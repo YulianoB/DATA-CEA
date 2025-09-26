@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Toaster, toast } from 'sonner' // ✅ Toasts
-
+import { Toaster, toast } from 'sonner' // ✅ Toasts locales
+import { cerrarSesion } from '@/lib/auth/logout'
 // Supabase client y validaciones globales
 import { supabase } from '@/lib/supabaseClient'
 import {
@@ -63,10 +63,10 @@ export default function InspeccionPage() {
     fetchVehiculos()
   }, [router])
 
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser')
-    router.push('/login')
-  }
+  
+  // ...
+  const handleLogout = () => cerrarSesion(router)
+
 
   // ---------- Helpers de fecha/hora Bogotá ----------
   const formatearBogota = (date, fmt) => {
@@ -193,9 +193,10 @@ export default function InspeccionPage() {
     const resultado = await validarInspeccionDuplicada(nuevaPlaca, fecha)
     setMensajeDuplicado(resultado.mensaje)
 
-    // (Opcional) toast inmediato si ya existe
     if (resultado.existe) {
       toast.error(`Ya existe una inspección hoy para la placa ${nuevaPlaca}`)
+    } else {
+      toast.message(`No existe inspección hoy para ${nuevaPlaca}. Puedes continuar.`)
     }
   }
 
@@ -377,7 +378,7 @@ export default function InspeccionPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      {/* Toaster para esta página */}
+      {/* Toaster local para esta página */}
       <Toaster position="top-center" richColors />
 
       <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg p-6">

@@ -1,5 +1,7 @@
-// app/layout.jsx (raíz del proyecto)
+// app/layout.jsx
 import './globals.css'
+import '@fortawesome/fontawesome-free/css/all.min.css'
+import ToastProvider from '@/components/providers/ToastProvider'
 
 export const metadata = {
   title: 'Mi App',
@@ -9,14 +11,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <head>
-        {/* Font Awesome CDN (para usar <i className="fas ...">) */}
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-        />
-      </head>
-      <body>{children}</body>
+      <body>
+        <ToastProvider />
+        {children}
+      </body>
     </html>
   )
 }
+

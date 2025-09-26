@@ -2,20 +2,74 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Toaster, toast } from 'sonner'
 
 export default function InstructorPracticaPage() {
   const router = useRouter()
   const [user, setUser] = useState(null)
 
+  // === Reuniones: estado y polling de reunión activa ===
+  const [reunionActiva, setReunionActiva] = useState(null)
+  const [enviandoAsistencia, setEnviandoAsistencia] = useState(false)
+
+  // Cargar usuario
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser')
     if (storedUser) setUser(JSON.parse(storedUser))
     else router.push('/login')
   }, [router])
 
+  // Polling solo cuando hay usuario cargado
+  useEffect(() => {
+    if (!user) return
+    let alive = true
+    const fetchActiva = async () => {
+      try {
+        const res = await fetch('/api/reuniones/activa', { cache: 'no-store' })
+        const json = await res.json()
+        if (!alive) return
+        setReunionActiva(json?.data || null)
+      } catch {
+        // silencio
+      }
+    }
+    fetchActiva()
+    const id = setInterval(fetchActiva, 60_000) // cada 60s
+    return () => { alive = false; clearInterval(id) }
+  }, [user])
+
   const handleLogout = () => {
     localStorage.removeItem('currentUser')
     router.push('/login')
+  }
+
+  // === Reuniones: registrar asistencia ===
+  const registrarAsistenciaReunion = async () => {
+    try {
+      if (!reunionActiva?.enlace_asistencia) { toast.warning('No hay reunión activa.'); return }
+      const s = localStorage.getItem('currentUser')
+      if (!s) { toast.error('No hay usuario en sesión.'); return }
+      const u = JSON.parse(s)
+      if (!u?.documento) { toast.error('Usuario sin documento.'); return }
+
+      setEnviandoAsistencia(true)
+      const res = await fetch('/api/asistencias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enlace_asistencia: reunionActiva.enlace_asistencia,
+          user: { documento: u.documento, nombreCompleto: u.nombreCompleto, role: u.rol || u.role }
+        })
+      })
+      const json = await res.json()
+      if (json.status === 'success') toast.success('✅ Asistencia registrada.')
+      else if (json.status === 'warning') toast.warning(json.message || 'Aviso.')
+      else toast.error(json.message || 'Error al registrar asistencia.')
+    } catch {
+      toast.error('Error al registrar asistencia.')
+    } finally {
+      setEnviandoAsistencia(false)
+    }
   }
 
   if (!user) return <p className="text-center mt-20">Cargando...</p>
@@ -31,6 +85,7 @@ export default function InstructorPracticaPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
+      <Toaster position="top-center" richColors />
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-6">
         
         {/* Encabezado */}
@@ -45,6 +100,21 @@ export default function InstructorPracticaPage() {
         <p className="bg-blue-50 border border-blue-200 text-[var(--primary-dark)] p-2 rounded-md mb-6 text-center text-sm">
           Usuario: <strong>{user.nombreCompleto}</strong> ({user.rol})
         </p>
+
+        {/* Enlace de asistencia (visible solo si hay reunión activa) */}
+        {reunionActiva ? (
+          <div className="mb-4 text-center">
+            <button
+              onClick={registrarAsistenciaReunion}
+              disabled={enviandoAsistencia}
+              className="text-[var(--primary)] hover:underline flex items-center justify-center gap-2 mx-auto disabled:opacity-60 text-sm"
+              title={`Reunión: ${reunionActiva.tipo_reunion} (${reunionActiva.hora_inicio}–${reunionActiva.hora_fin})`}
+            >
+              <i className="fas fa-check-circle"></i>
+              {enviandoAsistencia ? 'Enviando...' : 'Registrar asistencia a reunión'}
+            </button>
+          </div>
+        ) : null}
 
         {/* Botones de navegación en grid responsivo */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 gap-4">
