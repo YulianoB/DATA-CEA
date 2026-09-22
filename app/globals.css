@@ -1,24 +1,38 @@
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
+
+/* ============================================================
+   VARIABLES GENERALES
+============================================================ */
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
   --primary: #204c93;
   --primary-dark: #280032;
+
   --danger: #C54217;
   --danger-dark: #8C2E10;
 }
 
+
+/* ============================================================
+   TEMA TAILWIND
+============================================================ */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
+
+
+/* ============================================================
+   MODO OSCURO DEL SISTEMA
+============================================================ */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -27,25 +41,1240 @@
   }
 }
 
+
+/* ============================================================
+   ESTILOS GENERALES
+============================================================ */
+
+html,
+body,
+#__next {
+  min-height: 100%;
+}
+
+
 body {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  margin: 0;
+  padding: 0;
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  margin:0;
-  padding:0;
-   @apply bg-gray-100 text-gray-800;
-
 }
 
-/* ajustes básicos que ayudan a consistencia */
-html,body,#__next{
-  height:100%;
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
 }
 
-.container{
-  max-width:1200px;
-  margin:0 auto;
-  padding:16px;
+
+button {
+  cursor: pointer;
 }
-button{ cursor:pointer; }
+
+
+/* ============================================================
+   CONTROL DE CLASES
+============================================================ */
+
+.hoja-control {
+  width: 215.9mm;
+  min-height: 279.4mm;
+  box-sizing: border-box;
+}
+
+
+/* ============================================================
+   DOCUMENTOS PESV VERTICALES
+============================================================ */
+
+.hoja-pesv {
+  width: 215.9mm;
+  min-height: 279.4mm;
+
+  box-sizing: border-box;
+}
+
+
+.hoja-pesv .break-inside-avoid {
+  break-inside: avoid;
+}
+
+
+/* ============================================================
+   PLAN ANUAL DE TRABAJO PESV
+   VISTA HORIZONTAL EN PANTALLA
+============================================================ */
+
+.hoja-plan-trabajo-pesv {
+  width: 279.4mm;
+  min-width: 279.4mm;
+
+  min-height: 215.9mm;
+
+  margin-left: auto;
+  margin-right: auto;
+
+  box-sizing: border-box;
+}
+
+
+.tabla-plan-trabajo-pesv {
+  width: 100%;
+
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+
+/* ============================================================
+   IMPRESIÓN
+============================================================ */
+
+@media print {
+
+  /*
+    Configuración predeterminada para los documentos
+    verticales de DATA CEA.
+  */
+  @page {
+    size: Letter portrait;
+    margin: 0;
+  }
+
+
+  /* ==========================================================
+     CONFIGURACIÓN GENERAL DE IMPRESIÓN
+  ========================================================== */
+
+  html,
+  body {
+    width: 215.9mm !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: white !important;
+  }
+
+
+  .no-print {
+    display: none !important;
+  }
+
+
+  body > div,
+  body > div > div {
+    min-height: 0 !important;
+  }
+
+
+  /* ==========================================================
+     CONTROL DE CLASES
+  ========================================================== */
+
+  .hoja-control:first-of-type {
+    page-break-before: auto !important;
+    break-before: auto !important;
+  }
+
+
+  /*
+    Cada hoja representa una página física tamaño carta.
+  */
+  .hoja-control {
+    width: 215.9mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+
+    margin: 0 !important;
+
+    padding: 7mm !important;
+
+    box-sizing: border-box !important;
+
+    box-shadow: none !important;
+
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+
+  /*
+    La segunda hoja del Control de Clases comienza
+    obligatoriamente en una nueva página.
+  */
+  .pagina-dos {
+    margin-top: 0 !important;
+
+    page-break-before: always !important;
+    break-before: page !important;
+
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+
+  /* ==========================================================
+     DOCUMENTOS PESV VERTICALES
+  ========================================================== */
+
+  /*
+    Documento PESV continuo.
+    El navegador distribuye naturalmente el contenido
+    entre páginas tamaño carta vertical.
+  */
+  .hoja-pesv {
+    width: 215.9mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+
+    padding-left: 7mm !important;
+    padding-right: 7mm !important;
+    padding-top: 7mm !important;
+    padding-bottom: 7mm !important;
+
+    box-sizing: border-box !important;
+
+    box-shadow: none !important;
+
+    overflow: visible !important;
+
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+
+  /*
+    El encabezado documental no debe dividirse
+    entre dos páginas.
+  */
+  .encabezado-pesv-print {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  /*
+    Una meta individual no debe quedar cortada.
+  */
+  .hoja-pesv .break-inside-avoid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  /*
+    El objetivo completo sí puede continuar
+    en la siguiente página.
+  */
+  .bloque-objetivo-pesv {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+
+  /* ==========================================================
+     TABLAS GENERALES
+  ========================================================== */
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  thead {
+    display: table-header-group;
+  }
+
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+
+  /* ==========================================================
+     PLAN ANUAL DE TRABAJO PESV
+     IMPRESIÓN HORIZONTAL
+  ========================================================== */
+
+  /*
+    Estas clases solamente existen mientras está abierta
+    la página del Plan Anual de Trabajo.
+
+    Sobrescriben la medida vertical general del html/body.
+  */
+  html.html-plan-trabajo-pesv,
+  html.html-plan-trabajo-pesv body,
+  body.body-plan-trabajo-pesv {
+    width: 279.4mm !important;
+
+    min-width: 279.4mm !important;
+    max-width: 279.4mm !important;
+
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: white !important;
+
+    overflow: visible !important;
+  }
+
+
+  /*
+    El formato horizontal se asigna desde el contenedor
+    principal y no desde la hoja interna.
+
+    Esto evita que el navegador genere primero una página
+    vertical vacía y posteriormente cambie a landscape.
+  */
+  .documento-plan-trabajo-pesv {
+    
+    width: 279.4mm !important;
+
+    min-width: 279.4mm !important;
+    max-width: 279.4mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: white !important;
+
+    overflow: visible !important;
+
+    page-break-before: auto !important;
+    break-before: auto !important;
+
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+
+  /*
+    Hoja Carta horizontal.
+  */
+  .hoja-plan-trabajo-pesv {
+    width: 279.4mm !important;
+
+    min-width: 279.4mm !important;
+    max-width: 279.4mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+
+    padding-left: 6mm !important;
+    padding-right: 6mm !important;
+    padding-top: 6mm !important;
+    padding-bottom: 6mm !important;
+
+    box-sizing: border-box !important;
+
+    box-shadow: none !important;
+
+    overflow: visible !important;
+
+    page-break-before: auto !important;
+    break-before: auto !important;
+
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+
+  /*
+    Tabla principal del Plan Anual.
+  */
+  .tabla-plan-trabajo-pesv {
+    width: 100% !important;
+
+    table-layout: fixed !important;
+
+    border-collapse: collapse !important;
+
+    margin: 0 !important;
+  }
+
+
+  /*
+    Repetir la cabecera de columnas cuando
+    existan varias páginas.
+  */
+  .tabla-plan-trabajo-pesv thead {
+    display: table-header-group !important;
+  }
+
+
+  /*
+    Cada actividad debe permanecer completa
+    dentro de una página cuando sea posible.
+  */
+  .tabla-plan-trabajo-pesv tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  /*
+    Los textos extensos pueden ajustarse dentro
+    del ancho de cada columna.
+  */
+  .tabla-plan-trabajo-pesv th,
+  .tabla-plan-trabajo-pesv td {
+    overflow-wrap: anywhere;
+
+    word-break: normal;
+
+    white-space: normal;
+  }
+
+
+  /*
+    Conserva el fondo del mes programado
+    y además permanece la X para impresión
+    en escala de grises.
+  */
+  .mes-programado {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+
+  /* ==========================================================
+     COLORES E IMÁGENES
+  ========================================================== */
+
+  img {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* ============================================================
+   MATRIZ DE RIESGOS PESV
+   VISTA HORIZONTAL EN PANTALLA
+============================================================ */
+
+.hoja-matriz-riesgos-pesv {
+  width: 279.4mm;
+  min-width: 279.4mm;
+
+  min-height: 215.9mm;
+
+  margin-left: auto;
+  margin-right: auto;
+
+  padding: 6mm;
+
+  box-sizing: border-box;
+}
+
+
+.tabla-riesgos {
+  width: 100%;
+
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+
+/* ============================================================
+   MATRIZ DE RIESGOS PESV
+   OFICIO HORIZONTAL
+============================================================ */
+
+.hoja-matriz-riesgos-pesv {
+  width: 330.2mm;
+  min-width: 330.2mm;
+
+  min-height: 215.9mm;
+
+  margin-left: auto;
+  margin-right: auto;
+
+  padding: 6mm;
+
+  box-sizing: border-box;
+}
+
+
+.tabla-riesgos {
+  width: 100%;
+
+  max-width: 100%;
+
+  border-collapse: collapse;
+
+  table-layout: fixed;
+
+  box-sizing: border-box;
+}
+
+
+.tabla-riesgos th,
+.tabla-riesgos td {
+  box-sizing: border-box;
+
+  overflow-wrap: anywhere;
+
+  word-break: normal;
+
+  white-space: normal;
+}
+
+
+/* ============================================================
+   MATRIZ DE RIESGOS PESV
+   IMPRESIÓN OFICIO HORIZONTAL
+============================================================ */
+
+@media print {
+
+  /*
+    Página exclusiva para la Matriz de Riesgos.
+    Oficio horizontal:
+    330.2 mm x 215.9 mm
+  */
+  @page {
+    size: 330.2mm 215.9mm;
+    margin: 0;
+  }
+
+
+  html.html-matriz-riesgos-pesv,
+  html.html-matriz-riesgos-pesv body,
+  body.body-matriz-riesgos-pesv {
+    width: 330.2mm !important;
+
+    min-width: 330.2mm !important;
+    max-width: 330.2mm !important;
+
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: white !important;
+
+    overflow: visible !important;
+  }
+
+
+  .documento-matriz-riesgos-pesv {
+    width: 330.2mm !important;
+
+    min-width: 330.2mm !important;
+    max-width: 330.2mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: white !important;
+
+    overflow: visible !important;
+  }
+
+
+  .hoja-matriz-riesgos-pesv {
+    width: 330.2mm !important;
+
+    min-width: 330.2mm !important;
+    max-width: 330.2mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+
+    padding-left: 6mm !important;
+    padding-right: 6mm !important;
+    padding-top: 6mm !important;
+    padding-bottom: 6mm !important;
+
+    box-sizing: border-box !important;
+
+    box-shadow: none !important;
+
+    overflow: visible !important;
+  }
+
+
+  .tabla-riesgos {
+    width: 100% !important;
+
+    max-width: 100% !important;
+
+    table-layout: fixed !important;
+
+    border-collapse: collapse !important;
+
+    margin: 0 !important;
+
+    box-sizing: border-box !important;
+  }
+
+
+  .tabla-riesgos thead {
+    display: table-header-group !important;
+  }
+
+
+  .tabla-riesgos tfoot {
+    display: table-footer-group !important;
+  }
+
+
+  .tabla-riesgos tr,
+  .fila-riesgo {
+    page-break-inside: avoid !important;
+
+    break-inside: avoid !important;
+  }
+
+
+  .tabla-riesgos th,
+  .tabla-riesgos td {
+    max-width: 100%;
+
+    overflow-wrap: anywhere;
+
+    word-break: normal;
+
+    white-space: normal;
+
+    box-sizing: border-box;
+  }
+
+
+  .metodologia-documento,
+  .firmas-documento {
+    page-break-inside: avoid !important;
+
+    break-inside: avoid !important;
+  }
+
+
+  .encabezado-tabla-grupo,
+  .encabezado-tabla {
+    page-break-after: avoid !important;
+
+    break-after: avoid !important;
+  }
+
+
+  .encabezado-pesv-print {
+    page-break-inside: avoid !important;
+
+    break-inside: avoid !important;
+  }
+}
+/* ============================================================
+   INFORME DE AUDITORÍA PESV
+   CARTA VERTICAL
+============================================================ */
+
+@media print {
+
+  html.html-informe-auditoria-pesv,
+  html.html-informe-auditoria-pesv body,
+  body.body-informe-auditoria-pesv {
+    width: 215.9mm !important;
+
+    min-width: 215.9mm !important;
+    max-width: 215.9mm !important;
+
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: white !important;
+
+    overflow: visible !important;
+  }
+
+
+  .hoja-informe-auditoria-pesv {
+    width: 215.9mm !important;
+
+    min-width: 215.9mm !important;
+    max-width: 215.9mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+
+    padding-left: 11mm !important;
+    padding-right: 11mm !important;
+    padding-top: 44mm !important;
+    padding-bottom: 10mm !important;
+
+    box-sizing: border-box !important;
+
+    box-shadow: none !important;
+
+    overflow: visible !important;
+  }
+
+
+  .encabezado-impresion {
+    display: block !important;
+
+    position: fixed !important;
+
+    top: 6mm !important;
+    left: 11mm !important;
+    right: 11mm !important;
+
+    z-index: 1000 !important;
+
+    background: white !important;
+  }
+
+
+  .encabezado-impresion > table {
+    margin-bottom: 0 !important;
+  }
+
+
+  .bloque-hallazgo,
+  .bloque-accion {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+
+  .bloque-seguimiento {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  .titulo-seccion {
+    page-break-after: avoid !important;
+    break-after: avoid-page !important;
+  }
+
+
+  .firmas-documento {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+
+    margin-top: 6mm !important;
+  }
+}
+
+/* ============================================================
+   SOPORTE DE MEDICION DE INDICADORES PESV
+   app/admin/pesv/indicadores/imprimir/[id]/page.jsx
+
+   Formato:
+   Carta vertical 215.9 mm x 279.4 mm
+============================================================ */
+
+
+/* ============================================================
+   VISTA EN PANTALLA
+============================================================ */
+
+.pagina-soporte-indicador-pesv {
+  width: 100%;
+  min-height: 100vh;
+
+  padding-top: 20px;
+  padding-bottom: 30px;
+
+  box-sizing: border-box;
+}
+
+
+.hoja-soporte-indicador-pesv {
+  width: 215.9mm;
+  max-width: calc(100vw - 32px);
+
+  min-height: 279.4mm;
+
+  margin-left: auto;
+  margin-right: auto;
+
+  padding-top: 8mm;
+  padding-right: 10mm;
+  padding-bottom: 10mm;
+  padding-left: 10mm;
+
+  box-sizing: border-box;
+}
+
+
+.tabla-documento-indicador-pesv {
+  width: 100%;
+  max-width: 100%;
+
+  margin: 0;
+
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  box-sizing: border-box;
+}
+
+
+.tabla-documento-indicador-pesv td,
+.tabla-documento-indicador-pesv th {
+  box-sizing: border-box;
+
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+
+.tabla-encabezado-indicador {
+  width: 100%;
+  max-width: 100%;
+
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  box-sizing: border-box;
+}
+
+
+.tabla-datos-indicador {
+  width: 100%;
+  max-width: 100%;
+
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  box-sizing: border-box;
+}
+
+
+.encabezado-indicador-repetible {
+  display: table-header-group;
+}
+
+
+.titulo-seccion-indicador {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+
+.firmas-indicador {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+
+/* ============================================================
+   IMPRESION
+   SOPORTE DE MEDICION DE INDICADORES PESV
+============================================================ */
+
+@media print {
+
+  @page {
+    size: Letter portrait;
+    margin: 0;
+  }
+
+
+  /* ==========================================================
+     HTML Y BODY
+  ========================================================== */
+
+  html.html-soporte-indicador-pesv,
+  html.html-soporte-indicador-pesv body,
+  body.body-soporte-indicador-pesv {
+    width: 215.9mm !important;
+
+    min-width: 215.9mm !important;
+    max-width: 215.9mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: white !important;
+    overflow: visible !important;
+
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+
+  /* ==========================================================
+     CONTENEDOR GENERAL
+  ========================================================== */
+
+  .pagina-soporte-indicador-pesv {
+    width: 215.9mm !important;
+
+    min-width: 215.9mm !important;
+    max-width: 215.9mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: white !important;
+    overflow: visible !important;
+  }
+
+
+  .no-print {
+    display: none !important;
+  }
+
+
+  /* ==========================================================
+     HOJA DEL DOCUMENTO
+  ========================================================== */
+
+  .hoja-soporte-indicador-pesv {
+    width: 215.9mm !important;
+
+    min-width: 215.9mm !important;
+    max-width: 215.9mm !important;
+
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+
+    padding-top: 7mm !important;
+    padding-right: 10mm !important;
+    padding-bottom: 0 !important;
+    padding-left: 10mm !important;
+
+    box-sizing: border-box !important;
+
+    background: white !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+
+    page-break-before: auto !important;
+    break-before: auto !important;
+
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+
+  /* ==========================================================
+     TABLA ESTRUCTURAL PRINCIPAL
+
+     El contenido ya no vive dentro de una unica fila gigante.
+     Cada bloque principal del documento es una fila real del
+     TBODY. Por eso dejamos que Chromium fragmente la tabla
+     naturalmente entre filas.
+  ========================================================== */
+
+  .tabla-documento-indicador-pesv {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    margin: 0 !important;
+
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+
+    box-sizing: border-box !important;
+
+    page-break-before: auto !important;
+    break-before: auto !important;
+
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+
+  .tabla-documento-indicador-pesv > thead,
+  .encabezado-indicador-repetible {
+    display: table-header-group !important;
+  }
+
+
+  .tabla-documento-indicador-pesv > tbody {
+    display: table-row-group !important;
+  }
+
+
+  /* ==========================================================
+     ENCABEZADO REPETIBLE
+  ========================================================== */
+
+  .tabla-documento-indicador-pesv > thead > tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  .tabla-documento-indicador-pesv > thead > tr > td {
+    padding-top: 6mm !important;
+    padding-right: 0 !important;
+    padding-bottom: 3mm !important;
+    padding-left: 0 !important;
+  }
+
+
+  .tabla-encabezado-indicador {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    margin: 0 !important;
+
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+
+    box-sizing: border-box !important;
+  }
+
+
+  .tabla-encabezado-indicador tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  /* ==========================================================
+     FILAS ESTRUCTURALES DEL DOCUMENTO
+
+     Esta regla es intencionalmente mas especifica que la regla
+     global de impresion:
+       tr { break-inside: avoid !important; }
+
+     De esta forma la regla global no vuelve a controlar las
+     filas principales del soporte PESV.
+  ========================================================== */
+
+  .tabla-documento-indicador-pesv
+    > tbody
+    > tr.fila-bloque-indicador {
+    page-break-before: auto !important;
+    break-before: auto !important;
+
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+
+  /*
+    Bloques cortos:
+    si caben en el espacio restante continúan normalmente.
+    Si no caben completos, Chromium puede llevar el bloque
+    completo a la página siguiente.
+  */
+  .tabla-documento-indicador-pesv
+    > tbody
+    > tr.fila-bloque-indicador-no-divisible {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  .tabla-documento-indicador-pesv
+    > tbody
+    > tr.fila-bloque-indicador-no-divisible
+    > td {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  /*
+    Bloques de contenido variable, como análisis u observaciones:
+    se permite su fragmentación si llegan a ser extensos.
+  */
+  .tabla-documento-indicador-pesv
+    > tbody
+    > tr.fila-bloque-indicador-divisible {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+
+  .tabla-documento-indicador-pesv
+    > tbody
+    > tr.fila-bloque-indicador-divisible
+    > td {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+
+  /*
+    Las celdas estructurales no agregan espacio al final.
+  */
+  .tabla-documento-indicador-pesv
+    > tbody
+    > tr.fila-bloque-indicador
+    > td.celda-contenido-indicador {
+    padding-bottom: 0 !important;
+  }
+
+
+  /*
+    No se fuerza ningun salto después de la última fila.
+    Esto evita crear artificialmente otro fragmento de tabla.
+  */
+  .tabla-documento-indicador-pesv
+    > tbody
+    > tr.fila-bloque-indicador:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+
+  /* ==========================================================
+     BLOQUES INTERNOS
+  ========================================================== */
+
+  .bloque-no-dividir {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  /*
+    Dentro de una fila marcada como divisible no imponemos
+    el bloqueo general al contenedor exterior. Los elementos
+    internos conservan sus propias reglas cuando corresponda.
+  */
+  .fila-bloque-indicador-divisible .bloque-no-dividir {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+
+  /* ==========================================================
+     TABLAS INTERNAS
+  ========================================================== */
+
+  .tabla-datos-indicador {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+
+    box-sizing: border-box !important;
+  }
+
+
+  /*
+    Las filas de las tablas de datos sí deben mantenerse
+    completas para no partir una fila de resultados/costos.
+  */
+  .tabla-datos-indicador tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  .tabla-datos-indicador thead {
+    display: table-header-group !important;
+  }
+
+
+  /* ==========================================================
+     TITULOS Y FIRMAS
+  ========================================================== */
+
+  .titulo-seccion-indicador {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+
+  .firmas-indicador {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-before: auto !important;
+    break-before: auto !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /*
+    La fila estructural que contiene las firmas también debe
+    mantenerse completa. Si las dos firmas no caben en el
+    espacio restante, Chromium mueve la fila completa a la
+    página siguiente; nunca debe separar una firma de la otra.
+  */
+  .tabla-documento-indicador-pesv
+    > tbody
+    > tr.fila-bloque-indicador-no-divisible
+    .firmas-indicador {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+
+  /* ==========================================================
+     IMAGENES
+  ========================================================== */
+
+  .hoja-soporte-indicador-pesv img {
+    max-width: 100% !important;
+
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+
+  /* ==========================================================
+     COLORES DE IMPRESION
+  ========================================================== */
+
+  .hoja-soporte-indicador-pesv,
+  .hoja-soporte-indicador-pesv * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

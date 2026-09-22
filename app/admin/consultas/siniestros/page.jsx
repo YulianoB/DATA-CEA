@@ -1,959 +1,2556 @@
+// app/admin/consultas/siniestros/page.jsx
+
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
-import { Toaster, toast } from 'sonner'
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
-// ---- Helpers Bogotá ----
-const fmtBogota = (date, mode) => {
-  const optFecha = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Bogota' }
-  const optHora  = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'America/Bogota' }
-  return new Intl.DateTimeFormat('en-CA', mode === 'fecha' ? optFecha : optHora).format(date) // YYYY-MM-DD / HH:mm:ss
+import {
+  useRouter,
+} from 'next/navigation'
+
+import {
+  Toaster,
+  toast,
+} from 'sonner'
+
+import {
+  cerrarSesion,
+} from '@/lib/auth/logout'
+
+// ============================================================
+// CONSTANTES
+// app/admin/consultas/siniestros/page.jsx
+// ============================================================
+
+const PAGE_SIZE = 50
+
+const ESTADOS_BANDEJA = [
+  {
+    valor: 'PENDIENTE',
+    titulo: 'Pendientes',
+    icono: 'fa-clock',
+  },
+  {
+    valor: 'EN ANÁLISIS',
+    titulo: 'En análisis',
+    icono: 'fa-magnifying-glass',
+  },
+  {
+    valor: 'CERRADO',
+    titulo: 'Cerrados',
+    icono: 'fa-circle-check',
+  },
+  {
+    valor: 'TODOS',
+    titulo: 'Todos',
+    icono: 'fa-list',
+  },
+]
+
+const RESUMEN_VACIO = {
+  total_siniestros: 0,
+  pendientes: 0,
+  en_analisis: 0,
+  cerrados: 0,
+  personas_involucradas: 0,
+  heridos_leves: 0,
+  heridos_graves: 0,
+  fatalidades: 0,
+  vehiculos_involucrados: 0,
+  costos: {
+    total_directo: 0,
+    total_indirecto: 0,
+    total_general: 0,
+  },
 }
-const hoyBogota = () => fmtBogota(new Date(), 'fecha')
-const SELECT_FIELDS = `
-  id,
-  consecutivo,
-  fecha_siniestro,
-  tipo_siniestro,
-  num_personas_involucradas,
-  heridos_leves,
-  heridos_graves,
-  fatalidades,
-  placa,
-  nombre_conductor_implicado,
-  documento,
-  resumen,
-  estado_analisis,
-  numero_ipat,
-  autoridad,
-  costo_dir_choque_simple,
-  costo_indi_choque_simple,
-  costo_dir_heridos_l,
-  costo_indi_heridos_l,
-  costo_dir_heridos_g,
-  costo_indi_heridos_g,
-  costo_dir_fatalidad,
-  costo_indi_fatalidad,
-  fecha_estado_en_analisis,
-  nombre_usuario_en_analisis,
-  fecha_estado_cerrado,
-  nombre_usuario_cerrado,
-  resumen_analisis
-`
 
-// Normaliza tildes y mayúsculas p/ comparar estados robustamente
-const normEstado = (s) =>
-  String(s || '')
+// ============================================================
+// HELPERS GENERALES
+// app/admin/consultas/siniestros/page.jsx
+// ============================================================
+
+function normalizarTexto(valor) {
+  return String(valor ?? '').trim()
+}
+
+function obtenerNitEmpresa(user) {
+  return normalizarTexto(
+    user?.nitEmpresa ||
+    user?.nit_empresa ||
+    user?.empresa?.nit ||
+    user?.nit ||
+    localStorage.getItem('currentEmpresaNit')
+  )
+}
+
+function obtenerResponsable(user) {
+  return normalizarTexto(
+    user?.nombreCompleto ||
+    user?.nombre_completo ||
+    user?.usuario ||
+    user?.documento ||
+    'ADMINISTRADOR'
+  )
+}
+
+function hoyBogota() {
+  return new Intl.DateTimeFormat(
+    'en-CA',
+    {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      timeZone: 'America/Bogota',
+    }
+  ).format(new Date())
+}
+
+function mesActualBogota() {
+  return Number(
+    new Intl.DateTimeFormat(
+      'en-CA',
+      {
+        month: '2-digit',
+        timeZone: 'America/Bogota',
+      }
+    ).format(new Date())
+  )
+}
+
+function normEstado(valor) {
+  return String(valor || '')
     .toUpperCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // quita diacríticos
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
-
-// Chip visual por estado_analisis
-const EstadoChip = ({ estado }) => {
-  const e = String(estado || '').toUpperCase()
-  const color =
-    e === 'CERRADO' ? 'bg-green-100 text-green-700 border-green-300' :
-    e.includes('ANÁLISIS') || e.includes('ANALISIS') ? 'bg-blue-100 text-blue-700 border-blue-300' :
-    e === 'PENDIENTE' ? 'bg-amber-100 text-amber-700 border-amber-300' :
-    'bg-gray-100 text-gray-700 border-gray-300'
-  return <span className={`px-2 py-[2px] rounded border text-[11px] font-semibold ${color}`}>{estado || '-'}</span>
 }
+
+function fmt(valor) {
+  return Number(valor || 0).toLocaleString(
+    'es-CO',
+    {
+      maximumFractionDigits: 0,
+    }
+  )
+}
+
+function fmtCOP(valor) {
+  return Number(valor || 0).toLocaleString(
+    'es-CO',
+    {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    }
+  )
+}
+
+function formatearFecha(valor) {
+  const texto = normalizarTexto(valor)
+
+  if (!texto) {
+    return '-'
+  }
+
+  const partes = texto.slice(0, 10).split('-')
+
+  if (partes.length !== 3) {
+    return texto
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`
+}
+
+function formatearFechaExcel(valor) {
+  const texto = normalizarTexto(valor)
+
+  if (!texto) {
+    return ''
+  }
+
+  return formatearFecha(texto)
+}
+
+function obtenerTextoAfectacion(row) {
+  const fatalidades = Number(row?.fatalidades || 0)
+  const graves = Number(row?.heridos_graves || 0)
+  const leves = Number(row?.heridos_leves || 0)
+
+  const partes = []
+
+  if (fatalidades > 0) {
+    partes.push(`${fatalidades} fatalidad${fatalidades === 1 ? '' : 'es'}`)
+  }
+
+  if (graves > 0) {
+    partes.push(`${graves} grave${graves === 1 ? '' : 's'}`)
+  }
+
+  if (leves > 0) {
+    partes.push(`${leves} leve${leves === 1 ? '' : 's'}`)
+  }
+
+  if (partes.length === 0) {
+    return 'Choque simple'
+  }
+
+  return partes.join(' · ')
+}
+
+function obtenerConteoEstado(resumen, estado) {
+  if (estado === 'PENDIENTE') {
+    return Number(resumen?.pendientes || 0)
+  }
+
+  if (estado === 'EN ANÁLISIS') {
+    return Number(resumen?.en_analisis || 0)
+  }
+
+  if (estado === 'CERRADO') {
+    return Number(resumen?.cerrados || 0)
+  }
+
+  return Number(resumen?.total_siniestros || 0)
+}
+
+async function leerRespuestaApi(response) {
+  const contentType =
+    response.headers.get('content-type') || ''
+
+  if (!contentType.includes('application/json')) {
+    const texto = await response.text()
+
+    console.error(
+      'Respuesta no JSON:',
+      texto.slice(0, 500)
+    )
+
+    throw new Error(
+      `La API respondió contenido no JSON. HTTP ${response.status}`
+    )
+  }
+
+  const data = await response.json()
+
+  if (
+    !response.ok ||
+    data?.status !== 'success'
+  ) {
+    throw new Error(
+      data?.message ||
+      `Error HTTP ${response.status}`
+    )
+  }
+
+  return data
+}
+
+// ============================================================
+// TRIMESTRES
+// app/admin/consultas/siniestros/page.jsx
+// ============================================================
+
+function rangoTrimestre(anio, trimestre) {
+  const year = Number(anio)
+  const quarter = Number(trimestre)
+
+  if (quarter === 1) {
+    return {
+      desde: `${year}-01-01`,
+      hasta: `${year}-03-31`,
+      nombre: 'I trimestre',
+    }
+  }
+
+  if (quarter === 2) {
+    return {
+      desde: `${year}-04-01`,
+      hasta: `${year}-06-30`,
+      nombre: 'II trimestre',
+    }
+  }
+
+  if (quarter === 3) {
+    return {
+      desde: `${year}-07-01`,
+      hasta: `${year}-09-30`,
+      nombre: 'III trimestre',
+    }
+  }
+
+  return {
+    desde: `${year}-10-01`,
+    hasta: `${year}-12-31`,
+    nombre: 'IV trimestre',
+  }
+}
+
+function obtenerUltimoTrimestreCerrado() {
+  const hoy = hoyBogota()
+  const anioActual = Number(hoy.slice(0, 4))
+  const mesActual = mesActualBogota()
+  const trimestreActual = Math.ceil(mesActual / 3)
+
+  if (trimestreActual === 1) {
+    return {
+      anio: anioActual - 1,
+      trimestre: 4,
+    }
+  }
+
+  return {
+    anio: anioActual,
+    trimestre: trimestreActual - 1,
+  }
+}
+
+// ============================================================
+// EVIDENCIA SUPERINTENDENCIA
+// app/admin/consultas/siniestros/page.jsx
+//
+// Se genera una fila por nivel de pérdida presente.
+// Si no existen fatalidades ni heridos, se registra
+// como Choque simple.
+// ============================================================
+
+function construirFilasEvidencia(registros) {
+  const filas = []
+
+  for (const row of registros || []) {
+    const comun = {
+      fecha_siniestro: row?.fecha_siniestro || '',
+      placa: row?.placa || '',
+      conductor: row?.nombre_conductor_implicado || '',
+      documento: row?.documento || '',
+      ipat: row?.numero_ipat || '',
+      autoridad: row?.autoridad || '',
+      fecha_comite: row?.fecha_comite_analisis || '',
+    }
+
+    const fatalidades = Number(row?.fatalidades || 0)
+    const graves = Number(row?.heridos_graves || 0)
+    const leves = Number(row?.heridos_leves || 0)
+
+    if (fatalidades > 0) {
+      filas.push({
+        ...comun,
+        nivel_perdida: 'Fatalidad',
+        personas_nivel: fatalidades,
+      })
+    }
+
+    if (graves > 0) {
+      filas.push({
+        ...comun,
+        nivel_perdida: 'Heridos graves',
+        personas_nivel: graves,
+      })
+    }
+
+    if (leves > 0) {
+      filas.push({
+        ...comun,
+        nivel_perdida: 'Heridos leves',
+        personas_nivel: leves,
+      })
+    }
+
+    if (
+      fatalidades === 0 &&
+      graves === 0 &&
+      leves === 0
+    ) {
+      filas.push({
+        ...comun,
+        nivel_perdida: 'Choque simple',
+        personas_nivel: Number(row?.num_personas_involucradas || 0),
+      })
+    }
+  }
+
+  return filas
+}
+
+// ============================================================
+// CHIP ESTADO
+// app/admin/consultas/siniestros/page.jsx
+// ============================================================
+
+function EstadoChip({ estado }) {
+  const normalizado = normEstado(estado)
+
+  let color =
+    'bg-gray-100 text-gray-700 border-gray-300'
+
+  if (normalizado === 'CERRADO') {
+    color =
+      'bg-green-100 text-green-700 border-green-300'
+  }
+
+  if (normalizado === 'EN ANALISIS') {
+    color =
+      'bg-blue-100 text-blue-700 border-blue-300'
+  }
+
+  if (normalizado === 'PENDIENTE') {
+    color =
+      'bg-amber-100 text-amber-700 border-amber-300'
+  }
+
+  return (
+    <span
+      className={`inline-flex px-2 py-1 rounded-full border text-[10px] font-semibold whitespace-nowrap ${color}`}
+    >
+      {estado || '-'}
+    </span>
+  )
+}
+
+// ============================================================
+// TARJETA DE ESTADO
+// app/admin/consultas/siniestros/page.jsx
+// ============================================================
+
+function TarjetaEstado({
+  titulo,
+  valor,
+  cantidad,
+  icono,
+  activa,
+  onClick,
+  disabled,
+}) {
+  const clasesActiva = activa
+    ? 'border-[var(--primary)] bg-[var(--primary)] text-white shadow-md'
+    : 'border-gray-200 bg-white text-gray-800 hover:border-[var(--primary)] hover:bg-gray-50'
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full rounded-xl border p-4 text-left transition ${clasesActiva} ${
+        disabled
+          ? 'opacity-60 cursor-wait'
+          : ''
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p
+            className={`text-[10px] uppercase tracking-wide font-semibold ${
+              activa
+                ? 'text-white/80'
+                : 'text-gray-500'
+            }`}
+          >
+            {titulo}
+          </p>
+
+          <p className="text-2xl font-black mt-1">
+            {fmt(cantidad)}
+          </p>
+        </div>
+
+        <div
+          className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+            activa
+              ? 'bg-white/15'
+              : 'bg-gray-100 text-[var(--primary)]'
+          }`}
+        >
+          <i className={`fas ${icono}`}></i>
+        </div>
+      </div>
+
+      <p
+        className={`text-[10px] mt-2 ${
+          activa
+            ? 'text-white/80'
+            : 'text-gray-400'
+        }`}
+      >
+        {valor === 'TODOS'
+          ? 'Ver todos los registros'
+          : `Ver registros ${titulo.toLowerCase()}`}
+      </p>
+    </button>
+  )
+}
+
+// ============================================================
+// DATO DE EXPEDIENTE
+// app/admin/consultas/siniestros/page.jsx
+// ============================================================
+
+function Dato({ etiqueta, valor }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">
+        {etiqueta}
+      </p>
+
+      <p className="text-sm text-gray-800 font-medium break-words mt-1">
+        {valor || '-'}
+      </p>
+    </div>
+  )
+}
+
+// ============================================================
+// PÁGINA
+// app/admin/consultas/siniestros/page.jsx
+// ============================================================
 
 export default function SiniestrosPage() {
   const router = useRouter()
+
+  // ==========================================================
+  // SESIÓN
+  // ==========================================================
+
   const [user, setUser] = useState(null)
+  const [nitActual, setNitActual] = useState('')
 
-  // Filtros
-  const [filters, setFilters] = useState({
-    startDate: '',
-    endDate: '',
-    placa: '',
-    tipoSiniestro: '',
-  })
+  // ==========================================================
+  // BANDEJA
+  // ==========================================================
 
-  // Listas
-  const [placas, setPlacas] = useState([])
-
-  // Datos/paginación
-  const [data, setData]     = useState([])
+  const [estadoActual, setEstadoActual] = useState('PENDIENTE')
+  const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
-  const pageSize = 50
   const [total, setTotal] = useState(0)
+  const [totalPagesApi, setTotalPagesApi] = useState(1)
+  const [resumen, setResumen] = useState(RESUMEN_VACIO)
 
-  // Drawer seguimiento
+  // ==========================================================
+  // DRAWER
+  // ==========================================================
+
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [rowSel, setRowSel] = useState(null)
-  const [closing, setClosing] = useState(false) // anti doble-click
+  const [changingState, setChangingState] = useState(false)
+  const [closing, setClosing] = useState(false)
 
-  // Campos de cierre
+  // ==========================================================
+  // CAMPOS DE ANÁLISIS Y CIERRE
+  // ==========================================================
+
   const [numIpat, setNumIpat] = useState('')
   const [autoridad, setAutoridad] = useState('')
+  const [fechaComiteAnalisis, setFechaComiteAnalisis] = useState('')
   const [resumenAnalisis, setResumenAnalisis] = useState('')
+
   const [costo, setCosto] = useState({
-    dirChoque: '', indChoque: '',
-    dirLeves: '',  indLeves:  '',
-    dirGraves: '', indGraves: '',
-    dirFatal:  '', indFatal:  '',
+    dirChoque: '',
+    indChoque: '',
+    dirLeves: '',
+    indLeves: '',
+    dirGraves: '',
+    indGraves: '',
+    dirFatal: '',
+    indFatal: '',
   })
 
-  // Cargar usuario + placas
-  useEffect(() => {
-    const stored = localStorage.getItem('currentUser')
-    if (!stored) { router.push('/login'); return }
-    setUser(JSON.parse(stored))
+  // ==========================================================
+  // EVIDENCIA TRIMESTRAL
+  // ==========================================================
 
-    const cargarPlacas = async () => {
-      const { data: vehs } = await supabase
-        .from('vehiculos')
-        .select('placa')
-        .order('placa', { ascending: true })
-      setPlacas((vehs || []).map(v => v.placa))
-    }
-    cargarPlacas()
-  }, [router])
+  const trimestreInicial = useMemo(
+    () => obtenerUltimoTrimestreCerrado(),
+    []
+  )
 
-  // Handlers filtros
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFilters(prev => ({ ...prev, [name]: value }))
-  }
+  const [anioExport, setAnioExport] = useState(
+    trimestreInicial.anio
+  )
 
-  const validarRango = () => {
-    const { startDate, endDate } = filters
-    const hoy = hoyBogota()
-    if (!startDate || !endDate) {
-      toast.warning('Debes seleccionar ambas fechas.')
-      setStatus('⚠️ Debe seleccionar ambas fechas.')
-      return false
-    }
-    if (endDate < startDate) {
-      toast.warning('La fecha fin no puede ser menor que la fecha inicio.')
-      setStatus('⚠️ Rango de fechas inválido.')
-      return false
-    }
-    if (startDate > hoy || endDate > hoy) {
-      toast.warning('No puedes seleccionar fechas futuras.')
-      setStatus('⚠️ No se permiten fechas futuras.')
-      return false
-    }
-    return true
-  }
+  const [trimestreExport, setTrimestreExport] = useState(
+    trimestreInicial.trimestre
+  )
 
-  // Construye query base (para consulta y exportación)
-  const buildQuery = () => {
-    let query = supabase
-      .from('siniestros')
-      .select(SELECT_FIELDS, { count: 'exact' })
-      .gte('fecha_siniestro', filters.startDate)
-      .lte('fecha_siniestro', filters.endDate)
-      .order('fecha_siniestro', { ascending: false })
-      .order('consecutivo', { ascending: false })
+  const [exporting, setExporting] = useState(false)
 
-    if (filters.placa) query = query.eq('placa', filters.placa)
-    if (filters.tipoSiniestro) query = query.eq('tipo_siniestro', filters.tipoSiniestro)
-    return query
-  }
+  const periodoExport = useMemo(
+    () => rangoTrimestre(
+      anioExport,
+      trimestreExport
+    ),
+    [
+      anioExport,
+      trimestreExport,
+    ]
+  )
 
-  // Consultar
-  const handleConsultar = async (goToPage = 1) => {
-    if (!validarRango()) return
-    setLoading(true); setStatus('Consultando datos...'); setPage(goToPage)
+  const aniosDisponibles = useMemo(
+    () => {
+      const actual = Number(
+        hoyBogota().slice(0, 4)
+      )
 
-    try {
-      let query = buildQuery()
-      const from = (goToPage - 1) * pageSize
-      const to   = from + pageSize - 1
-      query = query.range(from, to)
+      const inicio = 2024
+      const lista = []
 
-      const { data: rows, error, count } = await query
-      if (error) {
-        console.error('Error consultando siniestros:', error)
-        toast.error('❌ Error al consultar siniestros.')
-        setStatus('❌ Error al consultar siniestros.')
+      for (
+        let anio = actual;
+        anio >= inicio;
+        anio -= 1
+      ) {
+        lista.push(anio)
+      }
+
+      return lista
+    },
+    []
+  )
+
+  // ==========================================================
+  // SESIÓN
+  // app/admin/consultas/siniestros/page.jsx
+  // ==========================================================
+
+  useEffect(
+    () => {
+      const stored =
+        localStorage.getItem('currentUser')
+
+      if (!stored) {
+        router.push('/login')
         return
       }
-      setData(rows || [])
-      setTotal(count || 0)
-      setStatus(`Consulta completada. ${count || 0} registros encontrados.`)
-    } catch (err) {
-      console.error(err)
-      toast.error('❌ Error al consultar siniestros.')
-      setStatus('❌ Error al consultar siniestros.')
+
+      try {
+        const parsed = JSON.parse(stored)
+        const nit = obtenerNitEmpresa(parsed)
+
+        if (!nit) {
+          toast.error(
+            'No se encontró la empresa asociada a la sesión.'
+          )
+          return
+        }
+
+        setUser(parsed)
+        setNitActual(nit)
+      } catch (error) {
+        console.error(
+          'Error leyendo sesión:',
+          error
+        )
+
+        localStorage.removeItem('currentUser')
+        router.push('/login')
+      }
+    },
+    [router]
+  )
+
+  // ==========================================================
+  // CONSULTAR BANDEJA POR ESTADO
+  // app/admin/consultas/siniestros/page.jsx
+  // API: /api/admin/consultas/siniestros?recurso=consulta
+  // ==========================================================
+
+  const consultarEstado = async (
+    estado = estadoActual,
+    goToPage = 1,
+    mostrarMensaje = true
+  ) => {
+    if (!nitActual) {
+      return
+    }
+
+    setLoading(true)
+
+    if (mostrarMensaje) {
+      setStatus('Consultando siniestros...')
+    }
+
+    try {
+      const params = new URLSearchParams({
+        nit: nitActual,
+        recurso: 'consulta',
+        estado,
+        pagina: String(goToPage),
+        page_size: String(PAGE_SIZE),
+      })
+
+      const response = await fetch(
+        `/api/admin/consultas/siniestros?${params.toString()}`,
+        {
+          cache: 'no-store',
+        }
+      )
+
+      const result = await leerRespuestaApi(response)
+
+      setEstadoActual(estado)
+      setData(
+        Array.isArray(result?.registros)
+          ? result.registros
+          : []
+      )
+
+      const paginacion = result?.paginacion || {}
+
+      setPage(
+        Number(
+          paginacion?.pagina || goToPage
+        )
+      )
+
+      setTotal(
+        Number(
+          paginacion?.total || 0
+        )
+      )
+
+      setTotalPagesApi(
+        Number(
+          paginacion?.total_paginas || 1
+        )
+      )
+
+      setResumen(
+        result?.resumen || RESUMEN_VACIO
+      )
+
+      if (mostrarMensaje) {
+        setStatus(
+          `${Number(
+            paginacion?.total || 0
+          ).toLocaleString('es-CO')} registro(s) en la bandeja seleccionada.`
+        )
+      }
+    } catch (error) {
+      console.error(
+        'Error consultando siniestros:',
+        error
+      )
+
+      setData([])
+      setTotal(0)
+      setTotalPagesApi(1)
+      setStatus(
+        `❌ ${
+          error?.message ||
+          'Error al consultar siniestros.'
+        }`
+      )
+
+      toast.error(
+        error?.message ||
+        'Error al consultar siniestros.'
+      )
     } finally {
       setLoading(false)
     }
   }
 
-  const handleLimpiar = () => {
-    setFilters({ startDate: '', endDate: '', placa: '', tipoSiniestro: '' })
-    setData([]); setTotal(0); setPage(1); setStatus('')
-  }
+  // ==========================================================
+  // CARGA INICIAL: PENDIENTES
+  // app/admin/consultas/siniestros/page.jsx
+  // ==========================================================
 
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil((total || 0) / pageSize)),
-    [total, pageSize]
-  )
-
-  // ---- Totales (página actual) ----
-  const totals = useMemo(() => {
-    const sum = (k) => data.reduce((acc, r) => acc + (Number(r?.[k]) || 0), 0)
-    const t = {
-      dirChoque: sum('costo_dir_choque_simple'),
-      indChoque: sum('costo_indi_choque_simple'),
-      dirLeves:  sum('costo_dir_heridos_l'),
-      indLeves:  sum('costo_indi_heridos_l'),
-      dirGraves: sum('costo_dir_heridos_g'),
-      indGraves: sum('costo_indi_heridos_g'),
-      dirFatal:  sum('costo_dir_fatalidad'),
-      indFatal:  sum('costo_indi_fatalidad'),
-    }
-    t.granTotal = Object.values(t).reduce((a,b)=>a+b,0)
-    return t
-  }, [data])
-
-  // Formato miles (es-CO)
-  const fmt = (n) => Number(n || 0).toLocaleString('es-CO')
-
-  // Drawer control
-  const abrirSeguimiento = (row) => {
-    setRowSel(row)
-    setNumIpat(row?.numero_ipat || '')
-    setAutoridad(row?.autoridad || '')
-    setResumenAnalisis(row?.resumen_analisis || '')
-    setCosto({
-      dirChoque: String(row?.costo_dir_choque_simple ?? '') || '',
-      indChoque: String(row?.costo_indi_choque_simple ?? '') || '',
-      dirLeves:  String(row?.costo_dir_heridos_l ?? '') || '',
-      indLeves:  String(row?.costo_indi_heridos_l ?? '') || '',
-      dirGraves: String(row?.costo_dir_heridos_g ?? '') || '',
-      indGraves: String(row?.costo_indi_heridos_g ?? '') || '',
-      dirFatal:  String(row?.costo_dir_fatalidad ?? '') || '',
-      indFatal:  String(row?.costo_indi_fatalidad ?? '') || '',
-    })
-    setClosing(false)
-    setDrawerOpen(true)
-  }
-  const cerrarDrawer = () => {
-    setDrawerOpen(false)
-    setRowSel(null)
-    setClosing(false)
-  }
-
-  // Acciones de seguimiento
-  const marcarEnAnalisis = async () => {
-    if (!rowSel) return
-    const est = normEstado(rowSel.estado_analisis)
-    if (est === 'CERRADO') { toast.info('El siniestro ya está CERRADO.'); return }
-    if (est === 'EN ANALISIS') { toast.info('Ya está EN ANÁLISIS.'); return }
-
-    const hoy = hoyBogota()
-    const { error } = await supabase
-      .from('siniestros')
-      .update({
-        estado_analisis: 'EN ANÁLISIS',
-        fecha_estado_en_analisis: hoy,
-        nombre_usuario_en_analisis: user?.nombreCompleto || user?.usuario || ''
-      })
-      .eq('id', rowSel.id)
-
-    if (error) { console.error(error); toast.error('No se pudo marcar EN ANÁLISIS.'); return }
-
-    toast.success('Marcado EN ANÁLISIS.')
-    const updated = {
-      ...rowSel,
-      estado_analisis: 'EN ANÁLISIS',
-      fecha_estado_en_analisis: hoy,
-      nombre_usuario_en_analisis: user?.nombreCompleto || user?.usuario || ''
-    }
-    setRowSel(updated)
-    setData(prev => prev.map(r => r.id === updated.id ? updated : r))
-  }
-
-  const cerrarSiniestro = async () => {
-    if (!rowSel || closing) return
-    const est = normEstado(rowSel.estado_analisis)
-    // ✅ Solo permite cerrar si el estado es EN ANALISIS (sin/sin tilde)
-    if (est !== 'EN ANALISIS') { toast.warning('Para cerrar, primero cambia el estado a EN ANÁLISIS.'); return }
-    if (!resumenAnalisis.trim()) {
-      toast.warning('El resumen de análisis es obligatorio para cerrar.')
-      return
-    }
-    setClosing(true)
-    try {
-      const hoy = hoyBogota()
-      const payload = {
-        estado_analisis: 'CERRADO',
-        fecha_estado_cerrado: hoy,
-        nombre_usuario_cerrado: user?.nombreCompleto || user?.usuario || '',
-        resumen_analisis: resumenAnalisis.trim(),
-        numero_ipat: numIpat?.trim() || null,
-        autoridad: autoridad?.trim() || null,
-        costo_dir_choque_simple: Number(costo.dirChoque || 0) || null,
-        costo_indi_choque_simple: Number(costo.indChoque || 0) || null,
-        costo_dir_heridos_l: Number(costo.dirLeves || 0) || null,
-        costo_indi_heridos_l: Number(costo.indLeves || 0) || null,
-        costo_dir_heridos_g: Number(costo.dirGraves || 0) || null,
-        costo_indi_heridos_g: Number(costo.indGraves || 0) || null,
-        costo_dir_fatalidad: Number(costo.dirFatal || 0) || null,
-        costo_indi_fatalidad: Number(costo.indFatal || 0) || null,
+  useEffect(
+    () => {
+      if (!nitActual) {
+        return
       }
 
-      const { error } = await supabase
-        .from('siniestros')
-        .update(payload)
-        .eq('id', rowSel.id)
+      consultarEstado(
+        'PENDIENTE',
+        1,
+        false
+      )
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [nitActual]
+  )
 
-      if (error) { console.error(error); toast.error('No se pudo CERRAR el siniestro.'); return }
+  // ==========================================================
+  // PAGINACIÓN
+  // ==========================================================
 
-      toast.success('Análisis cerrado.')
-      const updated = { ...rowSel, ...payload }
-      setRowSel(updated)
-      setData(prev => prev.map(r => r.id === updated.id ? updated : r))
+  const totalPages = Math.max(
+    1,
+    Number(
+      totalPagesApi ||
+      Math.ceil(total / PAGE_SIZE) ||
+      1
+    )
+  )
+
+  // ==========================================================
+  // ABRIR EXPEDIENTE
+  // app/admin/consultas/siniestros/page.jsx
+  // ==========================================================
+
+  const abrirSeguimiento = row => {
+    setRowSel(row)
+
+    setNumIpat(
+      row?.numero_ipat || ''
+    )
+
+    setAutoridad(
+      row?.autoridad || ''
+    )
+
+    setFechaComiteAnalisis(
+      row?.fecha_comite_analisis || ''
+    )
+
+    setResumenAnalisis(
+      row?.resumen_analisis || ''
+    )
+
+    setCosto({
+      dirChoque: String(
+        row?.costo_dir_choque_simple ?? ''
+      ),
+      indChoque: String(
+        row?.costo_indi_choque_simple ?? ''
+      ),
+      dirLeves: String(
+        row?.costo_dir_heridos_l ?? ''
+      ),
+      indLeves: String(
+        row?.costo_indi_heridos_l ?? ''
+      ),
+      dirGraves: String(
+        row?.costo_dir_heridos_g ?? ''
+      ),
+      indGraves: String(
+        row?.costo_indi_heridos_g ?? ''
+      ),
+      dirFatal: String(
+        row?.costo_dir_fatalidad ?? ''
+      ),
+      indFatal: String(
+        row?.costo_indi_fatalidad ?? ''
+      ),
+    })
+
+    setDrawerOpen(true)
+  }
+
+  const cerrarDrawer = () => {
+    if (
+      closing ||
+      changingState
+    ) {
+      return
+    }
+
+    setDrawerOpen(false)
+    setRowSel(null)
+  }
+
+  // ==========================================================
+  // ESTADO DERIVADO DEL EXPEDIENTE
+  // ==========================================================
+
+  const estadoRow = normEstado(
+    rowSel?.estado_analisis
+  )
+
+  const esPendiente =
+    estadoRow === 'PENDIENTE'
+
+  const esAnalisis =
+    estadoRow === 'EN ANALISIS'
+
+  const esCerrado =
+    estadoRow === 'CERRADO'
+
+  const puedeEditar =
+    esAnalisis && !esCerrado
+
+  // ==========================================================
+  // TOTALES DE COSTOS EN EL DRAWER
+  // ==========================================================
+
+  const totalesCostos = useMemo(
+    () => {
+      const n = valor => {
+        const numero = Number(valor || 0)
+        return Number.isFinite(numero)
+          ? numero
+          : 0
+      }
+
+      const directo =
+        n(costo.dirChoque) +
+        n(costo.dirLeves) +
+        n(costo.dirGraves) +
+        n(costo.dirFatal)
+
+      const indirecto =
+        n(costo.indChoque) +
+        n(costo.indLeves) +
+        n(costo.indGraves) +
+        n(costo.indFatal)
+
+      return {
+        directo,
+        indirecto,
+        total: directo + indirecto,
+      }
+    },
+    [costo]
+  )
+
+  // ==========================================================
+  // MARCAR EN ANÁLISIS
+  // app/admin/consultas/siniestros/page.jsx
+  // API PATCH: accion=marcar_en_analisis
+  // ==========================================================
+
+  const marcarEnAnalisis = async () => {
+    if (
+      !rowSel?.id ||
+      !nitActual ||
+      changingState
+    ) {
+      return
+    }
+
+    setChangingState(true)
+
+    try {
+      const response = await fetch(
+        '/api/admin/consultas/siniestros',
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-cea-nit': nitActual,
+          },
+          body: JSON.stringify({
+            nit: nitActual,
+            accion: 'marcar_en_analisis',
+            id: rowSel.id,
+            responsable: obtenerResponsable(user),
+          }),
+        }
+      )
+
+      const result = await leerRespuestaApi(response)
+
+      setRowSel(result.registro)
+
+      toast.success(
+        'Siniestro marcado EN ANÁLISIS.'
+      )
+
+      await consultarEstado(
+        estadoActual,
+        page,
+        false
+      )
+    } catch (error) {
+      console.error(
+        'Error cambiando estado:',
+        error
+      )
+
+      toast.error(
+        error?.message ||
+        'No fue posible cambiar el estado.'
+      )
+    } finally {
+      setChangingState(false)
+    }
+  }
+
+  // ==========================================================
+  // VALIDAR COSTOS
+  // app/admin/consultas/siniestros/page.jsx
+  // ==========================================================
+
+  const validarCostos = () => {
+    const campos = [
+      ['Choque simple - directo', costo.dirChoque],
+      ['Choque simple - indirecto', costo.indChoque],
+      ['Heridos leves - directo', costo.dirLeves],
+      ['Heridos leves - indirecto', costo.indLeves],
+      ['Heridos graves - directo', costo.dirGraves],
+      ['Heridos graves - indirecto', costo.indGraves],
+      ['Fatalidades - directo', costo.dirFatal],
+      ['Fatalidades - indirecto', costo.indFatal],
+    ]
+
+    for (const [nombre, valor] of campos) {
+      const numero = Number(valor || 0)
+
+      if (
+        !Number.isFinite(numero) ||
+        numero < 0
+      ) {
+        toast.warning(
+          `${nombre}: el valor debe ser mayor o igual a cero.`
+        )
+        return false
+      }
+    }
+
+    return true
+  }
+
+  // ==========================================================
+  // CERRAR SINIESTRO
+  // app/admin/consultas/siniestros/page.jsx
+  // API PATCH: accion=cerrar_siniestro
+  // ==========================================================
+
+  const cerrarSiniestro = async () => {
+    if (
+      !rowSel?.id ||
+      !nitActual ||
+      closing
+    ) {
+      return
+    }
+
+    if (!esAnalisis) {
+      toast.warning(
+        'El siniestro debe estar EN ANÁLISIS antes de cerrarse.'
+      )
+      return
+    }
+
+    if (!fechaComiteAnalisis) {
+      toast.warning(
+        'Debe registrar la fecha del comité donde fue analizado el siniestro.'
+      )
+      return
+    }
+
+    if (
+      rowSel?.fecha_siniestro &&
+      fechaComiteAnalisis < rowSel.fecha_siniestro
+    ) {
+      toast.warning(
+        'La fecha del comité no puede ser anterior a la fecha del siniestro.'
+      )
+      return
+    }
+
+    if (fechaComiteAnalisis > hoyBogota()) {
+      toast.warning(
+        'La fecha del comité no puede ser futura.'
+      )
+      return
+    }
+
+    if (!normalizarTexto(resumenAnalisis)) {
+      toast.warning(
+        'Debe registrar el análisis o las conclusiones antes de cerrar.'
+      )
+      return
+    }
+
+    if (!validarCostos()) {
+      return
+    }
+
+    setClosing(true)
+
+    try {
+      const response = await fetch(
+        '/api/admin/consultas/siniestros',
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-cea-nit': nitActual,
+          },
+          body: JSON.stringify({
+            nit: nitActual,
+            accion: 'cerrar_siniestro',
+            id: rowSel.id,
+            responsable: obtenerResponsable(user),
+            numero_ipat: normalizarTexto(numIpat),
+            autoridad: normalizarTexto(autoridad),
+            fecha_comite_analisis: fechaComiteAnalisis,
+            resumen_analisis: normalizarTexto(resumenAnalisis),
+            costo_dir_choque_simple: Number(costo.dirChoque || 0),
+            costo_indi_choque_simple: Number(costo.indChoque || 0),
+            costo_dir_heridos_l: Number(costo.dirLeves || 0),
+            costo_indi_heridos_l: Number(costo.indLeves || 0),
+            costo_dir_heridos_g: Number(costo.dirGraves || 0),
+            costo_indi_heridos_g: Number(costo.indGraves || 0),
+            costo_dir_fatalidad: Number(costo.dirFatal || 0),
+            costo_indi_fatalidad: Number(costo.indFatal || 0),
+          }),
+        }
+      )
+
+      const result = await leerRespuestaApi(response)
+
+      setRowSel(result.registro)
+
+      toast.success(
+        'Siniestro cerrado correctamente.'
+      )
+
+      await consultarEstado(
+        estadoActual,
+        page,
+        false
+      )
+    } catch (error) {
+      console.error(
+        'Error cerrando siniestro:',
+        error
+      )
+
+      toast.error(
+        error?.message ||
+        'No fue posible cerrar el siniestro.'
+      )
     } finally {
       setClosing(false)
     }
   }
 
-  // Obtiene TODOS los registros filtrados (para exportación)
-  const fetchAllForExport = async () => {
-    if (!validarRango()) return []
-    if (total <= data.length) return data // ya tenemos todo
+  // ==========================================================
+  // EXPORTAR EVIDENCIA TRIMESTRAL A EXCEL
+  // app/admin/consultas/siniestros/page.jsx
+  // API GET: recurso=exportar
+  //
+  // La exportación NO filtra por estado administrativo.
+  // Incluye todos los siniestros cuya fecha_siniestro
+  // pertenece al trimestre seleccionado.
+  // ==========================================================
 
-    const pageSizeExp = 1000
-    let offset = 0
-    let acc = []
-    while (offset < total) {
-      let q = buildQuery().range(offset, offset + pageSizeExp - 1)
-      const { data: chunk, error } = await q
-      if (error) { console.error(error); break }
-      acc = acc.concat(chunk || [])
-      if (!chunk || chunk.length < pageSizeExp) break
-      offset += pageSizeExp
+  const exportarEvidenciaExcel = async () => {
+    if (
+      !nitActual ||
+      exporting
+    ) {
+      return
     }
-    return acc
-  }
 
-  // Export XLSX
-  const exportXLSX = async () => {
-    const allRows = await fetchAllForExport()
-    if (!allRows || allRows.length === 0) return
+    if (periodoExport.hasta > hoyBogota()) {
+      toast.warning(
+        'El trimestre seleccionado todavía no ha finalizado. Seleccione un trimestre cerrado.'
+      )
+      return
+    }
 
-    const [{ default: ExcelJS }, { saveAs }] = await Promise.all([
-      import('exceljs'),
-      import('file-saver')
-    ])
+    setExporting(true)
 
-    const wb = new ExcelJS.Workbook()
-    const ws = wb.addWorksheet('Siniestros')
+    try {
+      const params = new URLSearchParams({
+        nit: nitActual,
+        recurso: 'exportar',
+        fecha_inicio: periodoExport.desde,
+        fecha_fin: periodoExport.hasta,
+      })
 
-    const headers = [
-      'Consecutivo','Fecha','Tipo','# Personas','Leves','Graves','Fatalidades','Placa',
-      'Conductor','Documento','Resumen','Estado','IPAT','Autoridad',
-      'C.D. Choque','C.I. Choque','C.D. Leves','C.I. Leves',
-      'C.D. Graves','C.I. Graves','C.D. Fatales','C.I. Fatales',
-      'F. Análisis','U. Análisis','F. Cierre','U. Cierre','Resumen Análisis'
-    ]
-    ws.addRow(headers)
-    const headerRow = ws.getRow(1)
-    headerRow.eachCell((cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } }
-      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-      cell.border = {
-        top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-        bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-        right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-      }
-    })
-    headerRow.height = 22
-
-    const rows = allRows.map(r => [
-      r.consecutivo || '',
-      r.fecha_siniestro || '',
-      r.tipo_siniestro || '',
-      r.num_personas_involucradas ?? '',
-      r.heridos_leves ?? '',
-      r.heridos_graves ?? '',
-      r.fatalidades ?? '',
-      r.placa || '',
-      r.nombre_conductor_implicado || '',
-      r.documento || '',
-      (r.resumen || '').replace(/\r?\n/g, ' '),
-      r.estado_analisis || '',
-      r.numero_ipat || '',
-      r.autoridad || '',
-      r.costo_dir_choque_simple ?? '',
-      r.costo_indi_choque_simple ?? '',
-      r.costo_dir_heridos_l ?? '',
-      r.costo_indi_heridos_l ?? '',
-      r.costo_dir_heridos_g ?? '',
-      r.costo_indi_heridos_g ?? '',
-      r.costo_dir_fatalidad ?? '',
-      r.costo_indi_fatalidad ?? '',
-      r.fecha_estado_en_analisis || '',
-      r.nombre_usuario_en_analisis || '',
-      r.fecha_estado_cerrado || '',
-      r.nombre_usuario_cerrado || '',
-      (r.resumen_analisis || '').replace(/\r?\n/g, ' ')
-    ])
-    rows.forEach(arr => {
-      const row = ws.addRow(arr)
-      row.eachCell((cell, col) => {
-        cell.alignment = { vertical: 'middle', horizontal: col <= 10 ? 'center' : 'left', wrapText: true }
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+      const response = await fetch(
+        `/api/admin/consultas/siniestros?${params.toString()}`,
+        {
+          cache: 'no-store',
         }
-      })
-    })
+      )
 
-    // Totales (sobre todos los registros exportados)
-    const sumAll = (k) => allRows.reduce((acc, r) => acc + (Number(r?.[k]) || 0), 0)
-    const totalsAll = {
-      dirChoque: sumAll('costo_dir_choque_simple'),
-      indChoque: sumAll('costo_indi_choque_simple'),
-      dirLeves:  sumAll('costo_dir_heridos_l'),
-      indLeves:  sumAll('costo_indi_heridos_l'),
-      dirGraves: sumAll('costo_dir_heridos_g'),
-      indGraves: sumAll('costo_indi_heridos_g'),
-      dirFatal:  sumAll('costo_dir_fatalidad'),
-      indFatal:  sumAll('costo_indi_fatalidad'),
+      const result = await leerRespuestaApi(response)
+
+      const registros = Array.isArray(result?.registros)
+        ? result.registros
+        : []
+
+      const filasEvidencia =
+        registros.length > 0
+          ? construirFilasEvidencia(registros)
+          : []
+
+      const ExcelJSImport = await import('exceljs')
+      const ExcelJS = ExcelJSImport.default || ExcelJSImport
+      const fileSaver = await import('file-saver')
+      const saveAs = fileSaver.saveAs || fileSaver.default
+
+      const workbook = new ExcelJS.Workbook()
+
+      workbook.creator = 'CEA - PESV'
+      workbook.created = new Date()
+
+      // ======================================================
+      // HOJA 1: EVIDENCIA SOLICITADA
+      // ======================================================
+
+      const evidencia = workbook.addWorksheet(
+        'Registro vehículos siniestrados'
+      )
+
+      evidencia.mergeCells('A1:I1')
+      evidencia.getCell('A1').value =
+        'REGISTRO DE VEHÍCULOS SINIESTRADOS'
+      evidencia.getCell('A1').font = {
+        bold: true,
+        size: 14,
+      }
+      evidencia.getCell('A1').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      }
+      evidencia.getRow(1).height = 24
+
+      evidencia.mergeCells('A2:I2')
+      evidencia.getCell('A2').value =
+        `${periodoExport.nombre.toUpperCase()} ${anioExport} · ${formatearFecha(periodoExport.desde)} al ${formatearFecha(periodoExport.hasta)}`
+      evidencia.getCell('A2').alignment = {
+        horizontal: 'center',
+      }
+      evidencia.getCell('A2').font = {
+        italic: true,
+      }
+
+      evidencia.mergeCells('A3:I3')
+      evidencia.getCell('A3').value =
+        normalizarTexto(result?.empresa?.nombre)
+          ? `${result.empresa.nombre} · NIT ${result?.empresa?.nit || nitActual}`
+          : `NIT ${result?.empresa?.nit || nitActual}`
+      evidencia.getCell('A3').alignment = {
+        horizontal: 'center',
+      }
+
+      const encabezados = [
+        'Fecha del siniestro',
+        'Nivel de pérdida',
+        'Número de personas implicadas por cada nivel',
+        'Placa del vehículo implicado de la empresa',
+        'Nombre del conductor implicado de la empresa',
+        'Identificación del conductor implicado de la empresa',
+        'Consecutivo IPAT en el RNAT del RUNT',
+        'Organismo de tránsito o autoridad que elaboró el IPAT',
+        'Fecha del comité donde fue analizado',
+      ]
+
+      const headerRow = evidencia.getRow(5)
+      headerRow.values = encabezados
+      headerRow.font = {
+        bold: true,
+      }
+      headerRow.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true,
+      }
+      headerRow.height = 45
+
+      if (filasEvidencia.length > 0) {
+        for (const fila of filasEvidencia) {
+          evidencia.addRow([
+            formatearFechaExcel(fila.fecha_siniestro),
+            fila.nivel_perdida,
+            fila.personas_nivel,
+            fila.placa,
+            fila.conductor,
+            fila.documento,
+            fila.ipat,
+            fila.autoridad,
+            formatearFechaExcel(fila.fecha_comite),
+          ])
+        }
+      } else {
+        const filaSinSiniestros =
+          evidencia.addRow([
+            '',
+            `NO SE REPORTARON SINIESTROS VIALES DURANTE EL ${periodoExport.nombre.toUpperCase()} DE ${anioExport}.`,
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+          ])
+
+        evidencia.mergeCells(
+          `B${filaSinSiniestros.number}:I${filaSinSiniestros.number}`
+        )
+
+        const celdaNota =
+          evidencia.getCell(
+            `B${filaSinSiniestros.number}`
+          )
+
+        celdaNota.font = {
+          bold: true,
+        }
+
+        celdaNota.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+          wrapText: true,
+        }
+
+        filaSinSiniestros.height = 45
+      }
+
+      evidencia.columns = [
+        { width: 18 },
+        { width: 20 },
+        { width: 18 },
+        { width: 20 },
+        { width: 30 },
+        { width: 22 },
+        { width: 24 },
+        { width: 34 },
+        { width: 22 },
+      ]
+
+      evidencia.eachRow(
+        {
+          includeEmpty: false,
+        },
+        row => {
+          row.eachCell(cell => {
+            cell.alignment = {
+              ...cell.alignment,
+              vertical: 'middle',
+              wrapText: true,
+            }
+          })
+        }
+      )
+
+      evidencia.views = [
+        {
+          state: 'frozen',
+          ySplit: 5,
+        },
+      ]
+
+      evidencia.autoFilter = {
+        from: 'A5',
+        to: 'I5',
+      }
+
+      // ======================================================
+      // HOJA 2: CONTROL ADMINISTRATIVO COMPLEMENTARIO
+      // ======================================================
+
+      const control = workbook.addWorksheet(
+        'Control administrativo'
+      )
+
+      control.columns = [
+        { header: 'Consecutivo interno', key: 'consecutivo', width: 18 },
+        { header: 'Fecha siniestro', key: 'fecha', width: 16 },
+        { header: 'Tipo siniestro', key: 'tipo', width: 22 },
+        { header: 'Placa', key: 'placa', width: 14 },
+        { header: 'Estado administrativo', key: 'estado', width: 20 },
+        { header: 'IPAT', key: 'ipat', width: 20 },
+        { header: 'Autoridad', key: 'autoridad', width: 28 },
+        { header: 'Fecha comité', key: 'fecha_comite', width: 18 },
+        { header: 'Costo directo', key: 'directo', width: 18 },
+        { header: 'Costo indirecto', key: 'indirecto', width: 18 },
+        { header: 'Costo total', key: 'total', width: 18 },
+        { header: 'Estado evidencia', key: 'estado_evidencia', width: 24 },
+      ]
+
+      control.getRow(1).font = {
+        bold: true,
+      }
+      control.getRow(1).alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true,
+      }
+      control.getRow(1).height = 32
+
+      let totalCostosDirectos = 0
+      let totalCostosIndirectos = 0
+
+      if (registros.length > 0) {
+        for (const row of registros) {
+          const directo =
+            Number(row?.costo_dir_choque_simple || 0) +
+            Number(row?.costo_dir_heridos_l || 0) +
+            Number(row?.costo_dir_heridos_g || 0) +
+            Number(row?.costo_dir_fatalidad || 0)
+
+          const indirecto =
+            Number(row?.costo_indi_choque_simple || 0) +
+            Number(row?.costo_indi_heridos_l || 0) +
+            Number(row?.costo_indi_heridos_g || 0) +
+            Number(row?.costo_indi_fatalidad || 0)
+
+          totalCostosDirectos += directo
+          totalCostosIndirectos += indirecto
+
+          const completa =
+            normEstado(row?.estado_analisis) === 'CERRADO' &&
+            Boolean(normalizarTexto(row?.fecha_comite_analisis))
+
+          control.addRow({
+            consecutivo: row?.consecutivo || '',
+            fecha: formatearFechaExcel(row?.fecha_siniestro),
+            tipo: row?.tipo_siniestro || '',
+            placa: row?.placa || '',
+            estado: row?.estado_analisis || '',
+            ipat: row?.numero_ipat || '',
+            autoridad: row?.autoridad || '',
+            fecha_comite: formatearFechaExcel(row?.fecha_comite_analisis),
+            directo,
+            indirecto,
+            total: directo + indirecto,
+            estado_evidencia: completa
+              ? 'COMPLETA'
+              : 'PENDIENTE DE COMPLETAR',
+          })
+        }
+      } else {
+        const filaControl =
+          control.addRow({
+            consecutivo: '',
+            fecha: '',
+            tipo: `SIN SINIESTROS REPORTADOS - ${periodoExport.nombre.toUpperCase()} ${anioExport}`,
+            placa: '',
+            estado: 'SIN NOVEDAD',
+            ipat: '',
+            autoridad: '',
+            fecha_comite: '',
+            directo: 0,
+            indirecto: 0,
+            total: 0,
+            estado_evidencia: 'NO APLICA',
+          })
+
+        filaControl.font = {
+          italic: true,
+        }
+      }
+
+      // ====================================================
+      // TOTALIZACIÓN DE COSTOS DEL TRIMESTRE
+      // Hoja: Control administrativo
+      // ====================================================
+
+      const filaTotal =
+        control.addRow({
+          consecutivo: '',
+          fecha: '',
+          tipo: '',
+          placa: '',
+          estado: '',
+          ipat: '',
+          autoridad: '',
+          fecha_comite: 'TOTALES DEL TRIMESTRE',
+          directo: totalCostosDirectos,
+          indirecto: totalCostosIndirectos,
+          total: totalCostosDirectos + totalCostosIndirectos,
+          estado_evidencia: '',
+        })
+
+      filaTotal.font = {
+        bold: true,
+      }
+
+      filaTotal.alignment = {
+        vertical: 'middle',
+      }
+
+      filaTotal.height = 22
+
+      control.getCell(
+        `H${filaTotal.number}`
+      ).alignment = {
+        horizontal: 'right',
+        vertical: 'middle',
+      }
+
+      control.getColumn('directo').numFmt = '#,##0.00'
+      control.getColumn('indirecto').numFmt = '#,##0.00'
+      control.getColumn('total').numFmt = '#,##0.00'
+
+      control.views = [
+        {
+          state: 'frozen',
+          ySplit: 1,
+        },
+      ]
+
+      control.autoFilter = {
+        from: 'A1',
+        to: 'L1',
+      }
+
+      // ======================================================
+      // GENERAR ARCHIVO
+      // ======================================================
+
+      const buffer = await workbook.xlsx.writeBuffer()
+
+      const blob = new Blob(
+        [buffer],
+        {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }
+      )
+
+      const nombreArchivo =
+        `Registro_Vehiculos_Siniestrados_${anioExport}_T${trimestreExport}.xlsx`
+
+      saveAs(blob, nombreArchivo)
+
+      if (registros.length === 0) {
+        toast.success(
+          `Evidencia generada correctamente. No se reportaron siniestros en el ${periodoExport.nombre} de ${anioExport}.`,
+          {
+            duration: 5000,
+          }
+        )
+
+        return
+      }
+
+      const incompletos = registros.filter(
+        row =>
+          normEstado(row?.estado_analisis) !== 'CERRADO' ||
+          !normalizarTexto(row?.fecha_comite_analisis)
+      ).length
+
+      if (incompletos > 0) {
+        toast.warning(
+          `Excel generado. ${incompletos} siniestro(s) todavía tienen información administrativa pendiente.`,
+          {
+            duration: 5000,
+          }
+        )
+      } else {
+        toast.success(
+          'Evidencia trimestral generada correctamente.'
+        )
+      }
+    } catch (error) {
+      console.error(
+        'Error exportando evidencia:',
+        error
+      )
+
+      toast.error(
+        error?.message ||
+        'No fue posible generar la evidencia en Excel.'
+      )
+    } finally {
+      setExporting(false)
     }
-
-    const totalRow = new Array(headers.length).fill('')
-    totalRow[13] = 'TOTALES'
-    totalRow[14] = totalsAll.dirChoque
-    totalRow[15] = totalsAll.indChoque
-    totalRow[16] = totalsAll.dirLeves
-    totalRow[17] = totalsAll.indLeves
-    totalRow[18] = totalsAll.dirGraves
-    totalRow[19] = totalsAll.indGraves
-    totalRow[20] = totalsAll.dirFatal
-    totalRow[21] = totalsAll.indFatal
-    const rTot = ws.addRow(totalRow)
-    rTot.eachCell((cell) => {
-      cell.font = { bold: true }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }
-    })
-
-    // auto ancho
-    for (let i = 1; i <= headers.length; i++) {
-      let max = headers[i - 1].length
-      ws.eachRow({ includeEmpty: false }, row => {
-        const v = row.getCell(i).value
-        const s = v == null ? '' : String(v)
-        max = Math.max(max, Math.min(s.length, 120))
-      })
-      ws.getColumn(i).width = Math.min(Math.max(max + 2, 10), 60)
-    }
-    ws.views = [{ state: 'frozen', ySplit: 1 }]
-
-    const buf = await wb.xlsx.writeBuffer()
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    saveAs(blob, `siniestros_${filters.startDate || 'inicio'}_${filters.endDate || 'fin'}.xlsx`)
   }
 
-  // Export PDF (impresión)
-  const exportPDF = async () => {
-    const allRows = await fetchAllForExport()
-    if (!allRows || allRows.length === 0) return
+  // ==========================================================
+  // LOGOUT
+  // ==========================================================
 
-    const sumAll = (k) => allRows.reduce((acc, r) => acc + (Number(r?.[k]) || 0), 0)
-    const totalsAll = {
-      dirChoque: sumAll('costo_dir_choque_simple'),
-      indChoque: sumAll('costo_indi_choque_simple'),
-      dirLeves:  sumAll('costo_dir_heridos_l'),
-      indLeves:  sumAll('costo_indi_heridos_l'),
-      dirGraves: sumAll('costo_dir_heridos_g'),
-      indGraves: sumAll('costo_indi_heridos_g'),
-      dirFatal:  sumAll('costo_dir_fatalidad'),
-      indFatal:  sumAll('costo_indi_fatalidad'),
-    }
+  const handleLogout = () =>
+    cerrarSesion(router)
 
-    const win = window.open('', '_blank')
-    if (!win) { toast.warning('Permite ventanas emergentes para exportar a PDF.'); return }
+  // ==========================================================
+  // CARGANDO SESIÓN
+  // ==========================================================
 
-    const style = `
-      <style>
-        body { font-family: Arial, sans-serif; font-size: 11px; }
-        h3 { text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        th, td { border: 1px solid #444; padding: 4px; text-align: center; }
-        th { background: #1f2937; color: #fff; }
-        tr:nth-child(even) { background: #f3f4f6; }
-        tfoot td { background: #e5e7eb; font-weight: bold; }
-      </style>
-    `
-    const headers = `
-      <tr>
-        <th>Consecutivo</th><th>Fecha</th><th>Tipo</th><th># Pers.</th><th>Leves</th><th>Graves</th><th>Fatales</th>
-        <th>Placa</th><th>Conductor</th><th>Documento</th><th>Resumen</th><th>Estado</th><th>IPAT</th><th>Autoridad</th>
-        <th>C.D. Choque</th><th>C.I. Choque</th><th>C.D. Leves</th><th>C.I. Leves</th>
-        <th>C.D. Graves</th><th>C.I. Graves</th><th>C.D. Fatales</th><th>C.I. Fatales</th>
-        <th>F. Análisis</th><th>U. Análisis</th><th>F. Cierre</th><th>U. Cierre</th><th>Resumen Análisis</th>
-      </tr>
-    `
-    const rows = allRows.map(r => `
-      <tr>
-        <td>${r.consecutivo || ''}</td>
-        <td>${r.fecha_siniestro || ''}</td>
-        <td>${r.tipo_siniestro || ''}</td>
-        <td>${r.num_personas_involucradas ?? ''}</td>
-        <td>${r.heridos_leves ?? ''}</td>
-        <td>${r.heridos_graves ?? ''}</td>
-        <td>${r.fatalidades ?? ''}</td>
-        <td>${r.placa || ''}</td>
-        <td>${r.nombre_conductor_implicado || ''}</td>
-        <td>${r.documento || ''}</td>
-        <td>${(r.resumen || '').replace(/\r?\n/g, ' ')}</td>
-        <td>${r.estado_analisis || ''}</td>
-        <td>${r.numero_ipat || ''}</td>
-        <td>${r.autoridad || ''}</td>
-        <td>${r.costo_dir_choque_simple ?? ''}</td>
-        <td>${r.costo_indi_choque_simple ?? ''}</td>
-        <td>${r.costo_dir_heridos_l ?? ''}</td>
-        <td>${r.costo_indi_heridos_l ?? ''}</td>
-        <td>${r.costo_dir_heridos_g ?? ''}</td>
-        <td>${r.costo_indi_heridos_g ?? ''}</td>
-        <td>${r.costo_dir_fatalidad ?? ''}</td>
-        <td>${r.costo_indi_fatalidad ?? ''}</td>
-        <td>${r.fecha_estado_en_analisis || ''}</td>
-        <td>${r.nombre_usuario_en_analisis || ''}</td>
-        <td>${r.fecha_estado_cerrado || ''}</td>
-        <td>${r.nombre_usuario_cerrado || ''}</td>
-        <td>${(r.resumen_analisis || '').replace(/\r?\n/g, ' ')}</td>
-      </tr>
-    `).join('')
-
-    const totalsRow = `
-      <tr>
-        <td colspan="14"><b>TOTALES</b></td>
-        <td>${totalsAll.dirChoque}</td>
-        <td>${totalsAll.indChoque}</td>
-        <td>${totalsAll.dirLeves}</td>
-        <td>${totalsAll.indLeves}</td>
-        <td>${totalsAll.dirGraves}</td>
-        <td>${totalsAll.indGraves}</td>
-        <td>${totalsAll.dirFatal}</td>
-        <td>${totalsAll.indFatal}</td>
-        <td colspan="5"></td>
-      </tr>
-    `
-
-    win.document.write(`
-      <html><head><title>Siniestros</title>${style}</head>
-      <body>
-        <h3>Siniestros (${filters.startDate} a ${filters.endDate})</h3>
-        <table>
-          <thead>${headers}</thead>
-          <tbody>${rows}</tbody>
-          <tfoot>${totalsRow}</tfoot>
-        </table>
-        <script>window.onload = () => { window.print(); }</script>
-      </body></html>
-    `)
-    win.document.close()
+  if (!user) {
+    return (
+      <p className="text-center mt-20">
+        Cargando...
+      </p>
+    )
   }
 
-  // Flags y permisos edición seguimiento
-  const estadoUpper = normEstado(rowSel?.estado_analisis)
-  const esPendiente = estadoUpper === 'PENDIENTE'
-  const esCerrado   = estadoUpper === 'CERRADO'
-  const esAnalisis  = estadoUpper === 'EN ANALISIS'
-  const puedeEditar = esAnalisis && !esCerrado
+  // ==========================================================
+  // RENDER
+  // app/admin/consultas/siniestros/page.jsx
+  // ==========================================================
 
   return (
-    <div className="p-4">
-      <Toaster position="top-center" richColors />
+    <div className="min-h-screen bg-gray-100 p-3 sm:p-5">
+      <Toaster
+        position="top-center"
+        richColors
+      />
 
-      {!user ? (
-        <p className="text-center mt-20">Cargando...</p>
-      ) : (
-        <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-4">
-          {/* Título */}
-          <h2 className="text-lg font-bold text-center mb-2 flex items-center justify-center gap-2 text-[var(--primary)] border-b pb-2">
-            <i className="fas fa-car-crash text-[var(--primary)]"></i>
-            Consultar Siniestros Registrados
-          </h2>
+      <div className="max-w-7xl mx-auto space-y-4">
 
-          {/* Filtros */}
-          <div className="bg-[var(--primary-dark)] text-white rounded-lg p-2 mb-2">
-            <h3 className="text-xs font-bold mb-1">Filtros de Búsqueda</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
-              <div className="flex flex-col">
-                <label className="mb-1">Fecha Inicio</label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={filters.startDate}
-                  onChange={handleChange}
-                  className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="mb-1">Fecha Fin</label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={filters.endDate}
-                  onChange={handleChange}
-                  className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="mb-1">Placa</label>
-                <select
-                  name="placa"
-                  value={filters.placa}
-                  onChange={handleChange}
-                  className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-                >
-                  <option value="">Toda la Flota</option>
-                  {placas.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="mb-1">Tipo de Siniestro</label>
-                <select
-                  name="tipoSiniestro"
-                  value={filters.tipoSiniestro}
-                  onChange={handleChange}
-                  className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-                >
-                  <option value="">Todos</option>
-                  <option value="Atropello">Atropello</option>
-                  <option value="Choque">Choque</option>
-                  <option value="Colisión">Colisión</option>
-                  <option value="Vuelco">Vuelco</option>
-                  <option value="Características Especiales">Características Especiales</option>
-                  <option value="Caída">Caída</option>
-                </select>
-              </div>
+        {/* ==================================================
+            ENCABEZADO
+        ================================================== */}
+
+        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 sm:p-5">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-bold">
+                Consultas administrativas
+              </p>
+
+              <h1 className="text-xl sm:text-2xl font-black text-gray-900 mt-1 flex items-center gap-2">
+                <i className="fas fa-car-burst text-[var(--primary)]"></i>
+                Gestión de Siniestros Viales
+              </h1>
+
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                Gestión de pendientes, análisis, cierres y evidencia trimestral.
+              </p>
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() =>
+                  router.push('/admin/consultas')
+                }
+                className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-900 text-white text-xs font-semibold flex items-center gap-2"
+              >
+                <i className="fas fa-arrow-left"></i>
+                Regresar a Consultas
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-lg bg-[var(--danger)] hover:bg-red-800 text-white text-xs font-semibold flex items-center gap-2"
+              >
+                <i className="fas fa-sign-out-alt"></i>
+                Cerrar Sesión
+              </button>
             </div>
           </div>
 
-          {/* Botones */}
-          <div className="flex flex-wrap justify-center gap-2 mb-2 text-xs">
-            <button
-              onClick={()=>handleConsultar(1)}
+          <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500">
+            Usuario:{' '}
+            <strong className="text-gray-700">
+              {user?.nombreCompleto || user?.usuario || '-'}
+            </strong>
+
+            {user?.nombreEmpresa && (
+              <>
+                {' · '}CEA:{' '}
+                <strong className="text-gray-700">
+                  {user.nombreEmpresa}
+                </strong>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* ==================================================
+            BANDEJAS POR ESTADO
+        ================================================== */}
+
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {ESTADOS_BANDEJA.map(item => (
+            <TarjetaEstado
+              key={item.valor}
+              {...item}
+              cantidad={obtenerConteoEstado(
+                resumen,
+                item.valor
+              )}
+              activa={
+                estadoActual === item.valor
+              }
               disabled={loading}
-              className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-60"
-            >
-              <i className="fas fa-search"></i> {loading ? 'Consultando...' : 'Consultar'}
-            </button>
+              onClick={() =>
+                consultarEstado(
+                  item.valor,
+                  1
+                )
+              }
+            />
+          ))}
+        </section>
+
+        {/* ==================================================
+            BANDEJA PRINCIPAL
+        ================================================== */}
+
+        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-4 sm:px-5 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h2 className="font-black text-gray-900 flex items-center gap-2">
+                <i className="fas fa-inbox text-[var(--primary)]"></i>
+                Bandeja de siniestros
+              </h2>
+
+              <p className="text-xs text-gray-500 mt-1">
+                {estadoActual === 'TODOS'
+                  ? 'Mostrando todos los registros.'
+                  : `Mostrando registros en estado ${estadoActual}.`}
+              </p>
+            </div>
+
             <button
-              onClick={handleLimpiar}
-              className="bg-gray-500 hover:bg-gray-700 text-white px-2 py-1 rounded flex items-center gap-1"
+              type="button"
+              onClick={() =>
+                consultarEstado(
+                  estadoActual,
+                  page
+                )
+              }
+              disabled={loading}
+              className="px-3 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700 flex items-center gap-2 self-start sm:self-auto"
             >
-              <i className="fas fa-eraser"></i> Limpiar
-            </button>
-            <button
-              onClick={exportXLSX}
-              disabled={total === 0}
-              className="bg-green-600 hover:bg-green-800 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
-            >
-              <i className="fas fa-file-excel"></i> Excel
-            </button>
-            <button
-              onClick={exportPDF}
-              disabled={total === 0}
-              className="bg-red-600 hover:bg-red-800 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
-            >
-              <i className="fas fa-file-pdf"></i> PDF
+              <i
+                className={`fas fa-rotate-right ${
+                  loading
+                    ? 'fa-spin'
+                    : ''
+                }`}
+              ></i>
+              Actualizar
             </button>
           </div>
 
-          {/* Área de mensajes */}
-          <p
-            className={`text-center text-xs mb-2 ${
-              status.includes('❌') ? 'text-red-600' : status.includes('⚠️') ? 'text-yellow-600' : 'text-blue-700'
-            }`}
-          >
-            {status}
-          </p>
+          {status && (
+            <div className="px-4 sm:px-5 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-600">
+              {status}
+            </div>
+          )}
 
-          {/* Tabla */}
-          <div className="overflow-x-auto border rounded-lg shadow">
-            <table className="w-full text-[11px] border-collapse rounded-lg overflow-hidden">
-              <thead className="bg-slate-800 text-white">
+          {/* ESCRITORIO */}
+
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full min-w-[900px] text-sm">
+              <thead className="bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="p-1 border text-center">Consecutivo</th>
-                  <th className="p-1 border text-center">Fecha</th>
-                  <th className="p-1 border text-center">Tipo</th>
-                  <th className="p-1 border text-center"># Personas</th>
-                  <th className="p-1 border text-center">Leves</th>
-                  <th className="p-1 border text-center">Graves</th>
-                  <th className="p-1 border text-center">Fatalidades</th>
-                  <th className="p-1 border text-center">Placa</th>
-                  <th className="p-1 border text-center">Conductor</th>
-                  <th className="p-1 border text-center">Documento</th>
-                  <th className="p-1 border text-center">Resumen</th>
-                  <th className="p-1 border text-center">Estado</th>
-                  <th className="p-1 border text-center">IPAT</th>
-                  <th className="p-1 border text-center">Autoridad</th>
-                  <th className="p-1 border text-center">C.D. Choque</th>
-                  <th className="p-1 border text-center">C.I. Choque</th>
-                  <th className="p-1 border text-center">C.D. Leves</th>
-                  <th className="p-1 border text-center">C.I. Leves</th>
-                  <th className="p-1 border text-center">C.D. Graves</th>
-                  <th className="p-1 border text-center">C.I. Graves</th>
-                  <th className="p-1 border text-center">C.D. Fatales</th>
-                  <th className="p-1 border text-center">C.I. Fatales</th>
-                  <th className="p-1 border text-center">F. Análisis</th>
-                  <th className="p-1 border text-center">U. Análisis</th>
-                  <th className="p-1 border text-center">F. Cierre</th>
-                  <th className="p-1 border text-center">U. Cierre</th>
-                  <th className="p-1 border text-center">Resumen Análisis</th>
-                  <th className="p-1 border text-center">Acción</th>
+                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wide">
+                    Siniestro
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wide">
+                    Vehículo / Conductor
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wide">
+                    Afectación
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wide">
+                    Estado
+                  </th>
+                  <th className="text-right px-4 py-3 text-[10px] uppercase tracking-wide">
+                    Acción
+                  </th>
                 </tr>
               </thead>
-              <tbody>
-                {data.length > 0 ? (
-                  data.map((row) => {
-                    const isCerrado = normEstado(row.estado_analisis) === 'CERRADO'
-                    return (
-                      <tr key={row.id} className="odd:bg-white even:bg-gray-100 hover:bg-blue-50 transition">
-                        <td className="p-1 border text-center">{row.consecutivo || '-'}</td>
-                        <td className="p-1 border text-center">{row.fecha_siniestro || '-'}</td>
-                        <td className="p-1 border text-center">{row.tipo_siniestro || '-'}</td>
-                        <td className="p-1 border text-center">{row.num_personas_involucradas ?? '-'}</td>
-                        <td className="p-1 border text-center">{row.heridos_leves ?? '-'}</td>
-                        <td className="p-1 border text-center">{row.heridos_graves ?? '-'}</td>
-                        <td className="p-1 border text-center">{row.fatalidades ?? '-'}</td>
-                        <td className="p-1 border text-center">{row.placa || '-'}</td>
-                        <td className="p-1 border text-center">{row.nombre_conductor_implicado || '-'}</td>
-                        <td className="p-1 border text-center">{row.documento || '-'}</td>
-                        <td className="p-1 border text-center truncate max-w-[240px]" title={row.resumen || ''}>
-                          {row.resumen || '-'}
-                        </td>
-                        <td className="p-1 border text-center"><EstadoChip estado={row.estado_analisis} /></td>
-                        <td className="p-1 border text-center">{row.numero_ipat || '-'}</td>
-                        <td className="p-1 border text-center">{row.autoridad || '-'}</td>
-                        {/* costos con separador de miles */}
-                        <td className="p-1 border text-center">{fmt(row.costo_dir_choque_simple)}</td>
-                        <td className="p-1 border text-center">{fmt(row.costo_indi_choque_simple)}</td>
-                        <td className="p-1 border text-center">{fmt(row.costo_dir_heridos_l)}</td>
-                        <td className="p-1 border text-center">{fmt(row.costo_indi_heridos_l)}</td>
-                        <td className="p-1 border text-center">{fmt(row.costo_dir_heridos_g)}</td>
-                        <td className="p-1 border text-center">{fmt(row.costo_indi_heridos_g)}</td>
-                        <td className="p-1 border text-center">{fmt(row.costo_dir_fatalidad)}</td>
-                        <td className="p-1 border text-center">{fmt(row.costo_indi_fatalidad)}</td>
 
-                        <td className="p-1 border text-center">{row.fecha_estado_en_analisis || '-'}</td>
-                        <td className="p-1 border text-center">{row.nombre_usuario_en_analisis || '-'}</td>
-                        <td className="p-1 border text-center">{row.fecha_estado_cerrado || '-'}</td>
-                        <td className="p-1 border text-center">{row.nombre_usuario_cerrado || '-'}</td>
-                        <td className="p-1 border text-center truncate max-w-[240px]" title={row.resumen_analisis || ''}>
-                          {row.resumen_analisis || '-'}
+              <tbody className="divide-y divide-gray-100">
+                {loading && data.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      className="px-4 py-10 text-center text-gray-500"
+                    >
+                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                      Consultando...
+                    </td>
+                  </tr>
+                ) : data.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      className="px-4 py-10 text-center text-gray-500"
+                    >
+                      No existen siniestros en esta bandeja.
+                    </td>
+                  </tr>
+                ) : (
+                  data.map(row => {
+                    const estado = normEstado(
+                      row?.estado_analisis
+                    )
+
+                    const textoAccion =
+                      estado === 'CERRADO'
+                        ? 'Ver expediente'
+                        : estado === 'EN ANALISIS'
+                          ? 'Continuar análisis'
+                          : 'Iniciar análisis'
+
+                    return (
+                      <tr
+                        key={row.id}
+                        className={
+                          Number(row?.fatalidades || 0) > 0
+                            ? 'bg-red-50/60'
+                            : 'hover:bg-gray-50'
+                        }
+                      >
+                        <td className="px-4 py-3 align-top">
+                          <p className="font-bold text-gray-900">
+                            {row?.consecutivo || `#${row.id}`}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formatearFecha(row?.fecha_siniestro)}
+                            {' · '}
+                            {row?.tipo_siniestro || '-'}
+                          </p>
                         </td>
-                        <td className="p-1 border text-center">
+
+                        <td className="px-4 py-3 align-top">
+                          <p className="font-bold text-gray-800">
+                            {row?.placa || '-'}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {row?.nombre_conductor_implicado || '-'}
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            {row?.documento || '-'}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-3 align-top">
+                          <p className="text-xs font-semibold text-gray-700">
+                            {obtenerTextoAfectacion(row)}
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-1">
+                            Personas involucradas: {fmt(row?.num_personas_involucradas)}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-3 align-top">
+                          <EstadoChip
+                            estado={row?.estado_analisis}
+                          />
+                        </td>
+
+                        <td className="px-4 py-3 text-right align-top">
                           <button
-                            onClick={()=> abrirSeguimiento(row)}
-                            disabled={isCerrado}
-                            className={`px-2 py-1 rounded text-white ${isCerrado ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'}`}
-                            title={isCerrado ? 'Siniestro cerrado' : 'Seguimiento'}
+                            type="button"
+                            onClick={() =>
+                              abrirSeguimiento(row)
+                            }
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white text-xs font-semibold"
                           >
-                            Seguimiento
+                            <i className="fas fa-folder-open"></i>
+                            {textoAccion}
                           </button>
                         </td>
                       </tr>
                     )
                   })
-                ) : (
-                  <tr>
-                    <td colSpan="28" className="text-center text-gray-500 p-2">
-                      No hay resultados para los filtros seleccionados.
-                    </td>
-                  </tr>
                 )}
               </tbody>
-
-              {/* Pie de totales (página actual) */}
-              <tfoot>
-                <tr className="bg-gray-100 font-semibold">
-                  <td className="p-1 border text-right" colSpan={14}>Totales (página):</td>
-                  <td className="p-1 border text-center">{fmt(totals.dirChoque)}</td>
-                  <td className="p-1 border text-center">{fmt(totals.indChoque)}</td>
-                  <td className="p-1 border text-center">{fmt(totals.dirLeves)}</td>
-                  <td className="p-1 border text-center">{fmt(totals.indLeves)}</td>
-                  <td className="p-1 border text-center">{fmt(totals.dirGraves)}</td>
-                  <td className="p-1 border text-center">{fmt(totals.indGraves)}</td>
-                  <td className="p-1 border text-center">{fmt(totals.dirFatal)}</td>
-                  <td className="p-1 border text-center">{fmt(totals.indFatal)}</td>
-                  <td className="p-1 border text-center" colSpan={5}></td>
-                </tr>
-                <tr className="bg-gray-50 font-semibold">
-                  <td className="p-1 border text-right" colSpan={14}>Gran total (página):</td>
-                  <td className="p-1 border text-center" colSpan={8}>{fmt(totals.granTotal)}</td>
-                  <td className="p-1 border text-center" colSpan={5}></td>
-                </tr>
-              </tfoot>
             </table>
           </div>
 
-          {/* Paginación */}
+          {/* MÓVIL */}
+
+          <div className="md:hidden p-3 space-y-3">
+            {loading && data.length === 0 ? (
+              <div className="py-10 text-center text-sm text-gray-500">
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                Consultando...
+              </div>
+            ) : data.length === 0 ? (
+              <div className="py-10 text-center text-sm text-gray-500">
+                No existen siniestros en esta bandeja.
+              </div>
+            ) : (
+              data.map(row => {
+                const estado = normEstado(
+                  row?.estado_analisis
+                )
+
+                const textoAccion =
+                  estado === 'CERRADO'
+                    ? 'Ver expediente'
+                    : estado === 'EN ANALISIS'
+                      ? 'Continuar análisis'
+                      : 'Iniciar análisis'
+
+                return (
+                  <article
+                    key={row.id}
+                    className="border border-gray-200 rounded-xl p-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-black text-gray-900">
+                          {row?.consecutivo || `#${row.id}`}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatearFecha(row?.fecha_siniestro)} · {row?.tipo_siniestro || '-'}
+                        </p>
+                      </div>
+
+                      <EstadoChip
+                        estado={row?.estado_analisis}
+                      />
+                    </div>
+
+                    <div className="mt-3 text-xs text-gray-600 space-y-1">
+                      <p>
+                        <strong>Placa:</strong> {row?.placa || '-'}
+                      </p>
+                      <p>
+                        <strong>Conductor:</strong> {row?.nombre_conductor_implicado || '-'}
+                      </p>
+                      <p>
+                        <strong>Afectación:</strong> {obtenerTextoAfectacion(row)}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        abrirSeguimiento(row)
+                      }
+                      className="w-full mt-3 px-3 py-2 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold"
+                    >
+                      <i className="fas fa-folder-open mr-2"></i>
+                      {textoAccion}
+                    </button>
+                  </article>
+                )
+              })
+            )}
+          </div>
+
+          {/* PAGINACIÓN */}
+
           {total > 0 && (
-            <div className="flex items-center justify-center gap-2 mt-2 text-xs">
-              <button
-                className="px-2 py-1 border rounded disabled:opacity-50"
-                onClick={()=> handleConsultar(Math.max(1, page - 1))}
-                disabled={loading || page <= 1}
-              >
-                ‹ Anterior
-              </button>
-              <span>Página {page} de {totalPages}</span>
-              <button
-                className="px-2 py-1 border rounded disabled:opacity-50"
-                onClick={()=> handleConsultar(Math.min(totalPages, page + 1))}
-                disabled={loading || page >= totalPages}
-              >
-                Siguiente ›
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+            <div className="px-4 sm:px-5 py-3 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-xs text-gray-500">
+                Página {page} de {totalPages} · {fmt(total)} registro(s)
+              </p>
 
-      {/* Drawer seguimiento */}
-      {drawerOpen && rowSel && (
-        <div className="fixed inset-0 z-50">
-          {/* overlay */}
-          <div className="absolute inset-0 bg-black/40" onClick={cerrarDrawer}></div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={
+                    loading ||
+                    page <= 1
+                  }
+                  onClick={() =>
+                    consultarEstado(
+                      estadoActual,
+                      page - 1
+                    )
+                  }
+                  className="px-3 py-2 border rounded-lg text-xs font-semibold disabled:opacity-50"
+                >
+                  Anterior
+                </button>
 
-          {/* panel */}
-          <div className="absolute right-0 top-0 h-full w-full sm:w-[560px] bg-white shadow-2xl p-4 overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-2 mb-3">
-              <h3 className="text-lg font-bold text-[var(--primary)] flex items-center gap-2">
-                <i className="fas fa-car-crash"></i> Seguimiento de Siniestro
-              </h3>
-              <button className="text-gray-600 hover:text-black" onClick={cerrarDrawer}>
-                <i className="fas fa-times text-xl"></i>
-              </button>
-            </div>
-
-            {/* Estado actual */}
-            <div className="mb-3 text-sm">
-              Estado actual: <EstadoChip estado={rowSel.estado_analisis} />
-            </div>
-
-            {/* Detalle */}
-            <div className="border rounded mb-4">
-              <div className="bg-gray-900 text-white px-3 py-1 rounded-t text-sm font-semibold">Detalle</div>
-              <div className="p-3 text-xs grid grid-cols-2 gap-2">
-                <div><b>Consecutivo:</b> {rowSel.consecutivo || '-'}</div>
-                <div><b>Fecha:</b> {rowSel.fecha_siniestro || '-'}</div>
-                <div><b>Tipo:</b> {rowSel.tipo_siniestro || '-'}</div>
-                <div><b>Placa:</b> {rowSel.placa || '-'}</div>
-                <div><b># Personas:</b> {rowSel.num_personas_involucradas ?? '-'}</div>
-                <div><b>Leves:</b> {rowSel.heridos_leves ?? '-'}</div>
-                <div><b>Graves:</b> {rowSel.heridos_graves ?? '-'}</div>
-                <div><b>Fatalidades:</b> {rowSel.fatalidades ?? '-'}</div>
-                <div className="col-span-2"><b>Conductor:</b> {rowSel.nombre_conductor_implicado || '-'}</div>
-                <div className="col-span-2"><b>Resumen:</b> {rowSel.resumen || '-'}</div>
+                <button
+                  type="button"
+                  disabled={
+                    loading ||
+                    page >= totalPages
+                  }
+                  onClick={() =>
+                    consultarEstado(
+                      estadoActual,
+                      page + 1
+                    )
+                  }
+                  className="px-3 py-2 border rounded-lg text-xs font-semibold disabled:opacity-50"
+                >
+                  Siguiente
+                </button>
               </div>
             </div>
+          )}
+        </section>
 
-            {/* Acciones seguimiento */}
-            <div className="border rounded">
-              <div className="bg-gray-900 text-white px-3 py-1 rounded-t text-sm font-semibold">Acciones de Seguimiento</div>
+        {/* ==================================================
+            RESUMEN GENERAL
+        ================================================== */}
 
-              <div className="p-3 space-y-3 text-sm">
-                {/* EN ANÁLISIS */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={marcarEnAnalisis}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-800 text-white rounded disabled:opacity-50"
-                    disabled={esCerrado || esAnalisis}
-                  >
-                    Marcar EN ANÁLISIS
-                  </button>
-                  <div className="text-xs text-gray-600">
-                    Fecha análisis: {rowSel.fecha_estado_en_analisis || '-'} · {rowSel.nombre_usuario_en_analisis || '-'}
+        <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="bg-white border rounded-xl p-3">
+            <p className="text-[10px] uppercase text-gray-500 font-bold">
+              Personas implicadas
+            </p>
+            <p className="text-lg font-black mt-1">
+              {fmt(resumen?.personas_involucradas)}
+            </p>
+          </div>
+
+          <div className="bg-white border rounded-xl p-3">
+            <p className="text-[10px] uppercase text-gray-500 font-bold">
+              Heridos leves
+            </p>
+            <p className="text-lg font-black mt-1">
+              {fmt(resumen?.heridos_leves)}
+            </p>
+          </div>
+
+          <div className="bg-white border rounded-xl p-3">
+            <p className="text-[10px] uppercase text-gray-500 font-bold">
+              Heridos graves
+            </p>
+            <p className="text-lg font-black mt-1">
+              {fmt(resumen?.heridos_graves)}
+            </p>
+          </div>
+
+          <div className="bg-white border rounded-xl p-3">
+            <p className="text-[10px] uppercase text-gray-500 font-bold">
+              Fatalidades
+            </p>
+            <p className="text-lg font-black mt-1 text-red-700">
+              {fmt(resumen?.fatalidades)}
+            </p>
+          </div>
+
+          <div className="bg-white border rounded-xl p-3 col-span-2 md:col-span-1">
+            <p className="text-[10px] uppercase text-gray-500 font-bold">
+              Costo acumulado
+            </p>
+            <p className="text-lg font-black mt-1">
+              {fmtCOP(resumen?.costos?.total_general)}
+            </p>
+          </div>
+        </section>
+
+        {/* ==================================================
+            EVIDENCIA TRIMESTRAL
+        ================================================== */}
+
+        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 sm:p-5">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+            <div className="max-w-2xl">
+              <h2 className="font-black text-gray-900 flex items-center gap-2">
+                <i className="fas fa-file-excel text-green-700"></i>
+                Evidencia trimestral · Registro de vehículos siniestrados
+              </h2>
+
+              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                El archivo se genera por fecha del siniestro e incluye los campos requeridos para el registro trimestral: nivel de pérdida, personas implicadas, vehículo, conductor, IPAT, autoridad y fecha del comité.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-[120px_170px_auto] gap-2 w-full lg:w-auto">
+              <div>
+                <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">
+                  Año
+                </label>
+
+                <select
+                  value={anioExport}
+                  onChange={event =>
+                    setAnioExport(
+                      Number(event.target.value)
+                    )
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                >
+                  {aniosDisponibles.map(anio => (
+                    <option
+                      key={anio}
+                      value={anio}
+                    >
+                      {anio}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">
+                  Trimestre
+                </label>
+
+                <select
+                  value={trimestreExport}
+                  onChange={event =>
+                    setTrimestreExport(
+                      Number(event.target.value)
+                    )
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                >
+                  <option value={1}>I trimestre</option>
+                  <option value={2}>II trimestre</option>
+                  <option value={3}>III trimestre</option>
+                  <option value={4}>IV trimestre</option>
+                </select>
+              </div>
+
+              <div className="col-span-2 sm:col-span-1 flex items-end">
+                <button
+                  type="button"
+                  onClick={exportarEvidenciaExcel}
+                  disabled={exporting}
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg bg-green-700 hover:bg-green-800 text-white text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  <i
+                    className={`fas ${
+                      exporting
+                        ? 'fa-spinner fa-spin'
+                        : 'fa-file-excel'
+                    }`}
+                  ></i>
+                  {exporting
+                    ? 'Generando...'
+                    : 'Generar Excel'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-600">
+            <strong>Período:</strong>{' '}
+            {formatearFecha(periodoExport.desde)} al {formatearFecha(periodoExport.hasta)}.
+            {' '}La evidencia incluye todos los siniestros del trimestre, independientemente de su estado administrativo. Si alguno continúa pendiente o en análisis, el archivo lo identificará en la hoja de control administrativo.
+          </div>
+        </section>
+      </div>
+
+      {/* ====================================================
+          DRAWER EXPEDIENTE
+      ==================================================== */}
+
+      {drawerOpen && rowSel && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <button
+            type="button"
+            aria-label="Cerrar expediente"
+            className="absolute inset-0 bg-black/40"
+            onClick={cerrarDrawer}
+          ></button>
+
+          <aside className="relative w-full sm:w-[620px] h-full bg-white shadow-2xl overflow-y-auto">
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-5 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-gray-500 font-bold">
+                    Expediente del siniestro
+                  </p>
+
+                  <h2 className="text-lg font-black text-gray-900 mt-1">
+                    {rowSel?.consecutivo || `#${rowSel?.id}`}
+                  </h2>
+
+                  <div className="mt-2">
+                    <EstadoChip
+                      estado={rowSel?.estado_analisis}
+                    />
                   </div>
                 </div>
 
-                {/* Cerrar análisis (habilitado solo EN ANÁLISIS) */}
-                <div className="border-t pt-3 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      className="border rounded p-2 text-xs"
-                      placeholder="Número IPAT"
-                      value={numIpat}
-                      onChange={(e)=> setNumIpat(e.target.value)}
-                      disabled={!puedeEditar}
-                    />
-                    <input
-                      type="text"
-                      className="border rounded p-2 text-xs"
-                      placeholder="Autoridad de Tránsito"
-                      value={autoridad}
-                      onChange={(e)=> setAutoridad(e.target.value)}
-                      disabled={!puedeEditar}
-                    />
-                  </div>
+                <button
+                  type="button"
+                  onClick={cerrarDrawer}
+                  disabled={closing || changingState}
+                  className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                >
+                  <i className="fas fa-xmark"></i>
+                </button>
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <input type="number" className="border rounded p-2 text-xs" placeholder="C.D. Choque"
-                      value={costo.dirChoque} onChange={(e)=> setCosto(s=>({...s, dirChoque: e.target.value}))} disabled={!puedeEditar}/>
-                    <input type="number" className="border rounded p-2 text-xs" placeholder="C.I. Choque"
-                      value={costo.indChoque} onChange={(e)=> setCosto(s=>({...s, indChoque: e.target.value}))} disabled={!puedeEditar}/>
-                    <input type="number" className="border rounded p-2 text-xs" placeholder="C.D. Leves"
-                      value={costo.dirLeves} onChange={(e)=> setCosto(s=>({...s, dirLeves: e.target.value}))} disabled={!puedeEditar}/>
-                    <input type="number" className="border rounded p-2 text-xs" placeholder="C.I. Leves"
-                      value={costo.indLeves} onChange={(e)=> setCosto(s=>({...s, indLeves: e.target.value}))} disabled={!puedeEditar}/>
-                    <input type="number" className="border rounded p-2 text-xs" placeholder="C.D. Graves"
-                      value={costo.dirGraves} onChange={(e)=> setCosto(s=>({...s, dirGraves: e.target.value}))} disabled={!puedeEditar}/>
-                    <input type="number" className="border rounded p-2 text-xs" placeholder="C.I. Graves"
-                      value={costo.indGraves} onChange={(e)=> setCosto(s=>({...s, indGraves: e.target.value}))} disabled={!puedeEditar}/>
-                    <input type="number" className="border rounded p-2 text-xs" placeholder="C.D. Fatales"
-                      value={costo.dirFatal} onChange={(e)=> setCosto(s=>({...s, dirFatal: e.target.value}))} disabled={!puedeEditar}/>
-                    <input type="number" className="border rounded p-2 text-xs" placeholder="C.I. Fatales"
-                      value={costo.indFatal} onChange={(e)=> setCosto(s=>({...s, indFatal: e.target.value}))} disabled={!puedeEditar}/>
-                  </div>
+            <div className="p-4 sm:p-5 space-y-5">
 
-                  <label className="block font-semibold text-xs">Resumen de Análisis *</label>
-                  <textarea
-                    className="w-full border rounded p-2 text-xs"
-                    rows={3}
-                    placeholder="Describe las conclusiones del análisis (obligatorio para cerrar)"
-                    value={resumenAnalisis}
-                    onChange={(e)=> setResumenAnalisis(e.target.value)}
-                    disabled={!puedeEditar}
+              {/* ============================================
+                  1. REPORTE INICIAL
+              ============================================ */}
+
+              <section className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
+                  1. Reporte inicial
+                </div>
+
+                <div className="p-4 grid grid-cols-2 gap-4">
+                  <Dato
+                    etiqueta="Fecha del siniestro"
+                    valor={formatearFecha(rowSel?.fecha_siniestro)}
                   />
 
-                  <div className="flex items-center justify-between mt-1">
-                    <button
-                      onClick={cerrarSiniestro}
-                      className="px-3 py-1 bg-green-600 hover:bg-green-800 text-white rounded disabled:opacity-50"
-                      disabled={!puedeEditar || !resumenAnalisis.trim() || closing}
-                      title={closing ? 'Guardando...' : 'Cerrar Análisis'}
-                    >
-                      {closing ? 'Guardando...' : 'Cerrar Análisis'}
-                    </button>
-                    <div className="text-xs text-gray-600">
-                      F. cierre: {rowSel.fecha_estado_cerrado || '-'} · {rowSel.nombre_usuario_cerrado || '-'}
+                  <Dato
+                    etiqueta="Tipo"
+                    valor={rowSel?.tipo_siniestro}
+                  />
+
+                  <Dato
+                    etiqueta="Placa"
+                    valor={rowSel?.placa}
+                  />
+
+                  <Dato
+                    etiqueta="Personas involucradas"
+                    valor={fmt(rowSel?.num_personas_involucradas)}
+                  />
+
+                  <Dato
+                    etiqueta="Conductor"
+                    valor={rowSel?.nombre_conductor_implicado}
+                  />
+
+                  <Dato
+                    etiqueta="Identificación"
+                    valor={rowSel?.documento}
+                  />
+
+                  <Dato
+                    etiqueta="Heridos leves"
+                    valor={fmt(rowSel?.heridos_leves)}
+                  />
+
+                  <Dato
+                    etiqueta="Heridos graves"
+                    valor={fmt(rowSel?.heridos_graves)}
+                  />
+
+                  <Dato
+                    etiqueta="Fatalidades"
+                    valor={fmt(rowSel?.fatalidades)}
+                  />
+
+                  <div className="col-span-2">
+                    <Dato
+                      etiqueta="Resumen inicial"
+                      valor={rowSel?.resumen}
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* ============================================
+                  2. TRAZABILIDAD
+              ============================================ */}
+
+              <section className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
+                  2. Trazabilidad
+                </div>
+
+                <div className="p-4 grid grid-cols-2 gap-4">
+                  <Dato
+                    etiqueta="Inicio del análisis"
+                    valor={formatearFecha(rowSel?.fecha_estado_en_analisis)}
+                  />
+
+                  <Dato
+                    etiqueta="Responsable análisis"
+                    valor={rowSel?.nombre_usuario_en_analisis}
+                  />
+
+                  <Dato
+                    etiqueta="Fecha del comité"
+                    valor={formatearFecha(rowSel?.fecha_comite_analisis)}
+                  />
+
+                  <Dato
+                    etiqueta="Fecha de cierre"
+                    valor={formatearFecha(rowSel?.fecha_estado_cerrado)}
+                  />
+
+                  <div className="col-span-2">
+                    <Dato
+                      etiqueta="Responsable cierre"
+                      valor={rowSel?.nombre_usuario_cerrado}
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* ============================================
+                  3. INICIO DE ANÁLISIS
+              ============================================ */}
+
+              {esPendiente && (
+                <section className="border border-amber-200 bg-amber-50 rounded-xl p-4">
+                  <h3 className="font-bold text-amber-900 text-sm">
+                    Iniciar seguimiento administrativo
+                  </h3>
+
+                  <p className="text-xs text-amber-800 mt-1">
+                    Al iniciar el análisis se registrará la fecha y el usuario responsable. Después podrá diligenciar IPAT, autoridad, comité, análisis y costos.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={marcarEnAnalisis}
+                    disabled={changingState}
+                    className="mt-3 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold disabled:opacity-60"
+                  >
+                    <i
+                      className={`fas ${
+                        changingState
+                          ? 'fa-spinner fa-spin'
+                          : 'fa-play'
+                      } mr-2`}
+                    ></i>
+                    {changingState
+                      ? 'Actualizando...'
+                      : 'Marcar EN ANÁLISIS'}
+                  </button>
+                </section>
+              )}
+
+              {/* ============================================
+                  4. ANÁLISIS ADMINISTRATIVO
+              ============================================ */}
+
+              <section className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
+                  3. Análisis administrativo
+                </div>
+
+                <div className="p-4 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Consecutivo IPAT
+                      </label>
+
+                      <input
+                        type="text"
+                        value={numIpat}
+                        onChange={event =>
+                          setNumIpat(event.target.value)
+                        }
+                        disabled={!puedeEditar}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                        placeholder="Consecutivo IPAT en RNAT del RUNT"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Organismo / Autoridad
+                      </label>
+
+                      <input
+                        type="text"
+                        value={autoridad}
+                        onChange={event =>
+                          setAutoridad(event.target.value)
+                        }
+                        disabled={!puedeEditar}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                        placeholder="Autoridad que elaboró el IPAT"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Fecha del comité donde fue analizado <span className="text-red-600">*</span>
+                    </label>
+
+                    <input
+                      type="date"
+                      value={fechaComiteAnalisis}
+                      min={rowSel?.fecha_siniestro || undefined}
+                      max={hoyBogota()}
+                      onChange={event =>
+                        setFechaComiteAnalisis(event.target.value)
+                      }
+                      disabled={!puedeEditar}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                    />
+
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      Este dato forma parte de la evidencia trimestral de vehículos siniestrados.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Análisis / Conclusiones <span className="text-red-600">*</span>
+                    </label>
+
+                    <textarea
+                      rows="5"
+                      value={resumenAnalisis}
+                      onChange={event =>
+                        setResumenAnalisis(event.target.value)
+                      }
+                      disabled={!puedeEditar}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                      placeholder="Registre el análisis administrativo, conclusiones y decisiones adoptadas."
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* ============================================
+                  5. COSTOS
+              ============================================ */}
+
+              <section className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
+                  4. Costos asociados
+                </div>
+
+                <div className="p-4">
+                  <p className="text-xs text-gray-500 mb-3">
+                    Registre valores iguales o mayores a cero. Si una categoría no presenta costo, puede dejarla en cero.
+                  </p>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[500px] text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="border px-3 py-2 text-left text-xs">
+                            Nivel
+                          </th>
+                          <th className="border px-3 py-2 text-center text-xs">
+                            Directo
+                          </th>
+                          <th className="border px-3 py-2 text-center text-xs">
+                            Indirecto
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {[
+                          {
+                            label: 'Choque simple',
+                            direct: 'dirChoque',
+                            indirect: 'indChoque',
+                          },
+                          {
+                            label: 'Heridos leves',
+                            direct: 'dirLeves',
+                            indirect: 'indLeves',
+                          },
+                          {
+                            label: 'Heridos graves',
+                            direct: 'dirGraves',
+                            indirect: 'indGraves',
+                          },
+                          {
+                            label: 'Fatalidades',
+                            direct: 'dirFatal',
+                            indirect: 'indFatal',
+                          },
+                        ].map(item => (
+                          <tr key={item.label}>
+                            <td className="border px-3 py-2 text-xs font-semibold text-gray-700">
+                              {item.label}
+                            </td>
+
+                            <td className="border p-2">
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={costo[item.direct]}
+                                onChange={event =>
+                                  setCosto(prev => ({
+                                    ...prev,
+                                    [item.direct]: event.target.value,
+                                  }))
+                                }
+                                disabled={!puedeEditar}
+                                className="w-full border border-gray-300 rounded px-2 py-1.5 text-right text-xs disabled:bg-gray-100"
+                              />
+                            </td>
+
+                            <td className="border p-2">
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={costo[item.indirect]}
+                                onChange={event =>
+                                  setCosto(prev => ({
+                                    ...prev,
+                                    [item.indirect]: event.target.value,
+                                  }))
+                                }
+                                disabled={!puedeEditar}
+                                className="w-full border border-gray-300 rounded px-2 py-1.5 text-right text-xs disabled:bg-gray-100"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div className="bg-gray-50 border rounded-lg p-2">
+                      <p className="text-[9px] uppercase text-gray-500 font-bold">
+                        Directos
+                      </p>
+                      <p className="text-xs font-black mt-1">
+                        {fmtCOP(totalesCostos.directo)}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 border rounded-lg p-2">
+                      <p className="text-[9px] uppercase text-gray-500 font-bold">
+                        Indirectos
+                      </p>
+                      <p className="text-xs font-black mt-1">
+                        {fmtCOP(totalesCostos.indirecto)}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 border rounded-lg p-2">
+                      <p className="text-[9px] uppercase text-gray-500 font-bold">
+                        Total
+                      </p>
+                      <p className="text-xs font-black mt-1">
+                        {fmtCOP(totalesCostos.total)}
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </section>
 
-            {/* Cerrar panel */}
-            <div className="flex justify-end mt-4">
-              <button className="px-3 py-2 bg-gray-600 hover:bg-gray-800 text-white rounded" onClick={cerrarDrawer}>
-                Cerrar panel
-              </button>
+              {/* ============================================
+                  6. CIERRE / EXPEDIENTE CERRADO
+              ============================================ */}
+
+              {esAnalisis && (
+                <section className="border border-blue-200 bg-blue-50 rounded-xl p-4">
+                  <h3 className="text-sm font-black text-blue-900">
+                    Cierre del análisis
+                  </h3>
+
+                  <p className="text-xs text-blue-800 mt-1">
+                    Al cerrar el expediente, la información quedará en modo consulta y será utilizada en los reportes y evidencias correspondientes.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={cerrarSiniestro}
+                    disabled={closing}
+                    className="mt-3 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold disabled:opacity-60"
+                  >
+                    <i
+                      className={`fas ${
+                        closing
+                          ? 'fa-spinner fa-spin'
+                          : 'fa-lock'
+                      } mr-2`}
+                    ></i>
+                    {closing
+                      ? 'Cerrando...'
+                      : 'Cerrar siniestro'}
+                  </button>
+                </section>
+              )}
+
+              {esCerrado && (
+                <section className="border border-green-200 bg-green-50 rounded-xl p-4">
+                  <h3 className="text-sm font-black text-green-900">
+                    Expediente cerrado
+                  </h3>
+
+                  <p className="text-xs text-green-800 mt-1">
+                    Este registro se encuentra cerrado y disponible únicamente para consulta.
+                  </p>
+                </section>
+              )}
             </div>
-          </div>
+          </aside>
         </div>
       )}
     </div>

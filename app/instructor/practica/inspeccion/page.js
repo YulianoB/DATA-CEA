@@ -1,440 +1,1476 @@
+// app/instructor/practica/inspeccion/page.js
+
 'use client'
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Toaster, toast } from 'sonner' // ✅ Toasts locales
+import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
-// Supabase client y validaciones globales
-import { supabase } from '@/lib/supabaseClient'
 import {
   validarInspeccionDuplicada,
-  validarKilometraje
+  validarKilometraje,
 } from '@/lib/servicios/validaciones'
+
+// ============================================================
+// Helpers Bogotá
+// ============================================================
+
+const formatearBogota = (date, fmt) => {
+  const opts =
+    fmt === 'fecha'
+      ? {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          timeZone: 'America/Bogota',
+        }
+      : {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+          timeZone: 'America/Bogota',
+        }
+
+  return new Intl.DateTimeFormat(
+    'en-CA',
+    opts
+  ).format(date)
+}
+
+const obtenerFechaHoraBogota = () => {
+  const now = new Date()
+
+  const fecha =
+    formatearBogota(
+      now,
+      'fecha'
+    )
+
+  const hora =
+    formatearBogota(
+      now,
+      'hora'
+    )
+
+  const timestamp =
+    `${fecha}T${hora}-05:00`
+
+  return {
+    fecha,
+    hora,
+    timestamp,
+  }
+}
+
+// ============================================================
+// Página
+// ============================================================
 
 export default function InspeccionPage() {
   const router = useRouter()
-  const [user, setUser] = useState(null)
 
+  const [user, setUser] =
+    useState(null)
+
+  const [nitActual, setNitActual] =
+    useState('')
+
+  // ============================================================
   // Datos / UI
-  const [vehiculos, setVehiculos] = useState([])
-  const [placaSeleccionada, setPlacaSeleccionada] = useState('')
-  const [vehiculoInfo, setVehiculoInfo] = useState({ tipo: '-', marca: '-' })
-  const [mensajeDuplicado, setMensajeDuplicado] = useState('')
-  const [kilometraje, setKilometraje] = useState('')
-  const [mensajeKm, setMensajeKm] = useState('')
+  // ============================================================
 
+  const [vehiculos, setVehiculos] =
+    useState([])
+
+  const [
+    cargandoVehiculos,
+    setCargandoVehiculos,
+  ] = useState(false)
+
+  const [
+    placaSeleccionada,
+    setPlacaSeleccionada,
+  ] = useState('')
+
+  const [
+    vehiculoInfo,
+    setVehiculoInfo,
+  ] = useState({
+    tipo: '-',
+    marca: '-',
+  })
+
+  const [
+    mensajeDuplicado,
+    setMensajeDuplicado,
+  ] = useState('')
+
+  const [
+    validandoDocumentos,
+    setValidandoDocumentos,
+  ] = useState(false)
+
+  const [
+    documentacionVehiculoValida,
+    setDocumentacionVehiculoValida,
+  ] = useState(false)
+
+  const [
+    mostrarModalDocumentos,
+    setMostrarModalDocumentos,
+  ] = useState(false)
+
+  const [
+    validacionDocumentos,
+    setValidacionDocumentos,
+  ] = useState(null)
+
+  const [
+    kilometraje,
+    setKilometraje,
+  ] = useState('')
+
+  const [
+    mensajeKm,
+    setMensajeKm,
+  ] = useState('')
+
+  // ============================================================
   // Formulario
-  const [secciones, setSecciones] = useState({
+  // ============================================================
+
+  const [
+    secciones,
+    setSecciones,
+  ] = useState({
     revisionExterior: null,
     motor: null,
     interiorFuncionamiento: null,
     equiposPrevencion: null,
-    documentos: null
+    documentos: null,
   })
-  const [observaciones, setObservaciones] = useState('')
 
-  // Modal de advertencia por kilometraje
-  const [mostrarModalKm, setMostrarModalKm] = useState(false)
-  const [datosKm, setDatosKm] = useState(null)
-  const [forzarGuardado, setForzarGuardado] = useState(false)
+  const [
+    observaciones,
+    setObservaciones,
+  ] = useState('')
 
+  // ============================================================
+  // Modal kilometraje
+  // ============================================================
+
+  const [
+    mostrarModalKm,
+    setMostrarModalKm,
+  ] = useState(false)
+
+  const [
+    datosKm,
+    setDatosKm,
+  ] = useState(null)
+
+  const [
+    forzarGuardado,
+    setForzarGuardado,
+  ] = useState(false)
+
+  // ============================================================
   // Guardado
-  const [guardando, setGuardando] = useState(false)
-  const [mensajeGuardado, setMensajeGuardado] = useState('')
+  // ============================================================
+
+  const [
+    guardando,
+    setGuardando,
+  ] = useState(false)
+
+  const [
+    mensajeGuardado,
+    setMensajeGuardado,
+  ] = useState('')
+
+  // ============================================================
+  // Cargar sesión
+  // ============================================================
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    } else {
+    const storedUser =
+      localStorage.getItem(
+        'currentUser'
+      )
+
+    if (!storedUser) {
       router.push('/login')
-    }
-
-    // Cargar lista de vehículos
-    const fetchVehiculos = async () => {
-      const { data, error } = await supabase
-        .from('vehiculos')
-        .select('placa, tipo_vehiculo, marca')
-        .order('placa', { ascending: true })
-
-      if (!error && data) setVehiculos(data)
-    }
-
-    fetchVehiculos()
-  }, [router])
-
-  
-  // ...
-  const handleLogout = () => cerrarSesion(router)
-
-
-  // ---------- Helpers de fecha/hora Bogotá ----------
-  const formatearBogota = (date, fmt) => {
-    const opts =
-      fmt === 'fecha'
-        ? { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Bogota' }
-        : { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'America/Bogota' }
-    return new Intl.DateTimeFormat('en-CA', opts).format(date) // en-CA => YYYY-MM-DD / HH:mm:ss
-  }
-
-  const obtenerFechaHoraBogota = () => {
-    const now = new Date()
-    const fecha = formatearBogota(now, 'fecha') // YYYY-MM-DD
-    const hora = formatearBogota(now, 'hora')   // HH:mm:ss
-    const timestamp = `${fecha}T${hora}-05:00`  // Bogotá (UTC-05:00)
-    return { fecha, hora, timestamp }
-  }
-
-  // ---------- Consecutivo ----------
-  const obtenerSiguienteConsecutivo = async () => {
-    const { data, error } = await supabase
-      .from('preoperacionales')
-      .select('consecutivo')
-      .order('consecutivo', { ascending: false })
-      .limit(1)
-
-    if (error) {
-      console.error('Error obteniendo consecutivo:', error.message)
-      return 'IP-0000001'
-    }
-
-    if (!data || data.length === 0 || !data[0]?.consecutivo) {
-      return 'IP-0000001'
-    }
-
-    const last = String(data[0].consecutivo) // ej: "IP-0000123"
-    const num = parseInt(last.replace('IP-', ''), 10) + 1
-    return 'IP-' + String(num).padStart(7, '0')
-  }
-
-  // ---------- Helpers correo ----------
-  const obtenerEmailUsuario = async () => {
-    if (user?.email) return user.email
-    if (!user?.nombreCompleto) return ''
-
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('email')
-      .eq('nombre_completo', user.nombreCompleto)
-      .limit(1)
-
-    if (error || !data || !data[0]?.email) return ''
-    return data[0].email
-  }
-
-  const enviarCorreoInspeccion = async ({ para, asunto, html, cc, bcc }) => {
-    try {
-      const res = await fetch('/api/email/enviar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ para, asunto, html, cc, bcc })
-      })
-      const json = await res.json()
-      if (!json.ok) {
-        console.error('Error enviando correo:', json.error)
-        return { ok: false, error: json.error }
-      }
-      return { ok: true }
-    } catch (e) {
-      console.error('Error enviando correo:', e?.message || e)
-      return { ok: false, error: e?.message || String(e) }
-    }
-  }
-
-  const obtenerDestinatariosMantenimiento = () => {
-    const s = process.env.NEXT_PUBLIC_MAIL_MANTENIMIENTO || ''
-    return s
-      .split(',')
-      .map(x => x.trim())
-      .filter(Boolean)
-  }
-
-  // ---------- Limpia campos al cambiar placa ----------
-  const resetPorCambioPlaca = () => {
-    setKilometraje('')
-    setMensajeKm('')
-    setSecciones({
-      revisionExterior: null,
-      motor: null,
-      interiorFuncionamiento: null,
-      equiposPrevencion: null,
-      documentos: null
-    })
-    setObservaciones('')
-    setMostrarModalKm(false)
-    setDatosKm(null)
-    setForzarGuardado(false)
-  }
-
-  // ---------- Handlers UI ----------
-  const handlePlacaChange = async (e) => {
-    const nuevaPlaca = e.target.value
-
-    // Si cambia la placa, limpiamos el formulario relacionado
-    resetPorCambioPlaca()
-
-    setPlacaSeleccionada(nuevaPlaca)
-
-    if (!nuevaPlaca) {
-      setMensajeDuplicado('')
-      setVehiculoInfo({ tipo: '-', marca: '-' })
       return
     }
 
-    // Autocompletar tipo/marca
-    const v = vehiculos.find((v) => v.placa === nuevaPlaca)
-    setVehiculoInfo({
-      tipo: v?.tipo_vehiculo || '-',
-      marca: v?.marca || '-'
-    })
-
-    // ✅ Validar duplicado usando FECHA Bogotá (corrige desfase de zona horaria)
-    const { fecha } = obtenerFechaHoraBogota()
-    const resultado = await validarInspeccionDuplicada(nuevaPlaca, fecha)
-    setMensajeDuplicado(resultado.mensaje)
-
-    if (resultado.existe) {
-      toast.error(`Ya existe una inspección hoy para la placa ${nuevaPlaca}`)
-    } else {
-      toast.message(`No existe inspección hoy para ${nuevaPlaca}. Puedes continuar.`)
-    }
-  }
-
-  const handleKmChange = async (e) => {
-    const nuevoKm = e.target.value
-    setKilometraje(nuevoKm)
-
-    if (!placaSeleccionada || !nuevoKm) {
-      setMensajeKm('')
-      return
-    }
-
-    const resultado = await validarKilometraje(placaSeleccionada, parseInt(nuevoKm, 10))
-
-    if (resultado.estado === 'advertencia') {
-      setDatosKm(resultado)
-      setMostrarModalKm(true)
-      setMensajeKm(resultado.mensaje)
-    } else {
-      setMensajeKm(resultado.mensaje)
-      setMostrarModalKm(false)
-      setForzarGuardado(false)
-    }
-  }
-
-  const handleSeccionChange = (id, valor) => {
-    setSecciones((prev) => ({ ...prev, [id]: valor }))
-  }
-
-  // ---------- Validaciones para habilitar Guardar ----------
-  const todoConforme = Object.values(secciones).every((v) => v === 'CONFORME')
-  const algunaNoConforme = Object.values(secciones).includes('NO CONFORME')
-  const seccionesCompletas = Object.values(secciones).every((v) => v !== null)
-
-  const kilometrajeValido =
-    (mensajeKm && !mensajeKm.includes('menor')) || forzarGuardado
-
-  const puedeGuardar =
-    placaSeleccionada &&
-    !mensajeDuplicado.includes('Ya existe') && // queda bloqueado si ya hay inspección hoy
-    kilometrajeValido &&
-    seccionesCompletas &&
-    (todoConforme || (algunaNoConforme && observaciones.trim() !== ''))
-
-  // ---------- Reset total ----------
-  const resetearEstados = () => {
-    setPlacaSeleccionada('')
-    setVehiculoInfo({ tipo: '-', marca: '-' })
-    setMensajeDuplicado('')
-    resetPorCambioPlaca()
-    setMensajeGuardado('')
-  }
-
-  // ---------- Guardar en Supabase ----------
-  const handleGuardar = async () => {
-    if (!puedeGuardar || guardando) return
-
     try {
-      setGuardando(true)
-      setMensajeGuardado('')
+      const parsed =
+        JSON.parse(storedUser)
 
-      // Fecha/hora en Bogotá
-      const { fecha, hora, timestamp } = obtenerFechaHoraBogota()
+      setUser(parsed)
 
-      // Reforzar duplicado por seguridad
-      const dup = await validarInspeccionDuplicada(placaSeleccionada, fecha)
-      if (dup.existe) {
-        setGuardando(false)
-        setMensajeGuardado(dup.mensaje)
-        toast.error(dup.mensaje)
+      const nit =
+        parsed?.nitEmpresa ||
+        localStorage.getItem(
+          'currentEmpresaNit'
+        ) ||
+        ''
+
+      if (!nit) {
+        toast.error(
+          'No se encontró el CEA asociado a la sesión.'
+        )
         return
       }
 
-      // Siguiente consecutivo
-      const consecutivo = await obtenerSiguienteConsecutivo()
+      setNitActual(
+        String(nit).trim()
+      )
+    } catch (error) {
+      console.error(
+        'Error leyendo sesión:',
+        error
+      )
 
-      // Cargar tipo/marca por si acaso
-      const v = vehiculos.find((vv) => vv.placa === placaSeleccionada)
-      const tipo = v?.tipo_vehiculo || vehiculoInfo.tipo || ''
-      const marca = v?.marca || vehiculoInfo.marca || ''
+      localStorage.removeItem(
+        'currentUser'
+      )
 
-      // Estado observación
-      const hayObs = observaciones.trim() !== ''
-      const estadoObs = hayObs ? 'PENDIENTE' : ''
+      router.push('/login')
+    }
+  }, [router])
 
-      const payload = {
-        consecutivo,
-        timestamp_registro: timestamp,
-        fecha_registro: fecha,
-        hora_registro: hora,
-        placa: placaSeleccionada,
-        tipo_vehiculo: tipo,
-        marca: marca,
-        km_registro: Number(kilometraje),
-        usuario_encargado: user?.nombreCompleto || '',
-        revision_exterior: secciones.revisionExterior,
-        motor: secciones.motor,
-        interior_funcionamiento: secciones.interiorFuncionamiento,
-        equipos_prevencion: secciones.equiposPrevencion,
-        documentos: secciones.documentos,
-        observaciones: hayObs ? observaciones.trim() : '',
-        estado_observacion: estadoObs
+  // ============================================================
+  // Cargar vehículos desde API
+  // ============================================================
+
+  useEffect(() => {
+    if (!nitActual) return
+
+    const fetchVehiculos =
+      async () => {
+        setCargandoVehiculos(true)
+
+        try {
+          const res =
+            await fetch(
+              `/api/preoperacionales?nit=${encodeURIComponent(
+                nitActual
+              )}&recurso=vehiculos`,
+              {
+                cache: 'no-store',
+              }
+            )
+
+          const json =
+            await res.json()
+
+          if (
+            !res.ok ||
+            json?.status !==
+              'success'
+          ) {
+            console.error(
+              'Error cargando vehículos:',
+              json
+            )
+
+            toast.error(
+              json?.message ||
+                'No se pudieron cargar los vehículos.'
+            )
+
+            setVehiculos([])
+            return
+          }
+
+          setVehiculos(
+            Array.isArray(
+              json.vehiculos
+            )
+              ? json.vehiculos
+              : []
+          )
+        } catch (error) {
+          console.error(
+            'Error cargando vehículos:',
+            error
+          )
+
+          toast.error(
+            'No fue posible cargar la lista de vehículos.'
+          )
+
+          setVehiculos([])
+        } finally {
+          setCargandoVehiculos(
+            false
+          )
+        }
       }
 
-      const { error } = await supabase.from('preoperacionales').insert([payload])
+    fetchVehiculos()
+  }, [nitActual])
 
-      if (error) {
-        setMensajeGuardado('Error al guardar la inspección: ' + error.message)
-        toast.error('No se pudo guardar la inspección')
-      } else {
-        // 1) Correo al instructor
-        const correoDestino = await obtenerEmailUsuario()
-        if (correoDestino) {
-          const asunto = `Confirmación inspección: ${consecutivo}`
-          const html = `
-            <p>Hola ${user?.nombreCompleto || ''},</p>
-            <p>Inspección registrada correctamente:</p>
-            <ul>
-              <li><b>Consecutivo:</b> ${consecutivo}</li>
-              <li><b>Placa:</b> ${placaSeleccionada}</li>
-              <li><b>Marca:</b> ${marca}</li>
-              <li><b>Tipo:</b> ${tipo}</li>
-              <li><b>Fecha:</b> ${fecha}</li>
-              <li><b>Hora:</b> ${hora}</li>
-              <li><b>Kilometraje:</b> ${kilometraje}</li>
-              <li><b>Observaciones:</b> ${observaciones.trim() || 'Sin observaciones'}</li>
-            </ul>
-            <p>Gracias por completar tu inspección.</p>
-          `
-          await enviarCorreoInspeccion({ para: correoDestino, asunto, html })
+  // ============================================================
+  // Logout
+  // ============================================================
+
+  const handleLogout = () =>
+    cerrarSesion(router)
+
+  // ============================================================
+  // Correo
+  // ============================================================
+
+  const enviarCorreoInspeccion =
+    async ({
+      para,
+      asunto,
+      html,
+      cc,
+      bcc,
+    }) => {
+      try {
+        const res =
+          await fetch(
+            '/api/email/enviar',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body: JSON.stringify(
+                {
+                  para,
+                  asunto,
+                  html,
+                  cc,
+                  bcc,
+                }
+              ),
+            }
+          )
+
+        const json =
+          await res.json()
+
+        if (!json.ok) {
+          console.error(
+            'Error enviando correo:',
+            json.error
+          )
+
+          return {
+            ok: false,
+            error:
+              json.error,
+          }
         }
 
-        // 2) Si hay observaciones → correo a mantenimiento (múltiples)
+        return {
+          ok: true,
+        }
+      } catch (error) {
+        console.error(
+          'Error enviando correo:',
+          error?.message ||
+            error
+        )
+
+        return {
+          ok: false,
+          error:
+            error?.message ||
+            String(error),
+        }
+      }
+    }
+
+  const obtenerDestinatariosMantenimiento =
+    () => {
+      const correos =
+        process.env
+          .NEXT_PUBLIC_MAIL_MANTENIMIENTO ||
+        ''
+
+      return correos
+        .split(',')
+        .map((correo) =>
+          correo.trim()
+        )
+        .filter(Boolean)
+    }
+
+  // ============================================================
+  // Limpiar campos al cambiar placa
+  // ============================================================
+
+  const resetPorCambioPlaca =
+    () => {
+      setKilometraje('')
+      setMensajeKm('')
+
+      setSecciones({
+        revisionExterior: null,
+        motor: null,
+        interiorFuncionamiento:
+          null,
+        equiposPrevencion: null,
+        documentos: null,
+      })
+
+      setObservaciones('')
+
+      setMostrarModalKm(false)
+      setDatosKm(null)
+      setForzarGuardado(false)
+      setValidandoDocumentos(
+        false
+      )
+
+      setDocumentacionVehiculoValida(
+        false
+      )
+
+      setMostrarModalDocumentos(
+        false
+      )
+
+      setValidacionDocumentos(
+        null
+      )
+    }
+
+    // ============================================================
+// Validar documentación vehículo
+// ============================================================
+
+const validarDocumentacionVehiculo =
+  async (
+    placa,
+    fecha
+  ) => {
+    if (
+      !nitActual ||
+      !placa ||
+      !fecha
+    ) {
+      return {
+        valido:
+          false,
+      }
+    }
+
+    setValidandoDocumentos(
+      true
+    )
+
+    setDocumentacionVehiculoValida(
+      false
+    )
+
+    try {
+      const params =
+        new URLSearchParams({
+          nit:
+            nitActual,
+
+          recurso:
+            'documentacion_vehiculo',
+
+          placa,
+
+          fecha,
+        })
+
+      const res =
+        await fetch(
+          `/api/preoperacionales?${params.toString()}`,
+          {
+            cache:
+              'no-store',
+          }
+        )
+
+      const json =
+        await res.json()
+
+      if (
+        !res.ok ||
+        json?.status !==
+          'success'
+      ) {
+        throw new Error(
+          json?.message ||
+            'No fue posible validar la documentación del vehículo.'
+        )
+      }
+
+      const valido =
+        Boolean(
+          json?.valido
+        )
+
+      setDocumentacionVehiculoValida(
+        valido
+      )
+
+      setValidacionDocumentos(
+        json
+      )
+
+      if (
+        !valido
+      ) {
+        setMostrarModalDocumentos(
+          true
+        )
+      }
+
+      return {
+        valido,
+        data:
+          json,
+      }
+    } catch (
+      error
+    ) {
+      console.error(
+        'Error validando documentación del vehículo:',
+        error
+      )
+
+      const mensaje =
+        error?.message ||
+        'No fue posible validar la documentación del vehículo.'
+
+      setDocumentacionVehiculoValida(
+        false
+      )
+
+      setValidacionDocumentos({
+        valido:
+          false,
+
+        motivo:
+          mensaje,
+
+        documentos_no_vigentes:
+          [],
+      })
+
+      setMostrarModalDocumentos(
+        true
+      )
+
+      return {
+        valido:
+          false,
+      }
+    } finally {
+      setValidandoDocumentos(
+        false
+      )
+    }
+  }
+
+  // ============================================================
+  // Selección placa
+  // ============================================================
+
+  const handlePlacaChange =
+    async (e) => {
+      const nuevaPlaca =
+        e.target.value
+
+      resetPorCambioPlaca()
+
+      setPlacaSeleccionada(
+        nuevaPlaca
+      )
+
+      if (!nuevaPlaca) {
+        setMensajeDuplicado('')
+
+        setVehiculoInfo({
+          tipo: '-',
+          marca: '-',
+        })
+
+        return
+      }
+
+      const vehiculo =
+        vehiculos.find(
+          (item) =>
+            item.placa ===
+            nuevaPlaca
+        )
+
+      setVehiculoInfo({
+        tipo:
+          vehiculo?.tipo_vehiculo ||
+          '-',
+
+        marca:
+          vehiculo?.marca ||
+          '-',
+      })
+
+      if (!nitActual) {
+        setMensajeDuplicado(
+          'No se identificó el CEA.'
+        )
+        return
+      }
+
+      const { fecha } =
+        obtenerFechaHoraBogota()
+
+      // ========================================================
+      // VALIDAR DOCUMENTACIÓN ANTES DEL PREOPERACIONAL
+      // ========================================================
+
+      const validacionDocumental =
+        await validarDocumentacionVehiculo(
+          nuevaPlaca,
+          fecha
+        )
+
+      if (
+        !validacionDocumental
+          ?.valido
+      ) {
+        setMensajeDuplicado(
+          ''
+        )
+
+        return
+      }
+
+      // ========================================================
+      // VALIDAR INSPECCIÓN DEL DÍA
+      // ========================================================
+
+      const resultado =
+        await validarInspeccionDuplicada(
+          nitActual,
+          nuevaPlaca,
+          fecha
+        )
+
+      setMensajeDuplicado(
+        resultado.mensaje
+      )
+      
+      if (resultado.existe) {
+        toast.error(
+          resultado.mensaje ||
+            `Ya existe una inspección hoy para la placa ${nuevaPlaca}.`
+        )
+      } else {
+        toast.message(
+          resultado.mensaje ||
+            `No existe inspección hoy para ${nuevaPlaca}. Puedes continuar.`
+        )
+      }
+    }
+
+  // ============================================================
+  // Kilometraje
+  // ============================================================
+
+  const handleKmChange =
+    async (e) => {
+      const nuevoKm =
+        e.target.value
+
+      setKilometraje(
+        nuevoKm
+      )
+
+      setMensajeKm('')
+      setForzarGuardado(false)
+
+      if (
+        !nitActual ||
+        !placaSeleccionada ||
+        nuevoKm === ''
+      ) {
+        return
+      }
+
+      const resultado =
+        await validarKilometraje(
+          nitActual,
+          placaSeleccionada,
+          parseInt(
+            nuevoKm,
+            10
+          )
+        )
+
+      setMensajeKm(
+        resultado.mensaje ||
+          ''
+      )
+
+      if (
+        resultado.estado ===
+        'advertencia'
+      ) {
+        setDatosKm(resultado)
+        setMostrarModalKm(true)
+
+        return
+      }
+
+      setMostrarModalKm(false)
+      setDatosKm(null)
+
+      if (
+        resultado.estado ===
+        'error'
+      ) {
+        toast.error(
+          resultado.mensaje
+        )
+      }
+    }
+
+  // ============================================================
+  // Secciones
+  // ============================================================
+
+  const handleSeccionChange = (
+    id,
+    valor
+  ) => {
+    setSecciones(
+      (prev) => ({
+        ...prev,
+        [id]: valor,
+      })
+    )
+  }
+
+  // ============================================================
+  // Validaciones Guardar
+  // ============================================================
+
+  const todoConforme =
+    Object.values(
+      secciones
+    ).every(
+      (valor) =>
+        valor === 'CONFORME'
+    )
+
+  const algunaNoConforme =
+    Object.values(
+      secciones
+    ).includes(
+      'NO CONFORME'
+    )
+
+  const seccionesCompletas =
+    Object.values(
+      secciones
+    ).every(
+      (valor) =>
+        valor !== null
+    )
+
+  const mensajeKmNormalizado =
+  String(
+    mensajeKm || ''
+  ).toLowerCase()
+
+const kilometrajeValido =
+  (
+    mensajeKm &&
+    !mensajeKmNormalizado.includes(
+      'menor'
+    ) &&
+    !mensajeKmNormalizado.includes(
+      'no fue posible'
+    ) &&
+    !mensajeKmNormalizado.includes(
+      'no se identificó'
+    ) &&
+    !mensajeKmNormalizado.includes(
+      'error'
+    )
+  ) ||
+  forzarGuardado
+
+const mensajeDuplicadoNormalizado =
+  String(
+    mensajeDuplicado || ''
+  ).toLowerCase()
+
+const duplicadoValido =
+  Boolean(
+    mensajeDuplicado
+  ) &&
+  !mensajeDuplicadoNormalizado.includes(
+    'ya existe'
+  ) &&
+  !mensajeDuplicadoNormalizado.includes(
+    'no fue posible'
+  ) &&
+  !mensajeDuplicadoNormalizado.includes(
+    'no se identificó'
+  ) &&
+  !mensajeDuplicadoNormalizado.includes(
+    'error'
+  )
+
+const kmNumero =
+  Number(kilometraje)
+
+const kilometrajeNumeroValido =
+  Number.isFinite(kmNumero) &&
+  kmNumero >= 0
+
+const puedeGuardar =
+  Boolean(nitActual) &&
+  Boolean(
+    placaSeleccionada
+  ) &&
+  documentacionVehiculoValida &&
+  !validandoDocumentos &&
+  duplicadoValido &&
+  kilometrajeValido &&
+  kilometrajeNumeroValido &&
+  seccionesCompletas &&
+  (
+    todoConforme ||
+    (
+      algunaNoConforme &&
+      observaciones.trim() !== ''
+    )
+  )
+  // ============================================================
+  // Reset total
+  // ============================================================
+
+  const resetearEstados =
+    () => {
+      setPlacaSeleccionada(
+        ''
+      )
+
+      setVehiculoInfo({
+        tipo: '-',
+        marca: '-',
+      })
+
+      setMensajeDuplicado('')
+
+      resetPorCambioPlaca()
+
+      setMensajeGuardado('')
+    }
+
+  // ============================================================
+  // Registrar inspección
+  // ============================================================
+
+  const handleGuardar =
+    async () => {
+      if (
+        !puedeGuardar ||
+        guardando ||
+        !user ||
+        !nitActual
+      ) {
+        return
+      }
+
+      setGuardando(true)
+      setMensajeGuardado('')
+
+      try {
+        const {
+          fecha,
+          hora,
+          timestamp,
+        } =
+          obtenerFechaHoraBogota()
+
+        // ======================================================
+        // Reforzar validación duplicado
+        // ======================================================
+
+        const dup =
+          await validarInspeccionDuplicada(
+            nitActual,
+            placaSeleccionada,
+            fecha
+          )
+
+        if (dup.existe) {
+          setMensajeGuardado(
+            dup.mensaje
+          )
+
+          toast.error(
+            dup.mensaje
+          )
+
+          return
+        }
+
+        // ======================================================
+        // Vehículo
+        // ======================================================
+
+        const vehiculo =
+          vehiculos.find(
+            (item) =>
+              item.placa ===
+              placaSeleccionada
+          )
+
+        const tipo =
+          vehiculo?.tipo_vehiculo ||
+          vehiculoInfo.tipo ||
+          ''
+
+        const marcaVehiculo =
+          vehiculo?.marca ||
+          vehiculoInfo.marca ||
+          ''
+
+        // ======================================================
+        // Observaciones
+        // ======================================================
+
+        const hayObs =
+          observaciones
+            .trim() !== ''
+
+        const estadoObs =
+          hayObs
+            ? 'PENDIENTE'
+            : ''
+
+        // ======================================================
+        // Payload
+        // ======================================================
+
+        const payload = {
+          nit: nitActual,
+
+          accion:
+            'registrar',
+
+          timestamp_registro:
+            timestamp,
+
+          fecha_registro:
+            fecha,
+
+          hora_registro:
+            hora,
+
+          placa:
+            placaSeleccionada,
+
+          tipo_vehiculo:
+            tipo,
+
+          marca:
+            marcaVehiculo,
+
+          km_registro:
+            Number(
+              kilometraje
+            ),
+
+          usuario_encargado:
+            user?.nombreCompleto ||
+            user?.usuario ||
+            '',
+
+          revision_exterior:
+            secciones
+              .revisionExterior,
+
+          motor:
+            secciones.motor,
+
+          interior_funcionamiento:
+            secciones
+              .interiorFuncionamiento,
+
+          equipos_prevencion:
+            secciones
+              .equiposPrevencion,
+
+          documentos:
+            secciones.documentos,
+
+          observaciones:
+            hayObs
+              ? observaciones.trim()
+              : '',
+
+          estado_observacion:
+            estadoObs,
+        }
+
+        // ======================================================
+        // Registrar mediante API
+        // ======================================================
+
+        const res =
+          await fetch(
+            '/api/preoperacionales',
+            {
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify(
+                  payload
+                ),
+            }
+          )
+
+        const json =
+          await res.json()
+
+        if (
+          !res.ok ||
+          json?.status !==
+            'success'
+        ) {
+          const mensaje =
+            json?.message ||
+            'No se pudo guardar la inspección.'
+
+          setMensajeGuardado(
+            mensaje
+          )
+
+          toast.error(
+            mensaje
+          )
+
+          return
+        }
+
+        const consecutivo =
+          json?.consecutivo ||
+          json
+            ?.preoperacional
+            ?.consecutivo ||
+          json?.data
+            ?.consecutivo ||
+          ''
+
+        // ======================================================
+        // Correo al instructor
+        // ======================================================
+
+        const correoDestino =
+          user?.email ||
+          ''
+
+        if (correoDestino) {
+          const asunto =
+            consecutivo
+              ? `Confirmación inspección: ${consecutivo}`
+              : 'Confirmación inspección preoperacional'
+
+          const html = `
+            <p>
+              Hola ${
+                user?.nombreCompleto ||
+                ''
+              },
+            </p>
+
+            <p>
+              Inspección registrada correctamente:
+            </p>
+
+            <ul>
+              ${
+                consecutivo
+                  ? `<li><b>Consecutivo:</b> ${consecutivo}</li>`
+                  : ''
+              }
+
+              <li>
+                <b>Placa:</b>
+                ${placaSeleccionada}
+              </li>
+
+              <li>
+                <b>Marca:</b>
+                ${marcaVehiculo}
+              </li>
+
+              <li>
+                <b>Tipo:</b>
+                ${tipo}
+              </li>
+
+              <li>
+                <b>Fecha:</b>
+                ${fecha}
+              </li>
+
+              <li>
+                <b>Hora:</b>
+                ${hora}
+              </li>
+
+              <li>
+                <b>Kilometraje:</b>
+                ${kilometraje}
+              </li>
+
+              <li>
+                <b>Observaciones:</b>
+                ${
+                  observaciones.trim() ||
+                  'Sin observaciones'
+                }
+              </li>
+            </ul>
+
+            <p>
+              Gracias por completar tu inspección.
+            </p>
+          `
+
+          await enviarCorreoInspeccion({
+            para:
+              correoDestino,
+            asunto,
+            html,
+          })
+        }
+
+        // ======================================================
+        // Correo mantenimiento cuando existen observaciones
+        // ======================================================
+
         if (hayObs) {
-          const destinatarios = obtenerDestinatariosMantenimiento()
-          if (destinatarios.length > 0) {
-            const asuntoM = `🚨 Observación en inspección preoperacional: ${placaSeleccionada} (${consecutivo})`
+          const destinatarios =
+            obtenerDestinatariosMantenimiento()
+
+          if (
+            destinatarios.length >
+            0
+          ) {
+            const asuntoM =
+              consecutivo
+                ? `🚨 Observación en inspección preoperacional: ${placaSeleccionada} (${consecutivo})`
+                : `🚨 Observación en inspección preoperacional: ${placaSeleccionada}`
+
             const htmlM = `
-              <p><strong>Se ha registrado una inspección con observaciones para seguimiento.</strong></p>
+              <p>
+                <strong>
+                  Se ha registrado una inspección con observaciones para seguimiento.
+                </strong>
+              </p>
+
               <ul>
-                <li><strong>Consecutivo:</strong> ${consecutivo}</li>
-                <li><strong>Placa:</strong> ${placaSeleccionada}</li>
-                <li><strong>Tipo de Vehículo:</strong> ${tipo}</li>
-                <li><strong>Marca:</strong> ${marca}</li>
-                <li><strong>Usuario responsable:</strong> ${user?.nombreCompleto || ''}</li>
-                <li><strong>Fecha:</strong> ${fecha} ${hora}</li>
-                <li><strong>Kilometraje:</strong> ${kilometraje}</li>
+                ${
+                  consecutivo
+                    ? `<li><strong>Consecutivo:</strong> ${consecutivo}</li>`
+                    : ''
+                }
+
+                <li>
+                  <strong>Placa:</strong>
+                  ${placaSeleccionada}
+                </li>
+
+                <li>
+                  <strong>Tipo de Vehículo:</strong>
+                  ${tipo}
+                </li>
+
+                <li>
+                  <strong>Marca:</strong>
+                  ${marcaVehiculo}
+                </li>
+
+                <li>
+                  <strong>Usuario responsable:</strong>
+                  ${
+                    user?.nombreCompleto ||
+                    ''
+                  }
+                </li>
+
+                <li>
+                  <strong>Fecha:</strong>
+                  ${fecha} ${hora}
+                </li>
+
+                <li>
+                  <strong>Kilometraje:</strong>
+                  ${kilometraje}
+                </li>
               </ul>
-              <p><strong>Observaciones:</strong><br>${observaciones.trim()}</p>
-              <p><em>Correo automático generado por el sistema.</em></p>
+
+              <p>
+                <strong>
+                  Observaciones:
+                </strong>
+                <br>
+                ${observaciones.trim()}
+              </p>
+
+              <p>
+                <em>
+                  Correo automático generado por el sistema.
+                </em>
+              </p>
             `
+
             await enviarCorreoInspeccion({
-              para: destinatarios,
-              asunto: asuntoM,
-              html: htmlM
+              para:
+                destinatarios,
+              asunto:
+                asuntoM,
+              html:
+                htmlM,
             })
           }
         }
 
-        // ✅ Toast de éxito antes de redirigir
-        toast.success(`Inspección guardada (${placaSeleccionada} • ${consecutivo})`, { duration: 1400 })
+        // ======================================================
+        // Éxito
+        // ======================================================
 
-        // Limpiar y redirigir después de mostrar el toast
+        toast.success(
+          consecutivo
+            ? `Inspección guardada (${placaSeleccionada} • ${consecutivo})`
+            : `Inspección guardada (${placaSeleccionada})`,
+          {
+            duration: 1400,
+          }
+        )
+
         setTimeout(() => {
           resetearEstados()
-          router.push('/instructor/practica')
-        }, 1450)
-      }
-    } catch (err) {
-      setMensajeGuardado('Error inesperado al guardar: ' + (err?.message || String(err)))
-      toast.error('Error inesperado al guardar')
-    } finally {
-      setGuardando(false)
-    }
-  }
 
+          router.push(
+            '/instructor/practica'
+          )
+        }, 1450)
+      } catch (error) {
+        console.error(
+          'Error inesperado guardando inspección:',
+          error
+        )
+
+        const mensaje =
+          'Error inesperado al guardar la inspección.'
+
+        setMensajeGuardado(
+          mensaje
+        )
+
+        toast.error(
+          mensaje
+        )
+      } finally {
+        setGuardando(false)
+      }
+    }
+
+  // ============================================================
   // Render
-  if (!user) return <p className="text-center mt-20">Cargando...</p>
+  // ============================================================
+
+  if (!user) {
+    return (
+      <p className="text-center mt-20">
+        Cargando...
+      </p>
+    )
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      {/* Toaster local para esta página */}
-      <Toaster position="top-center" richColors />
+
+      <Toaster
+        position="top-center"
+        richColors
+      />
 
       <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg p-6">
-        
-        {/* Título */}
+
+        {/* ====================================================
+            TÍTULO
+        ==================================================== */}
+
         <h2 className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2 border-b pb-2 text-[var(--primary)]">
+
           <i className="fas fa-clipboard-check text-[var(--primary)]"></i>
+
           Inspección Preoperacional
+
         </h2>
 
-        {/* Usuario */}
+        {/* ====================================================
+            USUARIO
+        ==================================================== */}
+
         <div className="bg-gray-50 p-2 rounded mb-4 text-xs border text-center">
-          Usuario: <strong>{user.nombreCompleto}</strong>
+
+          <span>
+            Usuario:{' '}
+            <strong>
+              {user.nombreCompleto}
+            </strong>
+          </span>
+
+          {user.rol && (
+            <span>
+              {' '}
+              ({user.rol})
+            </span>
+          )}
+
+          {user.nombreEmpresa && (
+            <span className="block mt-1">
+              CEA:{' '}
+              <strong>
+                {user.nombreEmpresa}
+              </strong>
+            </span>
+          )}
+
         </div>
 
-        {/* Placa y Kilometraje */}
-        <div className="grid grid-cols-2 gap-4 mb-2">
+        {/* ====================================================
+            PLACA Y KILOMETRAJE
+        ==================================================== */}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+
+          {/* Placa */}
+
           <div>
-            <label className="block text-sm font-semibold mb-1">Placa del Vehículo</label>
+
+            <label className="block text-sm font-semibold mb-1">
+              Placa del Vehículo
+            </label>
+
             <select
               className="w-full border p-2 rounded text-sm h-10"
-              value={placaSeleccionada}
-              onChange={handlePlacaChange}
+              value={
+                placaSeleccionada
+              }
+              onChange={
+                handlePlacaChange
+              }
+              disabled={
+                cargandoVehiculos
+              }
             >
-              <option value="">-- Seleccione la Placa --</option>
-              {vehiculos.map((vehiculo) => (
-                <option key={vehiculo.placa} value={vehiculo.placa}>
-                  {vehiculo.placa}
-                </option>
-              ))}
+
+              <option value="">
+                {cargandoVehiculos
+                  ? 'Cargando vehículos...'
+                  : '-- Seleccione la Placa --'}
+              </option>
+
+              {vehiculos.map(
+                (vehiculo) => (
+                  <option
+                    key={
+                      vehiculo.placa
+                    }
+                    value={
+                      vehiculo.placa
+                    }
+                  >
+                    {vehiculo.placa}
+                  </option>
+                )
+              )}
+
             </select>
+
             {mensajeDuplicado && (
               <p
                 className={`text-xs mt-1 ${
-                  mensajeDuplicado.includes('Ya existe') ? 'text-red-600' : 'text-green-600'
+                  mensajeDuplicado.includes(
+                    'Ya existe'
+                  )
+                    ? 'text-red-600'
+                    : 'text-green-600'
                 }`}
               >
                 {mensajeDuplicado}
               </p>
             )}
+
           </div>
+
+          {/* Kilometraje */}
+
           <div>
-            <label className="block text-sm font-semibold mb-1">Kilometraje Actual</label>
+
+            <label className="block text-sm font-semibold mb-1">
+              Kilometraje Actual
+            </label>
+
             <input
               type="number"
-              className="w-full border p-2 rounded text-sm h-10"
+              className={`w-full border p-2 rounded text-sm h-10 ${
+                (
+                !placaSeleccionada ||
+                validandoDocumentos ||
+                !documentacionVehiculoValida
+              )
+                ? 'bg-gray-100 cursor-not-allowed'
+                : ''
+              }`}
               min="0"
               value={kilometraje}
-              onChange={handleKmChange}
+              onChange={
+                handleKmChange
+              }
+              disabled={
+                !placaSeleccionada ||
+                validandoDocumentos ||
+                !documentacionVehiculoValida
+              }
             />
+
             {mensajeKm && (
               <p
                 className={`text-xs mt-1 ${
-                  mensajeKm.includes('menor')
+                  mensajeKm
+                    .toLowerCase()
+                    .includes(
+                      'menor'
+                    )
                     ? 'text-red-600'
-                    : mensajeKm.includes('supera')
+                    : mensajeKm
+                        .toLowerCase()
+                        .includes(
+                          'supera'
+                        )
                     ? 'text-orange-600'
                     : 'text-green-600'
                 }`}
@@ -442,153 +1478,672 @@ export default function InspeccionPage() {
                 {mensajeKm}
               </p>
             )}
+
           </div>
+
         </div>
 
-        {/* Info del vehículo */}
+        {/* ====================================================
+            INFO VEHÍCULO
+        ==================================================== */}
+
         <div className="text-xs mb-6 px-2">
-          <p><strong>Tipo de Vehículo:</strong> {vehiculoInfo.tipo}</p>
-          <p><strong>Marca:</strong> {vehiculoInfo.marca}</p>
+
+          <p>
+            <strong>
+              Tipo de Vehículo:
+            </strong>{' '}
+            {vehiculoInfo.tipo}
+          </p>
+
+          <p>
+            <strong>
+              Marca:
+            </strong>{' '}
+            {vehiculoInfo.marca}
+          </p>
+
         </div>
 
-        {/* Secciones */}
+        {/* ====================================================
+            SECCIONES
+        ==================================================== */}
+
         {[
-          { id: 'revisionExterior', title: 'SECCIÓN 1: REVISIÓN EXTERIOR', desc: 'Verifique carrocería, faros, llantas, espejos, limpiaparabrisas, etc.' },
-          { id: 'motor', title: 'SECCIÓN 2: MOTOR', desc: 'Verifique niveles de fluidos, fugas, batería, correas, cadena (en motos).' },
-          { id: 'interiorFuncionamiento', title: 'SECCIÓN 3: INTERIOR Y FUNCIONAMIENTO', desc: 'Verifique cinturones, asientos, luces, tablero.' },
-          { id: 'equiposPrevencion', title: 'SECCIÓN 4: EQUIPOS DE PREVENCIÓN Y SEGURIDAD', desc: 'Kit carretera, casco, señalización, banderín.' },
-          { id: 'documentos', title: 'SECCIÓN 5: DOCUMENTOS', desc: 'SOAT, RTM, licencia, tarjeta de servicio, certificado instructor, cédula.' }
-        ].map((section) => (
-          <div key={section.id} className="bg-gray-50 border border-gray-300 rounded-lg mb-4 shadow-sm">
-            <div className="bg-black text-white text-sm font-semibold px-3 py-2 rounded-t-lg">
-              {section.title}
-            </div>
-            <div className="p-3">
-              <p className="text-xs text-gray-700 mb-2">{section.desc}</p>
-              <div className="flex gap-6 text-sm">
-                <label>
-                  <input
-                    type="radio"
-                    name={section.id}
-                    value="CONFORME"
-                    onChange={() => handleSeccionChange(section.id, 'CONFORME')}
-                    className="mr-1"
-                  /> CONFORME
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name={section.id}
-                    value="NO CONFORME"
-                    onChange={() => handleSeccionChange(section.id, 'NO CONFORME')}
-                    className="mr-1"
-                  /> NO CONFORME
-                </label>
+          {
+            id:
+              'revisionExterior',
+            title:
+              'SECCIÓN 1: REVISIÓN EXTERIOR',
+            desc:
+              'Verifique carrocería, faros, llantas, espejos, limpiaparabrisas, etc.',
+          },
+          {
+            id:
+              'motor',
+            title:
+              'SECCIÓN 2: MOTOR',
+            desc:
+              'Verifique niveles de fluidos, fugas, batería, correas, cadena (en motos).',
+          },
+          {
+            id:
+              'interiorFuncionamiento',
+            title:
+              'SECCIÓN 3: INTERIOR Y FUNCIONAMIENTO',
+            desc:
+              'Verifique cinturones, asientos, luces, tablero.',
+          },
+          {
+            id:
+              'equiposPrevencion',
+            title:
+              'SECCIÓN 4: EQUIPOS DE PREVENCIÓN Y SEGURIDAD',
+            desc:
+              'Kit carretera, casco, señalización, banderín.',
+          },
+          {
+            id:
+              'documentos',
+            title:
+              'SECCIÓN 5: DOCUMENTOS',
+            desc:
+              'SOAT, RTM, licencia, tarjeta de servicio, certificado instructor, cédula.',
+          },
+        ].map(
+          (section) => (
+
+            <div
+              key={section.id}
+              className="bg-gray-50 border border-gray-300 rounded-lg mb-4 shadow-sm"
+            >
+
+              <div className="bg-black text-white text-sm font-semibold px-3 py-2 rounded-t-lg">
+
+                {section.title}
+
               </div>
+
+              <div className="p-3">
+
+                <p className="text-xs text-gray-700 mb-2">
+                  {section.desc}
+                </p>
+
+                <div className="flex gap-6 text-sm">
+
+                  <label>
+
+                    <input
+                    type="radio"
+                    name={
+                      section.id
+                    }
+                    value="CONFORME"
+                    checked={
+                      secciones[
+                        section.id
+                      ] ===
+                      'CONFORME'
+                    }
+                    onChange={() =>
+                      handleSeccionChange(
+                        section.id,
+                        'CONFORME'
+                      )
+                    }
+                    disabled={
+                      !placaSeleccionada ||
+                      validandoDocumentos ||
+                      !documentacionVehiculoValida
+                    }
+                    className="
+                      mr-1
+                      disabled:cursor-not-allowed
+                      disabled:opacity-50
+                    "
+                  />
+
+                    CONFORME
+
+                  </label>
+
+                  <label>
+
+                    <input
+                    type="radio"
+                    name={
+                      section.id
+                    }
+                    value="NO CONFORME"
+                    checked={
+                      secciones[
+                        section.id
+                      ] ===
+                      'NO CONFORME'
+                    }
+                    onChange={() =>
+                      handleSeccionChange(
+                        section.id,
+                        'NO CONFORME'
+                      )
+                    }
+                    disabled={
+                      !placaSeleccionada ||
+                      validandoDocumentos ||
+                      !documentacionVehiculoValida
+                    }
+                    className="
+                      mr-1
+                      disabled:cursor-not-allowed
+                      disabled:opacity-50
+                    "
+                  />
+
+                    NO CONFORME
+
+                  </label>
+
+                </div>
+
+              </div>
+
             </div>
-          </div>
-        ))}
-
-        {/* Observaciones */}
-        <div className="mt-4">
-          <label className="block mb-1 font-semibold text-sm">Observaciones</label>
-          <textarea
-            rows="3"
-            className={`w-full border p-2 rounded text-sm ${!Object.values(secciones).includes('NO CONFORME') ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-            value={observaciones}
-            onChange={(e) => setObservaciones(e.target.value)}
-            disabled={!Object.values(secciones).includes('NO CONFORME')}
-          ></textarea>
-          {Object.values(secciones).includes('NO CONFORME') && observaciones.trim() === '' && (
-            <p className="text-xs text-red-600 mt-1">
-              Debes ingresar observaciones para las secciones NO CONFORME.
-            </p>
-          )}
-        </div>
-
-        {/* Mensaje (por si hubiera) */}
-        {mensajeGuardado && (
-          <div className={`mt-4 text-sm ${mensajeGuardado.startsWith('✅') ? 'text-green-700' : 'text-red-700'}`}>
-            {mensajeGuardado}
-          </div>
+          )
         )}
 
-        {/* Botones */}
+        {/* ====================================================
+            OBSERVACIONES
+        ==================================================== */}
+
+        <div className="mt-4">
+
+          <label className="block mb-1 font-semibold text-sm">
+            Observaciones
+          </label>
+
+          <textarea
+            rows="3"
+            className={`w-full border p-2 rounded text-sm ${
+              !algunaNoConforme
+                ? 'bg-gray-100 cursor-not-allowed'
+                : ''
+            }`}
+            value={
+              observaciones
+            }
+            onChange={(e) =>
+              setObservaciones(
+                e.target.value
+              )
+            }
+            disabled={
+              !algunaNoConforme
+            }
+          />
+
+          {algunaNoConforme &&
+            observaciones
+              .trim() === '' && (
+
+              <p className="text-xs text-red-600 mt-1">
+                Debes ingresar observaciones para las secciones NO CONFORME.
+              </p>
+
+            )}
+
+        </div>
+
+        {/* ====================================================
+            MENSAJE GUARDADO
+        ==================================================== */}
+
+        {mensajeGuardado && (
+
+          <div className="mt-4 text-sm text-red-700">
+            {mensajeGuardado}
+          </div>
+
+        )}
+
+        {/* ====================================================
+            BOTONES
+        ==================================================== */}
+
         <div className="mt-8 space-y-4">
+
           <div className="flex justify-center">
+
             <button
-              onClick={handleGuardar}
-              disabled={!puedeGuardar || guardando}
+              onClick={
+                handleGuardar
+              }
+              disabled={
+                !puedeGuardar ||
+                guardando
+              }
               className={`py-2 px-6 rounded-lg shadow-md flex items-center gap-2 text-sm ${
-                puedeGuardar && !guardando
+                puedeGuardar &&
+                !guardando
                   ? 'bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white'
                   : 'bg-gray-400 text-gray-700 cursor-not-allowed'
               }`}
             >
-              <i className="fas fa-save"></i> {guardando ? 'Guardando...' : 'Guardar'}
+
+              <i className="fas fa-save"></i>
+
+              {guardando
+                ? 'Guardando...'
+                : 'Guardar'}
+
             </button>
+
           </div>
 
           <div className="flex justify-center gap-3 flex-wrap">
+
             <button
-              onClick={() => router.push('/instructor/practica')}
+              onClick={() =>
+                router.push(
+                  '/instructor/practica'
+                )
+              }
               className="bg-gray-600 hover:bg-gray-800 text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
             >
-              <i className="fas fa-arrow-left"></i> Regresar
+
+              <i className="fas fa-arrow-left"></i>
+
+              Regresar
+
             </button>
+
             <button
-              onClick={handleLogout}
+              onClick={
+                handleLogout
+              }
               className="bg-[var(--danger)] hover:bg-red-800 text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
             >
-              <i className="fas fa-sign-out-alt"></i> Cerrar Sesión
+
+              <i className="fas fa-sign-out-alt"></i>
+
+              Cerrar Sesión
+
             </button>
+
           </div>
+
+        </div>
+
+      </div>
+
+      {/* ======================================================
+    MODAL DOCUMENTACIÓN VEHÍCULO
+====================================================== */}
+
+{mostrarModalDocumentos &&
+  validacionDocumentos && (
+
+  <div
+    className="
+      fixed
+      inset-0
+      z-[70]
+      bg-black/60
+      flex
+      items-center
+      justify-center
+      p-4
+    "
+  >
+    <div
+      className="
+        w-full
+        max-w-md
+        bg-white
+        rounded-xl
+        shadow-2xl
+        overflow-hidden
+        border
+        border-red-300
+      "
+    >
+      {/* CABECERA */}
+
+      <div
+        className="
+          bg-red-50
+          border-b
+          border-red-200
+          px-5
+          py-4
+          flex
+          items-center
+          gap-3
+        "
+      >
+        <div
+          className="
+            w-11
+            h-11
+            shrink-0
+            rounded-full
+            bg-red-100
+            text-red-700
+            flex
+            items-center
+            justify-center
+            text-lg
+          "
+        >
+          <i className="fas fa-triangle-exclamation"></i>
+        </div>
+
+        <div>
+          <p
+            className="
+              text-[9px]
+              uppercase
+              tracking-wide
+              font-black
+              text-red-600
+            "
+          >
+            Vehículo no habilitado
+          </p>
+
+          <h3
+            className="
+              text-[15px]
+              font-black
+              text-gray-900
+            "
+          >
+            Documentación no vigente
+          </h3>
         </div>
       </div>
 
-      {/* Modal advertencia de kilometraje */}
-      {mostrarModalKm && datosKm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      {/* CONTENIDO */}
+
+      <div className="px-5 py-5">
+
+        <p
+          className="
+            text-sm
+            text-gray-800
+            font-semibold
+            text-center
+          "
+        >
+          La placa{' '}
+          <strong>
+            {placaSeleccionada}
+          </strong>{' '}
+          no puede operar hasta que su documentación se encuentre vigente.
+        </p>
+
+        {validacionDocumentos
+          ?.documentos_no_vigentes
+          ?.length > 0 && (
+
+          <div
+            className="
+              mt-4
+              border
+              border-red-200
+              bg-red-50
+              rounded-lg
+              overflow-hidden
+            "
+          >
+            {validacionDocumentos
+              .documentos_no_vigentes
+              .map(
+                documento => (
+
+                <div
+                  key={
+                    documento.id ||
+                    documento.documento
+                  }
+                  className="
+                    px-3
+                    py-3
+                    border-b
+                    last:border-b-0
+                    border-red-100
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      justify-between
+                      gap-3
+                      text-xs
+                    "
+                  >
+                    <strong
+                      className="
+                        text-red-700
+                      "
+                    >
+                      {
+                        documento
+                          ?.documento ||
+                        'Documento'
+                      }
+                    </strong>
+
+                    <span
+                      className="
+                        font-bold
+                        text-gray-700
+                      "
+                    >
+                      Vigencia:{' '}
+                      {
+                        documento
+                          ?.fecha_vigencia ||
+                        'No registrada'
+                      }
+                    </span>
+                  </div>
+                </div>
+
+              )
+            )}
+          </div>
+        )}
+
+        <div
+          className="
+            mt-4
+            bg-amber-50
+            border
+            border-amber-200
+            rounded-lg
+            p-3
+          "
+        >
+          <p
+            className="
+              text-[11px]
+              leading-5
+              text-gray-800
+            "
+          >
+            Si el documento ya fue renovado y se encuentra vigente,
+            debe realizar la actualización de la información desde el menú
+            <strong> Actualizar Documentos</strong>.
+          </p>
+
+          <p
+            className="
+              text-[11px]
+              leading-5
+              text-red-700
+              font-bold
+              mt-2
+            "
+          >
+            Mientras no exista un documento actualizado y vigente,
+            este vehículo no podrá operar.
+          </p>
+        </div>
+
+        {validacionDocumentos
+          ?.motivo && (
+
+          <p
+            className="
+              mt-3
+              text-[10px]
+              text-gray-500
+              text-center
+            "
+          >
+            {
+              validacionDocumentos
+                .motivo
+            }
+          </p>
+        )}
+
+        <div
+          className="
+            mt-5
+            flex
+            justify-center
+          "
+        >
+          <button
+            type="button"
+            onClick={() =>
+              setMostrarModalDocumentos(
+                false
+              )
+            }
+            className="
+              min-w-[130px]
+              bg-slate-800
+              hover:bg-slate-900
+              text-white
+              rounded-lg
+              px-4
+              py-2.5
+              text-xs
+              font-black
+            "
+          >
+            <i className="fas fa-check mr-2"></i>
+            ENTENDIDO
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}        
+      
+      {/* ======================================================
+          MODAL KILOMETRAJE
+      ====================================================== */}
+
+      {mostrarModalKm &&
+        datosKm && (
+
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+
           <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
+
             <h3 className="text-lg font-bold mb-4 text-red-600">
               Advertencia de Kilometraje
             </h3>
+
             <p className="text-sm mb-2">
-              El kilometraje ingresado <strong>{kilometraje}</strong> supera en más de 300 km el último registrado.
+              El kilometraje ingresado{' '}
+              <strong>
+                {kilometraje}
+              </strong>{' '}
+              supera en más de 300 km el último registrado.
             </p>
+
             <p className="text-sm mb-2">
-              <strong>Último registro:</strong> {datosKm.maxKm} km
+
+              <strong>
+                Último registro:
+              </strong>{' '}
+
+              {datosKm.maxKm} km
+
             </p>
+
             <p className="text-sm mb-2">
-              <strong>Fuente:</strong> {datosKm.fuente} ({datosKm.campo})
+
+              <strong>
+                Fuente:
+              </strong>{' '}
+
+              {datosKm.fuente}{' '}
+              ({datosKm.campo})
+
             </p>
+
             <p className="text-sm mb-4">
-              Diferencia: <strong>{datosKm.diferencia} km</strong>
+
+              Diferencia:{' '}
+
+              <strong>
+                {datosKm.diferencia} km
+              </strong>
+
             </p>
 
             <div className="flex justify-end gap-3">
+
               <button
                 onClick={() => {
-                  setMostrarModalKm(false)
-                  setForzarGuardado(true)
-                }}
-                className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded"
-              >
-                Confirmar y Guardar
-              </button>
-              <button
-                onClick={() => {
-                  setMostrarModalKm(false)
-                  setForzarGuardado(false)
+                  setMostrarModalKm(
+                    false
+                  )
+
+                  setDatosKm(null)
+                  setForzarGuardado(
+                    false
+                  )
                 }}
                 className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded"
               >
+
                 Cancelar
+
               </button>
+
+              <button
+                onClick={() => {
+                  setMostrarModalKm(
+                    false
+                  )
+
+                  setForzarGuardado(
+                    true
+                  )
+                }}
+                className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded"
+              >
+
+                Confirmar y Continuar
+
+              </button>
+
             </div>
+
           </div>
+
         </div>
+
       )}
+
     </div>
   )
 }

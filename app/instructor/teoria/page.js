@@ -1,402 +1,1309 @@
+// app/instructor/teoria/page.js
+
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Toaster, toast } from 'sonner'
-import { supabase } from '@/lib/supabaseClient'
-import { cerrarSesion } from '@/lib/auth/logout'
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
-// -------- Helpers zona Bogotá --------
-const fmtBogota = (date, mode) => {
-  const optFecha = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Bogota' }
-  const optHora  = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'America/Bogota' }
-  return new Intl.DateTimeFormat('en-CA', mode === 'fecha' ? optFecha : optHora).format(date) // YYYY-MM-DD / HH:mm:ss
-}
-const ahoraBogota = () => {
-  const now = new Date()
-  const fecha = fmtBogota(now, 'fecha')
-  const hora  = fmtBogota(now, 'hora')
-  const timestamp = `${fecha}T${hora}-05:00`
-  return { fecha, hora, timestamp }
-}
-const humanHM = (totalMin) => {
-  const m = Math.max(0, Math.round(Number(totalMin || 0)))
-  const h = Math.floor(m / 60)
-  const r = m % 60
-  if (h > 0 && r > 0) return `${h} h ${r} m`
-  if (h > 0) return `${h} h`
-  return `${m} m`
+import {
+  useRouter,
+} from 'next/navigation'
+
+import {
+  Toaster,
+  toast,
+} from 'sonner'
+
+import {
+  cerrarSesion,
+} from '@/lib/auth/logout'
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function humanHM(totalMin) {
+  const minutos =
+    Math.max(
+      0,
+      Math.round(
+        Number(
+          totalMin ||
+          0
+        )
+      )
+    )
+
+  const horas =
+    Math.floor(
+      minutos /
+      60
+    )
+
+  const resto =
+    minutos %
+    60
+
+  if (
+    horas > 0 &&
+    resto > 0
+  ) {
+    return `${horas} h ${resto} m`
+  }
+
+  if (
+    horas > 0
+  ) {
+    return `${horas} h`
+  }
+
+  return `${minutos} m`
 }
 
-// -------- Página --------
+function normalizarRol(valor) {
+  return String(
+    valor ||
+    ''
+  )
+    .trim()
+    .toUpperCase()
+    .replace(
+      /_/g,
+      ' '
+    )
+    .replace(
+      /\s+/g,
+      ' '
+    )
+}
+
+function esRolPermitido(valor) {
+  const rol =
+    normalizarRol(
+      valor
+    )
+
+  return (
+    rol ===
+      'INSTRUCTOR TEORÍA' ||
+    rol ===
+      'INSTRUCTOR TEORIA' ||
+    rol ===
+      'AUXILIAR ADMINISTRATIVO'
+  )
+}
+
+// ============================================================
+// PÁGINA
+// ============================================================
+
 export default function RegistroHorariosPage() {
-  const router = useRouter()
-  const [user, setUser] = useState(null)
+  const router =
+    useRouter()
 
-  // estado de la jornada
-  const [tengoAbierta, setTengoAbierta] = useState(false)
-  const [registroAbierto, setRegistroAbierto] = useState(null) // { id, timestamp_entrada, fecha_entrada, hora_entrada }
-  const [cargandoEstado, setCargandoEstado] = useState(true)
-  const [guardando, setGuardando] = useState(false)
+  const [
+    user,
+    setUser,
+  ] =
+    useState(null)
 
-  // === Reuniones: estado y polling de reunión activa ===
-  const [reunionActiva, setReunionActiva] = useState(null)
-  const [enviandoAsistencia, setEnviandoAsistencia] = useState(false)
+  const [
+    nitActual,
+    setNitActual,
+  ] =
+    useState('')
+
+  // ==========================================================
+  // JORNADA
+  // ==========================================================
+
+  const [
+    tengoAbierta,
+    setTengoAbierta,
+  ] =
+    useState(false)
+
+  const [
+    registroAbierto,
+    setRegistroAbierto,
+  ] =
+    useState(null)
+
+  const [
+    cargandoEstado,
+    setCargandoEstado,
+  ] =
+    useState(true)
+
+  const [
+    guardando,
+    setGuardando,
+  ] =
+    useState(false)
+
+  // ==========================================================
+  // REUNIONES
+  // ==========================================================
+
+  const [
+    reunionActiva,
+    setReunionActiva,
+  ] =
+    useState(null)
+
+  const [
+    enviandoAsistencia,
+    setEnviandoAsistencia,
+  ] =
+    useState(false)
+
+  // ==========================================================
+  // SESIÓN
+  // ==========================================================
 
   useEffect(() => {
-    let alive = true
-    const fetchActiva = async () => {
+    const stored =
+      localStorage.getItem(
+        'currentUser'
+      )
+
+    if (!stored) {
+      router.push(
+        '/login'
+      )
+
+      return
+    }
+
+    try {
+      const parsed =
+        JSON.parse(
+          stored
+        )
+
+      const nit =
+        parsed?.nitEmpresa ||
+        localStorage.getItem(
+          'currentEmpresaNit'
+        ) ||
+        parsed?.empresa?.nit ||
+        ''
+
+      if (!nit) {
+        toast.error(
+          'No se encontró el CEA asociado a la sesión.'
+        )
+
+        return
+      }
+
+      if (
+        !esRolPermitido(
+          parsed?.rol ||
+          parsed?.role
+        )
+      ) {
+        toast.error(
+          'El perfil actual no está autorizado para este módulo.'
+        )
+
+        router.push(
+          '/login'
+        )
+
+        return
+      }
+
+      setUser(
+        parsed
+      )
+
+      setNitActual(
+        String(
+          nit
+        ).trim()
+      )
+    } catch (error) {
+      console.error(
+        'Error leyendo sesión:',
+        error
+      )
+
+      localStorage.removeItem(
+        'currentUser'
+      )
+
+      router.push(
+        '/login'
+      )
+    }
+  }, [
+    router,
+  ])
+
+  // ==========================================================
+  // CARGAR ESTADO DE JORNADA
+  // ==========================================================
+
+  const cargarEstado =
+    async () => {
+      if (
+        !user?.usuario ||
+        !nitActual
+      ) {
+        return
+      }
+
+      setCargandoEstado(
+        true
+      )
+
       try {
-        const res = await fetch('/api/reuniones/activa', { cache: 'no-store' })
-        const json = await res.json()
-        if (!alive) return
-        setReunionActiva(json?.data || null)
-      } catch {
-        // silencio
+        const response =
+          await fetch(
+            `/api/horarios/simple?nit=${encodeURIComponent(
+              nitActual
+            )}&usuario=${encodeURIComponent(
+              user.usuario
+            )}`,
+            {
+              cache:
+                'no-store',
+            }
+          )
+
+        const result =
+          await response.json()
+
+        if (
+          !response.ok ||
+          result?.status !==
+            'success'
+        ) {
+          toast.error(
+            result?.message ||
+            'No fue posible consultar el estado de la jornada.'
+          )
+
+          setTengoAbierta(
+            false
+          )
+
+          setRegistroAbierto(
+            null
+          )
+
+          return
+        }
+
+        const abierta =
+          Boolean(
+            result
+              ?.tiene_jornada_abierta
+          )
+
+        setTengoAbierta(
+          abierta
+        )
+
+        setRegistroAbierto(
+          result?.jornada ||
+          null
+        )
+      } catch (error) {
+        console.error(
+          'Error consultando jornada:',
+          error
+        )
+
+        toast.error(
+          'No fue posible consultar el estado de la jornada.'
+        )
+
+        setTengoAbierta(
+          false
+        )
+
+        setRegistroAbierto(
+          null
+        )
+      } finally {
+        setCargandoEstado(
+          false
+        )
       }
     }
-    fetchActiva()
-    const id = setInterval(fetchActiva, 60_000) // cada 60s
-    return () => { alive = false; clearInterval(id) }
-  }, [])
 
-  // Cargar user y estado inicial
   useEffect(() => {
-    const s = localStorage.getItem('currentUser')
-    if (!s) { router.push('/login'); return }
-    const u = JSON.parse(s)
-    setUser(u)
-
-    const cargarEstado = async () => {
-      setCargandoEstado(true)
-      const { fecha } = ahoraBogota()
-      const { data, error } = await supabase
-        .from('horarios')
-        .select('id, timestamp_entrada, fecha_entrada, hora_entrada')
-        .eq('usuario', u.usuario)
-        .eq('fecha_entrada', fecha)
-        .eq('estado_registro', 'Abierto')
-        .limit(1)
-
-      if (!error && data && data.length > 0) {
-        setTengoAbierta(true)
-        setRegistroAbierto(data[0])
-      } else {
-        setTengoAbierta(false)
-        setRegistroAbierto(null)
-      }
-      setCargandoEstado(false)
+    if (
+      !user ||
+      !nitActual
+    ) {
+      return
     }
 
     cargarEstado()
-  }, [router])
+  }, [
+    user,
+    nitActual,
+  ])
 
-  // Email del usuario
-  const obtenerEmailUsuario = async () => {
-    // si login ya trajera email podrías usar user.email
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('email')
-      .eq('usuario', user.usuario)
-      .limit(1)
-    if (error || !data || !data[0]?.email) return ''
-    return data[0].email
-  }
+  // ==========================================================
+  // REUNIÓN ACTIVA
+  // ==========================================================
 
-  const enviarCorreo = async ({ para, asunto, html }) => {
-    try {
-      const res = await fetch('/api/email/enviar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ para, asunto, html })
-      })
-      const json = await res.json()
-      if (!json.ok) {
-        console.error('Error enviando correo:', json.error)
+  useEffect(() => {
+    if (!nitActual) {
+      return
+    }
+
+    let alive =
+      true
+
+    const cargarReunionActiva =
+      async () => {
+        try {
+          const response =
+            await fetch(
+              `/api/reuniones/activa?nit=${encodeURIComponent(
+                nitActual
+              )}`,
+              {
+                cache:
+                  'no-store',
+              }
+            )
+
+          const result =
+            await response.json()
+
+          if (!alive) {
+            return
+          }
+
+          if (
+            !response.ok ||
+            result?.status !==
+              'success'
+          ) {
+            setReunionActiva(
+              null
+            )
+
+            return
+          }
+
+          setReunionActiva(
+            result?.data ||
+            null
+          )
+        } catch {
+          if (
+            alive
+          ) {
+            setReunionActiva(
+              null
+            )
+          }
+        }
       }
-    } catch (e) {
-      console.error('Error enviando correo:', e?.message || e)
+
+    cargarReunionActiva()
+
+    const intervalId =
+      setInterval(
+        cargarReunionActiva,
+        60_000
+      )
+
+    return () => {
+      alive =
+        false
+
+      clearInterval(
+        intervalId
+      )
     }
-  }
+  }, [
+    nitActual,
+  ])
 
-  // === Reuniones: registrar asistencia (TOP-LEVEL, no anidada) ===
-  const registrarAsistenciaReunion = async () => {
-    try {
-      const s = localStorage.getItem('currentUser')
-      if (!s) { toast.error('No hay usuario en sesión.'); return }
-      const u = JSON.parse(s)
-      if (!u?.documento) { toast.error('Usuario sin documento.'); return }
-      if (!reunionActiva?.enlace_asistencia) { toast.warning('No hay reunión activa.'); return }
+  // ==========================================================
+  // EMAIL
+  // ==========================================================
 
-      setEnviandoAsistencia(true)
-      const res = await fetch('/api/asistencias', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          enlace_asistencia: reunionActiva.enlace_asistencia,
-          user: { documento: u.documento, nombreCompleto: u.nombreCompleto, role: u.rol || u.role }
-        })
-      })
-      const json = await res.json()
-      if (json.status === 'success') toast.success('✅ Asistencia registrada.')
-      else if (json.status === 'warning') toast.warning(json.message || 'Aviso.')
-      else toast.error(json.message || 'Error al registrar asistencia.')
-    } catch {
-      toast.error('Error al registrar asistencia.')
-    } finally {
-      setEnviandoAsistencia(false)
-    }
-  }
-
-  // Mensaje de estado arriba de los botones
-  const statusMessage = useMemo(() => {
-    if (cargandoEstado) return ''
-    if (tengoAbierta && registroAbierto) {
-      return `Tiene una jornada abierta desde ${registroAbierto.fecha_entrada} ${registroAbierto.hora_entrada}.`
-    }
-    return 'No tiene jornada abierta hoy. Puede registrar entrada.'
-  }, [cargandoEstado, tengoAbierta, registroAbierto])
-
-  // Habilitación de botones
-  const entradaHabilitada = useMemo(() => {
-    if (!user) return false
-    // sólo INSTRUCTOR TEORÍA o AUXILIAR ADMINISTRATIVO
-    const rol = String(user.rol || '').toUpperCase()
-    const rolPermitido = rol === 'INSTRUCTOR TEORÍA' || rol === 'AUXILIAR ADMINISTRATIVO'
-    return rolPermitido && !tengoAbierta && !guardando && !cargandoEstado
-  }, [user, tengoAbierta, guardando, cargandoEstado])
-
-  const salidaHabilitada = useMemo(() => {
-    if (!user) return false
-    const rol = String(user.rol || '').toUpperCase()
-    const rolPermitido = rol === 'INSTRUCTOR TEORÍA' || rol === 'AUXILIAR ADMINISTRATIVO'
-    return rolPermitido && tengoAbierta && !!registroAbierto && !guardando && !cargandoEstado
-  }, [user, tengoAbierta, registroAbierto, guardando, cargandoEstado])
-
-  // Entrada
-  const registrarEntrada = async () => {
-    if (!entradaHabilitada || !user) return
-    setGuardando(true)
-    try {
-      const { fecha, hora, timestamp } = ahoraBogota()
-
-      // Seguridad: evitar duplicado si dos clicks
-      const { data: yaAbierta } = await supabase
-        .from('horarios')
-        .select('id')
-        .eq('usuario', user.usuario)
-        .eq('fecha_entrada', fecha)
-        .eq('estado_registro', 'Abierto')
-        .limit(1)
-      if (yaAbierta && yaAbierta.length > 0) {
-        toast.error('Ya tiene una jornada abierta hoy.')
-        setGuardando(false)
+  const enviarCorreo =
+    async ({
+      para,
+      asunto,
+      html,
+    }) => {
+      if (!para) {
         return
       }
 
-      const rol = String(user.rol || '').toUpperCase()
-      const { error } = await supabase
-        .from('horarios')
-        .insert([{
-          timestamp_entrada: timestamp,
-          fecha_entrada: fecha,
-          hora_entrada: hora,
-          usuario: user.usuario,
-          nombre_completo: user.nombreCompleto,
-          rol: rol, // INSTRUCTOR TEORÍA o AUXILIAR ADMINISTRATIVO
-          estado_registro: 'Abierto'
-          // demás campos propios de práctica quedan nulos
-        }])
-
-      if (error) {
-        console.error('Supabase insert error (entrada):', error)
-        toast.error('No se pudo registrar la entrada.')
-        setGuardando(false)
-        return
-      }
-
-      // Correo
-      const correo = await obtenerEmailUsuario()
-      if (correo) {
-        const asunto = `Entrada registrada - ${fecha}`
-        const html = `
-          <p>Hola ${user.nombreCompleto},</p>
-          <p>Se registró tu <b>entrada</b> correctamente.</p>
-          <ul>
-            <li><b>Fecha:</b> ${fecha}</li>
-            <li><b>Hora:</b> ${hora}</li>
-            <li><b>Usuario:</b> ${user.usuario}</li>
-            <li><b>Rol:</b> ${rol}</li>
-          </ul>
-        `
-        enviarCorreo({ para: correo, asunto, html })
-      }
-
-      toast.success('Entrada registrada.')
-      // Cerrar sesión como solicitaste
-      await new Promise(r => setTimeout(r, 600))
-      cerrarSesion(router)
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  // Salida
-  const registrarSalida = async () => {
-    if (!salidaHabilitada || !user || !registroAbierto) return
-    setGuardando(true)
-    try {
-      const { fecha, hora, timestamp } = ahoraBogota()
-
-      // Calcular duración (minutos) entre timestamp_entrada y ahora
-      const tsIn = registroAbierto.timestamp_entrada
-      const tsOut = timestamp
-      let minutos = 0
       try {
-        const start = new Date(tsIn).getTime()
-        const end   = new Date(tsOut).getTime()
-        minutos = Math.max(0, Math.round((end - start) / (1000 * 60)))
-      } catch {
-        minutos = 0
+        const response =
+          await fetch(
+            '/api/email/enviar',
+            {
+              method:
+                'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  para,
+                  asunto,
+                  html,
+                }),
+            }
+          )
+
+        const result =
+          await response.json()
+
+        if (
+          !result?.ok
+        ) {
+          console.error(
+            'Error enviando correo:',
+            result?.error
+          )
+        }
+      } catch (error) {
+        console.error(
+          'Error enviando correo:',
+          error?.message ||
+          error
+        )
       }
+    }
 
-      const { error } = await supabase
-        .from('horarios')
-        .update({
-          timestamp_salida: timestamp,
-          fecha_salida: fecha,
-          hora_salida: hora,
-          duracion_jornada: minutos, // guardado en minutos (entero, sin decimales)
-          estado_registro: 'Cerrado'
-        })
-        .eq('id', registroAbierto.id)
+  // ==========================================================
+  // REGISTRAR ASISTENCIA A REUNIÓN
+  // ==========================================================
 
-      if (error) {
-        console.error('Supabase update error (salida):', error)
-        toast.error('No se pudo registrar la salida.')
-        setGuardando(false)
+  const registrarAsistenciaReunion =
+    async () => {
+      if (
+        !user ||
+        !nitActual
+      ) {
+        toast.error(
+          'No hay una sesión válida.'
+        )
+
         return
       }
 
-      // Correo
-      const correo = await obtenerEmailUsuario()
-      if (correo) {
-        const asunto = `Salida registrada - ${fecha}`
-        const html = `
-          <p>Hola ${user.nombreCompleto},</p>
-          <p>Se registró tu <b>salida</b> correctamente.</p>
-          <ul>
-            <li><b>Fecha:</b> ${fecha}</li>
-            <li><b>Hora:</b> ${hora}</li>
-            <li><b>Duración:</b> ${humanHM(minutos)}</li>
-            <li><b>Usuario:</b> ${user.usuario}</li>
-            <li><b>Rol:</b> ${user.rol}</li>
-          </ul>
-        `
-        enviarCorreo({ para: correo, asunto, html })
+      if (
+        !user?.documento
+      ) {
+        toast.error(
+          'El usuario no tiene documento registrado.'
+        )
+
+        return
       }
 
-      toast.success(`Salida registrada. Duración: ${humanHM(minutos)}`)
+      if (
+        !reunionActiva
+          ?.enlace_asistencia
+      ) {
+        toast.warning(
+          'No hay reunión activa.'
+        )
 
-      // Cerrar sesión como solicitaste
-      await new Promise(r => setTimeout(r, 800))
-      cerrarSesion(router)
-    } finally {
-      setGuardando(false)
+        return
+      }
+
+      setEnviandoAsistencia(
+        true
+      )
+
+      try {
+        const response =
+          await fetch(
+            '/api/asistencias',
+            {
+              method:
+                'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  nit:
+                    nitActual,
+
+                  enlace_asistencia:
+                    reunionActiva
+                      .enlace_asistencia,
+
+                  user: {
+                    documento:
+                      user.documento,
+
+                    nombreCompleto:
+                      user.nombreCompleto ||
+                      user.nombre_completo ||
+                      '',
+
+                    role:
+                      user.rol ||
+                      user.role ||
+                      '',
+                  },
+                }),
+            }
+          )
+
+        const result =
+          await response.json()
+
+        if (
+          result?.status ===
+          'success'
+        ) {
+          toast.success(
+            'Asistencia registrada.'
+          )
+
+          return
+        }
+
+        if (
+          result?.status ===
+          'warning'
+        ) {
+          toast.warning(
+            result?.message ||
+            'Aviso.'
+          )
+
+          return
+        }
+
+        toast.error(
+          result?.message ||
+          'Error al registrar asistencia.'
+        )
+      } catch (error) {
+        console.error(
+          'Error registrando asistencia:',
+          error
+        )
+
+        toast.error(
+          'Error al registrar asistencia.'
+        )
+      } finally {
+        setEnviandoAsistencia(
+          false
+        )
+      }
     }
-  }
 
-  // ---- Render ----
-  if (!user) return <p className="text-center mt-20">Cargando...</p>
+  // ==========================================================
+  // MENSAJE DE ESTADO
+  // ==========================================================
+
+  const statusMessage =
+    useMemo(() => {
+      if (
+        cargandoEstado
+      ) {
+        return ''
+      }
+
+      if (
+        tengoAbierta &&
+        registroAbierto
+      ) {
+        return (
+          `Tiene una jornada abierta desde ` +
+          `${registroAbierto.fecha_entrada || '-'} ` +
+          `${registroAbierto.hora_entrada || '-'}`
+        )
+      }
+
+      return (
+        'No tiene jornada abierta. Puede registrar entrada.'
+      )
+    }, [
+      cargandoEstado,
+      tengoAbierta,
+      registroAbierto,
+    ])
+
+  // ==========================================================
+  // HABILITACIÓN
+  // ==========================================================
+
+  const entradaHabilitada =
+    useMemo(() => {
+      if (!user) {
+        return false
+      }
+
+      return (
+        esRolPermitido(
+          user.rol ||
+          user.role
+        ) &&
+        !tengoAbierta &&
+        !guardando &&
+        !cargandoEstado
+      )
+    }, [
+      user,
+      tengoAbierta,
+      guardando,
+      cargandoEstado,
+    ])
+
+  const salidaHabilitada =
+    useMemo(() => {
+      if (!user) {
+        return false
+      }
+
+      return (
+        esRolPermitido(
+          user.rol ||
+          user.role
+        ) &&
+        tengoAbierta &&
+        Boolean(
+          registroAbierto
+        ) &&
+        !guardando &&
+        !cargandoEstado
+      )
+    }, [
+      user,
+      tengoAbierta,
+      registroAbierto,
+      guardando,
+      cargandoEstado,
+    ])
+
+  // ==========================================================
+  // REGISTRAR ENTRADA
+  // ==========================================================
+
+  const registrarEntrada =
+    async () => {
+      if (
+        !entradaHabilitada ||
+        !user ||
+        !nitActual
+      ) {
+        return
+      }
+
+      setGuardando(
+        true
+      )
+
+      try {
+        const response =
+          await fetch(
+            '/api/horarios/simple',
+            {
+              method:
+                'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  nit:
+                    nitActual,
+
+                  accion:
+                    'registrar_entrada',
+
+                  usuario:
+                    user.usuario,
+
+                  nombre_completo:
+                    user.nombreCompleto ||
+                    user.nombre_completo ||
+                    '',
+
+                  rol:
+                    user.rol ||
+                    user.role ||
+                    '',
+                }),
+            }
+          )
+
+        const result =
+          await response.json()
+
+        if (
+          response.status ===
+            409 ||
+          result?.status ===
+            'warning'
+        ) {
+          toast.warning(
+            result?.message ||
+            'Ya existe una jornada abierta.'
+          )
+
+          if (
+            result?.jornada
+          ) {
+            setTengoAbierta(
+              true
+            )
+
+            setRegistroAbierto(
+              result.jornada
+            )
+          }
+
+          return
+        }
+
+        if (
+          !response.ok ||
+          result?.status !==
+            'success'
+        ) {
+          toast.error(
+            result?.message ||
+            'No fue posible registrar la entrada.'
+          )
+
+          return
+        }
+
+        const jornada =
+          result?.jornada ||
+          {}
+
+        // ====================================================
+        // CORREO
+        // ====================================================
+
+        if (
+          result?.email
+        ) {
+          const asunto =
+            `Entrada registrada - ${jornada.fecha_entrada || ''}`
+
+          const html = `
+            <p>Hola ${
+              user.nombreCompleto ||
+              user.nombre_completo ||
+              ''
+            },</p>
+
+            <p>
+              Se registró tu <b>entrada</b> correctamente.
+            </p>
+
+            <ul>
+              <li>
+                <b>Fecha:</b>
+                ${jornada.fecha_entrada || '-'}
+              </li>
+
+              <li>
+                <b>Hora:</b>
+                ${jornada.hora_entrada || '-'}
+              </li>
+
+              <li>
+                <b>Usuario:</b>
+                ${user.usuario || '-'}
+              </li>
+
+              <li>
+                <b>Rol:</b>
+                ${jornada.rol || user.rol || '-'}
+              </li>
+            </ul>
+          `
+
+          enviarCorreo({
+            para:
+              result.email,
+
+            asunto,
+
+            html,
+          })
+        }
+
+        toast.success(
+          'Entrada registrada.'
+        )
+
+        // ====================================================
+        // CERRAR SESIÓN
+        // ====================================================
+
+        await new Promise(
+          (resolve) =>
+            setTimeout(
+              resolve,
+              600
+            )
+        )
+
+        cerrarSesion(
+          router
+        )
+      } catch (error) {
+        console.error(
+          'Error registrando entrada:',
+          error
+        )
+
+        toast.error(
+          'No fue posible registrar la entrada.'
+        )
+      } finally {
+        setGuardando(
+          false
+        )
+      }
+    }
+
+  // ==========================================================
+  // REGISTRAR SALIDA
+  // ==========================================================
+
+  const registrarSalida =
+    async () => {
+      if (
+        !salidaHabilitada ||
+        !user ||
+        !nitActual ||
+        !registroAbierto
+      ) {
+        return
+      }
+
+      setGuardando(
+        true
+      )
+
+      try {
+        const response =
+          await fetch(
+            '/api/horarios/simple',
+            {
+              method:
+                'PATCH',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  nit:
+                    nitActual,
+
+                  accion:
+                    'registrar_salida',
+
+                  usuario:
+                    user.usuario,
+
+                  rol:
+                    user.rol ||
+                    user.role ||
+                    '',
+
+                  registro_id:
+                    registroAbierto.id,
+                }),
+            }
+          )
+
+        const result =
+          await response.json()
+
+        if (
+          response.status ===
+            409 ||
+          result?.status ===
+            'warning'
+        ) {
+          toast.warning(
+            result?.message ||
+            'La jornada ya se encuentra cerrada.'
+          )
+
+          await cargarEstado()
+
+          return
+        }
+
+        if (
+          !response.ok ||
+          result?.status !==
+            'success'
+        ) {
+          toast.error(
+            result?.message ||
+            'No fue posible registrar la salida.'
+          )
+
+          return
+        }
+
+        const jornada =
+          result?.jornada ||
+          {}
+
+        const minutos =
+          Number(
+            result
+              ?.duracion_minutos ||
+            jornada
+              ?.duracion_jornada ||
+            0
+          )
+
+        // ====================================================
+        // CORREO
+        // ====================================================
+
+        if (
+          result?.email
+        ) {
+          const asunto =
+            `Salida registrada - ${jornada.fecha_salida || ''}`
+
+          const html = `
+            <p>Hola ${
+              user.nombreCompleto ||
+              user.nombre_completo ||
+              ''
+            },</p>
+
+            <p>
+              Se registró tu <b>salida</b> correctamente.
+            </p>
+
+            <ul>
+              <li>
+                <b>Fecha:</b>
+                ${jornada.fecha_salida || '-'}
+              </li>
+
+              <li>
+                <b>Hora:</b>
+                ${jornada.hora_salida || '-'}
+              </li>
+
+              <li>
+                <b>Duración:</b>
+                ${humanHM(minutos)}
+              </li>
+
+              <li>
+                <b>Usuario:</b>
+                ${user.usuario || '-'}
+              </li>
+
+              <li>
+                <b>Rol:</b>
+                ${jornada.rol || user.rol || '-'}
+              </li>
+            </ul>
+          `
+
+          enviarCorreo({
+            para:
+              result.email,
+
+            asunto,
+
+            html,
+          })
+        }
+
+        toast.success(
+          `Salida registrada. Duración: ${humanHM(
+            minutos
+          )}`
+        )
+
+        // ====================================================
+        // CERRAR SESIÓN
+        // ====================================================
+
+        await new Promise(
+          (resolve) =>
+            setTimeout(
+              resolve,
+              800
+            )
+        )
+
+        cerrarSesion(
+          router
+        )
+      } catch (error) {
+        console.error(
+          'Error registrando salida:',
+          error
+        )
+
+        toast.error(
+          'No fue posible registrar la salida.'
+        )
+      } finally {
+        setGuardando(
+          false
+        )
+      }
+    }
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
+
+  if (!user) {
+    return (
+      <p className="text-center mt-20">
+        Cargando...
+      </p>
+    )
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
-      <Toaster position="top-center" richColors />
+
+      <Toaster
+        position="top-center"
+        richColors
+      />
+
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
 
-        
+        {/* ==================================================
+            ENCABEZADO
+        ================================================== */}
 
-        {/* Encabezado */}
         <div className="flex flex-col items-center mb-6">
+
           <i className="fas fa-clock text-3xl text-[var(--primary)] mb-2"></i>
+
           <h2 className="text-xl font-bold uppercase text-[var(--primary)] text-center">
             Registro de Horarios
           </h2>
+
         </div>
 
-        {/* Info usuario */}
+        {/* ==================================================
+            INFORMACIÓN USUARIO
+        ================================================== */}
+
         <p className="bg-blue-50 border border-blue-200 text-[var(--primary-dark)] p-2 rounded-md mb-6 text-center text-sm">
-          Usuario: <strong>{user.nombreCompleto}</strong> ({user.rol})
+
+          Usuario:{' '}
+
+          <strong>
+            {user.nombreCompleto ||
+              user.nombre_completo}
+          </strong>
+
+          {' '}
+
+          (
+          {user.rol ||
+            user.role}
+          )
+
+          {user.nombreEmpresa && (
+            <span className="block mt-1">
+              CEA:{' '}
+
+              <strong>
+                {user.nombreEmpresa}
+              </strong>
+            </span>
+          )}
+
         </p>
 
-        {/* Mensaje estado */}
+        {/* ==================================================
+            ESTADO JORNADA
+        ================================================== */}
+
         <div
-          id="status-message"
           className="text-center text-sm font-medium text-blue-800 bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-4 min-h-[1.5em]"
         >
-          {statusMessage}
+          {cargandoEstado ? (
+            <span>
+              <i className="fas fa-spinner fa-spin mr-2"></i>
+              Consultando jornada...
+            </span>
+          ) : (
+            statusMessage
+          )}
         </div>
 
-        {/* Asistencia reunión (visible solo si hay reunión activa) */}
-        <div
-          id="asistenciaReunionContainer"
-          className={`${reunionActiva ? '' : 'hidden'} text-center mb-6`}
-        >
-          <button
-            onClick={registrarAsistenciaReunion}
-            disabled={enviandoAsistencia}
-            className="text-[var(--primary)] hover:underline flex items-center justify-center gap-2 mx-auto disabled:opacity-60"
-            title={reunionActiva ? `Reunión: ${reunionActiva.tipo_reunion} (${reunionActiva.hora_inicio}–${reunionActiva.hora_fin})` : ''}
-          >
-            <i className="fas fa-check-circle"></i>
-            {enviandoAsistencia ? 'Enviando...' : 'Registrar asistencia a reunión'}
-          </button>
-        </div>
+        {/* ==================================================
+            ASISTENCIA A REUNIÓN
+        ================================================== */}
 
-        {/* Botones principales en cards */}
+        {reunionActiva && (
+
+          <div className="text-center mb-6">
+
+            <button
+              onClick={
+                registrarAsistenciaReunion
+              }
+              disabled={
+                enviandoAsistencia
+              }
+              className="text-[var(--primary)] hover:underline flex items-center justify-center gap-2 mx-auto disabled:opacity-60"
+              title={
+                `Reunión: ${
+                  reunionActiva
+                    .tipo_reunion ||
+                  ''
+                } (${
+                  reunionActiva
+                    .hora_inicio ||
+                  ''
+                }–${
+                  reunionActiva
+                    .hora_fin ||
+                  ''
+                })`
+              }
+            >
+
+              <i className="fas fa-check-circle"></i>
+
+              {enviandoAsistencia
+                ? 'Enviando...'
+                : 'Registrar asistencia a reunión'}
+
+            </button>
+
+          </div>
+
+        )}
+
+        {/* ==================================================
+            ENTRADA / SALIDA
+        ================================================== */}
+
         <div className="grid grid-cols-2 gap-4 mb-6">
+
           <button
-            onClick={registrarEntrada}
-            disabled={!entradaHabilitada}
-            className={`h-24 flex flex-col items-center justify-center gap-2 rounded-lg 
-                       bg-white text-gray-700 shadow-lg border border-gray-300
-                       hover:bg-[var(--primary)] hover:text-white 
-                       transform hover:-translate-y-1 hover:shadow-xl
-                       transition-all duration-200 ease-in-out text-sm font-medium
-                       ${!entradaHabilitada ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+            onClick={
+              registrarEntrada
+            }
+            disabled={
+              !entradaHabilitada
+            }
+            className={`h-24 flex flex-col items-center justify-center gap-2 rounded-lg
+              bg-white text-gray-700 shadow-lg border border-gray-300
+              hover:bg-[var(--primary)] hover:text-white
+              transform hover:-translate-y-1 hover:shadow-xl
+              transition-all duration-200 ease-in-out text-sm font-medium
+              ${
+                !entradaHabilitada
+                  ? 'opacity-50 cursor-not-allowed pointer-events-none'
+                  : ''
+              }`}
           >
+
             <i className="fas fa-sign-in-alt text-2xl"></i>
-            Entrada
+
+            {guardando
+              ? 'Procesando...'
+              : 'Entrada'}
+
           </button>
+
           <button
-            onClick={registrarSalida}
-            disabled={!salidaHabilitada}
-            className={`h-24 flex flex-col items-center justify-center gap-2 rounded-lg 
-                       bg-white text-gray-700 shadow-lg border border-gray-300
-                       hover:bg-[var(--primary)] hover:text-white 
-                       transform hover:-translate-y-1 hover:shadow-xl
-                       transition-all duration-200 ease-in-out text-sm font-medium
-                       ${!salidaHabilitada ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+            onClick={
+              registrarSalida
+            }
+            disabled={
+              !salidaHabilitada
+            }
+            className={`h-24 flex flex-col items-center justify-center gap-2 rounded-lg
+              bg-white text-gray-700 shadow-lg border border-gray-300
+              hover:bg-[var(--primary)] hover:text-white
+              transform hover:-translate-y-1 hover:shadow-xl
+              transition-all duration-200 ease-in-out text-sm font-medium
+              ${
+                !salidaHabilitada
+                  ? 'opacity-50 cursor-not-allowed pointer-events-none'
+                  : ''
+              }`}
           >
+
             <i className="fas fa-sign-out-alt text-2xl"></i>
-            Salida
+
+            {guardando
+              ? 'Procesando...'
+              : 'Salida'}
+
           </button>
+
         </div>
 
-        {/* Botón cerrar sesión */}
+        {/* ==================================================
+            CERRAR SESIÓN
+        ================================================== */}
+
         <div className="flex justify-center">
+
           <button
-            onClick={() => cerrarSesion(router)}
-            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] 
-                       text-white font-medium py-2 px-6 rounded-lg 
-                       flex items-center justify-center gap-2 
-                       shadow-md hover:shadow-lg transition text-sm"
+            onClick={() =>
+              cerrarSesion(
+                router
+              )
+            }
+            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)]
+              text-white font-medium py-2 px-6 rounded-lg
+              flex items-center justify-center gap-2
+              shadow-md hover:shadow-lg transition text-sm"
           >
+
             <i className="fas fa-sign-out-alt"></i>
+
             Cerrar Sesión
+
           </button>
+
         </div>
+
       </div>
+
     </div>
   )
 }

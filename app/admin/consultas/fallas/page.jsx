@@ -1,612 +1,3130 @@
+// app/admin/consultas/fallas/page.jsx
+
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
-import { Toaster, toast } from 'sonner'
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
-// Helpers fecha/hora Bogotá
-const fmtBogota = (date, mode) => {
-  const optFecha = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Bogota' }
-  const optHora  = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'America/Bogota' }
-  return new Intl.DateTimeFormat('en-CA', mode === 'fecha' ? optFecha : optHora).format(date) // YYYY-MM-DD / HH:mm:ss
+import {
+  useRouter,
+} from 'next/navigation'
+
+import {
+  Toaster,
+  toast,
+} from 'sonner'
+
+import {
+  cerrarSesion,
+} from '@/lib/auth/logout'
+
+// =========================================================
+// CONSTANTES
+// =========================================================
+
+const PAGE_SIZE = 50
+
+const ESTADOS = [
+  'PENDIENTE',
+  'EN ANÁLISIS',
+  'CERRADA',
+]
+
+// =========================================================
+// HELPERS
+// =========================================================
+
+function normalizarTexto(valor) {
+  return String(
+    valor ?? ''
+  ).trim()
 }
-const hoyBogota = () => fmtBogota(new Date(), 'fecha')
 
-// Chip visual por estado
-const EstadoChip = ({ estado }) => {
-  const e = String(estado || '').toUpperCase()
-  const color =
-    e === 'CERRADA' ? 'bg-green-100 text-green-700 border-green-300' :
-    e.includes('ANÁLISIS') ? 'bg-blue-100 text-blue-700 border-blue-300' :
-    e === 'PENDIENTE' ? 'bg-amber-100 text-amber-700 border-amber-300' :
-    'bg-gray-100 text-gray-700 border-gray-300'
-  return <span className={`px-2 py-[2px] rounded border text-[11px] font-semibold ${color}`}>{estado || '-'}</span>
-}
-
-export default function FallasPage() {
-  const router = useRouter()
-  const [user, setUser] = useState(null)
-
-  // Filtros
-  const [filters, setFilters] = useState({ startDate: '', endDate: '' })
-
-  // Datos/Paginación
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState('')
-  const [page, setPage] = useState(1)
-  const pageSize = 50
-  const [total, setTotal] = useState(0)
-
-  // Drawer seguimiento
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [rowSel, setRowSel] = useState(null)
-  const [obsCierre, setObsCierre] = useState('')
-  const [closing, setClosing] = useState(false) // anti doble-click
-
-  // Cargar usuario
-  useEffect(() => {
-    const stored = localStorage.getItem('currentUser')
-    if (!stored) { router.push('/login'); return }
-    setUser(JSON.parse(stored))
-  }, [router])
-
-  // Filtros handlers
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFilters(prev => ({ ...prev, [name]: value }))
-  }
-  const validarRango = () => {
-    const { startDate, endDate } = filters
-    if (!startDate || !endDate) { toast.warning('Debes seleccionar ambas fechas.'); setStatus('⚠️ Debe seleccionar ambas fechas.'); return false }
-    if (endDate < startDate) { toast.warning('La fecha fin no puede ser menor que la fecha inicio.'); setStatus('⚠️ Rango de fechas inválido.'); return false }
-    return true
-  }
-
-  // Consultar
-  const handleConsultar = async (goToPage = 1) => {
-    if (!validarRango()) return
-    setLoading(true); setStatus('Consultando datos...'); setPage(goToPage)
-
-    try {
-      let query = supabase
-        .from('reporte_fallas')
-        .select(`
-          id,
-          consecutivo,
-          fecha,
-          hora,
-          placa,
-          tipo_vehiculo,
-          marca,
-          kilometraje,
-          nombre_encargado,
-          descripcion_falla,
-          acciones_tomadas,
-          estado,
-          observaciones_seguimiento,
-          fecha_verificacion,
-          fecha_solucion,
-          usuario_soluciona
-        `, { count: 'exact' })
-        .gte('fecha', filters.startDate)
-        .lte('fecha', filters.endDate)
-        .order('fecha', { ascending: false })
-        .order('hora', { ascending: false })
-
-      const from = (goToPage - 1) * pageSize
-      const to   = from + pageSize - 1
-      query = query.range(from, to)
-
-      const { data: rows, error, count } = await query
-      if (error) {
-        console.error('Error consultando fallas:', error)
-        toast.error('❌ Error al consultar fallas.')
-        setStatus('❌ Error al consultar fallas.')
-        return
-      }
-      setData(rows || [])
-      setTotal(count || 0)
-      setStatus(`Consulta completada. ${count || 0} registros encontrados.`)
-    } catch (err) {
-      console.error(err)
-      toast.error('❌ Error al consultar fallas.')
-      setStatus('❌ Error al consultar fallas.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleLimpiar = () => {
-    setFilters({ startDate: '', endDate: '' })
-    setData([]); setTotal(0); setPage(1); setStatus('')
-  }
-
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil((total || 0) / pageSize)),
-    [total, pageSize]
+function obtenerNitEmpresa(user) {
+  return normalizarTexto(
+    user?.nitEmpresa ||
+    user?.nit_empresa ||
+    user?.empresa?.nit ||
+    user?.nit ||
+    localStorage.getItem(
+      'currentEmpresaNit'
+    )
   )
+}
 
-  // Drawer control
-  const abrirSeguimiento = (row) => {
-    setRowSel(row)
-    setObsCierre(row?.observaciones_seguimiento || '')
-    setClosing(false)
-    setDrawerOpen(true)
-  }
-  const cerrarDrawer = () => {
-    setDrawerOpen(false)
-    setRowSel(null)
-    setObsCierre('')
-    setClosing(false)
-  }
-
-  // Acciones
-  const marcarEnAnalisis = async () => {
-    if (!rowSel) return
-    const estadoUpper = String(rowSel.estado || '').toUpperCase()
-    if (estadoUpper === 'CERRADA') { toast.info('La falla ya está CERRADA.'); return }
-    if (estadoUpper.includes('ANÁLISIS')) { toast.info('Ya está EN ANÁLISIS.'); return }
-
-    const hoy = hoyBogota()
-    const { error } = await supabase
-      .from('reporte_fallas')
-      .update({ estado: 'EN ANÁLISIS', fecha_verificacion: hoy })
-      .eq('id', rowSel.id)
-    if (error) { console.error(error); toast.error('No se pudo marcar EN ANÁLISIS.'); return }
-
-    toast.success('Marcado EN ANÁLISIS.')
-    const updated = { ...rowSel, estado: 'EN ANÁLISIS', fecha_verificacion: hoy }
-    setRowSel(updated)
-    setData(prev => prev.map(r => r.id === updated.id ? updated : r))
-  }
-
-  const cerrarFalla = async () => {
-    if (!rowSel || closing) return
-    if (!obsCierre.trim()) { toast.warning('Debes ingresar la observación de cierre.'); return }
-    setClosing(true)
-    try {
-      const estadoUpper = String(rowSel.estado || '').toUpperCase()
-      if (estadoUpper === 'CERRADA') { toast.info('La falla ya está CERRADA.'); return }
-
-      const hoy = hoyBogota()
-      const { error } = await supabase
-        .from('reporte_fallas')
-        .update({
-          estado: 'CERRADA',
-          fecha_solucion: hoy,
-          usuario_soluciona: user?.nombreCompleto || user?.usuario || '',
-          observaciones_seguimiento: obsCierre.trim()
-        })
-        .eq('id', rowSel.id)
-
-      if (error) { console.error(error); toast.error('No se pudo CERRAR la falla.'); return }
-
-      toast.success('Falla CERRADA.')
-      const updated = {
-        ...rowSel,
-        estado: 'CERRADA',
-        fecha_solucion: hoy,
-        usuario_soluciona: user?.nombreCompleto || user?.usuario || '',
-        observaciones_seguimiento: obsCierre.trim()
-      }
-      setRowSel(updated)
-      setData(prev => prev.map(r => r.id === updated.id ? updated : r))
-    } finally {
-      setClosing(false)
+function hoyBogota() {
+  return new Intl.DateTimeFormat(
+    'en-CA',
+    {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      timeZone: 'America/Bogota',
     }
-  }
+  ).format(new Date())
+}
 
-  // Export XLSX con formato
-  const exportXLSX = async () => {
-    if (!data || data.length === 0) return
-    const [{ default: ExcelJS }, { saveAs }] = await Promise.all([
-      import('exceljs'),
-      import('file-saver')
-    ])
+function normEstado(valor) {
+  return String(
+    valor || ''
+  )
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(
+      /[\u0300-\u036f]/g,
+      ''
+    )
+    .replace(
+      /\s+/g,
+      ' '
+    )
+    .trim()
+}
 
-    const wb = new ExcelJS.Workbook()
-    const ws = wb.addWorksheet('Fallas')
-
-    const headers = [
-      'Consecutivo','Fecha','Hora','Placa','Tipo','Marca','KM','Encargado',
-      'Descripción','Acciones','Estado','Obs. Seguimiento','F. Verificación','F. Solución','U. Soluciona'
-    ]
-    ws.addRow(headers)
-    const headerRow = ws.getRow(1)
-    headerRow.eachCell((cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } } // azul oscuro
-      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-      cell.border = {
-        top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-        bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-        right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-      }
-    })
-    headerRow.height = 22
-
-    const rows = data.map(r => [
-      r.consecutivo || '',
-      r.fecha || '',
-      r.hora || '',
-      r.placa || '',
-      r.tipo_vehiculo || '',
-      r.marca || '',
-      r.kilometraje ?? '',
-      r.nombre_encargado || '',
-      (r.descripcion_falla || '').replace(/\r?\n/g, ' '),
-      (r.acciones_tomadas || '').replace(/\r?\n/g, ' '),
-      r.estado || '',
-      (r.observaciones_seguimiento || '').replace(/\r?\n/g, ' '),
-      r.fecha_verificacion || '',
-      r.fecha_solucion || '',
-      r.usuario_soluciona || '',
-    ])
-    rows.forEach(arr => {
-      const row = ws.addRow(arr)
-      row.eachCell((cell, col) => {
-        cell.alignment = { vertical: 'middle', horizontal: col <= 8 ? 'center' : 'left', wrapText: true }
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-        }
-      })
-    })
-
-    // auto ancho
-    for (let i = 1; i <= headers.length; i++) {
-      let max = headers[i - 1].length
-      ws.eachRow({ includeEmpty: false }, row => {
-        const v = row.getCell(i).value
-        const s = v == null ? '' : String(v)
-        max = Math.max(max, Math.min(s.length, 120))
-      })
-      ws.getColumn(i).width = Math.min(Math.max(max + 2, 10), 60)
+function fmtNumero(valor) {
+  return Number(
+    valor || 0
+  ).toLocaleString(
+    'es-CO',
+    {
+      maximumFractionDigits: 0,
     }
-    ws.views = [{ state: 'frozen', ySplit: 1 }]
+  )
+}
 
-    const buf = await wb.xlsx.writeBuffer()
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    saveAs(blob, `fallas_${filters.startDate || 'inicio'}_${filters.endDate || 'fin'}.xlsx`)
+async function leerRespuestaApi(response) {
+  const contentType =
+    response.headers.get(
+      'content-type'
+    ) || ''
+
+  if (
+    !contentType.includes(
+      'application/json'
+    )
+  ) {
+    const texto =
+      await response.text()
+
+    console.error(
+      'Respuesta no JSON:',
+      texto.slice(0, 500)
+    )
+
+    throw new Error(
+      `La API respondió contenido no JSON. HTTP ${response.status}`
+    )
   }
 
-  // Export PDF (impresión)
-  const exportPDF = () => {
-    if (!data || data.length === 0) return
-    const win = window.open('', '_blank')
-    if (!win) { toast.warning('Permite ventanas emergentes para exportar a PDF.'); return }
+  const data =
+    await response.json()
 
-    const style = `
-      <style>
-        body { font-family: Arial, sans-serif; font-size: 11px; }
-        h3 { text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        th, td { border: 1px solid #444; padding: 4px; text-align: center; }
-        th { background: #1f2937; color: #fff; }
-        tr:nth-child(even) { background: #f3f4f6; }
-      </style>
-    `
-    const headers = `
-      <tr>
-        <th>Consecutivo</th><th>Fecha</th><th>Hora</th><th>Placa</th><th>Tipo</th><th>Marca</th><th>KM</th>
-        <th>Encargado</th><th>Descripción</th><th>Acciones</th><th>Estado</th><th>Obs. Seg.</th>
-        <th>F. Verificación</th><th>F. Solución</th><th>U. Soluciona</th>
-      </tr>
-    `
-    const rows = data.map(r => `
-      <tr>
-        <td>${r.consecutivo || ''}</td>
-        <td>${r.fecha || ''}</td>
-        <td>${r.hora || ''}</td>
-        <td>${r.placa || ''}</td>
-        <td>${r.tipo_vehiculo || ''}</td>
-        <td>${r.marca || ''}</td>
-        <td>${r.kilometraje ?? ''}</td>
-        <td>${r.nombre_encargado || ''}</td>
-        <td>${(r.descripcion_falla || '').replace(/\r?\n/g, ' ')}</td>
-        <td>${(r.acciones_tomadas || '').replace(/\r?\n/g, ' ')}</td>
-        <td>${r.estado || ''}</td>
-        <td>${(r.observaciones_seguimiento || '').replace(/\r?\n/g, ' ')}</td>
-        <td>${r.fecha_verificacion || ''}</td>
-        <td>${r.fecha_solucion || ''}</td>
-        <td>${r.usuario_soluciona || ''}</td>
-      </tr>
-    `).join('')
-
-    win.document.write(`
-      <html><head><title>Fallas</title>${style}</head>
-      <body>
-        <h3>Reportes de Fallas (${filters.startDate} a ${filters.endDate})</h3>
-        <table>${headers}${rows}</table>
-        <script>window.onload = () => { window.print(); }</script>
-      </body></html>
-    `)
-    win.document.close()
+  if (
+    !response.ok ||
+    data?.status !== 'success'
+  ) {
+    throw new Error(
+      data?.message ||
+      `Error HTTP ${response.status}`
+    )
   }
 
-  // Flags para el drawer
-  const estadoUpper = String(rowSel?.estado || '').toUpperCase()
-  const esPendiente = estadoUpper === 'PENDIENTE'
-  const esCerrada   = estadoUpper === 'CERRADA'
-  const esAnalisis  = estadoUpper.includes('ANÁLISIS')
+  return data
+}
+
+// =========================================================
+// CHIP ESTADO
+// =========================================================
+
+function EstadoChip({
+  estado,
+}) {
+  const e =
+    normEstado(
+      estado
+    )
+
+  let color =
+    'bg-gray-100 text-gray-700 border-gray-300'
+
+  if (
+    e === 'CERRADA'
+  ) {
+    color =
+      'bg-green-100 text-green-700 border-green-300'
+  }
+
+  if (
+    e === 'EN ANALISIS'
+  ) {
+    color =
+      'bg-blue-100 text-blue-700 border-blue-300'
+  }
+
+  if (
+    e === 'PENDIENTE'
+  ) {
+    color =
+      'bg-amber-100 text-amber-700 border-amber-300'
+  }
 
   return (
-    <div className="p-4">
-      <Toaster position="top-center" richColors />
-      {!user ? (
-        <p className="text-center mt-20">Cargando...</p>
-      ) : (
-        <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-4">
-          {/* Título */}
-          <h2 className="text-lg font-bold text-center mb-2 flex items-center justify-center gap-2 text-[var(--primary)] border-b pb-2">
-            <i className="fas fa-triangle-exclamation text-[var(--primary)]"></i>
-            Consultar Reportes de Fallas
-          </h2>
+    <span
+      className={`px-2 py-[2px] rounded-full border text-[10px] font-semibold whitespace-nowrap ${color}`}
+    >
+      {estado || '-'}
+    </span>
+  )
+}
 
-          {/* Filtros */}
-          <div className="bg-[var(--primary-dark)] text-white rounded-lg p-2 mb-2">
-            <h3 className="text-xs font-bold mb-1">Filtros de Búsqueda</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-              <div className="flex flex-col">
-                <label className="mb-1">Fecha Inicio</label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={filters.startDate}
-                  onChange={handleChange}
-                  className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="mb-1">Fecha Fin</label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={filters.endDate}
-                  onChange={handleChange}
-                  className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-                />
-              </div>
-            </div>
-          </div>
+// =========================================================
+// KPI
+// =========================================================
 
-          {/* Botones */}
-          <div className="flex flex-wrap justify-center gap-2 mb-2 text-xs">
-            <button
-              onClick={()=>handleConsultar(1)}
-              disabled={loading}
-              className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-60"
-            >
-              <i className="fas fa-search"></i> {loading ? 'Consultando...' : 'Consultar'}
-            </button>
-            <button
-              onClick={handleLimpiar}
-              className="bg-gray-500 hover:bg-gray-700 text-white px-2 py-1 rounded flex items-center gap-1"
-            >
-              <i className="fas fa-eraser"></i> Limpiar
-            </button>
-            <button
-              onClick={exportXLSX}
-              disabled={data.length === 0}
-              className="bg-green-600 hover:bg-green-800 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
-            >
-              <i className="fas fa-file-excel"></i> Excel
-            </button>
-            <button
-              onClick={exportPDF}
-              disabled={data.length === 0}
-              className="bg-red-600 hover:bg-red-800 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
-            >
-              <i className="fas fa-file-pdf"></i> PDF
-            </button>
-          </div>
+function Kpi({
+  titulo,
+  valor,
+  icono,
+  tipo = 'normal',
+}) {
+  let contenedor =
+    'bg-blue-50 border-blue-200'
 
-          {/* Área de mensajes */}
+  let texto =
+    'text-blue-800'
+
+  let iconoClase =
+    'bg-blue-100 text-blue-700'
+
+  if (
+    tipo === 'success'
+  ) {
+    contenedor =
+      'bg-green-50 border-green-200'
+
+    texto =
+      'text-green-800'
+
+    iconoClase =
+      'bg-green-100 text-green-700'
+  }
+
+  if (
+    tipo === 'warning'
+  ) {
+    contenedor =
+      'bg-amber-50 border-amber-200'
+
+    texto =
+      'text-amber-800'
+
+    iconoClase =
+      'bg-amber-100 text-amber-700'
+  }
+
+  if (
+    tipo === 'danger'
+  ) {
+    contenedor =
+      'bg-red-50 border-red-200'
+
+    texto =
+      'text-red-800'
+
+    iconoClase =
+      'bg-red-100 text-red-700'
+  }
+
+  return (
+    <div
+      className={`border rounded-xl p-3 ${contenedor}`}
+    >
+      <div className="flex items-center gap-3">
+
+        <div
+          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconoClase}`}
+        >
+          <i
+            className={`fas ${icono}`}
+          ></i>
+        </div>
+
+        <div>
+
+          <p className="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">
+            {titulo}
+          </p>
+
           <p
-            className={`text-center text-xs mb-2 ${
-              status.includes('❌') ? 'text-red-600' : status.includes('⚠️') ? 'text-yellow-600' : 'text-blue-700'
+            className={`text-lg font-black ${texto}`}
+          >
+            {valor}
+          </p>
+
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+// =========================================================
+// PÁGINA
+// =========================================================
+
+export default function FallasPage() {
+  const router =
+    useRouter()
+
+  // =======================================================
+  // SESIÓN
+  // =======================================================
+
+  const [
+    user,
+    setUser,
+  ] =
+    useState(null)
+
+  const [
+    nitActual,
+    setNitActual,
+  ] =
+    useState('')
+
+  // =======================================================
+  // FILTROS
+  // =======================================================
+
+  const [
+    filters,
+    setFilters,
+  ] =
+    useState({
+      startDate: '',
+      endDate: '',
+      placa: '',
+      estado: '',
+    })
+
+  // =======================================================
+  // VEHÍCULOS
+  // =======================================================
+
+  const [
+    vehiculos,
+    setVehiculos,
+  ] =
+    useState([])
+
+  const [
+    cargandoVehiculos,
+    setCargandoVehiculos,
+  ] =
+    useState(false)
+
+  // =======================================================
+  // DATOS
+  // =======================================================
+
+  const [
+    data,
+    setData,
+  ] =
+    useState([])
+
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(false)
+
+  const [
+    status,
+    setStatus,
+  ] =
+    useState('')
+
+  // =======================================================
+  // PAGINACIÓN
+  // =======================================================
+
+  const [
+    page,
+    setPage,
+  ] =
+    useState(1)
+
+  const [
+    total,
+    setTotal,
+  ] =
+    useState(0)
+
+  const [
+    totalPagesApi,
+    setTotalPagesApi,
+  ] =
+    useState(1)
+
+  // =======================================================
+  // RESUMEN
+  // =======================================================
+
+  const [
+    resumen,
+    setResumen,
+  ] =
+    useState({
+      total_fallas: 0,
+      pendientes: 0,
+      en_analisis: 0,
+      cerradas: 0,
+      vehiculos_afectados: 0,
+      encargados_involucrados: 0,
+    })
+
+  // =======================================================
+  // DRAWER
+  // =======================================================
+
+  const [
+    drawerOpen,
+    setDrawerOpen,
+  ] =
+    useState(false)
+
+  const [
+    rowSel,
+    setRowSel,
+  ] =
+    useState(null)
+
+  const [
+    obsCierre,
+    setObsCierre,
+  ] =
+    useState('')
+
+  const [
+    closing,
+    setClosing,
+  ] =
+    useState(false)
+
+  const [
+    changingState,
+    setChangingState,
+  ] =
+    useState(false)
+
+  // =======================================================
+  // EXPORTACIÓN
+  // =======================================================
+
+  const [
+    exporting,
+    setExporting,
+  ] =
+    useState(false)
+
+  // =======================================================
+  // SESIÓN
+  // =======================================================
+
+  useEffect(
+    () => {
+      const stored =
+        localStorage.getItem(
+          'currentUser'
+        )
+
+      if (
+        !stored
+      ) {
+        router.push(
+          '/login'
+        )
+
+        return
+      }
+
+      try {
+        const parsed =
+          JSON.parse(
+            stored
+          )
+
+        const nit =
+          obtenerNitEmpresa(
+            parsed
+          )
+
+        if (
+          !nit
+        ) {
+          toast.error(
+            'No se encontró la empresa asociada a la sesión.'
+          )
+
+          return
+        }
+
+        setUser(
+          parsed
+        )
+
+        setNitActual(
+          nit
+        )
+      } catch (error) {
+        console.error(
+          'Error leyendo sesión:',
+          error
+        )
+
+        localStorage.removeItem(
+          'currentUser'
+        )
+
+        router.push(
+          '/login'
+        )
+      }
+    },
+    [
+      router,
+    ]
+  )
+
+  // =======================================================
+  // CARGAR VEHÍCULOS
+  // =======================================================
+
+  useEffect(
+    () => {
+      if (
+        !nitActual
+      ) {
+        return
+      }
+
+      const cargarVehiculos =
+        async () => {
+          setCargandoVehiculos(
+            true
+          )
+
+          try {
+            const params =
+              new URLSearchParams({
+                nit: nitActual,
+                recurso: 'vehiculos',
+              })
+
+            const response =
+              await fetch(
+                `/api/admin/consultas/fallas?${params.toString()}`,
+                {
+                  cache: 'no-store',
+                }
+              )
+
+            const result =
+              await leerRespuestaApi(
+                response
+              )
+
+            setVehiculos(
+              Array.isArray(
+                result?.vehiculos
+              )
+                ? result.vehiculos
+                : []
+            )
+          } catch (error) {
+            console.error(
+              'Error cargando vehículos:',
+              error
+            )
+
+            setVehiculos(
+              []
+            )
+
+            toast.error(
+              error?.message ||
+              'No fue posible cargar las placas.'
+            )
+          } finally {
+            setCargandoVehiculos(
+              false
+            )
+          }
+        }
+
+      cargarVehiculos()
+    },
+    [
+      nitActual,
+    ]
+  )
+
+  // =======================================================
+  // VEHÍCULOS ORDENADOS
+  // =======================================================
+
+  const vehiculosOrdenados =
+    useMemo(
+      () => {
+        return [
+          ...vehiculos,
+        ].sort(
+          (
+            a,
+            b
+          ) =>
+            String(
+              a?.placa ||
+              ''
+            ).localeCompare(
+              String(
+                b?.placa ||
+                ''
+              ),
+              'es'
+            )
+        )
+      },
+      [
+        vehiculos,
+      ]
+    )
+
+  // =======================================================
+  // FILTROS
+  // =======================================================
+
+  const handleChange =
+    (
+      event
+    ) => {
+      const {
+        name,
+        value,
+      } =
+        event.target
+
+      setFilters(
+        (
+          prev
+        ) => ({
+          ...prev,
+
+          [name]:
+            value,
+        })
+      )
+    }
+
+  // =======================================================
+  // VALIDACIÓN
+  // =======================================================
+
+  const validarRango =
+    () => {
+      const {
+        startDate,
+        endDate,
+      } =
+        filters
+
+      if (
+        !startDate ||
+        !endDate
+      ) {
+        toast.warning(
+          'Debe seleccionar ambas fechas.'
+        )
+
+        setStatus(
+          '⚠️ Debe seleccionar ambas fechas.'
+        )
+
+        return false
+      }
+
+      if (
+        endDate <
+        startDate
+      ) {
+        toast.warning(
+          'La fecha fin no puede ser menor que la fecha inicio.'
+        )
+
+        setStatus(
+          '⚠️ Rango de fechas inválido.'
+        )
+
+        return false
+      }
+
+      const hoy =
+        hoyBogota()
+
+      if (
+        startDate >
+          hoy ||
+        endDate >
+          hoy
+      ) {
+        toast.warning(
+          'No se permiten fechas futuras.'
+        )
+
+        setStatus(
+          '⚠️ No se permiten fechas futuras.'
+        )
+
+        return false
+      }
+
+      return true
+    }
+
+  // =======================================================
+  // CONSULTAR
+  // =======================================================
+
+  const handleConsultar =
+    async (
+      goToPage = 1
+    ) => {
+      if (
+        !validarRango()
+      ) {
+        return
+      }
+
+      if (
+        !nitActual
+      ) {
+        toast.error(
+          'No fue posible identificar la empresa.'
+        )
+
+        return
+      }
+
+      setLoading(
+        true
+      )
+
+      setStatus(
+        'Consultando fallas...'
+      )
+
+      try {
+        const params =
+          new URLSearchParams({
+            nit:
+              nitActual,
+
+            recurso:
+              'consulta',
+
+            fecha_inicio:
+              filters.startDate,
+
+            fecha_fin:
+              filters.endDate,
+
+            pagina:
+              String(
+                goToPage
+              ),
+
+            page_size:
+              String(
+                PAGE_SIZE
+              ),
+          })
+
+        if (
+          filters.placa
+        ) {
+          params.set(
+            'placa',
+            filters.placa
+          )
+        }
+
+        if (
+          filters.estado
+        ) {
+          params.set(
+            'estado',
+            filters.estado
+          )
+        }
+
+        const response =
+          await fetch(
+            `/api/admin/consultas/fallas?${params.toString()}`,
+            {
+              cache: 'no-store',
+            }
+          )
+
+        const result =
+          await leerRespuestaApi(
+            response
+          )
+
+        setData(
+          Array.isArray(
+            result?.registros
+          )
+            ? result.registros
+            : []
+        )
+
+        const paginacion =
+          result?.paginacion ||
+          {}
+
+        setPage(
+          Number(
+            paginacion?.pagina ||
+            goToPage
+          )
+        )
+
+        setTotal(
+          Number(
+            paginacion?.total ||
+            0
+          )
+        )
+
+        setTotalPagesApi(
+          Number(
+            paginacion
+              ?.total_paginas ||
+            1
+          )
+        )
+
+        setResumen(
+          result?.resumen || {
+            total_fallas: 0,
+            pendientes: 0,
+            en_analisis: 0,
+            cerradas: 0,
+            vehiculos_afectados: 0,
+            encargados_involucrados: 0,
+          }
+        )
+
+        setStatus(
+          `Consulta completada. ${Number(
+            paginacion?.total ||
+            0
+          ).toLocaleString(
+            'es-CO'
+          )} registro(s) encontrados.`
+        )
+      } catch (error) {
+        console.error(
+          'Error consultando fallas:',
+          error
+        )
+
+        setData(
+          []
+        )
+
+        setTotal(
+          0
+        )
+
+        setTotalPagesApi(
+          1
+        )
+
+        setStatus(
+          `❌ ${
+            error?.message ||
+            'Error al consultar fallas.'
+          }`
+        )
+
+        toast.error(
+          error?.message ||
+          'Error al consultar fallas.'
+        )
+      } finally {
+        setLoading(
+          false
+        )
+      }
+    }
+
+  // =======================================================
+  // LIMPIAR
+  // =======================================================
+
+  const handleLimpiar =
+    () => {
+      setFilters({
+        startDate: '',
+        endDate: '',
+        placa: '',
+        estado: '',
+      })
+
+      setData(
+        []
+      )
+
+      setTotal(
+        0
+      )
+
+      setPage(
+        1
+      )
+
+      setTotalPagesApi(
+        1
+      )
+
+      setStatus(
+        ''
+      )
+
+      setResumen({
+        total_fallas: 0,
+        pendientes: 0,
+        en_analisis: 0,
+        cerradas: 0,
+        vehiculos_afectados: 0,
+        encargados_involucrados: 0,
+      })
+    }
+
+  // =======================================================
+  // TOTAL PÁGINAS
+  // =======================================================
+
+  const totalPages =
+    Math.max(
+      1,
+      Number(
+        totalPagesApi ||
+        Math.ceil(
+          total /
+          PAGE_SIZE
+        ) ||
+        1
+      )
+    )
+
+  // =======================================================
+  // DRAWER
+  // =======================================================
+
+  const abrirSeguimiento =
+    (
+      row
+    ) => {
+      setRowSel(
+        row
+      )
+
+      setObsCierre(
+        row
+          ?.observaciones_seguimiento ||
+        ''
+      )
+
+      setClosing(
+        false
+      )
+
+      setChangingState(
+        false
+      )
+
+      setDrawerOpen(
+        true
+      )
+    }
+
+  const cerrarDrawer =
+    () => {
+      setDrawerOpen(
+        false
+      )
+
+      setRowSel(
+        null
+      )
+
+      setObsCierre(
+        ''
+      )
+
+      setClosing(
+        false
+      )
+
+      setChangingState(
+        false
+      )
+    }
+
+  // =======================================================
+  // ACTUALIZAR FILA LOCAL
+  // =======================================================
+
+  const actualizarFilaLocal =
+    (
+      registro
+    ) => {
+      if (
+        !registro?.id
+      ) {
+        return
+      }
+
+      setRowSel(
+        registro
+      )
+
+      setData(
+        (
+          prev
+        ) =>
+          prev.map(
+            (
+              item
+            ) =>
+              item.id ===
+              registro.id
+                ? registro
+                : item
+          )
+      )
+    }
+
+  // =======================================================
+  // MARCAR EN ANÁLISIS
+  // =======================================================
+
+  const marcarEnAnalisis =
+    async () => {
+      if (
+        !rowSel ||
+        changingState
+      ) {
+        return
+      }
+
+      const estado =
+        normEstado(
+          rowSel.estado
+        )
+
+      if (
+        estado === 'CERRADA'
+      ) {
+        toast.info(
+          'La falla ya está cerrada.'
+        )
+
+        return
+      }
+
+      if (
+        estado ===
+        'EN ANALISIS'
+      ) {
+        toast.info(
+          'La falla ya está EN ANÁLISIS.'
+        )
+
+        return
+      }
+
+      setChangingState(
+        true
+      )
+
+      try {
+        const response =
+          await fetch(
+            '/api/admin/consultas/fallas',
+            {
+              method:
+                'PATCH',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  nit:
+                    nitActual,
+
+                  accion:
+                    'marcar_en_analisis',
+
+                  id:
+                    rowSel.id,
+                }),
+            }
+          )
+
+        const result =
+          await leerRespuestaApi(
+            response
+          )
+
+        actualizarFilaLocal(
+          result.registro
+        )
+
+        toast.success(
+          result?.message ||
+          'Falla marcada EN ANÁLISIS.'
+        )
+
+        // Reconsultar para mantener resumen correcto
+        await handleConsultar(
+          page
+        )
+      } catch (error) {
+        console.error(
+          'Error marcando EN ANÁLISIS:',
+          error
+        )
+
+        toast.error(
+          error?.message ||
+          'No fue posible marcar EN ANÁLISIS.'
+        )
+      } finally {
+        setChangingState(
+          false
+        )
+      }
+    }
+
+  // =======================================================
+  // CERRAR FALLA
+  // =======================================================
+
+  const cerrarFalla =
+    async () => {
+      if (
+        !rowSel ||
+        closing
+      ) {
+        return
+      }
+
+      const estado =
+        normEstado(
+          rowSel.estado
+        )
+
+      if (
+        estado !==
+        'EN ANALISIS'
+      ) {
+        toast.warning(
+          'Para cerrar, primero cambie el estado a EN ANÁLISIS.'
+        )
+
+        return
+      }
+
+      if (
+        !obsCierre.trim()
+      ) {
+        toast.warning(
+          'Debe ingresar la observación de cierre.'
+        )
+
+        return
+      }
+
+      setClosing(
+        true
+      )
+
+      try {
+        const response =
+          await fetch(
+            '/api/admin/consultas/fallas',
+            {
+              method:
+                'PATCH',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  nit:
+                    nitActual,
+
+                  accion:
+                    'cerrar_falla',
+
+                  id:
+                    rowSel.id,
+
+                  responsable:
+                    user
+                      ?.nombreCompleto ||
+                    user
+                      ?.nombre_completo ||
+                    user
+                      ?.usuario ||
+                    '',
+
+                  observaciones_seguimiento:
+                    obsCierre.trim(),
+                }),
+            }
+          )
+
+        const result =
+          await leerRespuestaApi(
+            response
+          )
+
+        actualizarFilaLocal(
+          result.registro
+        )
+
+        toast.success(
+          result?.message ||
+          'Falla cerrada correctamente.'
+        )
+
+        await handleConsultar(
+          page
+        )
+      } catch (error) {
+        console.error(
+          'Error cerrando falla:',
+          error
+        )
+
+        toast.error(
+          error?.message ||
+          'No fue posible cerrar la falla.'
+        )
+      } finally {
+        setClosing(
+          false
+        )
+      }
+    }
+
+  // =======================================================
+  // DATOS EXPORTACIÓN
+  // =======================================================
+
+  const obtenerDatosExportacion =
+    async () => {
+      if (
+        !validarRango()
+      ) {
+        return null
+      }
+
+      const params =
+        new URLSearchParams({
+          nit:
+            nitActual,
+
+          recurso:
+            'exportar',
+
+          fecha_inicio:
+            filters.startDate,
+
+          fecha_fin:
+            filters.endDate,
+        })
+
+      if (
+        filters.placa
+      ) {
+        params.set(
+          'placa',
+          filters.placa
+        )
+      }
+
+      if (
+        filters.estado
+      ) {
+        params.set(
+          'estado',
+          filters.estado
+        )
+      }
+
+      const response =
+        await fetch(
+          `/api/admin/consultas/fallas?${params.toString()}`,
+          {
+            cache: 'no-store',
+          }
+        )
+
+      return leerRespuestaApi(
+        response
+      )
+    }
+
+  // =======================================================
+  // EXCEL
+  // =======================================================
+
+  const exportXLSX =
+    async () => {
+      if (
+        total === 0
+      ) {
+        return
+      }
+
+      setExporting(
+        true
+      )
+
+      try {
+        const result =
+          await obtenerDatosExportacion()
+
+        if (
+          !result
+        ) {
+          return
+        }
+
+        const allRows =
+          Array.isArray(
+            result?.registros
+          )
+            ? result.registros
+            : []
+
+        if (
+          allRows.length === 0
+        ) {
+          toast.info(
+            'No hay datos para exportar.'
+          )
+
+          return
+        }
+
+        const [
+          {
+            default: ExcelJS,
+          },
+          {
+            saveAs,
+          },
+        ] =
+          await Promise.all([
+            import(
+              'exceljs'
+            ),
+
+            import(
+              'file-saver'
+            ),
+          ])
+
+        const wb =
+          new ExcelJS.Workbook()
+
+        wb.creator =
+          'CEA'
+
+        wb.created =
+          new Date()
+
+        const ws =
+          wb.addWorksheet(
+            'Fallas'
+          )
+
+        const headers = [
+          'Consecutivo',
+          'Fecha',
+          'Hora',
+          'Placa',
+          'Tipo',
+          'Marca',
+          'KM',
+          'Encargado',
+          'Descripción',
+          'Acciones Tomadas',
+          'Estado',
+          'Observaciones Seguimiento',
+          'Fecha Verificación',
+          'Fecha Solución',
+          'Usuario Soluciona',
+        ]
+
+        // =================================================
+        // TÍTULO
+        // =================================================
+
+        ws.addRow([
+          'REPORTE DE FALLAS',
+        ])
+
+        ws.mergeCells(
+          'A1:O1'
+        )
+
+        ws.getCell(
+          'A1'
+        ).font = {
+          bold: true,
+          size: 16,
+        }
+
+        ws.getCell(
+          'A1'
+        ).alignment = {
+          horizontal:
+            'center',
+        }
+
+        ws.addRow([
+          `Empresa: ${
+            result
+              ?.empresa
+              ?.nombre ||
+            user
+              ?.nombreEmpresa ||
+            'CEA'
+          }`,
+        ])
+
+        ws.mergeCells(
+          'A2:O2'
+        )
+
+        ws.addRow([
+          `NIT: ${
+            result
+              ?.empresa
+              ?.nit ||
+            nitActual
+          }`,
+        ])
+
+        ws.mergeCells(
+          'A3:O3'
+        )
+
+        ws.addRow([
+          `Período: ${filters.startDate} a ${filters.endDate}`,
+        ])
+
+        ws.mergeCells(
+          'A4:O4'
+        )
+
+        ws.addRow([])
+
+        // =================================================
+        // ENCABEZADOS
+        // =================================================
+
+        ws.addRow(
+          headers
+        )
+
+        const headerRow =
+          ws.getRow(
+            6
+          )
+
+        headerRow.eachCell(
+          (
+            cell
+          ) => {
+            cell.fill = {
+              type:
+                'pattern',
+
+              pattern:
+                'solid',
+
+              fgColor: {
+                argb:
+                  'FF1F2937',
+              },
+            }
+
+            cell.font = {
+              color: {
+                argb:
+                  'FFFFFFFF',
+              },
+
+              bold: true,
+            }
+
+            cell.alignment = {
+              vertical:
+                'middle',
+
+              horizontal:
+                'center',
+
+              wrapText: true,
+            }
+
+            cell.border = {
+              top: {
+                style: 'thin',
+              },
+
+              left: {
+                style: 'thin',
+              },
+
+              bottom: {
+                style: 'thin',
+              },
+
+              right: {
+                style: 'thin',
+              },
+            }
+          }
+        )
+
+        // =================================================
+        // DATOS
+        // =================================================
+
+        for (
+          const r of
+            allRows
+        ) {
+          const row =
+            ws.addRow([
+              r?.consecutivo ||
+              '',
+
+              r?.fecha ||
+              '',
+
+              r?.hora ||
+              '',
+
+              r?.placa ||
+              '',
+
+              r
+                ?.tipo_vehiculo ||
+              '',
+
+              r?.marca ||
+              '',
+
+              Number(
+                r?.kilometraje ||
+                0
+              ),
+
+              r
+                ?.nombre_encargado ||
+              '',
+
+              String(
+                r
+                  ?.descripcion_falla ||
+                ''
+              ).replace(
+                /\r?\n/g,
+                ' '
+              ),
+
+              String(
+                r
+                  ?.acciones_tomadas ||
+                ''
+              ).replace(
+                /\r?\n/g,
+                ' '
+              ),
+
+              r?.estado ||
+              '',
+
+              String(
+                r
+                  ?.observaciones_seguimiento ||
+                ''
+              ).replace(
+                /\r?\n/g,
+                ' '
+              ),
+
+              r
+                ?.fecha_verificacion ||
+              '',
+
+              r
+                ?.fecha_solucion ||
+              '',
+
+              r
+                ?.usuario_soluciona ||
+              '',
+            ])
+
+          row.eachCell(
+            (
+              cell,
+              col
+            ) => {
+              cell.alignment = {
+                vertical:
+                  'middle',
+
+                horizontal:
+                  col <= 8
+                    ? 'center'
+                    : 'left',
+
+                wrapText: true,
+              }
+            }
+          )
+        }
+
+        ws.getColumn(
+          7
+        ).numFmt =
+          '#,##0'
+
+        const widths = [
+          14,
+          14,
+          12,
+          12,
+          18,
+          18,
+          12,
+          28,
+          40,
+          40,
+          16,
+          40,
+          16,
+          16,
+          28,
+        ]
+
+        widths.forEach(
+          (
+            width,
+            index
+          ) => {
+            ws.getColumn(
+              index + 1
+            ).width =
+              width
+          }
+        )
+
+        ws.views = [
+          {
+            state: 'frozen',
+            ySplit: 6,
+          },
+        ]
+
+        const buffer =
+          await wb.xlsx.writeBuffer()
+
+        const blob =
+          new Blob(
+            [
+              buffer,
+            ],
+            {
+              type:
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            }
+          )
+
+        saveAs(
+          blob,
+          `fallas_${filters.startDate}_${filters.endDate}.xlsx`
+        )
+      } catch (error) {
+        console.error(
+          'Error exportando Excel:',
+          error
+        )
+
+        toast.error(
+          error?.message ||
+          'No fue posible generar el Excel.'
+        )
+      } finally {
+        setExporting(
+          false
+        )
+      }
+    }
+
+  // =======================================================
+  // PDF
+  // =======================================================
+
+  const exportPDF =
+    async () => {
+      if (
+        total === 0
+      ) {
+        return
+      }
+
+      setExporting(
+        true
+      )
+
+      try {
+        const result =
+          await obtenerDatosExportacion()
+
+        if (
+          !result
+        ) {
+          return
+        }
+
+        const allRows =
+          Array.isArray(
+            result?.registros
+          )
+            ? result.registros
+            : []
+
+        if (
+          allRows.length === 0
+        ) {
+          toast.info(
+            'No hay datos para exportar.'
+          )
+
+          return
+        }
+
+        const [
+          {
+            jsPDF,
+          },
+          {
+            default:
+              autoTable,
+          },
+        ] =
+          await Promise.all([
+            import(
+              'jspdf'
+            ),
+
+            import(
+              'jspdf-autotable'
+            ),
+          ])
+
+        const doc =
+          new jsPDF({
+            orientation:
+              'landscape',
+
+            unit: 'pt',
+
+            format: 'a3',
+          })
+
+        const margin = 30
+
+        const head = [[
+          'Consec.',
+          'Fecha',
+          'Hora',
+          'Placa',
+          'Tipo',
+          'Marca',
+          'KM',
+          'Encargado',
+          'Descripción',
+          'Acciones',
+          'Estado',
+          'Obs. Seguimiento',
+          'F. Verificación',
+          'F. Solución',
+          'U. Soluciona',
+        ]]
+
+        const body =
+          allRows.map(
+            (
+              r
+            ) => [
+              r?.consecutivo ||
+              '',
+
+              r?.fecha ||
+              '',
+
+              r?.hora ||
+              '',
+
+              r?.placa ||
+              '',
+
+              r
+                ?.tipo_vehiculo ||
+              '',
+
+              r?.marca ||
+              '',
+
+              fmtNumero(
+                r?.kilometraje
+              ),
+
+              r
+                ?.nombre_encargado ||
+              '',
+
+              String(
+                r
+                  ?.descripcion_falla ||
+                ''
+              ).replace(
+                /\r?\n/g,
+                ' '
+              ),
+
+              String(
+                r
+                  ?.acciones_tomadas ||
+                ''
+              ).replace(
+                /\r?\n/g,
+                ' '
+              ),
+
+              r?.estado ||
+              '',
+
+              String(
+                r
+                  ?.observaciones_seguimiento ||
+                ''
+              ).replace(
+                /\r?\n/g,
+                ' '
+              ),
+
+              r
+                ?.fecha_verificacion ||
+              '',
+
+              r
+                ?.fecha_solucion ||
+              '',
+
+              r
+                ?.usuario_soluciona ||
+              '',
+            ]
+          )
+
+        autoTable(
+          doc,
+          {
+            head,
+            body,
+
+            startY: 66,
+
+            styles: {
+              fontSize: 7,
+              cellPadding: 2.5,
+              overflow:
+                'linebreak',
+            },
+
+            headStyles: {
+              fillColor: [
+                31,
+                41,
+                55,
+              ],
+
+              textColor: 255,
+            },
+
+            margin: {
+              left: margin,
+              right: margin,
+            },
+
+            didDrawPage:
+              () => {
+                doc.setFontSize(
+                  14
+                )
+
+                doc.text(
+                  'REPORTE DE FALLAS',
+                  margin,
+                  26
+                )
+
+                doc.setFontSize(
+                  8
+                )
+
+                doc.text(
+                  `${
+                    result
+                      ?.empresa
+                      ?.nombre ||
+                    user
+                      ?.nombreEmpresa ||
+                    'CEA'
+                  } · NIT ${
+                    result
+                      ?.empresa
+                      ?.nit ||
+                    nitActual
+                  }`,
+                  margin,
+                  42
+                )
+
+                doc.text(
+                  `Período: ${filters.startDate} a ${filters.endDate}`,
+                  margin,
+                  54
+                )
+              },
+          }
+        )
+
+        doc.save(
+          `fallas_${filters.startDate}_${filters.endDate}.pdf`
+        )
+      } catch (error) {
+        console.error(
+          'Error exportando PDF:',
+          error
+        )
+
+        toast.error(
+          error?.message ||
+          'No fue posible generar el PDF.'
+        )
+      } finally {
+        setExporting(
+          false
+        )
+      }
+    }
+
+  // =======================================================
+  // FLAGS DRAWER
+  // =======================================================
+
+  const estadoUpper =
+    normEstado(
+      rowSel?.estado
+    )
+
+  const esPendiente =
+    estadoUpper ===
+    'PENDIENTE'
+
+  const esCerrada =
+    estadoUpper ===
+    'CERRADA'
+
+  const esAnalisis =
+    estadoUpper ===
+    'EN ANALISIS'
+
+  const puedeEditar =
+    esAnalisis &&
+    !esCerrada
+
+  // =======================================================
+  // CARGANDO
+  // =======================================================
+
+  if (
+    !user
+  ) {
+    return (
+      <p className="text-center mt-20">
+        Cargando...
+      </p>
+    )
+  }
+
+  // =======================================================
+  // RENDER
+  // =======================================================
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
+
+      <Toaster
+        position="top-center"
+        richColors
+      />
+
+      <div className="max-w-7xl mx-auto space-y-4">
+
+        {/* ==================================================
+            ENCABEZADO
+        ================================================== */}
+
+        <div className="bg-white border rounded-xl shadow-lg p-5">
+
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+            <div>
+
+              <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
+                Consultas Administrativas
+              </p>
+
+              <h1 className="text-2xl font-bold text-[var(--primary)] flex items-center gap-2 mt-1">
+
+                <i className="fas fa-triangle-exclamation"></i>
+
+                Reportes de Fallas
+
+              </h1>
+
+              <p className="text-sm text-gray-600 mt-2">
+                Consulte las fallas reportadas durante la operación y realice seguimiento hasta su solución.
+              </p>
+
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+
+              <button
+                onClick={() =>
+                  router.push(
+                    '/admin/consultas'
+                  )
+                }
+                className="bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm"
+              >
+                <i className="fas fa-arrow-left mr-2"></i>
+
+                Regresar a Consultas
+              </button>
+
+              <button
+                onClick={() =>
+                  cerrarSesion(
+                    router
+                  )
+                }
+                className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-4 py-2 rounded-lg text-sm"
+              >
+                <i className="fas fa-sign-out-alt mr-2"></i>
+
+                Cerrar Sesión
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ==================================================
+            FILTROS
+        ================================================== */}
+
+        <div className="bg-[var(--primary-dark)] text-white rounded-xl p-4 shadow-sm">
+
+          <div className="flex items-center gap-2 mb-3">
+
+            <i className="fas fa-filter"></i>
+
+            <h2 className="text-sm font-semibold">
+              Filtros de búsqueda
+            </h2>
+
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+
+            <div>
+
+              <label className="block mb-1">
+                Fecha Inicio
+              </label>
+
+              <input
+                type="date"
+                name="startDate"
+                value={
+                  filters.startDate
+                }
+                max={
+                  hoyBogota()
+                }
+                onChange={
+                  handleChange
+                }
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+              />
+
+            </div>
+
+            <div>
+
+              <label className="block mb-1">
+                Fecha Fin
+              </label>
+
+              <input
+                type="date"
+                name="endDate"
+                value={
+                  filters.endDate
+                }
+                max={
+                  hoyBogota()
+                }
+                onChange={
+                  handleChange
+                }
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+              />
+
+            </div>
+
+            <div>
+
+              <label className="block mb-1">
+                Placa
+              </label>
+
+              <select
+                name="placa"
+                value={
+                  filters.placa
+                }
+                onChange={
+                  handleChange
+                }
+                disabled={
+                  cargandoVehiculos
+                }
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white disabled:bg-gray-100"
+              >
+
+                <option value="">
+                  Toda la flota
+                </option>
+
+                {vehiculosOrdenados.map(
+                  (
+                    vehiculo
+                  ) => (
+
+                    <option
+                      key={
+                        vehiculo.id ||
+                        vehiculo.placa
+                      }
+                      value={
+                        vehiculo.placa
+                      }
+                    >
+                      {vehiculo.placa}
+
+                      {vehiculo.marca
+                        ? ` · ${vehiculo.marca}`
+                        : ''}
+                    </option>
+
+                  )
+                )}
+
+              </select>
+
+            </div>
+
+            <div>
+
+              <label className="block mb-1">
+                Estado
+              </label>
+
+              <select
+                name="estado"
+                value={
+                  filters.estado
+                }
+                onChange={
+                  handleChange
+                }
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+              >
+
+                <option value="">
+                  Todos
+                </option>
+
+                {ESTADOS.map(
+                  (
+                    estado
+                  ) => (
+
+                    <option
+                      key={
+                        estado
+                      }
+                      value={
+                        estado
+                      }
+                    >
+                      {estado}
+                    </option>
+
+                  )
+                )}
+
+              </select>
+
+            </div>
+
+          </div>
+
+          {/* =================================================
+              BOTONES
+          ================================================= */}
+
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
+
+            <button
+              onClick={() =>
+                handleConsultar(
+                  1
+                )
+              }
+              disabled={
+                loading
+              }
+              className="bg-[var(--primary)] hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-50"
+            >
+              <i className="fas fa-search mr-2"></i>
+
+              {loading
+                ? 'Consultando...'
+                : 'Consultar'}
+            </button>
+
+            <button
+              onClick={
+                handleLimpiar
+              }
+              className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-xs"
+            >
+              <i className="fas fa-eraser mr-2"></i>
+
+              Limpiar
+            </button>
+
+            <button
+              onClick={
+                exportXLSX
+              }
+              disabled={
+                total === 0 ||
+                exporting
+              }
+              className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
+            >
+              <i className="fas fa-file-excel mr-2"></i>
+
+              Excel
+            </button>
+
+            <button
+              onClick={
+                exportPDF
+              }
+              disabled={
+                total === 0 ||
+                exporting
+              }
+              className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
+            >
+              <i className="fas fa-file-pdf mr-2"></i>
+
+              PDF
+            </button>
+
+          </div>
+
+        </div>
+
+        {/* ==================================================
+            MENSAJE
+        ================================================== */}
+
+        {status && (
+
+          <p
+            className={`text-center text-xs ${
+              status.includes(
+                '❌'
+              )
+                ? 'text-red-600'
+                : status.includes(
+                    '⚠️'
+                  )
+                  ? 'text-amber-600'
+                  : 'text-blue-700'
             }`}
           >
             {status}
           </p>
 
-          {/* Tabla */}
-          <div className="overflow-x-auto border rounded-lg shadow">
-            <table className="w-full text-[11px] border-collapse rounded-lg overflow-hidden">
+        )}
+
+        {/* ==================================================
+            RESUMEN
+        ================================================== */}
+
+        {total > 0 && (
+
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+
+            <Kpi
+              titulo="Fallas Reportadas"
+              valor={
+                resumen
+                  ?.total_fallas ||
+                0
+              }
+              icono="fa-triangle-exclamation"
+            />
+
+            <Kpi
+              titulo="Pendientes"
+              valor={
+                resumen
+                  ?.pendientes ||
+                0
+              }
+              icono="fa-clock"
+              tipo={
+                Number(
+                  resumen
+                    ?.pendientes ||
+                  0
+                ) > 0
+                  ? 'warning'
+                  : 'success'
+              }
+            />
+
+            <Kpi
+              titulo="En Análisis"
+              valor={
+                resumen
+                  ?.en_analisis ||
+                0
+              }
+              icono="fa-magnifying-glass"
+            />
+
+            <Kpi
+              titulo="Cerradas"
+              valor={
+                resumen
+                  ?.cerradas ||
+                0
+              }
+              icono="fa-circle-check"
+              tipo="success"
+            />
+
+            <Kpi
+              titulo="Vehículos Afectados"
+              valor={
+                resumen
+                  ?.vehiculos_afectados ||
+                0
+              }
+              icono="fa-car"
+            />
+
+          </div>
+
+        )}
+
+        {/* ==================================================
+            TABLA
+        ================================================== */}
+
+        <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+
+          <div className="overflow-x-auto">
+
+            <table className="w-full min-w-[1550px] text-[10px] border-collapse">
+
               <thead className="bg-slate-800 text-white">
+
                 <tr>
-                  <th className="p-1 border text-center">Consecutivo</th>
-                  <th className="p-1 border text-center">Fecha</th>
-                  <th className="p-1 border text-center">Hora</th>
-                  <th className="p-1 border text-center">Placa</th>
-                  <th className="p-1 border text-center">Tipo</th>
-                  <th className="p-1 border text-center">Marca</th>
-                  <th className="p-1 border text-center">KM</th>
-                  <th className="p-1 border text-center">Encargado</th>
-                  <th className="p-1 border text-center">Descripción</th>
-                  <th className="p-1 border text-center">Acciones</th>
-                  <th className="p-1 border text-center">Estado</th>
-                  <th className="p-1 border text-center">Obs. Seg.</th>
-                  <th className="p-1 border text-center">F. Verificación</th>
-                  <th className="p-1 border text-center">F. Solución</th>
-                  <th className="p-1 border text-center">U. Soluciona</th>
-                  <th className="p-1 border text-center">Acción</th>
+
+                  <th className="p-2 border">
+                    Consecutivo
+                  </th>
+
+                  <th className="p-2 border">
+                    Fecha
+                  </th>
+
+                  <th className="p-2 border">
+                    Hora
+                  </th>
+
+                  <th className="p-2 border">
+                    Placa
+                  </th>
+
+                  <th className="p-2 border">
+                    Tipo
+                  </th>
+
+                  <th className="p-2 border">
+                    Marca
+                  </th>
+
+                  <th className="p-2 border">
+                    KM
+                  </th>
+
+                  <th className="p-2 border">
+                    Encargado
+                  </th>
+
+                  <th className="p-2 border">
+                    Descripción
+                  </th>
+
+                  <th className="p-2 border">
+                    Estado
+                  </th>
+
+                  <th className="p-2 border">
+                    F. Verificación
+                  </th>
+
+                  <th className="p-2 border">
+                    F. Solución
+                  </th>
+
+                  <th className="p-2 border">
+                    Acción
+                  </th>
+
                 </tr>
+
               </thead>
+
               <tbody>
+
                 {data.length > 0 ? (
-                  data.map((row) => {
-                    const estadoUpper = String(row.estado || '').toUpperCase()
-                    const isCerrada = estadoUpper === 'CERRADA'
-                    return (
-                      <tr key={row.id} className="odd:bg-white even:bg-gray-100 hover:bg-blue-50 transition">
-                        <td className="p-1 border text-center">{row.consecutivo || '-'}</td>
-                        <td className="p-1 border text-center">{row.fecha || '-'}</td>
-                        <td className="p-1 border text-center">{row.hora || '-'}</td>
-                        <td className="p-1 border text-center">{row.placa || '-'}</td>
-                        <td className="p-1 border text-center">{row.tipo_vehiculo || '-'}</td>
-                        <td className="p-1 border text-center">{row.marca || '-'}</td>
-                        <td className="p-1 border text-center">{row.kilometraje ?? '-'}</td>
-                        <td className="p-1 border text-center">{row.nombre_encargado || '-'}</td>
-                        <td className="p-1 border text-center truncate max-w-[220px]" title={row.descripcion_falla || ''}>
-                          {row.descripcion_falla || '-'}
-                        </td>
-                        <td className="p-1 border text-center truncate max-w-[220px]" title={row.acciones_tomadas || ''}>
-                          {row.acciones_tomadas || '-'}
-                        </td>
-                        <td className="p-1 border text-center"><EstadoChip estado={row.estado} /></td>
-                        <td className="p-1 border text-center truncate max-w-[220px]" title={row.observaciones_seguimiento || ''}>
-                          {row.observaciones_seguimiento || '-'}
-                        </td>
-                        <td className="p-1 border text-center">{row.fecha_verificacion || '-'}</td>
-                        <td className="p-1 border text-center">{row.fecha_solucion || '-'}</td>
-                        <td className="p-1 border text-center">{row.usuario_soluciona || '-'}</td>
-                        <td className="p-1 border text-center">
-                          <button
-                            onClick={()=> abrirSeguimiento(row)}
-                            disabled={isCerrada}
-                            className={`px-2 py-1 rounded text-white ${isCerrada ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'}`}
-                            title={isCerrada ? 'Falla cerrada' : 'Seguimiento'}
+
+                  data.map(
+                    (
+                      row
+                    ) => {
+                      const estado =
+                        normEstado(
+                          row?.estado
+                        )
+
+                      const cerrada =
+                        estado ===
+                        'CERRADA'
+
+                      const pendiente =
+                        estado ===
+                        'PENDIENTE'
+
+                      return (
+                        <tr
+                          key={
+                            row.id
+                          }
+                          className={`
+                            transition
+                            ${
+                              pendiente
+                                ? 'bg-amber-50 hover:bg-amber-100'
+                                : 'odd:bg-white even:bg-gray-50 hover:bg-blue-50'
+                            }
+                          `}
+                        >
+
+                          <td className="p-2 border text-center">
+                            {row
+                              ?.consecutivo ||
+                              '-'}
+                          </td>
+
+                          <td className="p-2 border text-center whitespace-nowrap">
+                            {row?.fecha ||
+                              '-'}
+                          </td>
+
+                          <td className="p-2 border text-center whitespace-nowrap">
+                            {row?.hora ||
+                              '-'}
+                          </td>
+
+                          <td className="p-2 border text-center font-semibold">
+                            {row?.placa ||
+                              '-'}
+                          </td>
+
+                          <td className="p-2 border text-center">
+                            {row
+                              ?.tipo_vehiculo ||
+                              '-'}
+                          </td>
+
+                          <td className="p-2 border text-center">
+                            {row?.marca ||
+                              '-'}
+                          </td>
+
+                          <td className="p-2 border text-center">
+                            {fmtNumero(
+                              row
+                                ?.kilometraje
+                            )}
+                          </td>
+
+                          <td className="p-2 border text-center min-w-[180px]">
+                            {row
+                              ?.nombre_encargado ||
+                              '-'}
+                          </td>
+
+                          <td
+                            className="p-2 border text-left max-w-[380px] whitespace-normal break-words"
+                            title={
+                              row
+                                ?.descripcion_falla ||
+                              ''
+                            }
                           >
-                            Seguimiento
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })
+                            {row
+                              ?.descripcion_falla ||
+                              '-'}
+                          </td>
+
+                          <td className="p-2 border text-center">
+                            <EstadoChip
+                              estado={
+                                row?.estado
+                              }
+                            />
+                          </td>
+
+                          <td className="p-2 border text-center whitespace-nowrap">
+                            {row
+                              ?.fecha_verificacion ||
+                              '-'}
+                          </td>
+
+                          <td className="p-2 border text-center whitespace-nowrap">
+                            {row
+                              ?.fecha_solucion ||
+                              '-'}
+                          </td>
+
+                          <td className="p-2 border text-center">
+
+                            <button
+                              onClick={() =>
+                                abrirSeguimiento(
+                                  row
+                                )
+                              }
+                              className={`
+                                px-3
+                                py-1
+                                rounded
+                                text-white
+                                ${
+                                  cerrada
+                                    ? 'bg-gray-600 hover:bg-gray-700'
+                                    : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                                }
+                              `}
+                            >
+                              {cerrada
+                                ? 'Ver detalle'
+                                : 'Seguimiento'}
+                            </button>
+
+                          </td>
+
+                        </tr>
+                      )
+                    }
+                  )
+
                 ) : (
+
                   <tr>
-                    <td colSpan="16" className="text-center text-gray-500 p-2">
+
+                    <td
+                      colSpan={13}
+                      className="text-center text-gray-500 p-6"
+                    >
                       No hay resultados para los filtros seleccionados.
                     </td>
+
                   </tr>
+
                 )}
+
               </tbody>
+
             </table>
+
           </div>
 
-          {/* Paginación */}
-          {total > 0 && (
-            <div className="flex items-center justify-center gap-2 mt-2 text-xs">
-              <button
-                className="px-2 py-1 border rounded disabled:opacity-50"
-                onClick={()=> handleConsultar(Math.max(1, page - 1))}
-                disabled={loading || page <= 1}
-              >
-                ‹ Anterior
-              </button>
-              <span>Página {page} de {totalPages}</span>
-              <button
-                className="px-2 py-1 border rounded disabled:opacity-50"
-                onClick={()=> handleConsultar(Math.min(totalPages, page + 1))}
-                disabled={loading || page >= totalPages}
-              >
-                Siguiente ›
-              </button>
-            </div>
-          )}
         </div>
-      )}
 
-      {/* Drawer seguimiento */}
-      {drawerOpen && rowSel && (
-        <div className="fixed inset-0 z-50">
-          {/* overlay */}
-          <div className="absolute inset-0 bg-black/40" onClick={cerrarDrawer}></div>
+        {/* ==================================================
+            PAGINACIÓN
+        ================================================== */}
 
-          {/* panel */}
-          <div className="absolute right-0 top-0 h-full w-full sm:w-[520px] bg-white shadow-2xl p-4 overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-2 mb-3">
-              <h3 className="text-lg font-bold text-[var(--primary)] flex items-center gap-2">
-                <i className="fas fa-tools"></i> Seguimiento de Falla
-              </h3>
-              <button className="text-gray-600 hover:text-black" onClick={cerrarDrawer}>
-                <i className="fas fa-times text-xl"></i>
-              </button>
-            </div>
+        {total > 0 && (
 
-            {/* Estado actual */}
-            <div className="mb-3 text-sm">
-              Estado actual: <EstadoChip estado={rowSel.estado} />
-            </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
 
-            {/* Detalle */}
-            <div className="border rounded mb-4">
-              <div className="bg-gray-900 text-white px-3 py-1 rounded-t text-sm font-semibold">Detalle</div>
-              <div className="p-3 text-xs grid grid-cols-2 gap-2">
-                <div><b>Consecutivo:</b> {rowSel.consecutivo || '-'}</div>
-                <div><b>Fecha:</b> {rowSel.fecha || '-'}</div>
-                <div><b>Hora:</b> {rowSel.hora || '-'}</div>
-                <div><b>Placa:</b> {rowSel.placa || '-'}</div>
-                <div><b>Tipo:</b> {rowSel.tipo_vehiculo || '-'}</div>
-                <div><b>Marca:</b> {rowSel.marca || '-'}</div>
-                <div><b>KM:</b> {rowSel.kilometraje ?? '-'}</div>
-                <div className="col-span-2"><b>Encargado:</b> {rowSel.nombre_encargado || '-'}</div>
-                <div className="col-span-2"><b>Descripción:</b> {rowSel.descripcion_falla || '-'}</div>
-                <div className="col-span-2"><b>Acciones tomadas:</b> {rowSel.acciones_tomadas || '-'}</div>
-              </div>
-            </div>
+            <button
+              onClick={() =>
+                handleConsultar(
+                  Math.max(
+                    1,
+                    page - 1
+                  )
+                )
+              }
+              disabled={
+                loading ||
+                page <= 1
+              }
+              className="px-3 py-2 border rounded-lg bg-white hover:bg-gray-100 disabled:opacity-40"
+            >
+              <i className="fas fa-chevron-left mr-1"></i>
 
-            {/* Acciones de seguimiento */}
-            <div className="border rounded">
-              <div className="bg-gray-900 text-white px-3 py-1 rounded-t text-sm font-semibold">Acciones de Seguimiento</div>
-              <div className="p-3 space-y-3 text-sm">
-                {/* EN ANÁLISIS */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={marcarEnAnalisis}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-800 text-white rounded disabled:opacity-50"
-                    disabled={esCerrada || esAnalisis}
-                  >
-                    Marcar EN ANÁLISIS
-                  </button>
-                  <div className="text-xs text-gray-600">
-                    Fecha verificación: {rowSel.fecha_verificacion || '-'}
-                  </div>
+              Anterior
+            </button>
+
+            <span className="bg-white border rounded-lg px-4 py-2">
+
+              Página{' '}
+
+              <strong>
+                {page}
+              </strong>
+
+              {' '}de{' '}
+
+              <strong>
+                {totalPages}
+              </strong>
+
+              <span className="ml-2 text-gray-500">
+                (
+                {total.toLocaleString(
+                  'es-CO'
+                )}
+                {' '}registros)
+              </span>
+
+            </span>
+
+            <button
+              onClick={() =>
+                handleConsultar(
+                  Math.min(
+                    totalPages,
+                    page + 1
+                  )
+                )
+              }
+              disabled={
+                loading ||
+                page >= totalPages
+              }
+              className="px-3 py-2 border rounded-lg bg-white hover:bg-gray-100 disabled:opacity-40"
+            >
+              Siguiente
+
+              <i className="fas fa-chevron-right ml-1"></i>
+            </button>
+
+          </div>
+
+        )}
+
+      </div>
+
+      {/* ====================================================
+          DRAWER
+      ==================================================== */}
+
+      {drawerOpen &&
+        rowSel && (
+
+          <div className="fixed inset-0 z-50">
+
+            {/* OVERLAY */}
+
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={
+                cerrarDrawer
+              }
+            ></div>
+
+            {/* PANEL */}
+
+            <div className="absolute right-0 top-0 h-full w-full sm:w-[580px] bg-white shadow-2xl p-4 overflow-y-auto">
+
+              {/* CABECERA */}
+
+              <div className="flex items-center justify-between border-b pb-2 mb-3">
+
+                <div>
+
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Seguimiento
+                  </p>
+
+                  <h3 className="text-lg font-bold text-[var(--primary)] flex items-center gap-2">
+
+                    <i className="fas fa-triangle-exclamation"></i>
+
+                    Falla{' '}
+
+                    {rowSel
+                      ?.consecutivo ||
+                      ''}
+
+                  </h3>
+
                 </div>
 
-                {/* Cerrar falla */}
-                <div className="border-t pt-3">
-                  <label className="block mb-1 font-semibold text-xs">Observación de Cierre</label>
-                  <textarea
-                    className="w-full border rounded p-2 text-xs"
-                    rows={3}
-                    value={obsCierre}
-                    onChange={(e)=> setObsCierre(e.target.value)}
-                    placeholder={esPendiente ? 'Habilítalo marcando EN ANÁLISIS' : 'Describe la solución aplicada (obligatorio para cerrar)'}
-                    disabled={esPendiente || esCerrada}
-                  />
-                  <div className="flex items-center justify-between mt-2">
+                <button
+                  className="text-gray-600 hover:text-black"
+                  onClick={
+                    cerrarDrawer
+                  }
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
+
+              </div>
+
+              {/* ESTADO */}
+
+              <div className="mb-4 flex items-center gap-2 text-sm">
+
+                <span>
+                  Estado actual:
+                </span>
+
+                <EstadoChip
+                  estado={
+                    rowSel?.estado
+                  }
+                />
+
+              </div>
+
+              {/* =================================================
+                  DETALLE
+              ================================================= */}
+
+              <div className="border rounded-xl overflow-hidden mb-4">
+
+                <div className="bg-slate-800 text-white px-3 py-2 text-sm font-semibold">
+                  Detalle de la Falla
+                </div>
+
+                <div className="p-3 text-xs grid grid-cols-2 gap-3">
+
+                  <div>
+                    <span className="text-gray-500">
+                      Consecutivo
+                    </span>
+
+                    <p className="font-semibold">
+                      {rowSel
+                        ?.consecutivo ||
+                        '-'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-gray-500">
+                      Fecha
+                    </span>
+
+                    <p className="font-semibold">
+                      {rowSel
+                        ?.fecha ||
+                        '-'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-gray-500">
+                      Hora
+                    </span>
+
+                    <p className="font-semibold">
+                      {rowSel
+                        ?.hora ||
+                        '-'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-gray-500">
+                      Placa
+                    </span>
+
+                    <p className="font-semibold">
+                      {rowSel
+                        ?.placa ||
+                        '-'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-gray-500">
+                      Tipo
+                    </span>
+
+                    <p className="font-semibold">
+                      {rowSel
+                        ?.tipo_vehiculo ||
+                        '-'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-gray-500">
+                      Marca
+                    </span>
+
+                    <p className="font-semibold">
+                      {rowSel
+                        ?.marca ||
+                        '-'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-gray-500">
+                      Kilometraje
+                    </span>
+
+                    <p className="font-semibold">
+                      {fmtNumero(
+                        rowSel
+                          ?.kilometraje
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-gray-500">
+                      Encargado
+                    </span>
+
+                    <p className="font-semibold">
+                      {rowSel
+                        ?.nombre_encargado ||
+                        '-'}
+                    </p>
+                  </div>
+
+                  <div className="col-span-2">
+
+                    <span className="text-gray-500">
+                      Descripción de la falla
+                    </span>
+
+                    <p className="mt-1 whitespace-pre-wrap">
+                      {rowSel
+                        ?.descripcion_falla ||
+                        '-'}
+                    </p>
+
+                  </div>
+
+                  <div className="col-span-2">
+
+                    <span className="text-gray-500">
+                      Acciones tomadas inicialmente
+                    </span>
+
+                    <p className="mt-1 whitespace-pre-wrap">
+                      {rowSel
+                        ?.acciones_tomadas ||
+                        '-'}
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* =================================================
+                  TRAZABILIDAD
+              ================================================= */}
+
+              <div className="border rounded-xl overflow-hidden mb-4">
+
+                <div className="bg-slate-800 text-white px-3 py-2 text-sm font-semibold">
+                  Trazabilidad del Seguimiento
+                </div>
+
+                <div className="p-3 text-xs space-y-2">
+
+                  <div>
+                    <strong>
+                      Fecha verificación:
+                    </strong>{' '}
+
+                    {rowSel
+                      ?.fecha_verificacion ||
+                      '-'}
+                  </div>
+
+                  <div>
+                    <strong>
+                      Fecha solución:
+                    </strong>{' '}
+
+                    {rowSel
+                      ?.fecha_solucion ||
+                      '-'}
+                  </div>
+
+                  <div>
+                    <strong>
+                      Usuario que solucionó:
+                    </strong>{' '}
+
+                    {rowSel
+                      ?.usuario_soluciona ||
+                      '-'}
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* =================================================
+                  MARCAR EN ANÁLISIS
+              ================================================= */}
+
+              {!esCerrada && (
+
+                <div className="border rounded-xl overflow-hidden mb-4">
+
+                  <div className="bg-blue-700 text-white px-3 py-2 text-sm font-semibold">
+                    Estado de Seguimiento
+                  </div>
+
+                  <div className="p-3">
+
                     <button
-                      onClick={cerrarFalla}
-                      className="px-3 py-1 bg-green-600 hover:bg-green-800 text-white rounded disabled:opacity-50"
-                      disabled={esPendiente || esCerrada || !obsCierre.trim() || closing}
-                      title={closing ? 'Guardando...' : 'Cerrar Falla'}
+                      onClick={
+                        marcarEnAnalisis
+                      }
+                      disabled={
+                        esAnalisis ||
+                        changingState
+                      }
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-800 text-white rounded-lg text-xs disabled:opacity-40"
                     >
-                      {closing ? 'Guardando...' : 'Cerrar Falla'}
+                      {changingState
+                        ? 'Guardando...'
+                        : esAnalisis
+                          ? 'Actualmente EN ANÁLISIS'
+                          : 'Marcar EN ANÁLISIS'}
                     </button>
-                    <div className="text-xs text-gray-600">
-                      Fecha solución: {rowSel.fecha_solucion || '-'} · {rowSel.usuario_soluciona || '-'}
-                    </div>
+
                   </div>
+
                 </div>
+
+              )}
+
+              {/* =================================================
+                  OBSERVACIÓN / CIERRE
+              ================================================= */}
+
+              <div className="border rounded-xl overflow-hidden">
+
+                <div className="bg-slate-800 text-white px-3 py-2 text-sm font-semibold">
+                  Solución de la Falla
+                </div>
+
+                <div className="p-3 space-y-3">
+
+                  <div>
+
+                    <label className="block text-xs font-semibold mb-1">
+                      Observación de cierre
+                    </label>
+
+                    <textarea
+                      rows={4}
+                      value={
+                        obsCierre
+                      }
+                      onChange={(e) =>
+                        setObsCierre(
+                          e.target.value
+                        )
+                      }
+                      disabled={
+                        !puedeEditar
+                      }
+                      className="w-full border rounded-lg p-2 text-xs disabled:bg-gray-100"
+                      placeholder={
+                        esPendiente
+                          ? 'Primero marque la falla EN ANÁLISIS'
+                          : 'Describa la solución aplicada'
+                      }
+                    />
+
+                  </div>
+
+                  {!esCerrada && (
+
+                    <div className="flex justify-end">
+
+                      <button
+                        onClick={
+                          cerrarFalla
+                        }
+                        disabled={
+                          !puedeEditar ||
+                          !obsCierre.trim() ||
+                          closing
+                        }
+                        className="px-4 py-2 bg-green-600 hover:bg-green-800 text-white rounded-lg text-xs disabled:opacity-40"
+                      >
+                        {closing
+                          ? 'Guardando...'
+                          : 'Cerrar Falla'}
+                      </button>
+
+                    </div>
+
+                  )}
+
+                  {esCerrada && (
+
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs text-green-800">
+
+                      <i className="fas fa-circle-check mr-2"></i>
+
+                      Esta falla se encuentra cerrada.
+
+                    </div>
+
+                  )}
+
+                </div>
+
               </div>
+
+              {/* =================================================
+                  CERRAR PANEL
+              ================================================= */}
+
+              <div className="flex justify-end mt-4">
+
+                <button
+                  onClick={
+                    cerrarDrawer
+                  }
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-800 text-white rounded-lg text-xs"
+                >
+                  Cerrar panel
+                </button>
+
+              </div>
+
             </div>
 
-            {/* Cerrar panel */}
-            <div className="flex justify-end mt-4">
-              <button className="px-3 py-2 bg-gray-600 hover:bg-gray-800 text-white rounded" onClick={cerrarDrawer}>
-                Cerrar panel
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+
+        )}
+
     </div>
   )
 }

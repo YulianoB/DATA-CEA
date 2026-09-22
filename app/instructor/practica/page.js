@@ -1,3 +1,5 @@
+// app/instructor/practica/page.js
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -7,6 +9,10 @@ import { Toaster, toast } from 'sonner'
 export default function InstructorPracticaPage() {
   const router = useRouter()
   const [user, setUser] = useState(null)
+  const nitActual =
+  user?.nitEmpresa ||
+  localStorage.getItem('currentEmpresaNit') ||
+  ''
 
   // === Reuniones: estado y polling de reunión activa ===
   const [reunionActiva, setReunionActiva] = useState(null)
@@ -21,11 +27,14 @@ export default function InstructorPracticaPage() {
 
   // Polling solo cuando hay usuario cargado
   useEffect(() => {
-    if (!user) return
+    if (!user || !nitActual) return
     let alive = true
     const fetchActiva = async () => {
       try {
-        const res = await fetch('/api/reuniones/activa', { cache: 'no-store' })
+        const res = await fetch(
+          `/api/reuniones/activa?nit=${encodeURIComponent(nitActual)}`,
+          { cache: 'no-store' }
+        )
         const json = await res.json()
         if (!alive) return
         setReunionActiva(json?.data || null)
@@ -36,10 +45,15 @@ export default function InstructorPracticaPage() {
     fetchActiva()
     const id = setInterval(fetchActiva, 60_000) // cada 60s
     return () => { alive = false; clearInterval(id) }
-  }, [user])
+  }, [user, nitActual])
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser')
+    localStorage.removeItem('currentEmpresaNit')
+    localStorage.removeItem('currentEmpresaNombre')
+    localStorage.removeItem('currentPerfilRol')
+    localStorage.removeItem('currentPerfilMenu')
+
     router.push('/login')
   }
 
@@ -57,8 +71,13 @@ export default function InstructorPracticaPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          nit: nitActual,
           enlace_asistencia: reunionActiva.enlace_asistencia,
-          user: { documento: u.documento, nombreCompleto: u.nombreCompleto, role: u.rol || u.role }
+          user: {
+            documento: u.documento,
+            nombreCompleto: u.nombreCompleto,
+            role: u.rol || u.role
+          }
         })
       })
       const json = await res.json()
@@ -75,13 +94,42 @@ export default function InstructorPracticaPage() {
   if (!user) return <p className="text-center mt-20">Cargando...</p>
 
   const menuButtons = [
-    { icon: 'fa-clipboard-check', label: 'Registrar Preoperacionales', route: '/instructor/practica/inspeccion' },
-    { icon: 'fa-calendar-alt', label: 'Registrar Horarios de Práctica', route: '/instructor/practica/horarios' },
-    { icon: 'fa-tools', label: 'Registrar Mantenimientos', route: '/instructor/practica/mantenimientos' },
-    { icon: 'fa-car-crash', label: 'Registrar Siniestros Viales', route: '/instructor/practica/siniestros' },
-    { icon: 'fa-exclamation-circle', label: 'Registrar Fallas en Ruta', route: '/instructor/practica/fallas' },
-    { icon: 'fa-upload', label: 'Actualizar Documentos', route: '/instructor/practica/documentos' },
-  ]
+  {
+    icon: 'fa-calendar-days',
+    label: 'Programación de Clases',
+    route: '/instructor/practica/programacion',
+  },
+  {
+    icon: 'fa-clipboard-check',
+    label: 'Registrar Preoperacionales',
+    route: '/instructor/practica/inspeccion',
+  },
+  {
+    icon: 'fa-calendar-alt',
+    label: 'Registrar Horarios de Práctica',
+    route: '/instructor/practica/horarios',
+  },
+  {
+    icon: 'fa-tools',
+    label: 'Registrar Mantenimientos',
+    route: '/instructor/practica/mantenimientos',
+  },
+  {
+    icon: 'fa-car-crash',
+    label: 'Registrar Siniestros Viales',
+    route: '/instructor/practica/siniestros',
+  },
+  {
+    icon: 'fa-exclamation-circle',
+    label: 'Registrar Fallas en Ruta',
+    route: '/instructor/practica/fallas',
+  },
+  {
+    icon: 'fa-upload',
+    label: 'Actualizar Documentos',
+    route: '/instructor/practica/documentos',
+  },
+]
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
@@ -98,7 +146,15 @@ export default function InstructorPracticaPage() {
 
         {/* Info usuario */}
         <p className="bg-blue-50 border border-blue-200 text-[var(--primary-dark)] p-2 rounded-md mb-6 text-center text-sm">
-          Usuario: <strong>{user.nombreCompleto}</strong> ({user.rol})
+          <span>
+            Usuario: <strong>{user.nombreCompleto}</strong> ({user.rol})
+          </span>
+
+          {user.nombreEmpresa && (
+            <span className="block mt-1">
+              CEA: <strong>{user.nombreEmpresa}</strong>
+            </span>
+          )}
         </p>
 
         {/* Enlace de asistencia (visible solo si hay reunión activa) */}

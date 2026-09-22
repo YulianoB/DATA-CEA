@@ -1,734 +1,3455 @@
+// app/admin/consultas/preoperacionales/page.jsx
+
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
-import { Toaster, toast } from 'sonner'
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
-// Helpers zona Bogotá
-const fmtBogota = (date, mode) => {
-  const optFecha = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Bogota' }
-  const optHora  = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'America/Bogota' }
-  return new Intl.DateTimeFormat('en-CA', mode === 'fecha' ? optFecha : optHora).format(date) // YYYY-MM-DD / HH:mm:ss
+import {
+  useRouter,
+} from 'next/navigation'
+
+import {
+  Toaster,
+  toast,
+} from 'sonner'
+
+import { cerrarSesion } from '@/lib/auth/logout'
+
+// =========================================================
+// CONSTANTES
+// =========================================================
+
+const PAGE_SIZE = 50
+
+const ESTADO_PENDIENTE =
+  'PENDIENTE'
+
+const ESTADO_ANALISIS =
+  'EN ANÁLISIS'
+
+const ESTADO_CERRADA =
+  'CERRADA'
+
+// =========================================================
+// HELPERS
+// =========================================================
+
+function normalizarTexto(valor) {
+  return String(
+    valor || ''
+  ).trim()
 }
-const hoyBogota = () => fmtBogota(new Date(), 'fecha')
 
-// Chip por estado
-const EstadoChip = ({ estado }) => {
-  const e = String(estado || '').toUpperCase()
-  const color =
-    e === 'CERRADA' ? 'bg-green-100 text-green-700 border-green-300' :
-    e.includes('ANÁLISIS') ? 'bg-blue-100 text-blue-700 border-blue-300' :
-    e === 'PENDIENTE' ? 'bg-amber-100 text-amber-700 border-amber-300' :
-    'bg-gray-100 text-gray-700 border-gray-300'
-  return <span className={`px-2 py-[2px] rounded border text-[11px] font-semibold ${color}`}>{estado || '-'}</span>
+function normalizarMayusculas(valor) {
+  return String(
+    valor || ''
+  )
+    .trim()
+    .toUpperCase()
 }
 
-export default function PreoperacionalesPage() {
-  const router = useRouter()
-  const [user, setUser] = useState(null)
+// =========================================================
+// FECHA BOGOTÁ
+// =========================================================
 
-  // filtros
-  const [filters, setFilters] = useState({
-    startDate: '',
-    endDate: '',
-    tipoVehiculo: '',
-    placa: '',
-    conObservaciones: false,
-  })
+function hoyBogota() {
+  return new Intl.DateTimeFormat(
+    'en-CA',
+    {
+      year:
+        'numeric',
 
-  // catálogo de vehículos activos
-  const [vehiculos, setVehiculos] = useState([]) // {placa, tipo_vehiculo, marca}
-  const tiposVehiculo = useMemo(() => {
-    const set = new Set(vehiculos.map(v => v.tipo_vehiculo).filter(Boolean))
-    return Array.from(set).sort((a,b)=> String(a).localeCompare(String(b)))
-  }, [vehiculos])
-  const placasLista = useMemo(() => {
-    return vehiculos
-      .filter(v => filters.tipoVehiculo ? v.tipo_vehiculo === filters.tipoVehiculo : true)
-      .map(v => v.placa)
-      .sort((a,b)=> String(a).localeCompare(String(b)))
-  }, [vehiculos, filters.tipoVehiculo])
+      month:
+        '2-digit',
 
-  // tabla + paginación
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState('')
-  const [page, setPage] = useState(1)
-  const pageSize = 50
-  const [total, setTotal] = useState(0)
+      day:
+        '2-digit',
 
-  // drawer seguimiento
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [rowSel, setRowSel] = useState(null)
-  const [obsCierre, setObsCierre] = useState('')
-  const [closing, setClosing] = useState(false) // ← anti doble-click
-
-  // cargar usuario + catálogo de vehículos activos
-  useEffect(() => {
-    const stored = localStorage.getItem('currentUser')
-    if (!stored) { router.push('/login'); return }
-    const u = JSON.parse(stored)
-    setUser(u)
-
-    const cargarVehiculos = async () => {
-      const { data: vs, error } = await supabase
-        .from('vehiculos')
-        .select('placa, tipo_vehiculo, marca, estado')
-        .eq('estado', 'Activo')
-        .order('placa', { ascending: true })
-      if (error) {
-        console.error('Error cargando vehículos:', error)
-        toast.error('No se pudieron cargar las placas activas.')
-        return
-      }
-      setVehiculos(vs || [])
+      timeZone:
+        'America/Bogota',
     }
-    cargarVehiculos()
-  }, [router])
-
-  // handlers filtros
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setFilters((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
-  }
-
-  const validarRango = () => {
-    const { startDate, endDate } = filters
-    if (!startDate || !endDate) {
-      toast.warning('Debes seleccionar Fecha Inicio y Fecha Fin.')
-      setStatus('⚠️ Debe seleccionar ambas fechas.')
-      return false
-    }
-    if (startDate > hoy || endDate > hoy) {
-      toast.warning('No puede seleccionar fechas futuras')
-      setStatus('⚠️ No se permiten fechas futuras.')
-      return false
-    }
-     return true
-  }
-
-  const handleConsultar = async (goToPage = 1) => {
-    if (!validarRango()) return
-
-    setLoading(true)
-    setStatus('Consultando datos...')
-    setPage(goToPage)
-
-    try {
-      let query = supabase
-        .from('preoperacionales')
-        .select(`
-          id,
-          consecutivo,
-          fecha_registro,
-          hora_registro,
-          placa,
-          tipo_vehiculo,
-          marca,
-          km_registro,
-          usuario_encargado,
-          observaciones,
-          estado_observacion,
-          fecha_verificacion_observacion,
-          usuario_verificacion,
-          fecha_solucion_observacion,
-          usuario_solucion,
-          observacion_solucion,
-          revision_exterior,
-          motor,
-          interior_funcionamiento,
-          equipos_prevencion,
-          documentos
-        `, { count: 'exact' })
-        .gte('fecha_registro', filters.startDate)
-        .lte('fecha_registro', filters.endDate)
-
-      if (filters.tipoVehiculo) query = query.eq('tipo_vehiculo', filters.tipoVehiculo)
-      if (filters.placa)        query = query.eq('placa', filters.placa)
-      if (filters.conObservaciones) query = query.in('estado_observacion', ['PENDIENTE', 'EN ANÁLISIS'])
-
-      query = query
-        .order('fecha_registro', { ascending: false })
-        .order('hora_registro', { ascending: false })
-
-      const from = (goToPage - 1) * pageSize
-      const to   = from + pageSize - 1
-      query = query.range(from, to)
-
-      const { data: rows, error, count } = await query
-      if (error) {
-        console.error('Error consultando preoperacionales:', error)
-        toast.error('❌ Error al consultar inspecciones.')
-        setStatus('❌ Error al consultar inspecciones.')
-        return
-      }
-
-      setData(rows || [])
-      setTotal(count || 0)
-      setStatus(`Consulta completada. ${count || 0} registros encontrados.`)
-    } catch (err) {
-      console.error(err)
-      toast.error('❌ Error al consultar inspecciones.')
-      setStatus('❌ Error al consultar inspecciones.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleLimpiar = () => {
-    setFilters({
-      startDate: '',
-      endDate: '',
-      tipoVehiculo: '',
-      placa: '',
-      conObservaciones: false,
-    })
-    setData([])
-    setTotal(0)
-    setPage(1)
-    setStatus('')
-  }
-
-  const totalPages = useMemo(() => Math.max(1, Math.ceil((total || 0) / pageSize)), [total])
-
-  // abrir/cerrar drawer
-  const abrirSeguimiento = (row) => {
-    setRowSel(row)
-    setObsCierre(row?.observacion_solucion || '')
-    setClosing(false)
-    setDrawerOpen(true)
-  }
-  const cerrarDrawer = () => {
-    setDrawerOpen(false)
-    setRowSel(null)
-    setObsCierre('')
-    setClosing(false)
-  }
-
-  // acciones de seguimiento
-  const marcarEnAnalisis = async () => {
-    if (!rowSel || !user) return
-    const estadoUpper = String(rowSel.estado_observacion || '').toUpperCase()
-    if (estadoUpper === 'CERRADA') { toast.info('El registro ya está CERRADO.'); return }
-    if (estadoUpper.includes('ANÁLISIS')) { toast.info('Ya está EN ANÁLISIS.'); return }
-    const hoy = hoyBogota()
-    const { error } = await supabase
-      .from('preoperacionales')
-      .update({
-        estado_observacion: 'EN ANÁLISIS',
-        fecha_verificacion_observacion: hoy,
-        usuario_verificacion: user?.nombreCompleto || user?.usuario || '',
-      })
-      .eq('id', rowSel.id)
-    if (error) { console.error(error); toast.error('No se pudo marcar EN ANÁLISIS.'); return }
-    toast.success('Marcado EN ANÁLISIS.')
-    const updated = { ...rowSel,
-      estado_observacion: 'EN ANÁLISIS',
-      fecha_verificacion_observacion: hoy,
-      usuario_verificacion: user?.nombreCompleto || user?.usuario || '',
-    }
-    setRowSel(updated)
-    setData(prev => prev.map(r => r.id === updated.id ? updated : r))
-  }
-
-  const cerrarObservacion = async () => {
-    if (!rowSel || !user || closing) return
-    if (!obsCierre.trim()) { toast.warning('Debes ingresar la observación de cierre.'); return }
-
-    setClosing(true) // ← anti doble-click
-    try {
-      const estadoUpper = String(rowSel.estado_observacion || '').toUpperCase()
-      if (estadoUpper === 'CERRADA') { toast.info('El registro ya está CERRADO.'); return }
-
-      const hoy = hoyBogota()
-      const { error } = await supabase
-        .from('preoperacionales')
-        .update({
-          estado_observacion: 'CERRADA',
-          fecha_solucion_observacion: hoy,
-          usuario_solucion: user?.nombreCompleto || user?.usuario || '',
-          observacion_solucion: obsCierre.trim(),
-        })
-        .eq('id', rowSel.id)
-      if (error) { console.error(error); toast.error('No se pudo CERRAR la observación.'); return }
-
-      toast.success('Observación CERRADA.')
-      const updated = { ...rowSel,
-        estado_observacion: 'CERRADA',
-        fecha_solucion_observacion: hoy,
-        usuario_solucion: user?.nombreCompleto || user?.usuario || '',
-        observacion_solucion: obsCierre.trim(),
-      }
-      setRowSel(updated)
-      setData(prev => prev.map(r => r.id === updated.id ? updated : r))
-    } finally {
-      setClosing(false)
-    }
-  }
-
-  // ------- Export XLSX con formato -------
-  const exportXLSX = async () => {
-    if (!data || data.length === 0) return
-    const [{ default: ExcelJS }, { saveAs }] = await Promise.all([
-      import('exceljs'),
-      import('file-saver')
-    ])
-
-    const wb = new ExcelJS.Workbook()
-    const ws = wb.addWorksheet('Preoperacionales')
-
-    // Encabezados
-    const headers = [
-      'Consecutivo','Fecha','Hora','Placa','Marca','KM','Encargado',
-      'Observaciones','Estado','F_Verificación','U_Verifica','F_Solución','U_Soluciona','Obs_Solución'
-    ]
-    ws.addRow(headers)
-
-    // Estilo encabezado
-    const headerRow = ws.getRow(1)
-    headerRow.eachCell((cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } } // #1f2937
-      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-      cell.border = {
-        top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-        bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-        right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-      }
-    })
-    headerRow.height = 22
-
-    // Filas de datos
-    const rows = data.map(r => [
-      r.consecutivo || '',
-      r.fecha_registro || '',
-      r.hora_registro || '',
-      r.placa || '',
-      r.marca || '',
-      r.km_registro ?? '',
-      r.usuario_encargado || '',
-      (r.observaciones || '').replace(/\r?\n/g, ' '),
-      r.estado_observacion || '',
-      r.fecha_verificacion_observacion || '',
-      r.usuario_verificacion || '',
-      r.fecha_solucion_observacion || '',
-      r.usuario_solucion || '',
-      (r.observacion_solucion || '').replace(/\r?\n/g, ' '),
-    ])
-    rows.forEach((arr) => {
-      const row = ws.addRow(arr)
-      row.eachCell((cell, colNumber) => {
-        cell.alignment = { vertical: 'middle', horizontal: colNumber >= 8 ? 'left' : 'center', wrapText: true }
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-        }
-      })
-    })
-
-    // Ajuste de ancho de columnas (auto-fit aproximado)
-    const colMax = headers.length
-    for (let i = 1; i <= colMax; i++) {
-      let maxLen = headers[i - 1].length
-      ws.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-        const val = row.getCell(i).value
-        const str = val == null ? '' : String(val)
-        maxLen = Math.max(maxLen, Math.min(str.length, 120))
-      })
-      // margen + limite
-      ws.getColumn(i).width = Math.min(Math.max(maxLen + 2, 10), 60)
-    }
-
-    // Congelar fila de encabezado
-    ws.views = [{ state: 'frozen', ySplit: 1 }]
-
-    const buf = await wb.xlsx.writeBuffer()
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    saveAs(blob, `preoperacionales_${filters.startDate || 'inicio'}_${filters.endDate || 'fin'}.xlsx`)
-  }
-
-  // ------- Export PDF (impresión) -------
-  const exportPDF = () => {
-    if (!data || data.length === 0) return
-    const win = window.open('', '_blank')
-    if (!win) { toast.warning('Permite las ventanas emergentes para exportar a PDF.'); return }
-
-    const style = `
-      <style>
-        body { font-family: Arial, sans-serif; font-size: 11px; }
-        h3 { text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        th, td { border: 1px solid #444; padding: 4px; text-align: center; }
-        th { background: #1f2937; color: #fff; }
-        tr:nth-child(even) { background: #f3f4f6; }
-      </style>
-    `
-    const headers = `
-      <tr>
-        <th>Consecutivo</th><th>Fecha</th><th>Hora</th><th>Placa</th><th>Marca</th><th>KM</th>
-        <th>Encargado</th><th>Observaciones</th><th>Estado</th><th>F. Verif.</th><th>U. Verifica</th>
-        <th>F. Solución</th><th>U. Soluciona</th><th>Obs. Solución</th>
-      </tr>
-    `
-    const rows = data.map(r => `
-      <tr>
-        <td>${r.consecutivo || ''}</td>
-        <td>${r.fecha_registro || ''}</td>
-        <td>${r.hora_registro || ''}</td>
-        <td>${r.placa || ''}</td>
-        <td>${r.marca || ''}</td>
-        <td>${r.km_registro ?? ''}</td>
-        <td>${r.usuario_encargado || ''}</td>
-        <td>${(r.observaciones || '').replace(/\r?\n/g, ' ')}</td>
-        <td>${r.estado_observacion || ''}</td>
-        <td>${r.fecha_verificacion_observacion || ''}</td>
-        <td>${r.usuario_verificacion || ''}</td>
-        <td>${r.fecha_solucion_observacion || ''}</td>
-        <td>${r.usuario_solucion || ''}</td>
-        <td>${(r.observacion_solucion || '').replace(/\r?\n/g, ' ')}</td>
-      </tr>
-    `).join('')
-
-    win.document.write(`
-      <html><head><title>Preoperacionales</title>${style}</head>
-      <body>
-        <h3>Inspecciones Preoperacionales (${filters.startDate} a ${filters.endDate})</h3>
-        <table>${headers}${rows}</table>
-        <script>window.onload = () => { window.print(); }</script>
-      </body></html>
-    `)
-    win.document.close()
-  }
-
-  if (!user) return <p className="text-center mt-20">Cargando...</p>
-
-  // Booleans derivados para el drawer
-  const estadoUpper = String(rowSel?.estado_observacion || '').toUpperCase()
-  const esPendiente = estadoUpper === 'PENDIENTE'
-  const esCerrada = estadoUpper === 'CERRADA'
-  const esAnalisis = estadoUpper.includes('ANÁLISIS')
-
-  return (
-    <div className="p-4">
-      <Toaster position="top-center" richColors />
-      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-4">
-        {/* Título */}
-        <h2 className="text-lg font-bold text-center mb-2 flex items-center justify-center gap-2 text-[var(--primary)] border-b pb-2">
-          <i className="fas fa-clipboard-check text-[var(--primary)]"></i>
-          Consultar Inspecciones Preoperacionales
-        </h2>
-
-        {/* Filtros */}
-        <div className="bg-[var(--primary-dark)] text-white rounded-lg p-2 mb-2">
-          <h3 className="text-xs font-bold mb-1">Filtros de Búsqueda</h3>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
-            <div className="flex flex-col">
-              <label className="mb-1">Fecha Inicio</label>
-              <input
-                type="date"
-                name="startDate"
-                value={filters.startDate}
-                onChange={handleChange}
-                className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-              />
-            </div>
-            <div className="flex flex-col">
-              <label className="mb-1">Fecha Fin</label>
-              <input
-                type="date"
-                name="endDate"
-                value={filters.endDate}
-                onChange={handleChange}
-                className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-              />
-            </div>
-            <div className="flex flex-col">
-              <label className="mb-1">Tipo Vehículo</label>
-              <select
-                name="tipoVehiculo"
-                value={filters.tipoVehiculo}
-                onChange={(e)=>{ handleChange(e); setFilters(prev=>({...prev, placa:''})) }}
-                className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-              >
-                <option value="">Todos los Tipos</option>
-                {tiposVehiculo.map(tv => (
-                  <option key={tv} value={tv}>{tv}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label className="mb-1">Placa</label>
-              <select
-                name="placa"
-                value={filters.placa}
-                onChange={handleChange}
-                className="p-1 text-xs rounded border border-gray-300 text-gray-800 bg-white"
-              >
-                <option value="">Toda la Flota</option>
-                {placasLista.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="conObservaciones"
-                checked={filters.conObservaciones}
-                onChange={handleChange}
-                className="w-4 h-4"
-              />
-              <label>Con Observaciones</label>
-            </div>
-          </div>
-        </div>
-
-        {/* Botones */}
-        <div className="flex flex-wrap justify-center gap-2 mb-2 text-xs">
-          <button
-            onClick={()=>handleConsultar(1)}
-            disabled={loading}
-            className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-60"
-          >
-            <i className="fas fa-search"></i> {loading ? 'Consultando...' : 'Consultar'}
-          </button>
-          <button
-            onClick={handleLimpiar}
-            className="bg-gray-500 hover:bg-gray-700 text-white px-2 py-1 rounded flex items-center gap-1"
-          >
-            <i className="fas fa-eraser"></i> Limpiar
-          </button>
-          <button
-            onClick={exportXLSX}
-            disabled={data.length === 0}
-            className="bg-green-600 hover:bg-green-800 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
-            title={data.length ? 'Exportar a Excel (.xlsx)' : 'Sin datos'}
-          >
-            <i className="fas fa-file-excel"></i> Excel
-          </button>
-          <button
-            onClick={exportPDF}
-            disabled={data.length === 0}
-            className="bg-red-600 hover:bg-red-800 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
-            title={data.length ? 'Exportar a PDF' : 'Sin datos'}
-          >
-            <i className="fas fa-file-pdf"></i> PDF
-          </button>
-        </div>
-
-        {/* Área de mensajes */}
-        <p
-          className={`text-center text-xs mb-2 ${
-            status.includes('❌') ? 'text-red-600' : status.includes('⚠️') ? 'text-yellow-600' : 'text-blue-700'
-          }`}
-        >
-          {status}
-        </p>
-
-        {/* Tabla */}
-        <div className="overflow-x-auto border rounded-lg shadow">
-          <table className="w-full text-[11px] border-collapse rounded-lg overflow-hidden">
-            <thead className="bg-slate-800 text-white">
-              <tr>
-                <th className="p-1 border text-center">Consecutivo</th>
-                <th className="p-1 border text-center">Fecha</th>
-                <th className="p-1 border text-center">Hora</th>
-                <th className="p-1 border text-center">Placa</th>
-                <th className="p-1 border text-center">Marca</th>
-                <th className="p-1 border text-center">KM</th>
-                <th className="p-1 border text-center">Encargado</th>
-                <th className="p-1 border text-center">Observaciones</th>
-                <th className="p-1 border text-center">Estado</th>
-                <th className="p-1 border text-center">F. Verificación</th>
-                <th className="p-1 border text-center">U. Verifica</th>
-                <th className="p-1 border text-center">F. Solución</th>
-                <th className="p-1 border text-center">U. Soluciona</th>
-                <th className="p-1 border text-center">Obs. Solución</th>
-                <th className="p-1 border text-center">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.length > 0 ? (
-                data.map((row) => {
-                  const tieneObs = !!(row.observaciones && String(row.observaciones).trim().length > 0)
-                  return (
-                    <tr key={row.id} className="odd:bg-white even:bg-gray-100 hover:bg-blue-50 transition">
-                      <td className="p-1 border text-center">{row.consecutivo || '-'}</td>
-                      <td className="p-1 border text-center">{row.fecha_registro || '-'}</td>
-                      <td className="p-1 border text-center">{row.hora_registro || '-'}</td>
-                      <td className="p-1 border text-center">{row.placa || '-'}</td>
-                      <td className="p-1 border text-center">{row.marca || '-'}</td>
-                      <td className="p-1 border text-center">{row.km_registro ?? '-'}</td>
-                      <td className="p-1 border text-center">{row.usuario_encargado || '-'}</td>
-                      <td className="p-1 border text-center truncate max-w-[220px]" title={row.observaciones || ''}>
-                        {row.observaciones || '-'}
-                      </td>
-                      <td className="p-1 border text-center"><EstadoChip estado={row.estado_observacion} /></td>
-                      <td className="p-1 border text-center">{row.fecha_verificacion_observacion || '-'}</td>
-                      <td className="p-1 border text-center">{row.usuario_verificacion || '-'}</td>
-                      <td className="p-1 border text-center">{row.fecha_solucion_observacion || '-'}</td>
-                      <td className="p-1 border text-center">{row.usuario_solucion || '-'}</td>
-                      <td className="p-1 border text-center truncate max-w-[220px]" title={row.observacion_solucion || ''}>
-                        {row.observacion_solucion || '-'}
-                      </td>
-                      <td className="p-1 border text-center">
-                        {tieneObs ? (
-                          <button
-                            onClick={()=> abrirSeguimiento(row)}
-                            className="px-2 py-1 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded"
-                          >
-                            Seguimiento
-                          </button>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })
-              ) : (
-                <tr>
-                  <td colSpan="15" className="text-center text-gray-500 p-2">
-                    No hay resultados para los filtros seleccionados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Paginación */}
-        {total > 0 && (
-          <div className="flex items-center justify-center gap-2 mt-2 text-xs">
-            <button
-              className="px-2 py-1 border rounded disabled:opacity-50"
-              onClick={()=> handleConsultar(Math.max(1, page - 1))}
-              disabled={loading || page <= 1}
-            >
-              ‹ Anterior
-            </button>
-            <span>Página {page} de {totalPages}</span>
-            <button
-              className="px-2 py-1 border rounded disabled:opacity-50"
-              onClick={()=> handleConsultar(Math.min(totalPages, page + 1))}
-              disabled={loading || page >= totalPages}
-            >
-              Siguiente ›
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Drawer seguimiento */}
-      {drawerOpen && rowSel && (
-        <div className="fixed inset-0 z-50">
-          {/* overlay */}
-          <div className="absolute inset-0 bg-black/40" onClick={cerrarDrawer}></div>
-
-          {/* panel */}
-          <div className="absolute right-0 top-0 h-full w-full sm:w-[520px] bg-white shadow-2xl p-4 overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-2 mb-3">
-              <h3 className="text-lg font-bold text-[var(--primary)] flex items-center gap-2">
-                <i className="fas fa-tools"></i> Seguimiento de Inspección
-              </h3>
-              <button className="text-gray-600 hover:text-black" onClick={cerrarDrawer}>
-                <i className="fas fa-times text-xl"></i>
-              </button>
-            </div>
-
-            {/* Estado actual */}
-            <div className="mb-3 text-sm">
-              Estado actual: <EstadoChip estado={rowSel.estado_observacion} />
-            </div>
-
-            {/* Detalle */}
-            <div className="border rounded mb-4">
-              <div className="bg-gray-900 text-white px-3 py-1 rounded-t text-sm font-semibold">
-                Detalle
-              </div>
-              <div className="p-3 text-xs grid grid-cols-2 gap-2">
-                <div><b>Consecutivo:</b> {rowSel.consecutivo || '-'}</div>
-                <div><b>Fecha:</b> {rowSel.fecha_registro || '-'}</div>
-                <div><b>Hora:</b> {rowSel.hora_registro || '-'}</div>
-                <div><b>Placa:</b> {rowSel.placa || '-'}</div>
-                <div><b>Tipo:</b> {rowSel.tipo_vehiculo || '-'}</div>
-                <div><b>Marca:</b> {rowSel.marca || '-'}</div>
-                <div><b>KM:</b> {rowSel.km_registro ?? '-'}</div>
-                <div className="col-span-2"><b>Encargado:</b> {rowSel.usuario_encargado || '-'}</div>
-                <div className="col-span-2"><b>Observaciones:</b> {rowSel.observaciones || '-'}</div>
-                <div className="col-span-2 grid grid-cols-2 gap-2 mt-2">
-                  <div><b>Exterior:</b> {rowSel.revision_exterior || '-'}</div>
-                  <div><b>Motor:</b> {rowSel.motor || '-'}</div>
-                  <div><b>Interior:</b> {rowSel.interior_funcionamiento || '-'}</div>
-                  <div><b>Prevención:</b> {rowSel.equipos_prevencion || '-'}</div>
-                  <div><b>Documentos:</b> {rowSel.documentos || '-'}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Seguimiento (acciones) */}
-            <div className="border rounded">
-              <div className="bg-gray-900 text-white px-3 py-1 rounded-t text-sm font-semibold">
-                Acciones de Seguimiento
-              </div>
-              <div className="p-3 space-y-3 text-sm">
-                {/* EN ANÁLISIS */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={marcarEnAnalisis}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-800 text-white rounded disabled:opacity-50"
-                    disabled={esCerrada || esAnalisis}
-                  >
-                    Marcar EN ANÁLISIS
-                  </button>
-                  <div className="text-xs text-gray-600">
-                    Fecha verificación: {rowSel.fecha_verificacion_observacion || '-'} · {rowSel.usuario_verificacion || '-'}
-                  </div>
-                </div>
-
-                {/* CERRAR */}
-                <div className="border-t pt-3">
-                  <label className="block mb-1 font-semibold text-xs">Observación de Cierre</label>
-                  <textarea
-                    className="w-full border rounded p-2 text-xs"
-                    rows={3}
-                    value={obsCierre}
-                    onChange={(e)=> setObsCierre(e.target.value)}
-                    placeholder={esPendiente ? 'Habilítalo marcando EN ANÁLISIS' : 'Describe la solución aplicada (obligatorio para cerrar)'}
-                    disabled={esPendiente || esCerrada}
-                  />
-                  <div className="flex items-center justify-between mt-2">
-                    <button
-                      onClick={cerrarObservacion}
-                      className="px-3 py-1 bg-green-600 hover:bg-green-800 text-white rounded disabled:opacity-50"
-                      disabled={esPendiente || esCerrada || !obsCierre.trim() || closing}
-                      title={closing ? 'Guardando...' : 'Cerrar Observación'}
-                    >
-                      {closing ? 'Guardando...' : 'Cerrar Observación'}
-                    </button>
-                    <div className="text-xs text-gray-600">
-                      Fecha solución: {rowSel.fecha_solucion_observacion || '-'} · {rowSel.usuario_solucion || '-'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Cerrar */}
-            <div className="flex justify-end mt-4">
-              <button className="px-3 py-2 bg-gray-600 hover:bg-gray-800 text-white rounded" onClick={cerrarDrawer}>
-                Cerrar panel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+  ).format(
+    new Date()
   )
 }
 
+// =========================================================
+// NIT EMPRESA
+// =========================================================
+
+function obtenerNitEmpresa(
+  user
+) {
+  return normalizarTexto(
+    user?.nitEmpresa ||
+    user?.nit_empresa ||
+    user?.nit ||
+    user?.empresaNit ||
+    user?.empresa_nit
+  )
+}
+
+// =========================================================
+// LEER RESPUESTA API
+// =========================================================
+
+async function leerRespuestaApi(
+  response
+) {
+  const contentType =
+    response.headers.get(
+      'content-type'
+    ) || ''
+
+  if (
+    !contentType.includes(
+      'application/json'
+    )
+  ) {
+    const texto =
+      await response.text()
+
+    console.error(
+      'La API respondió contenido no JSON:',
+      {
+        status:
+          response.status,
+
+        texto:
+          texto.slice(
+            0,
+            500
+          ),
+      }
+    )
+
+    throw new Error(
+      `La API respondió contenido no JSON. HTTP ${response.status}`
+    )
+  }
+
+  const data =
+    await response.json()
+
+  if (
+    !response.ok ||
+    data?.status !==
+      'success'
+  ) {
+    throw new Error(
+      data?.message ||
+      `Error HTTP ${response.status}`
+    )
+  }
+
+  return data
+}
+
+// =========================================================
+// ESTADO CHIP
+// =========================================================
+
+function EstadoChip({
+  estado,
+}) {
+  const estadoNormalizado =
+    normalizarMayusculas(
+      estado
+    )
+
+  let clases =
+    'bg-gray-100 text-gray-700 border-gray-300'
+
+  if (
+    estadoNormalizado ===
+    ESTADO_CERRADA
+  ) {
+    clases =
+      'bg-green-100 text-green-700 border-green-300'
+  } else if (
+    estadoNormalizado ===
+      'EN ANALISIS' ||
+    estadoNormalizado ===
+      'EN ANÁLISIS'
+  ) {
+    clases =
+      'bg-blue-100 text-blue-700 border-blue-300'
+  } else if (
+    estadoNormalizado ===
+    ESTADO_PENDIENTE
+  ) {
+    clases =
+      'bg-amber-100 text-amber-700 border-amber-300'
+  }
+
+  return (
+    <span
+      className={`
+        inline-flex
+        items-center
+        justify-center
+        px-2
+        py-[2px]
+        rounded-full
+        border
+        text-[10px]
+        font-semibold
+        whitespace-nowrap
+        ${clases}
+      `}
+    >
+      {
+        estado ||
+        '-'
+      }
+    </span>
+  )
+}
+
+// =========================================================
+// PÁGINA
+// =========================================================
+
+export default function PreoperacionalesPage() {
+  const router =
+    useRouter()
+
+  // =======================================================
+  // SESIÓN
+  // =======================================================
+
+  const [
+    user,
+    setUser,
+  ] =
+    useState(
+      null
+    )
+
+  // =======================================================
+  // FILTROS
+  // =======================================================
+
+  const [
+    filters,
+    setFilters,
+  ] =
+    useState({
+      startDate:
+        '',
+
+      endDate:
+        '',
+
+      tipoVehiculo:
+        '',
+
+      placa:
+        '',
+
+      conObservaciones:
+        false,
+    })
+
+  // =======================================================
+  // VEHÍCULOS
+  // =======================================================
+
+  const [
+    vehiculos,
+    setVehiculos,
+  ] =
+    useState([])
+
+  // =======================================================
+  // RESULTADOS
+  // =======================================================
+
+  const [
+    data,
+    setData,
+  ] =
+    useState([])
+
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(false)
+
+  const [
+    status,
+    setStatus,
+  ] =
+    useState('')
+
+  // =======================================================
+  // PAGINACIÓN
+  // =======================================================
+
+  const [
+    page,
+    setPage,
+  ] =
+    useState(1)
+
+  const [
+    total,
+    setTotal,
+  ] =
+    useState(0)
+
+  const [
+    totalPagesApi,
+    setTotalPagesApi,
+  ] =
+    useState(1)
+
+  // =======================================================
+  // RESUMEN
+  // =======================================================
+
+  const [
+    resumen,
+    setResumen,
+  ] =
+    useState({
+      total_inspecciones:
+        0,
+
+      no_conformes:
+        0,
+
+      con_observaciones:
+        0,
+
+      pendientes:
+        0,
+
+      en_analisis:
+        0,
+
+      pendientes_o_analisis:
+        0,
+
+      cerradas:
+        0,
+    })
+
+  // =======================================================
+  // DRAWER
+  // =======================================================
+
+  const [
+    drawerOpen,
+    setDrawerOpen,
+  ] =
+    useState(false)
+
+  const [
+    rowSel,
+    setRowSel,
+  ] =
+    useState(null)
+
+  const [
+    obsCierre,
+    setObsCierre,
+  ] =
+    useState('')
+
+  const [
+    closing,
+    setClosing,
+  ] =
+    useState(false)
+
+  const [
+    updating,
+    setUpdating,
+  ] =
+    useState(false)
+
+  // =======================================================
+  // VEHÍCULOS DERIVADOS
+  // =======================================================
+
+  const tiposVehiculo =
+    useMemo(
+      () => {
+        const valores =
+          new Set(
+            vehiculos
+              .map(
+                (vehiculo) =>
+                  normalizarTexto(
+                    vehiculo
+                      ?.tipo_vehiculo
+                  )
+              )
+              .filter(
+                Boolean
+              )
+          )
+
+        return Array.from(
+          valores
+        ).sort(
+          (
+            a,
+            b
+          ) =>
+            a.localeCompare(
+              b,
+              'es'
+            )
+        )
+      },
+      [
+        vehiculos,
+      ]
+    )
+
+  const placasLista =
+    useMemo(
+      () => {
+        return vehiculos
+          .filter(
+            (vehiculo) => {
+              if (
+                !filters
+                  .tipoVehiculo
+              ) {
+                return true
+              }
+
+              return (
+                normalizarTexto(
+                  vehiculo
+                    ?.tipo_vehiculo
+                ) ===
+                filters
+                  .tipoVehiculo
+              )
+            }
+          )
+          .map(
+            (vehiculo) =>
+              normalizarTexto(
+                vehiculo
+                  ?.placa
+              )
+          )
+          .filter(
+            Boolean
+          )
+          .sort(
+            (
+              a,
+              b
+            ) =>
+              a.localeCompare(
+                b,
+                'es'
+              )
+          )
+      },
+      [
+        vehiculos,
+        filters.tipoVehiculo,
+      ]
+    )
+
+  const totalPages =
+    Math.max(
+      1,
+      Number(
+        totalPagesApi ||
+        Math.ceil(
+          total /
+          PAGE_SIZE
+        ) ||
+        1
+      )
+    )
+
+  // =======================================================
+  // CARGAR VEHÍCULOS
+  // =======================================================
+
+  const cargarVehiculos =
+    async (
+      usuarioSesion
+    ) => {
+      try {
+        const nit =
+          obtenerNitEmpresa(
+            usuarioSesion
+          )
+
+        if (
+          !nit
+        ) {
+          throw new Error(
+            'No fue posible identificar la empresa de la sesión.'
+          )
+        }
+
+        const params =
+          new URLSearchParams({
+            recurso:
+              'vehiculos',
+
+            nit,
+          })
+
+        const response =
+          await fetch(
+            `/api/admin/consultas/preoperacionales?${params.toString()}`,
+            {
+              method:
+                'GET',
+
+              cache:
+                'no-store',
+            }
+          )
+
+        const resultado =
+          await leerRespuestaApi(
+            response
+          )
+
+        setVehiculos(
+          Array.isArray(
+            resultado
+              ?.vehiculos
+          )
+            ? resultado.vehiculos
+            : []
+        )
+      } catch (error) {
+        console.error(
+          'Error cargando vehículos:',
+          error
+        )
+
+        setVehiculos(
+          []
+        )
+
+        toast.error(
+          error?.message ||
+          'No se pudieron cargar los vehículos.'
+        )
+      }
+    }
+
+  // =======================================================
+  // SESIÓN INICIAL
+  // =======================================================
+
+  useEffect(
+    () => {
+      const stored =
+        localStorage.getItem(
+          'currentUser'
+        )
+
+      if (
+        !stored
+      ) {
+        router.push(
+          '/login'
+        )
+
+        return
+      }
+
+      try {
+        const parsedUser =
+          JSON.parse(
+            stored
+          )
+
+        setUser(
+          parsedUser
+        )
+
+        cargarVehiculos(
+          parsedUser
+        )
+      } catch (error) {
+        console.error(
+          'Error leyendo sesión:',
+          error
+        )
+
+        localStorage.removeItem(
+          'currentUser'
+        )
+
+        router.push(
+          '/login'
+        )
+      }
+    },
+    [
+      router,
+    ]
+  )
+
+  // =======================================================
+  // FILTROS
+  // =======================================================
+
+  const handleChange =
+    (
+      event
+    ) => {
+      const {
+        name,
+        value,
+        type,
+        checked,
+      } =
+        event.target
+
+      setFilters(
+        (
+          prev
+        ) => ({
+          ...prev,
+
+          [name]:
+            type ===
+            'checkbox'
+              ? checked
+              : value,
+        })
+      )
+    }
+
+  const handleTipoVehiculo =
+    (
+      event
+    ) => {
+      const value =
+        event.target.value
+
+      setFilters(
+        (
+          prev
+        ) => ({
+          ...prev,
+
+          tipoVehiculo:
+            value,
+
+          placa:
+            '',
+        })
+      )
+    }
+
+  // =======================================================
+  // VALIDAR RANGO
+  // =======================================================
+
+  const validarRango =
+    () => {
+      const {
+        startDate,
+        endDate,
+      } =
+        filters
+
+      if (
+        !startDate ||
+        !endDate
+      ) {
+        toast.warning(
+          'Debe seleccionar Fecha Inicio y Fecha Fin.'
+        )
+
+        setStatus(
+          '⚠️ Debe seleccionar ambas fechas.'
+        )
+
+        return false
+      }
+
+      if (
+        endDate <
+        startDate
+      ) {
+        toast.warning(
+          'La fecha final no puede ser anterior a la fecha inicial.'
+        )
+
+        setStatus(
+          '⚠️ Rango de fechas inválido.'
+        )
+
+        return false
+      }
+
+      // IMPORTANTE:
+      // hoy se define aquí antes de utilizarlo.
+      const hoy =
+        hoyBogota()
+
+      if (
+        startDate >
+          hoy ||
+        endDate >
+          hoy
+      ) {
+        toast.warning(
+          'No puede seleccionar fechas futuras.'
+        )
+
+        setStatus(
+          '⚠️ No se permiten fechas futuras.'
+        )
+
+        return false
+      }
+
+      return true
+    }
+
+  // =======================================================
+  // CONSULTAR
+  // =======================================================
+
+  const handleConsultar =
+    async (
+      goToPage = 1
+    ) => {
+      if (
+        !user
+      ) {
+        return
+      }
+
+      if (
+        !validarRango()
+      ) {
+        return
+      }
+
+      setLoading(
+        true
+      )
+
+      setStatus(
+        'Consultando inspecciones...'
+      )
+
+      try {
+        const nit =
+          obtenerNitEmpresa(
+            user
+          )
+
+        if (
+          !nit
+        ) {
+          throw new Error(
+            'No fue posible identificar la empresa de la sesión.'
+          )
+        }
+
+        const params =
+          new URLSearchParams({
+            recurso:
+              'consulta',
+
+            nit,
+
+            fecha_inicio:
+              filters
+                .startDate,
+
+            fecha_fin:
+              filters
+                .endDate,
+
+            pagina:
+              String(
+                goToPage
+              ),
+
+            page_size:
+              String(
+                PAGE_SIZE
+              ),
+          })
+
+        if (
+          filters
+            .tipoVehiculo
+        ) {
+          params.set(
+            'tipo_vehiculo',
+            filters
+              .tipoVehiculo
+          )
+        }
+
+        if (
+          filters.placa
+        ) {
+          params.set(
+            'placa',
+            filters.placa
+          )
+        }
+
+        if (
+          filters
+            .conObservaciones
+        ) {
+          params.set(
+            'con_observaciones',
+            'true'
+          )
+        }
+
+        const response =
+          await fetch(
+            `/api/admin/consultas/preoperacionales?${params.toString()}`,
+            {
+              method:
+                'GET',
+
+              cache:
+                'no-store',
+            }
+          )
+
+        const resultado =
+          await leerRespuestaApi(
+            response
+          )
+
+        const registros =
+          Array.isArray(
+            resultado
+              ?.registros
+          )
+            ? resultado.registros
+            : []
+
+        const paginacion =
+          resultado
+            ?.paginacion ||
+          {}
+
+        setData(
+          registros
+        )
+
+        setPage(
+          Number(
+            paginacion
+              ?.pagina ||
+            goToPage
+          )
+        )
+
+        setTotal(
+          Number(
+            paginacion
+              ?.total ||
+            0
+          )
+        )
+
+        setTotalPagesApi(
+          Number(
+            paginacion
+              ?.total_paginas ||
+            1
+          )
+        )
+
+        setResumen(
+          resultado
+            ?.resumen || {
+            total_inspecciones:
+              0,
+
+            no_conformes:
+              0,
+
+            con_observaciones:
+              0,
+
+            pendientes:
+              0,
+
+            en_analisis:
+              0,
+
+            pendientes_o_analisis:
+              0,
+
+            cerradas:
+              0,
+          }
+        )
+
+        setStatus(
+          `Consulta completada. ${Number(
+            paginacion?.total ||
+            0
+          ).toLocaleString(
+            'es-CO'
+          )} registros encontrados.`
+        )
+      } catch (error) {
+        console.error(
+          'Error consultando preoperacionales:',
+          error
+        )
+
+        setData(
+          []
+        )
+
+        setTotal(
+          0
+        )
+
+        setTotalPagesApi(
+          1
+        )
+
+        setStatus(
+          `❌ ${
+            error?.message ||
+            'Error al consultar inspecciones.'
+          }`
+        )
+
+        toast.error(
+          error?.message ||
+          'Error al consultar inspecciones.'
+        )
+      } finally {
+        setLoading(
+          false
+        )
+      }
+    }
+
+  // =======================================================
+  // LIMPIAR
+  // =======================================================
+
+  const handleLimpiar =
+    () => {
+      setFilters({
+        startDate:
+          '',
+
+        endDate:
+          '',
+
+        tipoVehiculo:
+          '',
+
+        placa:
+          '',
+
+        conObservaciones:
+          false,
+      })
+
+      setData(
+        []
+      )
+
+      setTotal(
+        0
+      )
+
+      setPage(
+        1
+      )
+
+      setTotalPagesApi(
+        1
+      )
+
+      setResumen({
+        total_inspecciones:
+          0,
+
+        no_conformes:
+          0,
+
+        con_observaciones:
+          0,
+
+        pendientes:
+          0,
+
+        en_analisis:
+          0,
+
+        pendientes_o_analisis:
+          0,
+
+        cerradas:
+          0,
+      })
+
+      setStatus(
+        ''
+      )
+    }
+
+  // =======================================================
+  // DRAWER
+  // =======================================================
+
+  const abrirSeguimiento =
+    (
+      row
+    ) => {
+      setRowSel(
+        row
+      )
+
+      setObsCierre(
+        row
+          ?.observacion_solucion ||
+        ''
+      )
+
+      setClosing(
+        false
+      )
+
+      setUpdating(
+        false
+      )
+
+      setDrawerOpen(
+        true
+      )
+    }
+
+  const cerrarDrawer =
+    () => {
+      if (
+        closing ||
+        updating
+      ) {
+        return
+      }
+
+      setDrawerOpen(
+        false
+      )
+
+      setRowSel(
+        null
+      )
+
+      setObsCierre(
+        ''
+      )
+    }
+
+  // =======================================================
+  // RESPONSABLE
+  // =======================================================
+
+  const obtenerResponsable =
+    () => {
+      return normalizarTexto(
+        user
+          ?.nombreCompleto ||
+        user
+          ?.nombre_completo ||
+        user
+          ?.usuario
+      )
+    }
+
+  // =======================================================
+  // ACTUALIZAR FILA LOCAL
+  // =======================================================
+
+  const actualizarFilaLocal =
+    (
+      registro
+    ) => {
+      if (
+        !registro
+      ) {
+        return
+      }
+
+      setRowSel(
+        registro
+      )
+
+      setData(
+        (
+          prev
+        ) =>
+          prev.map(
+            (
+              item
+            ) =>
+              item.id ===
+              registro.id
+                ? registro
+                : item
+          )
+      )
+    }
+
+  // =======================================================
+  // MARCAR EN ANÁLISIS
+  // =======================================================
+
+  const marcarEnAnalisis =
+    async () => {
+      if (
+        !rowSel ||
+        !user ||
+        updating
+      ) {
+        return
+      }
+
+      const estado =
+        normalizarMayusculas(
+          rowSel
+            ?.estado_observacion
+        )
+
+      if (
+        estado ===
+        ESTADO_CERRADA
+      ) {
+        toast.info(
+          'La observación ya está cerrada.'
+        )
+
+        return
+      }
+
+      if (
+        estado ===
+          'EN ANALISIS' ||
+        estado ===
+          'EN ANÁLISIS'
+      ) {
+        toast.info(
+          'La observación ya está EN ANÁLISIS.'
+        )
+
+        return
+      }
+
+      setUpdating(
+        true
+      )
+
+      try {
+        const nit =
+          obtenerNitEmpresa(
+            user
+          )
+
+        const responsable =
+          obtenerResponsable()
+
+        const response =
+          await fetch(
+            '/api/admin/consultas/preoperacionales',
+            {
+              method:
+                'PATCH',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  nit,
+
+                  accion:
+                    'marcar_en_analisis',
+
+                  id:
+                    rowSel.id,
+
+                  responsable,
+                }),
+            }
+          )
+
+        const resultado =
+          await leerRespuestaApi(
+            response
+          )
+
+        actualizarFilaLocal(
+          resultado
+            ?.registro
+        )
+
+        toast.success(
+          resultado
+            ?.message ||
+          'Observación marcada EN ANÁLISIS.'
+        )
+
+        await handleConsultar(
+          page
+        )
+      } catch (error) {
+        console.error(
+          'Error marcando EN ANÁLISIS:',
+          error
+        )
+
+        toast.error(
+          error?.message ||
+          'No se pudo marcar EN ANÁLISIS.'
+        )
+      } finally {
+        setUpdating(
+          false
+        )
+      }
+    }
+
+  // =======================================================
+  // CERRAR OBSERVACIÓN
+  // =======================================================
+
+  const cerrarObservacion =
+    async () => {
+      if (
+        !rowSel ||
+        !user ||
+        closing
+      ) {
+        return
+      }
+
+      const observacion =
+        normalizarTexto(
+          obsCierre
+        )
+
+      if (
+        !observacion
+      ) {
+        toast.warning(
+          'Debe ingresar la observación de cierre.'
+        )
+
+        return
+      }
+
+      const estado =
+        normalizarMayusculas(
+          rowSel
+            ?.estado_observacion
+        )
+
+      if (
+        estado ===
+        ESTADO_CERRADA
+      ) {
+        toast.info(
+          'La observación ya está cerrada.'
+        )
+
+        return
+      }
+
+      if (
+        estado !==
+          'EN ANALISIS' &&
+        estado !==
+          'EN ANÁLISIS'
+      ) {
+        toast.warning(
+          'Primero debe marcar la observación EN ANÁLISIS.'
+        )
+
+        return
+      }
+
+      setClosing(
+        true
+      )
+
+      try {
+        const nit =
+          obtenerNitEmpresa(
+            user
+          )
+
+        const responsable =
+          obtenerResponsable()
+
+        const response =
+          await fetch(
+            '/api/admin/consultas/preoperacionales',
+            {
+              method:
+                'PATCH',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  nit,
+
+                  accion:
+                    'cerrar_observacion',
+
+                  id:
+                    rowSel.id,
+
+                  responsable,
+
+                  observacion_solucion:
+                    observacion,
+                }),
+            }
+          )
+
+        const resultado =
+          await leerRespuestaApi(
+            response
+          )
+
+        actualizarFilaLocal(
+          resultado
+            ?.registro
+        )
+
+        toast.success(
+          resultado
+            ?.message ||
+          'Observación cerrada correctamente.'
+        )
+
+        await handleConsultar(
+          page
+        )
+      } catch (error) {
+        console.error(
+          'Error cerrando observación:',
+          error
+        )
+
+        toast.error(
+          error?.message ||
+          'No se pudo cerrar la observación.'
+        )
+      } finally {
+        setClosing(
+          false
+        )
+      }
+    }
+
+  // =======================================================
+  // OBTENER DATOS PARA EXPORTAR
+  // =======================================================
+
+  const obtenerDatosExportacion =
+    async () => {
+      if (
+        !validarRango()
+      ) {
+        return []
+      }
+
+      const nit =
+        obtenerNitEmpresa(
+          user
+        )
+
+      const params =
+        new URLSearchParams({
+          recurso:
+            'exportar',
+
+          nit,
+
+          fecha_inicio:
+            filters
+              .startDate,
+
+          fecha_fin:
+            filters
+              .endDate,
+        })
+
+      if (
+        filters
+          .tipoVehiculo
+      ) {
+        params.set(
+          'tipo_vehiculo',
+          filters
+            .tipoVehiculo
+        )
+      }
+
+      if (
+        filters.placa
+      ) {
+        params.set(
+          'placa',
+          filters.placa
+        )
+      }
+
+      if (
+        filters
+          .conObservaciones
+      ) {
+        params.set(
+          'con_observaciones',
+          'true'
+        )
+      }
+
+      const response =
+        await fetch(
+          `/api/admin/consultas/preoperacionales?${params.toString()}`,
+          {
+            method:
+              'GET',
+
+            cache:
+              'no-store',
+          }
+        )
+
+      const resultado =
+        await leerRespuestaApi(
+          response
+        )
+
+      return Array.isArray(
+        resultado
+          ?.registros
+      )
+        ? resultado.registros
+        : []
+    }
+
+  // =======================================================
+  // EXPORTAR EXCEL
+  // =======================================================
+
+  const exportXLSX =
+    async () => {
+      try {
+        const registros =
+          await obtenerDatosExportacion()
+
+        if (
+          registros.length ===
+          0
+        ) {
+          toast.info(
+            'No hay datos para exportar.'
+          )
+
+          return
+        }
+
+        const [
+          {
+            default:
+              ExcelJS,
+          },
+          {
+            saveAs,
+          },
+        ] =
+          await Promise.all([
+            import(
+              'exceljs'
+            ),
+
+            import(
+              'file-saver'
+            ),
+          ])
+
+        const wb =
+          new ExcelJS.Workbook()
+
+        wb.creator =
+          'CEA'
+
+        wb.created =
+          new Date()
+
+        const ws =
+          wb.addWorksheet(
+            'Preoperacionales'
+          )
+
+        const headers = [
+          'Consecutivo',
+          'Fecha',
+          'Hora',
+          'Placa',
+          'Tipo Vehículo',
+          'Marca',
+          'KM',
+          'Encargado',
+          'Observaciones',
+          'Estado',
+          'F. Verificación',
+          'U. Verifica',
+          'F. Solución',
+          'U. Soluciona',
+          'Obs. Solución',
+        ]
+
+        ws.addRow(
+          headers
+        )
+
+        const headerRow =
+          ws.getRow(
+            1
+          )
+
+        headerRow.eachCell(
+          (
+            cell
+          ) => {
+            cell.fill = {
+              type:
+                'pattern',
+
+              pattern:
+                'solid',
+
+              fgColor: {
+                argb:
+                  'FF1F2937',
+              },
+            }
+
+            cell.font = {
+              color: {
+                argb:
+                  'FFFFFFFF',
+              },
+
+              bold:
+                true,
+            }
+
+            cell.alignment = {
+              vertical:
+                'middle',
+
+              horizontal:
+                'center',
+
+              wrapText:
+                true,
+            }
+          }
+        )
+
+        registros.forEach(
+          (
+            row
+          ) => {
+            ws.addRow([
+              row
+                ?.consecutivo ||
+              '',
+
+              row
+                ?.fecha_registro ||
+              '',
+
+              row
+                ?.hora_registro ||
+              '',
+
+              row
+                ?.placa ||
+              '',
+
+              row
+                ?.tipo_vehiculo ||
+              '',
+
+              row
+                ?.marca ||
+              '',
+
+              row
+                ?.km_registro ??
+              '',
+
+              row
+                ?.usuario_encargado ||
+              '',
+
+              normalizarTexto(
+                row
+                  ?.observaciones
+              ).replace(
+                /\r?\n/g,
+                ' '
+              ),
+
+              row
+                ?.estado_observacion ||
+              '',
+
+              row
+                ?.fecha_verificacion_observacion ||
+              '',
+
+              row
+                ?.usuario_verificacion ||
+              '',
+
+              row
+                ?.fecha_solucion_observacion ||
+              '',
+
+              row
+                ?.usuario_solucion ||
+              '',
+
+              normalizarTexto(
+                row
+                  ?.observacion_solucion
+              ).replace(
+                /\r?\n/g,
+                ' '
+              ),
+            ])
+          }
+        )
+
+        for (
+          let i = 1;
+          i <=
+          headers.length;
+          i++
+        ) {
+          let maxLength =
+            headers[
+              i -
+              1
+            ].length
+
+          ws.eachRow(
+            {
+              includeEmpty:
+                false,
+            },
+            (
+              row
+            ) => {
+              const valor =
+                row.getCell(
+                  i
+                ).value
+
+              const texto =
+                valor == null
+                  ? ''
+                  : String(
+                      valor
+                    )
+
+              maxLength =
+                Math.max(
+                  maxLength,
+                  Math.min(
+                    texto.length,
+                    60
+                  )
+                )
+            }
+          )
+
+          ws.getColumn(
+            i
+          ).width =
+            Math.min(
+              Math.max(
+                maxLength +
+                  2,
+                10
+              ),
+              45
+            )
+        }
+
+        ws.views = [
+          {
+            state:
+              'frozen',
+
+            ySplit:
+              1,
+          },
+        ]
+
+        const buffer =
+          await wb.xlsx.writeBuffer()
+
+        const blob =
+          new Blob(
+            [
+              buffer,
+            ],
+            {
+              type:
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            }
+          )
+
+        saveAs(
+          blob,
+          `preoperacionales_${filters.startDate}_${filters.endDate}.xlsx`
+        )
+      } catch (error) {
+        console.error(
+          'Error exportando Excel:',
+          error
+        )
+
+        toast.error(
+          error?.message ||
+          'No fue posible generar el archivo Excel.'
+        )
+      }
+    }
+
+  // =======================================================
+  // ESCAPAR HTML
+  // =======================================================
+
+  const escaparHtml =
+    (
+      valor
+    ) => {
+      return String(
+        valor ??
+        ''
+      )
+        .replace(
+          /&/g,
+          '&amp;'
+        )
+        .replace(
+          /</g,
+          '&lt;'
+        )
+        .replace(
+          />/g,
+          '&gt;'
+        )
+        .replace(
+          /"/g,
+          '&quot;'
+        )
+        .replace(
+          /'/g,
+          '&#039;'
+        )
+    }
+
+  // =======================================================
+  // EXPORTAR / IMPRIMIR PDF
+  // =======================================================
+
+  const exportPDF =
+    async () => {
+      try {
+        const registros =
+          await obtenerDatosExportacion()
+
+        if (
+          registros.length ===
+          0
+        ) {
+          toast.info(
+            'No hay datos para exportar.'
+          )
+
+          return
+        }
+
+        const win =
+          window.open(
+            '',
+            '_blank'
+          )
+
+        if (
+          !win
+        ) {
+          toast.warning(
+            'Debe permitir las ventanas emergentes para generar el reporte.'
+          )
+
+          return
+        }
+
+        const nombreEmpresa =
+          escaparHtml(
+            user
+              ?.nombreEmpresa ||
+            user
+              ?.nombre_empresa ||
+            'CEA'
+          )
+
+        const filas =
+          registros
+            .map(
+              (
+                row
+              ) => `
+                <tr>
+                  <td>${escaparHtml(row?.consecutivo)}</td>
+                  <td>${escaparHtml(row?.fecha_registro)}</td>
+                  <td>${escaparHtml(row?.hora_registro)}</td>
+                  <td>${escaparHtml(row?.placa)}</td>
+                  <td>${escaparHtml(row?.tipo_vehiculo)}</td>
+                  <td>${escaparHtml(row?.marca)}</td>
+                  <td>${escaparHtml(row?.km_registro)}</td>
+                  <td>${escaparHtml(row?.usuario_encargado)}</td>
+                  <td class="left">${escaparHtml(row?.observaciones)}</td>
+                  <td>${escaparHtml(row?.estado_observacion)}</td>
+                  <td>${escaparHtml(row?.fecha_verificacion_observacion)}</td>
+                  <td>${escaparHtml(row?.usuario_verificacion)}</td>
+                  <td>${escaparHtml(row?.fecha_solucion_observacion)}</td>
+                  <td>${escaparHtml(row?.usuario_solucion)}</td>
+                  <td class="left">${escaparHtml(row?.observacion_solucion)}</td>
+                </tr>
+              `
+            )
+            .join(
+              ''
+            )
+
+        win.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8" />
+
+              <title>
+                Inspecciones Preoperacionales
+              </title>
+
+              <style>
+                @page {
+                  size: A4 landscape;
+                  margin: 10mm;
+                }
+
+                * {
+                  box-sizing: border-box;
+                }
+
+                body {
+                  margin: 0;
+                  font-family: Arial, sans-serif;
+                  color: #111827;
+                  font-size: 8px;
+                }
+
+                .header {
+                  text-align: center;
+                  margin-bottom: 10px;
+                }
+
+                .header h1 {
+                  margin: 0 0 3px;
+                  font-size: 15px;
+                }
+
+                .header h2 {
+                  margin: 0 0 3px;
+                  font-size: 11px;
+                  font-weight: normal;
+                }
+
+                .header p {
+                  margin: 0;
+                  font-size: 9px;
+                }
+
+                table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  table-layout: fixed;
+                }
+
+                thead {
+                  display: table-header-group;
+                }
+
+                tr {
+                  page-break-inside: avoid;
+                }
+
+                th,
+                td {
+                  border: 1px solid #9ca3af;
+                  padding: 3px;
+                  vertical-align: middle;
+                  text-align: center;
+                  word-wrap: break-word;
+                }
+
+                th {
+                  background: #1f2937;
+                  color: white;
+                  font-weight: bold;
+                  font-size: 7px;
+                }
+
+                td {
+                  font-size: 7px;
+                }
+
+                .left {
+                  text-align: left;
+                }
+
+                .footer {
+                  margin-top: 8px;
+                  text-align: right;
+                  font-size: 8px;
+                }
+              </style>
+            </head>
+
+            <body>
+
+              <div class="header">
+                <h1>
+                  INSPECCIONES PREOPERACIONALES
+                </h1>
+
+                <h2>
+                  ${nombreEmpresa}
+                </h2>
+
+                <p>
+                  Periodo:
+                  ${escaparHtml(filters.startDate)}
+                  a
+                  ${escaparHtml(filters.endDate)}
+                </p>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Consecutivo</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Placa</th>
+                    <th>Tipo</th>
+                    <th>Marca</th>
+                    <th>KM</th>
+                    <th>Encargado</th>
+                    <th>Observaciones</th>
+                    <th>Estado</th>
+                    <th>F. Verif.</th>
+                    <th>U. Verifica</th>
+                    <th>F. Solución</th>
+                    <th>U. Soluciona</th>
+                    <th>Obs. Solución</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  ${filas}
+                </tbody>
+              </table>
+
+              <div class="footer">
+                Total registros:
+                ${registros.length}
+              </div>
+
+              <script>
+                window.onload = function () {
+                  window.print()
+                }
+              </script>
+
+            </body>
+          </html>
+        `)
+
+        win.document.close()
+      } catch (error) {
+        console.error(
+          'Error generando reporte:',
+          error
+        )
+
+        toast.error(
+          error?.message ||
+          'No fue posible generar el reporte.'
+        )
+      }
+    }
+
+  // =======================================================
+  // CARGANDO SESIÓN
+  // =======================================================
+
+  if (
+    !user
+  ) {
+    return (
+      <p className="text-center mt-20">
+        Cargando...
+      </p>
+    )
+  }
+
+  // =======================================================
+  // ESTADOS DRAWER
+  // =======================================================
+
+  const estadoUpper =
+    normalizarMayusculas(
+      rowSel
+        ?.estado_observacion
+    )
+
+  const esPendiente =
+    estadoUpper ===
+    ESTADO_PENDIENTE
+
+  const esCerrada =
+    estadoUpper ===
+    ESTADO_CERRADA
+
+  const esAnalisis =
+    estadoUpper ===
+      'EN ANALISIS' ||
+    estadoUpper ===
+      'EN ANÁLISIS'
+
+  // =======================================================
+  // RENDER
+  // =======================================================
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-4 md:p-6">
+
+      <Toaster
+        position="top-center"
+        richColors
+      />
+
+      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6">
+
+        
+        {/* ==================================================
+              ENCABEZADO
+            ================================================== */}
+
+      <div className="bg-white border rounded-xl shadow-lg p-5 mb-4">
+
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+          <div>
+
+            <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
+              Consultas Administrativas
+            </p>
+
+            <h1 className="text-2xl font-bold text-[var(--primary)] flex items-center gap-2 mt-1">
+
+              <i className="fas fa-clipboard-check"></i>
+
+              Consulta de Preoperacionales
+
+            </h1>
+
+            <p className="text-sm text-gray-600 mt-2">
+              Consulte y analice los registros preoperacionales realizados a los vehículos.
+            </p>
+
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+
+            <button
+              onClick={() =>
+                router.push('/admin/consultas')
+              }
+              className="bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm"
+            >
+              <i className="fas fa-arrow-left mr-2"></i>
+
+              Regresar a Consultas
+            </button>
+
+            <button
+              onClick={() =>
+                cerrarSesion(router)
+              }
+              className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-4 py-2 rounded-lg text-sm"
+            >
+              <i className="fas fa-sign-out-alt mr-2"></i>
+
+              Cerrar Sesión
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+        {/* =================================================
+            FILTROS
+        ================================================= */}
+
+        <div className="bg-[var(--primary-dark)] text-white rounded-xl p-4 mb-4 shadow-sm">
+
+          <div className="flex items-center gap-2 mb-3">
+
+            <i className="fas fa-filter"></i>
+
+            <h2 className="text-sm font-semibold">
+              Filtros de búsqueda
+            </h2>
+
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+
+            <div className="flex flex-col gap-1">
+
+              <label className="font-medium">
+                Fecha Inicio
+              </label>
+
+              <input
+                type="date"
+                name="startDate"
+                value={
+                  filters.startDate
+                }
+                max={
+                  hoyBogota()
+                }
+                onChange={
+                  handleChange
+                }
+                className="p-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+              />
+
+            </div>
+
+            <div className="flex flex-col gap-1">
+
+              <label className="font-medium">
+                Fecha Fin
+              </label>
+
+              <input
+                type="date"
+                name="endDate"
+                value={
+                  filters.endDate
+                }
+                max={
+                  hoyBogota()
+                }
+                onChange={
+                  handleChange
+                }
+                className="p-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+              />
+
+            </div>
+
+            <div className="flex flex-col gap-1">
+
+              <label className="font-medium">
+                Tipo Vehículo
+              </label>
+
+              <select
+                value={
+                  filters
+                    .tipoVehiculo
+                }
+                onChange={
+                  handleTipoVehiculo
+                }
+                className="p-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+              >
+
+                <option value="">
+                  Todos los tipos
+                </option>
+
+                {
+                  tiposVehiculo.map(
+                    (
+                      tipo
+                    ) => (
+                      <option
+                        key={
+                          tipo
+                        }
+                        value={
+                          tipo
+                        }
+                      >
+                        {tipo}
+                      </option>
+                    )
+                  )
+                }
+
+              </select>
+
+            </div>
+
+            <div className="flex flex-col gap-1">
+
+              <label className="font-medium">
+                Placa
+              </label>
+
+              <select
+                name="placa"
+                value={
+                  filters.placa
+                }
+                onChange={
+                  handleChange
+                }
+                className="p-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+              >
+
+                <option value="">
+                  Toda la flota
+                </option>
+
+                {
+                  placasLista.map(
+                    (
+                      placa
+                    ) => (
+                      <option
+                        key={
+                          placa
+                        }
+                        value={
+                          placa
+                        }
+                      >
+                        {placa}
+                      </option>
+                    )
+                  )
+                }
+
+              </select>
+
+            </div>
+
+            <label className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 cursor-pointer self-end">
+
+              <input
+                type="checkbox"
+                name="conObservaciones"
+                checked={
+                  filters
+                    .conObservaciones
+                }
+                onChange={
+                  handleChange
+                }
+                className="w-4 h-4"
+              />
+
+              <span>
+                Pendientes / En análisis
+              </span>
+
+            </label>
+
+          </div>
+
+        </div>
+
+        {/* =================================================
+            ACCIONES
+        ================================================= */}
+
+        <div className="flex flex-wrap justify-center gap-2 mb-4">
+
+          <button
+            onClick={() =>
+              handleConsultar(
+                1
+              )
+            }
+            disabled={
+              loading
+            }
+            className="
+              bg-[var(--primary)]
+              hover:bg-[var(--primary-dark)]
+              text-white
+              px-4
+              py-2
+              rounded-lg
+              text-xs
+              flex
+              items-center
+              gap-2
+              disabled:opacity-50
+              shadow-sm
+            "
+          >
+            <i className="fas fa-search"></i>
+
+            {
+              loading
+                ? 'Consultando...'
+                : 'Consultar'
+            }
+
+          </button>
+
+          <button
+            onClick={
+              handleLimpiar
+            }
+            className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2"
+          >
+            <i className="fas fa-eraser"></i>
+
+            Limpiar
+          </button>
+
+          <button
+            onClick={
+              exportXLSX
+            }
+            disabled={
+              total === 0
+            }
+            className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2 disabled:opacity-40"
+          >
+            <i className="fas fa-file-excel"></i>
+
+            Excel
+          </button>
+
+          <button
+            onClick={
+              exportPDF
+            }
+            disabled={
+              total === 0
+            }
+            className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2 disabled:opacity-40"
+          >
+            <i className="fas fa-file-pdf"></i>
+
+            PDF
+          </button>
+
+        </div>
+
+        {/* =================================================
+            RESUMEN
+        ================================================= */}
+
+        {
+          total > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-slate-700">
+                  {
+                    Number(
+                      resumen
+                        ?.total_inspecciones ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-gray-500">
+                  Inspecciones
+                </div>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-red-700">
+                  {
+                    Number(
+                      resumen
+                        ?.no_conformes ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-red-600">
+                  No conformes
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-amber-700">
+                  {
+                    Number(
+                      resumen
+                        ?.pendientes ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-amber-600">
+                  Pendientes
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-blue-700">
+                  {
+                    Number(
+                      resumen
+                        ?.en_analisis ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-blue-600">
+                  En análisis
+                </div>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-green-700">
+                  {
+                    Number(
+                      resumen
+                        ?.cerradas ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-green-600">
+                  Cerradas
+                </div>
+              </div>
+
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-purple-700">
+                  {
+                    Number(
+                      resumen
+                        ?.con_observaciones ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-purple-600">
+                  Con observación
+                </div>
+              </div>
+
+            </div>
+          )
+        }
+
+        {/* =================================================
+            ESTADO
+        ================================================= */}
+
+        {
+          status && (
+            <p
+              className={`
+                text-center
+                text-xs
+                mb-3
+                ${
+                  status.includes(
+                    '❌'
+                  )
+                    ? 'text-red-600'
+                    : status.includes(
+                        '⚠️'
+                      )
+                      ? 'text-amber-600'
+                      : 'text-blue-700'
+                }
+              `}
+            >
+              {status}
+            </p>
+          )
+        }
+
+        {/* =================================================
+            TABLA
+        ================================================= */}
+
+        <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+
+          <table className="w-full min-w-[1500px] text-[10px] border-collapse">
+
+            <thead className="bg-slate-800 text-white">
+
+              <tr>
+
+                <th className="p-2 border">
+                  Consecutivo
+                </th>
+
+                <th className="p-2 border">
+                  Fecha
+                </th>
+
+                <th className="p-2 border">
+                  Hora
+                </th>
+
+                <th className="p-2 border">
+                  Placa
+                </th>
+
+                <th className="p-2 border">
+                  Tipo
+                </th>
+
+                <th className="p-2 border">
+                  Marca
+                </th>
+
+                <th className="p-2 border">
+                  KM
+                </th>
+
+                <th className="p-2 border">
+                  Encargado
+                </th>
+
+                <th className="p-2 border">
+                  Observaciones
+                </th>
+
+                <th className="p-2 border">
+                  Estado
+                </th>
+
+                <th className="p-2 border">
+                  F. Verificación
+                </th>
+
+                <th className="p-2 border">
+                  U. Verifica
+                </th>
+
+                <th className="p-2 border">
+                  F. Solución
+                </th>
+
+                <th className="p-2 border">
+                  U. Soluciona
+                </th>
+
+                <th className="p-2 border">
+                  Acción
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {
+                data.length >
+                0
+                  ? data.map(
+                      (
+                        row
+                      ) => {
+                        const tieneSeguimiento =
+                          Boolean(
+                            row
+                              ?.requiere_seguimiento ||
+                            normalizarTexto(
+                              row
+                                ?.observaciones
+                            ) ||
+                            normalizarTexto(
+                              row
+                                ?.estado_observacion
+                            )
+                          )
+
+                        return (
+                          <tr
+                            key={
+                              row.id
+                            }
+                            className={`
+                              transition
+                              ${
+                                row
+                                  ?.tiene_no_conformidad
+                                  ? 'bg-red-50 hover:bg-red-100'
+                                  : 'odd:bg-white even:bg-gray-50 hover:bg-blue-50'
+                              }
+                            `}
+                          >
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.consecutivo ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center whitespace-nowrap">
+                              {
+                                row
+                                  ?.fecha_registro ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.hora_registro ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center font-semibold">
+                              {
+                                row
+                                  ?.placa ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.tipo_vehiculo ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.marca ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.km_registro ??
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.usuario_encargado ||
+                                '-'
+                              }
+                            </td>
+
+                            <td
+                              className="p-2 border max-w-[250px]"
+                              title={
+                                row
+                                  ?.observaciones ||
+                                ''
+                              }
+                            >
+                              <div className="line-clamp-3">
+                                {
+                                  row
+                                    ?.observaciones ||
+                                  '-'
+                                }
+                              </div>
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              <EstadoChip
+                                estado={
+                                  row
+                                    ?.estado_observacion
+                                }
+                              />
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.fecha_verificacion_observacion ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.usuario_verificacion ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.fecha_solucion_observacion ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center">
+                              {
+                                row
+                                  ?.usuario_solucion ||
+                                '-'
+                              }
+                            </td>
+
+                            <td className="p-2 border text-center">
+
+                              {
+                                tieneSeguimiento
+                                  ? (
+                                    <button
+                                      onClick={() =>
+                                        abrirSeguimiento(
+                                          row
+                                        )
+                                      }
+                                      className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-2 py-1 rounded-md whitespace-nowrap"
+                                    >
+                                      <i className="fas fa-search-plus mr-1"></i>
+
+                                      Seguimiento
+                                    </button>
+                                  )
+                                  : (
+                                    <span className="text-gray-400">
+                                      —
+                                    </span>
+                                  )
+                              }
+
+                            </td>
+
+                          </tr>
+                        )
+                      }
+                    )
+                  : (
+                    <tr>
+                      <td
+                        colSpan={
+                          15
+                        }
+                        className="text-center text-gray-500 p-6"
+                      >
+                        No hay resultados para los filtros seleccionados.
+                      </td>
+                    </tr>
+                  )
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+        {/* =================================================
+            PAGINACIÓN
+        ================================================= */}
+
+        {
+          total >
+            0 && (
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-xs">
+
+              <button
+                onClick={() =>
+                  handleConsultar(
+                    Math.max(
+                      1,
+                      page -
+                        1
+                    )
+                  )
+                }
+                disabled={
+                  loading ||
+                  page <=
+                    1
+                }
+                className="px-3 py-2 border rounded-lg bg-white hover:bg-gray-100 disabled:opacity-40"
+              >
+                <i className="fas fa-chevron-left mr-1"></i>
+
+                Anterior
+              </button>
+
+              <div className="bg-gray-100 border rounded-lg px-4 py-2">
+
+                Página{' '}
+
+                <strong>
+                  {page}
+                </strong>
+
+                {' '}de{' '}
+
+                <strong>
+                  {
+                    totalPages
+                  }
+                </strong>
+
+                <span className="ml-2 text-gray-500">
+                  (
+                  {
+                    total.toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                  {' '}registros)
+                </span>
+
+              </div>
+
+              <button
+                onClick={() =>
+                  handleConsultar(
+                    Math.min(
+                      totalPages,
+                      page +
+                        1
+                    )
+                  )
+                }
+                disabled={
+                  loading ||
+                  page >=
+                    totalPages
+                }
+                className="px-3 py-2 border rounded-lg bg-white hover:bg-gray-100 disabled:opacity-40"
+              >
+                Siguiente
+
+                <i className="fas fa-chevron-right ml-1"></i>
+              </button>
+
+            </div>
+          )
+        }
+
+      </div>
+
+      {/* ===================================================
+          DRAWER
+      =================================================== */}
+
+      {
+        drawerOpen &&
+        rowSel && (
+          <div className="fixed inset-0 z-50">
+
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={
+                cerrarDrawer
+              }
+            ></div>
+
+            <div className="absolute right-0 top-0 h-full w-full sm:w-[560px] bg-white shadow-2xl overflow-y-auto">
+
+              {/* HEADER */}
+
+              <div className="sticky top-0 bg-white z-10 flex items-center justify-between border-b p-4">
+
+                <div>
+
+                  <h2 className="text-lg font-bold text-[var(--primary)] flex items-center gap-2">
+
+                    <i className="fas fa-tools"></i>
+
+                    Seguimiento de Inspección
+
+                  </h2>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Consecutivo {
+                      rowSel
+                        ?.consecutivo ||
+                      '-'
+                    }
+                  </p>
+
+                </div>
+
+                <button
+                  onClick={
+                    cerrarDrawer
+                  }
+                  disabled={
+                    closing ||
+                    updating
+                  }
+                  className="text-gray-500 hover:text-black disabled:opacity-40"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
+
+              </div>
+
+              <div className="p-4 space-y-4">
+
+                {/* ESTADO */}
+
+                <div className="flex items-center justify-between bg-gray-50 border rounded-lg p-3 text-sm">
+
+                  <span className="font-semibold">
+                    Estado actual
+                  </span>
+
+                  <EstadoChip
+                    estado={
+                      rowSel
+                        ?.estado_observacion
+                    }
+                  />
+
+                </div>
+
+                {/* DETALLE */}
+
+                <div className="border rounded-xl overflow-hidden">
+
+                  <div className="bg-slate-800 text-white px-4 py-2 text-sm font-semibold">
+
+                    <i className="fas fa-clipboard-list mr-2"></i>
+
+                    Información de la inspección
+
+                  </div>
+
+                  <div className="p-4 grid grid-cols-2 gap-3 text-xs">
+
+                    <div>
+                      <span className="text-gray-500">
+                        Fecha
+                      </span>
+                      <div className="font-semibold">
+                        {
+                          rowSel
+                            ?.fecha_registro ||
+                          '-'
+                        }
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-gray-500">
+                        Hora
+                      </span>
+                      <div className="font-semibold">
+                        {
+                          rowSel
+                            ?.hora_registro ||
+                          '-'
+                        }
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-gray-500">
+                        Placa
+                      </span>
+                      <div className="font-semibold">
+                        {
+                          rowSel
+                            ?.placa ||
+                          '-'
+                        }
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-gray-500">
+                        Tipo
+                      </span>
+                      <div className="font-semibold">
+                        {
+                          rowSel
+                            ?.tipo_vehiculo ||
+                          '-'
+                        }
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-gray-500">
+                        Marca
+                      </span>
+                      <div className="font-semibold">
+                        {
+                          rowSel
+                            ?.marca ||
+                          '-'
+                        }
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-gray-500">
+                        Kilometraje
+                      </span>
+                      <div className="font-semibold">
+                        {
+                          rowSel
+                            ?.km_registro ??
+                          '-'
+                        }
+                      </div>
+                    </div>
+
+                    <div className="col-span-2">
+                      <span className="text-gray-500">
+                        Encargado
+                      </span>
+                      <div className="font-semibold">
+                        {
+                          rowSel
+                            ?.usuario_encargado ||
+                          '-'
+                        }
+                      </div>
+                    </div>
+
+                    <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+
+                      <span className="font-semibold text-amber-800">
+                        Observaciones
+                      </span>
+
+                      <div className="mt-1 whitespace-pre-wrap text-gray-700">
+                        {
+                          rowSel
+                            ?.observaciones ||
+                          'Sin observaciones.'
+                        }
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* COMPONENTES */}
+
+                <div className="border rounded-xl overflow-hidden">
+
+                  <div className="bg-slate-800 text-white px-4 py-2 text-sm font-semibold">
+                    Resultado de la inspección
+                  </div>
+
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+
+                    {
+                      [
+                        [
+                          'Exterior',
+                          rowSel
+                            ?.revision_exterior,
+                        ],
+
+                        [
+                          'Motor',
+                          rowSel
+                            ?.motor,
+                        ],
+
+                        [
+                          'Interior / Funcionamiento',
+                          rowSel
+                            ?.interior_funcionamiento,
+                        ],
+
+                        [
+                          'Equipos de Prevención',
+                          rowSel
+                            ?.equipos_prevencion,
+                        ],
+
+                        [
+                          'Documentos',
+                          rowSel
+                            ?.documentos,
+                        ],
+                      ].map(
+                        (
+                          [
+                            label,
+                            value,
+                          ]
+                        ) => {
+                          const noConforme =
+                            normalizarMayusculas(
+                              value
+                            ) ===
+                            'NO CONFORME'
+
+                          return (
+                            <div
+                              key={
+                                label
+                              }
+                              className={`
+                                border
+                                rounded-lg
+                                p-3
+                                ${
+                                  noConforme
+                                    ? 'bg-red-50 border-red-300'
+                                    : 'bg-gray-50 border-gray-200'
+                                }
+                              `}
+                            >
+                              <div className="text-gray-500">
+                                {
+                                  label
+                                }
+                              </div>
+
+                              <div
+                                className={`
+                                  font-semibold
+                                  mt-1
+                                  ${
+                                    noConforme
+                                      ? 'text-red-700'
+                                      : 'text-gray-800'
+                                  }
+                                `}
+                              >
+                                {
+                                  value ||
+                                  '-'
+                                }
+                              </div>
+                            </div>
+                          )
+                        }
+                      )
+                    }
+
+                  </div>
+
+                </div>
+
+                {/* SEGUIMIENTO */}
+
+                <div className="border rounded-xl overflow-hidden">
+
+                  <div className="bg-[var(--primary-dark)] text-white px-4 py-2 text-sm font-semibold">
+
+                    <i className="fas fa-tasks mr-2"></i>
+
+                    Seguimiento
+
+                  </div>
+
+                  <div className="p-4 space-y-4">
+
+                    {/* ANÁLISIS */}
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+
+                        <button
+                          onClick={
+                            marcarEnAnalisis
+                          }
+                          disabled={
+                            esCerrada ||
+                            esAnalisis ||
+                            updating ||
+                            closing
+                          }
+                          className="bg-blue-600 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-40"
+                        >
+                          <i className="fas fa-search mr-1"></i>
+
+                          {
+                            updating
+                              ? 'Guardando...'
+                              : 'Marcar EN ANÁLISIS'
+                          }
+                        </button>
+
+                        <div className="text-[11px] text-gray-600">
+
+                          <div>
+                            <strong>
+                              Fecha:
+                            </strong>{' '}
+
+                            {
+                              rowSel
+                                ?.fecha_verificacion_observacion ||
+                              '-'
+                            }
+                          </div>
+
+                          <div>
+                            <strong>
+                              Responsable:
+                            </strong>{' '}
+
+                            {
+                              rowSel
+                                ?.usuario_verificacion ||
+                              '-'
+                            }
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    {/* CIERRE */}
+
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+
+                      <label className="block font-semibold text-xs mb-2">
+                        Observación de solución
+                      </label>
+
+                      <textarea
+                        rows={
+                          4
+                        }
+                        value={
+                          obsCierre
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setObsCierre(
+                            event
+                              .target
+                              .value
+                          )
+                        }
+                        disabled={
+                          esPendiente ||
+                          esCerrada ||
+                          closing
+                        }
+                        placeholder={
+                          esPendiente
+                            ? 'Primero debe marcar la observación EN ANÁLISIS.'
+                            : 'Describa la solución aplicada...'
+                        }
+                        className="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white disabled:bg-gray-100"
+                      />
+
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
+
+                        <button
+                          onClick={
+                            cerrarObservacion
+                          }
+                          disabled={
+                            esPendiente ||
+                            esCerrada ||
+                            !esAnalisis ||
+                            !normalizarTexto(
+                              obsCierre
+                            ) ||
+                            closing ||
+                            updating
+                          }
+                          className="bg-green-600 hover:bg-green-800 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-40"
+                        >
+                          <i className="fas fa-check-circle mr-1"></i>
+
+                          {
+                            closing
+                              ? 'Guardando...'
+                              : 'Cerrar Observación'
+                          }
+                        </button>
+
+                        <div className="text-[11px] text-gray-600">
+
+                          <div>
+                            <strong>
+                              Fecha solución:
+                            </strong>{' '}
+
+                            {
+                              rowSel
+                                ?.fecha_solucion_observacion ||
+                              '-'
+                            }
+                          </div>
+
+                          <div>
+                            <strong>
+                              Responsable:
+                            </strong>{' '}
+
+                            {
+                              rowSel
+                                ?.usuario_solucion ||
+                              '-'
+                            }
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    {/* SOLUCIÓN HISTÓRICA */}
+
+                    {
+                      rowSel
+                        ?.observacion_solucion && (
+                        <div className="border rounded-lg p-3 bg-gray-50 text-xs">
+
+                          <div className="font-semibold mb-1">
+                            Solución registrada
+                          </div>
+
+                          <div className="whitespace-pre-wrap text-gray-700">
+                            {
+                              rowSel
+                                .observacion_solucion
+                            }
+                          </div>
+
+                        </div>
+                      )
+                    }
+
+                  </div>
+
+                </div>
+
+                {/* CERRAR PANEL */}
+
+                <div className="flex justify-end">
+
+                  <button
+                    onClick={
+                      cerrarDrawer
+                    }
+                    disabled={
+                      closing ||
+                      updating
+                    }
+                    className="bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
+                  >
+                    <i className="fas fa-times mr-1"></i>
+
+                    Cerrar panel
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        )
+      }
+
+    </div>
+  )
+}

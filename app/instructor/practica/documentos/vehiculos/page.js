@@ -1,372 +1,1970 @@
+// app/instructor/practica/documentos/vehiculos/page.js
+
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
-import { supabase } from '@/lib/supabaseClient'
 import { cerrarSesion } from '@/lib/auth/logout'
 
-// ---------- Helpers zona Bogotá ----------
-const fmtBogota = (date, mode) => {
-  const optFecha = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Bogota' }
-  const optHora  = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'America/Bogota' }
-  return new Intl.DateTimeFormat('en-CA', mode === 'fecha' ? optFecha : optHora).format(date) // YYYY-MM-DD / HH:mm:ss
-}
-const hoyBogota = () => fmtBogota(new Date(), 'fecha')
-const ahoraBogotaISO = () => {
-  const f = fmtBogota(new Date(), 'fecha')
-  const h = fmtBogota(new Date(), 'hora')
-  return `${f}T${h}-05:00`
-}
+// ============================================================
+// CONSTANTES
+// ============================================================
 
-export default function DocumentosVehiculosPage() {
-  const router = useRouter()
-  const [user, setUser] = useState(null)
+const DOCUMENTO_SOAT =
+  'SOAT'
 
-  // Catálogos
-  const [vehiculos, setVehiculos] = useState([])
+const DOCUMENTO_RTM =
+  'RTM'
 
-  // Form
-  const [placa, setPlaca] = useState('')
-  const [vehiculoInfo, setVehiculoInfo] = useState({ tipo_vehiculo: '-', marca: '-', estado: '-' })
-  const [documento, setDocumento] = useState('') // SOAT | RTM
-  const [fechaVigencia, setFechaVigencia] = useState('') // YYYY-MM-DD
+// ============================================================
+// HELPERS
+// ============================================================
 
-  // Validaciones UI
-  const [touched, setTouched] = useState({ placa: false, documento: false, fecha: false })
-
-  // Conflicto de futuro / confirmación de overwrite
-  const [modalConfirma, setModalConfirma] = useState(null)   // { registro, nuevaFecha }
-  const [needsOverwrite, setNeedsOverwrite] = useState(false) // hay registro futuro encontrado
-  const [overwriteTarget, setOverwriteTarget] = useState(null) // { id, ... }
-  const [overwriteConfirmed, setOverwriteConfirmed] = useState(false) // el usuario confirmó en el modal
-
-  // ---------------- Carga usuario + vehículos activos ----------------
-  useEffect(() => {
-    const stored = localStorage.getItem('currentUser')
-    if (!stored) { router.push('/login'); return }
-    const u = JSON.parse(stored)
-    setUser(u)
-
-    const cargarVehiculos = async () => {
-      const { data, error } = await supabase
-        .from('vehiculos')
-        .select('placa, tipo_vehiculo, marca, estado')
-        .eq('estado', 'Activo')
-        .order('placa', { ascending: true })
-      if (error) {
-        toast.error('No se pudieron cargar los vehículos.')
-        return
-      }
-      setVehiculos(data || [])
-    }
-    cargarVehiculos()
-  }, [router])
-
-  // Autocompletar info vehículo
-  useEffect(() => {
-    if (!placa) {
-      setVehiculoInfo({ tipo_vehiculo: '-', marca: '-', estado: '-' })
-      return
-    }
-    const v = vehiculos.find(x => x.placa === placa)
-    setVehiculoInfo({
-      tipo_vehiculo: v?.tipo_vehiculo || '-',
-      marca: v?.marca || '-',
-      estado: v?.estado || '-'
-    })
-  }, [placa, vehiculos])
-
-  // Reset de confirmación/overwrite si cambian placa o documento
-  useEffect(() => {
-    setNeedsOverwrite(false)
-    setOverwriteTarget(null)
-    setOverwriteConfirmed(false)
-    setModalConfirma(null)
-  }, [placa, documento])
-
-  // Errores básicos
-  const errores = useMemo(() => {
-    const e = {}
-    if (!placa) e.placa = 'Seleccione una placa.'
-    if (!documento) e.documento = 'Seleccione el tipo de documento.'
-    if (!fechaVigencia) e.fecha = 'Seleccione la fecha de vigencia.'
-    return e
-  }, [placa, documento, fechaVigencia])
-
-  // Guardar habilitado solo si:
-  // - No hay errores, y
-  // - (no se requiere overwrite) o (sí se requiere y está confirmado)
-  const puedeGuardar = useMemo(() => {
-    if (Object.keys(errores).length > 0) return false
-    if (needsOverwrite && !overwriteConfirmed) return false
-    return true
-  }, [errores, needsOverwrite, overwriteConfirmed])
-
-  // Al seleccionar fecha: validar conflicto de futuro
-  const onFechaChange = async (val) => {
-    setFechaVigencia(val)
-    setTouched(t => ({ ...t, fecha: true }))
-
-    // reset overwrite state
-    setNeedsOverwrite(false)
-    setOverwriteTarget(null)
-    setOverwriteConfirmed(false)
-    setModalConfirma(null)
-
-    // Se valida solo si hay placa y documento
-    if (!placa || !documento || !val) return
-
-    const hoy = hoyBogota()
-    const esFutura = val > hoy
-    if (!esFutura) return // si es hoy/pasada se permite insert sin modal
-
-    // ¿Ya existe registro futuro de esta placa+doc?
-    const { data, error } = await supabase
-      .from('vencimientos_vehiculos')
-      .select('id, placa, tipo_vehiculo, documento, fecha_vigencia, fecha_actualizacion, estado, nombre_quien_actualiza')
-      .eq('placa', placa)
-      .eq('documento', documento)
-      .gt('fecha_vigencia', hoy) // futuro
-      .order('fecha_vigencia', { ascending: false })
-      .limit(1)
-
-    if (error) {
-      console.error('Error verificando registro futuro:', error)
-      return
-    }
-
-    if (data && data.length > 0) {
-      setNeedsOverwrite(true)
-      setOverwriteTarget(data[0])
-      setModalConfirma({ registro: data[0], nuevaFecha: val })
-    }
+function formatearFecha(fecha) {
+  if (!fecha) {
+    return '-'
   }
 
-  // Guardar (insert/update)
-  const onGuardar = async () => {
-    setTouched({ placa: true, documento: true, fecha: true })
-    if (!puedeGuardar) {
-      toast.error('Hay campos obligatorios sin diligenciar o debes confirmar la sobrescritura.')
-      return
-    }
+  try {
+    return new Intl.DateTimeFormat(
+      'es-CO',
+      {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone:
+          'America/Bogota',
+      }
+    ).format(
+      new Date(
+        `${fecha}T12:00:00`
+      )
+    )
+  } catch {
+    return fecha
+  }
+}
 
-    const payload = {
-      placa,
-      tipo_vehiculo: vehiculoInfo.tipo_vehiculo || null,
-      documento, // 'SOAT' | 'RTM'
-      fecha_vigencia: fechaVigencia,
-      fecha_actualizacion: hoyBogota(),
-      estado: vehiculoInfo.estado || null,
-      nombre_quien_actualiza: user?.nombreCompleto || null
+function esVencido(
+  documento
+) {
+  return (
+    documento?.estado_vigencia ===
+    'VENCIDO'
+  )
+}
+
+function esVigente(
+  documento
+) {
+  return (
+    documento?.estado_vigencia ===
+    'VIGENTE'
+  )
+}
+
+function claseTarjetaEstado(
+  documento
+) {
+  if (!documento) {
+    return (
+      'border-gray-300 ' +
+      'bg-gray-50'
+    )
+  }
+
+  if (
+    esVencido(
+      documento
+    )
+  ) {
+    return (
+      'border-red-300 ' +
+      'bg-red-50'
+    )
+  }
+
+  if (
+    esVigente(
+      documento
+    )
+  ) {
+    return (
+      'border-green-300 ' +
+      'bg-green-50'
+    )
+  }
+
+  return (
+    'border-gray-300 ' +
+    'bg-gray-50'
+  )
+}
+
+function EstadoDocumento({
+  documento,
+  femenino = false,
+}) {
+  if (!documento) {
+    return null
+  }
+
+  if (
+    documento.estado_vigencia ===
+    'VENCIDO'
+  ) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-red-300 bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">
+
+        <i className="fas fa-exclamation-circle"></i>
+
+        {femenino
+          ? 'VENCIDA'
+          : 'VENCIDO'}
+
+      </span>
+    )
+  }
+
+  if (
+    documento.estado_vigencia ===
+    'VIGENTE'
+  ) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-green-300 bg-green-100 px-2.5 py-1 text-xs font-bold text-green-700">
+
+        <i className="fas fa-check-circle"></i>
+
+        VIGENTE
+
+      </span>
+    )
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
+
+      SIN VIGENCIA
+
+    </span>
+  )
+}
+
+function crearModalDocumento(
+  tipoDocumento,
+  documentoActual = null
+) {
+  return {
+    tipoDocumento,
+
+    documentoActual,
+
+    numero_documento:
+      documentoActual
+        ?.numero_documento ||
+      '',
+
+    fecha_expedicion:
+      documentoActual
+        ?.fecha_expedicion ||
+      '',
+
+    fecha_vigencia:
+      documentoActual
+        ?.fecha_vigencia ||
+      '',
+  }
+}
+
+function documentosIniciales() {
+  return {
+    soat: null,
+
+    rtm: null,
+
+    tarjeta_servicio:
+      null,
+
+    licencia_transito: {
+      numero: null,
+      fecha_matricula: null,
+      organismo_transito: null,
+    },
+  }
+}
+
+// ============================================================
+// PÁGINA
+// ============================================================
+
+export default function DocumentosVehiculosPage() {
+  const router =
+    useRouter()
+
+  const [
+    user,
+    setUser,
+  ] =
+    useState(null)
+
+  const [
+    nitActual,
+    setNitActual,
+  ] =
+    useState('')
+
+  // ==========================================================
+  // VEHÍCULOS
+  // ==========================================================
+
+  const [
+    vehiculos,
+    setVehiculos,
+  ] =
+    useState([])
+
+  const [
+    cargandoVehiculos,
+    setCargandoVehiculos,
+  ] =
+    useState(false)
+
+  const [
+    vehiculoId,
+    setVehiculoId,
+  ] =
+    useState('')
+
+  const [
+    vehiculoSeleccionado,
+    setVehiculoSeleccionado,
+  ] =
+    useState(null)
+
+  // ==========================================================
+  // DOCUMENTOS
+  // ==========================================================
+
+  const [
+    documentos,
+    setDocumentos,
+  ] =
+    useState(
+      documentosIniciales()
+    )
+
+  const [
+    cargandoDocumentos,
+    setCargandoDocumentos,
+  ] =
+    useState(false)
+
+  // ==========================================================
+  // MODAL SOAT / RTM
+  // ==========================================================
+
+  const [
+    modalDocumento,
+    setModalDocumento,
+  ] =
+    useState(null)
+
+  const [
+    guardando,
+    setGuardando,
+  ] =
+    useState(false)
+
+  // ==========================================================
+  // SESIÓN
+  // ==========================================================
+
+  useEffect(() => {
+    const stored =
+      localStorage.getItem(
+        'currentUser'
+      )
+
+    if (!stored) {
+      router.push(
+        '/login'
+      )
+
+      return
     }
 
     try {
-      if (needsOverwrite && overwriteConfirmed && overwriteTarget?.id) {
-        // UPDATE al registro futuro detectado
-        const { error } = await supabase
-          .from('vencimientos_vehiculos')
-          .update(payload)
-          .eq('id', overwriteTarget.id)
-        if (error) throw error
-      } else {
-        // INSERT normal
-        const { error } = await supabase
-          .from('vencimientos_vehiculos')
-          .insert([payload])
-        if (error) throw error
+      const parsed =
+        JSON.parse(
+          stored
+        )
+
+      setUser(
+        parsed
+      )
+
+      const nit =
+        parsed?.nitEmpresa ||
+        localStorage.getItem(
+          'currentEmpresaNit'
+        ) ||
+        ''
+
+      if (!nit) {
+        toast.error(
+          'No se encontró el CEA asociado a la sesión.'
+        )
+
+        return
       }
 
-      toast.success('Documento actualizado correctamente.')
+      setNitActual(
+        String(
+          nit
+        ).trim()
+      )
+    } catch (error) {
+      console.error(
+        'Error leyendo sesión:',
+        error
+      )
 
-      // Limpieza + regreso
-      setPlaca('')
-      setVehiculoInfo({ tipo_vehiculo: '-', marca: '-', estado: '-' })
-      setDocumento('')
-      setFechaVigencia('')
-      setTouched({ placa: false, documento: false, fecha: false })
-      setNeedsOverwrite(false)
-      setOverwriteTarget(null)
-      setOverwriteConfirmed(false)
-      setModalConfirma(null)
+      localStorage.removeItem(
+        'currentUser'
+      )
 
-      setTimeout(() => router.push('/instructor/practica'), 800)
-    } catch (e) {
-      console.error('Error guardando vencimiento:', e)
-      toast.error('No se pudo guardar la actualización.')
+      router.push(
+        '/login'
+      )
     }
+  }, [router])
+
+  // ==========================================================
+  // CARGAR VEHÍCULOS ACTIVOS
+  // ==========================================================
+
+  useEffect(() => {
+    if (
+      !nitActual
+    ) {
+      return
+    }
+
+    const cargarVehiculos =
+      async () => {
+        setCargandoVehiculos(
+          true
+        )
+
+        try {
+          const res =
+            await fetch(
+              `/api/documentos/vehiculos?nit=${encodeURIComponent(
+                nitActual
+              )}&recurso=vehiculos`,
+              {
+                cache:
+                  'no-store',
+              }
+            )
+
+          const json =
+            await res.json()
+
+          if (
+            !res.ok ||
+            json?.status !==
+              'success'
+          ) {
+            toast.error(
+              json?.message ||
+                'No fue posible cargar los vehículos.'
+            )
+
+            setVehiculos(
+              []
+            )
+
+            return
+          }
+
+          setVehiculos(
+            Array.isArray(
+              json.vehiculos
+            )
+              ? json.vehiculos
+              : []
+          )
+        } catch (error) {
+          console.error(
+            'Error cargando vehículos:',
+            error
+          )
+
+          toast.error(
+            'No fue posible cargar los vehículos.'
+          )
+
+          setVehiculos(
+            []
+          )
+        } finally {
+          setCargandoVehiculos(
+            false
+          )
+        }
+      }
+
+    cargarVehiculos()
+  }, [nitActual])
+
+  // ==========================================================
+  // CARGAR DOCUMENTOS VEHÍCULO
+  // ==========================================================
+
+  const cargarDocumentos =
+    async (
+      vehiculo
+    ) => {
+      if (
+        !vehiculo ||
+        !nitActual
+      ) {
+        return
+      }
+
+      setCargandoDocumentos(
+        true
+      )
+
+      try {
+        const res =
+          await fetch(
+            `/api/documentos/vehiculos?nit=${encodeURIComponent(
+              nitActual
+            )}&recurso=documentos&vehiculo_id=${encodeURIComponent(
+              vehiculo.id
+            )}`,
+            {
+              cache:
+                'no-store',
+            }
+          )
+
+        const json =
+          await res.json()
+
+        if (
+          !res.ok ||
+          json?.status !==
+            'success'
+        ) {
+          toast.error(
+            json?.message ||
+              'No fue posible cargar los documentos del vehículo.'
+          )
+
+          return
+        }
+
+        setVehiculoSeleccionado(
+          json?.vehiculo ||
+          vehiculo
+        )
+
+        setDocumentos({
+          soat:
+            json
+              ?.documentos
+              ?.soat ||
+            null,
+
+          rtm:
+            json
+              ?.documentos
+              ?.rtm ||
+            null,
+
+          tarjeta_servicio:
+            json
+              ?.documentos
+              ?.tarjeta_servicio ||
+            null,
+
+          licencia_transito: {
+            numero:
+              json
+                ?.documentos
+                ?.licencia_transito
+                ?.numero ||
+              null,
+
+            fecha_matricula:
+              json
+                ?.documentos
+                ?.licencia_transito
+                ?.fecha_matricula ||
+              null,
+
+            organismo_transito:
+              json
+                ?.documentos
+                ?.licencia_transito
+                ?.organismo_transito ||
+              null,
+          },
+        })
+      } catch (error) {
+        console.error(
+          'Error cargando documentos:',
+          error
+        )
+
+        toast.error(
+          'No fue posible cargar los documentos del vehículo.'
+        )
+      } finally {
+        setCargandoDocumentos(
+          false
+        )
+      }
+    }
+
+  // ==========================================================
+  // SELECCIONAR VEHÍCULO
+  // ==========================================================
+
+  const seleccionarVehiculo =
+    async (
+      nuevoId
+    ) => {
+      setVehiculoId(
+        nuevoId
+      )
+
+      setVehiculoSeleccionado(
+        null
+      )
+
+      setDocumentos(
+        documentosIniciales()
+      )
+
+      setModalDocumento(
+        null
+      )
+
+      if (
+        !nuevoId ||
+        !nitActual
+      ) {
+        return
+      }
+
+      const vehiculo =
+        vehiculos.find(
+          (item) =>
+            String(
+              item.id
+            ) ===
+            String(
+              nuevoId
+            )
+        )
+
+      if (
+        !vehiculo
+      ) {
+        toast.error(
+          'Vehículo inválido.'
+        )
+
+        return
+      }
+
+      setVehiculoSeleccionado(
+        vehiculo
+      )
+
+      await cargarDocumentos(
+        vehiculo
+      )
+    }
+
+  // ==========================================================
+  // ABRIR MODAL
+  // ==========================================================
+
+  const abrirModalDocumento =
+    (
+      tipoDocumento,
+      documentoActual
+    ) => {
+      setModalDocumento(
+        crearModalDocumento(
+          tipoDocumento,
+          documentoActual
+        )
+      )
+    }
+
+  // ==========================================================
+  // GUARDAR SOAT / RTM
+  // ==========================================================
+
+  const guardarDocumento =
+    async () => {
+      if (
+        !modalDocumento ||
+        !vehiculoSeleccionado ||
+        !nitActual ||
+        guardando
+      ) {
+        return
+      }
+
+      const numeroDocumento =
+        String(
+          modalDocumento
+            .numero_documento ||
+            ''
+        )
+          .trim()
+          .toUpperCase()
+
+      const fechaExpedicion =
+        String(
+          modalDocumento
+            .fecha_expedicion ||
+            ''
+        ).trim()
+
+      const fechaVigencia =
+        String(
+          modalDocumento
+            .fecha_vigencia ||
+            ''
+        ).trim()
+
+      if (
+        !numeroDocumento
+      ) {
+        toast.error(
+          `Ingrese el número del ${modalDocumento.tipoDocumento}.`
+        )
+
+        return
+      }
+
+      if (
+        !fechaExpedicion
+      ) {
+        toast.error(
+          'Seleccione la fecha de expedición.'
+        )
+
+        return
+      }
+
+      if (
+        !fechaVigencia
+      ) {
+        toast.error(
+          'Seleccione la fecha de vigencia.'
+        )
+
+        return
+      }
+
+      if (
+        fechaVigencia <
+        fechaExpedicion
+      ) {
+        toast.error(
+          'La fecha de vigencia no puede ser anterior a la fecha de expedición.'
+        )
+
+        return
+      }
+
+      setGuardando(
+        true
+      )
+
+      try {
+        const payload = {
+          nit:
+            nitActual,
+
+          accion:
+            'guardar_documento',
+
+          vehiculo_id:
+            vehiculoSeleccionado
+              .id,
+
+          placa:
+            vehiculoSeleccionado
+              .placa,
+
+          documento:
+            modalDocumento
+              .tipoDocumento,
+
+          numero_documento:
+            numeroDocumento,
+
+          fecha_expedicion:
+            fechaExpedicion,
+
+          fecha_vigencia:
+            fechaVigencia,
+
+          nombre_quien_actualiza:
+            user?.nombreCompleto ||
+            user?.nombre_completo ||
+            user?.usuario ||
+            '',
+        }
+
+        const res =
+          await fetch(
+            '/api/documentos/vehiculos',
+            {
+              method:
+                'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify(
+                  payload
+                ),
+            }
+          )
+
+        let json =
+          null
+
+        try {
+          json =
+            await res.json()
+        } catch {
+          toast.error(
+            'La respuesta del servidor no es válida.'
+          )
+
+          return
+        }
+
+        if (
+          res.status ===
+            409 ||
+          json?.status ===
+            'warning'
+        ) {
+          toast.warning(
+            json?.message ||
+              'No fue posible registrar el documento.'
+          )
+
+          return
+        }
+
+        if (
+          !res.ok ||
+          json?.status !==
+            'success'
+        ) {
+          toast.error(
+            json?.message ||
+              'No fue posible guardar el documento.'
+          )
+
+          return
+        }
+
+        toast.success(
+          json?.message ||
+            'Documento registrado correctamente.'
+        )
+
+        setModalDocumento(
+          null
+        )
+
+        await cargarDocumentos(
+          vehiculoSeleccionado
+        )
+      } catch (error) {
+        console.error(
+          'Error guardando documento:',
+          error
+        )
+
+        toast.error(
+          'No fue posible comunicarse con el servidor.'
+        )
+      } finally {
+        setGuardando(
+          false
+        )
+      }
+    }
+
+  // ==========================================================
+  // LOGOUT
+  // ==========================================================
+
+  const handleLogout =
+    () =>
+      cerrarSesion(
+        router
+      )
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
+
+  if (
+    !user
+  ) {
+    return (
+      <p className="text-center mt-20">
+        Cargando...
+      </p>
+    )
   }
-
-  const handleLogout = () => cerrarSesion(router)
-
-  if (!user) return <p className="text-center mt-20">Cargando...</p>
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <Toaster position="top-center" richColors />
-      <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg p-6">
-        {/* Título */}
+
+      <Toaster
+        position="top-center"
+        richColors
+      />
+
+      <div className="w-full max-w-5xl bg-white rounded-xl shadow-lg p-5 sm:p-6">
+
+        {/* ==================================================
+            TÍTULO
+        ================================================== */}
+
         <h2 className="text-2xl font-bold mb-6 text-center text-[var(--primary)] flex items-center justify-center gap-2">
+
           <i className="fas fa-car"></i>
-          Actualizar Documentos <br className="sm:hidden" /> Vehículos
+
+          Documentos de Vehículos
+
         </h2>
 
-        {/* Usuario */}
-        <p className="bg-blue-50 border border-blue-200 text-[var(--primary-dark)] p-2 rounded-md mb-6 text-center text-sm">
-          Usuario: <strong>{user.nombreCompleto}</strong> ({user.rol})
-        </p>
+        {/* ==================================================
+            USUARIO
+        ================================================== */}
 
-        {/* Formulario */}
-        <div className="space-y-5">
+        <div className="bg-blue-50 border border-blue-200 text-[var(--primary-dark)] p-2 rounded-md mb-6 text-center text-sm">
 
-          {/* Placa */}
-          <div className="border rounded-lg overflow-hidden">
-            <div className="bg-black text-white px-3 py-1 text-sm font-semibold flex items-center gap-2">
-              <i className="fas fa-id-card-alt"></i> Placa del Vehículo
-            </div>
-            <div className="p-3">
-              <select
-                className="w-full border p-2 rounded text-sm"
-                value={placa}
-                onChange={(e)=>{ setPlaca(e.target.value); setTouched(t=>({...t, placa:true})) }}
-              >
-                <option value="">-- Selecciona una placa --</option>
-                {vehiculos.map(v=>(
-                  <option key={v.placa} value={v.placa}>{v.placa}</option>
-                ))}
-              </select>
-              {touched.placa && !placa && <small className="text-red-600 text-xs">Seleccione una placa.</small>}
-            </div>
-          </div>
+          <span>
+            Usuario:{' '}
 
-          {/* Info vehículo */}
-          <div className="bg-gray-50 border rounded p-3 text-xs grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <p><strong>Tipo:</strong> {vehiculoInfo.tipo_vehiculo}</p>
-            <p><strong>Marca:</strong> {vehiculoInfo.marca}</p>
-            <p><strong>Estado:</strong> {vehiculoInfo.estado}</p>
-          </div>
+            <strong>
+              {user.nombreCompleto ||
+                user.nombre_completo}
+            </strong>
+          </span>
 
-          {/* Documento */}
-          <div className="border rounded-lg overflow-hidden">
-            <div className="bg-black text-white px-3 py-1 text-sm font-semibold flex items-center gap-2">
-              <i className="fas fa-file-alt"></i> Tipo de Documento
-            </div>
-            <div className="p-3">
-              <select
-                className="w-full border p-2 rounded text-sm"
-                value={documento}
-                onChange={(e)=>{ setDocumento(e.target.value.toUpperCase()); setTouched(t=>({...t, documento:true})) }}
-              >
-                <option value="">-- Selecciona el documento --</option>
-                <option value="SOAT">SOAT</option>
-                <option value="RTM">RTM</option>
-              </select>
-              {touched.documento && !documento && <small className="text-red-600 text-xs">Seleccione el tipo de documento.</small>}
-            </div>
-          </div>
+          {user.rol && (
+            <span>
+              {' '}
+              ({user.rol})
+            </span>
+          )}
 
-          {/* Fecha de Vigencia */}
-          <div className="border rounded-lg overflow-hidden">
-            <div className="bg-black text-white px-3 py-1 text-sm font-semibold flex items-center gap-2">
-              <i className="fas fa-calendar-day"></i> Fecha de Vigencia
-            </div>
-            <div className="p-3">
-              <input
-                type="date"
-                className="w-full border p-2 rounded text-sm"
-                value={fechaVigencia}
-                onChange={(e)=> onFechaChange(e.target.value)}
-              />
-              {touched.fecha && !fechaVigencia && <small className="text-red-600 text-xs">Seleccione la fecha de vigencia.</small>}
-            </div>
-          </div>
+          {user.nombreEmpresa && (
+            <span className="block mt-1">
 
-          {/* Actualizado por */}
-          <div className="border rounded-lg overflow-hidden">
-            <div className="bg-black text-white px-3 py-1 text-sm font-semibold flex items-center gap-2">
-              <i className="fas fa-user-check"></i> Actualizado por
-            </div>
-            <div className="p-3">
-              <input
-                type="text"
-                className="w-full border p-2 rounded text-sm bg-gray-100"
-                readOnly
-                value={user?.nombreCompleto || ''}
-              />
-            </div>
-          </div>
+              CEA:{' '}
+
+              <strong>
+                {
+                  user.nombreEmpresa
+                }
+              </strong>
+
+            </span>
+          )}
+
         </div>
 
-        {/* Botones */}
-        <div className="mt-8 space-y-4">
-          <div className="flex justify-center">
-            <button
-              onClick={onGuardar}
-              className={`bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white py-2 px-6 rounded-lg shadow-md flex items-center gap-2 text-sm ${!puedeGuardar ? 'opacity-60 cursor-not-allowed' : ''}`}
-              disabled={!puedeGuardar}
-            >
-              <i className="fas fa-save"></i> Guardar Actualización
-            </button>
+        {/* ==================================================
+            SELECT VEHÍCULO
+        ================================================== */}
+
+        <div className="border rounded-lg overflow-hidden mb-5">
+
+          <div className="bg-black text-white px-3 py-2 text-sm font-semibold flex items-center gap-2">
+
+            <i className="fas fa-id-card-alt"></i>
+
+            Vehículo
+
           </div>
 
-          <div className="flex justify-center gap-3 flex-wrap">
-            <button
-              onClick={() => router.push('/instructor/practica/documentos')}
-              className="bg-gray-600 hover:bg-gray-800 text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
+          <div className="p-3">
+
+            <select
+              className="w-full border p-2 rounded text-sm"
+              value={
+                vehiculoId
+              }
+              disabled={
+                cargandoVehiculos
+              }
+              onChange={(e) =>
+                seleccionarVehiculo(
+                  e.target.value
+                )
+              }
             >
-              <i className="fas fa-arrow-left"></i> Regresar
-            </button>
-            <button
-              onClick={()=> cerrarSesion(router)}
-              className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
-            >
-              <i className="fas fa-sign-out-alt"></i> Cerrar Sesión
-            </button>
+
+              <option value="">
+
+                {cargandoVehiculos
+                  ? 'Cargando vehículos...'
+                  : '-- Seleccione una placa --'}
+
+              </option>
+
+              {vehiculos.map(
+                (vehiculo) => (
+
+                  <option
+                    key={
+                      vehiculo.id
+                    }
+                    value={
+                      vehiculo.id
+                    }
+                  >
+                    {
+                      vehiculo.placa
+                    }
+                  </option>
+
+                )
+              )}
+
+            </select>
+
           </div>
+
         </div>
+
+        {/* ==================================================
+            INFORMACIÓN VEHÍCULO
+        ================================================== */}
+
+        {vehiculoSeleccionado && (
+
+          <div className="bg-gray-50 border rounded-lg p-3 mb-6 grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+
+            <div>
+
+              <p className="text-xs text-gray-500">
+                Placa
+              </p>
+
+              <p className="font-semibold">
+                {
+                  vehiculoSeleccionado
+                    .placa ||
+                  '-'
+                }
+              </p>
+
+            </div>
+
+            <div>
+
+              <p className="text-xs text-gray-500">
+                Tipo
+              </p>
+
+              <p className="font-semibold">
+                {
+                  vehiculoSeleccionado
+                    .tipo_vehiculo ||
+                  '-'
+                }
+              </p>
+
+            </div>
+
+            <div>
+
+              <p className="text-xs text-gray-500">
+                Marca
+              </p>
+
+              <p className="font-semibold">
+                {
+                  vehiculoSeleccionado
+                    .marca ||
+                  '-'
+                }
+              </p>
+
+            </div>
+
+            <div>
+
+              <p className="text-xs text-gray-500">
+                Estado
+              </p>
+
+              <p className="font-semibold">
+                {
+                  vehiculoSeleccionado
+                    .estado ||
+                  '-'
+                }
+              </p>
+
+            </div>
+
+          </div>
+
+        )}
+
+        {/* ==================================================
+            CARGANDO
+        ================================================== */}
+
+        {cargandoDocumentos && (
+
+          <div className="text-center py-8 text-gray-500 text-sm">
+
+            <i className="fas fa-spinner fa-spin mr-2"></i>
+
+            Consultando documentos...
+
+          </div>
+
+        )}
+
+        {/* ==================================================
+            TARJETAS
+        ================================================== */}
+
+        {vehiculoSeleccionado &&
+          !cargandoDocumentos && (
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            {/* ==============================================
+                SOAT
+            ============================================== */}
+
+            <div
+              className={`border rounded-xl p-5 shadow-sm ${claseTarjetaEstado(
+                documentos.soat
+              )}`}
+            >
+
+              <div className="flex items-start justify-between gap-3">
+
+                <div>
+
+                  <div className="flex items-center gap-2">
+
+                    <i className="fas fa-shield-alt text-lg"></i>
+
+                    <h3 className="font-bold">
+                      SOAT
+                    </h3>
+
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Seguro Obligatorio de Accidentes de Tránsito
+                  </p>
+
+                </div>
+
+                {documentos.soat && (
+
+                  <EstadoDocumento
+                    documento={
+                      documentos.soat
+                    }
+                  />
+
+                )}
+
+              </div>
+
+              {documentos.soat ? (
+
+                <div className="mt-5 text-sm space-y-2">
+
+                  <p>
+                    <strong>
+                      Número póliza:
+                    </strong>{' '}
+
+                    {documentos
+                      .soat
+                      .numero_documento ||
+                      '-'}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Fecha expedición:
+                    </strong>{' '}
+
+                    {formatearFecha(
+                      documentos
+                        .soat
+                        .fecha_expedicion
+                    )}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Vigencia:
+                    </strong>{' '}
+
+                    {formatearFecha(
+                      documentos
+                        .soat
+                        .fecha_vigencia
+                    )}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Última actualización:
+                    </strong>{' '}
+
+                    {formatearFecha(
+                      documentos
+                        .soat
+                        .fecha_actualizacion
+                    )}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Actualizado por:
+                    </strong>{' '}
+
+                    {documentos
+                      .soat
+                      .nombre_quien_actualiza ||
+                      '-'}
+                  </p>
+
+                  {esVencido(
+                    documentos.soat
+                  ) && (
+
+                    <div className="border border-red-300 bg-red-100 text-red-700 rounded-lg p-3 text-xs">
+
+                      <i className="fas fa-exclamation-triangle mr-1"></i>
+
+                      El SOAT se encuentra vencido. Debe registrarse la renovación correspondiente.
+
+                    </div>
+
+                  )}
+
+                  <button
+                    onClick={() =>
+                      abrirModalDocumento(
+                        DOCUMENTO_SOAT,
+                        documentos.soat
+                      )
+                    }
+                    className={`mt-2 px-4 py-2 rounded-lg text-sm text-white ${
+                      esVencido(
+                        documentos.soat
+                      )
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                    }`}
+                  >
+
+                    <i className="fas fa-sync-alt mr-2"></i>
+
+                    Renovar SOAT
+
+                  </button>
+
+                </div>
+
+              ) : (
+
+                <div className="mt-5">
+
+                  <p className="text-sm text-gray-500 mb-4">
+                    No existe un SOAT registrado para este vehículo.
+                  </p>
+
+                  <button
+                    onClick={() =>
+                      abrirModalDocumento(
+                        DOCUMENTO_SOAT,
+                        null
+                      )
+                    }
+                    className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded-lg text-sm"
+                  >
+
+                    <i className="fas fa-plus mr-2"></i>
+
+                    Registrar SOAT
+
+                  </button>
+
+                </div>
+
+              )}
+
+            </div>
+
+            {/* ==============================================
+                RTM
+            ============================================== */}
+
+            <div
+              className={`border rounded-xl p-5 shadow-sm ${claseTarjetaEstado(
+                documentos.rtm
+              )}`}
+            >
+
+              <div className="flex items-start justify-between gap-3">
+
+                <div>
+
+                  <div className="flex items-center gap-2">
+
+                    <i className="fas fa-tools text-lg"></i>
+
+                    <h3 className="font-bold">
+                      Revisión Técnico-Mecánica
+                    </h3>
+
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    RTM
+                  </p>
+
+                </div>
+
+                {documentos.rtm && (
+
+                  <EstadoDocumento
+                    documento={
+                      documentos.rtm
+                    }
+                  />
+
+                )}
+
+              </div>
+
+              {documentos.rtm ? (
+
+                <div className="mt-5 text-sm space-y-2">
+
+                  <p>
+                    <strong>
+                      Número RTM:
+                    </strong>{' '}
+
+                    {documentos
+                      .rtm
+                      .numero_documento ||
+                      '-'}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Fecha expedición:
+                    </strong>{' '}
+
+                    {formatearFecha(
+                      documentos
+                        .rtm
+                        .fecha_expedicion
+                    )}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Vigencia:
+                    </strong>{' '}
+
+                    {formatearFecha(
+                      documentos
+                        .rtm
+                        .fecha_vigencia
+                    )}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Última actualización:
+                    </strong>{' '}
+
+                    {formatearFecha(
+                      documentos
+                        .rtm
+                        .fecha_actualizacion
+                    )}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Actualizado por:
+                    </strong>{' '}
+
+                    {documentos
+                      .rtm
+                      .nombre_quien_actualiza ||
+                      '-'}
+                  </p>
+
+                  {esVencido(
+                    documentos.rtm
+                  ) && (
+
+                    <div className="border border-red-300 bg-red-100 text-red-700 rounded-lg p-3 text-xs">
+
+                      <i className="fas fa-exclamation-triangle mr-1"></i>
+
+                      La Revisión Técnico-Mecánica se encuentra vencida. Debe registrarse la renovación correspondiente.
+
+                    </div>
+
+                  )}
+
+                  <button
+                    onClick={() =>
+                      abrirModalDocumento(
+                        DOCUMENTO_RTM,
+                        documentos.rtm
+                      )
+                    }
+                    className={`mt-2 px-4 py-2 rounded-lg text-sm text-white ${
+                      esVencido(
+                        documentos.rtm
+                      )
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                    }`}
+                  >
+
+                    <i className="fas fa-sync-alt mr-2"></i>
+
+                    Renovar RTM
+
+                  </button>
+
+                </div>
+
+              ) : (
+
+                <div className="mt-5">
+
+                  <p className="text-sm text-gray-500 mb-4">
+                    No existe una RTM registrada para este vehículo.
+                  </p>
+
+                  <button
+                    onClick={() =>
+                      abrirModalDocumento(
+                        DOCUMENTO_RTM,
+                        null
+                      )
+                    }
+                    className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded-lg text-sm"
+                  >
+
+                    <i className="fas fa-plus mr-2"></i>
+
+                    Registrar RTM
+
+                  </button>
+
+                </div>
+
+              )}
+
+            </div>
+
+            {/* ==============================================
+                TARJETA DE SERVICIO
+            ============================================== */}
+
+            <div
+              className={`border rounded-xl p-5 shadow-sm ${claseTarjetaEstado(
+                documentos
+                  .tarjeta_servicio
+              )}`}
+            >
+
+              <div className="flex items-start justify-between gap-3">
+
+                <div>
+
+                  <div className="flex items-center gap-2">
+
+                    <i className="fas fa-address-card text-lg"></i>
+
+                    <h3 className="font-bold">
+                      Tarjeta de Servicio
+                    </h3>
+
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Documento de vinculación del vehículo al CEA
+                  </p>
+
+                </div>
+
+                {documentos
+                  .tarjeta_servicio ? (
+
+                  <EstadoDocumento
+                    documento={
+                      documentos
+                        .tarjeta_servicio
+                    }
+                    femenino
+                  />
+
+                ) : (
+
+                  <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
+
+                    SIN REGISTRO
+
+                  </span>
+
+                )}
+
+              </div>
+
+              {documentos
+                .tarjeta_servicio ? (
+
+                <div className="mt-5 text-sm space-y-2">
+
+                  <p>
+                    <strong>
+                      Número:
+                    </strong>{' '}
+
+                    {documentos
+                      .tarjeta_servicio
+                      .numero_documento ||
+                      '-'}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Fecha expedición:
+                    </strong>{' '}
+
+                    {formatearFecha(
+                      documentos
+                        .tarjeta_servicio
+                        .fecha_expedicion
+                    )}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Vigencia:
+                    </strong>{' '}
+
+                    {formatearFecha(
+                      documentos
+                        .tarjeta_servicio
+                        .fecha_vigencia
+                    )}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Última actualización:
+                    </strong>{' '}
+
+                    {formatearFecha(
+                      documentos
+                        .tarjeta_servicio
+                        .fecha_actualizacion
+                    )}
+                  </p>
+
+                  <p>
+                    <strong>
+                      Actualizado por:
+                    </strong>{' '}
+
+                    {documentos
+                      .tarjeta_servicio
+                      .nombre_quien_actualiza ||
+                      '-'}
+                  </p>
+
+                  {esVencido(
+                    documentos
+                      .tarjeta_servicio
+                  ) && (
+
+                    <div className="border border-red-300 bg-red-100 text-red-700 rounded-lg p-3 text-xs">
+
+                      <i className="fas fa-exclamation-triangle mr-1"></i>
+
+                      La Tarjeta de Servicio se encuentra vencida. El vehículo debe ser revisado administrativamente antes de continuar su operación en el CEA.
+
+                    </div>
+
+                  )}
+
+                  <div className="border border-gray-200 bg-white rounded-lg p-3 text-xs text-gray-600">
+
+                    <i className="fas fa-lock mr-1"></i>
+
+                    La Tarjeta de Servicio solo puede ser registrada o actualizada desde el módulo administrativo.
+
+                  </div>
+
+                </div>
+
+              ) : (
+
+                <div className="mt-5">
+
+                  <p className="text-sm text-gray-500 mb-3">
+                    No existe una Tarjeta de Servicio registrada para este vehículo.
+                  </p>
+
+                  <div className="border border-gray-200 bg-white rounded-lg p-3 text-xs text-gray-600">
+
+                    <i className="fas fa-lock mr-1"></i>
+
+                    Este documento debe registrarse desde el módulo administrativo.
+
+                  </div>
+
+                </div>
+
+              )}
+
+            </div>
+
+            {/* ==============================================
+                LICENCIA DE TRÁNSITO
+            ============================================== */}
+
+            <div className="border border-gray-300 bg-gray-50 rounded-xl p-5 shadow-sm">
+
+              <div className="flex items-start justify-between gap-3">
+
+                <div>
+
+                  <div className="flex items-center gap-2">
+
+                    <i className="fas fa-id-card text-lg"></i>
+
+                    <h3 className="font-bold">
+                      Licencia de Tránsito
+                    </h3>
+
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Información de matrícula del vehículo
+                  </p>
+
+                </div>
+
+                <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
+
+                  <i className="fas fa-lock"></i>
+
+                  SOLO CONSULTA
+
+                </span>
+
+              </div>
+
+              <div className="mt-5 text-sm space-y-2">
+
+                <p>
+                  <strong>
+                    N.º Licencia de Tránsito:
+                  </strong>{' '}
+
+                  {documentos
+                    .licencia_transito
+                    .numero ||
+                    '-'}
+                </p>
+
+                <p>
+                  <strong>
+                    Fecha de matrícula:
+                  </strong>{' '}
+
+                  {formatearFecha(
+                    documentos
+                      .licencia_transito
+                      .fecha_matricula
+                  )}
+                </p>
+
+                <p>
+                  <strong>
+                    Organismo de tránsito:
+                  </strong>{' '}
+
+                  {documentos
+                    .licencia_transito
+                    .organismo_transito ||
+                    '-'}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        )}
+
+        {/* ==================================================
+            NAVEGACIÓN
+        ================================================== */}
+
+        <div className="flex justify-center gap-3 mt-8 flex-wrap">
+
+          <button
+            onClick={() =>
+              router.push(
+                '/instructor/practica/documentos'
+              )
+            }
+            className="bg-gray-600 hover:bg-gray-800 text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
+          >
+
+            <i className="fas fa-arrow-left"></i>
+
+            Regresar
+
+          </button>
+
+          <button
+            onClick={
+              handleLogout
+            }
+            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
+          >
+
+            <i className="fas fa-sign-out-alt"></i>
+
+            Cerrar Sesión
+
+          </button>
+
+        </div>
+
       </div>
 
-      {/* Modal: existe un registro futuro → requiere confirmación para habilitar guardar (overwrite) */}
-      {modalConfirma && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-3">
-          <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
-            <h3 className="text-lg font-bold mb-3 text-red-600">Registro futuro detectado</h3>
-            <p className="text-sm mb-2">
-              Ya existe un registro <b>futuro</b> para esta placa y documento. Si continúas, se <b>sobrescribirá</b> con la nueva fecha.
-            </p>
-            <div className="text-xs bg-gray-50 border rounded p-3 mb-3">
-              <p><b>Placa:</b> {modalConfirma.registro.placa}</p>
-              <p><b>Documento:</b> {modalConfirma.registro.documento}</p>
-              <p><b>Fecha de vigencia (actual):</b> {modalConfirma.registro.fecha_vigencia || '-'}</p>
-              <p><b>Fecha actualización:</b> {modalConfirma.registro.fecha_actualizacion || '-'}</p>
-              <p><b>Tipo vehículo:</b> {modalConfirma.registro.tipo_vehiculo || '-'}</p>
-              <p><b>Estado:</b> {modalConfirma.registro.estado || '-'}</p>
-              <p><b>Actualizado por:</b> {modalConfirma.registro.nombre_quien_actualiza || '-'}</p>
+      {/* ======================================================
+          MODAL SOAT / RTM
+      ====================================================== */}
+
+      {modalDocumento && (
+
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+
+          <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full">
+
+            <h3 className="text-lg font-bold text-[var(--primary)] mb-1">
+
+              {modalDocumento
+                .documentoActual
+                ? 'Renovar'
+                : 'Registrar'}{' '}
+
+              {
+                modalDocumento
+                  .tipoDocumento
+              }
+
+            </h3>
+
+            {vehiculoSeleccionado && (
+
+              <p className="text-xs text-gray-500 mb-4">
+
+                Placa{' '}
+
+                <strong>
+                  {
+                    vehiculoSeleccionado
+                      .placa
+                  }
+                </strong>
+
+                {' '}•{' '}
+
+                {
+                  vehiculoSeleccionado
+                    .tipo_vehiculo ||
+                  '-'
+                }
+
+                {' '}•{' '}
+
+                {
+                  vehiculoSeleccionado
+                    .marca ||
+                  '-'
+                }
+
+              </p>
+
+            )}
+
+            {modalDocumento
+              .documentoActual && (
+
+              <div className="mb-5 border border-blue-200 bg-blue-50 text-blue-800 rounded-lg p-3 text-xs">
+
+                <div className="flex gap-2 items-start">
+
+                  <i className="fas fa-history mt-0.5"></i>
+
+                  <p>
+
+                    Esta renovación generará un
+
+                    <strong>
+                      {' '}nuevo registro histórico
+                    </strong>.
+
+                    {' '}El registro anterior se conservará para la Hoja de Vida del vehículo.
+
+                  </p>
+
+                </div>
+
+              </div>
+
+            )}
+
+            <div className="space-y-4">
+
+              {/* ============================================
+                  NÚMERO DOCUMENTO
+              ============================================ */}
+
+              <div>
+
+                <label className="block mb-1 font-semibold text-sm">
+
+                  {modalDocumento
+                    .tipoDocumento ===
+                  DOCUMENTO_SOAT
+                    ? 'Número de Póliza SOAT'
+                    : 'Número RTM'}
+
+                </label>
+
+                <input
+                  type="text"
+                  className="w-full border p-2 rounded-lg text-sm uppercase"
+                  value={
+                    modalDocumento
+                      .numero_documento
+                  }
+                  onChange={(e) =>
+                    setModalDocumento(
+                      (prev) => ({
+                        ...prev,
+
+                        numero_documento:
+                          e.target
+                            .value
+                            .toUpperCase(),
+                      })
+                    )
+                  }
+                  placeholder={
+                    modalDocumento
+                      .tipoDocumento ===
+                    DOCUMENTO_SOAT
+                      ? 'Ingrese número de póliza'
+                      : 'Ingrese número RTM'
+                  }
+                />
+
+              </div>
+
+              {/* ============================================
+                  FECHA EXPEDICIÓN
+              ============================================ */}
+
+              <div>
+
+                <label className="block mb-1 font-semibold text-sm">
+                  Fecha de Expedición
+                </label>
+
+                <input
+                  type="date"
+                  className="w-full border p-2 rounded-lg text-sm"
+                  value={
+                    modalDocumento
+                      .fecha_expedicion
+                  }
+                  onChange={(e) =>
+                    setModalDocumento(
+                      (prev) => ({
+                        ...prev,
+
+                        fecha_expedicion:
+                          e.target
+                            .value,
+                      })
+                    )
+                  }
+                />
+
+              </div>
+
+              {/* ============================================
+                  FECHA VIGENCIA
+              ============================================ */}
+
+              <div>
+
+                <label className="block mb-1 font-semibold text-sm">
+                  Fecha de Vigencia
+                </label>
+
+                <input
+                  type="date"
+                  className="w-full border p-2 rounded-lg text-sm"
+                  value={
+                    modalDocumento
+                      .fecha_vigencia
+                  }
+                  onChange={(e) =>
+                    setModalDocumento(
+                      (prev) => ({
+                        ...prev,
+
+                        fecha_vigencia:
+                          e.target
+                            .value,
+                      })
+                    )
+                  }
+                />
+
+              </div>
+
+              {/* ============================================
+                  ACTUALIZADO POR
+              ============================================ */}
+
+              <div>
+
+                <label className="block mb-1 font-semibold text-sm">
+                  Actualizado por
+                </label>
+
+                <input
+                  type="text"
+                  readOnly
+                  className="w-full border p-2 rounded-lg text-sm bg-gray-100"
+                  value={
+                    user?.nombreCompleto ||
+                    user?.nombre_completo ||
+                    ''
+                  }
+                />
+
+              </div>
+
             </div>
-            <p className="text-sm mb-4">
-              Nueva fecha propuesta: <b>{modalConfirma.nuevaFecha}</b>
-            </p>
-            <div className="flex justify-end gap-3">
+
+            {/* ==============================================
+                BOTONES
+            ============================================== */}
+
+            <div className="flex justify-end gap-3 mt-6">
+
               <button
-                onClick={() => { setModalConfirma(null); /* no confirmamos: guardar seguirá deshabilitado */ }}
-                className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded"
+                onClick={() =>
+                  setModalDocumento(
+                    null
+                  )
+                }
+                disabled={
+                  guardando
+                }
+                className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
               >
+
                 Cancelar
+
               </button>
+
               <button
-                onClick={() => {
-                  setOverwriteConfirmed(true)
-                  setModalConfirma(null)
-                  toast.info('Presione Guardar para registrar actualización (se sobrescribirá el registro existente).')
-                }}
-                className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded"
+                onClick={
+                  guardarDocumento
+                }
+                disabled={
+                  guardando
+                }
+                className={`px-4 py-2 rounded-lg text-white ${
+                  guardando
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                }`}
               >
-                Confirmar
+
+                {guardando
+                  ? 'Guardando...'
+                  : modalDocumento
+                      .documentoActual
+                  ? 'Registrar Renovación'
+                  : 'Registrar'}
+
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       )}
+
     </div>
   )
 }
