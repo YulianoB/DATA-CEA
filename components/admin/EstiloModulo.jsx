@@ -15,6 +15,15 @@ export const ESTILO_SECCIONES = {
   radio: 10,
 }
 
+// Franjas secundarias dentro de modales, formularios y bloques de detalle.
+export const ESTILO_SECCIONES_SECUNDARIAS = {
+  fondo: '#B2CBE2',
+  texto: '#263746',
+  borde: '#A9BDCC',
+  grosorBorde: 1,
+  radio: 8,
+}
+
 // 2. TABLAS - ENCABEZADOS
 export const ESTILO_ENCABEZADO_TABLA = {
   fondo: '#B2CBE2',
