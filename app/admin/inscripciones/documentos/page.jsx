@@ -24,6 +24,9 @@ import {
   ESTILO_ENCABEZADO_TABLA,
    BotonConsultar,
   BotonSecundario,
+  BotonVistaPrevia,
+  BotonImprimir,
+  BotonCargarPdf,
 } from '@/components/admin/EstiloModulo'
 
 
@@ -2513,113 +2516,113 @@ export default function DocumentosMatriculaPage() {
 
                                   {esControl && (
                                     <>
-                                      <button
+                                      <BotonVistaPrevia
                                         type="button"
                                         onClick={
                                           abrirControlClases
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
+                                        className="w-full !text-[9px] !py-1.5"
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
                                         Vista previa
-                                      </button>
+                                      </BotonVistaPrevia>
 
-                                      <button
+                                      <BotonImprimir
                                         type="button"
                                         onClick={
                                           abrirControlClases
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
+                                        className="w-full !text-[9px] !py-1.5"
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
                                         Imprimir
-                                      </button>
+                                      </BotonImprimir>
                                     </>
                                   )}
 
                                   {esContrato && (
                                     <>
-                                      <button
+                                      <BotonVistaPrevia
                                         type="button"
                                         onClick={
                                           abrirContrato
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
+                                        className="w-full !text-[9px] !py-1.5"
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
                                         Vista previa
-                                      </button>
+                                      </BotonVistaPrevia>
 
-                                      <button
+                                      <BotonImprimir
                                         type="button"
                                         onClick={
                                           abrirContrato
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
+                                        className="w-full !text-[9px] !py-1.5"
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
                                         Imprimir
-                                      </button>
+                                      </BotonImprimir>
                                     </>
                                   )}
 
                                     {esCodigoConducta && (
                                     <>
-                                      <button
+                                      <BotonVistaPrevia
                                         type="button"
                                         onClick={
                                           abrirCodigoConducta
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
+                                        className="w-full !text-[9px] !py-1.5"
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
                                         Vista previa
-                                      </button>
+                                      </BotonVistaPrevia>
 
-                                      <button
+                                      <BotonImprimir
                                         type="button"
                                         onClick={
                                           abrirCodigoConducta
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
+                                        className="w-full !text-[9px] !py-1.5"
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
                                         Imprimir
-                                      </button>
+                                      </BotonImprimir>
                                     </>
                                   )}
 
                                   {esAutorizacionDatos && (
                                     <>
-                                      <button
+                                      <BotonVistaPrevia
                                         type="button"
                                         onClick={
                                           abrirAutorizacionDatos
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
+                                        className="w-full !text-[9px] !py-1.5"
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
                                         Vista previa
-                                      </button>
+                                      </BotonVistaPrevia>
 
-                                      <button
+                                      <BotonImprimir
                                         type="button"
                                         onClick={
                                           abrirAutorizacionDatos
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
+                                        className="w-full !text-[9px] !py-1.5"
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
                                         Imprimir
-                                      </button>
+                                      </BotonImprimir>
                                     </>
                                   )}
 
@@ -2627,35 +2630,35 @@ export default function DocumentosMatriculaPage() {
                                     <>
                                       {documentoFila.tiene_archivo ? (
                                         <>
-                                          <button
+                                          <BotonVistaPrevia
                                             type="button"
                                             onClick={() =>
                                               abrirPdfInstitucional(
                                                 documentoFila
                                               )
                                             }
-                                            className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
+                                            className="w-full !text-[9px] !py-1.5"
                                           >
                                             <i className="fas fa-eye mr-1"></i>
 
                                             Ver
-                                          </button>
+                                          </BotonVistaPrevia>
 
-                                          <button
+                                          <BotonImprimir
                                             type="button"
                                             onClick={() =>
                                               abrirPdfInstitucional(
                                                 documentoFila
                                               )
                                             }
-                                            className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
+                                            className="w-full !text-[9px] !py-1.5"
                                           >
                                             <i className="fas fa-print mr-1"></i>
 
                                             Imprimir
-                                          </button>
+                                          </BotonImprimir>
 
-                                          <button
+                                          <BotonCargarPdf
                                             type="button"
                                             onClick={() =>
                                               seleccionarPdf(
@@ -2666,7 +2669,7 @@ export default function DocumentosMatriculaPage() {
                                               procesandoDocumentoId ===
                                               documentoFila.documento_id
                                             }
-                                            className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#7C86FF] hover:bg-[#626DDF] text-white disabled:bg-gray-300"
+                                            className="w-full !text-[9px] !py-1.5"
                                           >
                                             {procesandoDocumentoId ===
                                             documentoFila.documento_id ? (
@@ -2682,7 +2685,7 @@ export default function DocumentosMatriculaPage() {
                                                 Reemplazar PDF
                                               </>
                                             )}
-                                          </button>
+                                          </BotonCargarPdf>
 
                                           <button
                                             type="button"
@@ -2717,7 +2720,7 @@ export default function DocumentosMatriculaPage() {
                                         </>
                                       ) : (
                                         <>
-                                          <button
+                                          <BotonCargarPdf
                                             type="button"
                                             onClick={() =>
                                               seleccionarPdf(
@@ -2728,7 +2731,7 @@ export default function DocumentosMatriculaPage() {
                                               procesandoDocumentoId ===
                                               documentoFila.documento_id
                                             }
-                                            className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#7C86FF] hover:bg-[#626DDF] text-white disabled:bg-gray-300"
+                                            className="w-full !text-[9px] !py-1.5"
                                           >
                                             {procesandoDocumentoId ===
                                             documentoFila.documento_id ? (
@@ -2744,7 +2747,7 @@ export default function DocumentosMatriculaPage() {
                                                 Cargar PDF
                                               </>
                                             )}
-                                          </button>
+                                          </BotonCargarPdf>
 
                                           <button
                                             type="button"
