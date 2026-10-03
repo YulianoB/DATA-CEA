@@ -180,6 +180,7 @@ export default function MenuNavegacion({
   rutaRegreso = '/admin',
   textoRegreso = 'Menú anterior',
   mostrarCerrarSesion = true,
+  anchoContenido,
 }) {
   const router = useRouter()
   const [user, setUser] = useState(null)
@@ -253,7 +254,7 @@ export default function MenuNavegacion({
         </div>
       </header>
 
-      <div className="mx-auto px-4 pb-10 pt-2 md:px-6" style={{ maxWidth: ESTILO_MENU.anchoMaximo }}>
+      <div className="mx-auto px-4 pb-10 pt-2 md:px-6" style={{ maxWidth: anchoContenido || ESTILO_MENU.anchoMaximo }}>
         {gruposConNavegacion.map((grupo) => (
           <GrupoNavegacion key={grupo.id || grupo.titulo} titulo={grupo.titulo} opciones={grupo.opciones} columnas={grupo.columnas} />
         ))}
