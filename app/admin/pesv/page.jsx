@@ -12,6 +12,7 @@ import {
   Target,
   TriangleAlert,
   Wallet,
+  ShieldCheck,
 } from 'lucide-react'
 
 import MenuNavegacion from '@/components/admin/MenuNavegacion'
@@ -97,11 +98,12 @@ export default function PesvPage() {
   return (
     <MenuNavegacion
       titulo="PESV"
+      iconoTitulo={ShieldCheck}
       subtitulo="Plan Estratégico de Seguridad Vial"
       grupos={GRUPOS_PESV}
       mostrarRegresar
       rutaRegreso="/admin"
-      textoRegreso="Menú Administrativo"
+      textoRegreso="Regresar"
       mostrarCerrarSesion
     />
   )
