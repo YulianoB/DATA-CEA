@@ -14,6 +14,19 @@ import {
 
 import Link from 'next/link'
 
+import { Car, Search, Plus, X } from 'lucide-react'
+
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+
+import {
+  ESTILO_SECCIONES,
+  ESTILO_ENCABEZADO_TABLA,
+  ESTILO_CELDAS_TABLA,
+  BotonAccion,
+  BotonCancelar,
+  BotonGuardar,
+} from '@/components/admin/EstiloModulo'
+
 import {
   Toaster,
   toast,
@@ -152,6 +165,11 @@ export default function VehiculosAdminPage() {
     setGuardando,
   ] =
     useState(false)
+
+  const [
+    modalFormulario,
+    setModalFormulario,
+  ] = useState(false)
 
   // ==========================================================
   // LISTADO
@@ -662,11 +680,7 @@ export default function VehiculosAdminPage() {
           ).toUpperCase(),
       })
 
-      window.scrollTo({
-        top: 0,
-        behavior:
-          'smooth',
-      })
+      setModalFormulario(true)
     }
 
   // ==========================================================
@@ -793,6 +807,7 @@ export default function VehiculosAdminPage() {
         )
 
         limpiarFormulario()
+        setModalFormulario(false)
 
         await cargarVehiculos()
       } catch (error) {
@@ -1074,80 +1089,29 @@ export default function VehiculosAdminPage() {
 
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ==================================================
-            ENCABEZADO
-        ================================================== */}
-
-        <div className="bg-white rounded-xl shadow-lg border p-5 sm:p-6">
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b pb-4">
-
-            <div>
-
-              <h1 className="text-2xl font-bold text-[var(--primary)] flex items-center gap-3">
-
-                <i className="fas fa-car"></i>
-
-                Administración de Vehículos
-
-              </h1>
-
-              <p className="text-sm text-gray-600 mt-1">
-                Registro, actualización, vinculación y control del parque automotor del CEA.
-              </p>
-
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin'
-                  )
-                }
-                className="bg-gray-700 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm"
-              >
-
-                <i className="fas fa-arrow-left mr-2"></i>
-
-                Menú administrativo
-
-              </button>
-
-              <button
-                type="button"
-                onClick={
-                  handleLogout
-                }
-                className="bg-[var(--danger)] hover:bg-red-800 text-white px-4 py-2 rounded-lg text-sm"
-              >
-
-                <i className="fas fa-sign-out-alt mr-2"></i>
-
-                Cerrar Sesión
-
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
+        <EncabezadoModulo
+          titulo="Vehículos"
+          subtitulo="Registro, actualización y control del parque automotor del CEA."
+          icono={Car}
+          rutaRegreso="/admin"
+          textoRegreso="Regresar"
+        />
 
         {/* ==================================================
             FORMULARIO
         ================================================== */}
 
-        <form
+                {modalFormulario && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+<form
           onSubmit={
             guardarVehiculo
           }
-          className="bg-white rounded-xl shadow-lg border p-5 sm:p-6"
+          className="bg-white w-full max-w-6xl rounded-xl shadow-2xl border overflow-hidden max-h-[94vh] flex flex-col"
         >
 
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
+          <div className="relative shrink-0 px-5 py-3" style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto }}>
+            <div className="flex items-center justify-between gap-3 pr-10">
 
             <div>
 
@@ -1173,7 +1137,12 @@ export default function VehiculosAdminPage() {
 
             )}
 
+            </div>
+            <button type="button" onClick={() => { limpiarFormulario(); setModalFormulario(false) }} className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:opacity-75" aria-label="Cerrar"><X size={20} /></button>
           </div>
+
+          <div className="overflow-y-auto flex-1 p-4 sm:p-5">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 items-start">
 
           {/* ==================================================
               IDENTIFICACIÓN
@@ -1184,7 +1153,7 @@ export default function VehiculosAdminPage() {
             icono="fa-id-card"
           >
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
 
               <CampoInput
                 label="Placa *"
@@ -1337,7 +1306,7 @@ export default function VehiculosAdminPage() {
             icono="fa-cogs"
           >
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
 
               <CampoInput
                 label="Número de chasis"
@@ -1385,7 +1354,7 @@ export default function VehiculosAdminPage() {
             icono="fa-file-signature"
           >
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
 
               <CampoInput
                 label="Propietario"
@@ -1448,7 +1417,7 @@ export default function VehiculosAdminPage() {
             icono="fa-address-card"
           >
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
 
               <CampoInput
                 label="N.º Licencia de Tránsito"
@@ -1544,361 +1513,148 @@ export default function VehiculosAdminPage() {
 
           )}
 
+          </div>
+
           {/* ==================================================
               BOTONES
           ================================================== */}
 
-          <div className="flex justify-end gap-3 mt-6 border-t pt-5 flex-wrap">
+          <div className="flex justify-end gap-2 mt-3 border-t pt-3 flex-wrap">
 
-            <button
+            <BotonCancelar
               type="button"
-              onClick={
-                limpiarFormulario
-              }
-              disabled={
-                guardando
-              }
-              className="border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm"
+              onClick={() => { limpiarFormulario(); setModalFormulario(false) }}
+              disabled={guardando}
             >
+              {editandoId ? 'Cancelar edición' : 'Cancelar'}
+            </BotonCancelar>
 
-              <i className="fas fa-eraser mr-2"></i>
-
-              {editandoId
-                ? 'Cancelar edición'
-                : 'Limpiar'}
-
-            </button>
-
-            <button
-              type="submit"
-              disabled={
-                guardando
-              }
-              className={`px-5 py-2 rounded-lg text-white text-sm font-semibold ${
-                guardando
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
-              }`}
-            >
-
-              <i className="fas fa-save mr-2"></i>
-
-              {guardando
-                ? 'Guardando...'
-                : editandoId
-                ? 'Guardar Cambios'
-                : 'Registrar Vehículo'}
-
-            </button>
+            <BotonGuardar type="submit" disabled={guardando}>
+              <i className="fas fa-save mr-1"></i>
+              {guardando ? 'Guardando...' : editandoId ? 'Guardar Cambios' : 'Registrar Vehículo'}
+            </BotonGuardar>
 
           </div>
 
+          </div>
         </form>
+          </div>
+        )}
 
         {/* ==================================================
-            LISTADO
+            LISTADO PRINCIPAL
         ================================================== */}
 
-        <div className="bg-white rounded-xl shadow-lg border p-5 sm:p-6">
-
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-
-            <div>
-
-              <h2 className="text-xl font-bold text-gray-800">
-                Vehículos Registrados
-              </h2>
-
-              <p className="text-xs text-gray-500 mt-1">
-                {vehiculosFiltrados.length} vehículo(s) encontrados.
-              </p>
-
+        <div className="bg-white rounded-xl shadow-sm border border-[#D8E0E8] overflow-hidden">
+          <div className="px-4 py-3" style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto }}>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h2 className="text-sm font-bold">Vehículos Registrados</h2>
+                <p className="text-[11px] opacity-80">{vehiculosFiltrados.length} vehículo(s) encontrados.</p>
+              </div>
             </div>
+          </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
-
-              <input
-                type="text"
-                value={
-                  busqueda
-                }
-                onChange={(e) =>
-                  setBusqueda(
-                    e.target.value
-                  )
-                }
-                placeholder="Buscar placa, marca, VIN..."
-                className="border rounded-lg p-2 text-sm sm:w-72"
-              />
+          <div className="p-4">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-2 mb-4">
+              <div className="relative flex-1 min-w-[240px]">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar placa, marca, VIN..."
+                  className="w-full border border-[#A9BDCC] rounded-md py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-[#B2CBE2]"
+                />
+              </div>
 
               <select
-                value={
-                  filtroEstado
-                }
-                onChange={(e) =>
-                  setFiltroEstado(
-                    e.target.value
-                  )
-                }
-                className="border rounded-lg p-2 text-sm"
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                className="border border-[#A9BDCC] rounded-md px-3 py-2 text-sm bg-white min-w-[145px]"
               >
-
-                <option value="TODOS">
-                  Todos
-                </option>
-
-                <option value={ESTADO_ACTIVO}>
-                  Activos
-                </option>
-
-                <option value={ESTADO_INACTIVO}>
-                  Inactivos
-                </option>
-
+                <option value="TODOS">Todos</option>
+                <option value={ESTADO_ACTIVO}>Activos</option>
+                <option value={ESTADO_INACTIVO}>Inactivos</option>
               </select>
 
+              <BotonCancelar type="button" onClick={() => { setBusqueda(''); setFiltroEstado('TODOS') }}>
+                Limpiar
+              </BotonCancelar>
+
+              <BotonAccion
+                tipo="agregar"
+                type="button"
+                onClick={() => { limpiarFormulario(); setModalFormulario(true) }}
+              >
+                <Plus size={15} /> Registrar Vehículo
+              </BotonAccion>
             </div>
 
-          </div>
-
-          <div className="overflow-x-auto">
-
-            <table className="min-w-full text-sm border">
-
-              <thead className="bg-gray-100 text-gray-700">
-
-                <tr>
-
-                  <th className="text-left p-2 border">
-                    Placa
-                  </th>
-
-                  <th className="text-left p-2 border">
-                    Tipo
-                  </th>
-
-                  <th className="text-left p-2 border">
-                    Marca
-                  </th>
-
-                  <th className="text-left p-2 border">
-                    Modelo
-                  </th>
-
-                  <th className="text-left p-2 border">
-                    Línea
-                  </th>
-
-                  <th className="text-left p-2 border">
-                    Origen
-                  </th>
-
-                  <th className="text-left p-2 border">
-                    Estado
-                  </th>
-
-                  <th className="text-left p-2 border">
-                    Acciones
-                  </th>
-
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                {cargando ? (
-
+            <div className="overflow-x-auto rounded-lg border" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
+              <table className="w-full border-collapse text-sm">
+                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                   <tr>
-
-                    <td
-                      colSpan="8"
-                      className="p-6 text-center text-gray-500"
-                    >
-
-                      <i className="fas fa-spinner fa-spin mr-2"></i>
-
-                      Cargando vehículos...
-
-                    </td>
-
+                    {['Placa','Tipo','Marca','Modelo','GPS','SOAT','RTM','Estado','Acciones'].map((titulo) => (
+                      <th key={titulo} className="border border-slate-300 p-2 text-center font-bold whitespace-nowrap">{titulo}</th>
+                    ))}
                   </tr>
-
-                ) : vehiculosFiltrados.length ===
-                  0 ? (
-
-                  <tr>
-
-                    <td
-                      colSpan="8"
-                      className="p-6 text-center text-gray-500"
-                    >
-                      No hay vehículos registrados.
-                    </td>
-
-                  </tr>
-
-                ) : (
-
-                  vehiculosFiltrados.map(
-                    (vehiculo) => {
-                      const activo =
-                        String(
-                          vehiculo.estado ||
-                          ''
-                        )
-                          .toUpperCase() ===
-                        ESTADO_ACTIVO
-
-                      return (
-                        <tr
-                          key={
-                            vehiculo.id
-                          }
-                          className="hover:bg-gray-50"
-                        >
-
-                          <td className="p-2 border font-bold">
-                            {
-                              vehiculo.placa
-                            }
-                          </td>
-
-                          <td className="p-2 border">
-                            {
-                              vehiculo.tipo_vehiculo ||
-                              '-'
-                            }
-                          </td>
-
-                          <td className="p-2 border">
-                            {
-                              vehiculo.marca ||
-                              '-'
-                            }
-                          </td>
-
-                          <td className="p-2 border">
-                            {
-                              vehiculo.modelo ||
-                              '-'
-                            }
-                          </td>
-
-                          <td className="p-2 border">
-                            {
-                              vehiculo.linea ||
-                              '-'
-                            }
-                          </td>
-
-                          <td className="p-2 border">
-                            {
-                              vehiculo.origen ||
-                              '-'
-                            }
-                          </td>
-
-                          <td className="p-2 border">
-
-                            <span
-                              className={`inline-flex px-2 py-1 rounded-full text-xs font-bold border ${
-                                activo
-                                  ? 'bg-green-100 text-green-700 border-green-300'
-                                  : 'bg-red-100 text-red-700 border-red-300'
-                              }`}
-                            >
-
-                              {activo
-                                ? 'ACTIVO'
-                                : 'INACTIVO'}
-
-                            </span>
-
-                          </td>
-
-                          <td className="p-2 border">
-
-                            <div className="flex gap-2 flex-wrap">
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  editarVehiculo(
-                                    vehiculo
-                                  )
-                                }
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs"
-                              >
-
-                                <i className="fas fa-edit mr-1"></i>
-
-                                Editar
-
-                              </button>
-
-                              <Link
-                                href={`/admin/vehiculos/${vehiculo.id}`}
-                                className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-3 py-1.5 rounded text-xs"
-                              >
-
-                                <i className="fas fa-file-alt mr-1"></i>
-
-                                Hoja de Vida
-
-                              </Link>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  abrirModalEstado(
-                                    vehiculo,
-                                    activo
-                                      ? 'inactivar'
-                                      : 'activar'
-                                  )
-                                }
-                                className={`px-3 py-1.5 rounded text-xs text-white ${
-                                  activo
-                                    ? 'bg-red-600 hover:bg-red-700'
-                                    : 'bg-green-600 hover:bg-green-700'
-                                }`}
-                              >
-
-                                <i
-                                  className={`fas ${
-                                    activo
-                                      ? 'fa-ban'
-                                      : 'fa-check'
-                                  } mr-1`}
-                                ></i>
-
-                                {activo
-                                  ? 'Inactivar'
-                                  : 'Reactivar'}
-
-                              </button>
-
-                            </div>
-
-                          </td>
-
-                        </tr>
-                      )
+                </thead>
+                <tbody>
+                  {cargando ? (
+                    <tr><td colSpan="9" className="border border-slate-300 p-6 text-center text-gray-500">Cargando vehículos...</td></tr>
+                  ) : vehiculosFiltrados.length === 0 ? (
+                    <tr><td colSpan="9" className="border border-slate-300 p-6 text-center text-gray-500">No hay vehículos registrados.</td></tr>
+                  ) : vehiculosFiltrados.map((vehiculo) => {
+                    const activo = String(vehiculo.estado || '').toUpperCase() === ESTADO_ACTIVO
+                    const estadoVigencia = (dato) => {
+                      const estado = String(dato?.estado || 'SIN REGISTRO').toUpperCase()
+                      if (estado === 'VIGENTE') return <span className="font-semibold text-green-700">Vigente</span>
+                      if (estado === 'VENCIDO') return <span className="font-semibold text-red-600">Vencido</span>
+                      return <span className="text-slate-500">Sin registro</span>
                     }
-                  )
-
-                )}
-
-              </tbody>
-
-            </table>
-
+                    return (
+                      <tr key={vehiculo.id} className="hover:bg-slate-50">
+                        <td className="border border-slate-300 p-2 text-center font-bold">{vehiculo.placa}</td>
+                        <td className="border border-slate-300 p-2 text-center">{vehiculo.tipo_vehiculo || '-'}</td>
+                        <td className="border border-slate-300 p-2 text-center">{vehiculo.marca || '-'}</td>
+                        <td className="border border-slate-300 p-2 text-center">{vehiculo.modelo || '-'}</td>
+                        <td className="border border-slate-300 p-2 text-center">{String(vehiculo.gps || '').toUpperCase() === 'SI' ? 'Sí' : String(vehiculo.gps || '').toUpperCase() === 'NO' ? 'No' : '-'}</td>
+                        <td className="border border-slate-300 p-2 text-center">{estadoVigencia(vehiculo.soat)}</td>
+                        <td className="border border-slate-300 p-2 text-center">{estadoVigencia(vehiculo.rtm)}</td>
+                        <td className="border border-slate-300 p-2 text-center">
+                          <span className={`font-semibold ${activo ? 'text-green-700' : 'text-red-600'}`}>
+                            {activo ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                        <td className="border border-slate-300 p-2 text-center">
+                          <div className="flex flex-wrap items-center justify-center gap-1.5">
+                            <BotonAccion tipo="editarVehiculo" type="button" className="!px-2.5 !py-1.5" onClick={() => editarVehiculo(vehiculo)}>
+                              Editar
+                            </BotonAccion>
+                            <Link href={`/admin/vehiculos/${vehiculo.id}`}>
+                              <BotonAccion tipo="hojaVida" type="button" className="!px-2.5 !py-1.5">
+                                Hoja de Vida
+                              </BotonAccion>
+                            </Link>
+                            <BotonAccion
+                              tipo={activo ? 'inactivar' : 'activar'}
+                              type="button"
+                              className="!px-2.5 !py-1.5"
+                              onClick={() => abrirModalEstado(vehiculo, activo ? 'inactivar' : 'activar')}
+                            >
+                              {activo ? 'Inactivar' : 'Activar'}
+                            </BotonAccion>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-
         </div>
-
-      </div>
 
       {/* ======================================================
           MODAL VINCULACIÓN / DESVINCULACIÓN
