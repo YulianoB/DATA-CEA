@@ -21,6 +21,14 @@ import {
   cerrarSesion,
 } from '@/lib/auth/logout'
 
+import {
+  CheckCircle2,
+  Clock3,
+  LogIn,
+  LogOut,
+  LoaderCircle,
+} from 'lucide-react'
+
 // ============================================================
 // HELPERS
 // ============================================================
@@ -1097,14 +1105,14 @@ export default function RegistroHorariosPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA] p-4">
 
       <Toaster
         position="top-center"
         richColors
       />
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
+      <div className="max-w-md w-full bg-white rounded-xl border border-[#DCE4EB] shadow-lg p-6">
 
         {/* ==================================================
             ENCABEZADO
@@ -1112,11 +1120,21 @@ export default function RegistroHorariosPage() {
 
         <div className="flex flex-col items-center mb-6">
 
-          <i className="fas fa-clock text-3xl text-[var(--primary)] mb-2"></i>
+          <img
+            src="/logo.png"
+            alt="DATA CEA"
+            className="h-12 w-auto object-contain mb-2"
+          />
 
-          <h2 className="text-xl font-bold uppercase text-[var(--primary)] text-center">
-            Registro de Horarios
-          </h2>
+          <div className="flex items-center justify-center gap-2 text-[#173A57]">
+            <Clock3 size={25} strokeWidth={2} />
+
+            <h2 className="text-xl font-semibold uppercase text-center tracking-wide">
+              Registro de Horarios
+            </h2>
+          </div>
+
+          <div className="w-full h-[3px] bg-[#173A57] mt-3 rounded-full" />
 
         </div>
 
@@ -1124,7 +1142,7 @@ export default function RegistroHorariosPage() {
             INFORMACIÓN USUARIO
         ================================================== */}
 
-        <p className="bg-blue-50 border border-blue-200 text-[var(--primary-dark)] p-2 rounded-md mb-6 text-center text-sm">
+        <p className="bg-[#DCEEF9] border border-[#A9BDCC] text-[#29465D] p-2 rounded-md mb-6 text-center text-sm">
 
           Usuario:{' '}
 
@@ -1157,11 +1175,11 @@ export default function RegistroHorariosPage() {
         ================================================== */}
 
         <div
-          className="text-center text-sm font-medium text-blue-800 bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-4 min-h-[1.5em]"
+          className="text-center text-sm font-medium text-[#29465D] bg-[#F3F8FC] border border-[#A9BDCC] rounded px-3 py-2 mb-4 min-h-[1.5em]"
         >
           {cargandoEstado ? (
             <span>
-              <i className="fas fa-spinner fa-spin mr-2"></i>
+              <LoaderCircle size={16} className="inline-block animate-spin mr-2" />
               Consultando jornada...
             </span>
           ) : (
@@ -1184,7 +1202,7 @@ export default function RegistroHorariosPage() {
               disabled={
                 enviandoAsistencia
               }
-              className="text-[var(--primary)] hover:underline flex items-center justify-center gap-2 mx-auto disabled:opacity-60"
+              className="text-[#173A57] hover:text-[#0968B0] hover:underline flex items-center justify-center gap-2 mx-auto disabled:opacity-60 transition-colors"
               title={
                 `Reunión: ${
                   reunionActiva
@@ -1202,7 +1220,7 @@ export default function RegistroHorariosPage() {
               }
             >
 
-              <i className="fas fa-check-circle"></i>
+              <CheckCircle2 size={18} />
 
               {enviandoAsistencia
                 ? 'Enviando...'
@@ -1228,8 +1246,8 @@ export default function RegistroHorariosPage() {
               !entradaHabilitada
             }
             className={`h-24 flex flex-col items-center justify-center gap-2 rounded-lg
-              bg-white text-gray-700 shadow-lg border border-gray-300
-              hover:bg-[var(--primary)] hover:text-white
+              bg-[#DCEEF9] text-[#263746] shadow-md border border-[#A9BDCC]
+              hover:bg-[#173A57] hover:text-white
               transform hover:-translate-y-1 hover:shadow-xl
               transition-all duration-200 ease-in-out text-sm font-medium
               ${
@@ -1239,7 +1257,7 @@ export default function RegistroHorariosPage() {
               }`}
           >
 
-            <i className="fas fa-sign-in-alt text-2xl"></i>
+            <LogIn size={26} strokeWidth={2} />
 
             {guardando
               ? 'Procesando...'
@@ -1266,7 +1284,7 @@ export default function RegistroHorariosPage() {
               }`}
           >
 
-            <i className="fas fa-sign-out-alt text-2xl"></i>
+            <LogOut size={26} strokeWidth={2} />
 
             {guardando
               ? 'Procesando...'
@@ -1288,13 +1306,13 @@ export default function RegistroHorariosPage() {
                 router
               )
             }
-            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)]
+            className="bg-[#C93C3C] hover:bg-[#A92F2F]
               text-white font-medium py-2 px-6 rounded-lg
               flex items-center justify-center gap-2
-              shadow-md hover:shadow-lg transition text-sm"
+              shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm"
           >
 
-            <i className="fas fa-sign-out-alt"></i>
+            <LogOut size={17} />
 
             Cerrar Sesión
 
