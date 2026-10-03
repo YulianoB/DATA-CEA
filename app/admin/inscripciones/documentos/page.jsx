@@ -17,6 +17,14 @@ import {
   cerrarSesion,
 } from '@/lib/auth/logout'
 
+import {
+  ESTILO_SECCIONES,
+  ESTILO_ENCABEZADO_TABLA,
+  BotonAgregar,
+  BotonConsultar,
+  BotonSecundario,
+} from '@/components/admin/EstiloModulo'
+
 
 // ============================================================
 // CONSTANTES
@@ -1748,7 +1756,7 @@ export default function DocumentosMatriculaPage() {
       <div
         className="
           w-full
-          max-w-[1040px]
+          max-w-[1180px]
           bg-white
           border
           border-gray-300
@@ -1764,7 +1772,7 @@ export default function DocumentosMatriculaPage() {
 
         <div
           className="
-            bg-slate-800
+            bg-[#173A57]
             text-white
             px-4
             py-3
@@ -1954,13 +1962,12 @@ export default function DocumentosMatriculaPage() {
                   border-gray-300
                   rounded-lg
                   overflow-hidden
-                  mb-4
+                  mb-3
                 "
               >
 
                 <div
                   className="
-                    bg-gray-100
                     border-b
                     border-gray-300
                     px-3
@@ -1968,8 +1975,11 @@ export default function DocumentosMatriculaPage() {
                     text-[11px]
                     font-black
                     uppercase
-                    text-gray-700
                   "
+                  style={{
+                    backgroundColor: ESTILO_SECCIONES.fondo,
+                    color: ESTILO_SECCIONES.texto,
+                  }}
                 >
                   Matrícula Seleccionada
                 </div>
@@ -1984,12 +1994,12 @@ export default function DocumentosMatriculaPage() {
 
                   <div
                     className="
-                      p-3
+                      p-2.5
                       grid
                       grid-cols-2
-                      lg:grid-cols-4
-                      gap-x-4
-                      gap-y-3
+                      lg:grid-cols-5
+                      gap-x-3
+                      gap-y-2
                     "
                   >
 
@@ -2041,7 +2051,7 @@ export default function DocumentosMatriculaPage() {
                     <div
                       className="
                         col-span-2
-                        lg:col-span-4
+                        lg:col-span-1
                       "
                     >
                       <div className="text-[9px] font-bold uppercase text-gray-500">
@@ -2342,7 +2352,6 @@ export default function DocumentosMatriculaPage() {
 
                 <div
                   className="
-                    bg-gray-100
                     border-b
                     border-gray-300
                     px-3
@@ -2361,7 +2370,11 @@ export default function DocumentosMatriculaPage() {
                       uppercase
                       text-gray-700
                     "
-                  >
+                  
+                    style={{
+                      backgroundColor: ESTILO_SECCIONES.fondo,
+                      color: ESTILO_SECCIONES.texto,
+                    }}>
                     Documentos
                   </div>
 
@@ -2370,16 +2383,7 @@ export default function DocumentosMatriculaPage() {
                     onClick={
                       agregarDocumentoInstitucional
                     }
-                    className="
-                      bg-blue-600
-                      hover:bg-blue-700
-                      text-white
-                      px-3
-                      py-1.5
-                      rounded
-                      text-[9px]
-                      font-semibold
-                    "
+                    className={`${BotonAgregar} !text-[10px] !py-1.5 justify-center`}
                   >
                     <i className="fas fa-plus mr-1"></i>
 
@@ -2682,17 +2686,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirControlClases
                                         }
-                                        className="
-                                          bg-emerald-600
-                                          hover:bg-emerald-700
-                                          text-white
-                                          w-full
-                                          px-2.5
-                                          py-1.5
-                                          rounded
-                                          text-[9px]
-                                          font-semibold
-                                        "
+                                        className={`${BotonConsultar} !text-[10px] !py-1.5 justify-center`}
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
@@ -2704,17 +2698,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirControlClases
                                         }
-                                        className="
-                                          bg-slate-700
-                                          hover:bg-slate-800
-                                          text-white
-                                          w-full
-                                          px-2.5
-                                          py-1.5
-                                          rounded
-                                          text-[9px]
-                                          font-semibold
-                                        "
+                                        className={`${BotonSecundario} !text-[10px] !py-1.5 justify-center`}
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
