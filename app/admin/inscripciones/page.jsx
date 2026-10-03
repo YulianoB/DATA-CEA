@@ -1933,10 +1933,6 @@ export default function InscripcionesPage() {
                   </th>
 
                   <th className="p-2 border">
-                    Documentos
-                  </th>
-
-                  <th className="p-2 border">
                     Acción
                   </th>
 
@@ -1950,7 +1946,7 @@ export default function InscripcionesPage() {
                   <tr>
 
                     <td
-                      colSpan="9"
+                      colSpan="8"
                       className="
                         p-8
                         text-center
@@ -1968,7 +1964,7 @@ export default function InscripcionesPage() {
                   <tr>
 
                     <td
-                      colSpan="9"
+                      colSpan="8"
                       className="
                         p-8
                         text-center
@@ -2156,49 +2152,64 @@ export default function InscripcionesPage() {
                               text-center
                             "
                           >
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  router.push(
+                                    `/admin/inscripciones/documentos?matricula_id=${encodeURIComponent(
+                                      row.id
+                                    )}`
+                                  )
+                                }
+                                className="
+                                  min-w-[155px]
+                                  bg-emerald-600
+                                  hover:bg-emerald-700
+                                  hover:-translate-y-0.5
+                                  hover:shadow-md
+                                  text-white
+                                  px-3
+                                  py-1.5
+                                  rounded-lg
+                                  text-[11px]
+                                  whitespace-nowrap
+                                  transition-all
+                                  duration-200
+                                "
+                              >
+                                <i className="fas fa-file-alt mr-1"></i>
+                                Documentos de Matrícula
+                              </button>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                router.push(
-                                  `/admin/inscripciones/documentos?matricula_id=${encodeURIComponent(
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  consultarExpediente(
+                                    row.documento,
                                     row.id
-                                  )}`
-                                )
-                              }
-                              
-                              className={`${BotonSecundario} min-w-[170px] justify-center !text-[11px] !py-1.5`}
-                            >
-                              <i className="fas fa-file-alt mr-1"></i>
-
-                              Documentos de Matrícula
-                            </button>
-
-                          </td>
-
-                          <td
-                            className="
-                              p-2
-                              border
-                              text-center
-                            "
-                          >
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                consultarExpediente(
-                                  row.documento,
-                                  row.id
-                                )
-                              }
-                              className={`${BotonConsultar} min-w-[125px] justify-center !text-[11px] !py-1.5`}
-                            >
-                              <i className="fas fa-folder-open mr-1"></i>
-
-                              Ver Expediente
-                            </button>
-
+                                  )
+                                }
+                                className="
+                                  min-w-[125px]
+                                  bg-[#4682B4]
+                                  hover:bg-[#356A96]
+                                  hover:-translate-y-0.5
+                                  hover:shadow-md
+                                  text-white
+                                  px-3
+                                  py-1.5
+                                  rounded-lg
+                                  text-[11px]
+                                  whitespace-nowrap
+                                  transition-all
+                                  duration-200
+                                "
+                              >
+                                <i className="fas fa-folder-open mr-1"></i>
+                                Ver Expediente
+                              </button>
+                            </div>
                           </td>
 
                         </tr>
@@ -2222,1121 +2233,171 @@ export default function InscripcionesPage() {
       ==================================================== */}
 
       {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6">
-
-          {/* FONDO */}
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-5">
           <div
-            className="
-              absolute
-              inset-0
-              bg-black/40
-            "
-            onClick={
-              cerrarExpediente
-            }
+            className="absolute inset-0 bg-black/40"
+            onClick={cerrarExpediente}
           ></div>
 
-          {/* PANEL */}
-
-          <div
-            className="
-              relative
-              z-10
-              w-full
-              max-w-[1080px]
-              max-h-[92vh]
-              bg-white
-              shadow-2xl
-              rounded-xl
-              overflow-y-auto
-              border
-              border-gray-300
-            "
-          >
-
-            {/* ==============================================
-                CABECERA DRAWER
-            ============================================== */}
-
-            <div
-              className="
-                sticky
-                top-0
-                z-20
-                bg-[#173A57]
-                text-white
-                border-b
-                border-[#29465D]
-                px-4
-                py-3
-                flex
-                justify-between
-                items-center
-                gap-3
-              "
-            >
-
-              <div>
-
-                <p
-                  className="
-                    text-[11px]
-                    uppercase
-                    font-semibold
-                    text-gray-500
-                  "
-                >
-                  Expediente del Aprendiz
-                </p>
-
-                <h2
-                  className="
-                    text-lg
-                    font-bold
-                    text-white
-                  "
-                >
-                  {aprendiz
-                    ?.nombre_completo ||
-                    'Consulta de Expediente'}
-                </h2>
-
-                {aprendiz?.documento && (
-                  <p
-                    className="
-                      text-xs
-                      text-gray-500
-                      mt-1
-                    "
-                  >
-                    {aprendiz.tipo_doc ||
-                      ''}
-                    {' '}
-                    {formatearDocumento(
-                      aprendiz.documento
-                    )}
+          <div className="relative z-10 w-full max-w-[1180px] max-h-[94vh] bg-white shadow-2xl rounded-xl overflow-y-auto border border-gray-300">
+            <div className="sticky top-0 z-20 bg-[#173A57] text-white border-b border-[#29465D] px-4 py-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase font-semibold text-white">
+                    Expediente del Aprendiz
                   </p>
-                )}
+                  <h2 className="text-lg font-bold text-white">
+                    {aprendiz?.nombre_completo || 'Consulta de Expediente'}
+                  </h2>
+                  {aprendiz?.documento && (
+                    <p className="text-xs text-white mt-0.5">
+                      {aprendiz.tipo_doc || ''}{' '}
+                      {formatearDocumento(aprendiz.documento)}
+                    </p>
+                  )}
+                </div>
 
+                <button
+                  type="button"
+                  onClick={cerrarExpediente}
+                  className="shrink-0 w-9 h-9 border border-white/40 text-white rounded-lg hover:bg-white/15 hover:-translate-y-0.5 transition-all duration-200"
+                  title="Cerrar"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={
-                  cerrarExpediente
-                }
-                className="
-                  w-9
-                  h-9
-                  border
-                  border-white/30
-                  text-white
-                  rounded-lg
-                  hover:bg-white/10
-                "
-              >
-                <i className="fas fa-times"></i>
-              </button>
+              {matriculasExpediente.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {matriculasExpediente.map(matricula => {
+                    const seleccionada =
+                      String(matriculaSeleccionada?.id) === String(matricula.id)
 
+                    return (
+                      <button
+                        type="button"
+                        key={matricula.id}
+                        onClick={() => setMatriculaSeleccionada(matricula)}
+                        className={`
+                          rounded-lg border px-3 py-1.5 text-left transition-all duration-200
+                          hover:-translate-y-0.5
+                          ${seleccionada
+                            ? 'bg-white text-[#173A57] border-white shadow-md'
+                            : 'bg-white/10 text-white border-white/30 hover:bg-white/20'}
+                        `}
+                      >
+                        <span className="text-[10px] opacity-80">
+                          Matrícula {matricula.consecutivo || '-'}
+                        </span>
+                        <span className="ml-2 text-sm font-black">
+                          {matricula.categoria || '-'}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* ==============================================
-                CONTENIDO
-            ============================================== */}
-
             {loadingExpediente ? (
-              <div
-                className="
-                  p-12
-                  text-center
-                  text-gray-500
-                "
-              >
+              <div className="p-12 text-center text-sm text-gray-500">
                 <i className="fas fa-spinner fa-spin mr-2"></i>
-
                 Consultando expediente...
               </div>
-            ) : expediente &&
-              aprendiz ? (
-              <div
-                className="
-                  p-3
-                  space-y-3
-                "
-              >
-
-                {/* ERROR */}
-
+            ) : expediente && aprendiz ? (
+              <div className="p-3">
                 {error && (
-                  <div
-                    className="
-                      bg-red-50
-                      border
-                      border-red-300
-                      text-red-700
-                      rounded-lg
-                      p-3
-                      text-xs
-                    "
-                  >
+                  <div className="mb-3 bg-red-50 border border-red-300 text-red-700 rounded-lg p-3 text-xs">
                     <i className="fas fa-exclamation-triangle mr-2"></i>
-
                     {error}
                   </div>
                 )}
 
-                {/* ==========================================
-                    DATOS PERSONALES
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      bg-[#3B617D]
-                      text-white
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                    "
-                  >
-                    Datos Personales
-                  </div>
-
-                  <div
-                    className="
-                      p-2
-                      grid
-                      grid-cols-1
-                      sm:grid-cols-2
-                      gap-1.5
-                    "
-                  >
-
-                    <Campo
-                      label="Tipo documento"
-                      valor={
-                        aprendiz.tipo_doc
-                      }
-                    />
-
-                    <Campo
-                      label="Documento"
-                      valor={
-                        aprendiz.documento
-                      }
-                    />
-
-                    <Campo
-                      label="Lugar expedición"
-                      valor={
-                        aprendiz.lugar_expedicion
-                      }
-                    />
-
-                    <Campo
-                      label="Fecha nacimiento"
-                      valor={
-                        formatearFecha(
-                          aprendiz.fecha_nacimiento
-                        )
-                      }
-                    />
-
-                    <Campo
-                      label="Nombres"
-                      valor={
-                        aprendiz.nombres
-                      }
-                    />
-
-                    <Campo
-                      label="Apellidos"
-                      valor={
-                        aprendiz.apellidos
-                      }
-                    />
-
-                    <Campo
-                      label="Género"
-                      valor={
-                        aprendiz.genero
-                      }
-                    />
-
-                    <Campo
-                      label="Celular"
-                      valor={
-                        aprendiz.celular
-                      }
-                    />
-
-                    <Campo
-                      label="Correo"
-                      valor={
-                        aprendiz.correo
-                      }
-                    />
-
-                    <Campo
-                      label="Dirección"
-                      valor={
-                        aprendiz.direccion
-                      }
-                    />
-
-                    <Campo
-                      label="Barrio"
-                      valor={
-                        aprendiz.barrio
-                      }
-                    />
-
-                    <Campo
-                      label="Ciudad"
-                      valor={
-                        aprendiz.ciudad
-                      }
-                    />
-
-                    <Campo
-                      label="Estado civil"
-                      valor={
-                        aprendiz.estado_civil
-                      }
-                    />
-
-                    <Campo
-                      label="Ocupación"
-                      valor={
-                        aprendiz.ocupacion
-                      }
-                    />
-
-                    <Campo
-                      label="EPS"
-                      valor={
-                        aprendiz.eps
-                      }
-                    />
-
-                    <Campo
-                      label="Estrato"
-                      valor={
-                        aprendiz.estrato
-                      }
-                    />
-
-                    <Campo
-                      label="Nivel educativo"
-                      valor={
-                        aprendiz.nivel_educativo
-                      }
-                    />
-
-                  </div>
-
-                </div>
-
-                {/* ==========================================
-                    MATRÍCULAS / PROCESOS
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      bg-[#3B617D]
-                      text-white
-                      px-3
-                      py-2
-                      flex
-                      items-center
-                      justify-between
-                      gap-1.5
-                    "
-                  >
-
-                    <span
-                      className="
-                        text-xs
-                        font-semibold
-                      "
-                    >
-                      Matrículas del Aprendiz
-                    </span>
-
-                    <span
-                      className="
-                        text-[10px]
-                        text-gray-300
-                      "
-                    >
-                      {matriculasExpediente.length} proceso(s)
-                    </span>
-
-                  </div>
-
-                  <div className="p-3 space-y-2">
-
-                    {matriculasExpediente.map(
-                      matricula => {
-                        const seleccionada =
-                          String(
-                            matriculaSeleccionada
-                              ?.id
-                          ) ===
-                          String(
-                            matricula.id
-                          )
-
-                        const estadoMatricula =
-                          normalizarEstadoMatricula(
-                            matricula.estado
-                          )
-
-                        return (
-                          <button
-                            type="button"
-                            key={
-                              matricula.id
-                            }
-                            onClick={() =>
-                              setMatriculaSeleccionada(
-                                matricula
-                              )
-                            }
-                            className={`
-                              w-full
-                              border
-                              rounded-lg
-                              p-3
-                              text-left
-                              transition
-                              ${
-                                seleccionada
-                                  ? 'border-blue-400 bg-blue-50'
-                                  : 'border-gray-300 bg-white hover:bg-gray-50'
-                              }
-                            `}
-                          >
-
-                            <div
-                              className="
-                                flex
-                                flex-wrap
-                                items-center
-                                justify-between
-                                gap-1.5
-                              "
-                            >
-
-                              <div>
-
-                                <div
-                                  className="
-                                    flex
-                                    flex-wrap
-                                    items-center
-                                    gap-1.5
-                                  "
-                                >
-
-                                  <span
-                                    className="
-                                      text-xs
-                                      font-bold
-                                      text-gray-800
-                                    "
-                                  >
-                                    Matrícula{' '}
-                                    {matricula.consecutivo ||
-                                      '-'}
-                                  </span>
-
-                                  <Badge tipo="blue">
-                                    {matricula.categoria ||
-                                      '-'}
-                                  </Badge>
-
-                                </div>
-
-                                <p
-                                  className="
-                                    text-[10px]
-                                    text-gray-500
-                                    mt-1
-                                  "
-                                >
-                                  {formatearFecha(
-                                    matricula.fecha_matricula
-                                  )}
-
-                                  {matricula.convenio
-                                    ? ` · ${matricula.convenio}`
-                                    : ''}
-                                </p>
-
-                              </div>
-
-                              {estadoMatricula ===
-                              'FINALIZADO' ? (
-                                <Badge tipo="green">
-                                  FINALIZADO
-                                </Badge>
-                              ) : (
-                                <Badge tipo="blue">
-                                  ACTIVO
-                                </Badge>
-                              )}
-
-                            </div>
-
-                          </button>
-                        )
-                      }
-                    )}
-
-                  </div>
-
-                </div>
-
-                {/* ==========================================
-                    MATRÍCULA SELECCIONADA
-                ========================================== */}
-
-                {matriculaSeleccionada && (
-                  <>
-
-                    <div
-                      className="
-                        border
-                        border-gray-300
-                        rounded-lg
-                        overflow-hidden
-                      "
-                    >
-
-                      <div
-                        className="
-                          bg-slate-800
-                          text-white
-                          px-3
-                          py-2
-                          text-xs
-                          font-semibold
-                        "
-                      >
-                        Proceso Seleccionado
-                      </div>
-
-                      <div
-                        className="
-                          p-3
-                          grid
-                          grid-cols-2
-                          sm:grid-cols-4
-                          gap-1.5
-                        "
-                      >
-
-                        <Campo
-                          label="Matrícula"
-                          valor={
-                            matriculaSeleccionada.consecutivo
-                          }
-                        />
-
-                        <Campo
-                          label="Categoría"
-                          valor={
-                            matriculaSeleccionada.categoria
-                          }
-                        />
-
-                        <Campo
-                          label="Fecha matrícula"
-                          valor={
-                            formatearFecha(
-                              matriculaSeleccionada.fecha_matricula
-                            )
-                          }
-                        />
-
-                        <div
-                          className="
-                            border
-                            border-gray-200
-                            rounded-lg
-                            p-2.5
-                            bg-white
-                          "
-                        >
-
-                          <p
-                            className="
-                              text-[10px]
-                              uppercase
-                              tracking-wide
-                              font-semibold
-                              text-gray-500
-                            "
-                          >
-                            Estado Matrícula
-                          </p>
-
-                          <div className="mt-1">
-
-                            {normalizarEstadoMatricula(
-                              matriculaSeleccionada.estado
-                            ) ===
-                            'FINALIZADO' ? (
-                              <Badge tipo="green">
-                                FINALIZADO
-                              </Badge>
-                            ) : (
-                              <Badge tipo="blue">
-                                ACTIVO
-                              </Badge>
-                            )}
-
-                          </div>
-
-                        </div>
-
-                      </div>
-
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  <div className="border border-gray-300 rounded-lg overflow-hidden">
+                    <div className="bg-[#3B617D] text-white px-3 py-2 text-xs font-semibold">
+                      Datos Personales
                     </div>
 
-                    {/* ======================================
-                        DOCUMENTOS DE MATRÍCULA
-                    ====================================== */}
+                    <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      <Campo label="Fecha nacimiento" valor={formatearFecha(aprendiz.fecha_nacimiento)} />
+                      <Campo label="Género" valor={aprendiz.genero} />
+                      <Campo label="Celular" valor={aprendiz.celular} />
+                      <Campo label="Correo" valor={aprendiz.correo} />
+                      <Campo label="Dirección" valor={aprendiz.direccion} />
+                      <Campo label="Barrio" valor={aprendiz.barrio} />
+                      <Campo label="Ciudad" valor={aprendiz.ciudad} />
+                      <Campo label="Estado civil" valor={aprendiz.estado_civil} />
+                      <Campo label="Ocupación" valor={aprendiz.ocupacion} />
+                      <Campo label="EPS" valor={aprendiz.eps} />
+                      <Campo label="Estrato" valor={aprendiz.estrato} />
+                      <Campo label="Nivel educativo" valor={aprendiz.nivel_educativo} />
 
-                    <div
-                      className="
-                        border
-                        border-gray-300
-                        rounded-lg
-                        overflow-hidden
-                      "
-                    >
-
-                      <div
-                        className="
-                          bg-slate-800
-                          text-white
-                          px-3
-                          py-2
-                          text-xs
-                          font-semibold
-                        "
-                      >
-                        Documentos de Matrícula
-                      </div>
-
-                      <div
-                        className="
-                          p-3
-                          flex
-                          flex-wrap
-                          items-center
-                          justify-between
-                          gap-3
-                        "
-                      >
-
-                        <div>
-
-                          <p
-                            className="
-                              text-xs
-                              font-semibold
-                              text-gray-800
-                            "
-                          >
-                            Matrícula{' '}
-                            {matriculaSeleccionada.consecutivo ||
-                              '-'}
-                            {' · '}
-                            Categoría{' '}
-                            {matriculaSeleccionada.categoria ||
-                              '-'}
-                          </p>
-
-                          <p
-                            className="
-                              mt-1
-                              text-[10px]
-                              text-gray-500
-                            "
-                          >
-                            Control de Clases y Contrato correspondientes a esta matrícula.
-                          </p>
-
+                      <div className="sm:col-span-2 border border-gray-200 rounded-lg p-2 bg-slate-50">
+                        <p className="text-[10px] uppercase tracking-wide font-bold text-[#3B617D] mb-1.5">
+                          Contacto de Emergencia
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          <Campo label="Nombre" valor={aprendiz.emergencia_nombre} />
+                          <Campo label="Celular" valor={aprendiz.emergencia_celular} />
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            router.push(
-                              `/admin/inscripciones/documentos?matricula_id=${encodeURIComponent(
-                                matriculaSeleccionada.id
-                              )}`
-                            )
-                          }
-                                                      className="
-                            bg-[var(--primary)]
-                            hover:bg-[var(--primary-dark)]
-                            text-white
-                            px-3
-                            py-2
-                            rounded-lg
-                            text-xs
-                            flex
-                            items-center
-                            gap-1.5
-                          "
-                        >
-                          <i className="fas fa-file-alt"></i>
-
-                          Documentos de Matrícula
-                        </button>
-
                       </div>
-
                     </div>
-                    
-                    {/* ======================================
-                        PROCESOS EXTERNOS
-                    ====================================== */}
+                  </div>
 
-                    <div
-                      className="
-                        border
-                        border-gray-300
-                        rounded-lg
-                        overflow-hidden
-                      "
-                    >
-
-                      <div
-                        className="
-                          bg-slate-800
-                          text-white
-                          px-3
-                          py-2
-                          text-xs
-                          font-semibold
-                        "
-                      >
+                  <div className="space-y-3">
+                    <div className="border border-gray-300 rounded-lg overflow-hidden">
+                      <div className="bg-[#3B617D] text-white px-3 py-2 text-xs font-semibold">
                         Estado de Procesos Externos
                       </div>
 
-                      <div
-                        className="
-                          p-3
-                          grid
-                          grid-cols-1
-                          sm:grid-cols-3
-                          gap-3
-                        "
-                      >
-
-                        <TarjetaProcesoExterno
-                          titulo="RUNT"
-                          icono="fa-road"
-                          estado={
-                            estadoRunt
-                          }
-                        />
-
-                        <TarjetaProcesoExterno
-                          titulo="SICOV"
-                          icono="fa-fingerprint"
-                          estado={
-                            estadoSicov
-                          }
-                        />
-
-                        <TarjetaProcesoExterno
-                          titulo="SIET"
-                          icono="fa-graduation-cap"
-                          estado={
-                            estadoSiet
-                          }
-                        />
-
+                      <div className="p-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <TarjetaProcesoExterno titulo="RUNT" icono="fa-road" estado={estadoRunt} />
+                        <TarjetaProcesoExterno titulo="SICOV" icono="fa-fingerprint" estado={estadoSicov} />
+                        <TarjetaProcesoExterno titulo="SIET" icono="fa-graduation-cap" estado={estadoSiet} />
                       </div>
-
                     </div>
 
-                    {/* ======================================
-                        DETALLE RUNT
-                    ====================================== */}
-
-                    {matriculaSeleccionada
-                      ?.control_runt && (
-                      <div
-                        className="
-                          border
-                          border-gray-300
-                          rounded-lg
-                          overflow-hidden
-                        "
-                      >
-
-                        <div
-                          className="
-                            bg-gray-100
-                            border-b
-                            border-gray-300
-                            px-3
-                            py-2
-                            text-xs
-                            font-semibold
-                            text-gray-700
-                          "
-                        >
-                          Detalle RUNT
+                    {matriculaSeleccionada?.control_runt && (
+                      <div className="border border-gray-300 rounded-lg overflow-hidden">
+                        <div className="bg-[#B2CBE2] text-[#263746] px-3 py-2 text-xs font-semibold">Detalle RUNT</div>
+                        <div className="p-2 grid grid-cols-2 gap-1.5">
+                          <Campo label="Proceso" valor={`#${matriculaSeleccionada.control_runt.numero_proceso || 1}`} />
+                          <Campo label="Verificación" valor={matriculaSeleccionada.control_runt.resultado_verificacion || 'PENDIENTE'} />
+                          <Campo label="Registro" valor={matriculaSeleccionada.control_runt.estado_registro || 'PENDIENTE'} />
+                          <Campo label="Certificación" valor={matriculaSeleccionada.control_runt.estado_certificacion || 'PENDIENTE'} />
                         </div>
-
-                        <div
-                          className="
-                            p-3
-                            grid
-                            grid-cols-2
-                            sm:grid-cols-4
-                            gap-1.5
-                          "
-                        >
-
-                          <Campo
-                            label="Proceso"
-                            valor={`#${
-                              matriculaSeleccionada
-                                .control_runt
-                                .numero_proceso ||
-                              1
-                            }`}
-                          />
-
-                          <Campo
-                            label="Verificación"
-                            valor={
-                              matriculaSeleccionada
-                                .control_runt
-                                .resultado_verificacion ||
-                              'PENDIENTE'
-                            }
-                          />
-
-                          <Campo
-                            label="Registro"
-                            valor={
-                              matriculaSeleccionada
-                                .control_runt
-                                .estado_registro ||
-                              'PENDIENTE'
-                            }
-                          />
-
-                          <Campo
-                            label="Certificación"
-                            valor={
-                              matriculaSeleccionada
-                                .control_runt
-                                .estado_certificacion ||
-                              'PENDIENTE'
-                            }
-                          />
-
-                        </div>
-
                       </div>
                     )}
 
-                    {/* ======================================
-                        DETALLE SICOV
-                    ====================================== */}
-
-                    {matriculaSeleccionada
-                      ?.control_sicov && (
-                      <div
-                        className="
-                          border
-                          border-gray-300
-                          rounded-lg
-                          overflow-hidden
-                        "
-                      >
-
-                        <div
-                          className="
-                            bg-gray-100
-                            border-b
-                            border-gray-300
-                            px-3
-                            py-2
-                            text-xs
-                            font-semibold
-                            text-gray-700
-                          "
-                        >
-                          Detalle SICOV
+                    {matriculaSeleccionada?.control_sicov && (
+                      <div className="border border-gray-300 rounded-lg overflow-hidden">
+                        <div className="bg-[#B2CBE2] text-[#263746] px-3 py-2 text-xs font-semibold">Detalle SICOV</div>
+                        <div className="p-2 grid grid-cols-2 gap-1.5">
+                          <Campo label="Registro" valor={matriculaSeleccionada.control_sicov.estado_registro || 'PENDIENTE'} />
+                          <Campo label="Fecha registro" valor={formatearFecha(matriculaSeleccionada.control_sicov.fecha_registro)} />
+                          <Campo label="Certificación" valor={matriculaSeleccionada.control_sicov.estado_certificacion || 'PENDIENTE'} />
+                          <Campo label="Fecha certificación" valor={formatearFecha(matriculaSeleccionada.control_sicov.fecha_certificacion)} />
                         </div>
-
-                        <div
-                          className="
-                            p-3
-                            grid
-                            grid-cols-2
-                            sm:grid-cols-4
-                            gap-1.5
-                          "
-                        >
-
-                          <Campo
-                            label="Registro"
-                            valor={
-                              matriculaSeleccionada
-                                .control_sicov
-                                .estado_registro ||
-                              'PENDIENTE'
-                            }
-                          />
-
-                          <Campo
-                            label="Fecha registro"
-                            valor={
-                              formatearFecha(
-                                matriculaSeleccionada
-                                  .control_sicov
-                                  .fecha_registro
-                              )
-                            }
-                          />
-
-                          <Campo
-                            label="Certificación"
-                            valor={
-                              matriculaSeleccionada
-                                .control_sicov
-                                .estado_certificacion ||
-                              'PENDIENTE'
-                            }
-                          />
-
-                          <Campo
-                            label="Fecha certificación"
-                            valor={
-                              formatearFecha(
-                                matriculaSeleccionada
-                                  .control_sicov
-                                  .fecha_certificacion
-                              )
-                            }
-                          />
-
-                        </div>
-
                       </div>
                     )}
 
-                    {/* ======================================
-                        DETALLE SIET
-                    ====================================== */}
-
-                    {matriculaSeleccionada
-                      ?.control_siet && (
-                      <div
-                        className="
-                          border
-                          border-gray-300
-                          rounded-lg
-                          overflow-hidden
-                        "
-                      >
-
-                        <div
-                          className="
-                            bg-gray-100
-                            border-b
-                            border-gray-300
-                            px-3
-                            py-2
-                            text-xs
-                            font-semibold
-                            text-gray-700
-                          "
-                        >
-                          Detalle SIET
+                    {matriculaSeleccionada?.control_siet && (
+                      <div className="border border-gray-300 rounded-lg overflow-hidden">
+                        <div className="bg-[#B2CBE2] text-[#263746] px-3 py-2 text-xs font-semibold">Detalle SIET</div>
+                        <div className="p-2 grid grid-cols-2 gap-1.5">
+                          <Campo label="Estado" valor={matriculaSeleccionada.control_siet.estado || 'PENDIENTE'} />
+                          <Campo label="Fecha registro" valor={formatearFecha(matriculaSeleccionada.control_siet.fecha_registro)} />
+                          <Campo label="Usuario registro" valor={matriculaSeleccionada.control_siet.usuario_registro} />
+                          <Campo label="Fecha certificación" valor={formatearFecha(matriculaSeleccionada.control_siet.fecha_certificacion)} />
                         </div>
-
-                        <div
-                          className="
-                            p-3
-                            grid
-                            grid-cols-2
-                            sm:grid-cols-4
-                            gap-1.5
-                          "
-                        >
-
-                          <Campo
-                            label="Estado"
-                            valor={
-                              matriculaSeleccionada
-                                .control_siet
-                                .estado ||
-                              'PENDIENTE'
-                            }
-                          />
-
-                          <Campo
-                            label="Fecha registro"
-                            valor={
-                              formatearFecha(
-                                matriculaSeleccionada
-                                  .control_siet
-                                  .fecha_registro
-                              )
-                            }
-                          />
-
-                          <Campo
-                            label="Usuario registro"
-                            valor={
-                              matriculaSeleccionada
-                                .control_siet
-                                .usuario_registro
-                            }
-                          />
-
-                          <Campo
-                            label="Fecha certificación"
-                            valor={
-                              formatearFecha(
-                                matriculaSeleccionada
-                                  .control_siet
-                                  .fecha_certificacion
-                              )
-                            }
-                          />
-
-                        </div>
-
                       </div>
                     )}
-
-                  </>
-                )}
-
-                {/* ==========================================
-                    CONTACTO EMERGENCIA
-                ========================================== */}
-
-                {(
-                  aprendiz.emergencia_nombre ||
-                  aprendiz.emergencia_celular
-                ) && (
-                  <div
-                    className="
-                      border
-                      border-gray-300
-                      rounded-lg
-                      overflow-hidden
-                    "
-                  >
-
-                    <div
-                      className="
-                        bg-slate-800
-                        text-white
-                        px-3
-                        py-2
-                        text-xs
-                        font-semibold
-                      "
-                    >
-                      Contacto de Emergencia
-                    </div>
-
-                    <div
-                      className="
-                        p-3
-                        grid
-                        grid-cols-1
-                        sm:grid-cols-2
-                        gap-1.5
-                      "
-                    >
-
-                      <Campo
-                        label="Nombre"
-                        valor={
-                          aprendiz.emergencia_nombre
-                        }
-                      />
-
-                      <Campo
-                        label="Celular"
-                        valor={
-                          aprendiz.emergencia_celular
-                        }
-                      />
-
-                    </div>
-
                   </div>
-                )}
-
-                {/* ==========================================
-                    CERRAR
-                ========================================== */}
-
-                <div className="flex justify-end">
-
-                  <button
-                    type="button"
-                    onClick={
-                      cerrarExpediente
-                    }
-                    className="
-                      bg-gray-600
-                      hover:bg-gray-800
-                      text-white
-                      px-4
-                      py-2
-                      rounded-lg
-                      text-xs
-                    "
-                  >
-                    Cerrar
-                  </button>
-
                 </div>
-
               </div>
             ) : null}
-
           </div>
-
         </div>
       )}
 
