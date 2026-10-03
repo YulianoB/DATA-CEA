@@ -774,6 +774,12 @@ export default function InscripcionesPage() {
     )
 
   const [
+    resumenCategorias,
+    setResumenCategorias,
+  ] =
+    useState({})
+
+  const [
     loading,
     setLoading,
   ] =
@@ -900,6 +906,117 @@ export default function InscripcionesPage() {
         user,
       ]
     )
+
+  // ==========================================================
+  // RESUMEN POR CATEGORÍA
+  // ==========================================================
+
+  const consultarResumen =
+    useCallback(
+      async () => {
+        if (
+          !user
+        ) {
+          return
+        }
+
+        const hoy =
+          new Date()
+            .toLocaleDateString(
+              'en-CA'
+            )
+
+        const fechaInicio =
+          texto(
+            filtros.fecha_inicio
+          ) ||
+          hoy
+
+        const fechaFin =
+          texto(
+            filtros.fecha_fin
+          ) ||
+          (
+            filtros.fecha_inicio
+              ? fechaInicio
+              : hoy
+          )
+
+        if (
+          fechaFin <
+          fechaInicio
+        ) {
+          setResumenCategorias({})
+          return
+        }
+
+        try {
+          const params =
+            new URLSearchParams()
+
+          params.set(
+            'recurso',
+            'resumen'
+          )
+
+          params.set(
+            'fecha_inicio',
+            fechaInicio
+          )
+
+          params.set(
+            'fecha_fin',
+            fechaFin
+          )
+
+          if (
+            nit
+          ) {
+            params.set(
+              'nit',
+              nit
+            )
+          }
+
+          const json =
+            await fetchJsonSeguro(
+              `${API_URL}?${params.toString()}`
+            )
+
+          setResumenCategorias(
+            json?.data &&
+            typeof json.data ===
+              'object'
+              ? json.data
+              : {}
+          )
+        } catch (
+          errorResumen
+        ) {
+          console.error(
+            'Error consultando resumen de matrículas:',
+            errorResumen
+          )
+
+          setResumenCategorias({})
+        }
+      },
+      [
+        user,
+        nit,
+        filtros.fecha_inicio,
+        filtros.fecha_fin,
+      ]
+    )
+
+  useEffect(
+    () => {
+      consultarResumen()
+    },
+    [
+      consultarResumen,
+    ]
+  )
 
   // ==========================================================
   // CONSULTAR
@@ -1683,6 +1800,63 @@ export default function InscripcionesPage() {
 
             Nueva Matrícula
           </button>
+
+
+          {CATEGORIAS
+            .filter(
+              categoria =>
+                Number(
+                  resumenCategorias[
+                    categoria
+                  ] ||
+                  0
+                ) >
+                0
+            )
+            .map(
+              categoria => (
+                <div
+                  key={categoria}
+                  className="
+                    h-9
+                    min-w-[62px]
+                    px-2.5
+                    rounded-lg
+                    border
+                    border-[#A9BDCC]
+                    bg-[#DCEEF9]
+                    flex
+                    items-center
+                    justify-center
+                    gap-1.5
+                    whitespace-nowrap
+                  "
+                  title={`Matrículas ${categoria}`}
+                >
+                  <span
+                    className="
+                      text-[10px]
+                      font-bold
+                      text-[#36566F]
+                    "
+                  >
+                    {categoria}
+                  </span>
+
+                  <span
+                    className="
+                      text-sm
+                      font-black
+                      text-[#173A57]
+                    "
+                  >
+                    {resumenCategorias[
+                      categoria
+                    ]}
+                  </span>
+                </div>
+              )
+            )}
 
         </div>
 
