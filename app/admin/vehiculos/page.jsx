@@ -83,6 +83,16 @@ const OPCIONES_GPS = [
   'NO',
 ]
 
+const DOCUMENTO_SOAT = 'SOAT'
+const DOCUMENTO_RTM = 'RTM'
+const DOCUMENTO_TARJETA_SERVICIO = 'TARJETA_SERVICIO'
+
+const DOCUMENTOS_INICIALES = {
+  SOAT: { numero_documento: '', fecha_expedicion: '', fecha_vigencia: '' },
+  RTM: { numero_documento: '', fecha_expedicion: '', fecha_vigencia: '' },
+  TARJETA_SERVICIO: { numero_documento: '', fecha_expedicion: '', fecha_vigencia: '' },
+}
+
 const FORM_INICIAL = {
   placa: '',
   clasificacion: '',
@@ -185,6 +195,21 @@ export default function VehiculosAdminPage() {
     modalFormulario,
     setModalFormulario,
   ] = useState(false)
+
+  const [
+    documentosForm,
+    setDocumentosForm,
+  ] = useState(DOCUMENTOS_INICIALES)
+
+  const [
+    cargandoDocumentos,
+    setCargandoDocumentos,
+  ] = useState(false)
+
+  const [
+    guardandoDocumento,
+    setGuardandoDocumento,
+  ] = useState('')
 
   // ==========================================================
   // LISTADO
@@ -634,6 +659,140 @@ export default function VehiculosAdminPage() {
       setEditandoId(
         null
       )
+
+      setDocumentosForm(
+        DOCUMENTOS_INICIALES
+      )
+    }
+
+  // ==========================================================
+  // DOCUMENTOS DEL VEHÍCULO
+  // ==========================================================
+
+  const cargarDocumentosVehiculo =
+    async (vehiculo) => {
+      if (!empresaNit || !vehiculo?.id) return
+
+      setCargandoDocumentos(true)
+
+      try {
+        const response = await fetch(
+          `/api/documentos/vehiculos?recurso=documentos&vehiculo_id=${encodeURIComponent(vehiculo.id)}&nit=${encodeURIComponent(empresaNit)}`,
+          {
+            cache: 'no-store',
+            headers: {
+              'x-cea-nit': empresaNit,
+            },
+          }
+        )
+
+        const result = await response.json()
+
+        if (!response.ok || result?.status !== 'success') {
+          throw new Error(result?.message || 'No fue posible cargar los documentos del vehículo.')
+        }
+
+        const convertir = (documento) => ({
+          numero_documento: documento?.numero_documento || '',
+          fecha_expedicion: documento?.fecha_expedicion || '',
+          fecha_vigencia: documento?.fecha_vigencia || '',
+        })
+
+        setDocumentosForm({
+          SOAT: convertir(result?.documentos?.soat),
+          RTM: convertir(result?.documentos?.rtm),
+          TARJETA_SERVICIO: convertir(result?.documentos?.tarjeta_servicio),
+        })
+      } catch (error) {
+        console.error('Error cargando documentos del vehículo:', error)
+        toast.error(error?.message || 'No fue posible cargar los documentos del vehículo.')
+        setDocumentosForm(DOCUMENTOS_INICIALES)
+      } finally {
+        setCargandoDocumentos(false)
+      }
+    }
+
+  const cambiarDocumento =
+    (tipo, campo, valor) => {
+      setDocumentosForm((prev) => ({
+        ...prev,
+        [tipo]: {
+          ...prev[tipo],
+          [campo]:
+            campo === 'numero_documento'
+              ? String(valor || '').toUpperCase()
+              : valor,
+        },
+      }))
+    }
+
+  const guardarDocumentoVehiculo =
+    async (tipo) => {
+      if (!editandoId || !empresaNit || guardandoDocumento) return
+
+      const datos = documentosForm[tipo] || {}
+
+      if (!datos.numero_documento || !datos.fecha_expedicion || !datos.fecha_vigencia) {
+        toast.warning('Complete número, fecha de expedición y fecha de vigencia.')
+        return
+      }
+
+      if (datos.fecha_vigencia < datos.fecha_expedicion) {
+        toast.warning('La vigencia no puede ser anterior a la fecha de expedición.')
+        return
+      }
+
+      setGuardandoDocumento(tipo)
+
+      try {
+        const response = await fetch('/api/documentos/vehiculos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-cea-nit': empresaNit,
+          },
+          body: JSON.stringify({
+            nit: empresaNit,
+            accion:
+              tipo === DOCUMENTO_TARJETA_SERVICIO
+                ? 'guardar_tarjeta_servicio_admin'
+                : 'guardar_documento',
+            vehiculo_id: editandoId,
+            placa: form.placa,
+            tipo_vehiculo: form.tipo_vehiculo || null,
+            documento: tipo,
+            numero_documento: datos.numero_documento,
+            fecha_expedicion: datos.fecha_expedicion,
+            fecha_vigencia: datos.fecha_vigencia,
+            nombre_quien_actualiza: nombreResponsable,
+            rol_solicitante: 'ADMINISTRATIVO',
+          }),
+        })
+
+        const result = await response.json()
+
+        if (response.status === 409 || result?.status === 'warning') {
+          toast.warning(result?.message || 'El documento ya tiene estos mismos datos.')
+          return
+        }
+
+        if (!response.ok || result?.status !== 'success') {
+          throw new Error(result?.message || 'No fue posible guardar el documento.')
+        }
+
+        toast.success(result?.message || 'Documento actualizado correctamente.')
+
+        await cargarDocumentosVehiculo({
+          id: editandoId,
+        })
+
+        await cargarVehiculos()
+      } catch (error) {
+        console.error('Error guardando documento del vehículo:', error)
+        toast.error(error?.message || 'No fue posible guardar el documento.')
+      } finally {
+        setGuardandoDocumento('')
+      }
     }
 
   // ==========================================================
@@ -733,6 +892,7 @@ export default function VehiculosAdminPage() {
       })
 
       setModalFormulario(true)
+      cargarDocumentosVehiculo(vehiculo)
     }
 
   // ==========================================================
@@ -1570,6 +1730,75 @@ export default function VehiculosAdminPage() {
           )}
 
           </div>
+
+          {editandoId && (
+            <div className="mt-3">
+              <Seccion
+                titulo="Documentos del Vehículo"
+                icono="fa-file-alt"
+              >
+                {cargandoDocumentos ? (
+                  <div className="py-4 text-center text-sm text-gray-500">
+                    Cargando SOAT, RTM y Tarjeta de Servicio...
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    {[
+                      [DOCUMENTO_SOAT, 'SOAT'],
+                      [DOCUMENTO_RTM, 'RTM'],
+                      [DOCUMENTO_TARJETA_SERVICIO, 'Tarjeta de Servicio'],
+                    ].map(([tipo, titulo]) => {
+                      const datos = documentosForm[tipo] || {}
+                      return (
+                        <div key={tipo} className="rounded-lg border border-slate-300 bg-white p-3">
+                          <div className="mb-3 text-sm font-bold text-slate-700">
+                            {titulo}
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-2">
+                            <CampoInput
+                              label="Número"
+                              value={datos.numero_documento}
+                              onChange={(e) => cambiarDocumento(tipo, 'numero_documento', e.target.value)}
+                            />
+                            <CampoInput
+                              label="Fecha de expedición"
+                              type="date"
+                              value={datos.fecha_expedicion}
+                              onChange={(e) => cambiarDocumento(tipo, 'fecha_expedicion', e.target.value)}
+                            />
+                            <CampoInput
+                              label="Fecha de vigencia"
+                              type="date"
+                              value={datos.fecha_vigencia}
+                              onChange={(e) => cambiarDocumento(tipo, 'fecha_vigencia', e.target.value)}
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => guardarDocumentoVehiculo(tipo)}
+                            disabled={Boolean(guardandoDocumento)}
+                            className="mt-3 w-full rounded-lg bg-[#0968B0] px-3 py-2 text-xs font-semibold text-white hover:bg-[#07548E] disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {guardandoDocumento === tipo
+                              ? 'Guardando...'
+                              : datos.numero_documento
+                              ? 'Registrar nueva versión'
+                              : 'Registrar documento'}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <p className="mt-3 text-xs text-gray-500">
+                  Las renovaciones se registran como nuevas versiones y conservan el historial documental anterior.
+                </p>
+              </Seccion>
+            </div>
+          )}
 
           {/* ==================================================
               BOTONES
