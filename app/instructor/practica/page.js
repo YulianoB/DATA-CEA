@@ -5,6 +5,16 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import {
+  CalendarDays,
+  CarFront,
+  CheckCircle2,
+  ClipboardCheck,
+  FileUp,
+  LogOut,
+  TriangleAlert,
+  Wrench,
+} from 'lucide-react'
 
 export default function InstructorPracticaPage() {
   const router = useRouter()
@@ -118,80 +128,107 @@ export default function InstructorPracticaPage() {
 
   const menuButtons = [
     {
-      icon: 'fa-calendar-days',
+      icon: CalendarDays,
       label: 'Programación de Clases',
       route: '/instructor/practica/programacion',
     },
     {
-      icon: 'fa-clipboard-check',
+      icon: ClipboardCheck,
       label: 'Registrar Preoperacionales',
       route: '/instructor/practica/inspeccion',
     },
     {
-      icon: 'fa-calendar-alt',
+      icon: CalendarDays,
       label: 'Registrar Horarios de Práctica',
       route: '/instructor/practica/horarios',
     },
     {
-      icon: 'fa-tools',
+      icon: Wrench,
       label: 'Registrar Mantenimientos',
       route: '/instructor/practica/mantenimientos',
     },
     {
-      icon: 'fa-screwdriver-wrench',
+      icon: Wrench,
       label: 'Plan de Mantenimiento',
       route: '/instructor/practica/plan-mantenimiento',
     },
     {
-      icon: 'fa-car-crash',
+      icon: CarFront,
       label: 'Registrar Siniestros Viales',
       route: '/instructor/practica/siniestros',
     },
     {
-      icon: 'fa-exclamation-circle',
+      icon: TriangleAlert,
       label: 'Registrar Fallas en Ruta',
       route: '/instructor/practica/fallas',
     },
     {
-      icon: 'fa-upload',
+      icon: FileUp,
       label: 'Actualizar Documentos',
       route: '/instructor/practica/documentos',
     },
   ]
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA] p-4">
       <Toaster position="top-center" richColors />
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-6">
-        <div className="flex flex-col items-center mb-6">
-          <i className="fas fa-user-cog text-3xl text-[var(--primary)] mb-2"></i>
-          <h2 className="text-xl font-bold uppercase text-[var(--primary)] text-center">
-            Menú Instructor Práctica
-          </h2>
+      <div className="max-w-2xl w-full bg-white rounded-xl border border-[#DCE4EB] shadow-lg p-6">
+
+        {/* CABECERA COMPACTA: conserva el ancho móvil del contenedor */}
+        <div className="relative grid grid-cols-[52px_1fr_52px] items-start gap-2 mb-3">
+          <div className="flex justify-start">
+            <img
+              src="/logo.png"
+              alt="DATA CEA"
+              className="h-11 w-auto object-contain"
+            />
+          </div>
+
+          <div className="min-w-0 text-center">
+            <h2 className="text-lg font-semibold uppercase text-[#173A57] leading-tight">
+              Menú Instructor Práctica
+            </h2>
+
+            <p className="mt-1 text-[11px] leading-tight text-[#64748B] truncate">
+              {user.nombreCompleto}
+            </p>
+
+            {user.nombreEmpresa && (
+              <p className="mt-0.5 text-[10px] leading-tight text-[#64748B] truncate">
+                {user.nombreEmpresa}
+              </p>
+            )}
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              onClick={handleLogout}
+              className="h-9 w-9 rounded-lg border border-[#CBD5E1] bg-white text-[#475569]
+                         flex items-center justify-center shadow-sm
+                         hover:bg-[#C93C3C] hover:border-[#C93C3C] hover:text-white
+                         hover:-translate-y-0.5 transition-all"
+              title="Cerrar sesión"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
 
-        <p className="bg-blue-50 border border-blue-200 text-[var(--primary-dark)] p-2 rounded-md mb-6 text-center text-sm">
-          <span>
-            Usuario: <strong>{user.nombreCompleto}</strong> ({user.rol})
-          </span>
-
-          {user.nombreEmpresa && (
-            <span className="block mt-1">
-              CEA: <strong>{user.nombreEmpresa}</strong>
-            </span>
-          )}
-        </p>
+        <div className="w-full h-[3px] bg-[#173A57] rounded-full mb-4" />
 
         {reunionActiva ? (
           <div className="mb-4 text-center">
             <button
               onClick={registrarAsistenciaReunion}
               disabled={enviandoAsistencia}
-              className="text-[var(--primary)] hover:underline flex items-center justify-center gap-2 mx-auto disabled:opacity-60 text-sm"
+              className="text-[#173A57] hover:text-[#0968B0] hover:underline
+                         flex items-center justify-center gap-2 mx-auto
+                         disabled:opacity-60 text-sm transition-colors"
               title={`Reunión: ${reunionActiva.tipo_reunion} (${reunionActiva.hora_inicio}–${reunionActiva.hora_fin})`}
             >
-              <i className="fas fa-check-circle"></i>
+              <CheckCircle2 size={18} />
               {enviandoAsistencia
                 ? 'Enviando...'
                 : 'Registrar asistencia a reunión'}
@@ -200,35 +237,26 @@ export default function InstructorPracticaPage() {
         ) : null}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 gap-4">
-          {menuButtons.map((btn, i) => (
-            <button
-              key={i}
-              onClick={() => router.push(btn.route)}
-              className="h-24 flex flex-col items-center justify-center gap-2 rounded-lg
-                         bg-white text-gray-700 shadow-lg border border-gray-300
-                         hover:bg-[var(--primary)] hover:text-white
-                         transform hover:-translate-y-1 hover:shadow-xl
-                         transition-all duration-200 ease-in-out
-                         text-sm font-medium"
-            >
-              <i className={`fas ${btn.icon} text-2xl`}></i>
-              {btn.label}
-            </button>
-          ))}
-        </div>
+          {menuButtons.map((btn, i) => {
+            const Icono = btn.icon
 
-        <div className="flex justify-center mt-8">
-          <button
-            onClick={handleLogout}
-            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white font-medium
-                       py-2 px-6 rounded-lg flex items-center justify-center gap-2
-                       shadow-md hover:shadow-lg transition text-sm"
-          >
-            <i className="fas fa-sign-out-alt"></i>
-            Cerrar Sesión
-          </button>
+            return (
+              <button
+                key={i}
+                onClick={() => router.push(btn.route)}
+                className="h-24 flex flex-col items-center justify-center gap-2 rounded-lg
+                           bg-[#DCEEF9] text-[#263746] shadow-md border border-[#A9BDCC]
+                           hover:bg-[#173A57] hover:text-white
+                           transform hover:-translate-y-1 hover:shadow-xl
+                           transition-all duration-200 ease-in-out
+                           text-sm font-medium text-center px-2"
+              >
+                <Icono size={26} strokeWidth={2} />
+                {btn.label}
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>
-  )
-}
+  )}
