@@ -16,6 +16,11 @@ import {
 
 import { FileSignature } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import {
+  ESTILO_SECCIONES,
+  ESTILO_ENCABEZADO_TABLA,
+  ESTILO_CELDAS_TABLA,
+} from '@/components/admin/EstiloModulo'
 
 // ============================================================
 // CONSTANTES
@@ -1688,7 +1693,7 @@ export default function InscripcionesPage() {
         <div
           className="
             border
-            border-gray-300
+            border-[#CBD5E1]
             rounded-lg
             overflow-hidden
           "
@@ -1696,8 +1701,6 @@ export default function InscripcionesPage() {
 
           <div
             className="
-              bg-slate-800
-              text-white
               px-4
               py-3
               flex
@@ -1705,6 +1708,10 @@ export default function InscripcionesPage() {
               items-center
               gap-3
             "
+            style={{
+              backgroundColor: ESTILO_SECCIONES.fondo,
+              color: ESTILO_SECCIONES.texto,
+            }}
           >
 
             <span
@@ -1719,8 +1726,8 @@ export default function InscripcionesPage() {
             <span
               className="
                 text-xs
-                text-gray-300
               "
+              style={{ color: ESTILO_SECCIONES.subtitulo }}
             >
               {resultados.length} registro(s)
             </span>
@@ -1737,7 +1744,12 @@ export default function InscripcionesPage() {
               "
             >
 
-              <thead className="bg-gray-100">
+              <thead
+                style={{
+                  backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo,
+                  color: ESTILO_ENCABEZADO_TABLA.texto,
+                }}
+              >
 
                 <tr>
 
