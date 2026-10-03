@@ -2211,7 +2211,7 @@ export default function DocumentosMatriculaPage() {
                       font-black
                       uppercase
                       text-gray-700
-                    ">
+                     text-white font-bold">
                     Documentos
                   </div>
 
