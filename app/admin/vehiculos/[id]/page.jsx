@@ -1637,7 +1637,7 @@ return (
       position="top-center"
     />
 
-    <div className="max-w-7xl mx-auto space-y-5">
+    <div className="contenedor-hoja-vida max-w-[1120px] mx-auto space-y-5">
 
       {errorDocumento && (
         <div className="print:hidden mb-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -1645,6 +1645,56 @@ return (
           {errorDocumento}
         </div>
       )}
+
+      <div className="barra-hoja-vida no-print print:hidden mb-3 flex flex-col gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          <div>
+            <span className="text-gray-500">Estado:</span>{' '}
+            <strong
+              className={
+                String(vehiculo.estado || '').toUpperCase() === 'ACTIVO'
+                  ? 'text-green-700'
+                  : 'text-red-700'
+              }
+            >
+              {vehiculo.estado || '-'}
+            </strong>
+          </div>
+
+          <div>
+            <span className="text-gray-500">Documentos vencidos:</span>{' '}
+            <strong className={documentosVencidos > 0 ? 'text-red-700' : 'text-green-700'}>
+              {documentosVencidos}
+            </strong>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            onClick={() => window.print()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            <i className="fas fa-print mr-2"></i>
+            Imprimir
+          </button>
+
+          <Link
+            href="/admin/vehiculos"
+            className="bg-gray-700 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            <i className="fas fa-arrow-left mr-2"></i>
+            Vehículos
+          </Link>
+
+          <button
+            onClick={() => cerrarSesion(router)}
+            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-4 py-2 rounded-lg text-sm"
+          >
+            <i className="fas fa-sign-out-alt mr-2"></i>
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
 
       <table className="estructura-hoja-vida-print w-full border-collapse">
         <thead className="encabezado-documental-repetido">
@@ -1669,451 +1719,98 @@ return (
           <tr>
             <td className="contenido-hoja-vida-print p-0 border-0 align-top">
 
-      {/* ==================================================
-          ENCABEZADO GENERAL
-      ================================================== */}
+              <div className="cabecera-datos-vehiculo bg-white border rounded-xl shadow-lg overflow-hidden print:shadow-none print:rounded-none">
+                <div className="grid grid-cols-1 xl:grid-cols-[0.82fr_2.15fr_1.25fr] print:grid-cols-[0.82fr_2.15fr_1.25fr] gap-0">
 
-      <div className="bg-white rounded-xl shadow-lg border overflow-hidden print:shadow-none print:border-none print-avoid-break">
+                  <div className="p-4 border-b xl:border-b-0 xl:border-r print:border-b-0 print:border-r flex flex-col justify-center">
+                    <h1 className="text-3xl sm:text-4xl font-black text-[var(--primary)] tracking-wide leading-none">
+                      {vehiculo.placa}
+                    </h1>
 
-        {/* ================================================
-            BARRA DE ACCIONES
-        ================================================= */}
+                    <p className="text-base font-bold text-gray-800 mt-3">
+                      {vehiculo.tipo_vehiculo || '-'}
+                    </p>
 
-        <div className="flex justify-end gap-2 flex-wrap p-3 border-b bg-gray-50 print:hidden">
+                    <div className="mt-2 border-l-4 border-amber-500 pl-3">
+                      <p className="text-base font-bold text-amber-700 uppercase leading-tight">
+                        {vehiculo.marca || '-'}
+                        {vehiculo.linea ? ` ${vehiculo.linea}` : ''}
+                      </p>
 
-          <button
-            onClick={() =>
-              window.print()
-            }
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-          >
-            <i className="fas fa-print mr-2"></i>
-            Imprimir
-          </button>
+                      {vehiculo.modelo && (
+                        <p className="text-sm font-semibold text-gray-600 mt-1">
+                          Modelo {vehiculo.modelo}
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-          <Link
-            href="/admin/vehiculos"
-            className="bg-gray-700 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm"
-          >
-            <i className="fas fa-arrow-left mr-2"></i>
-            Vehículos
-          </Link>
+                  <div className="p-3 border-b xl:border-b-0 xl:border-r print:border-b-0 print:border-r space-y-3">
+                    <BloqueDatosCabecera titulo="Identificación y características">
+                      <DatoCompacto label="Clasificación" valor={vehiculo.clasificacion} />
+                      <DatoCompacto label="Origen" valor={vehiculo.origen} />
+                      <DatoCompacto label="Propietario" valor={vehiculo.propietario} />
+                      <DatoCompacto label="Fecha adquisición" valor={formatearFecha(vehiculo.fecha_adquisicion)} />
+                      <DatoCompacto label="Tipo" valor={vehiculo.tipo_vehiculo} />
+                      <DatoCompacto label="Modelo" valor={vehiculo.modelo} />
+                      <DatoCompacto label="Marca" valor={vehiculo.marca} />
+                      <DatoCompacto label="Línea" valor={vehiculo.linea} />
+                      <DatoCompacto label="Carrocería" valor={vehiculo.tipo_carroceria} />
+                      <DatoCompacto label="GPS" valor={vehiculo.gps} />
+                    </BloqueDatosCabecera>
 
-          <button
-            onClick={() =>
-              cerrarSesion(
-                router
-              )
-            }
-            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-4 py-2 rounded-lg text-sm"
-          >
-            <i className="fas fa-sign-out-alt mr-2"></i>
-            Cerrar Sesión
-          </button>
+                    <BloqueDatosCabecera titulo="Identificadores técnicos">
+                      <DatoCompacto label="Chasis" valor={vehiculo.numero_chasis} />
+                      <DatoCompacto label="Motor" valor={vehiculo.numero_motor} />
+                      <DatoCompacto label="VIN" valor={vehiculo.vin} />
+                    </BloqueDatosCabecera>
 
-        </div>
+                    <BloqueDatosCabecera titulo="Licencia de tránsito">
+                      <DatoCompacto label="Número" valor={vehiculo.numero_licencia_transito} />
+                      <DatoCompacto label="Fecha matrícula" valor={formatearFecha(vehiculo.fecha_matricula)} />
+                      <DatoCompacto label="Organismo" valor={vehiculo.organismo_transito} />
+                    </BloqueDatosCabecera>
 
-        {/* ================================================
-            CUERPO DEL ENCABEZADO
-        ================================================= */}
+                    <BloqueDatosCabecera titulo="Vinculación actual al CEA">
+                      {vinculacionActiva ? (
+                        <>
+                          <DatoCompacto label="Fecha" valor={formatearFecha(vinculacionActiva.fecha_vinculacion)} />
+                          <DatoCompacto label="Estado" valor="ACTIVA" />
+                          <DatoCompacto label="Motivo" valor={vinculacionActiva.motivo_vinculacion} />
+                          <DatoCompacto label="Responsable" valor={vinculacionActiva.creado_por} />
+                        </>
+                      ) : (
+                        <div className="col-span-full text-[11px] text-amber-700">
+                          El vehículo no tiene una vinculación activa registrada.
+                        </div>
+                      )}
+                    </BloqueDatosCabecera>
+                  </div>
 
-        <div className="encabezado-hoja-vida grid grid-cols-1 xl:grid-cols-[1.15fr_1.45fr_0.8fr] gap-5 p-5 items-start">
+                  <div className="p-3 flex items-center">
+                    <div className="grid grid-cols-2 gap-3 w-full">
+                      <FotoVehiculo
+                        titulo="Vista Frontal"
+                        url={fotoFrontalUrl}
+                        path={vehiculo.foto_frontal_path}
+                        inputRef={inputFotoFrontalRef}
+                        cargando={subiendoFoto === FOTO_FRONTAL}
+                        onArchivo={(archivo) => subirFoto(archivo, FOTO_FRONTAL)}
+                      />
 
-          {/* ==============================================
-              IDENTIDAD DEL VEHÍCULO
-          ============================================== */}
+                      <FotoVehiculo
+                        titulo="Vista Lateral"
+                        url={fotoLateralUrl}
+                        path={vehiculo.foto_lateral_path}
+                        inputRef={inputFotoLateralRef}
+                        cargando={subiendoFoto === FOTO_LATERAL}
+                        onArchivo={(archivo) => subirFoto(archivo, FOTO_LATERAL)}
+                      />
+                    </div>
+                  </div>
 
-          <div className="flex flex-col justify-start h-full pt-1">
-
-            <div className="flex items-start gap-4">
-
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[var(--primary)] text-white flex items-center justify-center shrink-0 shadow-sm">
-
-                <i
-                  className={`fas ${obtenerIconoVehiculo(
-                    vehiculo.tipo_vehiculo
-                  )} text-3xl sm:text-4xl`}
-                ></i>
-
+                </div>
               </div>
-
-              <div className="min-w-0">
-
-                <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
-                  Hoja de Vida del Vehículo
-                </p>
-
-                <h1 className="text-4xl sm:text-5xl font-black text-[var(--primary)] mt-1 tracking-wide leading-none">
-                  {vehiculo.placa}
-                </h1>
-
-                <p className="text-lg font-bold text-gray-800 mt-3">
-                  {vehiculo.tipo_vehiculo || '-'}
-                </p>
-
-                <div className="mt-2 border-l-4 border-amber-500 pl-3">
-
-                <p className="text-lg font-bold text-amber-700 uppercase leading-tight">
-                  {vehiculo.marca || '-'}
-
-                  {vehiculo.linea
-                    ? ` ${vehiculo.linea}`
-                    : ''}
-                </p>
-
-                {vehiculo.modelo && (
-
-                  <p className="text-sm font-semibold text-gray-600 mt-1">
-                    Modelo {vehiculo.modelo}
-                  </p>
-
-                )}
-
-              </div>
-
-                
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* ==============================================
-              REGISTRO FOTOGRÁFICO
-          ============================================== */}
-
-          <div className="w-full">
-
-            <div className="flex items-center justify-between mb-2">
-
-              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
-
-                <i className="fas fa-camera mr-2 text-[var(--primary)]"></i>
-
-                Registro Fotográfico
-
-              </h2>
-
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-
-              <FotoVehiculo
-                titulo="Vista Frontal"
-                url={
-                  fotoFrontalUrl
-                }
-                path={
-                  vehiculo
-                    .foto_frontal_path
-                }
-                inputRef={
-                  inputFotoFrontalRef
-                }
-                cargando={
-                  subiendoFoto ===
-                  FOTO_FRONTAL
-                }
-                onArchivo={(archivo) =>
-                  subirFoto(
-                    archivo,
-                    FOTO_FRONTAL
-                  )
-                }
-              />
-
-              <FotoVehiculo
-                titulo="Vista Lateral"
-                url={
-                  fotoLateralUrl
-                }
-                path={
-                  vehiculo
-                    .foto_lateral_path
-                }
-                inputRef={
-                  inputFotoLateralRef
-                }
-                cargando={
-                  subiendoFoto ===
-                  FOTO_LATERAL
-                }
-                onArchivo={(archivo) =>
-                  subirFoto(
-                    archivo,
-                    FOTO_LATERAL
-                  )
-                }
-              />
-
-            </div>
-
-          </div>
-
-          {/* ==============================================
-              RESUMEN
-          ============================================== */}
-
-          <div className="resumen-hoja-vida grid grid-cols-2 xl:grid-cols-1 gap-2 w-full">
-
-            <Resumen
-              titulo="Estado"
-              valor={
-                vehiculo.estado
-              }
-              icono="fa-toggle-on"
-            />
-
-            <Resumen
-              titulo="Vinculaciones"
-              valor={
-                vinculaciones.length
-              }
-              icono="fa-link"
-            />
-
-            <Resumen
-              titulo="Documentos vencidos"
-              valor={
-                documentosVencidos
-              }
-              icono="fa-exclamation-triangle"
-            />
-
-            <Resumen
-              titulo="Sin registro"
-              valor={
-                documentosSinRegistro
-              }
-              icono="fa-question-circle"
-            />
-
-          </div>
-
-        </div>
-
-      </div>
-        {/* ==================================================
-            DATOS MAESTROS
-        ================================================== */}
-
-        <Seccion
-          titulo="Identificación y Características"
-          icono="fa-id-card"
-          evitarCorte
-        >
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-
-            <Dato
-              label="Clasificación"
-              valor={
-                vehiculo.clasificacion
-              }
-            />
-
-            <Dato
-              label="Origen"
-              valor={
-                vehiculo.origen
-              }
-            />
-
-            <Dato
-              label="Propietario"
-              valor={
-                vehiculo.propietario
-              }
-            />
-
-            <Dato
-              label="Fecha adquisición"
-              valor={
-                formatearFecha(
-                  vehiculo
-                    .fecha_adquisicion
-                )
-              }
-            />
-
-            <Dato
-              label="Tipo"
-              valor={
-                vehiculo.tipo_vehiculo
-              }
-            />
-
-            <Dato
-              label="Modelo"
-              valor={
-                vehiculo.modelo
-              }
-            />
-
-            <Dato
-              label="Marca"
-              valor={
-                vehiculo.marca
-              }
-            />
-
-            <Dato
-              label="Línea"
-              valor={
-                vehiculo.linea
-              }
-            />
-
-            <Dato
-              label="Carrocería"
-              valor={
-                vehiculo
-                  .tipo_carroceria
-              }
-            />
-
-            <Dato
-              label="GPS"
-              valor={
-                vehiculo.gps
-              }
-            />
-
-          </div>
-
-        </Seccion>
-
-        <Seccion
-          titulo="Identificadores Técnicos"
-          icono="fa-cogs"
-          evitarCorte
-        >
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
-            <Dato
-              label="Número de Chasis"
-              valor={
-                vehiculo.numero_chasis
-              }
-            />
-
-            <Dato
-              label="Número de Motor"
-              valor={
-                vehiculo.numero_motor
-              }
-            />
-
-            <Dato
-              label="VIN"
-              valor={
-                vehiculo.vin
-              }
-            />
-
-          </div>
-
-        </Seccion>
-
-        <Seccion
-          titulo="Licencia de Tránsito"
-          icono="fa-address-card"
-          evitarCorte
-        >
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
-            <Dato
-              label="Número"
-              valor={
-                vehiculo
-                  .numero_licencia_transito
-              }
-            />
-
-            <Dato
-              label="Fecha de Matrícula"
-              valor={
-                formatearFecha(
-                  vehiculo
-                    .fecha_matricula
-                )
-              }
-            />
-
-            <Dato
-              label="Organismo"
-              valor={
-                vehiculo
-                  .organismo_transito
-              }
-            />
-
-          </div>
-
-        </Seccion>
-
-        {/* ==================================================
-            VINCULACIÓN
-        ================================================== */}
-
-        <Seccion
-          titulo="Vinculación Actual al CEA"
-          icono="fa-link"
-          evitarCorte
-        >
-
-          {vinculacionActiva ? (
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-
-              <Dato
-                label="Fecha"
-                valor={
-                  formatearFecha(
-                    vinculacionActiva
-                      .fecha_vinculacion
-                  )
-                }
-              />
-
-              <Dato
-                label="Estado"
-                valor="ACTIVA"
-              />
-
-              <Dato
-                label="Motivo"
-                valor={
-                  vinculacionActiva
-                    .motivo_vinculacion
-                }
-              />
-
-              <Dato
-                label="Responsable"
-                valor={
-                  vinculacionActiva
-                    .creado_por
-                }
-              />
-
-            </div>
-
-          ) : (
-
-            <div className="border border-yellow-300 bg-yellow-50 text-yellow-800 rounded-lg p-4 text-sm">
-
-              <i className="fas fa-exclamation-triangle mr-2"></i>
-
-              El vehículo no tiene una vinculación activa registrada.
-
-            </div>
-
-          )}
-
-        </Seccion>
 
         {/* ==================================================
             DOCUMENTOS
@@ -3258,7 +2955,7 @@ return (
              CONTENEDOR GENERAL
           ========================================== */
 
-          .max-w-7xl {
+          .contenedor-hoja-vida {
             max-width: none !important;
             width: 100% !important;
           }
@@ -3548,6 +3245,39 @@ return (
 // ============================================================
 // COMPONENTES
 // ============================================================
+
+function BloqueDatosCabecera({
+  titulo,
+  children,
+}) {
+  return (
+    <div>
+      <div className="mb-1 border-b border-gray-300 pb-1 text-[10px] font-black uppercase tracking-wide text-gray-600">
+        {titulo}
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function DatoCompacto({
+  label,
+  valor,
+}) {
+  return (
+    <div className="min-w-0 text-[10px] leading-tight">
+      <span className="font-semibold text-gray-500">
+        {label}:{' '}
+      </span>
+      <span className="font-semibold text-gray-800 break-words">
+        {valor || '-'}
+      </span>
+    </div>
+  )
+}
 
 function Seccion({
   titulo,
