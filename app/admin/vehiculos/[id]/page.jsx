@@ -1637,7 +1637,7 @@ return (
       position="top-center"
     />
 
-    <div className="contenedor-hoja-vida max-w-[1120px] mx-auto space-y-5">
+    <div className="contenedor-hoja-vida max-w-[980px] mx-auto space-y-5">
 
       {errorDocumento && (
         <div className="print:hidden mb-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -1710,7 +1710,7 @@ return (
                 />
               </div>
 
-              <div className="separador-encabezado-documento"></div>
+              <div className="separador-encabezado-documento h-4 print:h-auto"></div>
             </td>
           </tr>
         </thead>
@@ -1720,7 +1720,7 @@ return (
             <td className="contenido-hoja-vida-print p-0 border-0 align-top">
 
               <div className="cabecera-datos-vehiculo bg-white border rounded-xl shadow-lg overflow-hidden print:shadow-none print:rounded-none">
-                <div className="grid grid-cols-1 xl:grid-cols-[0.82fr_2.15fr_1.25fr] print:grid-cols-[0.82fr_2.15fr_1.25fr] gap-0">
+                <div className="grid grid-cols-1 xl:grid-cols-[0.78fr_1.72fr_1.5fr] print:grid-cols-[0.78fr_1.72fr_1.5fr] gap-0">
 
                   <div className="p-4 border-b xl:border-b-0 xl:border-r print:border-b-0 print:border-r flex flex-col justify-center">
                     <h1 className="text-3xl sm:text-4xl font-black text-[var(--primary)] tracking-wide leading-none">
@@ -1743,6 +1743,13 @@ return (
                         </p>
                       )}
                     </div>
+
+                    <p className="mt-4 text-[11px] leading-snug text-gray-600">
+                      <span className="font-semibold">Kilometraje promedio mensual (últimos 6 meses):</span>{' '}
+                      <strong className="text-gray-800">
+                        {formatearNumero(kilometraje.promedio_mensual_6_meses)} km
+                      </strong>
+                    </p>
                   </div>
 
                   <div className="p-3 border-b xl:border-b-0 xl:border-r print:border-b-0 print:border-r space-y-3">
@@ -1751,9 +1758,6 @@ return (
                       <DatoCompacto label="Origen" valor={vehiculo.origen} />
                       <DatoCompacto label="Propietario" valor={vehiculo.propietario} />
                       <DatoCompacto label="Fecha adquisición" valor={formatearFecha(vehiculo.fecha_adquisicion)} />
-                      <DatoCompacto label="Tipo" valor={vehiculo.tipo_vehiculo} />
-                      <DatoCompacto label="Modelo" valor={vehiculo.modelo} />
-                      <DatoCompacto label="Marca" valor={vehiculo.marca} />
                       <DatoCompacto label="Línea" valor={vehiculo.linea} />
                       <DatoCompacto label="Carrocería" valor={vehiculo.tipo_carroceria} />
                       <DatoCompacto label="GPS" valor={vehiculo.gps} />
@@ -1790,7 +1794,7 @@ return (
                   <div className="p-3 flex items-center">
                     <div className="grid grid-cols-2 gap-3 w-full">
                       <FotoVehiculo
-                        titulo="Vista Frontal"
+                        titulo=""
                         url={fotoFrontalUrl}
                         path={vehiculo.foto_frontal_path}
                         inputRef={inputFotoFrontalRef}
@@ -1799,7 +1803,7 @@ return (
                       />
 
                       <FotoVehiculo
-                        titulo="Vista Lateral"
+                        titulo=""
                         url={fotoLateralUrl}
                         path={vehiculo.foto_lateral_path}
                         inputRef={inputFotoLateralRef}
@@ -3287,7 +3291,7 @@ function Seccion({
 }) {
   return (
     <section
-      className={`bg-white rounded-xl shadow-lg border overflow-hidden print:shadow-none ${
+      className={`mt-4 bg-white rounded-xl shadow-lg border overflow-hidden print:shadow-none ${
         evitarCorte
           ? 'print-avoid-break'
           : ''
@@ -3370,10 +3374,12 @@ function FotoVehiculo({
   return (
     <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
 
-      <div className="px-3 py-2 border-b bg-gray-50 font-semibold text-sm text-center">
-        <i className="fas fa-camera mr-2 text-gray-500"></i>
-        {titulo}
-      </div>
+      {titulo && (
+        <div className="px-3 py-2 border-b bg-gray-50 font-semibold text-sm text-center">
+          <i className="fas fa-camera mr-2 text-gray-500"></i>
+          {titulo}
+        </div>
+      )}
 
       <div className="aspect-[3/2] max-h-56 print:max-h-32 flex items-center justify-center bg-gray-100 overflow-hidden">
 
