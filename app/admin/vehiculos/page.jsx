@@ -1115,7 +1115,7 @@ export default function VehiculosAdminPage() {
 
             <div>
 
-              <h2 className="text-xl font-bold text-gray-800">
+              <h2 className="text-lg font-bold text-white">
 
                 {editandoId
                   ? 'Editar Vehículo'
@@ -1123,7 +1123,7 @@ export default function VehiculosAdminPage() {
 
               </h2>
 
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-white/80 mt-1">
                 Datos maestros de la Hoja de Vida del vehículo.
               </p>
 
@@ -1690,7 +1690,7 @@ export default function VehiculosAdminPage() {
                       .accion ===
                     'inactivar'
                       ? 'Desvincular / Inactivar Vehículo'
-                      : 'Reactivar / Nueva Vinculación'}
+                      : 'Activar / Nueva Vinculación'}
 
                   </h3>
 
@@ -2057,9 +2057,12 @@ function Seccion({
   children,
 }) {
   return (
-    <div className="border rounded-xl overflow-hidden mb-5">
+    <div className="border rounded-lg overflow-hidden">
 
-      <div className="bg-gray-900 text-white px-4 py-2 text-sm font-semibold flex items-center gap-2">
+      <div
+        className="px-4 py-2 text-sm font-semibold flex items-center gap-2"
+        style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto }}
+      >
 
         <i
           className={`fas ${icono}`}
@@ -2069,7 +2072,7 @@ function Seccion({
 
       </div>
 
-      <div className="p-4 bg-gray-50">
+      <div className="p-3 bg-gray-50">
 
         {children}
 
