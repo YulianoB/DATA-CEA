@@ -1800,8 +1800,8 @@ return (
                     </BloqueDatosCabecera>
                   </div>
 
-                  <div className="p-3 flex items-start">
-                    <div className="grid grid-cols-2 gap-3 w-full">
+                  <div className="p-3 flex items-stretch">
+                    <div className="grid grid-cols-2 gap-3 w-full items-stretch">
                       <FotoVehiculo
                         titulo=""
                         url={fotoFrontalUrl}
@@ -2982,6 +2982,15 @@ return (
             page-break-inside: avoid !important;
           }
 
+          .cabecera-datos-vehiculo img {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            object-fit: contain !important;
+            object-position: center !important;
+          }
+
           /* ==========================================
              CONTENEDOR GENERAL
           ========================================== */
@@ -3051,12 +3060,6 @@ return (
              FOTOGRAFÍAS
           ========================================== */
 
-          .encabezado-hoja-vida img {
-            width: 100% !important;
-            max-width: 100% !important;
-            max-height: 120px !important;
-            object-fit: cover !important;
-          }
           /* ==========================================
              EVITAR CORTES
           ========================================== */
@@ -3423,16 +3426,16 @@ function FotoVehiculo({
   onArchivo,
 }) {
   return (
-    <div>
-      <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
-        <div className="aspect-[4/3] min-h-[165px] print:min-h-0 flex items-center justify-center bg-gray-100 overflow-hidden">
+    <div className="flex h-full min-w-0 flex-col">
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-white shadow-sm">
+        <div className="flex min-h-[165px] w-full flex-1 items-center justify-center overflow-hidden bg-gray-100 print:min-h-0">
 
           {url ? (
 
             <img
               src={url}
               alt={titulo || 'Fotografía del vehículo'}
-              className="w-full h-full object-contain"
+              className="block h-full max-h-full w-full max-w-full object-contain object-center"
             />
 
           ) : (
