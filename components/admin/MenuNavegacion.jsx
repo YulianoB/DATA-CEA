@@ -34,14 +34,14 @@ export const ESTILO_GRUPO_MENU = {
 
 // 3. TARJETAS DE NAVEGACION
 export const ESTILO_TARJETA_MENU = {
-  fondo: '#FFFFFF',
-  borde: '#6F8190',
+  fondo: '#F3F8FC',
+  borde: '#A9BDCC',
   bordeHover: '#173A57',
   fondoHover: '#173A57',
   textoTitulo: '#263746',
   textoTituloHover: '#FFFFFF',
   textoDescripcion: '#64748B',
-  fondoIcono: '#EEF4F8',
+  fondoIcono: 'transparent',
   textoIcono: '#36566F',
   fondoIconoHover: '#FFFFFF',
   textoIconoHover: '#173A57',
@@ -87,7 +87,7 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
       type="button"
       onClick={onClick}
       disabled={deshabilitada}
-      className="group flex min-h-[112px] w-full items-center gap-3 border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50"
+      className="group relative flex min-h-[112px] w-full flex-col items-center justify-center gap-2 border p-3 text-center disabled:cursor-not-allowed disabled:opacity-50"
       style={{
         backgroundColor: ESTILO_TARJETA_MENU.fondo,
         borderColor: ESTILO_TARJETA_MENU.borde,
@@ -130,21 +130,21 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
       {Icono && (
         <span
           data-menu-icon
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
           style={{ backgroundColor: ESTILO_TARJETA_MENU.fondoIcono, color: ESTILO_TARJETA_MENU.textoIcono, transition: ESTILO_TARJETA_MENU.transicion }}
         >
-          <Icono size={23} strokeWidth={2} />
+          <Icono size={29} strokeWidth={2} />
         </span>
       )}
 
       <span className="min-w-0 flex-1">
-        <span data-menu-title className="block text-sm font-bold" style={{ color: ESTILO_TARJETA_MENU.textoTitulo, transition: ESTILO_TARJETA_MENU.transicion }}>{titulo}</span>
+        <span data-menu-title className="block text-sm font-semibold leading-snug tracking-normal" style={{ color: ESTILO_TARJETA_MENU.textoTitulo, transition: ESTILO_TARJETA_MENU.transicion }}>{titulo}</span>
         {descripcion && (
           <span className="mt-1 block text-[11px] leading-4" style={{ color: ESTILO_TARJETA_MENU.textoDescripcion }}>{descripcion}</span>
         )}
       </span>
 
-      <ChevronRight data-menu-arrow size={17} className="shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" />
+      <ChevronRight data-menu-arrow size={15} className="absolute right-3 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-70" />
     </button>
   )
 }
@@ -238,13 +238,15 @@ export default function MenuNavegacion({
             </div>
           </div>
         </div>
-        <div
-          className="w-full"
-          style={{
-            height: `${ESTILO_MENU.grosorLineaTitulo}px`,
-            backgroundColor: ESTILO_MENU.lineaTitulo,
-          }}
-        />
+        <div className="mx-auto px-4 md:px-6" style={{ maxWidth: ESTILO_MENU.anchoMaximo }}>
+          <div
+            className="w-full"
+            style={{
+              height: `${ESTILO_MENU.grosorLineaTitulo}px`,
+              backgroundColor: ESTILO_MENU.lineaTitulo,
+            }}
+          />
+        </div>
       </header>
 
       <div className="mx-auto px-4 pb-10 pt-2 md:px-6" style={{ maxWidth: ESTILO_MENU.anchoMaximo }}>
