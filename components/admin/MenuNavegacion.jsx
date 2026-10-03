@@ -34,7 +34,7 @@ export const ESTILO_GRUPO_MENU = {
 
 // 3. TARJETAS DE NAVEGACION
 export const ESTILO_TARJETA_MENU = {
-  fondo: '#F3F8FC',
+  fondo: '#EAF4FB',
   borde: '#A9BDCC',
   bordeHover: '#173A57',
   fondoHover: '#173A57',
