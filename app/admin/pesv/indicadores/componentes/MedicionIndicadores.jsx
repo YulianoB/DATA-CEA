@@ -98,6 +98,15 @@ import EjlcMedicion
 import IdpMedicion
   from './medicion/indicadores/IdpMedicion'
 
+import CpfPesvCumplimientoMedicion
+  from './medicion/indicadores/CpfPesvCumplimientoMedicion'
+
+import CpfPesvCoberturaMedicion
+  from './medicion/indicadores/CpfPesvCoberturaMedicion'
+
+import NcacMedicion
+  from './medicion/indicadores/NcacMedicion'
+
 
 
 
@@ -131,6 +140,17 @@ const API_INDICADOR_EJLC =
 
 const API_INDICADOR_IDP =
   '/api/admin/pesv/indicadores/idp'
+
+
+const API_INDICADOR_CPF_PESV_CUMPLIMIENTO =
+  '/api/admin/pesv/indicadores/cpf-pesv-cumplimiento'
+
+
+const API_INDICADOR_CPF_PESV_COBERTURA =
+  '/api/admin/pesv/indicadores/cpf-pesv-cobertura'
+
+const API_INDICADOR_NCAC =
+  '/api/admin/pesv/indicadores/ncac'
 
 
 const MESES = [
@@ -1137,6 +1157,25 @@ export default function MedicionIndicadores({
   ] =
     useState(null)
 
+
+  const [
+    datosCpfPesvCumplimiento,
+    setDatosCpfPesvCumplimiento,
+  ] =
+    useState(null)
+
+  const [
+    datosCpfPesvCobertura,
+    setDatosCpfPesvCobertura,
+  ] =
+    useState(null)
+
+  const [
+    datosNcac,
+    setDatosNcac,
+  ] =
+    useState(null)
+
   const [
     medicionSeleccionada,
     setMedicionSeleccionada,
@@ -1396,6 +1435,20 @@ export default function MedicionIndicadores({
   const esIdp =
     codigoIndicador ===
     'IDP'
+
+
+  const esCpfPesvCumplimiento =
+    codigoIndicador ===
+    'CPF_PESV_CUMPLIMIENTO'
+
+
+  const esCpfPesvCobertura =
+    codigoIndicador ===
+    'CPF_PESV_COBERTURA'
+
+  const esNcac =
+    codigoIndicador ===
+    'NCAC'
 
 
   // ==========================================================
@@ -1738,6 +1791,9 @@ export default function MedicionIndicadores({
       setDatosCplanPesv(null)
       setDatosEjlc(null)
       setDatosIdp(null)
+      setDatosCpfPesvCumplimiento(null)
+      setDatosCpfPesvCobertura(null)
+      setDatosNcac(null)
       setMedicionSeleccionada(null)
 
       setNumerador('')
@@ -2131,6 +2187,189 @@ export default function MedicionIndicadores({
 
     return resultado.data
   }
+
+
+
+  // ==========================================================
+  // CONSULTAR CÁLCULO ESPECÍFICO CPF_PESV_CUMPLIMIENTO
+  // API: GET /api/admin/pesv/indicadores/cpf-pesv-cumplimiento
+  // CPF = capacitaciones ejecutadas / programadas * 100
+  // ==========================================================
+
+  async function solicitarCalculoCpfPesvCumplimiento() {
+    const parametros =
+      new URLSearchParams({
+        nit: String(nit),
+        anio: String(Number(anio)),
+        tipo_periodo:
+          tipoPeriodoIndicador,
+      })
+
+    if (
+      tipoPeriodoIndicador ===
+      'TRIMESTRE'
+    ) {
+      parametros.set(
+        'numero_periodo',
+        String(
+          Number(
+            numeroPeriodo
+          )
+        )
+      )
+    }
+
+    const respuesta =
+      await fetch(
+        `${API_INDICADOR_CPF_PESV_CUMPLIMIENTO}?${parametros.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'x-cea-nit': nit,
+          },
+          cache: 'no-store',
+        }
+      )
+
+    const resultado =
+      await respuesta.json()
+
+    if (
+      !respuesta.ok ||
+      resultado?.ok !== true
+    ) {
+      throw new Error(
+        resultado?.message ||
+        'No fue posible calcular el indicador CPF_PESV_CUMPLIMIENTO.'
+      )
+    }
+
+    if (
+      !resultado?.calculo
+    ) {
+      throw new Error(
+        'La API CPF_PESV_CUMPLIMIENTO no devolvió el resultado del cálculo.'
+      )
+    }
+
+    return resultado
+  }
+
+  // CONSULTAR CÁLCULO ESPECÍFICO CPF_PESV_COBERTURA
+  // API: GET /api/admin/pesv/indicadores/cpf-pesv-cobertura
+  // CPF = colaboradores capacitados / total de colaboradores * 100
+  // ==========================================================
+
+  async function solicitarCalculoCpfPesvCobertura() {
+    const parametros =
+      new URLSearchParams({
+        nit: String(nit),
+        anio: String(Number(anio)),
+        tipo_periodo:
+          tipoPeriodoIndicador,
+      })
+
+    if (
+      tipoPeriodoIndicador ===
+      'TRIMESTRE'
+    ) {
+      parametros.set(
+        'numero_periodo',
+        String(
+          Number(
+            numeroPeriodo
+          )
+        )
+      )
+    }
+
+    const respuesta =
+      await fetch(
+        `${API_INDICADOR_CPF_PESV_COBERTURA}?${parametros.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'x-cea-nit': nit,
+          },
+          cache: 'no-store',
+        }
+      )
+
+    const resultado =
+      await respuesta.json()
+
+    if (
+      !respuesta.ok ||
+      resultado?.ok !== true
+    ) {
+      throw new Error(
+        resultado?.message ||
+        'No fue posible calcular el indicador CPF_PESV_COBERTURA.'
+      )
+    }
+
+    if (
+      !resultado?.calculo
+    ) {
+      throw new Error(
+        'La API CPF_PESV_COBERTURA no devolvió el resultado del cálculo.'
+      )
+    }
+
+    return resultado
+  }
+
+
+  // ==========================================================
+  // CONSULTAR CÁLCULO ESPECÍFICO NCAC
+  // API: GET /api/admin/pesv/indicadores/ncac
+  // NCAC = NCG / NCI * 100
+  // Periodicidad: ANUAL
+  // ==========================================================
+
+  async function solicitarCalculoNcac() {
+    const parametros =
+      new URLSearchParams({
+        nit: String(nit),
+        anio: String(Number(anio)),
+      })
+
+    const respuesta =
+      await fetch(
+        `${API_INDICADOR_NCAC}?${parametros.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'x-cea-nit': nit,
+          },
+          cache: 'no-store',
+        }
+      )
+
+    const resultado =
+      await respuesta.json()
+
+    if (
+      !respuesta.ok ||
+      resultado?.ok !== true
+    ) {
+      throw new Error(
+        resultado?.message ||
+        'No fue posible calcular el indicador NCAC.'
+      )
+    }
+
+    if (
+      !resultado?.calculo
+    ) {
+      throw new Error(
+        'La API NCAC no devolvió el resultado del cálculo.'
+      )
+    }
+
+    return resultado
+  }
+
 
     // ==========================================================
   // CALCULAR LÍNEA BASE HISTÓRICA TSV
@@ -3018,6 +3257,305 @@ export default function MedicionIndicadores({
           },
         }
       } else if (
+        esCpfPesvCumplimiento
+      ) {
+        const resultadoCpfPesvCumplimiento =
+          await solicitarCalculoCpfPesvCumplimiento()
+
+        setDatosCpfPesvCumplimiento(
+          resultadoCpfPesvCumplimiento
+        )
+
+        setDatosRsvi(null)
+        setDatosGrv(null)
+        setDatosCmPesv(null)
+        setDatosCplanPesv(null)
+        setDatosEjlc(null)
+        setDatosIdp(null)
+
+        const calculoCpf =
+          resultadoCpfPesvCumplimiento.calculo
+
+        const evaluacionCpf =
+          resultadoCpfPesvCumplimiento?.evaluacion ||
+          {}
+
+        const resultadosCpf =
+          calculoCpf?.resultados ||
+          {}
+
+        calculo = {
+          ...calculoCpf,
+
+          numerador:
+            calculoCpf?.numerador ??
+            resultadosCpf?.capacitaciones_ejecutadas ??
+            null,
+
+          denominador:
+            calculoCpf?.denominador ??
+            resultadosCpf?.capacitaciones_programadas ??
+            null,
+
+          valor_resultado:
+            calculoCpf?.valor_resultado ??
+            resultadosCpf?.cumplimiento_plan_formacion ??
+            null,
+
+          linea_base:
+            evaluacionCpf?.linea_base ??
+            resultadoCpfPesvCumplimiento?.configuracion?.linea_base ??
+            null,
+
+          operador_meta:
+            evaluacionCpf?.operador_meta ||
+            resultadoCpfPesvCumplimiento?.configuracion?.operador_meta ||
+            null,
+
+          valor_meta:
+            evaluacionCpf?.valor_meta ??
+            resultadoCpfPesvCumplimiento?.configuracion?.valor_meta ??
+            null,
+
+          unidad_meta:
+            evaluacionCpf?.unidad_meta ||
+            resultadoCpfPesvCumplimiento?.configuracion?.unidad_meta ||
+            calculoCpf?.unidad_resultado ||
+            'PORCENTAJE',
+
+          cumple_meta:
+            evaluacionCpf?.cumple_meta ??
+            calculoCpf?.cumple_meta ??
+            null,
+
+          datos_calculo: {
+            ...(calculoCpf?.datos_calculo || {}),
+            codigo:
+              'CPF_PESV_CUMPLIMIENTO',
+            periodo:
+              calculoCpf?.periodo ||
+              resultadoCpfPesvCumplimiento?.periodo ||
+              null,
+            resultados:
+              resultadosCpf,
+            resumen:
+              calculoCpf?.resumen ||
+              {},
+            resumen_trimestral:
+              calculoCpf?.resumen_trimestral ||
+              calculoCpf?.trimestres ||
+              [],
+            acumulado_anual:
+              calculoCpf?.acumulado_anual ||
+              calculoCpf?.resumen_anual ||
+              null,
+            detalle_actividades:
+              calculoCpf?.detalle_actividades ||
+              [],
+            advertencias:
+              calculoCpf?.advertencias ||
+              [],
+            evaluacion:
+              evaluacionCpf,
+          },
+        }
+      } else if (
+        esNcac
+      ) {
+        const resultadoNcac =
+          await solicitarCalculoNcac()
+
+        setDatosNcac(
+          resultadoNcac
+        )
+
+        setDatosRsvi(null)
+        setDatosGrv(null)
+        setDatosCmPesv(null)
+        setDatosCplanPesv(null)
+        setDatosEjlc(null)
+        setDatosIdp(null)
+        setDatosCpfPesvCumplimiento(null)
+        setDatosCpfPesvCobertura(null)
+
+        const calculoNcac =
+          resultadoNcac.calculo
+
+        const evaluacionNcac =
+          resultadoNcac?.evaluacion ||
+          {}
+
+        const resultadosNcac =
+          calculoNcac?.resultados ||
+          {}
+
+        calculo = {
+          ...calculoNcac,
+
+          numerador:
+            calculoNcac?.numerador ??
+            resultadosNcac?.no_conformidades_gestionadas_cerradas ??
+            null,
+
+          denominador:
+            calculoNcac?.denominador ??
+            resultadosNcac?.no_conformidades_identificadas_analizadas ??
+            null,
+
+          valor_resultado:
+            calculoNcac?.valor_resultado ??
+            resultadosNcac?.ncac ??
+            null,
+
+          linea_base:
+            evaluacionNcac?.linea_base ??
+            resultadoNcac?.configuracion?.linea_base ??
+            null,
+
+          operador_meta:
+            evaluacionNcac?.operador_meta ||
+            resultadoNcac?.configuracion?.operador_meta ||
+            null,
+
+          valor_meta:
+            evaluacionNcac?.valor_meta ??
+            resultadoNcac?.configuracion?.valor_meta ??
+            null,
+
+          unidad_meta:
+            evaluacionNcac?.unidad_meta ||
+            resultadoNcac?.configuracion?.unidad_meta ||
+            calculoNcac?.unidad_resultado ||
+            'PORCENTAJE',
+
+          cumple_meta:
+            evaluacionNcac?.cumple_meta ??
+            calculoNcac?.cumple_meta ??
+            null,
+
+          datos_calculo: {
+            ...(calculoNcac?.datos_calculo || {}),
+            codigo: 'NCAC',
+            periodo:
+              calculoNcac?.periodo ||
+              resultadoNcac?.periodo ||
+              null,
+            resultados:
+              resultadosNcac,
+            detalle_no_conformidades:
+              calculoNcac?.detalle_no_conformidades ||
+              [],
+            advertencias:
+              calculoNcac?.advertencias ||
+              [],
+            evaluacion:
+              evaluacionNcac,
+          },
+        }
+      } else if (
+        esCpfPesvCobertura
+      ) {
+        const resultadoCpfPesvCobertura =
+          await solicitarCalculoCpfPesvCobertura()
+
+        setDatosCpfPesvCobertura(
+          resultadoCpfPesvCobertura
+        )
+
+        setDatosRsvi(null)
+        setDatosGrv(null)
+        setDatosCmPesv(null)
+        setDatosCplanPesv(null)
+        setDatosEjlc(null)
+        setDatosIdp(null)
+
+        const calculoCobertura =
+          resultadoCpfPesvCobertura.calculo
+
+        const evaluacionCobertura =
+          resultadoCpfPesvCobertura?.evaluacion ||
+          {}
+
+        const resultadosCobertura =
+          calculoCobertura?.resultados ||
+          {}
+
+        calculo = {
+          ...calculoCobertura,
+
+          numerador:
+            calculoCobertura?.numerador ??
+            resultadosCobertura?.colaboradores_capacitados ??
+            null,
+
+          denominador:
+            calculoCobertura?.denominador ??
+            resultadosCobertura?.total_colaboradores ??
+            null,
+
+          valor_resultado:
+            calculoCobertura?.valor_resultado ??
+            resultadosCobertura?.cobertura_plan_formacion ??
+            null,
+
+          linea_base:
+            evaluacionCobertura?.linea_base ??
+            resultadoCpfPesvCobertura?.configuracion?.linea_base ??
+            null,
+
+          operador_meta:
+            evaluacionCobertura?.operador_meta ||
+            resultadoCpfPesvCobertura?.configuracion?.operador_meta ||
+            null,
+
+          valor_meta:
+            evaluacionCobertura?.valor_meta ??
+            resultadoCpfPesvCobertura?.configuracion?.valor_meta ??
+            null,
+
+          unidad_meta:
+            evaluacionCobertura?.unidad_meta ||
+            resultadoCpfPesvCobertura?.configuracion?.unidad_meta ||
+            calculoCobertura?.unidad_resultado ||
+            'PORCENTAJE',
+
+          cumple_meta:
+            evaluacionCobertura?.cumple_meta ??
+            calculoCobertura?.cumple_meta ??
+            null,
+
+          datos_calculo: {
+            ...(calculoCobertura?.datos_calculo || {}),
+            codigo:
+              'CPF_PESV_COBERTURA',
+            periodo:
+              calculoCobertura?.periodo ||
+              resultadoCpfPesvCobertura?.periodo ||
+              null,
+            resultados:
+              resultadosCobertura,
+            resumen:
+              calculoCobertura?.resumen ||
+              {},
+            resumen_trimestral:
+              calculoCobertura?.resumen_trimestral ||
+              calculoCobertura?.trimestres ||
+              [],
+            acumulado_anual:
+              calculoCobertura?.acumulado_anual ||
+              calculoCobertura?.resumen_anual ||
+              null,
+            detalle_capacitados:
+              calculoCobertura?.detalle_capacitados ||
+              [],
+            advertencias:
+              calculoCobertura?.advertencias ||
+              [],
+            evaluacion:
+              evaluacionCobertura,
+          },
+        }
+      } else if (
         esEjlc
       ) {
         const resultadoEjlc =
@@ -3141,6 +3679,9 @@ export default function MedicionIndicadores({
         setDatosCplanPesv(null)
         setDatosEjlc(null)
         setDatosIdp(null)
+        setDatosCpfPesvCumplimiento(null)
+      setDatosCpfPesvCobertura(null)
+      setDatosNcac(null)
 
         const resultado =
           await solicitarApi(
@@ -3210,6 +3751,12 @@ export default function MedicionIndicadores({
             ? 'RSVI calculado. Revise la comparación anual de riesgos antes de guardar.'
             : esGrv
               ? 'GRV calculado. Revise la variación anual de riesgos con valoración CRÍTICA antes de guardar.'
+              : esCpfPesvCumplimiento
+                ? 'CPF_PESV_CUMPLIMIENTO calculado. Revise las capacitaciones programadas, ejecutadas y el cumplimiento del período antes de guardar.'
+              : esNcac
+                ? 'NCAC calculado. Revise las no conformidades identificadas y analizadas, las gestionadas y cerradas y el porcentaje anual antes de guardar.'
+              : esCpfPesvCobertura
+                ? 'CPF_PESV_COBERTURA calculado. Revise los colaboradores capacitados, la población total y la cobertura acumulada antes de guardar.'
               : esEjlc
                 ? 'EJLC calculado. Revise las jornadas, la calidad de los datos y el comparativo entre Horarios y Programación de clases antes de guardar.'
                 : esIdp
@@ -3949,6 +4496,10 @@ export default function MedicionIndicadores({
         [],
     })
 
+    setDatosCpfPesvCumplimiento(null)
+    setDatosCpfPesvCobertura(null)
+      setDatosNcac(null)
+
     if (
       esRsvi
     ) {
@@ -4329,6 +4880,276 @@ export default function MedicionIndicadores({
       setDatosCmPesv(null)
       setDatosEjlc(null)
     } else if (
+      esCpfPesvCumplimiento
+    ) {
+      const datosCalculoCpf =
+        medicion?.datos_calculo ||
+        {}
+
+      const resultadosCpf =
+        datosCalculoCpf?.resultados ||
+        {}
+
+      setDatosCpfPesvCumplimiento({
+        ok: true,
+
+        periodo:
+          datosCalculoCpf?.periodo ||
+          {
+            anio:
+              medicion?.anio,
+            tipo_periodo:
+              medicion?.tipo_periodo,
+            numero_periodo:
+              medicion?.numero_periodo,
+            periodo_desde:
+              medicion?.periodo_desde,
+            periodo_hasta:
+              medicion?.periodo_hasta,
+          },
+
+        evaluacion:
+          datosCalculoCpf?.evaluacion ||
+          {
+            linea_base:
+              medicion?.linea_base ?? null,
+            operador_meta:
+              medicion?.operador_meta || null,
+            valor_meta:
+              medicion?.valor_meta ?? null,
+            unidad_meta:
+              medicion?.unidad_meta || null,
+            cumple_meta:
+              medicion?.cumple_meta ?? null,
+          },
+
+        calculo: {
+          numerador:
+            medicion?.numerador,
+          denominador:
+            medicion?.denominador,
+          valor_resultado:
+            medicion?.valor_resultado,
+          unidad_resultado:
+            medicion?.unidad_resultado,
+          linea_base:
+            medicion?.linea_base,
+          operador_meta:
+            medicion?.operador_meta,
+          valor_meta:
+            medicion?.valor_meta,
+          unidad_meta:
+            medicion?.unidad_meta,
+          cumple_meta:
+            medicion?.cumple_meta,
+          origen_calculo:
+            medicion?.origen_calculo,
+          periodo:
+            datosCalculoCpf?.periodo ||
+            null,
+          resultados:
+            resultadosCpf,
+          resumen:
+            datosCalculoCpf?.resumen ||
+            {},
+          resumen_trimestral:
+            datosCalculoCpf?.resumen_trimestral ||
+            datosCalculoCpf?.trimestres ||
+            [],
+          trimestres:
+            datosCalculoCpf?.resumen_trimestral ||
+            datosCalculoCpf?.trimestres ||
+            [],
+          acumulado_anual:
+            datosCalculoCpf?.acumulado_anual ||
+            datosCalculoCpf?.resumen_anual ||
+            null,
+          resumen_anual:
+            datosCalculoCpf?.acumulado_anual ||
+            datosCalculoCpf?.resumen_anual ||
+            null,
+          detalle_actividades:
+            datosCalculoCpf?.detalle_actividades ||
+            [],
+          advertencias:
+            datosCalculoCpf?.advertencias ||
+            [],
+        },
+      })
+
+      setDatosRsvi(null)
+      setDatosGrv(null)
+      setDatosCmPesv(null)
+      setDatosCplanPesv(null)
+      setDatosEjlc(null)
+      setDatosIdp(null)
+    } else if (
+      esNcac
+    ) {
+      const datosCalculoNcac =
+        medicion?.datos_calculo ||
+        {}
+
+      const resultadosNcac =
+        datosCalculoNcac?.resultados ||
+        {}
+
+      setDatosNcac({
+        ok: true,
+
+        periodo:
+          datosCalculoNcac?.periodo ||
+          {
+            anio: medicion?.anio,
+            tipo_periodo: 'ANUAL',
+            numero_periodo: null,
+            periodo_desde: medicion?.periodo_desde,
+            periodo_hasta: medicion?.periodo_hasta,
+          },
+
+        evaluacion:
+          datosCalculoNcac?.evaluacion ||
+          {
+            linea_base: medicion?.linea_base ?? null,
+            operador_meta: medicion?.operador_meta || null,
+            valor_meta: medicion?.valor_meta ?? null,
+            unidad_meta: medicion?.unidad_meta || null,
+            cumple_meta: medicion?.cumple_meta ?? null,
+          },
+
+        calculo: {
+          numerador: medicion?.numerador,
+          denominador: medicion?.denominador,
+          valor_resultado: medicion?.valor_resultado,
+          unidad_resultado: medicion?.unidad_resultado,
+          linea_base: medicion?.linea_base,
+          operador_meta: medicion?.operador_meta,
+          valor_meta: medicion?.valor_meta,
+          unidad_meta: medicion?.unidad_meta,
+          cumple_meta: medicion?.cumple_meta,
+          origen_calculo: medicion?.origen_calculo,
+          periodo: datosCalculoNcac?.periodo || null,
+          resultados: resultadosNcac,
+          detalle_no_conformidades:
+            datosCalculoNcac?.detalle_no_conformidades || [],
+          advertencias:
+            datosCalculoNcac?.advertencias || [],
+        },
+      })
+
+      setDatosRsvi(null)
+      setDatosGrv(null)
+      setDatosCmPesv(null)
+      setDatosCplanPesv(null)
+      setDatosEjlc(null)
+      setDatosIdp(null)
+      setDatosCpfPesvCumplimiento(null)
+      setDatosCpfPesvCobertura(null)
+    } else if (
+      esCpfPesvCobertura
+    ) {
+      const datosCalculoCobertura =
+        medicion?.datos_calculo ||
+        {}
+
+      const resultadosCobertura =
+        datosCalculoCobertura?.resultados ||
+        {}
+
+      setDatosCpfPesvCobertura({
+        ok: true,
+
+        periodo:
+          datosCalculoCobertura?.periodo ||
+          {
+            anio:
+              medicion?.anio,
+            tipo_periodo:
+              medicion?.tipo_periodo,
+            numero_periodo:
+              medicion?.numero_periodo,
+            periodo_desde:
+              medicion?.periodo_desde,
+            periodo_hasta:
+              medicion?.periodo_hasta,
+          },
+
+        evaluacion:
+          datosCalculoCobertura?.evaluacion ||
+          {
+            linea_base:
+              medicion?.linea_base ?? null,
+            operador_meta:
+              medicion?.operador_meta || null,
+            valor_meta:
+              medicion?.valor_meta ?? null,
+            unidad_meta:
+              medicion?.unidad_meta || null,
+            cumple_meta:
+              medicion?.cumple_meta ?? null,
+          },
+
+        calculo: {
+          numerador:
+            medicion?.numerador,
+          denominador:
+            medicion?.denominador,
+          valor_resultado:
+            medicion?.valor_resultado,
+          unidad_resultado:
+            medicion?.unidad_resultado,
+          linea_base:
+            medicion?.linea_base,
+          operador_meta:
+            medicion?.operador_meta,
+          valor_meta:
+            medicion?.valor_meta,
+          unidad_meta:
+            medicion?.unidad_meta,
+          cumple_meta:
+            medicion?.cumple_meta,
+          origen_calculo:
+            medicion?.origen_calculo,
+          periodo:
+            datosCalculoCobertura?.periodo ||
+            null,
+          resultados:
+            resultadosCobertura,
+          resumen:
+            datosCalculoCobertura?.resumen ||
+            {},
+          resumen_trimestral:
+            datosCalculoCobertura?.resumen_trimestral ||
+            datosCalculoCobertura?.trimestres ||
+            [],
+          trimestres:
+            datosCalculoCobertura?.resumen_trimestral ||
+            datosCalculoCobertura?.trimestres ||
+            [],
+          acumulado_anual:
+            datosCalculoCobertura?.acumulado_anual ||
+            datosCalculoCobertura?.resumen_anual ||
+            null,
+          resumen_anual:
+            datosCalculoCobertura?.acumulado_anual ||
+            datosCalculoCobertura?.resumen_anual ||
+            null,
+          detalle_capacitados:
+            datosCalculoCobertura?.detalle_capacitados ||
+            [],
+          advertencias:
+            datosCalculoCobertura?.advertencias ||
+            [],
+        },
+      })
+
+      setDatosRsvi(null)
+      setDatosGrv(null)
+      setDatosCmPesv(null)
+      setDatosCplanPesv(null)
+      setDatosEjlc(null)
+      setDatosIdp(null)
+    } else if (
       esEjlc
     ) {
       const datosCalculoEjlc =
@@ -4453,6 +5274,9 @@ export default function MedicionIndicadores({
     setDatosCplanPesv(null)
     setDatosEjlc(null)
     setDatosIdp(null)
+    setDatosCpfPesvCumplimiento(null)
+    setDatosCpfPesvCobertura(null)
+      setDatosNcac(null)
     setNumerador('')
     setDenominador('')
     setValorResultado('')
@@ -6885,6 +7709,45 @@ export default function MedicionIndicadores({
                       datosCplanPesv
                     }
                   />
+                ) : esCpfPesvCumplimiento ? (
+                  <CpfPesvCumplimientoMedicion
+                    anio={
+                      anio
+                    }
+                    cargando={
+                      false
+                    }
+                    error=""
+                    datos={
+                      datosCpfPesvCumplimiento
+                    }
+                  />
+                ) : esCpfPesvCobertura ? (
+                  <CpfPesvCoberturaMedicion
+                    anio={
+                      anio
+                    }
+                    cargando={
+                      false
+                    }
+                    error=""
+                    datos={
+                      datosCpfPesvCobertura
+                    }
+                  />
+                ) : esNcac ? (
+                  <NcacMedicion
+                    anio={
+                      anio
+                    }
+                    cargando={
+                      false
+                    }
+                    error=""
+                    datos={
+                      datosNcac
+                    }
+                  />
                 ) : esEjlc ? (
                   <EjlcMedicion
                     anio={
@@ -7863,6 +8726,7 @@ export default function MedicionIndicadores({
                   }
                   disabled={
                     procesando ||
+                    analisisGuardado ||
                     !formularioAnalisisCompleto
                   }
                   className="

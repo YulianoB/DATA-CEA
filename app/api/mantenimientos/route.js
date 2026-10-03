@@ -288,7 +288,7 @@ export async function GET(request) {
     }
 
     // =====================================================
-    // PROVEEDORES
+    // PROVEEDORES ACTIVOS
     // =====================================================
 
     if (recurso === 'proveedores') {
@@ -296,32 +296,37 @@ export async function GET(request) {
         .from('proveedores')
         .select(`
           id,
-          empresa,
+          razon_social,
+          nombre_comercial,
+          tipo_persona,
           nit,
+          digito_verificacion,
           direccion,
           telefono,
           email,
+          departamento_id,
+          municipio_id,
           activo,
           observaciones
         `)
         .eq('activo', true)
-        .order('empresa', {
-          ascending: true,
-        })
+        .order('razon_social', { ascending: true })
 
       if (error) {
         return NextResponse.json(
-          {
-            status: 'failed',
-            message: error.message,
-          },
+          { status: 'failed', message: error.message },
           { status: 500 }
         )
       }
 
       return NextResponse.json({
         status: 'success',
-        proveedores: data || [],
+        proveedores: (data || []).map((item) => ({
+          ...item,
+          // Alias temporal para los registros históricos y componentes
+          // que todavía muestran la etiqueta "empresa".
+          empresa: item.razon_social,
+        })),
       })
     }
 
@@ -530,6 +535,64 @@ export async function GET(request) {
     }
 
     // =====================================================
+    // ACTIVIDADES HABILITADAS POR PROVEEDOR / TALLER
+    // =====================================================
+
+    if (recurso === 'actividades_proveedor') {
+      const proveedorId = Number(searchParams.get('proveedor_id'))
+      const tipoVehiculo = normalizarClave(searchParams.get('tipo_vehiculo'))
+
+      if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+        return NextResponse.json(
+          { status: 'failed', message: 'El proveedor es obligatorio.' },
+          { status: 400 }
+        )
+      }
+
+      const { data: relaciones, error: relacionesError } = await supabase
+        .from('proveedor_mantenimiento_actividades')
+        .select('actividad_id')
+        .eq('proveedor_id', proveedorId)
+        .eq('activo', true)
+
+      if (relacionesError) {
+        return NextResponse.json(
+          { status: 'failed', message: relacionesError.message },
+          { status: 500 }
+        )
+      }
+
+      const ids = [...new Set((relaciones || [])
+        .map((item) => Number(item.actividad_id))
+        .filter((id) => Number.isInteger(id) && id > 0))]
+
+      if (!ids.length) {
+        return NextResponse.json({ status: 'success', actividades: [] })
+      }
+
+      const { data: catalogo, error: catalogoError } = await supabase
+        .from('mantenimiento_actividades_catalogo')
+        .select('*')
+        .in('id', ids)
+        .eq('activo', true)
+        .order('nombre', { ascending: true })
+
+      if (catalogoError) {
+        return NextResponse.json(
+          { status: 'failed', message: catalogoError.message },
+          { status: 500 }
+        )
+      }
+
+      const actividades = (catalogo || []).filter((item) => {
+        if (!tipoVehiculo) return true
+        return normalizarClave(item.tipo_vehiculo) === tipoVehiculo
+      })
+
+      return NextResponse.json({ status: 'success', actividades })
+    }
+
+    // =====================================================
     // TÉCNICOS POR PROVEEDOR
     // =====================================================
 
@@ -587,108 +650,6 @@ export async function GET(request) {
       return NextResponse.json({
         status: 'success',
         tecnicos: data || [],
-      })
-    }
-
-    // =====================================================
-    // VALIDAR NIT PROVEEDOR
-    // =====================================================
-
-    if (recurso === 'validar_nit') {
-      const nitProveedor =
-        normalizarTexto(
-          searchParams.get('nit_proveedor')
-        )
-
-      if (!nitProveedor) {
-        return NextResponse.json({
-          status: 'success',
-          existe: false,
-          proveedor: null,
-        })
-      }
-
-      const { data, error } = await supabase
-        .from('proveedores')
-        .select(`
-          id,
-          empresa,
-          nit
-        `)
-        .eq('nit', nitProveedor)
-        .limit(1)
-
-      if (error) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message: error.message,
-          },
-          { status: 500 }
-        )
-      }
-
-      return NextResponse.json({
-        status: 'success',
-        existe:
-          Boolean(data?.length),
-        proveedor:
-          data?.length
-            ? data[0]
-            : null,
-      })
-    }
-
-    // =====================================================
-    // VALIDAR EMPRESA PROVEEDOR
-    // =====================================================
-
-    if (recurso === 'validar_empresa') {
-      const empresa =
-        normalizarMayusculas(
-          searchParams.get('empresa')
-        )
-
-      if (!empresa) {
-        return NextResponse.json({
-          status: 'success',
-          existe: false,
-          proveedor: null,
-        })
-      }
-
-      const { data, error } = await supabase
-        .from('proveedores')
-        .select(`
-          id,
-          empresa,
-          nit,
-          direccion,
-          telefono,
-          email,
-          activo
-        `)
-        .eq('empresa', empresa)
-        .limit(1)
-
-      if (error) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message: error.message,
-          },
-          { status: 500 }
-        )
-      }
-
-      return NextResponse.json({
-        status: 'success',
-        existe:
-          Boolean(data?.length),
-        proveedor:
-          data?.length
-            ? data[0]
-            : null,
       })
     }
 
@@ -793,433 +754,180 @@ export async function POST(request) {
     const accion =
       normalizarTexto(body.accion)
 
-    // =====================================================
-    // CREAR PROVEEDOR
-    // =====================================================
+    // En mantenimiento correctivo el instructor puede registrar un proveedor
+    // básico cuando el taller aún no existe. Se crea SIN actividades asociadas.
+    // La configuración/edición completa queda disponible en Administración.
+    if (accion === 'crear_proveedor_correctivo') {
+      const tipoPersona = normalizarMayusculas(body.tipo_persona) || 'JURIDICA'
+      const razonSocial = normalizarMayusculas(body.razon_social)
+      const nombreComercial = normalizarMayusculas(body.nombre_comercial)
+      const nitProveedor = String(body.nit_proveedor || '').replace(/\D/g, '')
+      const digitoVerificacion = String(body.digito_verificacion || '').replace(/\D/g, '').slice(0, 1)
+      const direccion = normalizarMayusculas(body.direccion)
+      const telefono = String(body.telefono || '').replace(/\D/g, '')
+      const email = normalizarEmail(body.email)
 
-    if (accion === 'crear_proveedor') {
-      const empresa =
-        normalizarMayusculas(
-          body.empresa
-        )
-
-      const nitProveedor =
-        normalizarTexto(
-          body.nit_proveedor
-        )
-
-      const direccion =
-        normalizarMayusculas(
-          body.direccion
-        )
-
-      const telefono =
-        normalizarTexto(
-          body.telefono
-        )
-
-      const email =
-        normalizarEmail(
-          body.email
-        )
-
-      if (!empresa) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              'La empresa es obligatoria.',
-          },
-          { status: 400 }
-        )
+      if (!['NATURAL', 'JURIDICA'].includes(tipoPersona)) {
+        return NextResponse.json({ status: 'failed', message: 'El tipo de persona no es válido.' }, { status: 400 })
+      }
+      if (!razonSocial) {
+        return NextResponse.json({ status: 'failed', message: 'La razón social o nombre del proveedor es obligatoria.' }, { status: 400 })
+      }
+      if (!/^\d+$/.test(nitProveedor)) {
+        return NextResponse.json({ status: 'failed', message: 'El NIT o documento debe contener únicamente números.' }, { status: 400 })
+      }
+      if (digitoVerificacion && !/^\d$/.test(digitoVerificacion)) {
+        return NextResponse.json({ status: 'failed', message: 'El DV (dígito de verificación) debe ser un solo número.' }, { status: 400 })
+      }
+      if (!direccion) {
+        return NextResponse.json({ status: 'failed', message: 'La dirección es obligatoria.' }, { status: 400 })
+      }
+      if (!/^\d{7,10}$/.test(telefono)) {
+        return NextResponse.json({ status: 'failed', message: 'El teléfono debe contener entre 7 y 10 números.' }, { status: 400 })
+      }
+      if (email && !emailValido(email)) {
+        return NextResponse.json({ status: 'failed', message: 'El correo electrónico no es válido.' }, { status: 400 })
       }
 
-      if (
-        email &&
-        !emailValido(email)
-      ) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              'El correo del proveedor no es válido.',
-          },
-          { status: 400 }
-        )
-      }
-
-      // ---------------------------------
-      // Empresa duplicada
-      // ---------------------------------
-
-      const {
-        data: empresaExistente,
-        error: empresaError,
-      } = await supabase
+      const { data: existente, error: existenteError } = await supabase
         .from('proveedores')
-        .select(`
-          id,
-          empresa,
-          nit,
-          direccion,
-          telefono,
-          email,
-          activo
-        `)
-        .eq('empresa', empresa)
+        .select('id, razon_social, nombre_comercial, nit, activo')
+        .eq('nit', nitProveedor)
         .limit(1)
 
-      if (empresaError) {
+      if (existenteError) {
+        return NextResponse.json({ status: 'failed', message: existenteError.message }, { status: 500 })
+      }
+      if (existente?.length) {
         return NextResponse.json(
           {
             status: 'failed',
-            message:
-              empresaError.message,
-          },
-          { status: 500 }
-        )
-      }
-
-      if (empresaExistente?.length) {
-        return NextResponse.json({
-          status: 'success',
-          existente: true,
-          message:
-            'El proveedor ya estaba registrado.',
-          proveedor:
-            empresaExistente[0],
-        })
-      }
-
-      // ---------------------------------
-      // NIT duplicado
-      // ---------------------------------
-
-      if (nitProveedor) {
-        const {
-          data: nitExistente,
-          error: nitError,
-        } = await supabase
-          .from('proveedores')
-          .select(`
-            id,
-            empresa,
-            nit
-          `)
-          .eq(
-            'nit',
-            nitProveedor
-          )
-          .limit(1)
-
-        if (nitError) {
-          return NextResponse.json(
-            {
-              status: 'failed',
-              message:
-                nitError.message,
-            },
-            { status: 500 }
-          )
-        }
-
-        if (nitExistente?.length) {
-          return NextResponse.json(
-            {
-              status: 'warning',
-              message:
-                `El NIT ya está registrado para ${nitExistente[0].empresa}.`,
-              proveedor:
-                nitExistente[0],
-            },
-            { status: 409 }
-          )
-        }
-      }
-
-      const {
-        data,
-        error,
-      } = await supabase
-        .from('proveedores')
-        .insert({
-          empresa,
-
-          nit:
-            nitProveedor ||
-            null,
-
-          direccion:
-            direccion ||
-            null,
-
-          telefono:
-            telefono ||
-            null,
-
-          email:
-            email ||
-            null,
-
-          activo: true,
-        })
-        .select(`
-          id,
-          empresa,
-          nit,
-          direccion,
-          telefono,
-          email,
-          activo
-        `)
-        .single()
-
-      if (error) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              `No se pudo crear el proveedor: ${error.message}`,
-          },
-          { status: 500 }
-        )
-      }
-
-      return NextResponse.json(
-        {
-          status: 'success',
-          existente: false,
-          message:
-            'Proveedor creado correctamente.',
-          proveedor: data,
-        },
-        { status: 201 }
-      )
-    }
-
-    // =====================================================
-    // CREAR TÉCNICO
-    // =====================================================
-
-    if (accion === 'crear_tecnico') {
-      const proveedorId =
-        Number(
-          body.proveedor_id
-        )
-
-      const nombres =
-        normalizarMayusculas(
-          body.nombres
-        )
-
-      const documento =
-        normalizarTexto(
-          body.documento
-        )
-
-      const telefono =
-        normalizarTexto(
-          body.telefono
-        )
-
-      const email =
-        normalizarEmail(
-          body.email
-        )
-
-      if (
-        !Number.isInteger(proveedorId) ||
-        proveedorId <= 0
-      ) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              'Debe seleccionar un proveedor.',
-          },
-          { status: 400 }
-        )
-      }
-
-      if (!nombres) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              'El nombre del técnico es obligatorio.',
-          },
-          { status: 400 }
-        )
-      }
-
-      if (!documento) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              'El documento del técnico es obligatorio.',
-          },
-          { status: 400 }
-        )
-      }
-
-      if (
-        email &&
-        !emailValido(email)
-      ) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              'El correo del técnico no es válido.',
-          },
-          { status: 400 }
-        )
-      }
-
-      // Verificar que proveedor existe y está activo
-
-      const {
-        data: proveedor,
-        error: proveedorError,
-      } = await supabase
-        .from('proveedores')
-        .select(`
-          id,
-          empresa,
-          activo
-        `)
-        .eq(
-          'id',
-          proveedorId
-        )
-        .maybeSingle()
-
-      if (proveedorError) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              proveedorError.message,
-          },
-          { status: 500 }
-        )
-      }
-
-      if (
-        !proveedor ||
-        proveedor.activo === false
-      ) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              'El proveedor no existe o está inactivo.',
-          },
-          { status: 404 }
-        )
-      }
-
-      // Documento duplicado dentro del proveedor
-
-      const {
-        data: tecnicoExistente,
-        error: tecnicoExistenteError,
-      } = await supabase
-        .from('tecnicos')
-        .select(`
-          id,
-          nombres,
-          documento
-        `)
-        .eq(
-          'proveedor_id',
-          proveedorId
-        )
-        .eq(
-          'documento',
-          documento
-        )
-        .limit(1)
-
-      if (tecnicoExistenteError) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              tecnicoExistenteError.message,
-          },
-          { status: 500 }
-        )
-      }
-
-      if (tecnicoExistente?.length) {
-        return NextResponse.json(
-          {
-            status: 'warning',
-            message:
-              'Ese documento ya está registrado para este proveedor.',
-            tecnico:
-              tecnicoExistente[0],
+            message: `Ya existe un proveedor con este NIT/documento: ${existente[0].razon_social}.`,
+            proveedor: existente[0],
           },
           { status: 409 }
         )
       }
 
-      const {
-        data,
-        error,
-      } = await supabase
-        .from('tecnicos')
+      const { data: proveedor, error: proveedorError } = await supabase
+        .from('proveedores')
         .insert({
-          proveedor_id:
-            proveedorId,
-
-          nombres,
-
-          documento,
-
-          telefono:
-            telefono ||
-            null,
-
-          email:
-            email ||
-            null,
-
+          tipo_persona: tipoPersona,
+          razon_social: razonSocial,
+          nombre_comercial: nombreComercial || null,
+          nit: nitProveedor,
+          digito_verificacion: digitoVerificacion || null,
+          direccion,
+          telefono,
+          email: email || null,
           activo: true,
+          observaciones: 'REGISTRADO DESDE MANTENIMIENTO CORRECTIVO - PENDIENTE DE REVISIÓN ADMINISTRATIVA',
+          updated_at: new Date().toISOString(),
         })
         .select(`
-          id,
-          proveedor_id,
-          nombres,
-          documento,
-          telefono,
-          email,
-          activo
+          id, razon_social, nombre_comercial, tipo_persona, nit,
+          digito_verificacion, direccion, telefono, email,
+          departamento_id, municipio_id, activo, observaciones
         `)
         .single()
 
-      if (error) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message:
-              `No se pudo crear el técnico: ${error.message}`,
-          },
-          { status: 500 }
-        )
+      if (proveedorError) {
+        return NextResponse.json({ status: 'failed', message: proveedorError.message }, { status: 500 })
       }
 
-      return NextResponse.json(
-        {
-          status: 'success',
-          message:
-            'Técnico creado correctamente.',
-          tecnico: data,
-        },
-        { status: 201 }
-      )
+      return NextResponse.json({
+        status: 'success',
+        proveedor: { ...proveedor, empresa: proveedor.razon_social },
+        message: 'Proveedor registrado para mantenimiento correctivo. Administración podrá completar su configuración posteriormente.',
+      })
+    }
+
+    // El instructor puede registrar un técnico únicamente dentro de un proveedor existente.
+    if (accion === 'crear_tecnico') {
+      const proveedorId = Number(body.proveedor_id)
+      const nombres = normalizarMayusculas(body.nombres)
+      const documento = String(body.documento || '').replace(/\D/g, '')
+      const telefono = String(body.telefono || '').replace(/\D/g, '')
+      const email = normalizarEmail(body.email)
+      const observaciones = normalizarMayusculas(body.observaciones)
+
+      if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+        return NextResponse.json({ status: 'failed', message: 'Debe seleccionar un proveedor o taller válido.' }, { status: 400 })
+      }
+
+      if (!nombres) {
+        return NextResponse.json({ status: 'failed', message: 'Los nombres del técnico son obligatorios.' }, { status: 400 })
+      }
+
+      if (!/^\d{5,12}$/.test(documento)) {
+        return NextResponse.json({ status: 'failed', message: 'El documento debe contener entre 5 y 12 números.' }, { status: 400 })
+      }
+
+      if (/^3\d{9}$/.test(documento)) {
+        return NextResponse.json({ status: 'failed', message: 'El documento ingresado tiene estructura de número celular. Verifique que no haya intercambiado el documento y el celular.' }, { status: 400 })
+      }
+
+      if (!/^3\d{9}$/.test(telefono)) {
+        return NextResponse.json({ status: 'failed', message: 'El celular debe contener exactamente 10 dígitos y comenzar por 3.' }, { status: 400 })
+      }
+
+      if (documento === telefono) {
+        return NextResponse.json({ status: 'failed', message: 'El documento y el celular no pueden ser iguales.' }, { status: 400 })
+      }
+
+      if (email && !emailValido(email)) {
+        return NextResponse.json({ status: 'failed', message: 'El correo electrónico no es válido.' }, { status: 400 })
+      }
+
+      const { data: proveedor, error: proveedorError } = await supabase
+        .from('proveedores')
+        .select('id, activo')
+        .eq('id', proveedorId)
+        .maybeSingle()
+
+      if (proveedorError) {
+        return NextResponse.json({ status: 'failed', message: proveedorError.message }, { status: 500 })
+      }
+
+      if (!proveedor || proveedor.activo === false) {
+        return NextResponse.json({ status: 'failed', message: 'El proveedor seleccionado no existe o está inactivo.' }, { status: 400 })
+      }
+
+      const { data: existente, error: existenteError } = await supabase
+        .from('tecnicos')
+        .select('id, proveedor_id, nombres, documento, telefono, email, activo, observaciones')
+        .eq('proveedor_id', proveedorId)
+        .eq('documento', documento)
+        .limit(1)
+
+      if (existenteError) {
+        return NextResponse.json({ status: 'failed', message: existenteError.message }, { status: 500 })
+      }
+
+      if (existente?.length) {
+        return NextResponse.json({ status: 'failed', message: 'Ya existe un técnico con este documento para el proveedor seleccionado.' }, { status: 409 })
+      }
+
+      const { data: tecnico, error: tecnicoError } = await supabase
+        .from('tecnicos')
+        .insert({
+          proveedor_id: proveedorId,
+          nombres,
+          documento,
+          telefono,
+          email: email || null,
+          activo: true,
+          observaciones: observaciones || null,
+          updated_at: new Date().toISOString(),
+        })
+        .select('id, proveedor_id, nombres, documento, telefono, email, activo, observaciones')
+        .single()
+
+      if (tecnicoError) {
+        return NextResponse.json({ status: 'failed', message: tecnicoError.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ status: 'success', tecnico })
     }
 
     // =====================================================
@@ -1246,6 +954,11 @@ export async function POST(request) {
         normalizarTexto(
           body.actividad_realizada
         )
+
+      const actividadCatalogoId =
+        body.actividad_catalogo_id
+          ? Number(body.actividad_catalogo_id)
+          : null
 
       const proveedorId =
         body.proveedor_id
@@ -1326,19 +1039,74 @@ export async function POST(request) {
         )
       }
 
+      const repuestosUtilizados = normalizarTexto(body.repuestos_utilizados)
+      const tiempoParadaHoras =
+        body.tiempoparada !== null &&
+        body.tiempoparada !== undefined &&
+        body.tiempoparada !== ''
+          ? Number(body.tiempoparada)
+          : null
+      const tiemposPermitidos = new Set([0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 12, 24, 48, 72])
+
+      if (!repuestosUtilizados) {
+        return NextResponse.json(
+          { status: 'failed', message: 'Los repuestos utilizados son obligatorios. Si no se utilizaron repuestos, registre NO APLICA.' },
+          { status: 400 }
+        )
+      }
+
+      if (tiempoParadaHoras !== null && !tiemposPermitidos.has(tiempoParadaHoras)) {
+        return NextResponse.json(
+          { status: 'failed', message: 'El tiempo de parada aproximado debe seleccionarse de la lista de horas permitidas.' },
+          { status: 400 }
+        )
+      }
+
+      if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+        return NextResponse.json(
+          {
+            status: 'failed',
+            message:
+              'Debe seleccionar un proveedor o taller registrado.',
+          },
+          { status: 400 }
+        )
+      }
+
+
       // ===================================================
-      // VALIDAR PROGRAMACIÓN PREVENTIVA
+      // VALIDAR PUNTO PREVENTIVO DEL NUEVO PLAN
       // ===================================================
 
       let programacionPreventiva = null
+      let actividadesRequeridas = []
+      let actividadesSeleccionadas = []
 
       if (tipoMantenimiento === 'PREVENTIVO') {
-        if (!programacionMantenimientoId || !planMantenimientoId || !nivelMantenimiento) {
+        const vehiculoId = Number(body.vehiculo_id)
+        const ciclo = Number(body.ciclo)
+        const kmObjetivo = Number(body.km_objetivo)
+        const idsSeleccionados = Array.isArray(body.actividades_config_ids)
+          ? [...new Set(body.actividades_config_ids.map(Number).filter(Number.isInteger))]
+          : []
+
+        if (!Number.isInteger(vehiculoId) || vehiculoId <= 0 || !Number.isInteger(ciclo) || ciclo <= 0) {
           return NextResponse.json(
-            {
-              status: 'failed',
-              message: 'El mantenimiento preventivo debe estar asociado a una programación vigente.',
-            },
+            { status: 'failed', message: 'El punto preventivo seleccionado no es válido.' },
+            { status: 400 }
+          )
+        }
+
+        if (!Number.isFinite(kmObjetivo) || kmObjetivo < 0) {
+          return NextResponse.json(
+            { status: 'failed', message: 'El kilometraje objetivo del punto no es válido.' },
+            { status: 400 }
+          )
+        }
+
+        if (!idsSeleccionados.length) {
+          return NextResponse.json(
+            { status: 'failed', message: 'Seleccione al menos una actividad realmente ejecutada.' },
             { status: 400 }
           )
         }
@@ -1346,101 +1114,221 @@ export async function POST(request) {
         const { data: vehiculoProgramado, error: vehiculoProgramadoError } = await supabase
           .from('vehiculos')
           .select('id, placa, estado')
+          .eq('id', vehiculoId)
           .eq('placa', placa)
           .maybeSingle()
 
-        if (vehiculoProgramadoError || !vehiculoProgramado) {
+        if (vehiculoProgramadoError || !vehiculoProgramado || !esVehiculoActivo(vehiculoProgramado.estado)) {
           return NextResponse.json(
-            { status: 'failed', message: vehiculoProgramadoError?.message || 'No se encontró el vehículo.' },
+            { status: 'failed', message: vehiculoProgramadoError?.message || 'El vehículo no existe o no está activo.' },
             { status: 400 }
           )
         }
 
-        const { data: programacionData, error: programacionDataError } = await supabase
-          .from('programacion_mantenimiento')
-          .select('id, vehiculo_id, plan_mantenimiento_id, nivel, vigencia, mes_programado, fecha_programada, estado')
-          .eq('id', programacionMantenimientoId)
-          .maybeSingle()
+        const { data: configs, error: configsError } = await supabase
+          .from('vehiculo_mantenimiento_config')
+          .select('id, actividad_id, frecuencia_km, tolerancia_km, activo')
+          .eq('vehiculo_id', vehiculoId)
 
-        if (programacionDataError) {
-          return NextResponse.json(
-            { status: 'failed', message: programacionDataError.message },
-            { status: 500 }
-          )
+        if (configsError) {
+          return NextResponse.json({ status: 'failed', message: configsError.message }, { status: 500 })
         }
 
+        const activas = (configs || []).filter((x) => x.activo !== false && Number(x.frecuencia_km) > 0)
+        if (!activas.length) {
+          return NextResponse.json({ status: 'failed', message: 'El vehículo no tiene configuración de mantenimiento activa.' }, { status: 409 })
+        }
+
+        const { data: catalogo, error: catalogoError } = await supabase
+          .from('mantenimiento_actividades_catalogo')
+          .select('id, nombre, activo')
+          .eq('activo', true)
+
+        if (catalogoError) {
+          return NextResponse.json({ status: 'failed', message: catalogoError.message }, { status: 500 })
+        }
+
+        const catalogoPorId = new Map((catalogo || []).map((x) => [Number(x.id), x]))
+        const normalizar = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase()
+        const configBase = activas.find((cfg) => {
+          const nombre = normalizar(catalogoPorId.get(Number(cfg.actividad_id))?.nombre)
+          return nombre === 'ACEITE DE MOTOR Y FILTRO DE ACEITE' || nombre === 'ACEITE DE MOTOR' || nombre.includes('CAMBIO DE ACEITE')
+        })
+        const frecuenciaBase = Number(configBase?.frecuencia_km)
+
+        if (!Number.isFinite(frecuenciaBase) || frecuenciaBase <= 0) {
+          return NextResponse.json({ status: 'failed', message: 'No se encontró la frecuencia base del vehículo.' }, { status: 409 })
+        }
+
+        const kmCiclo = frecuenciaBase * ciclo
+        actividadesRequeridas = activas.filter((cfg) => {
+          const f = Number(cfg.frecuencia_km)
+          return Number.isFinite(f) && f >= frecuenciaBase && f % frecuenciaBase === 0 && kmCiclo % f === 0
+        })
+
+        const toleranciasPunto = actividadesRequeridas
+          .map((cfg) => {
+            const valor = Number(cfg.tolerancia_km)
+            return Number.isFinite(valor) && valor >= 0
+              ? valor
+              : 500
+          })
+
+        const toleranciaPunto = toleranciasPunto.length
+          ? Math.min(...toleranciasPunto)
+          : 500
+
+        const kmMinimoPermitido = kmObjetivo - toleranciaPunto
+        const kmMaximoPermitido = kmObjetivo + toleranciaPunto
+        const kmRegistro = Number(kilometraje)
+
         if (
-          !programacionData ||
-          Number(programacionData.vehiculo_id) !== Number(vehiculoProgramado.id) ||
-          Number(programacionData.plan_mantenimiento_id) !== Number(planMantenimientoId) ||
-          Number(programacionData.nivel) !== Number(nivelMantenimiento) ||
-          !['PROGRAMADO', 'VENCIDO'].includes(normalizarMayusculas(programacionData.estado))
+          !Number.isFinite(kmRegistro) ||
+          kmRegistro < kmMinimoPermitido ||
+          kmRegistro > kmMaximoPermitido
         ) {
           return NextResponse.json(
             {
               status: 'failed',
-              message: 'La programación preventiva ya no está disponible o no corresponde al vehículo y nivel seleccionados.',
+              code: 'FUERA_TOLERANCIA_PREVENTIVO',
+              message:
+                `El mantenimiento preventivo P${ciclo} solo puede acreditarse entre ` +
+                `${kmMinimoPermitido.toLocaleString('es-CO')} km y ` +
+                `${kmMaximoPermitido.toLocaleString('es-CO')} km. ` +
+                `Kilometraje registrado: ${kmRegistro.toLocaleString('es-CO')} km.`,
             },
             { status: 409 }
           )
         }
 
-        programacionPreventiva = programacionData
+        const requeridasIds = new Set(actividadesRequeridas.map((x) => Number(x.id)))
+        actividadesSeleccionadas = activas.filter((x) => idsSeleccionados.includes(Number(x.id)) && requeridasIds.has(Number(x.id)))
+
+        if (actividadesSeleccionadas.length !== idsSeleccionados.length) {
+          return NextResponse.json({ status: 'failed', message: 'Una o más actividades seleccionadas no corresponden al punto preventivo.' }, { status: 409 })
+        }
+
+        const { data: existente, error: existenteError } = await supabase
+          .from('programacion_mantenimiento')
+          .select('*')
+          .eq('vehiculo_id', vehiculoId)
+          .eq('ciclo', ciclo)
+          .maybeSingle()
+
+        if (existenteError) {
+          return NextResponse.json({ status: 'failed', message: existenteError.message }, { status: 500 })
+        }
+
+        if (existente && String(existente.estado || '').toUpperCase() === 'EJECUTADO') {
+          return NextResponse.json({ status: 'failed', message: 'Este punto preventivo ya se encuentra completamente ejecutado.' }, { status: 409 })
+        }
+
+        if (existente) {
+          programacionPreventiva = existente
+        } else {
+          const estadoInicial = 'PROGRAMADO'
+          const fecha = body.fecha_registro || null
+          const { data: creada, error: crearError } = await supabase
+            .from('programacion_mantenimiento')
+            .insert({
+              vehiculo_id: vehiculoId,
+              ciclo,
+              km_limite: kmObjetivo,
+              estado: estadoInicial,
+              vigencia: fecha ? Number(String(fecha).slice(0, 4)) : null,
+              mes_programado: fecha ? Number(String(fecha).slice(5, 7)) : null,
+              observaciones: `P${ciclo} materializado al registrar mantenimiento preventivo.`,
+            })
+            .select()
+            .single()
+
+          if (crearError) {
+            return NextResponse.json({ status: 'failed', message: `No se pudo materializar P${ciclo}: ${crearError.message}` }, { status: 500 })
+          }
+          programacionPreventiva = creada
+        }
       }
 
       // ===================================================
-      // OBTENER PROVEEDOR
+      // OBTENER PROVEEDOR Y VALIDAR ACTIVIDADES HABILITADAS
       // ===================================================
 
-      let proveedor = null
+      const { data: proveedor, error: proveedorError } = await supabase
+        .from('proveedores')
+        .select(`
+          id,
+          razon_social,
+          nombre_comercial,
+          nit,
+          direccion,
+          telefono,
+          email,
+          activo
+        `)
+        .eq('id', proveedorId)
+        .maybeSingle()
 
-      if (proveedorId) {
-        const {
-          data,
-          error,
-        } = await supabase
-          .from('proveedores')
-          .select(`
-            id,
-            empresa,
-            nit,
-            direccion,
-            telefono,
-            email,
-            activo
-          `)
-          .eq(
-            'id',
-            proveedorId
-          )
-          .maybeSingle()
+      if (proveedorError) {
+        return NextResponse.json(
+          { status: 'failed', message: proveedorError.message },
+          { status: 500 }
+        )
+      }
 
-        if (error) {
+      if (!proveedor || proveedor.activo === false) {
+        return NextResponse.json(
+          {
+            status: 'failed',
+            message: 'El proveedor seleccionado no existe o está inactivo.',
+          },
+          { status: 400 }
+        )
+      }
+
+      const { data: relacionesProveedor, error: relacionesProveedorError } = await supabase
+        .from('proveedor_mantenimiento_actividades')
+        .select('actividad_id')
+        .eq('proveedor_id', proveedorId)
+        .eq('activo', true)
+
+      if (relacionesProveedorError) {
+        return NextResponse.json(
+          { status: 'failed', message: relacionesProveedorError.message },
+          { status: 500 }
+        )
+      }
+
+      const actividadesProveedorIds = new Set(
+        (relacionesProveedor || []).map((item) => Number(item.actividad_id))
+      )
+
+      if (
+        tipoMantenimiento === 'PREVENTIVO' &&
+        !actividadesProveedorIds.size
+      ) {
+        return NextResponse.json(
+          {
+            status: 'failed',
+            message: 'El proveedor seleccionado no tiene actividades de mantenimiento configuradas para preventivo. Solicite a Administración completar su configuración.',
+          },
+          { status: 409 }
+        )
+      }
+
+      if (tipoMantenimiento === 'PREVENTIVO') {
+        const noHabilitadas = actividadesSeleccionadas.filter(
+          (cfg) => !actividadesProveedorIds.has(Number(cfg.actividad_id))
+        )
+
+        if (noHabilitadas.length) {
           return NextResponse.json(
             {
               status: 'failed',
-              message:
-                error.message,
+              message: 'Una o más actividades seleccionadas no están habilitadas para el proveedor o taller escogido.',
             },
-            { status: 500 }
+            { status: 409 }
           )
         }
-
-        if (
-          !data ||
-          data.activo === false
-        ) {
-          return NextResponse.json(
-            {
-              status: 'failed',
-              message:
-                'El proveedor seleccionado no existe o está inactivo.',
-            },
-            { status: 400 }
-          )
-        }
-
-        proveedor = data
       }
 
       // ===================================================
@@ -1563,25 +1451,17 @@ export async function POST(request) {
         actividad_realizada:
           actividad,
 
-        plan_mantenimiento_id:
-          tipoMantenimiento === 'PREVENTIVO'
-            ? planMantenimientoId
-            : null,
+        plan_mantenimiento_id: null,
 
         programacion_mantenimiento_id:
           tipoMantenimiento === 'PREVENTIVO'
-            ? programacionMantenimientoId
+            ? programacionPreventiva?.id || null
             : null,
 
-        nivel_mantenimiento:
-          tipoMantenimiento === 'PREVENTIVO'
-            ? nivelMantenimiento
-            : null,
+        nivel_mantenimiento: null,
 
         repuestos_utilizados:
-          normalizarTexto(
-            body.repuestos_utilizados
-          ) || null,
+          repuestosUtilizados,
 
         // IDs de catálogo
         proveedor_id:
@@ -1594,7 +1474,7 @@ export async function POST(request) {
 
         // Fotografía histórica del proveedor
         empresa:
-          proveedor?.empresa ||
+          proveedor?.razon_social ||
           null,
 
         nit:
@@ -1622,13 +1502,10 @@ export async function POST(request) {
           tecnico?.documento ||
           null,
 
+        // Los registros nuevos usan horas como única unidad.
         tiempoparada:
-          body.tiempoparada !== null &&
-          body.tiempoparada !== undefined &&
-          body.tiempoparada !== ''
-            ? String(
-                body.tiempoparada
-              )
+          tiempoParadaHoras !== null
+            ? String(tiempoParadaHoras)
             : null,
 
         factura:
@@ -1699,54 +1576,73 @@ export async function POST(request) {
       }
 
       if (tipoMantenimiento === 'PREVENTIVO' && programacionPreventiva) {
-        const { error: actualizarProgramacionError } = await supabase
-          .from('programacion_mantenimiento')
-          .update({
-            estado: 'EJECUTADO',
-            mantenimiento_id: data.id,
-            fecha_ejecucion: payload.fecha_registro,
-            km_ejecucion: kilometraje,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', programacionPreventiva.id)
-          .in('estado', ['PROGRAMADO', 'VENCIDO'])
+        const filasActividades = actividadesSeleccionadas.map((cfg) => ({
+          mantenimiento_id: data.id,
+          vehiculo_mantenimiento_config_id: cfg.id,
+          fecha_ejecucion: payload.fecha_registro,
+          km_ejecucion: kilometraje,
+        }))
 
-        if (actualizarProgramacionError) {
-          return NextResponse.json(
-            {
-              status: 'failed',
-              code: 'MANTENIMIENTO_GUARDADO_PROGRAMACION_NO_ACTUALIZADA',
-              message: `El mantenimiento fue guardado, pero no se pudo actualizar su programación: ${actualizarProgramacionError.message}`,
-              mantenimiento: data,
-            },
-            { status: 500 }
-          )
+        if (filasActividades.length) {
+          const { error: actividadesError } = await supabase
+            .from('mantenimiento_actividades_ejecutadas')
+            .insert(filasActividades)
+
+          if (actividadesError) {
+            return NextResponse.json(
+              {
+                status: 'failed',
+                code: 'MANTENIMIENTO_GUARDADO_ACTIVIDADES_NO_ACREDITADAS',
+                message: `El mantenimiento fue guardado, pero no se pudieron acreditar sus actividades: ${actividadesError.message}`,
+                mantenimiento: data,
+              },
+              { status: 500 }
+            )
+          }
         }
 
-        const fechaEjecucion = String(payload.fecha_registro || '')
-        const mesEjecucion = fechaEjecucion ? Number(fechaEjecucion.slice(5, 7)) : null
-        const vigenciaEjecucion = fechaEjecucion ? Number(fechaEjecucion.slice(0, 4)) : null
-        const anticipada =
-          Number.isInteger(mesEjecucion) &&
-          Number.isInteger(vigenciaEjecucion) &&
-          (vigenciaEjecucion < Number(programacionPreventiva.vigencia) ||
-            (vigenciaEjecucion === Number(programacionPreventiva.vigencia) &&
-              mesEjecucion < Number(programacionPreventiva.mes_programado)))
+        const { data: mantenimientosPunto, error: mpError } = await supabase
+          .from('mantenimientos')
+          .select('id')
+          .eq('programacion_mantenimiento_id', programacionPreventiva.id)
 
-        if (anticipada) {
-          await supabase
-            .from('programacion_mantenimiento_novedades')
-            .insert({
-              programacion_mantenimiento_id: programacionPreventiva.id,
-              tipo_novedad: 'EJECUCION_ANTICIPADA',
-              estado_anterior: programacionPreventiva.estado,
-              estado_nuevo: 'EJECUTADO',
-              motivo: 'Mantenimiento preventivo ejecutado antes del mes formalmente programado.',
-              km_registrado: kilometraje,
-              fecha_km: payload.fecha_registro,
-              responsable: payload.responsable,
-              documento_responsable: payload.documento_responsable,
+        if (mpError) {
+          return NextResponse.json({ status: 'failed', message: mpError.message }, { status: 500 })
+        }
+
+        const idsMantenimientos = (mantenimientosPunto || []).map((x) => Number(x.id)).filter(Boolean)
+        let ejecutadas = []
+
+        if (idsMantenimientos.length) {
+          const { data: ejecData, error: ejecError } = await supabase
+            .from('mantenimiento_actividades_ejecutadas')
+            .select('vehiculo_mantenimiento_config_id, mantenimiento_id')
+            .in('mantenimiento_id', idsMantenimientos)
+
+          if (ejecError) {
+            return NextResponse.json({ status: 'failed', message: ejecError.message }, { status: 500 })
+          }
+          ejecutadas = ejecData || []
+        }
+
+        const ejecutadasIds = new Set(ejecutadas.map((x) => Number(x.vehiculo_mantenimiento_config_id)))
+        const completo = actividadesRequeridas.length > 0 && actividadesRequeridas.every((cfg) => ejecutadasIds.has(Number(cfg.id)))
+
+        if (completo) {
+          const { error: actualizarProgramacionError } = await supabase
+            .from('programacion_mantenimiento')
+            .update({
+              estado: 'EJECUTADO',
+              mantenimiento_id: data.id,
+              fecha_ejecucion: payload.fecha_registro,
+              km_ejecucion: kilometraje,
+              updated_at: new Date().toISOString(),
             })
+            .eq('id', programacionPreventiva.id)
+
+          if (actualizarProgramacionError) {
+            return NextResponse.json({ status: 'failed', message: `El mantenimiento fue guardado, pero no se pudo cerrar P${programacionPreventiva.ciclo}: ${actualizarProgramacionError.message}` }, { status: 500 })
+          }
         }
       }
 
@@ -1754,7 +1650,7 @@ export async function POST(request) {
         {
           status: 'success',
           message:
-            'Mantenimiento registrado correctamente.',
+            tipoMantenimiento === 'PREVENTIVO' ? 'Mantenimiento preventivo registrado. El punto se cerrará automáticamente cuando estén acreditadas todas sus actividades.' : 'Mantenimiento registrado correctamente.',
           mantenimiento: data,
         },
         { status: 201 }

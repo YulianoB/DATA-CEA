@@ -3438,6 +3438,22 @@
       codigoIndicador ===
       'IDP'
 
+    const esCpmvh =
+      codigoIndicador ===
+      'CPMVH'
+
+    const esCpfPesvCumplimiento =
+      codigoIndicador ===
+      'CPF_PESV_CUMPLIMIENTO'
+
+    const esCpfPesvCobertura =
+      codigoIndicador ===
+      'CPF_PESV_COBERTURA'
+
+    const esNcac =
+      codigoIndicador ===
+      'NCAC'
+
     const nombrePeriodo =
       obtenerNombrePeriodo(
         medicion
@@ -3888,10 +3904,16 @@
                             ? 'EJLC = (EJD / SDT) × 100'
                             : esIdp
                               ? 'IDP = (VID / TV) × 100'
-                              : valorONoAplica(
-                                  indicador
-                                    ?.formula
-                                )}
+                              : esCpfPesvCumplimiento
+                                ? 'CPF_PESV_CUMPLIMIENTO = (CFE(t) / CFP(t)) × 100'
+                                : esCpfPesvCobertura
+                                  ? 'CPF_PESV_COBERTURA = (CC(t) / TC(t)) × 100'
+                                : esNcac
+                                  ? 'NCAC = (NCG / NCI) × 100'
+                                : valorONoAplica(
+                                    indicador
+                                      ?.formula
+                                  )}
                       </Campo>
 
                       <Campo
@@ -3906,7 +3928,7 @@
                       </Campo>
                     </div>
 
-                    {(esTsv || esRsvi || esGrv || esCmPesv || esCplanPesv || esEjlc || esIdp) ? (
+                    {(esTsv || esRsvi || esGrv || esCmPesv || esCplanPesv || esEjlc || esIdp || esCpmvh || esCpfPesvCumplimiento || esCpfPesvCobertura || esNcac) ? (
                       <>
                         <Campo
                           titulo="Definición de variables"
@@ -4033,6 +4055,75 @@
                               <div className="mt-[0.8mm]">
                                 <strong>TV:</strong>{' '}
                                 Total de Vehículos que operan diariamente. Corresponde a los vehículos/día cuya operación fue confirmada mediante los registros disponibles de actividad del vehículo.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>100:</strong>{' '}
+                                Factor de conversión para expresar el resultado en porcentaje.
+                              </div>
+                            </>
+                          ) : esCpmvh ? (
+                            <>
+                              <div>
+                                <strong>CPMVh:</strong>{' '}
+                                Porcentaje de cumplimiento del Plan de Mantenimiento Preventivo de Vehículos en el período evaluado.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>MEVh(t):</strong>{' '}
+                                Número de mantenimientos preventivos ejecutados en el período evaluado.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>MPVh(t):</strong>{' '}
+                                Número de mantenimientos preventivos programados en el período evaluado.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>t:</strong>{' '}
+                                Período objeto de medición.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>100:</strong>{' '}
+                                Factor de conversión para expresar el resultado en porcentaje.
+                              </div>
+                            </>
+                          ) : esCpfPesvCumplimiento ? (
+                            <>
+                              <div>
+                                <strong>CPF_PESV_CUMPLIMIENTO:</strong>{' '}
+                                Porcentaje de cumplimiento del Plan de Formación en Seguridad Vial en el período evaluado.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>CFE(t):</strong>{' '}
+                                Capacitaciones en seguridad vial ejecutadas. Corresponde a la cantidad de actividades del Plan Anual de Formación en Seguridad Vial que fueron ejecutadas a los colaboradores en el período evaluado.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>CFP(t):</strong>{' '}
+                                Capacitaciones en seguridad vial programadas. Corresponde a la cantidad de actividades del Plan Anual de Formación en Seguridad Vial programadas para los colaboradores en el período evaluado.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>t:</strong>{' '}
+                                Período objeto de medición.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>100:</strong>{' '}
+                                Factor de conversión para expresar el resultado en porcentaje.
+                              </div>
+                            </>
+                          ) : esCpfPesvCobertura ? (
+                            <>
+                              <div>
+                                <strong>CPF_PESV_COBERTURA:</strong>{' '}
+                                Porcentaje de cobertura del Plan de Formación en Seguridad Vial en el período acumulado evaluado.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>CC(t):</strong>{' '}
+                                Número de colaboradores capacitados en seguridad vial. Corresponde a las personas de la organización que participaron en el Plan Anual de Formación en Seguridad Vial durante el período acumulado evaluado.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>TC(t):</strong>{' '}
+                                Número total de colaboradores de la organización considerados para el período acumulado evaluado.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>t:</strong>{' '}
+                                Período objeto de medición.
                               </div>
                               <div className="mt-[0.8mm]">
                                 <strong>100:</strong>{' '}
@@ -4224,6 +4315,54 @@
                               }
 
                               return `IDP = (${formatearEntero(vid)} / ${formatearEntero(tv)}) × 100 = ${formatearNumero(resultado, 2)} %`
+                            }
+
+                            if (esCpmvh) {
+                              const mevh = numero(medicion?.numerador)
+                              const mpvh = numero(medicion?.denominador)
+                              const resultado = numero(medicion?.valor_resultado)
+
+                              if (mevh === null || mpvh === null || resultado === null) {
+                                return '-'
+                              }
+
+                              return `CPMVh = (${formatearEntero(mevh)} / ${formatearEntero(mpvh)}) × 100 = ${formatearNumero(resultado, 2)} %`
+                            }
+
+                            if (esCpfPesvCumplimiento) {
+                              const cfe = numero(medicion?.numerador)
+                              const cfp = numero(medicion?.denominador)
+                              const resultado = numero(medicion?.valor_resultado)
+
+                              if (cfe === null || cfp === null || resultado === null) {
+                                return '-'
+                              }
+
+                              return `CPF_PESV_CUMPLIMIENTO = (${formatearEntero(cfe)} / ${formatearEntero(cfp)}) × 100 = ${formatearNumero(resultado, 2)} %`
+                            }
+
+                            if (esCpfPesvCobertura) {
+                              const cc = numero(medicion?.numerador)
+                              const tc = numero(medicion?.denominador)
+                              const resultado = numero(medicion?.valor_resultado)
+
+                              if (cc === null || tc === null || resultado === null) {
+                                return '-'
+                              }
+
+                              return `CPF_PESV_COBERTURA = (${formatearEntero(cc)} / ${formatearEntero(tc)}) × 100 = ${formatearNumero(resultado, 2)} %`
+                            }
+
+                            if (esNcac) {
+                              const ncg = numero(medicion?.numerador)
+                              const nci = numero(medicion?.denominador)
+                              const resultado = numero(medicion?.valor_resultado)
+
+                              if (ncg === null || nci === null || resultado === null) {
+                                return '-'
+                              }
+
+                              return `NCAC = (${formatearEntero(ncg)} / ${formatearEntero(nci)}) × 100 = ${formatearNumero(resultado, 2)} %`
                             }
 
                             return '-'
@@ -4588,6 +4727,198 @@
                                     ?.cumple_meta === false
                                   ? 'NO CUMPLE'
                                   : 'SIN EVALUAR'}
+                            </Campo>
+                          </div>
+                        ) : esCpmvh ? (
+                          <div
+                            className="
+                              grid
+                              grid-cols-3
+                            "
+                          >
+                            <Campo
+                              titulo="Mantenimientos preventivos ejecutados · MEVh(t)"
+                              className="
+                                border-r-0
+                              "
+                            >
+                              {formatearEntero(
+                                medicion
+                                  ?.numerador
+                              )}
+                            </Campo>
+
+                            <Campo
+                              titulo="Mantenimientos preventivos programados · MPVh(t)"
+                              className="
+                                border-r-0
+                              "
+                            >
+                              {formatearEntero(
+                                medicion
+                                  ?.denominador
+                              )}
+                            </Campo>
+
+                            <Campo
+                              titulo="Cumplimiento del plan de mantenimiento preventivo · CPMVH"
+                            >
+                              {(() => {
+                                const resultado =
+                                  numero(
+                                    medicion
+                                      ?.valor_resultado
+                                  )
+
+                                return resultado === null
+                                  ? '-'
+                                  : `${formatearNumero(
+                                      resultado,
+                                      2
+                                    )} %`
+                              })()}
+                            </Campo>
+                          </div>
+                        ) : esCpfPesvCumplimiento ? (
+                          <div
+                            className="
+                              grid
+                              grid-cols-3
+                            "
+                          >
+                            <Campo
+                              titulo="Capacitaciones en seguridad vial ejecutadas · CFE(t)"
+                              className="
+                                border-r-0
+                              "
+                            >
+                              {formatearEntero(
+                                medicion
+                                  ?.numerador
+                              )}
+                            </Campo>
+
+                            <Campo
+                              titulo="Capacitaciones en seguridad vial programadas · CFP(t)"
+                              className="
+                                border-r-0
+                              "
+                            >
+                              {formatearEntero(
+                                medicion
+                                  ?.denominador
+                              )}
+                            </Campo>
+
+                            <Campo
+                              titulo="Cumplimiento del Plan de Formación en Seguridad Vial · CPF_PESV_CUMPLIMIENTO"
+                            >
+                              {(() => {
+                                const resultado =
+                                  numero(
+                                    medicion
+                                      ?.valor_resultado
+                                  )
+
+                                return resultado === null
+                                  ? '-'
+                                  : `${formatearNumero(
+                                      resultado,
+                                      2
+                                    )} %`
+                              })()}
+                            </Campo>
+                          </div>
+                        ) : esCpfPesvCobertura ? (
+                          <div
+                            className="
+                              grid
+                              grid-cols-3
+                            "
+                          >
+                            <Campo
+                              titulo="Colaboradores capacitados en seguridad vial · CC(t)"
+                              className="
+                                border-r-0
+                              "
+                            >
+                              {formatearEntero(
+                                medicion
+                                  ?.numerador
+                              )}
+                            </Campo>
+
+                            <Campo
+                              titulo="Total de colaboradores de la organización · TC(t)"
+                              className="
+                                border-r-0
+                              "
+                            >
+                              {formatearEntero(
+                                medicion
+                                  ?.denominador
+                              )}
+                            </Campo>
+
+                            <Campo
+                              titulo="Cobertura del Plan de Formación en Seguridad Vial · CPF_PESV_COBERTURA"
+                            >
+                              {(() => {
+                                const resultado =
+                                  numero(
+                                    medicion
+                                      ?.valor_resultado
+                                  )
+
+                                return resultado === null
+                                  ? '-'
+                                  : `${formatearNumero(
+                                      resultado,
+                                      2
+                                    )} %`
+                              })()}
+                            </Campo>
+                          </div>
+                        ) : esNcac ? (
+                            <>
+                              <div>
+                                <strong>NCAC:</strong>{' '}
+                                Porcentaje anual de no conformidades de auditoría identificadas y analizadas que fueron gestionadas y cerradas.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>NCI:</strong>{' '}
+                                Número de no conformidades identificadas y analizadas durante la vigencia.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>NCG:</strong>{' '}
+                                Número de no conformidades gestionadas y cerradas durante la vigencia.
+                              </div>
+                              <div className="mt-[0.8mm]">
+                                <strong>100:</strong>{' '}
+                                Factor de conversión para expresar el resultado en porcentaje.
+                              </div>
+                            </>
+                          ) : esNcac ? (
+                          <div className="grid grid-cols-3">
+                            <Campo
+                              titulo="No conformidades identificadas y analizadas · NCI"
+                              className="border-r-0"
+                            >
+                              {formatearEntero(medicion?.denominador)}
+                            </Campo>
+                            <Campo
+                              titulo="No conformidades gestionadas y cerradas · NCG"
+                              className="border-r-0"
+                            >
+                              {formatearEntero(medicion?.numerador)}
+                            </Campo>
+                            <Campo titulo="No conformidades de auditoría cerradas · NCAC">
+                              {(() => {
+                                const resultado = numero(medicion?.valor_resultado)
+                                return resultado === null
+                                  ? '-'
+                                  : `${formatearNumero(resultado, 2)} %`
+                              })()}
                             </Campo>
                           </div>
                         ) : esCplanPesv ? (
@@ -5113,14 +5444,24 @@
 
                   {/* ============================================
                       OBSERVACIONES
+                      CPF_PESV_CUMPLIMIENTO: se mantiene el bloque
+                      completo para que no se divida entre páginas.
                   ============================================ */}
 
-                  <FilaDocumento divisible>
+                  <FilaDocumento divisible={!(esCpfPesvCumplimiento || esCpfPesvCobertura || esNcac)}>
 
                   <div
                     className="
                       bloque-no-dividir
                     "
+                    style={
+                      esNcac
+                        ? {
+                            breakBefore: 'page',
+                            pageBreakBefore: 'always',
+                          }
+                        : undefined
+                    }
                   >
                     <TituloSeccion>
                       {esTsv
@@ -5263,7 +5604,7 @@
       className="
         bloque-no-dividir
         firmas-indicador
-        mt-[4mm]
+        mt-[2mm]
         grid
         grid-cols-2
         gap-[15mm]
@@ -5278,7 +5619,7 @@
         {/* Espacio disponible para firma manuscrita */}
         <div
           className="
-            h-[15mm]
+            h-[8mm]
           "
         />
 
@@ -5321,7 +5662,7 @@
         {/* Espacio disponible para firma manuscrita */}
         <div
           className="
-            h-[15mm]
+            h-[8mm]
           "
         />
 
@@ -5364,10 +5705,10 @@
                   <div
                     className="
                       bloque-no-dividir
-                      mt-[8mm]
+                      mt-[3mm]
                       border-t
                       border-gray-300
-                      pt-[2mm]
+                      pt-[1mm]
                       text-center
                       text-[7px]
                       text-gray-500

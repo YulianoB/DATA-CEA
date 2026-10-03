@@ -3366,99 +3366,560 @@ async function calcularIdp(
 // app/admin/pesv/indicadores/page.jsx
 // API: /api/admin/pesv/indicadores
 //
-// El plan actual se encuentra definido principalmente por
-// rangos de kilometraje, no por actividades programadas con
-// fecha de vencimiento. Por eso queda ASISTIDO.
+// Fuente de verdad:
+// /api/admin/mantenimientos/plan-mantenimiento
+//
+// PROGRAMADOS = PROGRAMADO + EJECUTADO + VENCIDO
+// EJECUTADOS  = EJECUTADO
+//
+// Los mantenimientos correctivos no forman parte del cálculo.
 // ============================================================
 
 async function calcularCpmvh(
   supabase,
-  periodo
+  periodo,
+  contexto = {}
 ) {
-  const [
-    resultadoPlan,
-    resultadoMantenimientos,
-  ] =
-    await Promise.all([
-      supabase
-        .from(
-          'plan_mantenimiento'
-        )
-        .select(
-          'id,tipo_vehiculo,actividad,desde_km,hasta_km'
-        ),
+  const anio =
+    Number(
+      periodo.periodo_desde.slice(
+        0,
+        4
+      )
+    )
 
-      supabase
-        .from(
-          'mantenimientos'
-        )
-        .select(
-          'id,fecha_registro,placa,kilometraje,tipo_mantenimiento,actividad_realizada'
-        )
-        .gte(
-          'fecha_registro',
-          periodo.periodo_desde
-        )
-        .lte(
-          'fecha_registro',
-          periodo.periodo_hasta
-        ),
-    ])
+  const anioHasta =
+    Number(
+      periodo.periodo_hasta.slice(
+        0,
+        4
+      )
+    )
 
   if (
-    resultadoPlan.error
+    !anio ||
+    anio !== anioHasta
   ) {
-    throw resultadoPlan.error
+    throw new Error(
+      'El período del indicador CPMVH debe pertenecer a una sola vigencia.'
+    )
+  }
+
+  const request =
+    contexto?.request ||
+    null
+
+  const body =
+    contexto?.body ||
+    {}
+
+  const nit =
+    texto(
+      contexto?.nit ||
+      body?.nit ||
+      request?.headers?.get(
+        'x-cea-nit'
+      ) ||
+      ''
+    )
+
+  if (
+    !request ||
+    !nit
+  ) {
+    throw new Error(
+      'No fue posible identificar la empresa para calcular el indicador CPMVH.'
+    )
+  }
+
+  const urlActual =
+    new URL(
+      request.url
+    )
+
+  const urlPlan =
+    new URL(
+      '/api/admin/mantenimientos/plan-mantenimiento',
+      urlActual.origin
+    )
+
+  urlPlan.searchParams.set(
+    'vigencia',
+    String(
+      anio
+    )
+  )
+
+  const respuestaPlan =
+    await fetch(
+      urlPlan.toString(),
+      {
+        method:
+          'GET',
+
+        headers: {
+          'x-cea-nit':
+            nit,
+        },
+
+        cache:
+          'no-store',
+      }
+    )
+
+  const plan =
+    await respuestaPlan
+      .json()
+      .catch(
+        () => ({})
+      )
+
+  if (
+    !respuestaPlan.ok ||
+    plan?.status !==
+      'success'
+  ) {
+    throw new Error(
+      plan?.message ||
+      plan?.error ||
+      'No fue posible consultar el Plan de Mantenimiento para calcular CPMVH.'
+    )
+  }
+
+  const vehiculos =
+    Array.isArray(
+      plan?.vehiculos
+    )
+      ? plan.vehiculos
+      : []
+
+  const meses = [
+    'ENE',
+    'FEB',
+    'MAR',
+    'ABR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AGO',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DIC',
+  ]
+
+  const mesDesde =
+    Number(
+      periodo.periodo_desde.slice(
+        5,
+        7
+      )
+    )
+
+  const mesHasta =
+    Number(
+      periodo.periodo_hasta.slice(
+        5,
+        7
+      )
+    )
+
+  const detalleMeses = []
+
+  let totalProgramados =
+    0
+
+  let totalEjecutados =
+    0
+
+  let totalVencidos =
+    0
+
+  let totalPendientes =
+    0
+
+  const puntosProgramados =
+    []
+
+  const puntosEjecutados =
+    []
+
+  const puntosVencidos =
+    []
+
+  for (
+    let numeroMes = mesDesde;
+    numeroMes <= mesHasta;
+    numeroMes += 1
+  ) {
+    const nombreMes =
+      meses[
+        numeroMes - 1
+      ]
+
+    let programadosMes =
+      0
+
+    let ejecutadosMes =
+      0
+
+    let vencidosMes =
+      0
+
+    let pendientesMes =
+      0
+
+    for (
+      const vehiculo of
+        vehiculos
+    ) {
+      const mes =
+        vehiculo
+          ?.meses
+          ?.[
+            nombreMes
+          ] ||
+        {}
+
+      const pendientes =
+        Array.isArray(
+          mes?.programados
+        )
+          ? mes.programados
+          : []
+
+      const ejecutados =
+        Array.isArray(
+          mes?.ejecutados
+        )
+          ? mes.ejecutados
+          : []
+
+      const vencidos =
+        Array.isArray(
+          mes?.vencidos
+        )
+          ? mes.vencidos
+          : []
+
+      const programados =
+        pendientes.length +
+        ejecutados.length +
+        vencidos.length
+
+      programadosMes +=
+        programados
+
+      ejecutadosMes +=
+        ejecutados.length
+
+      vencidosMes +=
+        vencidos.length
+
+      pendientesMes +=
+        pendientes.length
+
+      const placa =
+        texto(
+          vehiculo
+            ?.vehiculo
+            ?.placa
+        )
+
+      for (
+        const punto of
+          pendientes
+      ) {
+        puntosProgramados.push({
+          vehiculo_id:
+            vehiculo
+              ?.vehiculo
+              ?.id ||
+            punto
+              ?.vehiculo_id ||
+            null,
+
+          placa:
+            placa ||
+            texto(
+              punto?.placa
+            ) ||
+            null,
+
+          punto:
+            entero(
+              punto?.punto ||
+              punto?.ciclo
+            ),
+
+          estado:
+            'PROGRAMADO',
+
+          mes:
+            numeroMes,
+
+          mes_nombre:
+            nombreMes,
+
+          fecha:
+            texto(
+              punto
+                ?.fecha_proyectada
+            ) ||
+            null,
+
+          km_objetivo:
+            numero(
+              punto
+                ?.km_objetivo
+            ),
+        })
+      }
+
+      for (
+        const punto of
+          ejecutados
+      ) {
+        puntosEjecutados.push({
+          vehiculo_id:
+            vehiculo
+              ?.vehiculo
+              ?.id ||
+            punto
+              ?.vehiculo_id ||
+            null,
+
+          placa:
+            placa ||
+            texto(
+              punto?.placa
+            ) ||
+            null,
+
+          punto:
+            entero(
+              punto?.punto ||
+              punto?.ciclo
+            ),
+
+          estado:
+            'EJECUTADO',
+
+          mes:
+            numeroMes,
+
+          mes_nombre:
+            nombreMes,
+
+          fecha:
+            texto(
+              punto
+                ?.fecha_ejecucion
+            ) ||
+            null,
+
+          km_ejecucion:
+            numero(
+              punto
+                ?.km_ejecucion
+            ),
+
+          mantenimiento_id:
+            punto
+              ?.mantenimiento_id ||
+            null,
+        })
+      }
+
+      for (
+        const punto of
+          vencidos
+      ) {
+        puntosVencidos.push({
+          vehiculo_id:
+            vehiculo
+              ?.vehiculo
+              ?.id ||
+            punto
+              ?.vehiculo_id ||
+            null,
+
+          placa:
+            placa ||
+            texto(
+              punto?.placa
+            ) ||
+            null,
+
+          punto:
+            entero(
+              punto?.punto ||
+              punto?.ciclo
+            ),
+
+          estado:
+            'VENCIDO',
+
+          mes:
+            numeroMes,
+
+          mes_nombre:
+            nombreMes,
+
+          fecha:
+            texto(
+              punto
+                ?.fecha_vencimiento ||
+              punto
+                ?.fecha_debio_realizarse
+            ) ||
+            null,
+
+          km_objetivo:
+            numero(
+              punto
+                ?.km_objetivo ||
+              punto
+                ?.km_debio_realizarse
+            ),
+
+          justificacion:
+            texto(
+              punto
+                ?.justificacion_vencimiento
+            ) ||
+            null,
+        })
+      }
+    }
+
+    totalProgramados +=
+      programadosMes
+
+    totalEjecutados +=
+      ejecutadosMes
+
+    totalVencidos +=
+      vencidosMes
+
+    totalPendientes +=
+      pendientesMes
+
+    detalleMeses.push({
+      mes:
+        numeroMes,
+
+      mes_nombre:
+        nombreMes,
+
+      programados:
+        programadosMes,
+
+      ejecutados:
+        ejecutadosMes,
+
+      vencidos:
+        vencidosMes,
+
+      pendientes:
+        pendientesMes,
+
+      resultado:
+        porcentaje(
+          ejecutadosMes,
+          programadosMes
+        ),
+    })
+  }
+
+  const advertencias =
+    []
+
+  if (
+    vehiculos.length ===
+    0
+  ) {
+    advertencias.push(
+      'No se encontraron vehículos con un Plan de Mantenimiento finalizado para la vigencia consultada.'
+    )
   }
 
   if (
-    resultadoMantenimientos.error
+    totalProgramados ===
+    0
   ) {
-    throw resultadoMantenimientos.error
+    advertencias.push(
+      'No existen mantenimientos preventivos programados en el período seleccionado; el porcentaje CPMVH no puede calcularse.'
+    )
   }
 
   return {
     origen_calculo:
-      'ASISTIDO',
+      'AUTOMATICO',
 
     numerador:
-      null,
+      totalEjecutados,
 
     denominador:
-      null,
+      totalProgramados,
 
     valor_resultado:
-      null,
+      porcentaje(
+        totalEjecutados,
+        totalProgramados
+      ),
 
     unidad_resultado:
       'PORCENTAJE',
 
     datos_calculo: {
-      reglas_plan_mantenimiento:
-        (
-          resultadoPlan.data ||
-          []
-        ).length,
+      vigencia:
+        anio,
 
-      mantenimientos_periodo:
-        (
-          resultadoMantenimientos.data ||
-          []
-        ).length,
+      periodo_desde:
+        periodo.periodo_desde,
 
-      mantenimiento_ids:
-        (
-          resultadoMantenimientos.data ||
-          []
-        ).map(
-          item =>
-            item.id
-        ),
+      periodo_hasta:
+        periodo.periodo_hasta,
+
+      vehiculos_incluidos:
+        vehiculos.length,
+
+      mantenimientos_preventivos_programados:
+        totalProgramados,
+
+      mantenimientos_preventivos_ejecutados:
+        totalEjecutados,
+
+      mantenimientos_preventivos_vencidos:
+        totalVencidos,
+
+      mantenimientos_preventivos_pendientes:
+        totalPendientes,
+
+      formula:
+        '(MANTENIMIENTOS PREVENTIVOS EJECUTADOS / MANTENIMIENTOS PREVENTIVOS PROGRAMADOS) × 100',
+
+      criterio_denominador:
+        'PROGRAMADOS = PENDIENTES + EJECUTADOS + VENCIDOS',
+
+      fuente:
+        'PLAN_DE_MANTENIMIENTO',
+
+      detalle_mensual:
+        detalleMeses,
+
+      puntos_programados:
+        puntosProgramados,
+
+      puntos_ejecutados:
+        puntosEjecutados,
+
+      puntos_vencidos:
+        puntosVencidos,
     },
 
-    advertencias: [
-      'El plan de mantenimiento vigente está definido por tipo de vehículo y rangos de kilometraje. No es posible determinar sin ambigüedad el total de actividades preventivas programadas por período; la medición debe validarse de forma asistida.',
-    ],
+    advertencias,
   }
 }
 
@@ -4167,7 +4628,8 @@ async function calcularNcac(
 async function calcularIndicador(
   supabase,
   indicador,
-  periodo
+  periodo,
+  contexto = {}
 ) {
   const codigo =
     mayusculas(
@@ -4222,7 +4684,8 @@ async function calcularIndicador(
     case 'CPMVH':
       return calcularCpmvh(
         supabase,
-        periodo
+        periodo,
+        contexto
       )
 
     case 'CPF_PESV_CUMPLIMIENTO':
@@ -4647,7 +5110,11 @@ export async function POST(
         await calcularIndicador(
           supabaseAdmin,
           indicador,
-          periodo
+          periodo,
+          {
+            request,
+            body,
+          }
         )
 
       const configuracion =
@@ -5516,7 +5983,11 @@ export async function POST(
         await calcularIndicador(
           supabaseAdmin,
           indicador,
-          periodo
+          periodo,
+          {
+            request,
+            body,
+          }
         )
 
       const configuracion =

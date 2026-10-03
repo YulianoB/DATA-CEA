@@ -1028,7 +1028,10 @@ export default function ImprimirAuditoriaPesvPage() {
                             {valorONoAplica(accion.descripcion)}
                           </Dato>
 
-                          <Dato label="Evidencia esperada">
+                          <Dato
+                            label="Evidencia esperada"
+                            className="corte-pagina-despues-evidencia-esperada"
+                          >
                             {valorONoAplica(accion.evidencia_esperada)}
                           </Dato>
 
@@ -1383,6 +1386,16 @@ export default function ImprimirAuditoriaPesvPage() {
           .bloque-accion {
             page-break-inside: auto !important;
             break-inside: auto !important;
+          }
+
+          /*
+            Corte controlado después de EVIDENCIA ESPERADA.
+            Evita que la parte siguiente de la acción llegue hasta
+            el borde inferior de la primera página.
+          */
+          .corte-pagina-despues-evidencia-esperada {
+            page-break-after: always !important;
+            break-after: page !important;
           }
 
           .bloque-seguimiento {

@@ -1,18 +1,14 @@
 // app/admin/caja/egresos/components/RegistrarEgresoDrawer.jsx
-
 'use client'
-
 import {
   useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react'
-
 // =========================================================
 // HELPERS
 // =========================================================
-
 function texto(
   valor
 ) {
@@ -20,7 +16,6 @@ function texto(
     valor ?? ''
   ).trim()
 }
-
 function mayusculas(
   valor
 ) {
@@ -28,20 +23,16 @@ function mayusculas(
     valor
   ).toUpperCase()
 }
-
 function hoyColombia() {
   return new Intl.DateTimeFormat(
     'en-CA',
     {
       timeZone:
         'America/Bogota',
-
       year:
         'numeric',
-
       month:
         '2-digit',
-
       day:
         '2-digit',
     }
@@ -49,7 +40,6 @@ function hoyColombia() {
     new Date()
   )
 }
-
 function formatearMoneda(
   valor
 ) {
@@ -58,13 +48,10 @@ function formatearMoneda(
     {
       style:
         'currency',
-
       currency:
         'COP',
-
       minimumFractionDigits:
         0,
-
       maximumFractionDigits:
         0,
     }
@@ -75,7 +62,6 @@ function formatearMoneda(
     )
   )
 }
-
 function nombreCompletoPersonal(
   persona
 ) {
@@ -95,7 +81,6 @@ function nombreCompletoPersonal(
     '-'
   )
 }
-
 function descripcionVehiculo(
   vehiculo
 ) {
@@ -103,138 +88,120 @@ function descripcionVehiculo(
     mayusculas(
       vehiculo?.placa
     ),
-
     mayusculas(
       vehiculo?.tipo_vehiculo
     ),
-
     mayusculas(
       vehiculo?.marca
     ),
-
     mayusculas(
       vehiculo?.linea
     ),
-
     texto(
       vehiculo?.modelo
     ),
   ].filter(
     Boolean
   )
-
   return partes.join(
     ' · '
   )
 }
-
 // =========================================================
 // FORMULARIO INICIAL
 // =========================================================
-
 function formularioInicial() {
   return {
     fecha:
       hoyColombia(),
-
     concepto_id:
       '',
-
     medio_pago_id:
       '',
-
     valor:
       '',
-
+    modalidad:
+      'PAGO_DIRECTO',
     tipo_beneficiario:
       'FUNCIONARIO',
-
     personal_id:
       '',
-
     beneficiario:
       '',
-
     tipo_documento_beneficiario:
       'CC',
-
     documento_beneficiario:
       '',
-
     cargo_beneficiario:
       '',
-
     vehiculo_id:
       '',
-
     placa:
       '',
-
     descripcion:
       '',
-
     numero_factura:
       '',
-
     referencia_pago:
       '',
-
     observaciones:
       '',
   }
 }
-
 function conceptoInicial() {
   return {
     nombre:
       '',
-
     descripcion:
       '',
-
     naturaleza:
       'EGRESO',
-
     requiere_aprendiz:
       false,
-
     requiere_vehiculo:
       false,
+    es_gasto_pesv:
+      false,
+    categoria_pesv:
+      '',
   }
 }
-
+const CATEGORIAS_PESV = [
+  { value: 'MANTENIMIENTO_SEGURIDAD', label: 'Mantenimiento y seguridad vehicular' },
+  { value: 'CAPACITACION', label: 'Capacitación y formación en seguridad vial' },
+  { value: 'SENALIZACION', label: 'Señalización y adecuaciones de seguridad vial' },
+  { value: 'TECNOLOGIA_MONITOREO', label: 'Tecnología y monitoreo' },
+  { value: 'EMERGENCIAS', label: 'Atención de emergencias y elementos de prevención' },
+  { value: 'GESTION_PESV', label: 'Gestión, seguimiento y documentación PESV' },
+  { value: 'OTROS', label: 'Otros recursos destinados al PESV' },
+]
+function nombreCategoriaPesv(valor) {
+  return CATEGORIAS_PESV.find(item => item.value === texto(valor))?.label || texto(valor)
+}
 // =========================================================
 // COMPONENTE
 // =========================================================
-
 export default function RegistrarEgresoDrawer({
   abierto,
   onCerrar,
-
   empresaNombre = '',
-
   conceptos = [],
   mediosPago = [],
   personal = [],
   vehiculos = [],
-
   postEgreso,
   postCatalogos,
-
   onActualizado,
   onCatalogosActualizados,
-
   onImprimirCuentaCobro,
 }) {
   const drawerRef =
     useRef(
       null
     )
-
   // =======================================================
   // PESTAÑA
   // =======================================================
-
   const [
     pestana,
     setPestana,
@@ -242,11 +209,9 @@ export default function RegistrarEgresoDrawer({
     useState(
       'REGISTRAR'
     )
-
   // =======================================================
   // FORMULARIO EGRESO
   // =======================================================
-
   const [
     form,
     setForm,
@@ -254,7 +219,6 @@ export default function RegistrarEgresoDrawer({
     useState(
       formularioInicial()
     )
-
   const [
     procesando,
     setProcesando,
@@ -262,19 +226,16 @@ export default function RegistrarEgresoDrawer({
     useState(
       false
     )
-
   const [
     error,
     setError,
   ] =
     useState('')
-
   const [
     mensaje,
     setMensaje,
   ] =
     useState('')
-
   const [
     egresoRegistrado,
     setEgresoRegistrado,
@@ -282,17 +243,14 @@ export default function RegistrarEgresoDrawer({
     useState(
       null
     )
-
   // =======================================================
   // PERSONAL
   // =======================================================
-
   const [
     buscarPersonal,
     setBuscarPersonal,
   ] =
     useState('')
-
   const [
     mostrarResultadosPersonal,
     setMostrarResultadosPersonal,
@@ -300,17 +258,14 @@ export default function RegistrarEgresoDrawer({
     useState(
       false
     )
-
   // =======================================================
   // VEHÍCULO
   // =======================================================
-
   const [
     buscarVehiculo,
     setBuscarVehiculo,
   ] =
     useState('')
-
   const [
     mostrarResultadosVehiculo,
     setMostrarResultadosVehiculo,
@@ -318,11 +273,9 @@ export default function RegistrarEgresoDrawer({
     useState(
       false
     )
-
   // =======================================================
   // ADMINISTRAR CONCEPTOS
   // =======================================================
-
   const [
     editandoConcepto,
     setEditandoConcepto,
@@ -330,7 +283,6 @@ export default function RegistrarEgresoDrawer({
     useState(
       null
     )
-
   const [
     formConcepto,
     setFormConcepto,
@@ -338,11 +290,20 @@ export default function RegistrarEgresoDrawer({
     useState(
       conceptoInicial()
     )
-
+  const [
+    mostrarFormularioConcepto,
+    setMostrarFormularioConcepto,
+  ] =
+    useState(
+      false
+    )
+  const [
+    conceptoResaltadoId,
+    setConceptoResaltadoId,
+  ] = useState(null)
   // =======================================================
   // CONCEPTOS DISPONIBLES PARA EGRESOS
   // =======================================================
-
   const conceptosEgreso =
     useMemo(
       () => {
@@ -385,11 +346,9 @@ export default function RegistrarEgresoDrawer({
         conceptos,
       ]
     )
-
   // =======================================================
   // TODOS LOS CONCEPTOS ADMINISTRABLES
   // =======================================================
-
   const conceptosAdmin =
     useMemo(
       () => {
@@ -431,11 +390,9 @@ export default function RegistrarEgresoDrawer({
         conceptos,
       ]
     )
-
   // =======================================================
   // MEDIOS DE PAGO
   // =======================================================
-
   const mediosVisibles =
     useMemo(
       () => {
@@ -471,11 +428,9 @@ export default function RegistrarEgresoDrawer({
         mediosPago,
       ]
     )
-
   // =======================================================
   // PERSONAL ACTIVO
   // =======================================================
-
   const personalActivo =
     useMemo(
       () => {
@@ -517,11 +472,9 @@ export default function RegistrarEgresoDrawer({
         personal,
       ]
     )
-
   // =======================================================
   // VEHÍCULOS
   // =======================================================
-
   const vehiculosDisponibles =
     useMemo(
       () => {
@@ -552,11 +505,9 @@ export default function RegistrarEgresoDrawer({
         vehiculos,
       ]
     )
-
   // =======================================================
   // CONCEPTO SELECCIONADO
   // =======================================================
-
   const conceptoSeleccionado =
     useMemo(
       () => {
@@ -578,16 +529,13 @@ export default function RegistrarEgresoDrawer({
         form.concepto_id,
       ]
     )
-
   const requiereVehiculo =
     conceptoSeleccionado
       ?.requiere_vehiculo ===
     true
-
   // =======================================================
   // FILTRAR PERSONAL
   // =======================================================
-
   const personalFiltrado =
     useMemo(
       () => {
@@ -595,7 +543,6 @@ export default function RegistrarEgresoDrawer({
           mayusculas(
             buscarPersonal
           )
-
         if (
           termino.length <
           2
@@ -606,7 +553,6 @@ export default function RegistrarEgresoDrawer({
               20
             )
         }
-
         return personalActivo
           .filter(
             persona => {
@@ -616,18 +562,15 @@ export default function RegistrarEgresoDrawer({
                     persona
                   )
                 )
-
               const documento =
                 mayusculas(
                   persona?.documento
                 )
-
               const cargo =
                 mayusculas(
                   persona?.cargo ||
                   persona?.tipo_personal
                 )
-
               return (
                 nombre.includes(
                   termino
@@ -651,11 +594,9 @@ export default function RegistrarEgresoDrawer({
         buscarPersonal,
       ]
     )
-
   // =======================================================
   // FILTRAR VEHÍCULOS
   // =======================================================
-
   const vehiculosFiltrados =
     useMemo(
       () => {
@@ -663,7 +604,6 @@ export default function RegistrarEgresoDrawer({
           mayusculas(
             buscarVehiculo
           )
-
         if (
           !termino
         ) {
@@ -673,7 +613,6 @@ export default function RegistrarEgresoDrawer({
               20
             )
         }
-
         return vehiculosDisponibles
           .filter(
             vehiculo =>
@@ -695,56 +634,46 @@ export default function RegistrarEgresoDrawer({
         buscarVehiculo,
       ]
     )
-
   // =======================================================
   // REINICIAR EGRESO
   // =======================================================
-
   function reiniciarFormulario() {
     setForm(
       formularioInicial()
     )
-
     setBuscarPersonal('')
     setBuscarVehiculo('')
-
     setMostrarResultadosPersonal(
       false
     )
-
     setMostrarResultadosVehiculo(
       false
     )
-
     setEgresoRegistrado(
       null
     )
-
     setError('')
     setMensaje('')
   }
-
   // =======================================================
   // REINICIAR CONCEPTO
   // =======================================================
-
   function nuevoConcepto() {
     setEditandoConcepto(
       null
     )
-
     setFormConcepto(
       conceptoInicial()
     )
-
+    setMostrarFormularioConcepto(
+      false
+    )
     setError('')
     setMensaje('')
   }
-
   // =======================================================
   // AL ABRIR
   // =======================================================
-
   useEffect(
     () => {
       if (
@@ -753,17 +682,14 @@ export default function RegistrarEgresoDrawer({
         setPestana(
           'REGISTRAR'
         )
-
         reiniciarFormulario()
         nuevoConcepto()
-
         setTimeout(
           () => {
             drawerRef.current
               ?.scrollTo({
                 top:
                   0,
-
                 behavior:
                   'auto',
               })
@@ -776,11 +702,9 @@ export default function RegistrarEgresoDrawer({
       abierto,
     ]
   )
-
   // =======================================================
   // SELECCIONAR CONCEPTO
   // =======================================================
-
   function seleccionarConcepto(
     conceptoId
   ) {
@@ -794,19 +718,15 @@ export default function RegistrarEgresoDrawer({
             conceptoId
           )
       )
-
     const necesitaVehiculo =
       concepto
         ?.requiere_vehiculo ===
       true
-
     setForm(
       actual => ({
         ...actual,
-
         concepto_id:
           conceptoId,
-
         descripcion:
             concepto?.descripcion
                 ? texto(
@@ -819,103 +739,102 @@ export default function RegistrarEgresoDrawer({
                         )
                     : actual.descripcion
                 ),
-
         vehiculo_id:
           necesitaVehiculo
             ? actual.vehiculo_id
             : '',
-
         placa:
           necesitaVehiculo
             ? actual.placa
             : '',
       })
     )
-
     if (
       !necesitaVehiculo
     ) {
       setBuscarVehiculo('')
-
       setMostrarResultadosVehiculo(
         false
       )
     }
   }
-
   // =======================================================
-  // CAMBIAR BENEFICIARIO
+  // CAMBIAR MODALIDAD
   // =======================================================
-
+  function cambiarModalidad(modalidad) {
+    setForm(actual => ({
+      ...actual,
+      modalidad,
+      tipo_beneficiario: 'FUNCIONARIO',
+      personal_id: '',
+      beneficiario: '',
+      tipo_documento_beneficiario: 'CC',
+      documento_beneficiario: '',
+      cargo_beneficiario: '',
+      numero_factura: '',
+    }))
+    setBuscarPersonal('')
+    setMostrarResultadosPersonal(false)
+    setError('')
+    setMensaje('')
+  }
+  // =======================================================
+  // CAMBIAR BENEFICIARIO / RECEPTOR
+  // =======================================================
   function cambiarTipoBeneficiario(
     tipo
   ) {
     setForm(
       actual => ({
         ...actual,
-
         tipo_beneficiario:
           tipo,
-
         personal_id:
           '',
-
         beneficiario:
           '',
-
         tipo_documento_beneficiario:
           'CC',
-
         documento_beneficiario:
           '',
-
         cargo_beneficiario:
           '',
       })
     )
-
     setBuscarPersonal('')
-
     setMostrarResultadosPersonal(
       false
     )
   }
-
   // =======================================================
   // SELECCIONAR FUNCIONARIO
   // =======================================================
-
   function seleccionarPersonal(
     persona
   ) {
     setForm(
       actual => ({
         ...actual,
-
         personal_id:
           persona?.id ||
           '',
-
         beneficiario:
           mayusculas(
             nombreCompletoPersonal(
               persona
             )
           ),
-
         tipo_documento_beneficiario:
           mayusculas(
             persona
               ?.tipo_documento
           ) ||
           'CC',
-
         documento_beneficiario:
           texto(
             persona
               ?.documento
           ),
-
         cargo_beneficiario:
           mayusculas(
             persona?.cargo ||
@@ -923,73 +842,60 @@ export default function RegistrarEgresoDrawer({
           ),
       })
     )
-
     setBuscarPersonal(
       nombreCompletoPersonal(
         persona
       )
     )
-
     setMostrarResultadosPersonal(
       false
     )
   }
-
   // =======================================================
   // SELECCIONAR VEHÍCULO
   // =======================================================
-
   function seleccionarVehiculo(
     vehiculo
   ) {
     setForm(
       actual => ({
         ...actual,
-
         vehiculo_id:
           vehiculo?.id ||
           '',
-
         placa:
           mayusculas(
             vehiculo?.placa
           ),
       })
     )
-
     setBuscarVehiculo(
       descripcionVehiculo(
         vehiculo
       )
     )
-
     setMostrarResultadosVehiculo(
       false
     )
   }
-
   // =======================================================
   // VALIDAR EGRESO
   // =======================================================
-
   function validarFormulario() {
     if (
       !form.fecha
     ) {
       return 'Seleccione la fecha del egreso.'
     }
-
     if (
       !form.concepto_id
     ) {
       return 'Seleccione el concepto del egreso.'
     }
-
     const valor =
       Number(
         form.valor
       )
-
     if (
       !Number.isFinite(
         valor
@@ -999,38 +905,29 @@ export default function RegistrarEgresoDrawer({
     ) {
       return 'Ingrese un valor válido mayor a cero.'
     }
-
-    if (
-      form.tipo_beneficiario ===
-        'FUNCIONARIO' &&
-      !form.personal_id
-    ) {
-      return 'Seleccione un funcionario.'
+    const esEntregaParaLegalizar =
+      form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+    if (form.tipo_beneficiario === 'FUNCIONARIO' && !form.personal_id) {
+      return esEntregaParaLegalizar
+        ? 'Seleccione la persona que recibe el dinero.'
+        : 'Seleccione un funcionario.'
     }
-
-    if (
-      !texto(
-        form.beneficiario
-      )
-    ) {
-      return 'Ingrese o seleccione el beneficiario.'
+    if (!texto(form.beneficiario)) {
+      return esEntregaParaLegalizar
+        ? 'Ingrese o seleccione la persona que recibe el dinero.'
+        : 'Ingrese o seleccione el beneficiario.'
     }
-
-    if (
-      !texto(
-        form.documento_beneficiario
-      )
-    ) {
-      return 'Ingrese el documento del beneficiario.'
+    if (!texto(form.documento_beneficiario)) {
+      return esEntregaParaLegalizar
+        ? 'Ingrese el documento de la persona que recibe el dinero.'
+        : 'Ingrese el documento del beneficiario.'
     }
-
     if (
       requiereVehiculo &&
       !form.vehiculo_id
     ) {
       return 'Este concepto requiere seleccionar un vehículo.'
     }
-
     if (
       !texto(
         form.descripcion
@@ -1038,36 +935,28 @@ export default function RegistrarEgresoDrawer({
     ) {
       return 'Ingrese la descripción del egreso.'
     }
-
     if (
       !form.medio_pago_id
     ) {
       return 'Seleccione el medio de pago.'
     }
-
     return ''
   }
-
   // =======================================================
   // REGISTRAR EGRESO
   // =======================================================
-
   async function registrarEgreso() {
     const validacion =
       validarFormulario()
-
     if (
       validacion
     ) {
       setError(
         validacion
       )
-
       setMensaje('')
-
       return
     }
-
     if (
       typeof postEgreso !==
       'function'
@@ -1075,107 +964,99 @@ export default function RegistrarEgresoDrawer({
       setError(
         'No se encuentra disponible la función para registrar el egreso.'
       )
-
       return
     }
-
     setProcesando(
       true
     )
-
     setError('')
     setMensaje('')
-
     try {
       const data =
         await postEgreso({
           accion:
             'registrar',
-
           fecha:
             form.fecha,
-
           concepto_id:
             form.concepto_id,
-
           medio_pago_id:
             form.medio_pago_id,
-
           valor:
             Number(
               form.valor
             ),
-
+          modalidad:
+            form.modalidad,
+          receptor_dinero:
+            form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+              ? mayusculas(form.beneficiario)
+              : null,
+          tipo_documento_receptor:
+            form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+              ? mayusculas(form.tipo_documento_beneficiario)
+              : null,
+          documento_receptor:
+            form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+              ? texto(form.documento_beneficiario)
+              : null,
           beneficiario:
-            mayusculas(
-              form.beneficiario
-            ),
-
+            form.modalidad === 'PAGO_DIRECTO'
+              ? mayusculas(form.beneficiario)
+              : null,
           tipo_documento_beneficiario:
-            mayusculas(
-              form.tipo_documento_beneficiario
-            ),
-
+            form.modalidad === 'PAGO_DIRECTO'
+              ? mayusculas(form.tipo_documento_beneficiario)
+              : null,
           documento_beneficiario:
-            texto(
-              form.documento_beneficiario
-            ),
-
+            form.modalidad === 'PAGO_DIRECTO'
+              ? texto(form.documento_beneficiario)
+              : null,
           vehiculo_id:
             form.vehiculo_id ||
             null,
-
          descripcion:
             texto(
                 form.descripcion
             ),
-
           numero_factura:
             texto(
               form.numero_factura
             ) ||
             null,
-
           referencia_pago:
             texto(
               form.referencia_pago
             ) ||
             null,
-
           observaciones:
             mayusculas(
               form.observaciones
             ) ||
             null,
         })
-
       const egreso =
         data?.data ||
         null
-
       setEgresoRegistrado(
         egreso
       )
-
       setMensaje(
         data?.message ||
         'Egreso registrado correctamente.'
       )
-
       if (
         typeof onActualizado ===
         'function'
       ) {
         await onActualizado()
       }
-
       setTimeout(
         () => {
           drawerRef.current
             ?.scrollTo({
               top:
                 0,
-
               behavior:
                 'smooth',
             })
@@ -1189,19 +1070,16 @@ export default function RegistrarEgresoDrawer({
         'Error registrando egreso:',
         errorRegistro
       )
-
       setError(
         errorRegistro?.message ||
         'No fue posible registrar el egreso.'
       )
-
       setTimeout(
         () => {
           drawerRef.current
             ?.scrollTo({
               top:
                 0,
-
               behavior:
                 'smooth',
             })
@@ -1214,18 +1092,22 @@ export default function RegistrarEgresoDrawer({
       )
     }
   }
-
   // =======================================================
   // IMPRIMIR EGRESO REGISTRADO
   // =======================================================
-
   function imprimirEgresoRegistrado() {
     if (
       !egresoRegistrado
     ) {
       return
     }
-
+    if (
+      egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR' ||
+      form.tipo_beneficiario !== 'FUNCIONARIO'
+    ) {
+      setError('La cuenta de cobro está disponible para pagos directos al personal del CEA.')
+      return
+    }
     if (
       typeof onImprimirCuentaCobro !==
       'function'
@@ -1233,85 +1115,63 @@ export default function RegistrarEgresoDrawer({
       setError(
         'La impresión de cuenta de cobro todavía no se encuentra configurada.'
       )
-
       return
     }
-
     onImprimirCuentaCobro(
       egresoRegistrado,
       {
         empresaNombre,
-
         cargo_beneficiario:
           form.cargo_beneficiario,
       }
     )
   }
-
   // =======================================================
   // EDITAR CONCEPTO
   // =======================================================
-
   function editarConcepto(
     concepto
   ) {
     setEditandoConcepto(
       concepto
     )
-
+    setMostrarFormularioConcepto(
+      true
+    )
     setFormConcepto({
       nombre:
         mayusculas(
           concepto?.nombre
         ),
-
       descripcion:
         texto(
           concepto?.descripcion
         ),
-
       naturaleza:
         mayusculas(
           concepto?.naturaleza
         ) ||
         'EGRESO',
-
       requiere_aprendiz:
         concepto?.requiere_aprendiz ===
         true,
-
       requiere_vehiculo:
         concepto?.requiere_vehiculo ===
         true,
+      es_gasto_pesv:
+        concepto?.es_gasto_pesv ===
+        true,
+      categoria_pesv:
+        concepto?.es_gasto_pesv === true
+          ? texto(concepto?.categoria_pesv)
+          : '',
     })
-
     setError('')
     setMensaje('')
-
-    setTimeout(
-      () => {
-        const elemento =
-          document.getElementById(
-            'formulario-concepto-egreso'
-          )
-
-        elemento
-          ?.scrollIntoView({
-            behavior:
-              'smooth',
-
-            block:
-              'start',
-          })
-      },
-      80
-    )
   }
-
   // =======================================================
   // GUARDAR CONCEPTO
   // =======================================================
-
   async function guardarConcepto() {
     if (
       typeof postCatalogos !==
@@ -1320,32 +1180,32 @@ export default function RegistrarEgresoDrawer({
       setError(
         'No se encuentra disponible la función para administrar conceptos.'
       )
-
       return
     }
-
     const nombre =
       mayusculas(
         formConcepto.nombre
       )
-
     if (
       !nombre
     ) {
       setError(
         'Ingrese el nombre del concepto.'
       )
-
       return
     }
-
+    if (
+      formConcepto.es_gasto_pesv === true &&
+      !texto(formConcepto.categoria_pesv)
+    ) {
+      setError('Seleccione la destinación PESV del concepto.')
+      return
+    }
     setProcesando(
       true
     )
-
     setError('')
     setMensaje('')
-
     try {
       const data =
         await postCatalogos({
@@ -1353,36 +1213,39 @@ export default function RegistrarEgresoDrawer({
             editandoConcepto
               ? 'editar_concepto'
               : 'crear_concepto',
-
           concepto_id:
             editandoConcepto
               ?.id ||
             null,
-
           nombre,
-
           descripcion:
             texto(
               formConcepto.descripcion
             ),
-
           naturaleza:
-            formConcepto.naturaleza,
-
+            'EGRESO',
           requiere_aprendiz:
             formConcepto.requiere_aprendiz,
-
           requiere_vehiculo:
             formConcepto.requiere_vehiculo,
+          es_gasto_pesv:
+            formConcepto.es_gasto_pesv,
+          categoria_pesv:
+            formConcepto.es_gasto_pesv
+              ? formConcepto.categoria_pesv
+              : null,
         })
-
+      const conceptoGuardado = data?.data || null
+      setMostrarFormularioConcepto(false)
+      setEditandoConcepto(null)
+      setFormConcepto(conceptoInicial())
       setMensaje(
         data?.message ||
         'Concepto guardado correctamente.'
       )
-
-      nuevoConcepto()
-
+      if (conceptoGuardado?.id) {
+        setConceptoResaltadoId(String(conceptoGuardado.id))
+      }
       if (
         typeof onCatalogosActualizados ===
         'function'
@@ -1394,20 +1257,9 @@ export default function RegistrarEgresoDrawer({
       ) {
         await onActualizado()
       }
-
-      setTimeout(
-        () => {
-          drawerRef.current
-            ?.scrollTo({
-              top:
-                0,
-
-              behavior:
-                'smooth',
-            })
-        },
-        80
-      )
+      setTimeout(() => {
+        setConceptoResaltadoId(null)
+      }, 3500)
     } catch (
       errorGuardar
     ) {
@@ -1421,11 +1273,9 @@ export default function RegistrarEgresoDrawer({
       )
     }
   }
-
   // =======================================================
   // ACTIVAR / DESACTIVAR CONCEPTO
   // =======================================================
-
   async function cambiarEstadoConcepto(
     concepto
   ) {
@@ -1436,34 +1286,27 @@ export default function RegistrarEgresoDrawer({
       setError(
         'No se encuentra disponible la función para administrar conceptos.'
       )
-
       return
     }
-
     const activar =
       concepto?.activo !==
       true
-
     const confirmar =
       window.confirm(
         activar
           ? `¿Desea activar el concepto ${concepto.nombre}?`
           : `¿Desea desactivar el concepto ${concepto.nombre}?`
       )
-
     if (
       !confirmar
     ) {
       return
     }
-
     setProcesando(
       true
     )
-
     setError('')
     setMensaje('')
-
     try {
       const data =
         await postCatalogos({
@@ -1471,16 +1314,13 @@ export default function RegistrarEgresoDrawer({
             activar
               ? 'activar_concepto'
               : 'desactivar_concepto',
-
           concepto_id:
             concepto.id,
         })
-
       setMensaje(
         data?.message ||
         'Concepto actualizado correctamente.'
       )
-
       if (
         typeof onCatalogosActualizados ===
         'function'
@@ -1505,21 +1345,17 @@ export default function RegistrarEgresoDrawer({
       )
     }
   }
-
   // =======================================================
   // NO RENDER
   // =======================================================
-
   if (
     !abierto
   ) {
     return null
   }
-
   // =======================================================
   // RENDER
   // =======================================================
-
   return (
     <div
       className="
@@ -1531,12 +1367,12 @@ export default function RegistrarEgresoDrawer({
       {/* ===================================================
           FONDO
       =================================================== */}
-
       <div
         className="
           absolute
           inset-0
-          bg-black/40
+          bg-slate-950/50
+          backdrop-blur-[1px]
         "
         onClick={() => {
           if (
@@ -1546,32 +1382,36 @@ export default function RegistrarEgresoDrawer({
           }
         }}
       ></div>
-
       {/* ===================================================
-          DRAWER
+          MODAL CENTRAL
       =================================================== */}
-
       <aside
         ref={
           drawerRef
         }
         className="
           absolute
-          right-0
-          top-0
-          h-full
-          w-full
-          sm:w-[560px]
+          left-1/2
+          top-1/2
+          -translate-x-1/2
+          -translate-y-1/2
+          w-[calc(100%-1.5rem)]
+          max-w-6xl
+          max-h-[92vh]
           bg-white
+          rounded-2xl
           shadow-2xl
           overflow-y-auto
           scroll-smooth
+          border
+          border-gray-200
+          transition-all
+          duration-200
         "
       >
         {/* =================================================
             HEADER
         ================================================= */}
-
         <div
           className="
             sticky
@@ -1604,7 +1444,6 @@ export default function RegistrarEgresoDrawer({
               >
                 Caja · Egresos
               </p>
-
               <h2
                 className="
                   text-lg
@@ -1613,9 +1452,10 @@ export default function RegistrarEgresoDrawer({
                   mt-0.5
                 "
               >
-                Egresos
+                {pestana === 'REGISTRAR'
+                  ? 'Registrar egreso'
+                  : 'Administrar conceptos'}
               </h2>
-
               <p
                 className="
                   text-[10px]
@@ -1623,10 +1463,11 @@ export default function RegistrarEgresoDrawer({
                   mt-1
                 "
               >
-                Registro y administración de conceptos de egreso.
+                {pestana === 'REGISTRAR'
+                  ? 'Complete la información del gasto realizado por el CEA.'
+                  : 'Configure los conceptos disponibles para el registro de egresos.'}
               </p>
             </div>
-
             <button
               type="button"
               disabled={
@@ -1649,11 +1490,9 @@ export default function RegistrarEgresoDrawer({
               <i className="fas fa-times"></i>
             </button>
           </div>
-
           {/* ===============================================
               TABS
           =============================================== */}
-
           <div
             className="
               grid
@@ -1668,7 +1507,6 @@ export default function RegistrarEgresoDrawer({
                 setPestana(
                   'REGISTRAR'
                 )
-
                 setError('')
                 setMensaje('')
               }}
@@ -1680,23 +1518,21 @@ export default function RegistrarEgresoDrawer({
                 ${
                   pestana ===
                   'REGISTRAR'
-                    ? 'bg-red-50 text-red-700 border-b-2 border-red-600'
+                    ? 'bg-slate-100 text-slate-800 border-b-2 border-slate-700'
                     : 'text-gray-500 hover:bg-gray-50'
                 }
               `}
             >
               <i className="fas fa-money-bill-transfer mr-1"></i>
-
               REGISTRAR EGRESO
             </button>
-
             <button
               type="button"
               onClick={() => {
                 setPestana(
                   'CONCEPTOS'
                 )
-
+                nuevoConcepto()
                 setError('')
                 setMensaje('')
               }}
@@ -1714,26 +1550,22 @@ export default function RegistrarEgresoDrawer({
               `}
             >
               <i className="fas fa-list mr-1"></i>
-
               ADMINISTRAR CONCEPTOS
             </button>
           </div>
         </div>
-
         {/* =================================================
             CONTENIDO
         ================================================= */}
-
         <div
           className="
-            p-4
-            space-y-4
+            p-3
+            space-y-3
           "
         >
           {/* ===============================================
               MENSAJES
           =============================================== */}
-
           {error && (
             <div
               className="
@@ -1747,11 +1579,9 @@ export default function RegistrarEgresoDrawer({
               "
             >
               <i className="fas fa-exclamation-triangle mr-2"></i>
-
               {error}
             </div>
           )}
-
           {mensaje &&
             !egresoRegistrado && (
             <div
@@ -1766,22 +1596,18 @@ export default function RegistrarEgresoDrawer({
               "
             >
               <i className="fas fa-check-circle mr-2"></i>
-
               {mensaje}
             </div>
           )}
-
           {/* ===============================================
               REGISTRAR EGRESO
           =============================================== */}
-
           {pestana ===
             'REGISTRAR' && (
             <>
               {/* ===========================================
                   REGISTRO EXITOSO
               =========================================== */}
-
               {egresoRegistrado && (
                 <div
                   className="
@@ -1807,11 +1633,9 @@ export default function RegistrarEgresoDrawer({
                       "
                     >
                       <i className="fas fa-check-circle mr-2"></i>
-
                       EGRESO REGISTRADO CORRECTAMENTE
                     </div>
                   </div>
-
                   <div
                     className="
                       p-3
@@ -1825,14 +1649,17 @@ export default function RegistrarEgresoDrawer({
                       "
                     >
                       <DatoResumen
-                        label="Cuenta"
+                        label={
+                          egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                            ? 'Entrega'
+                            : 'Cuenta'
+                        }
                         value={
-                          egresoRegistrado
-                            ?.numero_cuenta_cobro ||
-                          `#${egresoRegistrado?.id || ''}`
+                          egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                            ? `#${egresoRegistrado?.id || ''}`
+                            : (egresoRegistrado?.numero_cuenta_cobro || `#${egresoRegistrado?.id || ''}`)
                         }
                       />
-
                       <DatoResumen
                         label="Valor"
                         value={
@@ -1843,53 +1670,43 @@ export default function RegistrarEgresoDrawer({
                         }
                       />
                     </div>
-
                     <div
                       className="
                         mt-3
                       "
                     >
                       <DatoResumen
-                        label="Beneficiario"
+                        label={
+                          egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                            ? 'Recibe el dinero'
+                            : 'Beneficiario'
+                        }
                         value={
-                          egresoRegistrado
-                            ?.beneficiario
+                          egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                            ? egresoRegistrado?.receptor_dinero
+                            : egresoRegistrado?.beneficiario
                         }
                       />
                     </div>
-
                     <div
-                      className="
-                        mt-3
-                        grid
-                        grid-cols-1
-                        sm:grid-cols-2
-                        gap-2
-                      "
+                      className={
+                        egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR' ||
+                        form.tipo_beneficiario !== 'FUNCIONARIO'
+                          ? 'mt-3 grid grid-cols-1 gap-2'
+                          : 'mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2'
+                      }
                     >
-                      <button
-                        type="button"
-                        onClick={
-                          imprimirEgresoRegistrado
-                        }
-                        className="
-                          border
-                          border-blue-300
-                          bg-white
-                          hover:bg-blue-50
-                          text-blue-700
-                          rounded-lg
-                          py-2.5
-                          px-3
-                          text-[10px]
-                          font-black
-                        "
-                      >
-                        <i className="fas fa-print mr-2"></i>
-
-                        IMPRIMIR CUENTA DE COBRO
-                      </button>
-
+                      {egresoRegistrado?.modalidad !== 'ENTREGA_PARA_LEGALIZAR' &&
+                        form.tipo_beneficiario === 'FUNCIONARIO' && (
+                        <button
+                          type="button"
+                          onClick={imprimirEgresoRegistrado}
+                          className="border border-blue-300 bg-white hover:bg-blue-50 text-blue-700 rounded-lg py-2.5 px-3 text-[10px] font-black"
+                        >
+                          <i className="fas fa-print mr-2"></i>
+                          IMPRIMIR CUENTA DE COBRO
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={
@@ -1909,24 +1726,29 @@ export default function RegistrarEgresoDrawer({
                         "
                       >
                         <i className="fas fa-plus mr-2"></i>
-
                         REGISTRAR OTRO EGRESO
                       </button>
                     </div>
                   </div>
                 </div>
               )}
-
               {/* ===========================================
                   FORMULARIO
               =========================================== */}
-
               {!egresoRegistrado && (
                 <>
                   {/* =======================================
                       DATOS EGRESO
                   ======================================= */}
-
+                  <div
+                    className="
+                      grid
+                      grid-cols-1
+                      lg:grid-cols-3
+                      gap-3
+                      items-start
+                    "
+                  >
                   <Seccion
                     titulo="Datos del egreso"
                     icono="fas fa-file-invoice-dollar"
@@ -1949,14 +1771,12 @@ export default function RegistrarEgresoDrawer({
                             setForm(
                               actual => ({
                                 ...actual,
-
                                 fecha:
                                   value,
                               })
                             )
                         }
                       />
-
                       <CampoInput
                         label="Valor"
                         value={
@@ -1978,7 +1798,6 @@ export default function RegistrarEgresoDrawer({
                             setForm(
                               actual => ({
                                 ...actual,
-
                                 valor:
                                   String(
                                     value ||
@@ -1994,7 +1813,6 @@ export default function RegistrarEgresoDrawer({
                         placeholder="0"
                       />
                     </div>
-
                     <CampoSelect
                       label="Concepto"
                       value={
@@ -2008,7 +1826,6 @@ export default function RegistrarEgresoDrawer({
                           item => ({
                             value:
                               item.id,
-
                             label:
                               mayusculas(
                                 item.nombre
@@ -2017,33 +1834,82 @@ export default function RegistrarEgresoDrawer({
                         )
                       }
                     />
-
-                   <CampoTextarea
-                    label="Descripción"
-                    value={
-                        form.descripcion
-                    }
-                    onChange={
-                        value =>
-                        setForm(
-                            actual => ({
-                            ...actual,
-
-                            descripcion:
-                                value,
-                            })
-                        )
-                    }
-                    />
+                    {conceptoSeleccionado?.es_gasto_pesv === true && (
+                      <div
+                        className="
+                          rounded-lg
+                          border
+                          border-emerald-200
+                          bg-emerald-50
+                          px-3
+                          py-2.5
+                        "
+                      >
+                        <div className="text-[10px] font-black text-emerald-800">
+                          <i className="fas fa-shield-alt mr-2"></i>
+                          Gasto relacionado con el PESV
+                        </div>
+                        <div className="text-[9px] text-emerald-700 mt-1">
+                          Este egreso será tenido en cuenta en los reportes financieros del PESV.
+                        </div>
+                      </div>
+                    )}
+                   <div>
+                    <label className="block text-[10px] font-semibold text-gray-600 mb-1">
+                      Descripción
+                    </label>
+                    <div className="w-full min-h-[72px] border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 bg-gray-50 whitespace-pre-wrap">
+                      {form.descripcion || 'Seleccione un concepto para visualizar su descripción.'}
+                    </div>
+                    <div className="text-[9px] text-gray-400 mt-1">
+                      La descripción corresponde al concepto seleccionado. Use Observaciones para información particular del egreso.
+                    </div>
+                   </div>
                   </Seccion>
-
                   {/* =======================================
-                      BENEFICIARIO
+                      MODALIDAD DEL EGRESO
                   ======================================= */}
-
                   <Seccion
-                    titulo="Beneficiario"
-                    icono="fas fa-user-check"
+                    titulo="Modalidad del egreso"
+                    icono="fas fa-exchange-alt"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <BotonTipo
+                        activo={form.modalidad === 'PAGO_DIRECTO'}
+                        titulo="PAGO DIRECTO"
+                        subtitulo="Se conoce el beneficiario final"
+                        icono="fas fa-hand-holding-usd"
+                        onClick={() => cambiarModalidad('PAGO_DIRECTO')}
+                      />
+                      <BotonTipo
+                        activo={form.modalidad === 'ENTREGA_PARA_LEGALIZAR'}
+                        titulo="ENTREGA PARA LEGALIZAR"
+                        subtitulo="El tercero o factura se conocerá después"
+                        icono="fas fa-file-invoice-dollar"
+                        onClick={() => cambiarModalidad('ENTREGA_PARA_LEGALIZAR')}
+                      />
+                    </div>
+                    {form.modalidad === 'ENTREGA_PARA_LEGALIZAR' && (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-[9px] text-blue-800">
+                        <i className="fas fa-info-circle mr-2"></i>
+                        Registre a la persona que recibe el dinero. El beneficiario final, la factura y el valor legalizado se completarán posteriormente al legalizar este egreso.
+                      </div>
+                    )}
+                  </Seccion>
+                  {/* =======================================
+                      BENEFICIARIO / RECEPTOR
+                  ======================================= */}
+                  <Seccion
+                    titulo={
+                      form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                        ? 'Persona que recibe el dinero'
+                        : 'Beneficiario'
+                    }
+                    icono={
+                      form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                        ? 'fas fa-user-clock'
+                        : 'fas fa-user-check'
+                    }
                   >
                     <div
                       className="
@@ -2058,7 +1924,11 @@ export default function RegistrarEgresoDrawer({
                           'FUNCIONARIO'
                         }
                         titulo="FUNCIONARIO"
-                        subtitulo="Personal del CEA"
+                        subtitulo={
+                          form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                            ? 'Personal que recibe el dinero'
+                            : 'Personal del CEA'
+                        }
                         icono="fas fa-id-badge"
                         onClick={() =>
                           cambiarTipoBeneficiario(
@@ -2066,14 +1936,17 @@ export default function RegistrarEgresoDrawer({
                           )
                         }
                       />
-
                       <BotonTipo
                         activo={
                           form.tipo_beneficiario ===
                           'TERCERO'
                         }
                         titulo="TERCERO"
-                        subtitulo="Persona o empresa"
+                        subtitulo={
+                          form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                            ? 'Persona externa que recibe'
+                            : 'Persona o empresa'
+                        }
                         icono="fas fa-building"
                         onClick={() =>
                           cambiarTipoBeneficiario(
@@ -2082,9 +1955,7 @@ export default function RegistrarEgresoDrawer({
                         }
                       />
                     </div>
-
                     {/* FUNCIONARIO */}
-
                     {form.tipo_beneficiario ===
                       'FUNCIONARIO' && (
                       <div
@@ -2103,7 +1974,6 @@ export default function RegistrarEgresoDrawer({
                         >
                           Buscar funcionario
                         </label>
-
                         <div className="relative">
                           <i
                             className="
@@ -2117,7 +1987,6 @@ export default function RegistrarEgresoDrawer({
                               text-xs
                             "
                           ></i>
-
                           <input
                             type="text"
                             value={
@@ -2133,7 +2002,6 @@ export default function RegistrarEgresoDrawer({
                                 setBuscarPersonal(
                                   e.target.value
                                 )
-
                                 setMostrarResultadosPersonal(
                                   true
                                 )
@@ -2152,7 +2020,6 @@ export default function RegistrarEgresoDrawer({
                             "
                           />
                         </div>
-
                         {mostrarResultadosPersonal &&
                           personalFiltrado.length >
                             0 && (
@@ -2208,7 +2075,6 @@ export default function RegistrarEgresoDrawer({
                                       )
                                     )}
                                   </div>
-
                                   <div
                                     className="
                                       text-[9px]
@@ -2219,15 +2085,11 @@ export default function RegistrarEgresoDrawer({
                                     {persona
                                       ?.tipo_documento ||
                                       'CC'}
-
                                     {' '}
-
                                     {persona
                                       ?.documento ||
                                       '-'}
-
                                     {' · '}
-
                                     {mayusculas(
                                       persona?.cargo ||
                                       persona
@@ -2240,7 +2102,6 @@ export default function RegistrarEgresoDrawer({
                             )}
                           </div>
                         )}
-
                         {form.personal_id && (
                           <div
                             className="
@@ -2261,7 +2122,6 @@ export default function RegistrarEgresoDrawer({
                             >
                               {form.beneficiario}
                             </div>
-
                             <div
                               className="
                                 text-[9px]
@@ -2273,19 +2133,15 @@ export default function RegistrarEgresoDrawer({
                                 form
                                   .tipo_documento_beneficiario
                               }
-
                               {' '}
-
                               {
                                 form
                                   .documento_beneficiario
                               }
-
                               {form
                                 .cargo_beneficiario && (
                                 <>
                                   {' · '}
-
                                   {
                                     form
                                       .cargo_beneficiario
@@ -2297,9 +2153,7 @@ export default function RegistrarEgresoDrawer({
                         )}
                       </div>
                     )}
-
                     {/* TERCERO */}
-
                     {form.tipo_beneficiario ===
                       'TERCERO' && (
                       <>
@@ -2313,7 +2167,6 @@ export default function RegistrarEgresoDrawer({
                               setForm(
                                 actual => ({
                                   ...actual,
-
                                   beneficiario:
                                     mayusculas(
                                       value
@@ -2322,7 +2175,6 @@ export default function RegistrarEgresoDrawer({
                               )
                           }
                         />
-
                         <div
                           className="
                             grid
@@ -2341,7 +2193,6 @@ export default function RegistrarEgresoDrawer({
                                 setForm(
                                   actual => ({
                                     ...actual,
-
                                     tipo_documento_beneficiario:
                                       value,
                                   })
@@ -2351,37 +2202,29 @@ export default function RegistrarEgresoDrawer({
                               {
                                 value:
                                   'CC',
-
                                 label:
                                   'CC',
                               },
-
                               {
                                 value:
                                   'CE',
-
                                 label:
                                   'CE',
                               },
-
                               {
                                 value:
                                   'PASAPORTE',
-
                                 label:
                                   'PASAPORTE',
                               },
-
                               {
                                 value:
                                   'NIT',
-
                                 label:
                                   'NIT',
                               },
                             ]}
                           />
-
                           <div
                             className="
                               col-span-2
@@ -2398,7 +2241,6 @@ export default function RegistrarEgresoDrawer({
                                   setForm(
                                     actual => ({
                                       ...actual,
-
                                       documento_beneficiario:
                                         value,
                                     })
@@ -2410,32 +2252,30 @@ export default function RegistrarEgresoDrawer({
                       </>
                     )}
                   </Seccion>
-
                   {/* =======================================
                       VEHÍCULO
                   ======================================= */}
-
                   {requiereVehiculo && (
                     <Seccion
                       titulo="Vehículo asociado"
                       icono="fas fa-car"
                     >
-                      <div
-                        className="
-                          bg-amber-50
-                          border
-                          border-amber-200
-                          rounded-lg
-                          p-2.5
-                          text-[9px]
-                          text-amber-800
-                        "
-                      >
-                        <i className="fas fa-circle-info mr-2"></i>
-
-                        Este concepto requiere seleccionar el vehículo.
-                      </div>
-
+                      {!form.vehiculo_id && (
+                        <div
+                          className="
+                            bg-amber-50
+                            border
+                            border-amber-200
+                            rounded-lg
+                            p-2.5
+                            text-[9px]
+                            text-amber-800
+                          "
+                        >
+                          <i className="fas fa-circle-info mr-2"></i>
+                          Este concepto requiere seleccionar el vehículo.
+                        </div>
+                      )}
                       <div
                         className="
                           relative
@@ -2452,7 +2292,6 @@ export default function RegistrarEgresoDrawer({
                         >
                           Buscar placa
                         </label>
-
                         <input
                           type="text"
                           value={
@@ -2470,7 +2309,6 @@ export default function RegistrarEgresoDrawer({
                                   e.target.value
                                 )
                               )
-
                               setMostrarResultadosVehiculo(
                                 true
                               )
@@ -2488,7 +2326,6 @@ export default function RegistrarEgresoDrawer({
                             uppercase
                           "
                         />
-
                         {mostrarResultadosVehiculo &&
                           vehiculosFiltrados.length >
                             0 && (
@@ -2542,7 +2379,6 @@ export default function RegistrarEgresoDrawer({
                                       vehiculo.placa
                                     )}
                                   </div>
-
                                   <div
                                     className="
                                       text-[9px]
@@ -2572,7 +2408,6 @@ export default function RegistrarEgresoDrawer({
                             )}
                           </div>
                         )}
-
                         {form.vehiculo_id && (
                           <div
                             className="
@@ -2588,18 +2423,15 @@ export default function RegistrarEgresoDrawer({
                             "
                           >
                             <i className="fas fa-car mr-2"></i>
-
                             {form.placa}
                           </div>
                         )}
                       </div>
                     </Seccion>
                   )}
-
                   {/* =======================================
                       PAGO
                   ======================================= */}
-
                   <Seccion
                     titulo="Información del pago"
                     icono="fas fa-wallet"
@@ -2614,7 +2446,6 @@ export default function RegistrarEgresoDrawer({
                           setForm(
                             actual => ({
                               ...actual,
-
                               medio_pago_id:
                                 value,
                             })
@@ -2625,7 +2456,6 @@ export default function RegistrarEgresoDrawer({
                           item => ({
                             value:
                               item.id,
-
                             label:
                               mayusculas(
                                 item.nombre
@@ -2634,68 +2464,43 @@ export default function RegistrarEgresoDrawer({
                         )
                       }
                     />
-
                     <div
-                      className="
-                        grid
-                        grid-cols-2
-                        gap-2
-                      "
+                      className={
+                        form.modalidad === 'PAGO_DIRECTO'
+                          ? 'grid grid-cols-2 gap-2'
+                          : 'grid grid-cols-1 gap-2'
+                      }
                     >
-                      <CampoInput
-                        label="Número de factura"
-                        value={
-                          form.numero_factura
-                        }
-                        onChange={
-                          value =>
-                            setForm(
-                              actual => ({
-                                ...actual,
-
-                                numero_factura:
-                                  value,
-                              })
-                            )
-                        }
-                        placeholder="Opcional"
-                      />
-
+                      {form.modalidad === 'PAGO_DIRECTO' && (
+                        <CampoInput
+                          label="Número de factura"
+                          value={form.numero_factura}
+                          onChange={value =>
+                            setForm(actual => ({
+                              ...actual,
+                              numero_factura: value,
+                            }))
+                          }
+                          placeholder="Opcional"
+                        />
+                      )}
                       <CampoInput
                         label="Referencia pago"
-                        value={
-                          form.referencia_pago
-                        }
-                        onChange={
-                          value =>
-                            setForm(
-                              actual => ({
-                                ...actual,
-
-                                referencia_pago:
-                                  value,
-                              })
-                            )
+                        value={form.referencia_pago}
+                        onChange={value =>
+                          setForm(actual => ({
+                            ...actual,
+                            referencia_pago: value,
+                          }))
                         }
                         placeholder="Opcional"
                       />
                     </div>
-
-                    <div
-                      className="
-                        bg-gray-50
-                        border
-                        border-gray-200
-                        rounded-lg
-                        p-2.5
-                        text-[9px]
-                        text-gray-500
-                      "
-                    >
-                      La factura y la referencia pueden registrarse posteriormente;
-                      no son obligatorias para realizar el desembolso.
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-[9px] text-gray-500">
+                      {form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                        ? 'La factura o soporte del tercero se registrará posteriormente durante la legalización.'
+                        : 'La factura y la referencia pueden registrarse posteriormente; no son obligatorias para realizar el desembolso.'}
                     </div>
-
                     <CampoTextarea
                       label="Observaciones"
                       value={
@@ -2706,7 +2511,6 @@ export default function RegistrarEgresoDrawer({
                           setForm(
                             actual => ({
                               ...actual,
-
                               observaciones:
                                 mayusculas(
                                   value
@@ -2716,11 +2520,17 @@ export default function RegistrarEgresoDrawer({
                       }
                     />
                   </Seccion>
-
+                  </div>
                   {/* =======================================
                       BOTÓN PRINCIPAL
                   ======================================= */}
-
+                  <div
+                    className="
+                      flex
+                      justify-end
+                      pt-1
+                    "
+                  >
                   <button
                     type="button"
                     onClick={
@@ -2730,270 +2540,98 @@ export default function RegistrarEgresoDrawer({
                       procesando
                     }
                     className="
-                      w-full
-                      bg-red-600
-                      hover:bg-red-700
+                      inline-flex
+                      items-center
+                      justify-center
+                      min-w-[190px]
+                      bg-slate-700
+                      hover:bg-slate-800
                       disabled:opacity-50
                       text-white
                       rounded-lg
-                      py-3
-                      text-xs
+                      px-5
+                      py-2.5
+                      text-[10px]
                       font-black
+                      shadow-sm
+                      transition-colors
                     "
                   >
                     {procesando ? (
                       <>
                         <i className="fas fa-spinner fa-spin mr-2"></i>
-
                         REGISTRANDO...
                       </>
                     ) : (
                       <>
                         <i className="fas fa-save mr-2"></i>
-
                         REGISTRAR EGRESO
                       </>
                     )}
                   </button>
+                  </div>
                 </>
               )}
             </>
           )}
-
           {/* ===============================================
               ADMINISTRAR CONCEPTOS
           =============================================== */}
-
           {pestana ===
             'CONCEPTOS' && (
             <>
-              {/* ===========================================
-                  FORMULARIO CONCEPTO
-              =========================================== */}
-
               <div
-                id="formulario-concepto-egreso"
                 className="
-                  border
-                  border-gray-300
+                  flex
+                  flex-col
+                  sm:flex-row
+                  sm:items-center
+                  justify-between
+                  gap-3
                   rounded-xl
-                  overflow-hidden
-                  scroll-mt-32
+                  border
+                  border-gray-200
+                  bg-slate-50
+                  p-3
                 "
               >
-                <div
-                  className="
-                    bg-slate-800
-                    text-white
-                    px-3
-                    py-2
-                    flex
-                    justify-between
-                    items-center
-                    gap-2
-                  "
-                >
-                  <span
-                    className="
-                      text-[10px]
-                      font-bold
-                    "
-                  >
-                    {editandoConcepto
-                      ? `Editando: ${mayusculas(
-                          editandoConcepto.nombre
-                        )}`
-                      : 'Nuevo concepto de egreso'}
-                  </span>
-
-                  {editandoConcepto && (
-                    <button
-                      type="button"
-                      onClick={
-                        nuevoConcepto
-                      }
-                      className="
-                        text-[9px]
-                        font-black
-                      "
-                    >
-                      CANCELAR
-                    </button>
-                  )}
+                <div>
+                  <div className="text-[11px] font-black text-slate-800">
+                    Catálogo de conceptos de egreso
+                  </div>
+                  <div className="text-[9px] text-gray-500 mt-0.5">
+                    Consulte, edite o cree únicamente los conceptos que necesite.
+                  </div>
                 </div>
-
-                <div
-                  className="
-                    p-3
-                    space-y-3
-                  "
-                >
-                  <CampoInput
-                    label="Nombre"
-                    value={
-                      formConcepto.nombre
-                    }
-                    onChange={
-                      value =>
-                        setFormConcepto(
-                          actual => ({
-                            ...actual,
-
-                            nombre:
-                              mayusculas(
-                                value
-                              ),
-                          })
-                        )
-                    }
-                    placeholder="Ej. COMBUSTIBLE"
-                  />
-
-                  <CampoTextarea
-                    label="Descripción"
-                    value={
-                      formConcepto.descripcion
-                    }
-                    onChange={
-                      value =>
-                        setFormConcepto(
-                          actual => ({
-                            ...actual,
-
-                            descripcion:
-                              value,
-                          })
-                        )
-                    }
-                    placeholder="Descripción del concepto..."
-                  />
-
-                  <CampoSelect
-                    label="Naturaleza"
-                    value={
-                      formConcepto.naturaleza
-                    }
-                    onChange={
-                      value =>
-                        setFormConcepto(
-                          actual => ({
-                            ...actual,
-
-                            naturaleza:
-                              value,
-                          })
-                        )
-                    }
-                    options={[
-                      {
-                        value:
-                          'EGRESO',
-
-                        label:
-                          'EGRESO',
-                      },
-
-                      {
-                        value:
-                          'AMBOS',
-
-                        label:
-                          'AMBOS',
-                      },
-                    ]}
-                  />
-
-                  <label
-                    className="
-                      flex
-                      items-start
-                      gap-2
-                      border
-                      border-gray-200
-                      rounded-lg
-                      px-3
-                      py-2.5
-                      cursor-pointer
-                    "
-                  >
-                    <input
-                      type="checkbox"
-                      checked={
-                        formConcepto
-                          .requiere_vehiculo
-                      }
-                      onChange={
-                        e =>
-                          setFormConcepto(
-                            actual => ({
-                              ...actual,
-
-                              requiere_vehiculo:
-                                e.target.checked,
-                            })
-                          )
-                      }
-                      className="
-                        mt-0.5
-                      "
-                    />
-
-                    <div>
-                      <div
-                        className="
-                          text-[10px]
-                          font-black
-                          text-gray-700
-                        "
-                      >
-                        Requiere vehículo
-                      </div>
-
-                      <div
-                        className="
-                          text-[9px]
-                          text-gray-500
-                          mt-0.5
-                        "
-                      >
-                        Solicita seleccionar una placa al registrar el egreso.
-                      </div>
-                    </div>
-                  </label>
-
+                {!mostrarFormularioConcepto && (
                   <button
                     type="button"
-                    onClick={
-                      guardarConcepto
-                    }
-                    disabled={
-                      procesando
-                    }
+                    onClick={() => {
+                      nuevoConcepto()
+                      setMostrarFormularioConcepto(true)
+                    }}
+                    disabled={procesando}
                     className="
-                      w-full
-                      bg-blue-600
-                      hover:bg-blue-700
+                      shrink-0
+                      rounded-lg
+                      bg-slate-800
+                      hover:bg-slate-700
                       disabled:opacity-50
                       text-white
-                      rounded-lg
+                      px-4
                       py-2.5
                       text-[10px]
                       font-black
                     "
                   >
-                    <i className="fas fa-save mr-2"></i>
-
-                    {editandoConcepto
-                      ? 'GUARDAR CAMBIOS'
-                      : 'AGREGAR CONCEPTO'}
+                    <i className="fas fa-plus mr-2"></i>
+                    NUEVO CONCEPTO
                   </button>
-                </div>
+                )}
               </div>
-
               {/* ===========================================
                   LISTADO CONCEPTOS
               =========================================== */}
-
               <div
                 className="
                   border
@@ -3021,7 +2659,6 @@ export default function RegistrarEgresoDrawer({
                   >
                     Conceptos registrados
                   </span>
-
                   <span
                     className="
                       text-[9px]
@@ -3033,7 +2670,6 @@ export default function RegistrarEgresoDrawer({
                     registro(s)
                   </span>
                 </div>
-
                 {conceptosAdmin.length ===
                 0 ? (
                   <div
@@ -3049,8 +2685,9 @@ export default function RegistrarEgresoDrawer({
                 ) : (
                   <div
                     className="
-                      divide-y
-                      divide-gray-200
+                      p-2
+                      space-y-2
+                      bg-gray-50
                     "
                   >
                     {conceptosAdmin.map(
@@ -3059,13 +2696,21 @@ export default function RegistrarEgresoDrawer({
                           key={
                             item.id
                           }
-                          className="
+                          className={`
                             p-3
                             flex
                             justify-between
                             items-start
                             gap-3
-                          "
+                            border
+                            rounded-lg
+                            shadow-sm
+                            transition-all
+                            duration-500
+                            ${String(conceptoResaltadoId) === String(item.id)
+                              ? 'border-emerald-400 bg-emerald-50 ring-2 ring-emerald-200'
+                              : 'border-gray-300 bg-white hover:border-slate-400'}
+                          `}
                         >
                           <div
                             className="
@@ -3083,7 +2728,6 @@ export default function RegistrarEgresoDrawer({
                                 item.nombre
                               )}
                             </div>
-
                             {item.descripcion && (
                               <div
                                 className="
@@ -3095,7 +2739,6 @@ export default function RegistrarEgresoDrawer({
                                 {item.descripcion}
                               </div>
                             )}
-
                             <div
                               className="
                                 flex
@@ -3109,14 +2752,20 @@ export default function RegistrarEgresoDrawer({
                                   item.naturaleza
                                 )}
                               </Etiqueta>
-
                               {item.requiere_vehiculo && (
                                 <Etiqueta>
                                   REQUIERE VEHÍCULO
                                 </Etiqueta>
                               )}
+                              {item.es_gasto_pesv && (
+                                <>
+                                  <Etiqueta>GASTO PESV</Etiqueta>
+                                  {item.categoria_pesv && (
+                                    <Etiqueta>{nombreCategoriaPesv(item.categoria_pesv)}</Etiqueta>
+                                  )}
+                                </>
+                              )}
                             </div>
-
                             <div
                               className={`
                                 text-[9px]
@@ -3134,7 +2783,6 @@ export default function RegistrarEgresoDrawer({
                                 : 'INACTIVO'}
                             </div>
                           </div>
-
                           <div
                             className="
                               flex
@@ -3167,10 +2815,8 @@ export default function RegistrarEgresoDrawer({
                               "
                             >
                               <i className="fas fa-pen mr-1"></i>
-
                               Editar
                             </button>
-
                             <button
                               type="button"
                               onClick={() =>
@@ -3206,7 +2852,6 @@ export default function RegistrarEgresoDrawer({
                                   mr-1
                                 `}
                               ></i>
-
                               {item.activo
                                 ? 'Desactivar'
                                 : 'Activar'}
@@ -3222,14 +2867,104 @@ export default function RegistrarEgresoDrawer({
           )}
         </div>
       </aside>
+      {mostrarFormularioConcepto && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-950/55 backdrop-blur-[1px]"
+            onClick={() => {
+              if (!procesando) nuevoConcepto()
+            }}
+          ></div>
+          <div className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-200">
+            <div className="sticky top-0 z-20 bg-slate-800 text-white px-4 py-3 flex justify-between items-center gap-3 rounded-t-2xl">
+              <div>
+                <div className="text-[9px] uppercase font-bold text-slate-300">Caja · Egresos</div>
+                <div className="text-sm font-black mt-0.5">
+                  {editandoConcepto ? `Editar concepto: ${mayusculas(editandoConcepto.nombre)}` : 'Nuevo concepto de egreso'}
+                </div>
+              </div>
+              <button type="button" disabled={procesando} onClick={nuevoConcepto} className="w-9 h-9 rounded-lg border border-slate-500 hover:bg-slate-700 disabled:opacity-50">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              {error && (
+                <div className="bg-red-50 border border-red-300 text-red-700 rounded-lg p-3 text-[10px]">
+                  <i className="fas fa-exclamation-triangle mr-2"></i>{error}
+                </div>
+              )}
+              <CampoInput
+                label="Nombre"
+                value={formConcepto.nombre}
+                onChange={value => setFormConcepto(actual => ({ ...actual, nombre: mayusculas(value) }))}
+                placeholder="Ej. COMBUSTIBLE"
+              />
+              <CampoTextarea
+                label="Descripción"
+                value={formConcepto.descripcion}
+                onChange={value => setFormConcepto(actual => ({ ...actual, descripcion: value }))}
+                placeholder="Descripción del concepto..."
+              />
+              <div>
+                <div className="text-[10px] font-semibold text-gray-600 mb-1">Naturaleza</div>
+                <div className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-xs font-bold text-gray-700">EGRESO</div>
+                <div className="text-[9px] text-gray-400 mt-1">Este catálogo administra exclusivamente conceptos de egreso.</div>
+              </div>
+              <label className="flex items-start gap-2 border border-gray-200 rounded-lg px-3 py-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formConcepto.requiere_vehiculo}
+                  onChange={e => setFormConcepto(actual => ({ ...actual, requiere_vehiculo: e.target.checked }))}
+                  className="mt-0.5"
+                />
+                <div>
+                  <div className="text-[10px] font-black text-gray-700">Requiere vehículo</div>
+                  <div className="text-[9px] text-gray-500 mt-0.5">Solicita seleccionar una placa al registrar el egreso.</div>
+                </div>
+              </label>
+              <label className="flex items-start gap-2 border border-gray-200 rounded-lg px-3 py-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formConcepto.es_gasto_pesv}
+                  onChange={e => setFormConcepto(actual => ({
+                    ...actual,
+                    es_gasto_pesv: e.target.checked,
+                    categoria_pesv: e.target.checked ? actual.categoria_pesv : '',
+                  }))}
+                  className="mt-0.5"
+                />
+                <div>
+                  <div className="text-[10px] font-black text-gray-700">Gasto relacionado con el PESV</div>
+                  <div className="text-[9px] text-gray-500 mt-0.5">Incluye los egresos de este concepto en los reportes financieros del PESV.</div>
+                </div>
+              </label>
+              {formConcepto.es_gasto_pesv && (
+                <CampoSelect
+                  label="Destinación PESV"
+                  value={formConcepto.categoria_pesv}
+                  onChange={value => setFormConcepto(actual => ({ ...actual, categoria_pesv: value }))}
+                  options={CATEGORIAS_PESV}
+                />
+              )}
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" disabled={procesando} onClick={nuevoConcepto} className="border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg px-4 py-2.5 text-[10px] font-black disabled:opacity-50">
+                  CANCELAR
+                </button>
+                <button type="button" onClick={guardarConcepto} disabled={procesando} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg px-5 py-2.5 text-[10px] font-black">
+                  <i className={`fas ${procesando ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`}></i>
+                  {procesando ? 'GUARDANDO...' : (editandoConcepto ? 'GUARDAR CAMBIOS' : 'AGREGAR CONCEPTO')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-
 // =========================================================
 // SECCIÓN
 // =========================================================
-
 function Seccion({
   titulo,
   icono,
@@ -3261,14 +2996,12 @@ function Seccion({
             mr-2
           `}
         ></i>
-
         {titulo}
       </div>
-
       <div
         className="
-          p-3
-          space-y-3
+          p-2.5
+          space-y-2.5
           bg-white
           rounded-b-xl
         "
@@ -3278,11 +3011,9 @@ function Seccion({
     </div>
   )
 }
-
 // =========================================================
 // BOTÓN TIPO
 // =========================================================
-
 function BotonTipo({
   activo,
   titulo,
@@ -3326,7 +3057,6 @@ function BotonTipo({
             }
           `}
         ></i>
-
         <span
           className="
             text-[10px]
@@ -3337,7 +3067,6 @@ function BotonTipo({
           {titulo}
         </span>
       </div>
-
       <div
         className="
           text-[9px]
@@ -3350,11 +3079,9 @@ function BotonTipo({
     </button>
   )
 }
-
 // =========================================================
 // DATO RESUMEN
 // =========================================================
-
 function DatoResumen({
   label,
   value,
@@ -3371,7 +3098,6 @@ function DatoResumen({
       >
         {label}
       </div>
-
       <div
         className="
           text-xs
@@ -3388,11 +3114,9 @@ function DatoResumen({
     </div>
   )
 }
-
 // =========================================================
 // ETIQUETA
 // =========================================================
-
 function Etiqueta({
   children,
 }) {
@@ -3415,11 +3139,9 @@ function Etiqueta({
     </span>
   )
 }
-
 // =========================================================
 // INPUT
 // =========================================================
-
 function CampoInput({
   label,
   value,
@@ -3441,7 +3163,6 @@ function CampoInput({
       >
         {label}
       </label>
-
       <input
         type={
           type
@@ -3474,11 +3195,9 @@ function CampoInput({
     </div>
   )
 }
-
 // =========================================================
 // SELECT
 // =========================================================
-
 function CampoSelect({
   label,
   value,
@@ -3498,7 +3217,6 @@ function CampoSelect({
       >
         {label}
       </label>
-
       <select
         value={
           value
@@ -3523,7 +3241,6 @@ function CampoSelect({
         <option value="">
           Seleccione...
         </option>
-
         {options.map(
           item => (
             <option
@@ -3542,11 +3259,9 @@ function CampoSelect({
     </div>
   )
 }
-
 // =========================================================
 // TEXTAREA
 // =========================================================
-
 function CampoTextarea({
   label,
   value,
@@ -3566,7 +3281,6 @@ function CampoTextarea({
       >
         {label}
       </label>
-
       <textarea
         rows={3}
         value={

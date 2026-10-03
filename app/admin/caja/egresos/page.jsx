@@ -13,12 +13,12 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
-
 import RegistrarEgresoDrawer
   from './components/RegistrarEgresoDrawer'
+
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+
+import { ReceiptText } from 'lucide-react'
 
 import {
   imprimirCuentaCobro,
@@ -305,15 +305,17 @@ function TarjetaResumen({
   valor,
   subtitulo,
   icono,
+  iconoFondo = 'bg-slate-100',
+  iconoColor = 'text-slate-700',
 }) {
   return (
     <div
       className="
         bg-white
         border
-        border-gray-200
+        border-gray-300
         rounded-xl
-        p-4
+        p-3
         shadow-sm
       "
     >
@@ -340,8 +342,8 @@ function TarjetaResumen({
 
           <p
             className="
-              text-xl
-              md:text-2xl
+              text-lg
+              md:text-xl
               font-black
               text-gray-900
               mt-1
@@ -364,16 +366,16 @@ function TarjetaResumen({
         </div>
 
         <div
-          className="
-            w-10
-            h-10
-            rounded-xl
-            bg-red-50
-            text-red-700
+          className={`
+            w-9
+            h-9
+            rounded-lg
             flex
             items-center
             justify-center
-          "
+            ${iconoFondo}
+            ${iconoColor}
+          `}
         >
           <i
             className={
@@ -1458,224 +1460,29 @@ export default function CajaEgresosPage() {
       >
 
         {/* ==================================================
-            HEADER
+            ENCABEZADO DEL MÓDULO
         ================================================== */}
 
-        <div
-          className="
-            border
-            border-gray-400
-            rounded-xl
-            p-4
-            mb-4
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-4
-            "
-          >
-            <div>
-              <p
-                className="
-                  text-[10px]
-                  uppercase
-                  tracking-wide
-                  font-bold
-                  text-gray-500
-                "
-              >
-                Caja · Egresos
-              </p>
-
-              <h1
-                className="
-                  text-2xl
-                  font-black
-                  text-[var(--primary)]
-                  mt-1
-                "
-              >
-                <i className="fas fa-money-bill-transfer mr-2"></i>
-
-                Registrar Egresos
-              </h1>
-
-              <p
-                className="
-                  text-xs
-                  text-gray-500
-                  mt-1
-                "
-              >
-                Gastos, pagos a terceros, funcionarios, vehículos y otros desembolsos.
-              </p>
-            </div>
-
-            <div
-              className="
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-              <button
-                type="button"
-                onClick={
-                  cargarTodo
-                }
-                disabled={
-                  cargando
-                }
-                className="
-                  border
-                  border-gray-300
-                  bg-white
-                  hover:bg-gray-100
-                  text-gray-700
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i
-                  className={`
-                    fas
-                    fa-sync-alt
-                    mr-2
-                    ${
-                      cargando
-                        ? 'fa-spin'
-                        : ''
-                    }
-                  `}
-                ></i>
-
-                Actualizar
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin/caja'
-                  )
-                }
-                className="
-                  border
-                  border-gray-300
-                  bg-white
-                  hover:bg-gray-100
-                  text-gray-700
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-arrow-left mr-2"></i>
-
-                Volver a Caja
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin'
-                  )
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-home mr-2"></i>
-
-                Menú Administrativo
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-sign-out-alt mr-2"></i>
-
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
+        <div className="mb-4 overflow-hidden rounded-xl shadow-sm">
+          <EncabezadoModulo
+            titulo="Registrar Egresos"
+            subtitulo="Gastos, pagos a terceros, funcionarios, vehículos y otros desembolsos."
+            icono={ReceiptText}
+            rutaRegreso="/admin/caja"
+            textoRegreso="Volver a Caja"
+          />
         </div>
 
-        {/* ==================================================
-            EMPRESA
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-gray-300
-            bg-gray-50
-            rounded-xl
-            p-3
-            mb-4
-            text-xs
-            flex
-            flex-col
-            md:flex-row
-            md:justify-between
-            gap-1
-          "
-        >
-          <span>
-            Usuario:{' '}
-
-            <strong>
-              {usuarioOperacion ||
-                '-'}
-            </strong>
-          </span>
-
-          <span>
-            CEA:{' '}
-
-            <strong>
-              {empresaNombre ||
-                '-'}
-            </strong>
-
-            {' · '}
-
-            NIT{' '}
-
-            <strong>
-              {nit ||
-                '-'}
-            </strong>
-          </span>
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={cargarTodo}
+            disabled={cargando}
+            className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-[10px] font-bold text-gray-600 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+          >
+            <i className={`fas fa-sync-alt mr-2 ${cargando ? 'fa-spin' : ''}`}></i>
+            Actualizar
+          </button>
         </div>
 
         {/* ==================================================
@@ -1721,146 +1528,102 @@ export default function CajaEgresosPage() {
         )}
 
         {/* ==================================================
-            RESUMEN HOY
+            RESUMEN HOY + ACCIÓN
         ================================================== */}
 
         <div
           className="
             grid
             grid-cols-1
-            sm:grid-cols-2
-            xl:grid-cols-4
+            xl:grid-cols-[minmax(0,1fr)_190px]
             gap-3
-            mb-4
-          "
-        >
-          <TarjetaResumen
-            titulo="Egresos Hoy"
-            valor={
-              formatearMoneda(
-                resumenDia
-                  ?.total_egresos
-              )
-            }
-            subtitulo={`${Number(
-              resumenDia
-                ?.cantidad_egresos ||
-              0
-            )} egreso(s) activo(s)`}
-            icono="fas fa-money-bill-wave"
-          />
-
-          <TarjetaResumen
-            titulo="Efectivo Hoy"
-            valor={
-              formatearMoneda(
-                resumenDia
-                  ?.total_efectivo
-              )
-            }
-            subtitulo="Salidas registradas en efectivo"
-            icono="fas fa-wallet"
-          />
-
-          <TarjetaResumen
-            titulo="Otros Medios"
-            valor={
-              formatearMoneda(
-                resumenDia
-                  ?.total_otros_medios
-              )
-            }
-            subtitulo="Transferencias y otros medios"
-            icono="fas fa-building-columns"
-          />
-
-          <TarjetaResumen
-            titulo="Anulados Hoy"
-            valor={
-              Number(
-                resumenDia
-                  ?.cantidad_anulados ||
-                0
-              )
-            }
-            subtitulo="Movimientos anulados"
-            icono="fas fa-ban"
-          />
-        </div>
-
-        {/* ==================================================
-            REGISTRAR EGRESO
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-red-200
-            bg-red-50
-            rounded-xl
-            p-4
             mb-4
           "
         >
           <div
             className="
-              flex
-              flex-col
-              sm:flex-row
-              sm:items-center
-              sm:justify-between
+              grid
+              grid-cols-1
+              sm:grid-cols-2
+              lg:grid-cols-4
               gap-3
             "
           >
-            <div>
-              <h2
-                className="
-                  text-sm
-                  font-black
-                  text-red-900
-                "
-              >
-                <i className="fas fa-minus-circle mr-2"></i>
+            <TarjetaResumen
+              titulo="Egresos Hoy"
+              valor={formatearMoneda(resumenDia?.total_egresos)}
+              subtitulo={`${Number(resumenDia?.cantidad_egresos || 0)} egreso(s) activo(s)`}
+              icono="fas fa-money-bill-wave"
+              iconoFondo="bg-emerald-50"
+              iconoColor="text-emerald-700"
+            />
 
-                Registrar Egreso
-              </h2>
+            <TarjetaResumen
+              titulo="Efectivo Hoy"
+              valor={formatearMoneda(resumenDia?.total_efectivo)}
+              subtitulo="Salidas registradas en efectivo"
+              icono="fas fa-wallet"
+              iconoFondo="bg-blue-50"
+              iconoColor="text-blue-700"
+            />
 
-              <p
-                className="
-                  text-[10px]
-                  text-red-700
-                  mt-1
-                "
-              >
-                Registre gastos operativos, pagos, vehículos,
-                funcionarios y otros desembolsos.
-              </p>
-            </div>
+            <TarjetaResumen
+              titulo="Otros Medios"
+              valor={formatearMoneda(resumenDia?.total_otros_medios)}
+              subtitulo="Transferencias y otros medios"
+              icono="fas fa-building-columns"
+              iconoFondo="bg-amber-50"
+              iconoColor="text-amber-700"
+            />
 
+            <TarjetaResumen
+              titulo="Anulados Hoy"
+              valor={Number(resumenDia?.cantidad_anulados || 0)}
+              subtitulo="Movimientos anulados"
+              icono="fas fa-ban"
+              iconoFondo="bg-red-50"
+              iconoColor="text-red-700"
+            />
+          </div>
+
+          <div
+            className="
+              border
+              border-slate-300
+              bg-slate-50
+              rounded-xl
+              p-3
+              shadow-sm
+              flex
+              items-center
+              justify-center
+            "
+          >
             <button
               type="button"
               onClick={() => {
                 setError('')
                 setMensaje('')
-
-                setDrawerEgreso(
-                  true
-                )
+                setDrawerEgreso(true)
               }}
               className="
-                shrink-0
-                bg-red-600
-                hover:bg-red-700
+                inline-flex
+                items-center
+                justify-center
+                bg-[#36566F]
+                hover:bg-[#2d485d]
                 text-white
                 rounded-lg
                 px-4
                 py-2.5
                 text-[10px]
                 font-black
+                whitespace-nowrap
+                shadow-sm
+                transition-colors
               "
             >
               <i className="fas fa-plus mr-2"></i>
-
               REGISTRAR EGRESO
             </button>
           </div>
@@ -1872,287 +1635,120 @@ export default function CajaEgresosPage() {
 
         <div
           className="
-            border
-            border-gray-300
-            rounded-xl
-            overflow-hidden
-            mb-4
+            mb-3
+            flex
+            flex-col
+            xl:flex-row
+            xl:items-center
+            xl:justify-end
+            gap-2
           "
         >
           <div
             className="
-              bg-slate-800
-              text-white
-              px-4
-              py-2.5
-            "
-          >
-            <span
-              className="
-                text-xs
-                font-bold
-              "
-            >
-              <i className="fas fa-filter mr-2"></i>
-
-              Filtros
-            </span>
-          </div>
-
-          <div
-            className="
-              p-3
-              grid
-              grid-cols-1
-              sm:grid-cols-2
-              xl:grid-cols-5
+              flex
+              flex-wrap
+              items-center
+              justify-end
               gap-2
             "
           >
-
-            {/* BÚSQUEDA */}
-
-            <div className="relative">
+            <div className="relative w-full sm:w-[250px]">
               <i
                 className="
-                  fas
-                  fa-search
-                  absolute
-                  left-3
-                  top-1/2
-                  -translate-y-1/2
-                  text-gray-400
+                  fas fa-search absolute left-3 top-1/2
+                  -translate-y-1/2 text-gray-400
                 "
               ></i>
-
               <input
                 type="text"
-                value={
-                  busqueda
-                }
-                onChange={
-                  e =>
-                    setBusqueda(
-                      e.target.value
-                    )
-                }
+                value={busqueda}
+                onChange={e => setBusqueda(e.target.value)}
                 placeholder="Beneficiario, documento, placa..."
                 className="
-                  w-full
-                  border
-                  border-gray-300
-                  rounded-lg
-                  pl-9
-                  pr-3
-                  py-2
-                  text-xs
+                  w-full border border-gray-300 rounded-lg
+                  pl-9 pr-3 py-2 text-[10px] bg-white
                 "
               />
             </div>
 
-            {/* FECHA INICIAL */}
+            <input
+              type="date"
+              value={fechaInicio}
+              onChange={e => setFechaInicio(e.target.value)}
+              className="
+                w-full sm:w-[135px] border border-gray-300 rounded-lg
+                px-2.5 py-2 text-[10px] bg-white
+              "
+              title="Fecha inicial"
+            />
 
             <input
               type="date"
-              value={
-                fechaInicio
-              }
-              onChange={
-                e =>
-                  setFechaInicio(
-                    e.target.value
-                  )
-              }
+              value={fechaFin}
+              onChange={e => setFechaFin(e.target.value)}
               className="
-                border
-                border-gray-300
-                rounded-lg
-                px-3
-                py-2
-                text-xs
+                w-full sm:w-[135px] border border-gray-300 rounded-lg
+                px-2.5 py-2 text-[10px] bg-white
               "
+              title="Fecha final"
             />
-
-            {/* FECHA FINAL */}
-
-            <input
-              type="date"
-              value={
-                fechaFin
-              }
-              onChange={
-                e =>
-                  setFechaFin(
-                    e.target.value
-                  )
-              }
-              className="
-                border
-                border-gray-300
-                rounded-lg
-                px-3
-                py-2
-                text-xs
-              "
-            />
-
-            {/* CONCEPTO */}
 
             <select
-              value={
-                conceptoFiltro
-              }
-              onChange={
-                e =>
-                  setConceptoFiltro(
-                    e.target.value
-                  )
-              }
+              value={conceptoFiltro}
+              onChange={e => setConceptoFiltro(e.target.value)}
               className="
-                border
-                border-gray-300
-                rounded-lg
-                px-3
-                py-2
-                text-xs
+                w-full sm:w-[180px] border border-gray-300 rounded-lg
+                px-2.5 py-2 text-[10px] bg-white
               "
             >
-              <option value="">
-                Todos los conceptos
-              </option>
-
+              <option value="">Todos los conceptos</option>
               {conceptos
-                .filter(
-                  item =>
-                    [
-                      'EGRESO',
-                      'AMBOS',
-                    ].includes(
-                      mayusculas(
-                        item?.naturaleza
-                      )
-                    )
-                )
-                .map(
-                  item => (
-                    <option
-                      key={
-                        item.id
-                      }
-                      value={
-                        item.id
-                      }
-                    >
-                      {mayusculas(
-                        item.nombre
-                      )}
-
-                      {!item.activo
-                        ? ' · INACTIVO'
-                        : ''}
-                    </option>
-                  )
-                )}
+                .filter(item => ['EGRESO', 'AMBOS'].includes(mayusculas(item?.naturaleza)))
+                .map(item => (
+                  <option key={item.id} value={item.id}>
+                    {mayusculas(item.nombre)}
+                    {!item.activo ? ' · INACTIVO' : ''}
+                  </option>
+                ))}
             </select>
-
-            {/* ESTADO */}
 
             <select
-              value={
-                estadoFiltro
-              }
-              onChange={
-                e =>
-                  setEstadoFiltro(
-                    e.target.value
-                  )
-              }
+              value={estadoFiltro}
+              onChange={e => setEstadoFiltro(e.target.value)}
               className="
-                border
-                border-gray-300
-                rounded-lg
-                px-3
-                py-2
-                text-xs
+                w-full sm:w-[145px] border border-gray-300 rounded-lg
+                px-2.5 py-2 text-[10px] bg-white
               "
             >
-              <option value="">
-                Todos los estados
-              </option>
-
-              {ESTADOS
-                .filter(
-                  Boolean
-                )
-                .map(
-                  item => (
-                    <option
-                      key={
-                        item
-                      }
-                      value={
-                        item
-                      }
-                    >
-                      {item}
-                    </option>
-                  )
-                )}
+              <option value="">Todos los estados</option>
+              {ESTADOS.filter(Boolean).map(item => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
             </select>
-          </div>
-
-          <div
-            className="
-              px-3
-              pb-3
-              flex
-              justify-between
-              items-center
-              gap-3
-            "
-          >
-            <div
-              className="
-                text-[9px]
-                text-gray-500
-              "
-            >
-              {texto(
-                busqueda
-              ).length >
-                0 &&
-              texto(
-                busqueda
-              ).length <
-                3
-                ? 'Digite mínimo 3 caracteres para buscar.'
-                : ''}
-            </div>
 
             <button
               type="button"
-              onClick={
-                limpiarFiltros
-              }
+              onClick={limpiarFiltros}
               className="
-                border
-                border-gray-300
-                bg-white
-                hover:bg-gray-100
-                text-gray-700
-                rounded-lg
-                px-3
-                py-2
-                text-[10px]
-                font-bold
+                shrink-0 border border-gray-300 bg-white
+                hover:bg-gray-100 text-gray-700 rounded-lg
+                px-3 py-2 text-[10px] font-bold
               "
             >
-              <i className="fas fa-eraser mr-2"></i>
-
-              Limpiar filtros
+              <i className="fas fa-eraser mr-1.5"></i>
+              Limpiar
             </button>
           </div>
         </div>
+
+        {texto(busqueda).length > 0 && texto(busqueda).length < 3 && (
+          <div className="mb-2 text-right text-[9px] text-gray-500">
+            Digite mínimo 3 caracteres para buscar.
+          </div>
+        )}
 
         {/* ==================================================
             HISTORIAL

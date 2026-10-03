@@ -1,4 +1,4 @@
-// app
+// app/admin/pesv/indicadores/componentes/medicion/indicadores/TsvConfiguracion.jsx
 
 'use client'
 

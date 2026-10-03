@@ -1183,6 +1183,182 @@ function TablaPlanFormacion({
 
 
 // ============================================================
+// RESUMEN TRIMESTRAL Y ACUMULADO ANUAL
+// ============================================================
+
+function ResumenTrimestralFormacion({
+  actividades,
+  anio,
+}) {
+  const filas = [1, 2, 3, 4].map(
+    trimestre => {
+      const actividadesTrimestre =
+        actividades.filter(
+          actividad => {
+            const fecha = texto(
+              actividad?.fecha_programada
+            ).slice(0, 10)
+
+            if (
+              !/^\d{4}-\d{2}-\d{2}$/.test(fecha)
+            ) {
+              return false
+            }
+
+            const [
+              anioActividad,
+              mesActividad,
+            ] = fecha
+              .split('-')
+              .map(Number)
+
+            const trimestreActividad =
+              Math.ceil(mesActividad / 3)
+
+            return (
+              anioActividad === Number(anio) &&
+              trimestreActividad === trimestre
+            )
+          }
+        )
+
+      const programadas =
+        actividadesTrimestre.length
+
+      const ejecutadas =
+        actividadesTrimestre.filter(
+          actividad =>
+            texto(
+              actividad?.estado
+            ).toUpperCase() === 'EJECUTADA'
+        ).length
+
+      const cumplimiento =
+        programadas > 0
+          ? (ejecutadas / programadas) * 100
+          : 0
+
+      return {
+        trimestre,
+        programadas,
+        ejecutadas,
+        cumplimiento,
+      }
+    }
+  )
+
+  const totalProgramadas =
+    filas.reduce(
+      (total, fila) =>
+        total + fila.programadas,
+      0
+    )
+
+  const totalEjecutadas =
+    filas.reduce(
+      (total, fila) =>
+        total + fila.ejecutadas,
+      0
+    )
+
+  const cumplimientoAnual =
+    totalProgramadas > 0
+      ? (totalEjecutadas / totalProgramadas) * 100
+      : 0
+
+  const nombres = {
+    1: 'I Trimestre',
+    2: 'II Trimestre',
+    3: 'III Trimestre',
+    4: 'IV Trimestre',
+  }
+
+  return (
+    <div className="resumen-trimestral-formacion mt-2">
+      <div
+        className="
+          border
+          border-black
+          bg-slate-800
+          px-2
+          py-1
+          text-center
+          text-[7px]
+          font-black
+          uppercase
+          text-white
+        "
+      >
+        Resumen trimestral y acumulado anual
+      </div>
+
+      <table
+        className="
+          w-full
+          table-fixed
+          border-collapse
+          text-[6px]
+        "
+      >
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="border border-black px-1.5 py-1 font-black text-left">
+              PERIODO
+            </th>
+            <th className="border border-black px-1.5 py-1 font-black text-center">
+              ACTIVIDADES PROGRAMADAS
+            </th>
+            <th className="border border-black px-1.5 py-1 font-black text-center">
+              ACTIVIDADES EJECUTADAS
+            </th>
+            <th className="border border-black px-1.5 py-1 font-black text-center">
+              CUMPLIMIENTO
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filas.map(
+            fila => (
+              <tr key={fila.trimestre}>
+                <td className="border border-black px-1.5 py-1 font-semibold">
+                  {nombres[fila.trimestre]}
+                </td>
+                <td className="border border-black px-1.5 py-1 text-center">
+                  {fila.programadas}
+                </td>
+                <td className="border border-black px-1.5 py-1 text-center">
+                  {fila.ejecutadas}
+                </td>
+                <td className="border border-black px-1.5 py-1 text-center font-bold">
+                  {fila.cumplimiento.toFixed(2)}%
+                </td>
+              </tr>
+            )
+          )}
+
+          <tr className="bg-gray-100 font-black">
+            <td className="border border-black px-1.5 py-1">
+              ACUMULADO ANUAL
+            </td>
+            <td className="border border-black px-1.5 py-1 text-center">
+              {totalProgramadas}
+            </td>
+            <td className="border border-black px-1.5 py-1 text-center">
+              {totalEjecutadas}
+            </td>
+            <td className="border border-black px-1.5 py-1 text-center">
+              {cumplimientoAnual.toFixed(2)}%
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+
+// ============================================================
 // PIE
 // ============================================================
 
@@ -1373,6 +1549,11 @@ export default function DocumentoPlanFormacionPesvPage() {
           .mes-programado-formacion {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+
+          .resumen-trimestral-formacion {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
         }
       `
@@ -2432,6 +2613,20 @@ export default function DocumentoPlanFormacionPesvPage() {
         </div>
 
         <TablaPlanFormacion
+          actividades={
+            actividadesOrdenadas
+          }
+          anio={
+            anio
+          }
+        />
+
+
+        {/* ==================================================
+            RESUMEN TRIMESTRAL Y ACUMULADO ANUAL
+        ================================================== */}
+
+        <ResumenTrimestralFormacion
           actividades={
             actividadesOrdenadas
           }

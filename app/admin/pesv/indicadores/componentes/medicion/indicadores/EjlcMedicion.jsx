@@ -1,4 +1,5 @@
-// app
+// app/admin/pesv/indicadores/componentes/medicion/indicadores/EjlcMedicion.jsx
+ 
 
 'use client'
 

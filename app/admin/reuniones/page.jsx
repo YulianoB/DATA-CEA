@@ -1,5 +1,4 @@
-// app/admin/reuniones/page.jsx// app/admin/reuniones/page.jsx
-
+// app/admin/reuniones/page.jsx
 'use client'
 
 import {

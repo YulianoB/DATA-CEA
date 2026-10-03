@@ -3,7 +3,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { validarKilometraje } from '@/lib/servicios/validaciones'
 import { cerrarSesion } from '@/lib/auth/logout'
@@ -66,39 +66,12 @@ const parseCOP = (valor) =>
   Number(onlyDigits(valor) || 0)
 
 // ============================================================
-// Helpers tiempo de parada
+// Opciones de tiempo de parada aproximado (horas)
 // ============================================================
 
-const minutosDesdeValorUnidad = (valor, unidad) => {
-  const numero = Number(valor || 0)
-
-  if (!numero) return 0
-
-  if (unidad === 'h') {
-    return Math.round(numero * 60)
-  }
-
-  return Math.round(numero)
-}
-
-const labelDesdeMinutos = (minutos) => {
-  const total = Number(minutos || 0)
-
-  if (!total) return '0 min'
-
-  const horas = Math.floor(total / 60)
-  const resto = total % 60
-
-  if (horas > 0 && resto > 0) {
-    return `${total} min (${horas} h ${resto} m)`
-  }
-
-  if (horas > 0) {
-    return `${total} min (${horas} h)`
-  }
-
-  return `${total} min`
-}
+const OPCIONES_TIEMPO_PARADA = [
+  0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 12, 24, 48, 72,
+]
 
 // ============================================================
 // Página
@@ -131,38 +104,50 @@ export default function MantenimientosPage() {
   const [nivelSeleccionadoId, setNivelSeleccionadoId] = useState('')
   const [programacionPreventiva, setProgramacionPreventiva] = useState(null)
   const [cargandoProgramacion, setCargandoProgramacion] = useState(false)
+  const [actividadesSeleccionadas, setActividadesSeleccionadas] = useState([])
 
   // Repuestos
   const [repuestos, setRepuestos] = useState('')
 
-  // Proveedores
+  // Proveedores y técnicos configurados por Administración
   const [proveedores, setProveedores] = useState([])
   const [proveedorId, setProveedorId] = useState('')
   const [proveedorInfo, setProveedorInfo] = useState(null)
+  const [actividadesProveedor, setActividadesProveedor] = useState([])
+  const [cargandoActividadesProveedor, setCargandoActividadesProveedor] = useState(false)
+  const [modalProveedor, setModalProveedor] = useState(false)
+  const [guardandoProveedor, setGuardandoProveedor] = useState(false)
+  const [nuevoProveedor, setNuevoProveedor] = useState({
+    tipo_persona: 'JURIDICA',
+    razon_social: '',
+    nombre_comercial: '',
+    nit_proveedor: '',
+    digito_verificacion: '',
+    direccion: '',
+    telefono: '',
+    email: '',
+  })
 
-  // Técnicos
   const [tecnicos, setTecnicos] = useState([])
   const [tecnicoId, setTecnicoId] = useState('')
   const [tecnicoInfo, setTecnicoInfo] = useState(null)
-
-  // Modales
-  const [modalProveedor, setModalProveedor] = useState(null)
-  const [modalTecnico, setModalTecnico] = useState(null)
-
-  // Validaciones en vivo
-  const [provNitDup, setProvNitDup] = useState(null)
-  const provNitTimer = useRef(null)
-
-  const [tecDocDup, setTecDocDup] = useState(null)
-  const tecDocTimer = useRef(null)
+  const [actividadCatalogoId, setActividadCatalogoId] = useState('')
+  const [modalTecnico, setModalTecnico] = useState(false)
+  const [guardandoTecnico, setGuardandoTecnico] = useState(false)
+  const [nuevoTecnico, setNuevoTecnico] = useState({
+    nombres: '',
+    documento: '',
+    telefono: '',
+    email: '',
+    observaciones: '',
+  })
 
   // Costos
   const [valorRepuestosStr, setValorRepuestosStr] = useState('')
   const [valorManoObraStr, setValorManoObraStr] = useState('')
 
-  // Tiempo de parada
+  // Tiempo de parada aproximado, siempre expresado en horas
   const [tpValor, setTpValor] = useState('')
-  const [tpUnidad, setTpUnidad] = useState('min')
 
   // Otros
   const [factura, setFactura] = useState('')
@@ -291,16 +276,15 @@ export default function MantenimientosPage() {
   }, [nitActual])
 
   // ============================================================
-  // Cambio de placa / programación preventiva
+  // Cambio de placa / punto preventivo del nuevo plan
   // ============================================================
 
   useEffect(() => {
-    const vehiculo = vehiculos.find(
-      (item) => item.placa === placa
-    )
+    const vehiculo = vehiculos.find((item) => item.placa === placa)
 
     setProgramacionPreventiva(null)
     setActividadesPlan([])
+    setActividadesSeleccionadas([])
     setNivelSeleccionadoId('')
     setActividad('')
 
@@ -316,52 +300,155 @@ export default function MantenimientosPage() {
 
     const cargarProgramacion = async () => {
       if (!nitActual) return
-
       setCargandoProgramacion(true)
 
       try {
-        const res = await fetch(
-          `/api/mantenimientos?nit=${encodeURIComponent(
-            nitActual
-          )}&recurso=programacion_pendiente&placa=${encodeURIComponent(placa)}`,
-          { cache: 'no-store' }
+        const vigenciaActual = new Date().getFullYear()
+        const vigenciasConsulta = [vigenciaActual, vigenciaActual + 1]
+
+        const respuestas = await Promise.all(
+          vigenciasConsulta.map(async (vigencia) => {
+            const res = await fetch(
+              `/api/admin/mantenimientos/plan-mantenimiento?nit=${encodeURIComponent(nitActual)}&vigencia=${vigencia}`,
+              {
+                cache: 'no-store',
+                headers: { 'x-cea-nit': nitActual },
+              }
+            )
+
+            const json = await res.json()
+
+            return {
+              vigencia,
+              ok: res.ok && json?.status === 'success',
+              json,
+            }
+          })
         )
 
-        const json = await res.json()
+        const validas = respuestas.filter((item) => item.ok)
 
-        if (!res.ok || json?.status !== 'success') {
-          console.error('Error cargando programación preventiva:', json)
+        if (!validas.length) {
+          setProgramacionPreventiva(null)
+          toast.error(
+            respuestas.find((item) => item?.json?.message)?.json?.message ||
+            'No fue posible consultar el Plan de Mantenimiento.'
+          )
+          return
+        }
+
+        const vistas = validas
+          .map(({ vigencia, json }) => {
+            const vista = (json.vehiculos || []).find(
+              (item) =>
+                String(item?.vehiculo?.placa || '').toUpperCase() ===
+                String(placa).toUpperCase()
+            )
+
+            return vista ? { vigencia, vista } : null
+          })
+          .filter(Boolean)
+
+        if (!vistas.length) {
           setProgramacionPreventiva(null)
           return
         }
 
-        const programacion = json?.programacion || null
-        setProgramacionPreventiva(programacion)
+        const candidatos = vistas
+          .flatMap(({ vigencia, vista }) => {
+            const puntos = [
+              ...(vista.hechos || []),
+              ...(vista.proyecciones || []),
+            ].filter(
+              (p) =>
+                String(p?.estado || '').toUpperCase() === 'PROGRAMADO'
+            )
 
-        if (programacion) {
-          const nivelUnico = {
-            id: programacion.plan_mantenimiento_id,
-            nivel: programacion.nivel,
-            familia: programacion.familia,
-            desde_km: programacion.desde_km,
-            hasta_km: programacion.hasta_km,
-            actividad: programacion.actividad,
-            actividades_acumuladas: Array.isArray(programacion.actividades)
-              ? programacion.actividades
-              : [],
-          }
+            return puntos.map((punto) => ({
+              punto,
+              vista,
+              vigencia,
+            }))
+          })
+          .sort((a, b) => {
+            const fechaA = String(a.punto?.fecha_proyectada || '9999-12-31')
+            const fechaB = String(b.punto?.fecha_proyectada || '9999-12-31')
 
-          setActividadesPlan([nivelUnico])
-          setNivelSeleccionadoId(String(nivelUnico.id))
-          setActividad(
-            String(
-              nivelUnico.actividad ||
-                `MANTENIMIENTO PREVENTIVO NIVEL ${nivelUnico.nivel}`
-            ).trim()
-          )
+            if (fechaA !== fechaB) {
+              return fechaA.localeCompare(fechaB)
+            }
+
+            return (
+              Number(a.punto?.punto || a.punto?.ciclo || 0) -
+              Number(b.punto?.punto || b.punto?.ciclo || 0)
+            )
+          })
+
+        const seleccionado = candidatos[0] || null
+
+        if (!seleccionado) {
+          setProgramacionPreventiva(null)
+          return
         }
+
+        const { punto, vista } = seleccionado
+        const actividadesPunto = Array.isArray(punto.actividades)
+          ? punto.actividades
+          : []
+
+        const tolerancias = actividadesPunto
+          .map((act) => Number(act?.tolerancia_km))
+          .filter((valor) => Number.isFinite(valor) && valor >= 0)
+
+        const toleranciaKm = tolerancias.length
+          ? Math.min(...tolerancias)
+          : Number(punto?.tolerancia_km ?? 500)
+
+        const kmObjetivo = Number(punto?.km_objetivo)
+        const kmActual = Number(vista?.kilometraje?.ultimo_km)
+
+        const kmMinimo =
+          Number.isFinite(kmObjetivo)
+            ? kmObjetivo - toleranciaKm
+            : null
+
+        const kmMaximo =
+          Number.isFinite(kmObjetivo)
+            ? kmObjetivo + toleranciaKm
+            : null
+
+        const dentroTolerancia =
+          Number.isFinite(kmActual) &&
+          Number.isFinite(kmMinimo) &&
+          Number.isFinite(kmMaximo) &&
+          kmActual >= kmMinimo &&
+          kmActual <= kmMaximo
+
+        const normalizado = {
+          ...punto,
+          vehiculo_id: Number(vista.vehiculo?.id || punto.vehiculo_id),
+          punto: Number(punto.punto || punto.ciclo),
+          ciclo: Number(punto.ciclo || punto.punto),
+          frecuencia_base_km: Number(
+            vista.frecuencia_base_km ||
+            vista.ciclo?.frecuencia_base_km ||
+            0
+          ),
+          ultimo_km_preoperacional: vista.kilometraje?.ultimo_km ?? null,
+          ultimo_mantenimiento: vista.ultimo_mantenimiento || null,
+          actividades: actividadesPunto,
+          tolerancia_km: toleranciaKm,
+          km_minimo: kmMinimo,
+          km_maximo: kmMaximo,
+          dentro_tolerancia: dentroTolerancia,
+        }
+
+        setProgramacionPreventiva(normalizado)
+        setActividadesPlan(normalizado.actividades)
+        setNivelSeleccionadoId(String(normalizado.ciclo))
+        setActividad(`MANTENIMIENTO PREVENTIVO P${normalizado.ciclo}`)
       } catch (error) {
-        console.error('Error cargando programación preventiva:', error)
+        console.error('Error consultando el Plan de Mantenimiento:', error)
         setProgramacionPreventiva(null)
       } finally {
         setCargandoProgramacion(false)
@@ -372,74 +459,100 @@ export default function MantenimientosPage() {
   }, [placa, vehiculos, nitActual])
 
   // ============================================================
-  // Cambio de proveedor
+  // Cambio de proveedor: técnicos + actividades habilitadas
   // ============================================================
 
   useEffect(() => {
+    setActividadesSeleccionadas([])
+    setActividadCatalogoId('')
+    if (tipoMant === 'CORRECTIVO') setActividad('')
+
     if (!proveedorId) {
       setProveedorInfo(null)
       setTecnicos([])
       setTecnicoId('')
       setTecnicoInfo(null)
+      setActividadesProveedor([])
       return
     }
 
     const proveedor = proveedores.find(
-      (item) =>
-        String(item.id) === String(proveedorId)
+      (item) => String(item.id) === String(proveedorId)
     )
 
     setProveedorInfo(proveedor || null)
 
-    const cargarTecnicos = async () => {
+    const cargarDatosProveedor = async () => {
       if (!nitActual) return
 
+      setCargandoActividadesProveedor(true)
+
       try {
-        const res = await fetch(
-          `/api/mantenimientos?nit=${encodeURIComponent(
-            nitActual
-          )}&recurso=tecnicos&proveedor_id=${encodeURIComponent(
-            proveedorId
-          )}`,
-          {
-            cache: 'no-store',
-          }
+        const tipoVehiculo =
+          vehiculoInfo?.tipo && vehiculoInfo.tipo !== '-'
+            ? `&tipo_vehiculo=${encodeURIComponent(vehiculoInfo.tipo)}`
+            : ''
+
+        const [resTecnicos, resActividades] = await Promise.all([
+          fetch(
+            `/api/mantenimientos?nit=${encodeURIComponent(nitActual)}&recurso=tecnicos&proveedor_id=${encodeURIComponent(proveedorId)}`,
+            { cache: 'no-store' }
+          ),
+          fetch(
+            `/api/mantenimientos?nit=${encodeURIComponent(nitActual)}&recurso=actividades_proveedor&proveedor_id=${encodeURIComponent(proveedorId)}${tipoVehiculo}`,
+            { cache: 'no-store' }
+          ),
+        ])
+
+        const [jsonTecnicos, jsonActividades] = await Promise.all([
+          resTecnicos.json(),
+          resActividades.json(),
+        ])
+
+        setTecnicos(
+          resTecnicos.ok && jsonTecnicos?.status === 'success' && Array.isArray(jsonTecnicos.tecnicos)
+            ? jsonTecnicos.tecnicos
+            : []
         )
 
-        const json = await res.json()
-
-        if (
-          res.ok &&
-          json?.status === 'success'
-        ) {
-          setTecnicos(
-            Array.isArray(json.tecnicos)
-              ? json.tecnicos
+        if (resActividades.ok && jsonActividades?.status === 'success') {
+          setActividadesProveedor(
+            Array.isArray(jsonActividades.actividades)
+              ? jsonActividades.actividades
               : []
           )
         } else {
-          setTecnicos([])
-
+          setActividadesProveedor([])
           toast.error(
-            json?.message ||
-              'No se pudieron cargar los técnicos.'
+            jsonActividades?.message ||
+            'No se pudieron cargar las actividades del proveedor.'
           )
         }
       } catch (error) {
-        console.error(
-          'Error cargando técnicos:',
-          error
-        )
-
+        console.error('Error cargando información del proveedor:', error)
         setTecnicos([])
+        setActividadesProveedor([])
+      } finally {
+        setCargandoActividadesProveedor(false)
       }
     }
 
     setTecnicoId('')
     setTecnicoInfo(null)
+    cargarDatosProveedor()
+  }, [proveedorId, proveedores, nitActual, vehiculoInfo.tipo, tipoMant])
 
-    cargarTecnicos()
-  }, [proveedorId, proveedores, nitActual])
+  const actividadesProveedorIds = useMemo(
+    () => new Set(actividadesProveedor.map((item) => Number(item.id))),
+    [actividadesProveedor]
+  )
+
+  const actividadesPreventivasDisponibles = useMemo(() => {
+    if (!programacionPreventiva || !proveedorId) return []
+    return (programacionPreventiva.actividades || []).filter((act) =>
+      actividadesProveedorIds.has(Number(act.actividad_id))
+    )
+  }, [programacionPreventiva, proveedorId, actividadesProveedorIds])
 
   // ============================================================
   // Cambio de técnico
@@ -570,6 +683,8 @@ export default function MantenimientosPage() {
     setTipoMant(valor)
     setNivelSeleccionadoId('')
     setActividad('')
+    setActividadCatalogoId('')
+    setActividadesSeleccionadas([])
   }
 
   // ============================================================
@@ -637,16 +752,24 @@ export default function MantenimientosPage() {
       return false
     }
 
+    if (!proveedorId) return false
+    if (!repuestos.trim()) return false
+
     if (
       tipoMant === 'PREVENTIVO' &&
-      (!programacionPreventiva || !nivelSeleccionadoId || !actividad)
+      (
+        !programacionPreventiva ||
+        !programacionPreventiva?.dentro_tolerancia ||
+        !actividad ||
+        actividadesSeleccionadas.length === 0
+      )
     ) {
       return false
     }
 
     if (
       tipoMant === 'CORRECTIVO' &&
-      !actividad.trim()
+      (!actividad.trim() || !actividadCatalogoId)
     ) {
       return false
     }
@@ -662,6 +785,10 @@ export default function MantenimientosPage() {
     actividad,
     nivelSeleccionadoId,
     programacionPreventiva,
+    actividadesSeleccionadas,
+    proveedorId,
+    actividadCatalogoId,
+    repuestos,
   ])
 
   // ============================================================
@@ -686,12 +813,6 @@ export default function MantenimientosPage() {
         timestamp,
       } = ahoraBogota()
 
-      const minutos =
-        minutosDesdeValorUnidad(
-          tpValor,
-          tpUnidad
-        )
-
       const payload = {
         nit: nitActual,
         accion: 'registrar',
@@ -713,20 +834,30 @@ export default function MantenimientosPage() {
         actividad_realizada:
           actividad.trim(),
 
-        plan_mantenimiento_id:
-          tipoMant === 'PREVENTIVO'
-            ? Number(programacionPreventiva?.plan_mantenimiento_id)
+        actividad_catalogo_id:
+          tipoMant === 'CORRECTIVO' && actividadCatalogoId
+            ? Number(actividadCatalogoId)
             : null,
 
-        programacion_mantenimiento_id:
+        vehiculo_id:
           tipoMant === 'PREVENTIVO'
-            ? Number(programacionPreventiva?.id)
+            ? Number(programacionPreventiva?.vehiculo_id)
             : null,
 
-        nivel_mantenimiento:
+        ciclo:
           tipoMant === 'PREVENTIVO'
-            ? Number(programacionPreventiva?.nivel)
+            ? Number(programacionPreventiva?.ciclo)
             : null,
+
+        km_objetivo:
+          tipoMant === 'PREVENTIVO'
+            ? Number(programacionPreventiva?.km_objetivo)
+            : null,
+
+        actividades_config_ids:
+          tipoMant === 'PREVENTIVO'
+            ? actividadesSeleccionadas.map(Number)
+            : [],
 
         repuestos_utilizados:
           repuestos.trim() ||
@@ -742,9 +873,10 @@ export default function MantenimientosPage() {
             ? Number(tecnicoId)
             : null,
 
+        // Desde esta versión tiempoparada se registra directamente en horas.
         tiempoparada:
-          minutos
-            ? String(minutos)
+          tpValor !== ''
+            ? String(tpValor)
             : null,
 
         factura:
@@ -833,6 +965,7 @@ export default function MantenimientosPage() {
       setTipoMant('')
       setNivelSeleccionadoId('')
       setActividad('')
+      setActividadCatalogoId('')
       setActividadesPlan([])
 
       setRepuestos('')
@@ -848,7 +981,6 @@ export default function MantenimientosPage() {
       setValorManoObraStr('')
 
       setTpValor('')
-      setTpUnidad('min')
 
       setFactura('')
       setObservaciones('')
@@ -873,459 +1005,151 @@ export default function MantenimientosPage() {
   }
 
   // ============================================================
-  // Validación NIT proveedor
+  // Registrar técnico dentro de un proveedor ya autorizado
   // ============================================================
 
-  useEffect(() => {
-    if (!modalProveedor) {
-      setProvNitDup(null)
-      return
+  const guardarNuevoProveedor = async () => {
+    if (tipoMant !== 'CORRECTIVO' || !nitActual || guardandoProveedor) return
+
+    const razonSocial = nuevoProveedor.razon_social.trim()
+    const nitProveedor = onlyDigits(nuevoProveedor.nit_proveedor)
+    const telefono = onlyDigits(nuevoProveedor.telefono)
+    const email = nuevoProveedor.email.trim()
+
+    if (!razonSocial) return toast.error('La razón social o nombre del proveedor es obligatoria.')
+    if (!nitProveedor) return toast.error('El NIT o documento es obligatorio.')
+    if (nuevoProveedor.digito_verificacion && !/^\d$/.test(nuevoProveedor.digito_verificacion)) {
+      return toast.error('El DV (dígito de verificación) debe ser un solo número.')
     }
+    if (!nuevoProveedor.direccion.trim()) return toast.error('La dirección es obligatoria.')
+    if (!/^\d{7,10}$/.test(telefono)) return toast.error('El teléfono debe contener entre 7 y 10 números.')
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error('Ingrese un correo electrónico válido.')
 
-    const nitProveedor = String(
-      modalProveedor.nit || ''
-    ).trim()
-
-    if (provNitTimer.current) {
-      clearTimeout(
-        provNitTimer.current
-      )
-    }
-
-    if (
-      !nitProveedor ||
-      !nitActual
-    ) {
-      setProvNitDup(null)
-      return
-    }
-
-    provNitTimer.current =
-      setTimeout(
-        async () => {
-          try {
-            const res = await fetch(
-              `/api/mantenimientos?nit=${encodeURIComponent(
-                nitActual
-              )}&recurso=validar_nit&nit_proveedor=${encodeURIComponent(
-                nitProveedor
-              )}`,
-              {
-                cache: 'no-store',
-              }
-            )
-
-            const json =
-              await res.json()
-
-            if (
-              res.ok &&
-              json?.status === 'success'
-            ) {
-              setProvNitDup(
-                json.existe
-                  ? json.proveedor
-                  : null
-              )
-            }
-          } catch (error) {
-            console.error(
-              'Error validando NIT del proveedor:',
-              error
-            )
-          }
-        },
-        400
-      )
-
-    return () => {
-      if (provNitTimer.current) {
-        clearTimeout(
-          provNitTimer.current
-        )
-      }
-    }
-  }, [
-    modalProveedor?.nit,
-    nitActual,
-  ])
-
-  // ============================================================
-  // Validación documento técnico
-  // ============================================================
-
-  useEffect(() => {
-    if (
-      !modalTecnico ||
-      !proveedorId
-    ) {
-      setTecDocDup(null)
-      return
-    }
-
-    const documento = String(
-      modalTecnico.documento ||
-      ''
-    ).trim()
-
-    if (tecDocTimer.current) {
-      clearTimeout(
-        tecDocTimer.current
-      )
-    }
-
-    if (
-      !documento ||
-      !nitActual
-    ) {
-      setTecDocDup(null)
-      return
-    }
-
-    tecDocTimer.current =
-      setTimeout(
-        async () => {
-          try {
-            const res = await fetch(
-              `/api/mantenimientos?nit=${encodeURIComponent(
-                nitActual
-              )}&recurso=validar_tecnico&proveedor_id=${encodeURIComponent(
-                proveedorId
-              )}&documento=${encodeURIComponent(
-                documento
-              )}`,
-              {
-                cache: 'no-store',
-              }
-            )
-
-            const json =
-              await res.json()
-
-            if (
-              res.ok &&
-              json?.status === 'success'
-            ) {
-              setTecDocDup(
-                json.existe
-                  ? json.tecnico
-                  : null
-              )
-            }
-          } catch (error) {
-            console.error(
-              'Error validando documento del técnico:',
-              error
-            )
-          }
-        },
-        400
-      )
-
-    return () => {
-      if (tecDocTimer.current) {
-        clearTimeout(
-          tecDocTimer.current
-        )
-      }
-    }
-  }, [
-    modalTecnico?.documento,
-    proveedorId,
-    nitActual,
-  ])
-
-  // ============================================================
-  // Crear proveedor
-  // ============================================================
-
-  const guardarProveedor = async () => {
-    if (
-      !modalProveedor ||
-      !nitActual
-    ) {
-      return
-    }
-
-    const empresa = String(
-      modalProveedor.empresa ||
-      ''
-    )
-      .trim()
-      .toUpperCase()
-
-    if (!empresa) {
-      toast.error(
-        'La empresa es obligatoria.'
-      )
-      return
-    }
-
-    if (provNitDup) {
-      toast.error(
-        `El NIT ya está registrado para ${provNitDup.empresa}.`
-      )
-      return
-    }
-
+    setGuardandoProveedor(true)
     try {
-      const res = await fetch(
-        '/api/mantenimientos',
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-
-          body:
-            JSON.stringify({
-              nit: nitActual,
-
-              accion:
-                'crear_proveedor',
-
-              empresa,
-
-              nit_proveedor:
-                modalProveedor.nit,
-
-              direccion:
-                modalProveedor.direccion,
-
-              telefono:
-                modalProveedor.telefono,
-
-              email:
-                modalProveedor.email,
-            }),
-        }
-      )
-
-      const json =
-        await res.json()
-
-      if (
-        !res.ok ||
-        json?.status !== 'success'
-      ) {
-        toast.error(
-          json?.message ||
-            'No se pudo crear el proveedor.'
-        )
-        return
-      }
-
-      const nuevoProveedor =
-        json.proveedor
-
-      if (!nuevoProveedor) {
-        toast.error(
-          'La API no devolvió la información del proveedor.'
-        )
-        return
-      }
-
-      setProveedores((actuales) => {
-        const existe =
-          actuales.some(
-            (item) =>
-              String(item.id) ===
-              String(nuevoProveedor.id)
-          )
-
-        if (existe) {
-          return actuales
-        }
-
-        return [
-          ...actuales,
-          nuevoProveedor,
-        ].sort((a, b) =>
-          String(a.empresa || '').localeCompare(
-            String(b.empresa || ''),
-            'es'
-          )
-        )
+      const res = await fetch('/api/mantenimientos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cea-nit': nitActual,
+        },
+        body: JSON.stringify({
+          nit: nitActual,
+          accion: 'crear_proveedor_correctivo',
+          ...nuevoProveedor,
+          nit_proveedor: nitProveedor,
+          telefono,
+        }),
       })
+      const json = await res.json()
+      if (!res.ok || json?.status !== 'success') {
+        toast.error(json?.message || 'No se pudo registrar el proveedor.')
+        return
+      }
 
-      setProveedorId(
-        String(nuevoProveedor.id)
+      const proveedor = json.proveedor
+      setProveedores((actual) =>
+        [...actual.filter((p) => String(p.id) !== String(proveedor.id)), proveedor]
+          .sort((a, b) => String(a.razon_social || '').localeCompare(String(b.razon_social || ''), 'es'))
       )
-
-      setProveedorInfo(
-        nuevoProveedor
-      )
-
-      setModalProveedor(null)
-      setProvNitDup(null)
-
-      toast.success(
-        json?.existente
-          ? 'Proveedor seleccionado.'
-          : 'Proveedor creado correctamente.'
-      )
+      setProveedorId(String(proveedor.id))
+      setModalProveedor(false)
+      setNuevoProveedor({
+        tipo_persona: 'JURIDICA',
+        razon_social: '',
+        nombre_comercial: '',
+        nit_proveedor: '',
+        digito_verificacion: '',
+        direccion: '',
+        telefono: '',
+        email: '',
+      })
+      toast.success('Proveedor registrado. Quedó disponible para este mantenimiento correctivo.')
     } catch (error) {
-      console.error(
-        'Error creando proveedor:',
-        error
-      )
-
-      toast.error(
-        'Error inesperado al crear el proveedor.'
-      )
+      console.error('Error registrando proveedor:', error)
+      toast.error('Error inesperado al registrar el proveedor.')
+    } finally {
+      setGuardandoProveedor(false)
     }
   }
 
-  // ============================================================
-  // Crear técnico
-  // ============================================================
+  const guardarNuevoTecnico = async () => {
+    if (!proveedorId || guardandoTecnico) return
 
-  const guardarTecnico = async () => {
-    if (
-      !modalTecnico ||
-      !proveedorId ||
-      !nitActual
-    ) {
-      return
-    }
-
-    const nombres = String(
-      modalTecnico.nombres || ''
-    )
-      .trim()
-      .toUpperCase()
-
-    const documento = String(
-      modalTecnico.documento || ''
-    ).trim()
+    const nombres = nuevoTecnico.nombres.trim().toUpperCase()
+    const documento = onlyDigits(nuevoTecnico.documento)
+    const telefono = onlyDigits(nuevoTecnico.telefono)
+    const email = nuevoTecnico.email.trim().toLowerCase()
 
     if (!nombres) {
-      toast.error(
-        'El nombre del técnico es obligatorio.'
-      )
+      toast.error('Los nombres del técnico son obligatorios.')
       return
     }
 
-    if (!documento) {
-      toast.error(
-        'El documento del técnico es obligatorio.'
-      )
+    if (!/^\d{5,12}$/.test(documento)) {
+      toast.error('El documento debe contener entre 5 y 12 números.')
       return
     }
 
-    if (tecDocDup) {
-      toast.error(
-        'Ese documento ya está registrado para este proveedor.'
-      )
+    if (/^3\d{9}$/.test(documento)) {
+      toast.error('El documento ingresado tiene estructura de número celular. Verifique que no haya intercambiado el documento y el celular.')
       return
     }
+
+    if (!/^3\d{9}$/.test(telefono)) {
+      toast.error('El celular debe contener exactamente 10 dígitos y comenzar por 3.')
+      return
+    }
+
+    if (documento === telefono) {
+      toast.error('El documento y el celular no pueden ser iguales. Verifique que no haya intercambiado los datos.')
+      return
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Ingrese un correo electrónico válido.')
+      return
+    }
+
+    setGuardandoTecnico(true)
 
     try {
-      const res = await fetch(
-        '/api/mantenimientos',
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-
-          body:
-            JSON.stringify({
-              nit: nitActual,
-
-              accion:
-                'crear_tecnico',
-
-              proveedor_id:
-                Number(proveedorId),
-
-              nombres,
-
-              documento,
-
-              telefono:
-                modalTecnico.telefono,
-
-              email:
-                modalTecnico.email,
-            }),
-        }
-      )
-
-      const json =
-        await res.json()
-
-      if (
-        !res.ok ||
-        json?.status !== 'success'
-      ) {
-        toast.error(
-          json?.message ||
-            'No se pudo crear el técnico.'
-        )
-        return
-      }
-
-      const nuevoTecnico =
-        json.tecnico
-
-      if (!nuevoTecnico) {
-        toast.error(
-          'La API no devolvió la información del técnico.'
-        )
-        return
-      }
-
-      setTecnicos((actuales) => {
-        const existe =
-          actuales.some(
-            (item) =>
-              String(item.id) ===
-              String(nuevoTecnico.id)
-          )
-
-        if (existe) {
-          return actuales
-        }
-
-        return [
-          ...actuales,
-          nuevoTecnico,
-        ].sort((a, b) =>
-          String(a.nombres || '').localeCompare(
-            String(b.nombres || ''),
-            'es'
-          )
-        )
+      const res = await fetch('/api/mantenimientos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cea-nit': nitActual,
+        },
+        body: JSON.stringify({
+          nit: nitActual,
+          accion: 'crear_tecnico',
+          proveedor_id: Number(proveedorId),
+          nombres,
+          documento,
+          telefono,
+          email: email || null,
+          observaciones: nuevoTecnico.observaciones.trim().toUpperCase() || null,
+        }),
       })
 
-      setTecnicoId(
-        String(nuevoTecnico.id)
-      )
+      const json = await res.json()
 
-      setTecnicoInfo(
-        nuevoTecnico
-      )
+      if (!res.ok || json?.status !== 'success') {
+        toast.error(json?.message || 'No fue posible registrar el técnico.')
+        return
+      }
 
-      setModalTecnico(null)
-      setTecDocDup(null)
-
-      toast.success(
-        'Técnico creado correctamente.'
-      )
+      const tecnicoCreado = json.tecnico
+      setTecnicos((actual) => [...actual.filter((x) => Number(x.id) !== Number(tecnicoCreado.id)), tecnicoCreado].sort((a, b) => String(a.nombres || '').localeCompare(String(b.nombres || ''))))
+      setTecnicoId(String(tecnicoCreado.id))
+      setTecnicoInfo(tecnicoCreado)
+      setModalTecnico(false)
+      toast.success('Técnico registrado correctamente.')
     } catch (error) {
-      console.error(
-        'Error creando técnico:',
-        error
-      )
-
-      toast.error(
-        'Error inesperado al crear el técnico.'
-      )
+      console.error('Error registrando técnico:', error)
+      toast.error('No fue posible registrar el técnico.')
+    } finally {
+      setGuardandoTecnico(false)
     }
   }
 
@@ -1341,12 +1165,6 @@ export default function MantenimientosPage() {
     )
   }
 
-  const minutosParada =
-    minutosDesdeValorUnidad(
-      tpValor,
-      tpUnidad
-    )
-
   return (
     <div className="min-h-screen bg-gray-100 p-2 sm:p-4">
 
@@ -1355,14 +1173,18 @@ export default function MantenimientosPage() {
         richColors
       />
 
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-3 sm:p-6">
+      <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-3 sm:p-5">
 
         {/* Título */}
 
-        <h2 className="text-2xl font-bold text-center text-[var(--primary)] mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-center text-[var(--primary)] mb-4">
           <i className="fas fa-tools mr-2"></i>
           Registro de Mantenimiento
         </h2>
+
+        <div className="mb-4 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+          Los campos marcados con <b>*</b> son obligatorios.
+        </div>
 
         {/* Usuario */}
 
@@ -1516,131 +1338,74 @@ export default function MantenimientosPage() {
             {tipoMant === 'PREVENTIVO' && (
               <div className="space-y-3">
                 {cargandoProgramacion ? (
-                  <div className="border rounded-xl p-4 bg-gray-50 text-sm text-gray-600 text-center">
-                    Consultando mantenimiento preventivo programado...
+                  <div className="border rounded-xl p-4 bg-slate-50 text-sm text-slate-600 text-center">
+                    Consultando Plan de Mantenimiento...
                   </div>
                 ) : !placa ? (
-                  <div className="border rounded-xl p-4 bg-gray-50 text-sm text-gray-600">
+                  <div className="border rounded-xl p-4 bg-slate-50 text-sm text-slate-600">
                     Seleccione primero la placa del vehículo.
                   </div>
                 ) : !programacionPreventiva ? (
                   <div className="border border-orange-200 rounded-xl p-4 bg-orange-50">
-                    <p className="text-sm font-bold text-orange-800">
-                      Sin mantenimiento preventivo programado
-                    </p>
+                    <p className="text-sm font-bold text-orange-800">Sin punto preventivo disponible</p>
                     <p className="text-xs text-orange-700 mt-1">
-                      Este vehículo aún no tiene un mantenimiento preventivo pendiente en el Plan de Mantenimiento.
-                      No es posible registrar un preventivo ordinario hasta que exista una programación formal.
+                      Revise que el vehículo tenga su configuración finalizada y un punto PROGRAMADO en el Plan de Mantenimiento.
                     </p>
                   </div>
                 ) : (
-                  <>
-                    <div className="border border-[var(--primary)] rounded-xl overflow-hidden">
-                      <div className="bg-blue-50 px-4 py-3 border-b">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-xs text-gray-600">Mantenimiento correspondiente</p>
-                            <p className="text-lg font-bold text-[var(--primary)]">
-                              Nivel {programacionPreventiva.nivel}
-                            </p>
-                            <p className="text-xs text-gray-700 mt-1">
-                              {programacionPreventiva.desde_km != null && programacionPreventiva.hasta_km != null
-                                ? `${Number(programacionPreventiva.desde_km).toLocaleString('es-CO')} - ${Number(programacionPreventiva.hasta_km).toLocaleString('es-CO')} km`
-                                : 'Rango de kilometraje no configurado'}
-                            </p>
-                          </div>
-                          <span className="shrink-0 px-2.5 py-1 rounded-full bg-[var(--primary)] text-white text-[11px] font-bold">
-                            {programacionPreventiva.estado}
-                          </span>
+                  <div className="border border-slate-300 rounded-xl overflow-hidden">
+                    <div className="bg-slate-800 text-white px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] text-slate-300">Punto preventivo</p>
+                          <p className="text-xl font-bold">P{programacionPreventiva.ciclo}</p>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                          <div className="bg-white rounded-lg p-2 border">
-                            <span className="text-gray-500">Vigencia</span>
-                            <p className="font-bold">{programacionPreventiva.vigencia}</p>
-                          </div>
-                          <div className="bg-white rounded-lg p-2 border">
-                            <span className="text-gray-500">Mes programado</span>
-                            <p className="font-bold">{programacionPreventiva.mes_programado}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-3">
-                        <p className="text-sm font-bold mb-2">Actividades a realizar</p>
-                        {Array.isArray(programacionPreventiva.actividades) &&
-                        programacionPreventiva.actividades.length > 0 ? (
-                          <div className="space-y-2">
-                            {programacionPreventiva.actividades.map((act, index) => (
-                              <div
-                                key={`${act.id}-${act.nivel_origen}-${index}`}
-                                className="flex items-start gap-2 text-xs"
-                              >
-                                <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold">
-                                  ✓
-                                </span>
-                                <div className="min-w-0">
-                                  <span className="font-semibold text-gray-500">
-                                    N{act.nivel_origen} ·{' '}
-                                  </span>
-                                  <span className="text-gray-800">{act.actividad}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-orange-600">
-                            Este nivel no tiene actividades configuradas.
-                          </p>
-                        )}
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${String(programacionPreventiva.estado).toUpperCase() === 'VENCIDO' ? 'bg-orange-200 text-orange-900' : 'bg-blue-200 text-blue-900'}`}>
+                          {programacionPreventiva.estado}
+                        </span>
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-gray-500">
-                      El nivel es determinado por la programación del vehículo y no puede modificarse desde este formulario.
-                    </p>
-                  </>
+                    <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 text-xs">
+                      <div className="bg-white border rounded-lg p-2">
+                        <span className="text-slate-500">Km objetivo</span>
+                        <p className="font-bold">{Number(programacionPreventiva.km_objetivo || 0).toLocaleString('es-CO')} km</p>
+                      </div>
+                      <div className="bg-white border rounded-lg p-2">
+                        <span className="text-slate-500">Frecuencia base</span>
+                        <p className="font-bold">{Number(programacionPreventiva.frecuencia_base_km || 0).toLocaleString('es-CO')} km</p>
+                      </div>
+                      <div className="bg-white border rounded-lg p-2">
+                        <span className="text-slate-500">Tolerancia</span>
+                        <p className="font-bold">± {Number(programacionPreventiva.tolerancia_km || 500).toLocaleString('es-CO')} km</p>
+                      </div>
+                      <div className="bg-white border rounded-lg p-2">
+                        <span className="text-slate-500">Rango habilitado</span>
+                        <p className="font-bold">
+                          {Number(programacionPreventiva.km_minimo || 0).toLocaleString('es-CO')} - {Number(programacionPreventiva.km_maximo || 0).toLocaleString('es-CO')} km
+                        </p>
+                      </div>
+                    </div>
+
+                    {!programacionPreventiva.dentro_tolerancia && (
+                      <div className="mx-3 mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
+                        <p className="text-xs font-bold text-blue-900">
+                          Mantenimiento programado aún no habilitado
+                        </p>
+                        <p className="mt-1 text-[11px] leading-4 text-blue-800">
+                          El punto P{programacionPreventiva.ciclo} puede registrarse cuando el kilometraje del vehículo se encuentre entre{' '}
+                          <b>{Number(programacionPreventiva.km_minimo || 0).toLocaleString('es-CO')} km</b> y{' '}
+                          <b>{Number(programacionPreventiva.km_maximo || 0).toLocaleString('es-CO')} km</b>.
+                          El último kilometraje preoperacional es{' '}
+                          <b>{Number(programacionPreventiva.ultimo_km_preoperacional || 0).toLocaleString('es-CO')} km</b>.
+                        </p>
+                      </div>
+                    )}
+
+                  </div>
                 )}
               </div>
             )}
-
-            {tipoMant === 'CORRECTIVO' && (
-              <div>
-                <label className="block text-sm font-semibold mb-1">
-                  Actividad realizada *
-                </label>
-
-                <textarea
-                  className="w-full border p-2 min-h-11 rounded-lg text-sm"
-                  rows="3"
-                  value={actividad}
-                  onChange={(e) =>
-                    setActividad(
-                      e.target.value.toUpperCase()
-                    )
-                  }
-                  placeholder="Describa la actividad realizada"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-semibold mb-1">
-                Repuestos utilizados
-              </label>
-
-              <textarea
-                className="w-full border p-2 min-h-11 rounded-lg text-sm"
-                rows="3"
-                value={repuestos}
-                onChange={(e) =>
-                  setRepuestos(
-                    e.target.value.toUpperCase()
-                  )
-                }
-                placeholder="Describa los repuestos utilizados"
-              />
-            </div>
           </div>
         </div>
 
@@ -1649,100 +1414,59 @@ export default function MantenimientosPage() {
         ====================================================== */}
 
         <div className="border rounded-lg overflow-hidden mb-6">
-
           <div className="bg-gray-900 text-white px-4 py-2 font-semibold">
             <i className="fas fa-building mr-2"></i>
             Proveedor y técnico
           </div>
 
           <div className="p-4 space-y-5">
+            <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-700">
+              Los proveedores, talleres, técnicos y actividades que atienden son configurados por Administración. Si el proveedor de la factura aún no aparece, solicite su registro antes de guardar el mantenimiento.
+            </div>
 
             <div>
               <label className="block text-sm font-semibold mb-1">
-                Proveedor
+                Proveedor o taller *
               </label>
 
-              <div className="flex gap-2">
-
-                <select
-                  className="flex-1 border p-2 min-h-11 rounded-lg text-sm"
-                  value={proveedorId}
-                  onChange={(e) =>
-                    setProveedorId(
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="">
-                    -- Seleccione proveedor --
+              <select
+                className="w-full border p-2 min-h-11 rounded-lg text-sm"
+                value={proveedorId}
+                onChange={(e) => setProveedorId(e.target.value)}
+              >
+                <option value="">-- Seleccione proveedor --</option>
+                {proveedores.map((proveedor) => (
+                  <option key={proveedor.id} value={proveedor.id}>
+                    {proveedor.razon_social || proveedor.empresa}
+                    {proveedor.nombre_comercial ? ` / ${proveedor.nombre_comercial}` : ''}
+                    {proveedor.nit ? ` - NIT ${proveedor.nit}` : ''}
                   </option>
+                ))}
+              </select>
+              {tipoMant === 'CORRECTIVO' && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setModalProveedor(true)}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    + Registrar proveedor que no aparece
+                  </button>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Disponible solo para mantenimiento correctivo. El proveedor se crea sin actividades y Administración podrá revisar o completar sus datos después.
+                  </p>
+                </div>
+              )}
 
-                  {proveedores.map(
-                    (proveedor) => (
-                      <option
-                        key={proveedor.id}
-                        value={proveedor.id}
-                      >
-                        {proveedor.empresa}
-                        {proveedor.nit
-                          ? ` - NIT ${proveedor.nit}`
-                          : ''}
-                      </option>
-                    )
-                  )}
-                </select>
-
-                <button
-                  type="button"
-                  className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-3 rounded-lg"
-                  onClick={() => {
-                    setProvNitDup(null)
-
-                    setModalProveedor({
-                      empresa: '',
-                      nit: '',
-                      direccion: '',
-                      telefono: '',
-                      email: '',
-                    })
-                  }}
-                  title="Crear proveedor"
-                >
-                  <i className="fas fa-plus"></i>
-                </button>
-              </div>
 
               {proveedorInfo && (
                 <div className="bg-gray-50 border rounded-lg p-3 mt-3 text-xs text-gray-700">
-                  <p>
-                    <b>Empresa:</b>{' '}
-                    {proveedorInfo.empresa ||
-                      '-'}
-                  </p>
-
-                  <p>
-                    <b>NIT:</b>{' '}
-                    {proveedorInfo.nit ||
-                      '-'}
-                  </p>
-
-                  <p>
-                    <b>Dirección:</b>{' '}
-                    {proveedorInfo.direccion ||
-                      '-'}
-                  </p>
-
-                  <p>
-                    <b>Teléfono:</b>{' '}
-                    {proveedorInfo.telefono ||
-                      '-'}
-                  </p>
-
-                  <p>
-                    <b>Email:</b>{' '}
-                    {proveedorInfo.email ||
-                      '-'}
-                  </p>
+                  <p><b>Razón social:</b> {proveedorInfo.razon_social || proveedorInfo.empresa || '-'}</p>
+                  {proveedorInfo.nombre_comercial && <p><b>Nombre comercial:</b> {proveedorInfo.nombre_comercial}</p>}
+                  <p><b>NIT:</b> {proveedorInfo.nit || '-'}</p>
+                  <p><b>Dirección:</b> {proveedorInfo.direccion || '-'}</p>
+                  <p><b>Teléfono:</b> {proveedorInfo.telefono || '-'}</p>
+                  <p><b>Email:</b> {proveedorInfo.email || '-'}</p>
                 </div>
               )}
             </div>
@@ -1752,96 +1476,140 @@ export default function MantenimientosPage() {
                 Técnico
               </label>
 
-              <div className="flex gap-2">
-
-                <select
-                  className={`flex-1 border p-2 min-h-11 rounded-lg text-sm ${
-                    !proveedorId
-                      ? 'bg-gray-100'
-                      : ''
-                  }`}
-                  value={tecnicoId}
-                  disabled={!proveedorId}
-                  onChange={(e) =>
-                    setTecnicoId(
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="">
-                    -- Seleccione técnico --
+              <select
+                className={`w-full border p-2 min-h-11 rounded-lg text-sm ${!proveedorId ? 'bg-gray-100' : ''}`}
+                value={tecnicoId}
+                disabled={!proveedorId}
+                onChange={(e) => setTecnicoId(e.target.value)}
+              >
+                <option value="">-- Seleccione técnico --</option>
+                {tecnicos.map((tecnico) => (
+                  <option key={tecnico.id} value={tecnico.id}>
+                    {tecnico.nombres}{tecnico.documento ? ` - ${tecnico.documento}` : ''}
                   </option>
+                ))}
+              </select>
 
-                  {tecnicos.map(
-                    (tecnico) => (
-                      <option
-                        key={tecnico.id}
-                        value={tecnico.id}
-                      >
-                        {tecnico.nombres}
-                        {tecnico.documento
-                          ? ` - ${tecnico.documento}`
-                          : ''}
-                      </option>
-                    )
-                  )}
-                </select>
+              {proveedorId && tecnicos.length === 0 && (
+                <p className="mt-2 text-xs text-slate-500">
+                  Este proveedor no tiene técnicos activos registrados. Puede registrar el técnico que atendió el servicio.
+                </p>
+              )}
 
+              {proveedorId && (
                 <button
                   type="button"
-                  disabled={!proveedorId}
-                  className={`px-3 rounded-lg text-white ${
-                    proveedorId
-                      ? 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
-                      : 'bg-gray-400 cursor-not-allowed'
-                  }`}
                   onClick={() => {
-                    if (!proveedorId) {
-                      return
-                    }
-
-                    setTecDocDup(null)
-
-                    setModalTecnico({
-                      nombres: '',
-                      documento: '',
-                      telefono: '',
-                      email: '',
-                    })
+                    setNuevoTecnico({ nombres: '', documento: '', telefono: '', email: '', observaciones: '' })
+                    setModalTecnico(true)
                   }}
-                  title="Crear técnico"
+                  className="mt-3 min-h-10 rounded-lg border border-slate-400 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  <i className="fas fa-plus"></i>
+                  <i className="fas fa-user-plus mr-2"></i>
+                  Registrar técnico que no aparece en la lista
                 </button>
-              </div>
+              )}
 
               {tecnicoInfo && (
                 <div className="bg-gray-50 border rounded-lg p-3 mt-3 text-xs text-gray-700">
-                  <p>
-                    <b>Técnico:</b>{' '}
-                    {tecnicoInfo.nombres ||
-                      '-'}
-                  </p>
-
-                  <p>
-                    <b>Documento:</b>{' '}
-                    {tecnicoInfo.documento ||
-                      '-'}
-                  </p>
-
-                  <p>
-                    <b>Teléfono:</b>{' '}
-                    {tecnicoInfo.telefono ||
-                      '-'}
-                  </p>
-
-                  <p>
-                    <b>Email:</b>{' '}
-                    {tecnicoInfo.email ||
-                      '-'}
-                  </p>
+                  <p><b>Técnico:</b> {tecnicoInfo.nombres || '-'}</p>
+                  <p><b>Documento:</b> {tecnicoInfo.documento || '-'}</p>
+                  <p><b>Teléfono:</b> {tecnicoInfo.telefono || '-'}</p>
+                  <p><b>Email:</b> {tecnicoInfo.email || '-'}</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* =====================================================
+            ACTIVIDADES Y REPUESTOS
+        ====================================================== */}
+
+        <div className="border rounded-lg overflow-hidden mb-6">
+          <div className="bg-gray-900 text-white px-4 py-2 font-semibold">
+            <i className="fas fa-clipboard-check mr-2"></i>
+            Actividades y repuestos del servicio
+          </div>
+
+          <div className="p-4 space-y-5">
+            {tipoMant === 'PREVENTIVO' && (
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <label className="text-sm font-bold">Actividades realizadas en este servicio *</label>
+                  <span className="text-xs font-semibold text-slate-600">{actividadesSeleccionadas.length}/{actividadesPreventivasDisponibles.length}</span>
+                </div>
+
+                {!proveedorId ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                    Seleccione primero el proveedor o taller. Solo se mostrarán las actividades que ese proveedor tiene configuradas por Administración.
+                  </div>
+                ) : cargandoActividadesProveedor ? (
+                  <div className="rounded-xl border bg-slate-50 p-3 text-xs text-slate-600">
+                    Consultando actividades habilitadas para el proveedor...
+                  </div>
+                ) : actividadesPreventivasDisponibles.length === 0 ? (
+                  <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs text-orange-800">
+                    Este proveedor no tiene configuradas actividades compatibles con el punto preventivo y el tipo de vehículo seleccionado. Solicite a Administración revisar su configuración.
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[11px] text-slate-500 mb-3">
+                      Marque únicamente las actividades realmente ejecutadas durante este servicio.
+                    </p>
+                    <div className="space-y-2">
+                      {actividadesPreventivasDisponibles.map((act, index) => {
+                        const id = Number(act.configuracion_id)
+                        const checked = actividadesSeleccionadas.includes(id)
+                        return (
+                          <label key={`${id}-${index}`} className={`flex items-start gap-3 border rounded-xl p-3 cursor-pointer ${checked ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200'}`}>
+                            <input
+                              type="checkbox"
+                              className="mt-1 h-5 w-5 shrink-0"
+                              checked={checked}
+                              disabled={!programacionPreventiva?.dentro_tolerancia}
+                              onChange={() => setActividadesSeleccionadas((actual) => checked ? actual.filter((x) => x !== id) : [...actual, id])}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800">{act.actividad}</p>
+                              {act.accion && <p className="text-[11px] text-slate-600 mt-1">{act.accion}</p>}
+                              <p className="text-[11px] text-slate-500 mt-1">Cada {Number(act.frecuencia_km || 0).toLocaleString('es-CO')} km</p>
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {tipoMant === 'CORRECTIVO' && (
+              <div>
+                <label className="block text-sm font-semibold mb-1">Actividad realizada *</label>
+                <textarea
+                  className="w-full border p-2 rounded-lg text-sm"
+                  rows="3"
+                  value={actividad}
+                  onChange={(e) => setActividad(e.target.value.toUpperCase())}
+                  placeholder="Describa el diagnóstico, reparación o trabajo correctivo realizado."
+                />
+                <p className="mt-1 text-[11px] text-slate-500">
+                  El mantenimiento correctivo no se relaciona con las actividades del Plan de Mantenimiento.
+                </p>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-semibold mb-1">Repuestos utilizados *</label>
+              <textarea
+                className="w-full border p-2 min-h-11 rounded-lg text-sm"
+                rows="3"
+                value={repuestos}
+                onChange={(e) => setRepuestos(e.target.value.toUpperCase())}
+                placeholder="Describa los repuestos utilizados. Si no se utilizaron, escriba NO APLICA."
+              />
+              <p className="mt-1 text-[11px] text-slate-500">Campo obligatorio. Si el servicio no requirió repuestos, registre NO APLICA.</p>
             </div>
           </div>
         </div>
@@ -1907,54 +1675,25 @@ export default function MantenimientosPage() {
 
             <div>
               <label className="block text-sm font-semibold mb-1">
-                Tiempo de parada
+                Tiempo de parada aproximado (horas)
               </label>
 
-              <div className="grid grid-cols-2 gap-2">
-
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  className="w-full border p-2 min-h-11 rounded-lg text-sm"
-                  value={tpValor}
-                  onChange={(e) =>
-                    setTpValor(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Valor"
-                />
-
-                <select
-                  className="w-full border p-2 min-h-11 rounded-lg text-sm"
-                  value={tpUnidad}
-                  onChange={(e) =>
-                    setTpUnidad(
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="min">
-                    Minutos
+              <select
+                className="w-full border p-2 min-h-11 rounded-lg text-sm"
+                value={tpValor}
+                onChange={(e) => setTpValor(e.target.value)}
+              >
+                <option value="">-- Seleccione tiempo aproximado --</option>
+                {OPCIONES_TIEMPO_PARADA.map((horas) => (
+                  <option key={horas} value={horas}>
+                    {horas} {horas === 1 ? 'hora' : 'horas'}
                   </option>
+                ))}
+              </select>
 
-                  <option value="h">
-                    Horas
-                  </option>
-                </select>
-              </div>
-
-              {!!minutosParada && (
-                <p className="text-xs text-gray-600 mt-1">
-                  Se registrará:{' '}
-                  <b>
-                    {labelDesdeMinutos(
-                      minutosParada
-                    )}
-                  </b>
-                </p>
-              )}
+              <p className="mt-1 text-[11px] text-slate-500">
+                Desde esta versión el tiempo de parada se registra únicamente en horas.
+              </p>
             </div>
 
             <div>
@@ -1993,36 +1732,6 @@ export default function MantenimientosPage() {
               />
             </div>
           </div>
-        </div>
-
-        {/* =====================================================
-            RESPONSABLE
-        ====================================================== */}
-
-        <div className="bg-gray-50 border rounded-lg p-4 mb-6 text-sm">
-
-          <p className="font-semibold mb-2">
-            Responsable del registro
-          </p>
-
-          <p>
-            <b>Nombre:</b>{' '}
-            {user.nombreCompleto ||
-              user.usuario ||
-              '-'}
-          </p>
-
-          <p>
-            <b>Documento:</b>{' '}
-            {user.documento ||
-              '-'}
-          </p>
-
-          <p>
-            <b>Cargo / Rol:</b>{' '}
-            {user.rol ||
-              '-'}
-          </p>
         </div>
 
         {/* =====================================================
@@ -2077,6 +1786,122 @@ export default function MantenimientosPage() {
           </button>
         </div>
       </div>
+
+      {/* =====================================================
+          MODAL REGISTRAR PROVEEDOR - SOLO CORRECTIVO
+      ====================================================== */}
+
+      {modalProveedor && tipoMant === 'CORRECTIVO' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-800">Registrar proveedor para correctivo</h3>
+            <p className="mt-1 text-xs text-slate-600">
+              Use los datos de la factura o documento del taller. Este registro se crea sin actividades de mantenimiento asociadas y podrá ser revisado por Administración.
+            </p>
+            <p className="mt-2 text-[11px] text-slate-500">Los campos marcados con <b>*</b> son obligatorios.</p>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Tipo de persona *</label>
+                <select className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoProveedor.tipo_persona} onChange={(e) => setNuevoProveedor((x) => ({ ...x, tipo_persona: e.target.value }))}>
+                  <option value="JURIDICA">Jurídica</option>
+                  <option value="NATURAL">Natural</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Razón social / nombre *</label>
+                <input className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoProveedor.razon_social} onChange={(e) => setNuevoProveedor((x) => ({ ...x, razon_social: e.target.value.toUpperCase() }))} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Nombre comercial</label>
+                <input className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoProveedor.nombre_comercial} onChange={(e) => setNuevoProveedor((x) => ({ ...x, nombre_comercial: e.target.value.toUpperCase() }))} />
+              </div>
+
+              <div className="grid grid-cols-[1fr_110px] gap-3">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">NIT / documento *</label>
+                  <input inputMode="numeric" className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoProveedor.nit_proveedor} onChange={(e) => setNuevoProveedor((x) => ({ ...x, nit_proveedor: onlyDigits(e.target.value) }))} />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">DV</label>
+                  <input inputMode="numeric" maxLength={1} className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoProveedor.digito_verificacion} onChange={(e) => setNuevoProveedor((x) => ({ ...x, digito_verificacion: onlyDigits(e.target.value).slice(0, 1) }))} />
+                  <p className="mt-1 text-[10px] leading-tight text-slate-500">
+                    DV = Dígito de Verificación del NIT. Es el número que aparece después del guion, por ejemplo 900123456-<b>7</b>.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Dirección *</label>
+                <input className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoProveedor.direccion} onChange={(e) => setNuevoProveedor((x) => ({ ...x, direccion: e.target.value.toUpperCase() }))} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Teléfono *</label>
+                <input inputMode="tel" maxLength={10} className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoProveedor.telefono} onChange={(e) => setNuevoProveedor((x) => ({ ...x, telefono: onlyDigits(e.target.value).slice(0, 10) }))} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Correo</label>
+                <input type="email" className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoProveedor.email} onChange={(e) => setNuevoProveedor((x) => ({ ...x, email: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" disabled={guardandoProveedor} onClick={() => setModalProveedor(false)} className="rounded-lg bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-700">Cancelar</button>
+              <button type="button" disabled={guardandoProveedor} onClick={guardarNuevoProveedor} className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-900 disabled:bg-gray-400">{guardandoProveedor ? 'Guardando...' : 'Guardar proveedor'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          MODAL REGISTRAR TÉCNICO
+      ====================================================== */}
+
+      {modalTecnico && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-800">Registrar técnico</h3>
+            <p className="mt-1 text-xs text-slate-600">
+              El proveedor ya debe existir. Verifique especialmente documento y celular antes de guardar.
+            </p>
+            <p className="mt-2 text-[11px] text-slate-500">Los campos marcados con <b>*</b> son obligatorios.</p>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Nombres *</label>
+                <input className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoTecnico.nombres} onChange={(e) => setNuevoTecnico((x) => ({ ...x, nombres: e.target.value.toUpperCase() }))} />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Documento *</label>
+                <input inputMode="numeric" maxLength={12} className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoTecnico.documento} onChange={(e) => setNuevoTecnico((x) => ({ ...x, documento: onlyDigits(e.target.value).slice(0, 12) }))} placeholder="Número de documento" />
+                {/^3\d{9}$/.test(nuevoTecnico.documento) && <p className="mt-1 text-xs font-semibold text-red-600">Este número tiene estructura de celular. Verifique que no haya intercambiado documento y celular.</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Celular *</label>
+                <input inputMode="tel" maxLength={10} className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoTecnico.telefono} onChange={(e) => setNuevoTecnico((x) => ({ ...x, telefono: onlyDigits(e.target.value).slice(0, 10) }))} placeholder="Ej. 3001234567" />
+                {nuevoTecnico.telefono && !/^3\d{9}$/.test(nuevoTecnico.telefono) && <p className="mt-1 text-xs font-semibold text-red-600">El celular debe tener exactamente 10 dígitos y comenzar por 3.</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Correo</label>
+                <input type="email" className="w-full border p-2 min-h-11 rounded-lg text-sm" value={nuevoTecnico.email} onChange={(e) => setNuevoTecnico((x) => ({ ...x, email: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Observaciones</label>
+                <textarea rows="2" className="w-full border p-2 rounded-lg text-sm" value={nuevoTecnico.observaciones} onChange={(e) => setNuevoTecnico((x) => ({ ...x, observaciones: e.target.value.toUpperCase() }))} />
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" disabled={guardandoTecnico} onClick={() => setModalTecnico(false)} className="rounded-lg bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-700">Cancelar</button>
+              <button type="button" disabled={guardandoTecnico} onClick={guardarNuevoTecnico} className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-900 disabled:bg-gray-400">{guardandoTecnico ? 'Guardando...' : 'Guardar técnico'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =====================================================
           MODAL KILOMETRAJE
@@ -2136,308 +1961,6 @@ export default function MantenimientosPage() {
         </div>
       )}
 
-      {/* =====================================================
-          MODAL NUEVO PROVEEDOR
-      ====================================================== */}
-
-      {modalProveedor && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-
-          <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
-
-            <h3 className="text-lg font-bold mb-4">
-              Nuevo proveedor
-            </h3>
-
-            <div className="space-y-3">
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Empresa *
-                </label>
-
-                <input
-                  className="w-full border p-2 rounded text-sm"
-                  autoFocus
-                  value={
-                    modalProveedor.empresa
-                  }
-                  onChange={(e) =>
-                    setModalProveedor({
-                      ...modalProveedor,
-                      empresa:
-                        e.target.value.toUpperCase(),
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  NIT
-                </label>
-
-                <input
-                  className="w-full border p-2 rounded text-sm"
-                  value={
-                    modalProveedor.nit
-                  }
-                  onChange={(e) =>
-                    setModalProveedor({
-                      ...modalProveedor,
-                      nit:
-                        e.target.value,
-                    })
-                  }
-                />
-
-                {!!provNitDup && (
-                  <p className="text-xs text-red-600 mt-1">
-                    Este NIT ya está registrado para{' '}
-                    <b>
-                      {provNitDup.empresa}
-                    </b>
-                    .
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Dirección
-                </label>
-
-                <input
-                  className="w-full border p-2 rounded text-sm"
-                  value={
-                    modalProveedor.direccion
-                  }
-                  onChange={(e) =>
-                    setModalProveedor({
-                      ...modalProveedor,
-                      direccion:
-                        e.target.value.toUpperCase(),
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Teléfono
-                </label>
-
-                <input
-                  className="w-full border p-2 rounded text-sm"
-                  value={
-                    modalProveedor.telefono
-                  }
-                  onChange={(e) =>
-                    setModalProveedor({
-                      ...modalProveedor,
-                      telefono:
-                        e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Email
-                </label>
-
-                <input
-                  type="email"
-                  className="w-full border p-2 rounded text-sm"
-                  value={
-                    modalProveedor.email
-                  }
-                  onChange={(e) =>
-                    setModalProveedor({
-                      ...modalProveedor,
-                      email:
-                        e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-5">
-
-              <button
-                className="px-3 py-2 bg-gray-500 hover:bg-gray-700 text-white rounded"
-                onClick={() =>
-                  setModalProveedor(null)
-                }
-              >
-                Cancelar
-              </button>
-
-              <button
-                className={`px-3 py-2 text-white rounded ${
-                  provNitDup
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
-                }`}
-                disabled={!!provNitDup}
-                onClick={guardarProveedor}
-              >
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =====================================================
-          MODAL NUEVO TÉCNICO
-      ====================================================== */}
-
-      {modalTecnico && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-
-          <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
-
-            <h3 className="text-lg font-bold mb-2">
-              Nuevo técnico
-            </h3>
-
-            {proveedorInfo && (
-              <p className="text-xs text-gray-600 mb-4">
-                Proveedor:{' '}
-                <b>
-                  {proveedorInfo.empresa}
-                </b>
-              </p>
-            )}
-
-            <div className="space-y-3">
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Nombres y Apellidos *
-                </label>
-
-                <input
-                  className="w-full border p-2 rounded text-sm"
-                  autoFocus
-                  value={
-                    modalTecnico.nombres
-                  }
-                  onChange={(e) =>
-                    setModalTecnico({
-                      ...modalTecnico,
-                      nombres:
-                        e.target.value.toUpperCase(),
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Documento *
-                </label>
-
-                <input
-                  className="w-full border p-2 rounded text-sm"
-                  value={
-                    modalTecnico.documento
-                  }
-                  onChange={(e) =>
-                    setModalTecnico({
-                      ...modalTecnico,
-                      documento:
-                        e.target.value,
-                    })
-                  }
-                />
-
-                {!!tecDocDup && (
-                  <p className="text-xs text-red-600 mt-1">
-                    Documento ya registrado para este proveedor. Técnico:{' '}
-                    <b>
-                      {tecDocDup.nombres}
-                    </b>
-                    .
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Teléfono
-                </label>
-
-                <input
-                  className="w-full border p-2 rounded text-sm"
-                  value={
-                    modalTecnico.telefono
-                  }
-                  onChange={(e) =>
-                    setModalTecnico({
-                      ...modalTecnico,
-                      telefono:
-                        e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Email
-                </label>
-
-                <input
-                  type="email"
-                  className="w-full border p-2 rounded text-sm"
-                  value={
-                    modalTecnico.email
-                  }
-                  onChange={(e) =>
-                    setModalTecnico({
-                      ...modalTecnico,
-                      email:
-                        e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-5">
-
-              <button
-                className="px-3 py-2 bg-gray-500 hover:bg-gray-700 text-white rounded"
-                onClick={() =>
-                  setModalTecnico(null)
-                }
-              >
-                Cancelar
-              </button>
-
-              <button
-                className={`px-3 py-2 text-white rounded ${
-                  !proveedorId ||
-                  tecDocDup
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
-                }`}
-                disabled={
-                  !proveedorId ||
-                  !!tecDocDup
-                }
-                onClick={guardarTecnico}
-              >
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

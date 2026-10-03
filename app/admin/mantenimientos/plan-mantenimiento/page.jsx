@@ -1,277 +1,1043 @@
+// app/admin/mantenimientos/plan-mantenimiento/page.jsx
+
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Wrench, RefreshCw, Search, CalendarDays, X, AlertTriangle,
-  CheckCircle2, Clock3, RotateCcw, Gauge, CarFront, LoaderCircle,
+  CalendarDays,
+  Car,
+  CheckCircle2,
+  ChevronDown,
+  CircleAlert,
+  Gauge,
+  FileDown,
+  Loader2,
+  RefreshCw,
+  TriangleAlert,
+  Wrench,
+  X,
 } from 'lucide-react'
+
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { cerrarSesion } from '@/lib/auth/logout'
 
-const MESES = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC']
-const MOTIVOS_GESTION = [
-  'ANTICIPACIÓN POR MAYOR RECORRIDO',
-  'REPROGRAMACIÓN POR MENOR RECORRIDO',
-  'VEHÍCULO FUERA DE SERVICIO',
-  'INDISPONIBILIDAD DE TALLER / PROVEEDOR',
-  'VENCIMIENTO DE LA PROGRAMACIÓN',
-  'OTRO',
+const MESES = [
+  'ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN',
+  'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC',
 ]
 
-function texto(v){ return String(v ?? '').trim() }
-function numero(v){ const n=Number(v); return Number.isFinite(n)?n:null }
-function km(v){ const n=numero(v); return n===null?'—':`${Math.round(n).toLocaleString('es-CO')} km` }
-function obtenerUsuario(){
-  try { const raw=localStorage.getItem('currentUser')||sessionStorage.getItem('currentUser'); return raw?JSON.parse(raw):null } catch { return null }
-}
-function obtenerNit(u){ return texto(u?.nitEmpresa||u?.nit_empresa||u?.nit||u?.empresaNit||u?.empresa_nit) }
-function estadoCelda(c){
-  if(!c || !c.total) return 'VACIO'
-  return texto(c.estado).toUpperCase() || 'PROGRAMADO'
-}
-function claseEstado(e){
-  if(e==='EJECUTADO') return 'border-emerald-200 bg-emerald-50 text-emerald-800'
-  if(e==='VENCIDO') return 'border-red-200 bg-red-50 text-red-800'
-  if(e==='PARCIAL') return 'border-amber-200 bg-amber-50 text-amber-800'
-  return 'border-blue-200 bg-blue-50 text-blue-800'
+function numero(valor) {
+  const n = Number(valor)
+  return Number.isFinite(n) ? n : null
 }
 
-export default function PlanMantenimientoPage(){
-  const router=useRouter()
-  const [currentUser,setCurrentUser]=useState(null)
-  const [data,setData]=useState(null)
-  const [cargando,setCargando]=useState(true)
-  const [procesando,setProcesando]=useState(false)
-  const [error,setError]=useState('')
-  const [mensaje,setMensaje]=useState('')
-  const [buscar,setBuscar]=useState('')
-  const [vigencia,setVigencia]=useState(new Date().getFullYear())
-  const [modal,setModal]=useState(null)
-  const [form,setForm]=useState({nuevo_mes:'',nueva_vigencia:'',motivo:'',justificacion:''})
+function formatoNumero(valor, decimales = 0) {
+  const n = numero(valor)
+  if (n === null) return '—'
 
+  return new Intl.NumberFormat('es-CO', {
+    maximumFractionDigits: decimales,
+    minimumFractionDigits: decimales,
+  }).format(n)
+}
 
-  useEffect(()=>{ setCurrentUser(obtenerUsuario()) },[])
+function formatoKm(valor) {
+  const n = numero(valor)
+  return n === null ? '—' : `${formatoNumero(n)} km`
+}
 
-  const cargar=useCallback(async()=>{
-    const u=obtenerUsuario(); const nit=obtenerNit(u)
-    if(!nit){ setError('No fue posible identificar el NIT del CEA en la sesión actual.'); setCargando(false); return }
-    setCargando(true); setError('')
-    try{
-      const r=await fetch(`/api/admin/mantenimientos/plan-mantenimiento?vigencia=${vigencia}`,{headers:{'x-cea-nit':nit},credentials:'include',cache:'no-store'})
-      const j=await r.json().catch(()=>({}))
-      if(!r.ok || j?.status==='failed') throw new Error(j?.message||'No fue posible cargar el plan de mantenimiento.')
-      setData(j)
-    }catch(e){ setError(e.message||'Error cargando el plan.') }
-    finally{ setCargando(false) }
-  },[vigencia])
+function formatoFecha(fecha) {
+  if (!fecha) return '—'
+  const [anio, mes, dia] = String(fecha).slice(0, 10).split('-')
+  if (!anio || !mes || !dia) return fecha
+  return `${dia}/${mes}/${anio}`
+}
 
-  useEffect(()=>{ cargar() },[cargar])
+function obtenerCurrentUser() {
+  if (typeof window === 'undefined') return null
 
-  const vehiculos=useMemo(()=>{
-    const q=buscar.trim().toUpperCase()
-    const arr=Array.isArray(data?.vehiculos)?data.vehiculos:[]
-    if(!q) return arr
-    return arr.filter(x=>[x?.vehiculo?.placa,x?.vehiculo?.marca,x?.vehiculo?.linea,x?.vehiculo?.modelo].some(v=>texto(v).toUpperCase().includes(q)))
-  },[data,buscar])
+  try {
+    return JSON.parse(localStorage.getItem('currentUser') || 'null')
+  } catch {
+    return null
+  }
+}
 
-  async function post(body){
-    const u=obtenerUsuario(); const nit=obtenerNit(u)
-    if(!nit){ setError('No fue posible identificar el NIT del CEA en la sesión actual.'); return }
-    setProcesando(true); setError(''); setMensaje('')
-    try{
-      const r=await fetch('/api/admin/mantenimientos/plan-mantenimiento',{
-        method:'POST',headers:{'Content-Type':'application/json','x-cea-nit':nit},credentials:'include',cache:'no-store',
-        body:JSON.stringify({...body,responsable:texto(u?.nombre||u?.nombres||u?.nombreCompleto),documento_responsable:texto(u?.documento||u?.cedula)})
-      })
-      const respuesta=await r.text()
-      let j={}
-      try{ j=respuesta?JSON.parse(respuesta):{} }catch{ throw new Error(respuesta||`Respuesta no válida de la API (${r.status}).`) }
-      if(!r.ok || j?.status==='failed') throw new Error(j?.message||j?.error||'No fue posible completar la operación.')
+function obtenerNit(user) {
+  return (
+    user?.nitEmpresa ||
+    user?.nit ||
+    user?.empresa?.nit ||
+    ''
+  )
+}
 
-      if(body?.accion==='GENERAR_PLAN'){
-        const creadas=Number(j?.creadas??0)
-        const omitidas=Array.isArray(j?.omitidas)?j.omitidas:[]
-        const detalle=omitidas.length?` Vehículos omitidos: ${omitidas.map(x=>`${x.placa||x.vehiculo_id}: ${x.motivo||'sin detalle'}`).join(' · ')}`:''
-        setMensaje(j?.message||`Plan generado. Programaciones creadas: ${creadas}.${detalle}`)
-      }else setMensaje(j?.message||'Operación realizada correctamente.')
-
-      await cargar(); setModal(null); setForm({nuevo_mes:'',nueva_vigencia:'',motivo:'',justificacion:''})
-    }catch(e){ setError(e.message||'Error procesando la solicitud.') }
-    finally{ setProcesando(false) }
+function claseEstado(tipo) {
+  if (tipo === 'EJECUTADO') {
+    return 'border-slate-300 bg-emerald-200 text-slate-900'
   }
 
-  function abrirMes(v,mes){
-    const celda=v?.meses?.[mes]||{total:0,actividades:[]}
-    setModal({tipo:'MES',vehiculo:v,mes,celda})
-  }
-  function abrirGestion(a,v,mes){
-    setForm({nuevo_mes:'',nueva_vigencia:String(a?.vigencia||vigencia),motivo:'',justificacion:''}); setModal({tipo:'GESTION',actividad:a,vehiculo:v,mes})
+  if (tipo === 'VENCIDO') {
+    return 'border-slate-300 bg-orange-200 text-slate-900'
   }
 
+  return 'border-slate-300 bg-blue-200 text-slate-900'
+}
 
-  function gruposFrecuencia(actividades){
-    const mapa=new Map()
-    for(const a of actividades||[]){
-      const f=numero(a.frecuencia_km)
-      const k=f===null?'SIN_FRECUENCIA':f
-      if(!mapa.has(k)) mapa.set(k,[])
-      mapa.get(k).push(a)
+function etiquetaEstado(tipo) {
+  return tipo || 'PROGRAMADO'
+}
+
+function PuntoChip({ punto, tipo, onClick }) {
+  const actividades = punto?.actividades || []
+  const frecuencias = [
+    ...new Set(
+      actividades
+        .map((x) => numero(x.frecuencia_km))
+        .filter(Boolean)
+    ),
+  ].sort((a, b) => a - b)
+
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(punto, tipo)}
+      className={`w-full rounded-lg border px-2 py-2 text-left shadow-sm transition hover:shadow ${claseEstado(tipo)}`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-extrabold">
+          P{punto?.punto || punto?.ciclo || '—'}
+        </span>
+        <span className="text-[9px] font-bold uppercase">
+          {etiquetaEstado(tipo)}
+        </span>
+      </div>
+
+      {frecuencias.length > 0 && (
+        <div className="mt-1 text-[9px] font-semibold">
+          {frecuencias.map((f) => `${formatoNumero(f / 1000)}k`).join(' + ')}
+        </div>
+      )}
+
+      {punto?.historico_reconstruido && (
+        <div className="mt-1 text-[8px] font-extrabold uppercase tracking-wide text-slate-600">
+          Historial 2026
+        </div>
+      )}
+
+      {punto?.fecha_debio_realizarse && (
+        <div className="mt-1 text-[9px] text-slate-700">
+          Debió: {formatoFecha(punto.fecha_debio_realizarse)}
+        </div>
+      )}
+
+      {tipo === 'PROGRAMADO' && punto?.km_objetivo != null && (
+        <div className="mt-1 text-[9px]">
+          Objetivo {formatoKm(punto.km_objetivo)}
+        </div>
+      )}
+    </button>
+  )
+}
+
+
+function contarMes(mes) {
+  const pendientes =
+    (mes?.programados || []).length
+  const ejecutados =
+    (mes?.ejecutados || []).length
+  const vencidos =
+    (mes?.vencidos || []).length
+
+  return {
+    programados:
+      pendientes + ejecutados + vencidos,
+    ejecutados,
+    vencidos,
+  }
+}
+
+function sumarConteos(a, b) {
+  return {
+    programados: a.programados + b.programados,
+    ejecutados: a.ejecutados + b.ejecutados,
+    vencidos: a.vencidos + b.vencidos,
+  }
+}
+
+function totalizarPlan(vehiculos) {
+  const trimestres = [
+    { nombre: 'I TRIMESTRE', meses: ['ENE', 'FEB', 'MAR'] },
+    { nombre: 'II TRIMESTRE', meses: ['ABR', 'MAY', 'JUN'] },
+    { nombre: 'III TRIMESTRE', meses: ['JUL', 'AGO', 'SEP'] },
+    { nombre: 'IV TRIMESTRE', meses: ['OCT', 'NOV', 'DIC'] },
+  ]
+
+  const resultado = trimestres.map((trimestre) => {
+    let total = {
+      programados: 0,
+      ejecutados: 0,
+      vencidos: 0,
     }
-    return [...mapa.entries()]
-      .sort((a,b)=>{
-        if(a[0]==='SIN_FRECUENCIA') return 1
-        if(b[0]==='SIN_FRECUENCIA') return -1
-        return Number(a[0])-Number(b[0])
-      })
-      .map(([frecuencia,items])=>({frecuencia,items}))
+
+    for (const vehiculo of vehiculos || []) {
+      for (const mes of trimestre.meses) {
+        total = sumarConteos(
+          total,
+          contarMes(vehiculo?.meses?.[mes])
+        )
+      }
+    }
+
+    return {
+      ...trimestre,
+      ...total,
+    }
+  })
+
+  const anual = resultado.reduce(
+    (acc, item) => sumarConteos(acc, item),
+    {
+      programados: 0,
+      ejecutados: 0,
+      vencidos: 0,
+    }
+  )
+
+  return {
+    trimestres: resultado,
+    anual,
+  }
+}
+
+export default function PlanMantenimientoPage() {
+  const router = useRouter()
+
+  const [cargando, setCargando] = useState(true)
+  const [actualizando, setActualizando] = useState(false)
+  const [error, setError] = useState('')
+  const [data, setData] = useState(null)
+  const [vigencia, setVigencia] = useState(new Date().getFullYear())
+  const [modal, setModal] = useState(null)
+  const [justificacion, setJustificacion] = useState('')
+  const [guardandoJustificacion, setGuardandoJustificacion] = useState(false)
+
+  const currentUser = useMemo(() => obtenerCurrentUser(), [])
+  const nit = useMemo(() => obtenerNit(currentUser), [currentUser])
+
+  async function cargar({ silencioso = false } = {}) {
+    if (!nit) {
+      setError('No fue posible identificar la empresa de la sesión.')
+      setCargando(false)
+      return
+    }
+
+    if (silencioso) setActualizando(true)
+    else setCargando(true)
+
+    setError('')
+
+    try {
+      const respuesta = await fetch(
+        `/api/admin/mantenimientos/plan-mantenimiento?vigencia=${vigencia}`,
+        {
+          method: 'GET',
+          headers: {
+            'x-cea-nit': nit,
+          },
+          cache: 'no-store',
+        }
+      )
+
+      const json = await respuesta.json().catch(() => ({}))
+
+      if (!respuesta.ok || json?.status !== 'success') {
+        throw new Error(
+          json?.message ||
+            json?.error ||
+            'No fue posible consultar el Plan de Mantenimiento.'
+        )
+      }
+
+      setData(json)
+    } catch (e) {
+      console.error(e)
+      setError(e?.message || 'Error consultando el Plan de Mantenimiento.')
+    } finally {
+      setCargando(false)
+      setActualizando(false)
+    }
   }
 
-  return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 p-3 md:p-5">
-    <div className="mx-auto max-w-[1550px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <EncabezadoModulo
-        icono={Wrench}
-        titulo="PLAN DE MANTENIMIENTO"
-        subtitulo="Matriz anual de programación preventiva por vehículo"
-        currentUser={currentUser}
-        permitirPersonalizacion={false}
-        rutaRegreso="/admin/mantenimientos"
-        textoRegreso="Mantenimiento Vehicular"
-        onVolver={()=>router.push('/admin/mantenimientos')}
-        onCerrarSesion={()=>cerrarSesion(router)}
-      />
+  useEffect(() => {
+    cargar()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vigencia, nit])
 
-      <main className="p-4 md:p-5">
-        {error && <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><AlertTriangle size={18}/><span>{error}</span></div>}
-        {mensaje && <div className="mb-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><CheckCircle2 size={18}/><span>{mensaje}</span></div>}
+  function abrirPunto(punto, tipo, vehiculo) {
+    setJustificacion(punto?.justificacion_vencimiento || '')
+    setModal({
+      punto,
+      tipo,
+      vehiculo,
+    })
+  }
 
-        <div className="mb-4 grid gap-3 md:grid-cols-4">
-          <Resumen titulo="Vehículos" valor={data?.resumen?.vehiculos ?? 0} texto="Plan finalizado" />
-          <Resumen titulo="Programadas" valor={data?.resumen?.programadas ?? 0} texto="Obligaciones vigentes" />
-          <Resumen titulo="Ejecutadas" valor={data?.resumen?.ejecutadas ?? 0} texto="Acreditadas automáticamente" />
-          <Resumen titulo="Vencidas" valor={data?.resumen?.vencidas ?? 0} texto="Requieren gestión" />
-        </div>
+  function cerrarModal() {
+    if (guardandoJustificacion) return
+    setModal(null)
+    setJustificacion('')
+  }
 
-        <div className="mb-4 flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:flex-row">
-          <div className="relative flex-1"><Search className="absolute left-3 top-2.5 text-slate-400" size={18}/><input value={buscar} onChange={e=>setBuscar(e.target.value)} placeholder="Buscar por placa, marca, línea o modelo..." className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-3 text-sm outline-none focus:border-slate-500"/></div>
-          <select value={vigencia} onChange={e=>setVigencia(Number(e.target.value))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
-            {(data?.vigencias_disponibles||[vigencia]).map(anio=><option key={anio} value={anio}>{anio}</option>)}
-          </select>
-          <button onClick={cargar} disabled={cargando} className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-slate-900 disabled:opacity-60"><RefreshCw size={17} className={cargando?'animate-spin':''}/>Actualizar</button>
-          <button onClick={()=>post({accion:'GENERAR_PLAN',vigencia})} disabled={procesando} className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-md disabled:translate-y-0 disabled:opacity-60">{procesando?<LoaderCircle size={17} className="animate-spin"/>:<CalendarDays size={17}/>} {procesando?'Generando plan...':'Generar / completar plan'}</button>
-        </div>
+  async function guardarJustificacion() {
+    const punto = modal?.punto
 
-        {cargando ? <div className="flex min-h-52 items-center justify-center gap-2 text-slate-500"><LoaderCircle className="animate-spin"/>Cargando matriz...</div> :
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full min-w-[1450px] border-collapse text-[11px]">
-            <thead><tr className="bg-slate-400 text-slate-900">
-              <th className="sticky left-0 z-30 w-[190px] min-w-[190px] border-b border-r border-slate-300 bg-slate-400 px-3 py-2.5 text-center text-[10px] font-bold">VEHÍCULO</th>
-              <th className="sticky left-[190px] z-30 w-[110px] min-w-[110px] border-b border-r border-slate-300 bg-slate-400 px-2 py-2.5 text-center text-[10px] font-bold">PROM. MENSUAL</th>
-              <th className="sticky left-[300px] z-30 w-[110px] min-w-[110px] border-b border-r border-slate-300 bg-slate-400 px-2 py-2.5 text-center text-[10px] font-bold">KM ACTUAL</th>
-              {MESES.map(m=><th key={m} className="min-w-[90px] border-b border-l border-slate-300 bg-slate-400 px-2 py-2.5 text-center text-[10px] font-bold">{m}</th>)}
-            </tr></thead>
-            <tbody>
-              {vehiculos.map(v=><tr key={v.vehiculo.id} className="border-t border-slate-200 align-middle hover:bg-slate-50">
-                <td className="sticky left-0 z-20 w-[190px] min-w-[190px] border border-slate-300 bg-white px-3 py-3">
-                  <div className="flex items-center gap-2"><CarFront size={20} className="text-slate-600"/><div><div className="font-bold text-slate-900">{v.vehiculo.placa}</div><div className="text-[11px] text-slate-500">{[v.vehiculo.marca,v.vehiculo.linea].filter(Boolean).join(' ')}</div><div className="mt-1 text-[10px] text-slate-400">{v.configuraciones_activas ?? 0} actividades</div></div></div>
-                </td>
-                <td className="sticky left-[190px] z-20 w-[110px] min-w-[110px] border border-slate-300 bg-white px-2 py-3 text-center font-semibold text-slate-700">{km(v?.kilometraje?.promedio_km_mes)}</td>
-                <td className="sticky left-[300px] z-20 w-[110px] min-w-[110px] border border-slate-300 bg-white px-2 py-3 text-center"><div className="font-semibold text-slate-800">{km(v?.kilometraje?.ultimo_km)}</div><div className="text-[10px] text-slate-400">{v?.kilometraje?.ultima_fecha || '—'}</div></td>
-                {MESES.map(m=>{ const c=v?.meses?.[m]; const e=estadoCelda(c); return <td key={m} className="border border-slate-300 px-1.5 py-2 text-center">
-                  {e==='VACIO' ? <span className="text-slate-300">—</span> : <button onClick={()=>abrirMes(v,m)} className={`w-full rounded-lg border px-1 py-2 text-[10px] font-bold ${claseEstado(e)}`}><div>{e}</div><div className="mt-0.5 font-normal">{c.total} act.</div>{e==='PARCIAL'&&<div>{c.ejecutadas}/{c.total}</div>}</button>}
-                </td>})}
-              </tr>)}
-              {!vehiculos.length && <tr><td colSpan={15} className="py-12 text-center text-sm text-slate-500">No hay vehículos para mostrar en el plan.</td></tr>}
-            </tbody>
-          </table>
-        </div>}
+    if (!punto) {
+      setError(
+        'No se encontró la información del vencimiento.'
+      )
+      return
+    }
 
-        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600"><b>Regla de ejecución:</b> esta pantalla no permite marcar mantenimientos como ejecutados. El estado EJECUTADO se acredita automáticamente desde los mantenimientos registrados. La gestión manual se limita a vencimientos y reprogramaciones, conservando la trazabilidad.</div>
-      </main>
+    if (!justificacion.trim()) {
+      setError('La justificación del vencimiento es obligatoria.')
+      return
+    }
+
+    setGuardandoJustificacion(true)
+    setError('')
+
+    try {
+      const respuesta = await fetch(
+        '/api/admin/mantenimientos/plan-mantenimiento',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-cea-nit': nit,
+          },
+          body: JSON.stringify({
+            accion:
+              punto?.historico_reconstruido
+                ? 'GESTIONAR_VENCIDO_HISTORICO'
+                : 'JUSTIFICAR_VENCIDO',
+            programacion_id:
+              punto?.historico_reconstruido
+                ? null
+                : punto.id,
+            vehiculo_id:
+              punto?.historico_reconstruido
+                ? modal?.vehiculo?.id
+                : null,
+            ciclo:
+              punto?.historico_reconstruido
+                ? (punto?.punto || punto?.ciclo)
+                : null,
+            fecha_vencimiento:
+              punto?.historico_reconstruido
+                ? punto?.fecha_vencimiento
+                : null,
+            km_vencimiento:
+              punto?.historico_reconstruido
+                ? punto?.km_vencimiento
+                : null,
+            km_objetivo:
+              punto?.historico_reconstruido
+                ? (punto?.km_objetivo || punto?.km_debio_realizarse)
+                : null,
+            justificacion: justificacion.trim(),
+            responsable:
+              currentUser?.nombre ||
+              currentUser?.nombres ||
+              currentUser?.usuario ||
+              null,
+            documento_responsable:
+              currentUser?.documento ||
+              currentUser?.numeroDocumento ||
+              null,
+          }),
+        }
+      )
+
+      const json = await respuesta.json().catch(() => ({}))
+
+      if (!respuesta.ok || json?.status !== 'success') {
+        throw new Error(
+          json?.message || 'No fue posible guardar la justificación.'
+        )
+      }
+
+      setModal(null)
+      setJustificacion('')
+      await cargar({ silencioso: true })
+    } catch (e) {
+      console.error(e)
+      setError(e?.message || 'Error guardando la justificación.')
+    } finally {
+      setGuardandoJustificacion(false)
+    }
+  }
+
+  const vehiculos = data?.vehiculos || []
+  const vigencias = data?.vigencias_disponibles || [vigencia]
+
+  const totalizado = useMemo(
+    () => totalizarPlan(vehiculos),
+    [vehiculos]
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 p-3 md:p-5">
+      <div className="mx-auto max-w-[1550px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <EncabezadoModulo
+          icono={Wrench}
+          titulo="PLAN DE MANTENIMIENTO"
+          subtitulo="Matriz anual de programación preventiva por vehículo"
+          currentUser={currentUser}
+          permitirPersonalizacion={false}
+          rutaRegreso="/admin/mantenimientos"
+          textoRegreso="Mantenimiento Vehicular"
+          onVolver={() => router.push('/admin/mantenimientos')}
+          onCerrarSesion={() => cerrarSesion(router)}
+        />
+
+        <main className="p-4 md:p-5">
+
+        {error && (
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
+            <CircleAlert size={18} className="mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {cargando ? (
+          <div className="flex min-h-[360px] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center gap-3 text-sm font-semibold text-slate-600">
+              <Loader2 size={20} className="animate-spin" />
+              Calculando programación dinámica...
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-3 flex flex-col gap-2 rounded-xl border border-slate-300 bg-slate-50 p-2.5 xl:flex-row xl:items-center xl:justify-between">
+              <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
+                <Resumen
+                  icono={Car}
+                  titulo="Vehículos"
+                  valor={vehiculos.length}
+                />
+                <Resumen
+                  icono={CalendarDays}
+                  titulo={`Programados ${vigencia}`}
+                  valor={totalizado.anual.programados}
+                />
+                <Resumen
+                  icono={CheckCircle2}
+                  titulo="Ejecutados"
+                  valor={totalizado.anual.ejecutados}
+                />
+                <Resumen
+                  icono={TriangleAlert}
+                  titulo="Vencidos"
+                  valor={totalizado.anual.vencidos}
+                />
+              </div>
+
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-slate-200 pt-2 xl:border-l xl:border-t-0 xl:pl-3 xl:pt-0">
+                <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-600">
+                  Vigencia
+                </label>
+
+                <div className="relative">
+                  <select
+                    value={vigencia}
+                    onChange={(e) => setVigencia(Number(e.target.value))}
+                    className="appearance-none rounded-lg border border-slate-300 bg-white py-2 pl-3 pr-8 text-xs font-bold text-slate-800 outline-none focus:border-slate-500"
+                  >
+                    {vigencias.map((anio) => (
+                      <option key={anio} value={anio}>
+                        {anio}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={13}
+                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => cargar({ silencioso: true })}
+                  disabled={actualizando}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-700 px-3 py-2 text-[11px] font-bold text-white transition hover:bg-slate-600 disabled:opacity-60"
+                >
+                  <RefreshCw
+                    size={13}
+                    className={actualizando ? 'animate-spin' : ''}
+                  />
+                  Actualizar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/admin/mantenimientos/plan-mantenimiento/documento?anio=${vigencia}`
+                    )
+                  }
+                  disabled={cargando || vehiculos.length === 0}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-white px-3 py-2 text-[11px] font-bold text-slate-800 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <FileDown size={13} />
+                  Generar PDF
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
+              <div className="border-b border-slate-300 bg-slate-200 px-4 py-3 text-slate-900">
+                <div className="text-sm font-extrabold">
+                  Matriz de programación dinámica · {vigencia}
+                </div>
+                <div className="mt-1 text-[11px] font-medium text-slate-600">
+                  Los meses futuros se calculan automáticamente con la configuración, los mantenimientos reales y el kilometraje de los preoperacionales.
+                </div>
+              </div>
+
+              {vehiculos.length === 0 ? (
+                <div className="px-5 py-12 text-center text-sm text-slate-500">
+                  No hay vehículos con configuración de mantenimiento FINALIZADA.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-[1650px] w-full border-collapse">
+                    <thead>
+                      <tr className="bg-slate-400 text-[10px] font-extrabold uppercase tracking-wide text-slate-900">
+                        <th className="sticky left-0 z-20 min-w-[250px] border-b border-r border-slate-300 bg-slate-400 px-3 py-3 text-left">
+                          Vehículo
+                        </th>
+                        {MESES.map((mes) => (
+                          <th
+                            key={mes}
+                            className="min-w-[112px] border-b border-r border-slate-300 px-2 py-3 text-center"
+                          >
+                            {mes}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {vehiculos.map((vista) => (
+                        <FilaVehiculo
+                          key={vista.vehiculo.id}
+                          vista={vista}
+                          abrirPunto={abrirPunto}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+              <div className="border-b border-slate-300 bg-slate-200 px-4 py-2.5">
+                <div className="text-xs font-extrabold uppercase tracking-wide text-slate-800">
+                  Totalizado trimestral y acumulado anual · {vigencia}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[650px] border-collapse text-[11px]">
+                  <thead>
+                    <tr className="bg-slate-100 text-[10px] font-extrabold uppercase tracking-wide text-slate-600">
+                      <th className="border-b border-r border-slate-300 px-3 py-2 text-left">
+                        Período
+                      </th>
+                      <th className="border-b border-r border-slate-300 px-3 py-2 text-center">
+                        Programados
+                      </th>
+                      <th className="border-b border-r border-slate-300 px-3 py-2 text-center">
+                        Ejecutados
+                      </th>
+                      <th className="border-b border-slate-300 px-3 py-2 text-center">
+                        Vencidos
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {totalizado.trimestres.map((item) => (
+                      <tr key={item.nombre} className="text-slate-800">
+                        <td className="border-b border-r border-slate-200 px-3 py-2 font-bold">
+                          {item.nombre}
+                        </td>
+                        <td className="border-b border-r border-slate-200 px-3 py-2 text-center font-extrabold">
+                          {item.programados}
+                        </td>
+                        <td className="border-b border-r border-slate-200 px-3 py-2 text-center font-extrabold">
+                          {item.ejecutados}
+                        </td>
+                        <td className="border-b border-slate-200 px-3 py-2 text-center font-extrabold">
+                          {item.vencidos}
+                        </td>
+                      </tr>
+                    ))}
+
+                    <tr className="bg-slate-100 text-slate-900">
+                      <td className="border-r border-slate-300 px-3 py-2.5 font-extrabold">
+                        ACUMULADO ANUAL
+                      </td>
+                      <td className="border-r border-slate-300 px-3 py-2.5 text-center font-extrabold">
+                        {totalizado.anual.programados}
+                      </td>
+                      <td className="border-r border-slate-300 px-3 py-2.5 text-center font-extrabold">
+                        {totalizado.anual.ejecutados}
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-extrabold">
+                        {totalizado.anual.vencidos}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[11px] text-slate-600 shadow-sm">
+              <span className="font-bold text-slate-800">Criterio:</span>{' '}
+              la programación se genera automáticamente con la información existente. El mes proyectado se recalcula según el recorrido reciente y el vencimiento se determina al superar el kilometraje objetivo más la tolerancia configurada.
+            </div>
+          </>
+        )}
+        </main>
+      </div>
+
+      {modal && (
+        <ModalPunto
+          modal={modal}
+          justificacion={justificacion}
+          setJustificacion={setJustificacion}
+          guardarJustificacion={guardarJustificacion}
+          guardando={guardandoJustificacion}
+          cerrar={cerrarModal}
+        />
+      )}
     </div>
+  )
+}
 
-    {modal?.tipo==='MES' && <Modal titulo={`${modal.vehiculo.vehiculo.placa} · ${modal.mes}`} cerrar={()=>setModal(null)}>
-      <div className="mb-3 grid grid-cols-3 gap-2 text-xs"><Dato label="Km actual" value={km(modal.vehiculo?.kilometraje?.ultimo_km)}/><Dato label="Promedio mensual" value={km(modal.vehiculo?.kilometraje?.promedio_km_mes)}/><Dato label="Estado mes" value={estadoCelda(modal.celda)}/></div>
-      {(modal.celda.actividades||[]).some(a=>a.estado!=='EJECUTADO')&&
-        <div className="mb-3 flex justify-end">
-          <button
-            onClick={()=>abrirGestion((modal.celda.actividades||[]).find(a=>a.estado!=='EJECUTADO'),modal.vehiculo,modal.mes)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-900 hover:shadow-md"
+function Resumen({ icono: Icono, titulo, valor }) {
+  return (
+    <div className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 shadow-sm">
+      <div className="flex items-center gap-2">
+        <div className="rounded-md border border-slate-200 bg-slate-100 p-1.5 text-slate-700">
+          <Icono size={14} />
+        </div>
+        <div className="min-w-0">
+          <div className="truncate text-[9px] font-extrabold uppercase tracking-wide text-slate-500">
+            {titulo}
+          </div>
+          <div className="text-base font-extrabold leading-none text-slate-900">
+            {valor}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FilaVehiculo({ vista, abrirPunto }) {
+  const v = vista.vehiculo
+  const km = vista.kilometraje || {}
+  const ciclo = vista.ciclo || {}
+
+  return (
+    <tr className="align-top">
+      <td className="sticky left-0 z-10 border-b border-r border-slate-300 bg-white px-3 py-3">
+        <div className="font-extrabold text-slate-900">
+          {v.placa}
+        </div>
+        <div className="mt-0.5 text-[10px] font-semibold text-slate-500">
+          {[v.marca, v.linea].filter(Boolean).join(' · ')}
+        </div>
+
+        <div className="mt-2 space-y-1 text-[10px] text-slate-600">
+          <div className="flex items-center gap-1.5">
+            <Gauge size={12} />
+            <span>
+              Km actual: <b>{formatoKm(km.ultimo_km)}</b>
+            </span>
+          </div>
+          <div>
+            Promedio dinámico:{' '}
+            <b>{formatoKm(km.promedio_km_mes)}/mes</b>
+          </div>
+          <div>
+            Próximo punto:{' '}
+            <b>P{ciclo.punto_actual || '—'}</b>
+          </div>
+          <div>
+            Base:{' '}
+            <b>{formatoKm(ciclo.frecuencia_base_km)}</b>
+          </div>
+        </div>
+
+        {vista.errores?.length > 0 && (
+          <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[9px] font-bold text-amber-800">
+            {vista.errores.join(' · ')}
+          </div>
+        )}
+      </td>
+
+      {MESES.map((mes) => {
+        const celda = vista.meses?.[mes] || {
+          programados: [],
+          ejecutados: [],
+          vencidos: [],
+        }
+
+        return (
+          <td
+            key={mes}
+            className="border-b border-r border-slate-300 bg-slate-50/40 px-1.5 py-2"
           >
-            <RotateCcw size={14}/>Gestionar programación
-          </button>
-        </div>}
-      <div className="space-y-3">
-        {gruposFrecuencia(modal.celda.actividades||[]).map(grupo=>{
-          const referencia=grupo.items[0]||{}
-          return <section key={String(grupo.frecuencia)} className="overflow-hidden rounded-xl border border-slate-300">
-            <div className="border-b border-slate-300 bg-slate-200 px-3 py-2">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <div className="text-[11px] font-bold uppercase text-slate-800">{grupo.frecuencia==='SIN_FRECUENCIA'?'ACTIVIDADES SIN FRECUENCIA':`ACTIVIDADES CON FRECUENCIA DE ${km(grupo.frecuencia)}`}</div>
-                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-slate-600">
-                    <span><b>Km objetivo:</b> {km(referencia.km_objetivo)}</span><span><b>Tolerancia:</b> ± {km(referencia.tolerancia_km)}</span><span><b>Ventana:</b> {km(referencia.ventana_desde_km)} – {km(referencia.ventana_hasta_km)}</span>
+            <div className="space-y-1.5">
+              {celda.vencidos.map((p) => (
+                <PuntoChip
+                  key={`v-${p.id || p.punto}`}
+                  punto={p}
+                  tipo="VENCIDO"
+                  onClick={(punto, tipo) =>
+                    abrirPunto(punto, tipo, v)
+                  }
+                />
+              ))}
+
+              {celda.ejecutados.map((p) => (
+                <PuntoChip
+                  key={`e-${p.id || p.punto}`}
+                  punto={p}
+                  tipo="EJECUTADO"
+                  onClick={(punto, tipo) =>
+                    abrirPunto(punto, tipo, v)
+                  }
+                />
+              ))}
+
+              {celda.programados.map((p) => (
+                <PuntoChip
+                  key={`p-${p.punto}`}
+                  punto={p}
+                  tipo={p.estado}
+                  onClick={(punto, tipo) =>
+                    abrirPunto(punto, tipo, v)
+                  }
+                />
+              ))}
+            </div>
+          </td>
+        )
+      })}
+    </tr>
+  )
+}
+
+function ModalPunto({
+  modal,
+  justificacion,
+  setJustificacion,
+  guardarJustificacion,
+  guardando,
+  cerrar,
+}) {
+  const { punto, tipo, vehiculo } = modal
+  const actividades = punto?.actividades || []
+
+  const actividadesPorFrecuencia =
+    actividades.reduce((mapa, actividad) => {
+      const frecuencia =
+        numero(actividad?.frecuencia_km) || 0
+
+      if (!mapa.has(frecuencia)) {
+        mapa.set(frecuencia, [])
+      }
+
+      mapa.get(frecuencia).push(actividad)
+      return mapa
+    }, new Map())
+
+  const gruposFrecuencia =
+    [...actividadesPorFrecuencia.entries()]
+      .sort((a, b) => a[0] - b[0])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3">
+      <div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-2xl">
+        <div className="border-b border-slate-300 bg-slate-100 p-3">
+          <div className="flex items-stretch gap-2">
+            <div className="flex flex-1 items-center rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <div>
+                <div className="text-[9px] font-extrabold uppercase tracking-wide text-slate-500">
+                  Vehículo
+                </div>
+                <div className="text-sm font-extrabold text-slate-900">
+                  {vehiculo?.placa}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex min-w-[92px] items-center rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <div>
+                <div className="text-[9px] font-extrabold uppercase tracking-wide text-slate-500">
+                  Punto
+                </div>
+                <div className="text-sm font-extrabold text-slate-900">
+                  P{punto?.punto || punto?.ciclo}
+                </div>
+              </div>
+            </div>
+
+            <div className={`flex min-w-[120px] items-center rounded-lg border px-3 py-2 ${claseEstado(tipo)}`}>
+              <div>
+                <div className="text-[9px] font-extrabold uppercase tracking-wide opacity-70">
+                  Estado
+                </div>
+                <div className="text-xs font-extrabold">
+                  {etiquetaEstado(tipo)}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={cerrar}
+              className="flex w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-200"
+              aria-label="Cerrar"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="max-h-[calc(92vh-58px)] overflow-y-auto p-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Dato titulo="Km referencia" valor={formatoKm(punto?.km_referencia)} />
+            <Dato titulo="Km objetivo" valor={formatoKm(punto?.km_objetivo)} />
+            <Dato titulo="Tolerancia" valor={formatoKm(punto?.tolerancia_km)} />
+            <Dato
+              titulo="Límite máximo"
+              valor={formatoKm(
+                punto?.km_maximo ??
+                  (numero(punto?.km_objetivo) !== null &&
+                  numero(punto?.tolerancia_km) !== null
+                    ? numero(punto.km_objetivo) + numero(punto.tolerancia_km)
+                    : null)
+              )}
+            />
+          </div>
+
+          {tipo === 'PROGRAMADO' && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <Dato titulo="Km actual" valor={formatoKm(punto?.km_actual)} />
+              <Dato titulo="Km faltantes" valor={formatoKm(punto?.km_faltantes)} />
+              <Dato titulo="Fecha estimada" valor={formatoFecha(punto?.fecha_proyectada)} />
+            </div>
+          )}
+
+          {tipo === 'VENCIDO' && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <Dato titulo="Fecha vencimiento" valor={formatoFecha(punto?.fecha_vencimiento)} />
+              <Dato titulo="Km vencimiento" valor={formatoKm(punto?.km_vencimiento)} />
+              <Dato
+                titulo="Atendido posteriormente"
+                valor={punto?.atendido ? 'SÍ' : 'NO'}
+              />
+            </div>
+          )}
+
+          {tipo === 'EJECUTADO' && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Dato titulo="Fecha ejecución" valor={formatoFecha(punto?.fecha_ejecucion)} />
+              <Dato titulo="Km ejecución" valor={formatoKm(punto?.km_ejecucion)} />
+            </div>
+          )}
+
+          {punto?.historico_reconstruido && (
+            <div className="mt-4 rounded-xl border border-slate-300 bg-slate-50 p-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-wide text-slate-600">
+                Reconstrucción histórica 2026
+              </div>
+
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-lg border border-slate-200 bg-white p-2">
+                  <div className="text-[9px] font-bold uppercase text-slate-500">
+                    Fecha en que debió realizarse
+                  </div>
+                  <div className="mt-1 text-xs font-extrabold text-slate-800">
+                    {formatoFecha(punto?.fecha_debio_realizarse)}
                   </div>
                 </div>
 
+                <div className="rounded-lg border border-slate-200 bg-white p-2">
+                  <div className="text-[9px] font-bold uppercase text-slate-500">
+                    Km estimado de obligación
+                  </div>
+                  <div className="mt-1 text-xs font-extrabold text-slate-800">
+                    {formatoKm(punto?.km_debio_realizarse || punto?.km_objetivo)}
+                  </div>
+                </div>
+              </div>
+
+              {punto?.actividad_historica && (
+                <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-[10px] text-slate-600">
+                  <span className="font-extrabold">Registro histórico:</span>{' '}
+                  {punto.actividad_historica}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-5">
+            <div className="mb-2 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wide text-slate-700">
+              <Wrench size={14} />
+              Actividades del punto
+            </div>
+
+            {actividades.length === 0 ? (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-4 text-xs text-slate-500">
+                No se encontraron actividades para este punto.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {gruposFrecuencia.map(([frecuencia, lista]) => (
+                  <div
+                    key={frecuencia}
+                    className="overflow-hidden rounded-xl border border-slate-300 bg-white"
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-300 bg-slate-200 px-3 py-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wide text-slate-700">
+                        Frecuencia {formatoKm(frecuencia)}
+                      </div>
+                      <div className="rounded-md border border-slate-300 bg-white px-2 py-0.5 text-[9px] font-extrabold text-slate-600">
+                        {lista.length} {lista.length === 1 ? 'actividad' : 'actividades'}
+                      </div>
+                    </div>
+
+                    <div className="divide-y divide-slate-200">
+                      {lista.map((a) => (
+                        <div
+                          key={`${a.configuracion_id}-${a.actividad_id}`}
+                          className="px-3 py-2.5"
+                        >
+                          <div className="text-xs font-semibold text-slate-800">
+                            {a.actividad}
+                          </div>
+                          {a.accion && (
+                            <div className="mt-0.5 text-[10px] text-slate-500">
+                              {a.accion}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {tipo === 'VENCIDO' &&
+            punto?.justificacion_vencimiento && (
+            <div className="mt-5 rounded-xl border border-emerald-300 bg-emerald-50 p-4">
+              <div className="text-xs font-extrabold uppercase tracking-wide text-emerald-900">
+                Vencimiento gestionado
+              </div>
+
+              <div className="mt-2 text-[11px] text-slate-700">
+                La justificación ya fue registrada. El punto conserva el estado
+                VENCIDO y permanece visible como antecedente.
+              </div>
+
+              <div className="mt-3 rounded-lg border border-emerald-200 bg-white p-3">
+                <div className="text-[9px] font-bold uppercase text-slate-500">
+                  Justificación registrada
+                </div>
+                <div className="mt-1 whitespace-pre-wrap text-xs font-semibold text-slate-800">
+                  {punto.justificacion_vencimiento}
+                </div>
+              </div>
+
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-lg border border-emerald-200 bg-white p-2">
+                  <div className="text-[9px] font-bold uppercase text-slate-500">
+                    Responsable
+                  </div>
+                  <div className="mt-1 text-[11px] font-semibold text-slate-800">
+                    {punto?.responsable_justificacion || '—'}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-emerald-200 bg-white p-2">
+                  <div className="text-[9px] font-bold uppercase text-slate-500">
+                    Fecha de gestión
+                  </div>
+                  <div className="mt-1 text-[11px] font-semibold text-slate-800">
+                    {formatoFecha(punto?.justificado_at)}
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="divide-y divide-slate-200">
-              {grupo.items.map(a=><div key={a.id} className="flex items-center justify-between gap-3 px-3 py-2 hover:bg-slate-50">
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-slate-900">{a.actividad}</div>
-                  {a.accion&&<div className="text-[10px] text-slate-500">{a.accion}</div>}
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className={`rounded-full border px-2 py-1 text-[9px] font-bold ${claseEstado(a.estado)}`}>{a.estado}</span>
+          )}
 
-                </div>
-              </div>)}
+          {tipo === 'VENCIDO' &&
+            !punto?.justificacion_vencimiento && (
+            <div className="mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4">
+              <div className="text-xs font-extrabold uppercase text-orange-900">
+                Justificación del vencimiento
+              </div>
+              <p className="mt-1 text-[11px] text-orange-800">
+                El vencimiento permanecerá visible en la matriz. La gestión registra la justificación y el responsable, pero no elimina ni cambia el estado VENCIDO.
+              </p>
+
+              <textarea
+                value={justificacion}
+                onChange={(e) => setJustificacion(e.target.value)}
+                rows={4}
+                placeholder="Registre la justificación..."
+                className="mt-3 w-full rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400"
+              />
+
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={guardarJustificacion}
+                  disabled={guardando || !justificacion.trim()}
+                  className="inline-flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {guardando && <Loader2 size={14} className="animate-spin" />}
+                  Guardar justificación
+                </button>
+              </div>
             </div>
-          </section>
-        })}
-        {!(modal.celda.actividades||[]).length&&<div className="py-8 text-center text-sm text-slate-500">No hay actividades en este mes.</div>}
+          )}
+        </div>
       </div>
-    </Modal>}
-
-    {modal?.tipo==='GESTION' && <Modal titulo={`Gestionar programación · ${modal.vehiculo.vehiculo.placa}`} cerrar={()=>setModal(null)}>
-      <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5"><b>{modal.vehiculo.vehiculo.placa}</b> · Programación actual: {modal.mes} · Frecuencia: {km(modal.actividad.frecuencia_km)} · Objetivo: {km(modal.actividad.km_objetivo)} · Tolerancia: ± {km(modal.actividad.tolerancia_km)}<div className="mt-1 text-[10px] text-slate-500">La reprogramación se aplica al punto maestro completo y conserva la trazabilidad. Si ya se superó la ventana kilométrica, el incumplimiento original se conserva.</div></div>
-      <label className="mb-1 block text-xs font-semibold text-slate-700">Motivo <span className="text-red-600">*</span></label>
-      <select value={form.motivo} onChange={e=>setForm({...form,motivo:e.target.value})} className="mb-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
-        <option value="">Seleccione un motivo...</option>
-        {MOTIVOS_GESTION.map(m=><option key={m} value={m}>{m}</option>)}
-      </select>
-      {!form.motivo&&<div className="mb-3 text-[10px] font-medium text-red-600">* Campo obligatorio.</div>}
-
-      <label className="mb-1 block text-xs font-semibold text-slate-700">Justificación <span className="text-red-600">*</span></label>
-      <textarea value={form.justificacion} onChange={e=>setForm({...form,justificacion:e.target.value})} className="mb-1 min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none" placeholder={form.motivo==='OTRO'?'Describa la razón de la gestión y el soporte correspondiente...':'Explique la situación concreta y el soporte de la gestión...'}/>
-      {!texto(form.justificacion)&&<div className="mb-3 text-[10px] font-medium text-red-600">* Campo obligatorio.</div>}
-
-      <div className="mb-1 text-xs font-semibold text-slate-700">Nuevo período del punto de control <span className="text-red-600">*</span></div>
-      <div className="mb-1 grid grid-cols-2 gap-2">
-        <select value={form.nueva_vigencia} onChange={e=>setForm({...form,nueva_vigencia:e.target.value})} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-          <option value="">Vigencia...</option>
-          {Array.from({length:4},(_,i)=>new Date().getFullYear()-1+i).map(a=><option key={a} value={a}>{a}</option>)}
-        </select>
-        <select value={form.nuevo_mes} onChange={e=>setForm({...form,nuevo_mes:e.target.value})} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-          <option value="">Mes...</option>
-          {MESES.map((m,i)=><option key={m} value={i+1}>{m}</option>)}
-        </select>
-      </div>
-      {(!form.nueva_vigencia||!form.nuevo_mes)&&<div className="mb-3 text-[10px] font-medium text-red-600">* Vigencia y mes son obligatorios para reprogramar.</div>}
-      <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-600">
-        Si el motivo es <b>ANTICIPACIÓN POR MAYOR RECORRIDO</b>, el destino debe ser anterior a la programación actual y no podrá ser anterior al mes inmediatamente anterior al mes en curso. Para los demás motivos, el destino debe ser posterior a la programación vigente.
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <button disabled={procesando||!form.motivo||!texto(form.justificacion)||!form.nueva_vigencia||!form.nuevo_mes} onClick={()=>post({accion:'REPROGRAMAR',programacion_id:modal.actividad.id,nueva_vigencia:Number(form.nueva_vigencia),nuevo_mes:Number(form.nuevo_mes),motivo:form.motivo,justificacion:form.justificacion})} className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-950 disabled:cursor-not-allowed disabled:opacity-40">
-          {procesando?'Guardando...':'Reprogramar punto maestro'}
-        </button>
-      </div>
-    </Modal>}
-  </div>
+    </div>
+  )
 }
 
-function Resumen({titulo,valor,texto:sub}){ return <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{titulo}</div><div className="mt-1 text-2xl font-bold text-slate-800">{valor}</div><div className="mt-1 text-xs text-slate-500">{sub}</div></div> }
-function Dato({label,value}){ return <div className="rounded-lg bg-slate-50 px-2.5 py-2"><div className="text-[9px] font-bold uppercase text-slate-400">{label}</div><div className="mt-0.5 font-semibold text-slate-700">{value}</div></div> }
-function Modal({titulo,cerrar,children}){ return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"><div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl"><div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3"><div className="font-bold text-slate-800">{titulo}</div><button onClick={cerrar} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"><X size={20}/></button></div><div className="p-4">{children}</div></div></div> }
+function Dato({ titulo, valor }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="text-[9px] font-bold uppercase tracking-wide text-slate-500">
+        {titulo}
+      </div>
+      <div className="mt-0.5 text-xs font-extrabold text-slate-800">
+        {valor}
+      </div>
+    </div>
+  )
+}

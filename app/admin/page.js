@@ -55,7 +55,7 @@ export default function AdminPage() {
   const menuButtons = [
     {
       icon: 'fa-user-graduate',
-      label: 'Consultas y Matrículas',
+      label: 'Matrículas y Consultas',
       route: '/admin/inscripciones',
     },
     {
@@ -117,6 +117,11 @@ export default function AdminPage() {
       icon: 'fa-road',
       label: 'PESV',
       route: '/admin/pesv',
+    },
+    {
+      icon: 'fa-file-alt',
+      label: 'Reporte SINST - VIGIA 2',
+      route: '/admin/sinst-vigia',
     },
     {
       icon: 'fa-tools',

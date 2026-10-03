@@ -1,31 +1,24 @@
 // app/api/admin/caja/egresos/route.js
-
 import {
   NextResponse,
 } from 'next/server'
-
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
   respuestaErrorEmpresa,
 } from '@/lib/supabaseEmpresaServer'
-
 // =========================================================
 // CONSTANTES
 // =========================================================
-
 const LIMITE_CONSULTA =
   200
-
 const ESTADOS_VALIDOS =
   new Set([
     'ACTIVO',
     'ANULADO',
   ])
-
 // =========================================================
 // RESPUESTA ERROR
 // =========================================================
-
 function respuestaError(
   error
 ) {
@@ -33,7 +26,6 @@ function respuestaError(
     respuestaErrorEmpresa(
       error
     )
-
   return NextResponse.json(
     respuesta.body,
     {
@@ -42,11 +34,9 @@ function respuestaError(
     }
   )
 }
-
 // =========================================================
 // HELPERS
 // =========================================================
-
 function texto(
   valor
 ) {
@@ -54,7 +44,6 @@ function texto(
     valor ?? ''
   ).trim()
 }
-
 function mayusculas(
   valor
 ) {
@@ -62,18 +51,16 @@ function mayusculas(
     valor
   ).toUpperCase()
 }
-
 function limpiarBusqueda(
   valor
 ) {
   return texto(
     valor
   ).replace(
-    /[%_]/g,
+    /[%\_]/g,
     ''
   )
 }
-
 function fechaValida(
   valor
 ) {
@@ -83,7 +70,6 @@ function fechaValida(
     )
   )
 }
-
 function enteroPositivo(
   valor
 ) {
@@ -94,12 +80,10 @@ function enteroPositivo(
   ) {
     return null
   }
-
   const numero =
     Number(
       valor
     )
-
   if (
     !Number.isInteger(
       numero
@@ -108,10 +92,8 @@ function enteroPositivo(
   ) {
     return null
   }
-
   return numero
 }
-
 function numeroPositivo(
   valor
 ) {
@@ -122,12 +104,10 @@ function numeroPositivo(
   ) {
     return null
   }
-
   const numero =
     Number(
       valor
     )
-
   if (
     !Number.isFinite(
       numero
@@ -136,29 +116,23 @@ function numeroPositivo(
   ) {
     return null
   }
-
   return Math.round(
     numero * 100
   ) / 100
 }
-
 // =========================================================
 // FECHA COLOMBIA
 // =========================================================
-
 function hoyColombia() {
   return new Intl.DateTimeFormat(
     'en-CA',
     {
       timeZone:
         'America/Bogota',
-
       year:
         'numeric',
-
       month:
         '2-digit',
-
       day:
         '2-digit',
     }
@@ -166,11 +140,9 @@ function hoyColombia() {
     new Date()
   )
 }
-
 // =========================================================
 // EMPRESA
 // =========================================================
-
 function construirEmpresaRespuesta(
   empresa
 ) {
@@ -178,50 +150,39 @@ function construirEmpresaRespuesta(
     nit:
       empresa?.nit ||
       '',
-
     codigo:
       empresa?.codigo ||
       '',
-
     nombre:
       empresa?.nombre ||
       empresa?.razon_social ||
       '',
-
     razon_social:
       empresa?.razon_social ||
       '',
-
     direccion:
       empresa?.direccion ||
       '',
-
     ciudad:
       empresa?.ciudad ||
       '',
-
     departamento:
       empresa?.departamento ||
       '',
-
     telefono:
       empresa?.telefono ||
       '',
-
     email:
       empresa?.email_principal ||
       '',
-
     representante_legal:
       empresa?.representante_legal ||
       '',
-
     documento_representante:
       empresa?.documento_representante ||
       '',
   }
 }
-
 // =========================================================
 // CONSECUTIVO CUENTA DE COBRO
 // =========================================================
@@ -234,7 +195,6 @@ function construirEmpresaRespuesta(
 // No requiere tabla adicional, trigger ni función SQL.
 //
 // =========================================================
-
 function generarConsecutivoCuentaCobro(
   id,
   fecha
@@ -243,7 +203,6 @@ function generarConsecutivoCuentaCobro(
     texto(
       fecha
     )
-
   const anio =
     /^\d{4}/.test(
       fechaTexto
@@ -257,7 +216,6 @@ function generarConsecutivoCuentaCobro(
             0,
             4
           )
-
   const numero =
     String(
       id
@@ -265,14 +223,11 @@ function generarConsecutivoCuentaCobro(
       6,
       '0'
     )
-
   return `CC-${anio}-${numero}`
 }
-
 // =========================================================
 // CONCEPTO
 // =========================================================
-
 async function obtenerConcepto(
   supabase,
   conceptoId
@@ -292,6 +247,8 @@ async function obtenerConcepto(
         naturaleza,
         requiere_aprendiz,
         requiere_vehiculo,
+        es_gasto_pesv,
+        categoria_pesv,
         activo
       `)
       .eq(
@@ -299,7 +256,6 @@ async function obtenerConcepto(
         conceptoId
       )
       .maybeSingle()
-
   if (
     error
   ) {
@@ -307,7 +263,6 @@ async function obtenerConcepto(
       `No fue posible consultar el concepto: ${error.message}`
     )
   }
-
   if (
     !data
   ) {
@@ -315,13 +270,10 @@ async function obtenerConcepto(
       new Error(
         'El concepto seleccionado no existe.'
       )
-
     errorConcepto.status =
       400
-
     throw errorConcepto
   }
-
   if (
     data.activo !==
     true
@@ -330,18 +282,14 @@ async function obtenerConcepto(
       new Error(
         'El concepto seleccionado se encuentra inactivo.'
       )
-
     errorConcepto.status =
       400
-
     throw errorConcepto
   }
-
   const naturaleza =
     mayusculas(
       data.naturaleza
     )
-
   if (
     ![
       'EGRESO',
@@ -354,20 +302,15 @@ async function obtenerConcepto(
       new Error(
         'El concepto seleccionado no está habilitado para egresos.'
       )
-
     errorConcepto.status =
       400
-
     throw errorConcepto
   }
-
   return data
 }
-
 // =========================================================
 // MEDIO DE PAGO
 // =========================================================
-
 async function obtenerMedioPago(
   supabase,
   medioPagoId
@@ -391,7 +334,6 @@ async function obtenerMedioPago(
         medioPagoId
       )
       .maybeSingle()
-
   if (
     error
   ) {
@@ -399,7 +341,6 @@ async function obtenerMedioPago(
       `No fue posible consultar el medio de pago: ${error.message}`
     )
   }
-
   if (
     !data
   ) {
@@ -407,13 +348,10 @@ async function obtenerMedioPago(
       new Error(
         'El medio de pago seleccionado no existe.'
       )
-
     errorMedio.status =
       400
-
     throw errorMedio
   }
-
   if (
     data.activo !==
     true
@@ -422,20 +360,15 @@ async function obtenerMedioPago(
       new Error(
         'El medio de pago seleccionado se encuentra inactivo.'
       )
-
     errorMedio.status =
       400
-
     throw errorMedio
   }
-
   return data
 }
-
 // =========================================================
 // VEHÍCULO
 // =========================================================
-
 async function obtenerVehiculo(
   supabase,
   vehiculoId
@@ -445,7 +378,6 @@ async function obtenerVehiculo(
   ) {
     return null
   }
-
   const {
     data,
     error,
@@ -470,7 +402,6 @@ async function obtenerVehiculo(
         vehiculoId
       )
       .maybeSingle()
-
   if (
     error
   ) {
@@ -478,7 +409,6 @@ async function obtenerVehiculo(
       `No fue posible consultar el vehículo: ${error.message}`
     )
   }
-
   if (
     !data
   ) {
@@ -486,20 +416,15 @@ async function obtenerVehiculo(
       new Error(
         'El vehículo seleccionado no existe.'
       )
-
     errorVehiculo.status =
       400
-
     throw errorVehiculo
   }
-
   return data
 }
-
 // =========================================================
 // AUDITORÍA
 // =========================================================
-
 async function registrarAuditoria(
   supabase,
   {
@@ -526,57 +451,44 @@ async function registrarAuditoria(
           texto(
             usuario
           ),
-
         accion:
           mayusculas(
             accion
           ),
-
         entidad:
           'EGRESO_CAJA',
-
         entidad_id:
           entidadId,
-
         matricula_id:
           null,
-
         documento:
           null,
-
         consecutivo_referencia:
           texto(
             consecutivoReferencia
           ) ||
           null,
-
         descripcion:
           texto(
             descripcion
           ),
-
         datos_anteriores:
           datosAnteriores,
-
         datos_nuevos:
           datosNuevos,
-
         motivo:
           texto(
             motivo
           ) ||
           null,
-
         observaciones:
           texto(
             observaciones
           ) ||
           null,
-
         origen:
           'MODULO_CAJA_EGRESOS',
       })
-
   if (
     error
   ) {
@@ -585,11 +497,9 @@ async function registrarAuditoria(
     )
   }
 }
-
 // =========================================================
 // EGRESO POR ID
 // =========================================================
-
 async function obtenerEgresoPorId(
   supabase,
   id
@@ -605,10 +515,23 @@ async function obtenerEgresoPorId(
       .select(`
         id,
         concepto_id,
+        es_gasto_pesv,
+        categoria_pesv,
         medio_pago_id,
         vehiculo_id,
         placa,
         fecha,
+        modalidad,
+        receptor_dinero,
+        tipo_documento_receptor,
+        documento_receptor,
+        estado_legalizacion,
+        fecha_legalizacion,
+        valor_legalizado,
+        valor_reintegrado,
+        valor_reembolsado,
+        legalizado_por,
+        observaciones_legalizacion,
         beneficiario,
         tipo_documento_beneficiario,
         documento_beneficiario,
@@ -625,20 +548,19 @@ async function obtenerEgresoPorId(
         fecha_anulacion,
         created_at,
         updated_at,
-
         concepto:conceptos_caja (
           id,
           nombre,
           descripcion,
           naturaleza,
-          requiere_vehiculo
+          requiere_vehiculo,
+          es_gasto_pesv,
+          categoria_pesv
         ),
-
         medio_pago:medios_pago_caja (
           id,
           nombre
         ),
-
         vehiculo:vehiculos (
           id,
           placa,
@@ -656,7 +578,6 @@ async function obtenerEgresoPorId(
         id
       )
       .maybeSingle()
-
   if (
     error
   ) {
@@ -664,14 +585,11 @@ async function obtenerEgresoPorId(
       `No fue posible consultar el egreso: ${error.message}`
     )
   }
-
   return data
 }
-
 // =========================================================
 // LISTAR EGRESOS
 // =========================================================
-
 async function listarEgresos(
   supabase,
   {
@@ -690,10 +608,23 @@ async function listarEgresos(
       .select(`
         id,
         concepto_id,
+        es_gasto_pesv,
+        categoria_pesv,
         medio_pago_id,
         vehiculo_id,
         placa,
         fecha,
+        modalidad,
+        receptor_dinero,
+        tipo_documento_receptor,
+        documento_receptor,
+        estado_legalizacion,
+        fecha_legalizacion,
+        valor_legalizado,
+        valor_reintegrado,
+        valor_reembolsado,
+        legalizado_por,
+        observaciones_legalizacion,
         beneficiario,
         tipo_documento_beneficiario,
         documento_beneficiario,
@@ -710,20 +641,19 @@ async function listarEgresos(
         fecha_anulacion,
         created_at,
         updated_at,
-
         concepto:conceptos_caja (
           id,
           nombre,
           descripcion,
           naturaleza,
-          requiere_vehiculo
+          requiere_vehiculo,
+          es_gasto_pesv,
+          categoria_pesv
         ),
-
         medio_pago:medios_pago_caja (
           id,
           nombre
         ),
-
         vehiculo:vehiculos (
           id,
           placa,
@@ -733,7 +663,6 @@ async function listarEgresos(
           modelo
         )
       `)
-
   if (
     fechaInicio
   ) {
@@ -743,7 +672,6 @@ async function listarEgresos(
         fechaInicio
       )
   }
-
   if (
     fechaFin
   ) {
@@ -753,7 +681,6 @@ async function listarEgresos(
         fechaFin
       )
   }
-
   if (
     estado
   ) {
@@ -763,7 +690,6 @@ async function listarEgresos(
         estado
       )
   }
-
   if (
     conceptoId
   ) {
@@ -773,12 +699,10 @@ async function listarEgresos(
         conceptoId
       )
   }
-
   const termino =
     limpiarBusqueda(
       busqueda
     )
-
   if (
     termino
   ) {
@@ -797,7 +721,6 @@ async function listarEgresos(
         )
       )
   }
-
   const {
     data,
     error,
@@ -820,7 +743,6 @@ async function listarEgresos(
       .limit(
         LIMITE_CONSULTA
       )
-
   if (
     error
   ) {
@@ -828,18 +750,15 @@ async function listarEgresos(
       `No fue posible consultar los egresos: ${error.message}`
     )
   }
-
   return Array.isArray(
     data
   )
     ? data
     : []
 }
-
 // =========================================================
 // RESUMEN
 // =========================================================
-
 async function obtenerResumen(
   supabase,
   {
@@ -861,7 +780,6 @@ async function obtenerResumen(
           nombre
         )
       `)
-
   if (
     fechaInicio
   ) {
@@ -871,7 +789,6 @@ async function obtenerResumen(
         fechaInicio
       )
   }
-
   if (
     fechaFin
   ) {
@@ -881,13 +798,11 @@ async function obtenerResumen(
         fechaFin
       )
   }
-
   const {
     data,
     error,
   } =
     await consulta
-
   if (
     error
   ) {
@@ -895,29 +810,22 @@ async function obtenerResumen(
       `No fue posible consultar el resumen de egresos: ${error.message}`
     )
   }
-
   const registros =
     Array.isArray(
       data
     )
       ? data
       : []
-
   let totalEgresos =
     0
-
   let totalEfectivo =
     0
-
   let totalOtrosMedios =
     0
-
   let cantidadEgresos =
     0
-
   let cantidadAnulados =
     0
-
   for (
     const registro of
       registros
@@ -926,36 +834,29 @@ async function obtenerResumen(
       mayusculas(
         registro?.estado
       )
-
     if (
       estado ===
       'ANULADO'
     ) {
       cantidadAnulados +=
         1
-
       continue
     }
-
     const valor =
       Number(
         registro?.valor ||
         0
       )
-
     cantidadEgresos +=
       1
-
     totalEgresos +=
       valor
-
     const medio =
       mayusculas(
         registro
           ?.medio_pago
           ?.nombre
       )
-
     if (
       medio ===
       'EFECTIVO'
@@ -967,29 +868,22 @@ async function obtenerResumen(
         valor
     }
   }
-
   return {
     total_egresos:
       totalEgresos,
-
     total_efectivo:
       totalEfectivo,
-
     total_otros_medios:
       totalOtrosMedios,
-
     cantidad_egresos:
       cantidadEgresos,
-
     cantidad_anulados:
       cantidadAnulados,
   }
 }
-
 // =========================================================
 // GET
 // =========================================================
-
 export async function GET(
   request
 ) {
@@ -1001,28 +895,23 @@ export async function GET(
       await obtenerSupabaseAdminEmpresaDesdeRequest(
         request
       )
-
     const supabase =
       supabaseAdmin
-
     const {
       searchParams,
     } =
       new URL(
         request.url
       )
-
     const recurso =
       texto(
         searchParams.get(
           'recurso'
         )
       ).toLowerCase()
-
     // =====================================================
     // LISTAR
     // =====================================================
-
     if (
       recurso ===
       'listar'
@@ -1033,35 +922,30 @@ export async function GET(
             'q'
           )
         )
-
       const fechaInicio =
         texto(
           searchParams.get(
             'fecha_inicio'
           )
         )
-
       const fechaFin =
         texto(
           searchParams.get(
             'fecha_fin'
           )
         )
-
       const estado =
         mayusculas(
           searchParams.get(
             'estado'
           )
         )
-
       const conceptoId =
         enteroPositivo(
           searchParams.get(
             'concepto_id'
           )
         )
-
       if (
         fechaInicio &&
         !fechaValida(
@@ -1072,7 +956,6 @@ export async function GET(
           {
             status:
               'error',
-
             message:
               'La fecha inicial no es válida.',
           },
@@ -1082,7 +965,6 @@ export async function GET(
           }
         )
       }
-
       if (
         fechaFin &&
         !fechaValida(
@@ -1093,7 +975,6 @@ export async function GET(
           {
             status:
               'error',
-
             message:
               'La fecha final no es válida.',
           },
@@ -1103,7 +984,6 @@ export async function GET(
           }
         )
       }
-
       if (
         fechaInicio &&
         fechaFin &&
@@ -1114,7 +994,6 @@ export async function GET(
           {
             status:
               'error',
-
             message:
               'La fecha final no puede ser anterior a la fecha inicial.',
           },
@@ -1124,7 +1003,6 @@ export async function GET(
           }
         )
       }
-
       if (
         estado &&
         !ESTADOS_VALIDOS.has(
@@ -1135,7 +1013,6 @@ export async function GET(
           {
             status:
               'error',
-
             message:
               'El estado seleccionado no es válido.',
           },
@@ -1145,7 +1022,6 @@ export async function GET(
           }
         )
       }
-
       const registros =
         await listarEgresos(
           supabase,
@@ -1157,31 +1033,24 @@ export async function GET(
             conceptoId,
           }
         )
-
       return NextResponse.json({
         status:
           'success',
-
         data:
           registros,
-
         total:
           registros.length,
-
         limite:
           LIMITE_CONSULTA,
-
         empresa:
           construirEmpresaRespuesta(
             empresa
           ),
       })
     }
-
     // =====================================================
     // DETALLE
     // =====================================================
-
     if (
       recurso ===
       'detalle'
@@ -1192,7 +1061,6 @@ export async function GET(
             'id'
           )
         )
-
       if (
         !id
       ) {
@@ -1200,7 +1068,6 @@ export async function GET(
           {
             status:
               'error',
-
             message:
               'El identificador del egreso es obligatorio.',
           },
@@ -1210,13 +1077,11 @@ export async function GET(
           }
         )
       }
-
       const egreso =
         await obtenerEgresoPorId(
           supabase,
           id
         )
-
       if (
         !egreso
       ) {
@@ -1224,7 +1089,6 @@ export async function GET(
           {
             status:
               'error',
-
             message:
               'El egreso solicitado no existe.',
           },
@@ -1234,25 +1098,20 @@ export async function GET(
           }
         )
       }
-
       return NextResponse.json({
         status:
           'success',
-
         data:
           egreso,
-
         empresa:
           construirEmpresaRespuesta(
             empresa
           ),
       })
     }
-
     // =====================================================
     // RESUMEN
     // =====================================================
-
     if (
       recurso ===
       'resumen'
@@ -1264,7 +1123,6 @@ export async function GET(
           )
         ) ||
         hoyColombia()
-
       const fechaFin =
         texto(
           searchParams.get(
@@ -1272,7 +1130,6 @@ export async function GET(
           )
         ) ||
         fechaInicio
-
       if (
         !fechaValida(
           fechaInicio
@@ -1285,7 +1142,6 @@ export async function GET(
           {
             status:
               'error',
-
             message:
               'El rango de fechas no es válido.',
           },
@@ -1295,7 +1151,6 @@ export async function GET(
           }
         )
       }
-
       if (
         fechaFin <
         fechaInicio
@@ -1304,7 +1159,6 @@ export async function GET(
           {
             status:
               'error',
-
             message:
               'La fecha final no puede ser anterior a la fecha inicial.',
           },
@@ -1314,7 +1168,6 @@ export async function GET(
           }
         )
       }
-
       const resumen =
         await obtenerResumen(
           supabase,
@@ -1323,26 +1176,21 @@ export async function GET(
             fechaFin,
           }
         )
-
       return NextResponse.json({
         status:
           'success',
-
         data:
           resumen,
-
         empresa:
           construirEmpresaRespuesta(
             empresa
           ),
       })
     }
-
     return NextResponse.json(
       {
         status:
           'error',
-
         message:
           'Recurso no válido.',
       },
@@ -1358,24 +1206,20 @@ export async function GET(
       'Error GET /api/admin/caja/egresos:',
       error
     )
-
     return respuestaError(
       error
     )
   }
 }
-
 // =========================================================
 // POST
 // =========================================================
-
 export async function POST(
   request
 ) {
   try {
     const body =
       await request.json()
-
     const {
       supabaseAdmin,
       empresa,
@@ -1384,19 +1228,15 @@ export async function POST(
         request,
         body
       )
-
     const supabase =
       supabaseAdmin
-
     const accion =
       texto(
         body?.accion
       ).toLowerCase()
-
     // =====================================================
     // REGISTRAR
     // =====================================================
-
     if (
       accion ===
       'registrar'
@@ -1405,81 +1245,73 @@ export async function POST(
         enteroPositivo(
           body?.concepto_id
         )
-
       const medioPagoId =
         enteroPositivo(
           body?.medio_pago_id
         )
-
       const vehiculoId =
         enteroPositivo(
           body?.vehiculo_id
         )
-
       const fecha =
         texto(
           body?.fecha
         ) ||
         hoyColombia()
-
+      const modalidad =
+        mayusculas(body?.modalidad || 'PAGO_DIRECTO')
+      const esEntregaParaLegalizar =
+        modalidad === 'ENTREGA_PARA_LEGALIZAR'
+      const receptorDinero =
+        mayusculas(body?.receptor_dinero)
+      const tipoDocumentoReceptor =
+        mayusculas(body?.tipo_documento_receptor)
+      const documentoReceptor =
+        texto(body?.documento_receptor)
       const beneficiario =
-        mayusculas(
-          body?.beneficiario
-        )
-
+        mayusculas(body?.beneficiario)
       const tipoDocumento =
         mayusculas(
           body?.tipo_documento_beneficiario
         )
-
       const documento =
         texto(
           body?.documento_beneficiario
         )
-
       const descripcion =
         mayusculas(
           body?.descripcion
         )
-
       const valor =
         numeroPositivo(
           body?.valor
         )
-
       // ===================================================
       // OPCIONALES
       // ===================================================
-
       const numeroFactura =
         texto(
           body?.numero_factura
         )
-
       const referenciaPago =
         texto(
           body?.referencia_pago
         )
-
       const observaciones =
         mayusculas(
           body?.observaciones
         )
-
       // ===================================================
       // USUARIO OPERACIÓN
       // ===================================================
-
       const pagadoPor =
         mayusculas(
           body?.pagado_por ||
           body?.usuario
         )
-
       // ===================================================
       // VALIDACIONES
       // ===================================================
-
       if (
         !conceptoId
       ) {
@@ -1487,7 +1319,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'Seleccione un concepto de egreso.',
           },
@@ -1497,7 +1328,6 @@ export async function POST(
           }
         )
       }
-
       if (
         !medioPagoId
       ) {
@@ -1505,7 +1335,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'Seleccione un medio de pago.',
           },
@@ -1515,7 +1344,6 @@ export async function POST(
           }
         )
       }
-
       if (
         !fechaValida(
           fecha
@@ -1525,7 +1353,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'La fecha del egreso no es válida.',
           },
@@ -1535,43 +1362,36 @@ export async function POST(
           }
         )
       }
-
-      if (
-        !beneficiario
-      ) {
+      if (!['PAGO_DIRECTO', 'ENTREGA_PARA_LEGALIZAR'].includes(modalidad)) {
         return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              'El beneficiario es obligatorio.',
-          },
-          {
-            status:
-              400,
-          }
+          { status: 'error', message: 'La modalidad del egreso no es válida.' },
+          { status: 400 }
         )
       }
-
-      if (
-        !documento
-      ) {
+      if (esEntregaParaLegalizar && !receptorDinero) {
         return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              'El documento del beneficiario es obligatorio.',
-          },
-          {
-            status:
-              400,
-          }
+          { status: 'error', message: 'Indique la persona que recibe el dinero para legalizar.' },
+          { status: 400 }
         )
       }
-
+      if (esEntregaParaLegalizar && !documentoReceptor) {
+        return NextResponse.json(
+          { status: 'error', message: 'El documento de la persona que recibe el dinero es obligatorio.' },
+          { status: 400 }
+        )
+      }
+      if (!esEntregaParaLegalizar && !beneficiario) {
+        return NextResponse.json(
+          { status: 'error', message: 'El beneficiario es obligatorio.' },
+          { status: 400 }
+        )
+      }
+      if (!esEntregaParaLegalizar && !documento) {
+        return NextResponse.json(
+          { status: 'error', message: 'El documento del beneficiario es obligatorio.' },
+          { status: 400 }
+        )
+      }
       if (
         !descripcion
       ) {
@@ -1579,7 +1399,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'La descripción del egreso es obligatoria.',
           },
@@ -1589,7 +1408,6 @@ export async function POST(
           }
         )
       }
-
       if (
         valor ===
         null
@@ -1598,7 +1416,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'Ingrese un valor válido mayor a cero.',
           },
@@ -1608,7 +1425,6 @@ export async function POST(
           }
         )
       }
-
       if (
         !pagadoPor
       ) {
@@ -1616,7 +1432,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'No se pudo identificar el usuario que registra el egreso.',
           },
@@ -1626,11 +1441,9 @@ export async function POST(
           }
         )
       }
-
       // ===================================================
       // VALIDAR CONCEPTO Y MEDIO
       // ===================================================
-
       const [
         concepto,
         medioPago,
@@ -1640,20 +1453,32 @@ export async function POST(
             supabase,
             conceptoId
           ),
-
           obtenerMedioPago(
             supabase,
             medioPagoId
           ),
         ])
-
+      // ===================================================
+      // CLASIFICACIÓN PESV DEL CONCEPTO
+      // ===================================================
+      if (
+        concepto?.es_gasto_pesv === true &&
+        !texto(concepto?.categoria_pesv)
+      ) {
+        return NextResponse.json(
+          {
+            status: 'error',
+            message:
+              'El concepto está marcado como gasto PESV pero no tiene una destinación PESV configurada.',
+          },
+          { status: 400 }
+        )
+      }
       // ===================================================
       // VEHÍCULO
       // ===================================================
-
       let vehiculo =
         null
-
       if (
         concepto
           ?.requiere_vehiculo ===
@@ -1666,7 +1491,6 @@ export async function POST(
             {
               status:
                 'error',
-
               message:
                 'Este concepto requiere seleccionar un vehículo.',
             },
@@ -1676,7 +1500,6 @@ export async function POST(
             }
           )
         }
-
         vehiculo =
           await obtenerVehiculo(
             supabase,
@@ -1691,22 +1514,18 @@ export async function POST(
             vehiculoId
           )
       }
-
       const placa =
         vehiculo?.placa
           ? mayusculas(
               vehiculo.placa
             )
           : null
-
       // ===================================================
       // REGISTRAR EGRESO
       // ===================================================
-
       const {
         data:
           egresoCreado,
-
         error:
           errorInsert,
       } =
@@ -1717,65 +1536,76 @@ export async function POST(
           .insert({
             concepto_id:
               concepto.id,
-
+            // Snapshot histórico PESV tomado del concepto en la BD.
+            es_gasto_pesv:
+              concepto.es_gasto_pesv === true,
+            categoria_pesv:
+              concepto.es_gasto_pesv === true
+                ? mayusculas(concepto.categoria_pesv)
+                : null,
             medio_pago_id:
               medioPago.id,
-
             vehiculo_id:
               vehiculo?.id ||
               null,
-
             placa,
-
             fecha,
-
-            beneficiario,
-
-            tipo_documento_beneficiario:
-              tipoDocumento ||
-              null,
-
-            documento_beneficiario:
-              documento,
-
+            modalidad,
+            receptor_dinero: esEntregaParaLegalizar ? receptorDinero : null,
+            tipo_documento_receptor: esEntregaParaLegalizar ? (tipoDocumentoReceptor || null) : null,
+            documento_receptor: esEntregaParaLegalizar ? documentoReceptor : null,
+            estado_legalizacion: esEntregaParaLegalizar ? 'PENDIENTE' : 'NO_APLICA',
+            fecha_legalizacion: null,
+            valor_legalizado: null,
+            valor_reintegrado: 0,
+            valor_reembolsado: 0,
+            legalizado_por: null,
+            observaciones_legalizacion: null,
+            beneficiario: esEntregaParaLegalizar ? null : beneficiario,
+            tipo_documento_beneficiario: esEntregaParaLegalizar ? null : (tipoDocumento || null),
+            documento_beneficiario: esEntregaParaLegalizar ? null : documento,
             descripcion,
-
             valor,
-
             // =============================================
             // OPCIONALES
             // =============================================
-
             numero_factura:
               numeroFactura ||
               null,
-
             referencia_pago:
               referenciaPago ||
               null,
-
             // soporte_url se deja sin utilizar.
-
             numero_cuenta_cobro:
               null,
-
             pagado_por:
               pagadoPor,
-
             observaciones:
               observaciones ||
               null,
-
             estado:
               'ACTIVO',
           })
           .select(`
             id,
             concepto_id,
+            es_gasto_pesv,
+            categoria_pesv,
             medio_pago_id,
             vehiculo_id,
             placa,
             fecha,
+            modalidad,
+            receptor_dinero,
+            tipo_documento_receptor,
+            documento_receptor,
+            estado_legalizacion,
+            fecha_legalizacion,
+            valor_legalizado,
+            valor_reintegrado,
+            valor_reembolsado,
+            legalizado_por,
+            observaciones_legalizacion,
             beneficiario,
             tipo_documento_beneficiario,
             documento_beneficiario,
@@ -1791,7 +1621,6 @@ export async function POST(
             updated_at
           `)
           .single()
-
       if (
         errorInsert
       ) {
@@ -1799,7 +1628,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               `No fue posible registrar el egreso: ${errorInsert.message}`,
           },
@@ -1809,21 +1637,19 @@ export async function POST(
           }
         )
       }
-
       // ===================================================
       // GENERAR CONSECUTIVO
       // ===================================================
-
       const consecutivo =
-        generarConsecutivoCuentaCobro(
-          egresoCreado.id,
-          fecha
-        )
-
+        esEntregaParaLegalizar
+          ? null
+          : generarConsecutivoCuentaCobro(
+              egresoCreado.id,
+              fecha
+            )
       const {
         data:
           egresoActualizado,
-
         error:
           errorConsecutivo,
       } =
@@ -1834,7 +1660,6 @@ export async function POST(
           .update({
             numero_cuenta_cobro:
               consecutivo,
-
             updated_at:
               new Date()
                 .toISOString(),
@@ -1846,10 +1671,23 @@ export async function POST(
           .select(`
             id,
             concepto_id,
+            es_gasto_pesv,
+            categoria_pesv,
             medio_pago_id,
             vehiculo_id,
             placa,
             fecha,
+            modalidad,
+            receptor_dinero,
+            tipo_documento_receptor,
+            documento_receptor,
+            estado_legalizacion,
+            fecha_legalizacion,
+            valor_legalizado,
+            valor_reintegrado,
+            valor_reembolsado,
+            legalizado_por,
+            observaciones_legalizacion,
             beneficiario,
             tipo_documento_beneficiario,
             documento_beneficiario,
@@ -1865,7 +1703,6 @@ export async function POST(
             updated_at
           `)
           .single()
-
       if (
         errorConsecutivo
       ) {
@@ -1878,14 +1715,12 @@ export async function POST(
             'id',
             egresoCreado.id
           )
-
         return NextResponse.json(
           {
             status:
               'error',
-
             message:
-              `No fue posible generar el consecutivo de la cuenta de cobro: ${errorConsecutivo.message}`,
+              `No fue posible finalizar el registro del egreso: ${errorConsecutivo.message}`,
           },
           {
             status:
@@ -1893,73 +1728,57 @@ export async function POST(
           }
         )
       }
-
       // ===================================================
       // AUDITORÍA
       // ===================================================
-
       try {
         await registrarAuditoria(
           supabase,
           {
             usuario:
               pagadoPor,
-
             accion:
               'CREAR_EGRESO',
-
             entidadId:
               egresoActualizado.id,
-
             consecutivoReferencia:
               consecutivo,
-
             descripcion:
-              `REGISTRO DE EGRESO ${consecutivo} A FAVOR DE ${beneficiario}.`,
-
+              esEntregaParaLegalizar
+                ? `REGISTRO DE ENTREGA PARA LEGALIZAR A ${receptorDinero}.`
+                : `REGISTRO DE EGRESO ${consecutivo} A FAVOR DE ${beneficiario}.`,
             datosNuevos: {
               ...egresoActualizado,
-
               concepto: {
                 id:
                   concepto.id,
-
                 nombre:
                   concepto.nombre,
               },
-
               medio_pago: {
                 id:
                   medioPago.id,
-
                 nombre:
                   medioPago.nombre,
               },
-
               vehiculo:
                 vehiculo
                   ? {
                       id:
                         vehiculo.id,
-
                       placa:
                         vehiculo.placa,
-
                       tipo_vehiculo:
                         vehiculo.tipo_vehiculo,
-
                       marca:
                         vehiculo.marca,
-
                       linea:
                         vehiculo.linea,
-
                       modelo:
                         vehiculo.modelo,
                     }
                   : null,
             },
-
             observaciones,
           }
         )
@@ -1970,10 +1789,8 @@ export async function POST(
           'Error auditoría creación egreso:',
           errorAuditoria
         )
-
         // El registro recién creado se revierte porque
         // todavía no ha sido entregado como operación exitosa.
-
         await supabase
           .from(
             'egresos_caja'
@@ -1983,12 +1800,10 @@ export async function POST(
             'id',
             egresoActualizado.id
           )
-
         return NextResponse.json(
           {
             status:
               'error',
-
             message:
               'El egreso no fue registrado porque no fue posible guardar su trazabilidad.',
           },
@@ -1998,30 +1813,22 @@ export async function POST(
           }
         )
       }
-
       // ===================================================
       // RESPUESTA COMPLETA
       // ===================================================
-
       return NextResponse.json(
         {
           status:
             'success',
-
           message:
             `Egreso ${consecutivo} registrado correctamente.`,
-
           data: {
             ...egresoActualizado,
-
             concepto,
-
             medio_pago:
               medioPago,
-
             vehiculo,
           },
-
           empresa:
             construirEmpresaRespuesta(
               empresa
@@ -2033,11 +1840,9 @@ export async function POST(
         }
       )
     }
-
     // =====================================================
     // ANULAR
     // =====================================================
-
     if (
       accion ===
       'anular'
@@ -2046,19 +1851,16 @@ export async function POST(
         enteroPositivo(
           body?.id
         )
-
       const motivo =
         mayusculas(
           body?.motivo_anulacion ||
           body?.motivo
         )
-
       const usuario =
         mayusculas(
           body?.usuario_anulacion ||
           body?.usuario
         )
-
       if (
         !id
       ) {
@@ -2066,7 +1868,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'El identificador del egreso es obligatorio.',
           },
@@ -2076,7 +1877,6 @@ export async function POST(
           }
         )
       }
-
       if (
         !motivo
       ) {
@@ -2084,7 +1884,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'Debe indicar el motivo de la anulación.',
           },
@@ -2094,7 +1893,6 @@ export async function POST(
           }
         )
       }
-
       if (
         !usuario
       ) {
@@ -2102,7 +1900,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'No se pudo identificar el usuario que realiza la anulación.',
           },
@@ -2112,17 +1909,14 @@ export async function POST(
           }
         )
       }
-
       // ===================================================
       // CONSULTAR REGISTRO ORIGINAL
       // ===================================================
-
       const egresoAnterior =
         await obtenerEgresoPorId(
           supabase,
           id
         )
-
       if (
         !egresoAnterior
       ) {
@@ -2130,7 +1924,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'El egreso no existe.',
           },
@@ -2140,7 +1933,6 @@ export async function POST(
           }
         )
       }
-
       if (
         mayusculas(
           egresoAnterior.estado
@@ -2151,7 +1943,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'Este egreso ya se encuentra anulado.',
           },
@@ -2161,19 +1952,15 @@ export async function POST(
           }
         )
       }
-
       const fechaAnulacion =
         new Date()
           .toISOString()
-
       // ===================================================
       // ANULAR
       // ===================================================
-
       const {
         data:
           egresoAnulado,
-
         error:
           errorAnulacion,
       } =
@@ -2184,16 +1971,12 @@ export async function POST(
           .update({
             estado:
               'ANULADO',
-
             motivo_anulacion:
               motivo,
-
             usuario_anulacion:
               usuario,
-
             fecha_anulacion:
               fechaAnulacion,
-
             updated_at:
               fechaAnulacion,
           })
@@ -2208,10 +1991,23 @@ export async function POST(
           .select(`
             id,
             concepto_id,
+            es_gasto_pesv,
+            categoria_pesv,
             medio_pago_id,
             vehiculo_id,
             placa,
             fecha,
+            modalidad,
+            receptor_dinero,
+            tipo_documento_receptor,
+            documento_receptor,
+            estado_legalizacion,
+            fecha_legalizacion,
+            valor_legalizado,
+            valor_reintegrado,
+            valor_reembolsado,
+            legalizado_por,
+            observaciones_legalizacion,
             beneficiario,
             tipo_documento_beneficiario,
             documento_beneficiario,
@@ -2230,7 +2026,6 @@ export async function POST(
             updated_at
           `)
           .maybeSingle()
-
       if (
         errorAnulacion
       ) {
@@ -2238,7 +2033,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               `No fue posible anular el egreso: ${errorAnulacion.message}`,
           },
@@ -2248,7 +2042,6 @@ export async function POST(
           }
         )
       }
-
       if (
         !egresoAnulado
       ) {
@@ -2256,7 +2049,6 @@ export async function POST(
           {
             status:
               'error',
-
             message:
               'El egreso no pudo ser anulado porque su estado cambió.',
           },
@@ -2266,40 +2058,31 @@ export async function POST(
           }
         )
       }
-
       // ===================================================
       // AUDITORÍA
       // ===================================================
-
       try {
         await registrarAuditoria(
           supabase,
           {
             usuario,
-
             accion:
               'ANULAR_EGRESO',
-
             entidadId:
               id,
-
             consecutivoReferencia:
               egresoAnterior
                 .numero_cuenta_cobro,
-
             descripcion:
               `ANULACIÓN DEL EGRESO ${
                 egresoAnterior
                   .numero_cuenta_cobro ||
                 `#${id}`
               }.`,
-
             datosAnteriores:
               egresoAnterior,
-
             datosNuevos:
               egresoAnulado,
-
             motivo,
           }
         )
@@ -2310,11 +2093,9 @@ export async function POST(
           'Error auditoría anulación egreso:',
           errorAuditoria
         )
-
         // =================================================
         // RESTAURAR ESTADO
         // =================================================
-
         await supabase
           .from(
             'egresos_caja'
@@ -2322,19 +2103,15 @@ export async function POST(
           .update({
             estado:
               egresoAnterior.estado,
-
             motivo_anulacion:
               egresoAnterior
                 .motivo_anulacion,
-
             usuario_anulacion:
               egresoAnterior
                 .usuario_anulacion,
-
             fecha_anulacion:
               egresoAnterior
                 .fecha_anulacion,
-
             updated_at:
               egresoAnterior
                 .updated_at ||
@@ -2345,12 +2122,10 @@ export async function POST(
             'id',
             id
           )
-
         return NextResponse.json(
           {
             status:
               'error',
-
             message:
               'La anulación no fue aplicada porque no fue posible guardar su trazabilidad.',
           },
@@ -2360,37 +2135,30 @@ export async function POST(
           }
         )
       }
-
       return NextResponse.json({
         status:
           'success',
-
         message:
           `Egreso ${
             egresoAnulado
               .numero_cuenta_cobro ||
             `#${id}`
           } anulado correctamente.`,
-
         data:
           egresoAnulado,
-
         empresa:
           construirEmpresaRespuesta(
             empresa
           ),
       })
     }
-
     // =====================================================
     // ACCIÓN NO VÁLIDA
     // =====================================================
-
     return NextResponse.json(
       {
         status:
           'error',
-
         message:
           'La acción solicitada no es válida.',
       },
@@ -2406,7 +2174,6 @@ export async function POST(
       'Error POST /api/admin/caja/egresos:',
       error
     )
-
     return respuestaError(
       error
     )

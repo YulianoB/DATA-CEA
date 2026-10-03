@@ -1,5 +1,4 @@
-// app/api/siniestros/route.js// app/api/siniestros/route.js
-
+// app/api/siniestros/route.js
 import { NextResponse } from 'next/server'
 
 import {

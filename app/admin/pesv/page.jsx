@@ -146,6 +146,21 @@ export default function PesvPage() {
           '/admin/pesv/plan-formacion',
       },
 
+            {
+        icon:
+          'fa-wallet',
+
+        titulo:
+          'Presupuesto PESV',
+
+        descripcion:
+          'Planeación, ejecución y seguimiento de los recursos financieros destinados al PESV.',
+
+        route:
+          '/admin/pesv/presupuesto',
+
+      },
+
       {
         icon:
           'fa-exclamation-triangle',

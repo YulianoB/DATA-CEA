@@ -137,6 +137,20 @@ export default function InspeccionPage() {
   ] = useState('')
 
   // ============================================================
+  // Alerta plan de mantenimiento
+  // ============================================================
+
+  const [
+    alertaMantenimiento,
+    setAlertaMantenimiento,
+  ] = useState(null)
+
+  const [
+    mostrarAlertaMantenimiento,
+    setMostrarAlertaMantenimiento,
+  ] = useState(false)
+
+  // ============================================================
   // Formulario
   // ============================================================
 
@@ -442,6 +456,14 @@ export default function InspeccionPage() {
       setValidacionDocumentos(
         null
       )
+
+      setAlertaMantenimiento(
+        null
+      )
+
+      setMostrarAlertaMantenimiento(
+        false
+      )
     }
 
     // ============================================================
@@ -578,6 +600,233 @@ const validarDocumentacionVehiculo =
   }
 
   // ============================================================
+  // Consultar alerta de mantenimiento
+  // ============================================================
+
+  const consultarAlertaMantenimiento =
+    async (placa) => {
+      if (!nitActual || !placa) {
+        return
+      }
+
+      try {
+        const hoy = new Date()
+        const vigencia =
+          Number(
+            new Intl.DateTimeFormat(
+              'en-CA',
+              {
+                year: 'numeric',
+                timeZone:
+                  'America/Bogota',
+              }
+            ).format(hoy)
+          )
+
+        const res =
+          await fetch(
+            `/api/admin/mantenimientos/plan-mantenimiento?vigencia=${vigencia}`,
+            {
+              cache:
+                'no-store',
+
+              headers: {
+                'x-cea-nit':
+                  nitActual,
+              },
+            }
+          )
+
+        const json =
+          await res.json()
+
+        if (
+          !res.ok ||
+          json?.status !==
+            'success'
+        ) {
+          return
+        }
+
+        const vista =
+          (
+            Array.isArray(
+              json?.vehiculos
+            )
+              ? json.vehiculos
+              : []
+          ).find(
+            item =>
+              String(
+                item?.vehiculo
+                  ?.placa ||
+                item?.placa ||
+                ''
+              )
+                .trim()
+                .toUpperCase() ===
+              String(placa)
+                .trim()
+                .toUpperCase()
+          )
+
+        if (!vista) {
+          return
+        }
+
+        const vencidos =
+          Object.values(
+            vista?.meses || {}
+          ).flatMap(
+            mes =>
+              Array.isArray(
+                mes?.vencidos
+              )
+                ? mes.vencidos
+                : []
+          )
+
+        if (
+          vencidos.length >
+          0
+        ) {
+          const punto =
+            vencidos[0]
+
+          setAlertaMantenimiento({
+            tipo:
+              'VENCIDO',
+
+            placa,
+
+            punto:
+              punto?.punto ||
+              punto?.ciclo ||
+              null,
+
+            fecha:
+              punto
+                ?.fecha_vencimiento ||
+              punto
+                ?.fecha_debio_realizarse ||
+              null,
+
+            kmObjetivo:
+              punto?.km_objetivo ||
+              punto
+                ?.km_debio_realizarse ||
+              null,
+          })
+
+          setMostrarAlertaMantenimiento(
+            true
+          )
+
+          return
+        }
+
+        const programados =
+          Object.values(
+            vista?.meses || {}
+          ).flatMap(
+            mes =>
+              Array.isArray(
+                mes?.programados
+              )
+                ? mes.programados
+                : []
+          )
+            .filter(
+              punto =>
+                punto
+                  ?.fecha_proyectada
+            )
+            .sort(
+              (a, b) =>
+                String(
+                  a.fecha_proyectada
+                ).localeCompare(
+                  String(
+                    b.fecha_proyectada
+                  )
+                )
+            )
+
+        if (
+          programados.length ===
+          0
+        ) {
+          return
+        }
+
+        const proximo =
+          programados[0]
+
+        const hoyTexto =
+          formatearBogota(
+            new Date(),
+            'fecha'
+          )
+
+        const inicio =
+          new Date(
+            `${hoyTexto}T00:00:00-05:00`
+          )
+
+        const fechaProgramada =
+          new Date(
+            `${proximo.fecha_proyectada}T00:00:00-05:00`
+          )
+
+        const dias =
+          Math.ceil(
+            (
+              fechaProgramada -
+              inicio
+            ) /
+            86400000
+          )
+
+        if (
+          dias >= 0 &&
+          dias <= 3
+        ) {
+          setAlertaMantenimiento({
+            tipo:
+              'PROXIMO',
+
+            placa,
+
+            punto:
+              proximo?.punto ||
+              proximo?.ciclo ||
+              null,
+
+            fecha:
+              proximo
+                .fecha_proyectada,
+
+            dias,
+
+            kmObjetivo:
+              proximo
+                ?.km_objetivo ||
+              null,
+          })
+
+          setMostrarAlertaMantenimiento(
+            true
+          )
+        }
+      } catch (error) {
+        console.error(
+          'Error consultando alerta de mantenimiento:',
+          error
+        )
+      }
+    }
+
+  // ============================================================
   // Selección placa
   // ============================================================
 
@@ -677,6 +926,10 @@ const validarDocumentacionVehiculo =
             `No existe inspección hoy para ${nuevaPlaca}. Puedes continuar.`
         )
       }
+
+      await consultarAlertaMantenimiento(
+        nuevaPlaca
+      )
     }
 
   // ============================================================
@@ -2045,6 +2298,126 @@ const puedeGuardar =
   </div>
 )}        
       
+      {/* ======================================================
+          MODAL ALERTA PLAN DE MANTENIMIENTO
+      ====================================================== */}
+
+      {mostrarAlertaMantenimiento &&
+        alertaMantenimiento && (
+
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-amber-300 bg-white shadow-2xl">
+
+            <div className="border-b border-amber-200 bg-amber-50 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                  <i className="fas fa-screwdriver-wrench"></i>
+                </div>
+
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-wide text-amber-700">
+                    Plan de mantenimiento
+                  </p>
+
+                  <h3 className="text-[15px] font-black text-gray-900">
+                    {alertaMantenimiento.tipo === 'VENCIDO'
+                      ? 'Mantenimiento vencido'
+                      : 'Mantenimiento próximo'}
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-5">
+              <p className="text-sm text-gray-800">
+                El vehículo{' '}
+                <strong>
+                  {alertaMantenimiento.placa}
+                </strong>{' '}
+                presenta un mantenimiento{' '}
+                {alertaMantenimiento.tipo === 'VENCIDO'
+                  ? 'vencido'
+                  : 'próximo a su fecha estimada'}.
+              </p>
+
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-gray-800">
+                <p>
+                  <strong>Punto:</strong>{' '}
+                  P{alertaMantenimiento.punto || '—'}
+                </p>
+
+                <p className="mt-1">
+                  <strong>
+                    {alertaMantenimiento.tipo === 'VENCIDO'
+                      ? 'Fecha de referencia:'
+                      : 'Fecha estimada:'}
+                  </strong>{' '}
+                  {alertaMantenimiento.fecha || '—'}
+                </p>
+
+                {alertaMantenimiento.kmObjetivo != null && (
+                  <p className="mt-1">
+                    <strong>Kilometraje objetivo:</strong>{' '}
+                    {Number(
+                      alertaMantenimiento.kmObjetivo
+                    ).toLocaleString('es-CO')}{' '}
+                    km
+                  </p>
+                )}
+
+                {alertaMantenimiento.tipo === 'PROXIMO' && (
+                  <p className="mt-1 font-bold text-amber-800">
+                    Faltan aproximadamente{' '}
+                    {alertaMantenimiento.dias === 0
+                      ? 'menos de un día'
+                      : `${alertaMantenimiento.dias} día${
+                          alertaMantenimiento.dias === 1
+                            ? ''
+                            : 's'
+                        }`}.
+                  </p>
+                )}
+              </div>
+
+              <p className="mt-4 text-xs leading-5 text-gray-700">
+                Consulte la información completa desde la opción
+                <strong> Plan de Mantenimiento</strong> disponible en el
+                menú de Instructor Práctica.
+              </p>
+
+              <div className="mt-5 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMostrarAlertaMantenimiento(
+                      false
+                    )
+                  }
+                  className="rounded-lg bg-gray-600 px-4 py-2 text-xs font-bold text-white hover:bg-gray-800"
+                >
+                  Continuar inspección
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/instructor/practica/plan-mantenimiento?placa=${encodeURIComponent(
+                        alertaMantenimiento.placa
+                      )}`
+                    )
+                  }
+                  className="rounded-lg bg-[var(--primary)] px-4 py-2 text-xs font-bold text-white hover:bg-[var(--primary-dark)]"
+                >
+                  <i className="fas fa-calendar-check mr-2"></i>
+                  Ver plan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ======================================================
           MODAL KILOMETRAJE
       ====================================================== */}

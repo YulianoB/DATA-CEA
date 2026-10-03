@@ -538,6 +538,11 @@ export default function SiniestrosPage() {
   const [rowSel, setRowSel] = useState(null)
   const [changingState, setChangingState] = useState(false)
   const [closing, setClosing] = useState(false)
+  const [savingActa, setSavingActa] = useState(false)
+  const [loadingActa, setLoadingActa] = useState(false)
+  const [savingTreatment, setSavingTreatment] = useState(false)
+  const [pasoAnalisisGuardado, setPasoAnalisisGuardado] = useState(false)
+  const [pasoCostosGuardado, setPasoCostosGuardado] = useState(false)
 
   // ==========================================================
   // CAMPOS DE ANÁLISIS Y CIERRE
@@ -545,8 +550,17 @@ export default function SiniestrosPage() {
 
   const [numIpat, setNumIpat] = useState('')
   const [autoridad, setAutoridad] = useState('')
-  const [fechaComiteAnalisis, setFechaComiteAnalisis] = useState('')
   const [resumenAnalisis, setResumenAnalisis] = useState('')
+
+  const [acta, setActa] = useState(null)
+  const [fechaActa, setFechaActa] = useState('')
+  const [tratamientoRealizado, setTratamientoRealizado] = useState('')
+  const [accionesPreventivas, setAccionesPreventivas] = useState('')
+  const [acuerdosCompromisos, setAcuerdosCompromisos] = useState('')
+  const [responsablesCompromisos, setResponsablesCompromisos] = useState('')
+  const [fechaSeguimiento, setFechaSeguimiento] = useState('')
+  const [participantesTexto, setParticipantesTexto] = useState('')
+  const [observacionesActa, setObservacionesActa] = useState('')
 
   const [costo, setCosto] = useState({
     dirChoque: '',
@@ -793,59 +807,113 @@ export default function SiniestrosPage() {
   // app/admin/consultas/siniestros/page.jsx
   // ==========================================================
 
+  const cargarActa = async row => {
+    if (!row?.id || !nitActual) return
+
+    setLoadingActa(true)
+
+    try {
+      const params = new URLSearchParams({
+        nit: nitActual,
+        recurso: 'acta',
+        id: String(row.id),
+      })
+
+      const response = await fetch(
+        `/api/admin/consultas/siniestros?${params.toString()}`,
+        { cache: 'no-store' }
+      )
+
+      const result = await leerRespuestaApi(response)
+      const existente = result?.acta || null
+
+      setActa(existente)
+      setFechaActa(existente?.fecha_acta || hoyBogota())
+      setTratamientoRealizado(existente?.tratamiento_realizado || '')
+      setAccionesPreventivas(existente?.acciones_preventivas || '')
+      setAcuerdosCompromisos(existente?.acuerdos_compromisos || '')
+      setResponsablesCompromisos(existente?.responsables_compromisos || '')
+      setFechaSeguimiento(existente?.fecha_seguimiento || '')
+      setObservacionesActa(existente?.observaciones || '')
+
+      const nombres = Array.isArray(existente?.participantes)
+        ? existente.participantes
+            .map(item => {
+              if (typeof item === 'string') return item
+              const partes = [item?.nombre, item?.cargo].filter(Boolean)
+              return partes.join(' - ')
+            })
+            .filter(Boolean)
+            .join('\n')
+        : ''
+
+      setParticipantesTexto(nombres)
+    } catch (error) {
+      console.error('Error consultando acta:', error)
+      toast.error(error?.message || 'No fue posible consultar el acta.')
+    } finally {
+      setLoadingActa(false)
+    }
+  }
+
   const abrirSeguimiento = row => {
     setRowSel(row)
-
-    setNumIpat(
-      row?.numero_ipat || ''
-    )
-
-    setAutoridad(
-      row?.autoridad || ''
-    )
-
-    setFechaComiteAnalisis(
-      row?.fecha_comite_analisis || ''
-    )
-
-    setResumenAnalisis(
-      row?.resumen_analisis || ''
-    )
+    setNumIpat(row?.numero_ipat || '')
+    setAutoridad(row?.autoridad || '')
+    setResumenAnalisis(row?.resumen_analisis || '')
 
     setCosto({
-      dirChoque: String(
-        row?.costo_dir_choque_simple ?? ''
-      ),
-      indChoque: String(
-        row?.costo_indi_choque_simple ?? ''
-      ),
-      dirLeves: String(
-        row?.costo_dir_heridos_l ?? ''
-      ),
-      indLeves: String(
-        row?.costo_indi_heridos_l ?? ''
-      ),
-      dirGraves: String(
-        row?.costo_dir_heridos_g ?? ''
-      ),
-      indGraves: String(
-        row?.costo_indi_heridos_g ?? ''
-      ),
-      dirFatal: String(
-        row?.costo_dir_fatalidad ?? ''
-      ),
-      indFatal: String(
-        row?.costo_indi_fatalidad ?? ''
-      ),
+      dirChoque: String(row?.costo_dir_choque_simple ?? ''),
+      indChoque: String(row?.costo_indi_choque_simple ?? ''),
+      dirLeves: String(row?.costo_dir_heridos_l ?? ''),
+      indLeves: String(row?.costo_indi_heridos_l ?? ''),
+      dirGraves: String(row?.costo_dir_heridos_g ?? ''),
+      indGraves: String(row?.costo_indi_heridos_g ?? ''),
+      dirFatal: String(row?.costo_dir_fatalidad ?? ''),
+      indFatal: String(row?.costo_indi_fatalidad ?? ''),
     })
 
+    setActa(null)
+    setFechaActa(hoyBogota())
+    setTratamientoRealizado('')
+    setAccionesPreventivas('')
+    setAcuerdosCompromisos('')
+    setResponsablesCompromisos('')
+    setFechaSeguimiento('')
+    setParticipantesTexto('')
+    setObservacionesActa('')
+
+    setPasoAnalisisGuardado(
+      Boolean(normalizarTexto(row?.resumen_analisis))
+    )
+
+    const camposCosto = [
+      'costo_dir_choque_simple',
+      'costo_indi_choque_simple',
+      'costo_dir_heridos_l',
+      'costo_indi_heridos_l',
+      'costo_dir_heridos_g',
+      'costo_indi_heridos_g',
+      'costo_dir_fatalidad',
+      'costo_indi_fatalidad',
+    ]
+
+    setPasoCostosGuardado(
+      camposCosto.every(campo =>
+        row?.[campo] !== null &&
+        row?.[campo] !== undefined
+      )
+    )
+
     setDrawerOpen(true)
+    cargarActa(row)
   }
 
   const cerrarDrawer = () => {
     if (
       closing ||
-      changingState
+      changingState ||
+      savingActa
     ) {
       return
     }
@@ -946,6 +1014,8 @@ export default function SiniestrosPage() {
       const result = await leerRespuestaApi(response)
 
       setRowSel(result.registro)
+      setPasoAnalisisGuardado(false)
+      setPasoCostosGuardado(false)
 
       toast.success(
         'Siniestro marcado EN ANÁLISIS.'
@@ -1011,112 +1081,222 @@ export default function SiniestrosPage() {
   // API PATCH: accion=cerrar_siniestro
   // ==========================================================
 
-  const cerrarSiniestro = async () => {
-    if (
-      !rowSel?.id ||
-      !nitActual ||
-      closing
-    ) {
-      return
-    }
+  const payloadTratamiento = () => ({
+    nit: nitActual,
+    accion: 'guardar_tratamiento',
+    id: rowSel.id,
+    responsable: obtenerResponsable(user),
+    numero_ipat: normalizarTexto(numIpat),
+    autoridad: normalizarTexto(autoridad),
+    resumen_analisis: normalizarTexto(resumenAnalisis),
+    costo_dir_choque_simple: Number(costo.dirChoque || 0),
+    costo_indi_choque_simple: Number(costo.indChoque || 0),
+    costo_dir_heridos_l: Number(costo.dirLeves || 0),
+    costo_indi_heridos_l: Number(costo.indLeves || 0),
+    costo_dir_heridos_g: Number(costo.dirGraves || 0),
+    costo_indi_heridos_g: Number(costo.indGraves || 0),
+    costo_dir_fatalidad: Number(costo.dirFatal || 0),
+    costo_indi_fatalidad: Number(costo.indFatal || 0),
+  })
 
-    if (!esAnalisis) {
-      toast.warning(
-        'El siniestro debe estar EN ANÁLISIS antes de cerrarse.'
-      )
-      return
-    }
-
-    if (!fechaComiteAnalisis) {
-      toast.warning(
-        'Debe registrar la fecha del comité donde fue analizado el siniestro.'
-      )
-      return
-    }
-
-    if (
-      rowSel?.fecha_siniestro &&
-      fechaComiteAnalisis < rowSel.fecha_siniestro
-    ) {
-      toast.warning(
-        'La fecha del comité no puede ser anterior a la fecha del siniestro.'
-      )
-      return
-    }
-
-    if (fechaComiteAnalisis > hoyBogota()) {
-      toast.warning(
-        'La fecha del comité no puede ser futura.'
-      )
-      return
-    }
+  const guardarAnalisisYContinuar = async () => {
+    if (!rowSel?.id || !nitActual || savingTreatment) return
 
     if (!normalizarTexto(resumenAnalisis)) {
-      toast.warning(
-        'Debe registrar el análisis o las conclusiones antes de cerrar.'
-      )
+      toast.warning('Debe registrar el análisis o tratamiento realizado antes de continuar.')
       return
     }
 
-    if (!validarCostos()) {
+    setSavingTreatment(true)
+    try {
+      const response = await fetch('/api/admin/consultas/siniestros', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cea-nit': nitActual,
+        },
+        body: JSON.stringify(payloadTratamiento()),
+      })
+      const result = await leerRespuestaApi(response)
+      if (result?.registro) setRowSel(result.registro)
+      setPasoAnalisisGuardado(true)
+      toast.success('Análisis guardado. Continúe con los costos asociados.')
+    } catch (error) {
+      toast.error(error?.message || 'No fue posible guardar el análisis.')
+    } finally {
+      setSavingTreatment(false)
+    }
+  }
+
+  const guardarCostosYContinuar = async () => {
+    if (!rowSel?.id || !nitActual || savingTreatment) return
+    if (!validarCostos()) return
+
+    setSavingTreatment(true)
+    try {
+      const response = await fetch('/api/admin/consultas/siniestros', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cea-nit': nitActual,
+        },
+        body: JSON.stringify(payloadTratamiento()),
+      })
+      const result = await leerRespuestaApi(response)
+      if (result?.registro) setRowSel(result.registro)
+      setPasoCostosGuardado(true)
+      toast.success('Costos guardados. Ya puede elaborar el acta de tratamiento.')
+    } catch (error) {
+      toast.error(error?.message || 'No fue posible guardar los costos.')
+    } finally {
+      setSavingTreatment(false)
+    }
+  }
+
+  const abrirPdfActa = () => {
+    if (!rowSel?.id || !nitActual || acta?.estado !== 'FINALIZADA') {
+      toast.warning('El PDF estará disponible cuando el acta se encuentre FINALIZADA.')
       return
     }
+
+    const params = new URLSearchParams({ nit: nitActual })
+    window.open(
+      `/admin/consultas/siniestros/acta/${rowSel.id}?${params.toString()}`,
+      '_blank',
+      'noopener,noreferrer'
+    )
+  }
+
+  const participantesActa = () =>
+    participantesTexto
+      .split('\n')
+      .map(linea => normalizarTexto(linea))
+      .filter(Boolean)
+      .map(linea => {
+        const partes = linea.split(' - ')
+        return {
+          nombre: normalizarTexto(partes[0]),
+          cargo: normalizarTexto(partes.slice(1).join(' - ')) || null,
+        }
+      })
+
+  const construirPayloadActa = accion => ({
+    nit: nitActual,
+    accion,
+    id: rowSel.id,
+    responsable: obtenerResponsable(user),
+    numero_ipat: normalizarTexto(numIpat),
+    autoridad: normalizarTexto(autoridad),
+    resumen_analisis: normalizarTexto(resumenAnalisis),
+    costo_dir_choque_simple: Number(costo.dirChoque || 0),
+    costo_indi_choque_simple: Number(costo.indChoque || 0),
+    costo_dir_heridos_l: Number(costo.dirLeves || 0),
+    costo_indi_heridos_l: Number(costo.indLeves || 0),
+    costo_dir_heridos_g: Number(costo.dirGraves || 0),
+    costo_indi_heridos_g: Number(costo.indGraves || 0),
+    costo_dir_fatalidad: Number(costo.dirFatal || 0),
+    costo_indi_fatalidad: Number(costo.indFatal || 0),
+    fecha_acta: fechaActa,
+    tratamiento_realizado: normalizarTexto(tratamientoRealizado),
+    acciones_preventivas: normalizarTexto(accionesPreventivas),
+    acuerdos_compromisos: normalizarTexto(acuerdosCompromisos),
+    responsables_compromisos: normalizarTexto(responsablesCompromisos),
+    fecha_seguimiento: fechaSeguimiento || null,
+    participantes: participantesActa(),
+    observaciones: normalizarTexto(observacionesActa),
+  })
+
+  const guardarBorradorActa = async () => {
+    if (!rowSel?.id || !nitActual || savingActa) return
+
+    if (!esAnalisis) {
+      toast.warning('El siniestro debe estar EN ANÁLISIS para elaborar el acta.')
+      return
+    }
+
+    if (!validarCostos()) return
+
+    setSavingActa(true)
+
+    try {
+      const response = await fetch('/api/admin/consultas/siniestros', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cea-nit': nitActual,
+        },
+        body: JSON.stringify(construirPayloadActa('guardar_acta')),
+      })
+
+      const result = await leerRespuestaApi(response)
+      setActa(result?.acta || null)
+      if (result?.registro) setRowSel(result.registro)
+      toast.success('Borrador del acta guardado correctamente.')
+    } catch (error) {
+      console.error('Error guardando acta:', error)
+      toast.error(error?.message || 'No fue posible guardar el acta.')
+    } finally {
+      setSavingActa(false)
+    }
+  }
+
+  const finalizarActa = async () => {
+    if (!rowSel?.id || !nitActual || closing) return
+
+    if (!esAnalisis) {
+      toast.warning('El siniestro debe estar EN ANÁLISIS antes de finalizar el acta.')
+      return
+    }
+
+    if (!fechaActa) {
+      toast.warning('Debe registrar la fecha del acta.')
+      return
+    }
+
+    if (!normalizarTexto(tratamientoRealizado)) {
+      toast.warning('Debe registrar el tratamiento realizado.')
+      return
+    }
+
+    if (!normalizarTexto(accionesPreventivas)) {
+      toast.warning('Debe registrar las acciones preventivas.')
+      return
+    }
+
+    if (!normalizarTexto(acuerdosCompromisos)) {
+      toast.warning('Debe registrar los acuerdos y compromisos.')
+      return
+    }
+
+    if (participantesActa().length === 0) {
+      toast.warning('Debe registrar al menos un participante.')
+      return
+    }
+
+    if (!validarCostos()) return
 
     setClosing(true)
 
     try {
-      const response = await fetch(
-        '/api/admin/consultas/siniestros',
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-cea-nit': nitActual,
-          },
-          body: JSON.stringify({
-            nit: nitActual,
-            accion: 'cerrar_siniestro',
-            id: rowSel.id,
-            responsable: obtenerResponsable(user),
-            numero_ipat: normalizarTexto(numIpat),
-            autoridad: normalizarTexto(autoridad),
-            fecha_comite_analisis: fechaComiteAnalisis,
-            resumen_analisis: normalizarTexto(resumenAnalisis),
-            costo_dir_choque_simple: Number(costo.dirChoque || 0),
-            costo_indi_choque_simple: Number(costo.indChoque || 0),
-            costo_dir_heridos_l: Number(costo.dirLeves || 0),
-            costo_indi_heridos_l: Number(costo.indLeves || 0),
-            costo_dir_heridos_g: Number(costo.dirGraves || 0),
-            costo_indi_heridos_g: Number(costo.indGraves || 0),
-            costo_dir_fatalidad: Number(costo.dirFatal || 0),
-            costo_indi_fatalidad: Number(costo.indFatal || 0),
-          }),
-        }
-      )
+      const response = await fetch('/api/admin/consultas/siniestros', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cea-nit': nitActual,
+        },
+        body: JSON.stringify(construirPayloadActa('finalizar_acta')),
+      })
 
       const result = await leerRespuestaApi(response)
+      setActa(result?.acta || acta)
+      if (result?.registro) setRowSel(result.registro)
 
-      setRowSel(result.registro)
+      toast.success('Acta finalizada y siniestro cerrado correctamente.')
 
-      toast.success(
-        'Siniestro cerrado correctamente.'
-      )
-
-      await consultarEstado(
-        estadoActual,
-        page,
-        false
-      )
+      await consultarEstado(estadoActual, page, false)
     } catch (error) {
-      console.error(
-        'Error cerrando siniestro:',
-        error
-      )
-
-      toast.error(
-        error?.message ||
-        'No fue posible cerrar el siniestro.'
-      )
+      console.error('Error finalizando acta:', error)
+      toast.error(error?.message || 'No fue posible finalizar el acta.')
     } finally {
       setClosing(false)
     }
@@ -2142,7 +2322,7 @@ export default function SiniestrosPage() {
                 <button
                   type="button"
                   onClick={cerrarDrawer}
-                  disabled={closing || changingState}
+                  disabled={closing || changingState || savingActa}
                   className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                 >
                   <i className="fas fa-xmark"></i>
@@ -2237,8 +2417,13 @@ export default function SiniestrosPage() {
                   />
 
                   <Dato
-                    etiqueta="Fecha del comité"
-                    valor={formatearFecha(rowSel?.fecha_comite_analisis)}
+                    etiqueta="Acta de tratamiento"
+                    valor={acta?.numero_acta || 'Sin acta'}
+                  />
+
+                  <Dato
+                    etiqueta="Estado del acta"
+                    valor={acta?.estado || '-'}
                   />
 
                   <Dato
@@ -2266,7 +2451,7 @@ export default function SiniestrosPage() {
                   </h3>
 
                   <p className="text-xs text-amber-800 mt-1">
-                    Al iniciar el análisis se registrará la fecha y el usuario responsable. Después podrá diligenciar IPAT, autoridad, comité, análisis y costos.
+                    Al iniciar el análisis se registrará la fecha y el usuario responsable. Después podrá diligenciar IPAT, autoridad, tratamiento, costos y el acta del siniestro.
                   </p>
 
                   <button
@@ -2293,6 +2478,7 @@ export default function SiniestrosPage() {
                   4. ANÁLISIS ADMINISTRATIVO
               ============================================ */}
 
+              {(esAnalisis || esCerrado) && (
               <section className="border border-gray-200 rounded-xl overflow-hidden">
                 <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
                   3. Análisis administrativo
@@ -2337,28 +2523,6 @@ export default function SiniestrosPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">
-                      Fecha del comité donde fue analizado <span className="text-red-600">*</span>
-                    </label>
-
-                    <input
-                      type="date"
-                      value={fechaComiteAnalisis}
-                      min={rowSel?.fecha_siniestro || undefined}
-                      max={hoyBogota()}
-                      onChange={event =>
-                        setFechaComiteAnalisis(event.target.value)
-                      }
-                      disabled={!puedeEditar}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
-                    />
-
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      Este dato forma parte de la evidencia trimestral de vehículos siniestrados.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">
                       Análisis / Conclusiones <span className="text-red-600">*</span>
                     </label>
 
@@ -2373,13 +2537,28 @@ export default function SiniestrosPage() {
                       placeholder="Registre el análisis administrativo, conclusiones y decisiones adoptadas."
                     />
                   </div>
+
+
+                  {esAnalisis && (
+                    <button
+                      type="button"
+                      onClick={guardarAnalisisYContinuar}
+                      disabled={savingTreatment}
+                      className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold disabled:opacity-60"
+                    >
+                      <i className={`fas ${savingTreatment ? 'fa-spinner fa-spin' : 'fa-floppy-disk'} mr-2`}></i>
+                      {savingTreatment ? 'Guardando...' : 'Guardar análisis y continuar'}
+                    </button>
+                  )}
                 </div>
               </section>
+              )}
 
               {/* ============================================
-                  5. COSTOS
+                  4. COSTOS
               ============================================ */}
 
+              {(pasoAnalisisGuardado || esCerrado) && (
               <section className="border border-gray-200 rounded-xl overflow-hidden">
                 <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
                   4. Costos asociados
@@ -2501,42 +2680,189 @@ export default function SiniestrosPage() {
                       </p>
                     </div>
                   </div>
+
+                  {esAnalisis && (
+                    <button
+                      type="button"
+                      onClick={guardarCostosYContinuar}
+                      disabled={savingTreatment}
+                      className="mt-4 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold disabled:opacity-60"
+                    >
+                      <i className={`fas ${savingTreatment ? 'fa-spinner fa-spin' : 'fa-floppy-disk'} mr-2`}></i>
+                      {savingTreatment ? 'Guardando...' : 'Guardar costos y continuar'}
+                    </button>
+                  )}
                 </div>
               </section>
+              )}
 
               {/* ============================================
-                  6. CIERRE / EXPEDIENTE CERRADO
+                  5. ACTA DE TRATAMIENTO
               ============================================ */}
 
-              {esAnalisis && (
-                <section className="border border-blue-200 bg-blue-50 rounded-xl p-4">
-                  <h3 className="text-sm font-black text-blue-900">
-                    Cierre del análisis
-                  </h3>
+              {(pasoCostosGuardado || Boolean(acta) || esCerrado) && (
+              <section className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold flex items-center justify-between gap-3">
+                  <span>5. Acta de tratamiento del siniestro</span>
+                  {acta?.estado && (
+                    <span className="text-[10px] bg-white/15 px-2 py-1 rounded-full">
+                      {acta.estado}
+                    </span>
+                  )}
+                </div>
 
-                  <p className="text-xs text-blue-800 mt-1">
-                    Al cerrar el expediente, la información quedará en modo consulta y será utilizada en los reportes y evidencias correspondientes.
-                  </p>
+                <div className="p-4 space-y-4">
+                  {loadingActa ? (
+                    <p className="text-xs text-gray-500">
+                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                      Consultando acta...
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Fecha del acta</label>
+                          <input
+                            type="date"
+                            value={fechaActa}
+                            min={rowSel?.fecha_siniestro || undefined}
+                            max={hoyBogota()}
+                            onChange={event => setFechaActa(event.target.value)}
+                            disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                          />
+                        </div>
 
-                  <button
-                    type="button"
-                    onClick={cerrarSiniestro}
-                    disabled={closing}
-                    className="mt-3 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold disabled:opacity-60"
-                  >
-                    <i
-                      className={`fas ${
-                        closing
-                          ? 'fa-spinner fa-spin'
-                          : 'fa-lock'
-                      } mr-2`}
-                    ></i>
-                    {closing
-                      ? 'Cerrando...'
-                      : 'Cerrar siniestro'}
-                  </button>
-                </section>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Número de acta</label>
+                          <input
+                            type="text"
+                            value={acta?.numero_acta || 'Se asignará automáticamente'}
+                            disabled
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-100"
+                          />
+                        </div>
+                      </div>
+
+                      {[
+                        ['Tratamiento realizado', tratamientoRealizado, setTratamientoRealizado, 'Describa brevemente la revisión y el tratamiento dado al siniestro.'],
+                        ['Acciones preventivas para evitar que se repita', accionesPreventivas, setAccionesPreventivas, 'Registre las medidas preventivas definidas a partir del evento.'],
+                        ['Acuerdos y compromisos', acuerdosCompromisos, setAcuerdosCompromisos, 'Registre los acuerdos y compromisos establecidos.'],
+                      ].map(([label, value, setter, placeholder]) => (
+                        <div key={label}>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">
+                            {label} <span className="text-red-600">*</span>
+                          </label>
+                          <textarea
+                            rows="3"
+                            value={value}
+                            onChange={event => setter(event.target.value)}
+                            disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                            placeholder={placeholder}
+                          />
+                        </div>
+                      ))}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Responsable(s) de los compromisos</label>
+                          <input
+                            type="text"
+                            value={responsablesCompromisos}
+                            onChange={event => setResponsablesCompromisos(event.target.value)}
+                            disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                            placeholder="Nombre o responsables"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Fecha de seguimiento</label>
+                          <input
+                            type="date"
+                            value={fechaSeguimiento}
+                            min={fechaActa || rowSel?.fecha_siniestro || undefined}
+                            onChange={event => setFechaSeguimiento(event.target.value)}
+                            disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                          Participantes <span className="text-red-600">*</span>
+                        </label>
+                        <textarea
+                          rows="3"
+                          value={participantesTexto}
+                          onChange={event => setParticipantesTexto(event.target.value)}
+                          disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                          placeholder={'Un participante por línea. Puede usar: Nombre - Cargo'}
+                        />
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          Registre únicamente las personas que participaron realmente en el tratamiento del siniestro.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Observaciones</label>
+                        <textarea
+                          rows="2"
+                          value={observacionesActa}
+                          onChange={event => setObservacionesActa(event.target.value)}
+                          disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                          placeholder="Observaciones adicionales, si aplica."
+                        />
+                      </div>
+
+                      {esAnalisis && acta?.estado !== 'FINALIZADA' && (
+                        <button
+                          type="button"
+                          onClick={guardarBorradorActa}
+                          disabled={savingActa || closing}
+                          className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold disabled:opacity-60"
+                        >
+                          <i className={`fas ${savingActa ? 'fa-spinner fa-spin' : 'fa-floppy-disk'} mr-2`}></i>
+                          {savingActa ? 'Guardando...' : 'Guardar borrador del acta'}
+                        </button>
+                      )}
+                    </>
+                  )}
+
+
+                  {esAnalisis && acta?.estado !== 'FINALIZADA' && (
+                    <button
+                      type="button"
+                      onClick={finalizarActa}
+                      disabled={closing || savingActa}
+                      className="px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold disabled:opacity-60"
+                    >
+                      <i className={`fas ${closing ? 'fa-spinner fa-spin' : 'fa-lock'} mr-2`}></i>
+                      {closing ? 'Finalizando...' : 'Finalizar acta y cerrar siniestro'}
+                    </button>
+                  )}
+
+                  {acta?.estado === 'FINALIZADA' && (
+                    <button
+                      type="button"
+                      onClick={abrirPdfActa}
+                      className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold"
+                    >
+                      <i className="fas fa-file-pdf mr-2"></i>
+                      Generar PDF del acta
+                    </button>
+                  )}
+                </div>
+              </section>
               )}
+
+              {/* ============================================
+                  6. FINALIZACIÓN / EXPEDIENTE CERRADO
+              ============================================ */}
 
               {esCerrado && (
                 <section className="border border-green-200 bg-green-50 rounded-xl p-4">
@@ -2545,7 +2871,7 @@ export default function SiniestrosPage() {
                   </h3>
 
                   <p className="text-xs text-green-800 mt-1">
-                    Este registro se encuentra cerrado y disponible únicamente para consulta.
+                    Este registro se encuentra cerrado. El acta de tratamiento quedó finalizada y el expediente está disponible únicamente para consulta.
                   </p>
                 </section>
               )}

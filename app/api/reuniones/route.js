@@ -79,6 +79,172 @@ function isFinished(
 }
 
 
+async function sincronizarEjecucionPesv(
+  supabase,
+  reunion,
+  numeroAsistentes
+) {
+  const actividadId =
+    Number(
+      reunion
+        ?.pesv_plan_formacion_actividad_id
+    )
+
+  if (
+    !Number.isInteger(
+      actividadId
+    ) ||
+    actividadId <= 0
+  ) {
+    return
+  }
+
+  const {
+    data:
+      ejecucionExistente,
+    error:
+      errorEjecucionExistente,
+  } =
+    await supabase
+      .from(
+        'pesv_plan_formacion_ejecuciones'
+      )
+      .select(
+        'id'
+      )
+      .eq(
+        'actividad_id',
+        actividadId
+      )
+      .eq(
+        'reunion_id',
+        reunion.id
+      )
+      .maybeSingle()
+
+  if (
+    errorEjecucionExistente
+  ) {
+    console.error(
+      `Error validando ejecución PESV para reunión ${reunion.id}:`,
+      errorEjecucionExistente
+    )
+
+    return
+  }
+
+  if (
+    !ejecucionExistente
+  ) {
+    const {
+      error:
+        errorInsertEjecucion,
+    } =
+      await supabase
+        .from(
+          'pesv_plan_formacion_ejecuciones'
+        )
+        .insert({
+          actividad_id:
+            actividadId,
+
+          reunion_id:
+            reunion.id,
+
+          fecha_ejecucion:
+            reunion.fecha_programada,
+
+          numero_asistentes:
+            Number(
+              numeroAsistentes ||
+              0
+            ),
+
+          resultado:
+            'EJECUTADA',
+
+          observaciones:
+            'Ejecución registrada automáticamente desde la reunión PESV.',
+        })
+
+    if (
+      errorInsertEjecucion
+    ) {
+      console.error(
+        `Error creando ejecución PESV para reunión ${reunion.id}:`,
+        errorInsertEjecucion
+      )
+
+      return
+    }
+  } else {
+    const {
+      error:
+        errorActualizarEjecucion,
+    } =
+      await supabase
+        .from(
+          'pesv_plan_formacion_ejecuciones'
+        )
+        .update({
+          fecha_ejecucion:
+            reunion.fecha_programada,
+
+          numero_asistentes:
+            Number(
+              numeroAsistentes ||
+              0
+            ),
+        })
+        .eq(
+          'id',
+          ejecucionExistente.id
+        )
+
+    if (
+      errorActualizarEjecucion
+    ) {
+      console.error(
+        `Error actualizando ejecución PESV para reunión ${reunion.id}:`,
+        errorActualizarEjecucion
+      )
+
+      return
+    }
+  }
+
+  const {
+    error:
+      errorActividad,
+  } =
+    await supabase
+      .from(
+        'pesv_plan_formacion_actividades'
+      )
+      .update({
+        estado:
+          'EJECUTADA',
+
+        updated_at:
+          new Date()
+            .toISOString(),
+      })
+      .eq(
+        'id',
+        actividadId
+      )
+
+  if (
+    errorActividad
+  ) {
+    console.error(
+      `Error actualizando actividad PESV ${actividadId}:`,
+      errorActividad
+    )
+  }
+}
+
+
 async function finalizeExpiredMeetings(
   supabase
 ) {
@@ -95,7 +261,9 @@ async function finalizeExpiredMeetings(
         id,
         fecha_programada,
         hora_fin,
-        estado
+        estado,
+        origen_modulo,
+        pesv_plan_formacion_actividad_id
       `)
       .lte(
         'fecha_programada',
@@ -183,6 +351,27 @@ async function finalizeExpiredMeetings(
           `Error finalizando reunión ${reunion.id}:`,
           updateError
         )
+
+        continue
+      }
+
+      if (
+        String(
+          reunion
+            .origen_modulo ||
+          ''
+        )
+          .trim()
+          .toUpperCase() ===
+        'PESV' &&
+        reunion
+          .pesv_plan_formacion_actividad_id
+      ) {
+        await sincronizarEjecucionPesv(
+          supabase,
+          reunion,
+          count
+        )
       }
     }
 
@@ -254,10 +443,60 @@ function buildTransport() {
 }
 
 
+
+function normalizarPoblacionCitacion(
+  valor
+) {
+  const poblacion =
+    String(
+      valor ||
+      ''
+    )
+      .trim()
+      .toUpperCase()
+
+  if (
+    poblacion ===
+    'TODO EL PERSONAL'
+  ) {
+    return 'Todo el personal'
+  }
+
+  if (
+    poblacion ===
+    'INSTRUCTORES'
+  ) {
+    return 'Instructores'
+  }
+
+  if (
+    poblacion ===
+      'ADMINISTRATIVO' ||
+    poblacion ===
+      'PERSONAL ADMINISTRATIVO'
+  ) {
+    return 'Administrativo'
+  }
+
+  return null
+}
+
+
 async function getParticipantes(
   supabase,
   dirigidoA
 ) {
+  const poblacion =
+    normalizarPoblacionCitacion(
+      dirigidoA
+    )
+
+  if (!poblacion) {
+    throw new Error(
+      'La población de la citación no es válida.'
+    )
+  }
+
   const {
     data,
     error,
@@ -297,9 +536,9 @@ async function getParticipantes(
           .perfiles_usuario ||
         []
       ).filter(
-        (perfil) =>
+        perfil =>
           String(
-            perfil.estado ||
+            perfil?.estado ||
             ''
           )
             .trim()
@@ -308,54 +547,63 @@ async function getParticipantes(
       )
 
     const roles =
-      perfilesActivos.map(
-        (perfil) =>
-          perfil.rol
-      )
+      perfilesActivos
+        .map(
+          perfil =>
+            String(
+              perfil?.rol ||
+              ''
+            )
+              .trim()
+              .toUpperCase()
+        )
+        .filter(Boolean)
 
-    const incluir =
-      dirigidoA ===
-        'Todo el personal' ||
-      !dirigidoA ||
-      (
-        dirigidoA ===
-          'Instructores' &&
-        (
-          roles.includes(
-            'INSTRUCTOR_PRACTICA'
-          ) ||
-          roles.includes(
-            'INSTRUCTOR_TEORIA'
-          ) ||
-          roles.includes(
-            'INSTRUCTOR PRÁCTICA'
-          ) ||
-          roles.includes(
-            'INSTRUCTOR TEORÍA'
-          )
+    let incluir =
+      false
+
+    if (
+      poblacion ===
+      'Todo el personal'
+    ) {
+      incluir =
+        true
+    }
+
+    if (
+      poblacion ===
+      'Instructores'
+    ) {
+      incluir =
+        roles.includes(
+          'INSTRUCTOR_TEORIA'
+        ) ||
+        roles.includes(
+          'INSTRUCTOR_PRACTICA'
         )
-      ) ||
-      (
-        dirigidoA ===
-          'Administrativo' &&
-        (
-          roles.includes(
-            'ADMINISTRATIVO'
-          ) ||
-          roles.includes(
-            'AUXILIAR_ADMINISTRATIVO'
-          ) ||
-          roles.includes(
-            'AUXILIAR ADMINISTRATIVO'
-          )
+    }
+
+    if (
+      poblacion ===
+      'Administrativo'
+    ) {
+      incluir =
+        roles.includes(
+          'ADMINISTRATIVO'
+        ) ||
+        roles.includes(
+          'AUXILIAR_ADMINISTRATIVO'
         )
-      )
+    }
 
     if (!incluir) {
       continue
     }
 
     participantes.push({
+      personal_id:
+        persona.id,
+
       nombre_completo:
         `${persona.nombres || ''} ${persona.apellidos || ''}`
           .trim(),
@@ -399,6 +647,216 @@ async function getParticipantes(
   return Array.from(
     unicoPorDocumento.values()
   )
+}
+
+
+async function guardarCitados(
+  supabase,
+  reunionId,
+  participantes
+) {
+  const citados =
+    (
+      Array.isArray(
+        participantes
+      )
+        ? participantes
+        : []
+    )
+      .filter(
+        (participante) =>
+          String(
+            participante
+              ?.documento ||
+            ''
+          ).trim()
+      )
+      .map(
+        (participante) => ({
+          reunion_id:
+            reunionId,
+
+          personal_id:
+            participante
+              .personal_id ||
+            null,
+
+          documento:
+            String(
+              participante
+                .documento ||
+              ''
+            ).trim(),
+
+          nombre:
+            String(
+              participante
+                .nombre_completo ||
+              ''
+            ).trim(),
+
+          email:
+            String(
+              participante
+                .email ||
+              ''
+            ).trim() ||
+            null,
+
+          rol:
+            String(
+              participante
+                .rol ||
+              ''
+            ).trim() ||
+            null,
+
+          correo_enviado:
+            false,
+        })
+      )
+
+  if (
+    citados.length ===
+    0
+  ) {
+    return
+  }
+
+  const {
+    error,
+  } =
+    await supabase
+      .from(
+        'reuniones_citados'
+      )
+      .upsert(
+        citados,
+        {
+          onConflict:
+            'reunion_id,documento',
+
+          ignoreDuplicates:
+            true,
+        }
+      )
+
+  if (error) {
+    throw error
+  }
+}
+
+
+async function marcarCorreoCitado(
+  supabase,
+  reunionId,
+  documento
+) {
+  const {
+    error,
+  } =
+    await supabase
+      .from(
+        'reuniones_citados'
+      )
+      .update({
+        correo_enviado:
+          true,
+      })
+      .eq(
+        'reunion_id',
+        reunionId
+      )
+      .eq(
+        'documento',
+        documento
+      )
+
+  if (error) {
+    console.error(
+      `No fue posible marcar correo enviado para ${documento}:`,
+      error
+    )
+  }
+}
+
+
+async function validarActividadPesv(
+  supabase,
+  actividadId
+) {
+  if (
+    actividadId ===
+      null ||
+    actividadId ===
+      undefined ||
+    actividadId ===
+      ''
+  ) {
+    return null
+  }
+
+  const id =
+    Number(
+      actividadId
+    )
+
+  if (
+    !Number.isInteger(
+      id
+    ) ||
+    id <= 0
+  ) {
+    const error =
+      new Error(
+        'La actividad del Plan de Formación PESV no es válida.'
+      )
+
+    error.status =
+      400
+
+    throw error
+  }
+
+  const {
+    data,
+    error,
+  } =
+    await supabase
+      .from(
+        'pesv_plan_formacion_actividades'
+      )
+      .select(`
+        id,
+        plan_formacion_id,
+        codigo,
+        nombre,
+        fecha_programada,
+        estado
+      `)
+      .eq(
+        'id',
+        id
+      )
+      .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!data) {
+    const errorNoExiste =
+      new Error(
+        'La actividad del Plan de Formación PESV seleccionada no existe.'
+      )
+
+    errorNoExiste.status =
+      404
+
+    throw errorNoExiste
+  }
+
+  return data
 }
 
 
@@ -501,17 +959,25 @@ function participantesTableHtml(
 export async function POST(
   request
 ) {
+  let supabase =
+    null
+
+  let reunionCreada =
+    null
+
   try {
     const body =
       await request.json()
 
-    const {
-      supabase,
-    } =
+    const resultadoEmpresa =
       await obtenerSupabaseEmpresaDesdeRequest(
         request,
         body
       )
+
+    supabase =
+      resultadoEmpresa
+        .supabase
 
 
     if (
@@ -555,19 +1021,6 @@ export async function POST(
     }
 
 
-    const enlaceAsistencia =
-      crypto.randomUUID()
-
-
-    /*
-      El módulo general de reuniones
-      utiliza GENERAL por defecto.
-
-      Cuando una reunión sea creada
-      desde PESV, la aplicación enviará:
-
-      origen_modulo: 'PESV'
-    */
     const origenModulo =
       String(
         body.origen_modulo ||
@@ -576,6 +1029,38 @@ export async function POST(
         .trim()
         .toUpperCase() ||
       'GENERAL'
+
+
+    const actividadPesv =
+      await validarActividadPesv(
+        supabase,
+        body
+          .pesv_plan_formacion_actividad_id
+      )
+
+
+    if (
+      actividadPesv &&
+      origenModulo !==
+        'PESV'
+    ) {
+      return NextResponse.json(
+        {
+          status:
+            'error',
+
+          message:
+            'Una citación asociada al Plan de Formación debe pertenecer al módulo PESV.',
+        },
+        {
+          status: 400,
+        }
+      )
+    }
+
+
+    const enlaceAsistencia =
+      crypto.randomUUID()
 
 
     const payload = {
@@ -610,7 +1095,10 @@ export async function POST(
         '',
 
       dirigido_a:
-        body.dirigido_a ||
+        normalizarPoblacionCitacion(
+          body.dirigido_a ||
+          'Todo el personal'
+        ) ||
         'Todo el personal',
 
       lugar:
@@ -619,6 +1107,11 @@ export async function POST(
 
       origen_modulo:
         origenModulo,
+
+      pesv_plan_formacion_actividad_id:
+        actividadPesv
+          ?.id ||
+        null,
     }
 
 
@@ -652,11 +1145,83 @@ export async function POST(
     }
 
 
+    reunionCreada =
+      inserted
+
+
     const participantes =
       await getParticipantes(
         supabase,
         payload.dirigido_a
       )
+
+
+    try {
+      await guardarCitados(
+        supabase,
+        inserted.id,
+        participantes
+      )
+
+      // Sincroniza la fotografía de personas programadas
+      // con la población realmente seleccionada para la citación.
+      if (
+        actividadPesv?.id
+      ) {
+        const {
+          error:
+            errorPersonasProgramadas,
+        } =
+          await supabase
+            .from(
+              'pesv_plan_formacion_actividades'
+            )
+            .update({
+              personas_programadas:
+                participantes.length,
+            })
+            .eq(
+              'id',
+              actividadPesv.id
+            )
+
+        if (
+          errorPersonasProgramadas
+        ) {
+          throw errorPersonasProgramadas
+        }
+      }
+    } catch (
+      errorCitados
+    ) {
+      console.error(
+        'Error guardando personas citadas:',
+        errorCitados
+      )
+
+      const {
+        error:
+          errorRollback,
+      } =
+        await supabase
+          .from('reuniones')
+          .delete()
+          .eq(
+            'id',
+            inserted.id
+          )
+
+      if (
+        errorRollback
+      ) {
+        console.error(
+          'No fue posible revertir la reunión después del error de citados:',
+          errorRollback
+        )
+      }
+
+      throw errorCitados
+    }
 
 
     const transporter =
@@ -692,30 +1257,43 @@ export async function POST(
             participante.documento
         )
         .map(
-          (participante) =>
-            transporter
-              .sendMail({
-                from,
+          async (
+            participante
+          ) => {
+            try {
+              await transporter
+                .sendMail({
+                  from,
 
-                to:
-                  participante.email,
+                  to:
+                    participante.email,
 
-                subject:
-                  asunto,
+                  subject:
+                    asunto,
 
-                text:
-                  `Hola ${participante.nombre_completo},\n\n${cuerpo}`,
-              })
-              .catch(
-                (error) => {
-                  console.error(
-                    `No fue posible enviar correo a ${participante.email}:`,
-                    error
-                  )
+                  text:
+                    `Hola ${participante.nombre_completo},\n\n${cuerpo}`,
+                })
 
-                  return null
-                }
+              await marcarCorreoCitado(
+                supabase,
+                inserted.id,
+                participante
+                  .documento
               )
+
+              return true
+            } catch (
+              errorCorreo
+            ) {
+              console.error(
+                `No fue posible enviar correo a ${participante.email}:`,
+                errorCorreo
+              )
+
+              return false
+            }
+          }
         )
     )
 
@@ -743,7 +1321,7 @@ export async function POST(
 
           html:
             `${reunionDetailsHtml(payload)}` +
-            `<p><strong>Participantes notificados:</strong></p>` +
+            `<p><strong>Participantes citados:</strong></p>` +
             `${participantesTableHtml(participantes)}`,
         })
         .catch(
@@ -769,6 +1347,12 @@ export async function POST(
 
         enlace_asistencia:
           enlaceAsistencia,
+
+        total_citados:
+          participantes.length,
+
+        actividad_pesv:
+          actividadPesv,
       },
       {
         status: 201,
@@ -779,6 +1363,15 @@ export async function POST(
       'Error POST /api/reuniones:',
       error
     )
+
+    /*
+      Si el error ocurrió después de crear la reunión y
+      todavía existe, no se elimina automáticamente aquí.
+      El rollback específico de citados ya se ejecuta en
+      el punto correspondiente. Esto evita eliminar una
+      reunión válida por un fallo posterior de correo.
+    */
+    void reunionCreada
 
     return respuestaError(
       error

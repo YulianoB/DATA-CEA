@@ -17,6 +17,21 @@ import {
   toast,
 } from 'sonner'
 
+import {
+  GraduationCap,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+} from 'lucide-react'
+
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import {
+  BotonClaro,
+  BotonPdf,
+  MarcoTabla,
+  TituloSeccion,
+} from '@/components/admin/EstiloModulo'
+
 
 // ============================================================
 // CONSTANTES
@@ -36,10 +51,7 @@ const ESTADOS_PLAN = [
 
 const ESTADOS_ACTIVIDAD = [
   'PROGRAMADA',
-  'EN_EJECUCION',
   'EJECUTADA',
-  'REPROGRAMADA',
-  'CANCELADA',
 ]
 
 
@@ -53,25 +65,9 @@ const MODALIDADES = [
 const POBLACIONES = [
   'Todo el personal',
   'Instructores',
-  'Instructores de práctica',
-  'Instructores de teoría',
   'Administrativo',
-  'Directivos',
-  'Responsables PESV',
-  'Otro',
 ]
 
-
-const AREAS = [
-  'Todo el personal',
-  'Área académica',
-  'Instructores de práctica',
-  'Instructores de teoría',
-  'Administrativa',
-  'Dirección',
-  'PESV',
-  'Otra',
-]
 
 
 // ============================================================
@@ -172,6 +168,20 @@ const ACTIVIDAD_INICIAL = {
 
   observaciones:
     '',
+}
+
+
+const CITACION_INICIAL = {
+  actividad_id: null,
+  tipo_reunion: 'Capacitación PESV',
+  descripcion: '',
+  fecha_programada: '',
+  hora_inicio: '08:00',
+  hora_fin: '10:00',
+  modalidad: 'Presencial',
+  responsable: '',
+  dirigido_a: 'Todo el personal',
+  lugar: '',
 }
 
 
@@ -709,6 +719,12 @@ export default function PlanFormacionPesvPage() {
     useState(false)
 
   const [
+    mostrarDatosPlan,
+    setMostrarDatosPlan,
+  ] =
+    useState(false)
+
+  const [
     mostrarFormActividad,
     setMostrarFormActividad,
   ] =
@@ -731,6 +747,31 @@ export default function PlanFormacionPesvPage() {
     setActividadEjecucion,
   ] =
     useState(null)
+
+
+  const [
+    mostrarModalCitacion,
+    setMostrarModalCitacion,
+  ] =
+    useState(false)
+
+  const [
+    actividadCitacion,
+    setActividadCitacion,
+  ] =
+    useState(null)
+
+  const [
+    formCitacion,
+    setFormCitacion,
+  ] =
+    useState(CITACION_INICIAL)
+
+  const [
+    guardandoCitacion,
+    setGuardandoCitacion,
+  ] =
+    useState(false)
 
   const [
     filtroEstado,
@@ -1097,6 +1138,79 @@ export default function PlanFormacionPesvPage() {
         filtroEstado,
         filtroTexto,
       ]
+    )
+
+
+  // ==========================================================
+  // RESUMEN TRIMESTRAL Y ACUMULADO ANUAL
+  // Se calcula sobre todas las actividades del plan del año,
+  // independientemente de los filtros visuales de la matriz.
+  // ==========================================================
+
+  const resumenFormacion =
+    useMemo(
+      () => {
+        const trimestres =
+          ['T1', 'T2', 'T3', 'T4'].map(
+            (trimestre) => {
+              const actividadesTrimestre =
+                actividades.filter(
+                  (actividad) =>
+                    calcularTrimestre(
+                      actividad.fecha_programada
+                    ) === trimestre
+                )
+
+              const programadas =
+                actividadesTrimestre.length
+
+              const ejecutadas =
+                actividadesTrimestre.filter(
+                  (actividad) =>
+                    mayusculas(
+                      actividad.estado
+                    ) === 'EJECUTADA'
+                ).length
+
+              return {
+                trimestre,
+                programadas,
+                ejecutadas,
+                cumplimiento:
+                  programadas > 0
+                    ? (ejecutadas / programadas) * 100
+                    : 0,
+              }
+            }
+          )
+
+        const programadasAnual =
+          trimestres.reduce(
+            (total, item) =>
+              total + item.programadas,
+            0
+          )
+
+        const ejecutadasAnual =
+          trimestres.reduce(
+            (total, item) =>
+              total + item.ejecutadas,
+            0
+          )
+
+        return {
+          trimestres,
+          anual: {
+            programadas: programadasAnual,
+            ejecutadas: ejecutadasAnual,
+            cumplimiento:
+              programadasAnual > 0
+                ? (ejecutadasAnual / programadasAnual) * 100
+                : 0,
+          },
+        }
+      },
+      [actividades]
     )
 
 
@@ -2073,6 +2187,202 @@ export default function PlanFormacionPesvPage() {
   }
 
 
+  function normalizarDirigidoAReunion(valor) {
+    const poblacion =
+      texto(valor).toLowerCase()
+
+    if (
+      poblacion.includes('instructor')
+    ) {
+      return 'Instructores'
+    }
+
+    if (
+      poblacion.includes('administr') ||
+      poblacion.includes('directiv') ||
+      poblacion.includes('pesv')
+    ) {
+      return 'Administrativo'
+    }
+
+    return 'Todo el personal'
+  }
+
+
+  function abrirCitacion(actividad) {
+    if (
+      mayusculas(actividad?.estado) === 'EJECUTADA' ||
+      mayusculas(actividad?.estado) === 'CANCELADA'
+    ) {
+      toast.warning(
+        'Esta actividad no permite generar una nueva citación.'
+      )
+
+      return
+    }
+
+    setActividadCitacion(
+      actividad
+    )
+
+    setFormCitacion({
+      ...CITACION_INICIAL,
+      actividad_id:
+        actividad.id,
+      descripcion:
+        actividad.nombre ||
+        actividad.tema ||
+        'Actividad del Plan de Formación PESV',
+      fecha_programada:
+        actividad.fecha_programada ||
+        '',
+      modalidad:
+        actividad.modalidad ||
+        'Presencial',
+      responsable:
+        actividad.responsable_nombre ||
+        plan?.responsable_nombre ||
+        '',
+      dirigido_a:
+        normalizarDirigidoAReunion(
+          actividad.dirigido_a
+        ),
+    })
+
+    setMostrarModalCitacion(
+      true
+    )
+  }
+
+
+  function cambiarCitacion(event) {
+    const {
+      name,
+      value,
+    } = event.target
+
+    setFormCitacion(
+      anterior => ({
+        ...anterior,
+        [name]: value,
+      })
+    )
+  }
+
+
+  async function guardarCitacion() {
+    if (
+      !actividadCitacion?.id
+    ) {
+      return
+    }
+
+    if (
+      !formCitacion.descripcion ||
+      !formCitacion.fecha_programada ||
+      !formCitacion.hora_inicio ||
+      !formCitacion.hora_fin
+    ) {
+      toast.warning(
+        'Complete la descripción, fecha y horario de la citación.'
+      )
+
+      return
+    }
+
+    if (
+      formCitacion.hora_fin <=
+      formCitacion.hora_inicio
+    ) {
+      toast.warning(
+        'La hora de fin debe ser posterior a la hora de inicio.'
+      )
+
+      return
+    }
+
+    setGuardandoCitacion(true)
+
+    try {
+      const response =
+        await fetch(
+          '/api/reuniones',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+              'x-cea-nit':
+                nitActual,
+            },
+            body: JSON.stringify({
+              nit: nitActual,
+              tipo_reunion:
+                formCitacion.tipo_reunion,
+              descripcion:
+                formCitacion.descripcion,
+              fecha_programada:
+                formCitacion.fecha_programada,
+              hora_inicio:
+                formCitacion.hora_inicio,
+              hora_fin:
+                formCitacion.hora_fin,
+              modalidad:
+                formCitacion.modalidad,
+              responsable:
+                formCitacion.responsable,
+              dirigido_a:
+                formCitacion.dirigido_a,
+              lugar:
+                formCitacion.lugar,
+              creado_por:
+                user?.nombreCompleto ||
+                user?.nombre_completo ||
+                user?.usuario ||
+                '',
+              origen_modulo:
+                'PESV',
+              pesv_plan_formacion_actividad_id:
+                actividadCitacion.id,
+            }),
+          }
+        )
+
+      const data =
+        await response.json()
+
+      if (
+        !response.ok ||
+        data?.status !== 'success'
+      ) {
+        throw new Error(
+          data?.message ||
+          data?.detail ||
+          'No fue posible generar la citación.'
+        )
+      }
+
+      toast.success(
+        `Citación generada correctamente. ${data?.total_citados ?? 0} persona(s) citada(s).`
+      )
+
+      setMostrarModalCitacion(false)
+      setActividadCitacion(null)
+      setFormCitacion(CITACION_INICIAL)
+
+      await cargarDatos()
+    } catch (error) {
+      console.error(error)
+      toast.error(
+        error.message ||
+        'No fue posible generar la citación.'
+      )
+    } finally {
+      setGuardandoCitacion(false)
+    }
+  }
+
+
   // ==========================================================
   // DOCUMENTO
   // ==========================================================
@@ -2163,306 +2473,74 @@ export default function PlanFormacionPesvPage() {
         "
       >
 
-        {/* ==================================================
-            CABECERA
-        ================================================== */}
-
-        <div
-          className="
-            bg-white
-            border
-            border-slate-200
-            rounded-2xl
-            shadow-sm
-            p-4
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-3
-            "
-          >
-            <div
-              className="
-                flex
-                items-center
-                gap-3
-              "
-            >
-              <div
-                className="
-                  w-11
-                  h-11
-                  rounded-xl
-                  bg-slate-100
-                  text-[var(--primary)]
-                  flex
-                  items-center
-                  justify-center
-                "
-              >
-                <i
-                  className="
-                    fas
-                    fa-graduation-cap
-                    text-lg
-                  "
-                ></i>
-              </div>
-
-              <div>
-                <h1
-                  className="
-                    text-lg
-                    md:text-xl
-                    font-bold
-                    uppercase
-                    text-[var(--primary)]
-                  "
-                >
-                  Plan Anual de Formación PESV
-                </h1>
-
-                <p
-                  className="
-                    text-xs
-                    text-slate-500
-                    mt-1
-                  "
-                >
-                  Planeación, ejecución y seguimiento de la formación en seguridad vial
-                </p>
-              </div>
-            </div>
-
-
-            <div
-              className="
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-              <select
-                value={
-                  anio
-                }
-                onChange={
-                  (
-                    event
-                  ) =>
-                    setAnio(
-                      Number(
-                        event.target.value
-                      )
-                    )
-                }
-                className="
-                  border
-                  border-slate-300
-                  rounded-lg
-                  px-3
-                  py-2
-                  text-xs
-                  bg-white
-                  font-semibold
-                "
-              >
-                {opcionesAnio.map(
-                  (
-                    item
-                  ) => (
-                    <option
-                      key={
-                        item
-                      }
-                      value={
-                        item
-                      }
-                    >
-                      {item}
-                    </option>
-                  )
-                )}
-              </select>
-
-
-              <button
-                type="button"
-                onClick={
-                  generarDocumento
-                }
-                disabled={
-                  !plan
-                }
-                className="
-                  bg-emerald-600
-                  hover:bg-emerald-700
-                  disabled:opacity-40
-                  text-white
-                  rounded-lg
-                  px-3
-                  py-2
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i
-                  className="
-                    fas
-                    fa-file-pdf
-                  "
-                ></i>
-
-                Generar documento
-              </button>
-
-
-              <button
-                type="button"
-                onClick={
-                  () =>
-                    router.push(
-                      '/admin/pesv'
-                    )
-                }
-                className="
-                  bg-slate-600
-                  hover:bg-slate-800
-                  text-white
-                  rounded-lg
-                  px-3
-                  py-2
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i
-                  className="
-                    fas
-                    fa-arrow-left
-                  "
-                ></i>
-
-                Regresar
-              </button>
-            </div>
-          </div>
-
-
-          <div
-            className="
-              mt-3
-              bg-blue-50
-              border
-              border-blue-200
-              text-blue-900
-              rounded-lg
-              px-3
-              py-2
-              text-xs
-            "
-          >
-            Usuario:{' '}
-
-            <strong>
-              {user.nombreCompleto}
-            </strong>
-
-            {user.nombreEmpresa && (
-              <>
-                {' '}· CEA:{' '}
-
-                <strong>
-                  {user.nombreEmpresa}
-                </strong>
-              </>
-            )}
-
-            {' '}· Año:{' '}
-
-            <strong>
-              {anio}
-            </strong>
-          </div>
+        <div className="overflow-hidden rounded-xl shadow-sm">
+          <EncabezadoModulo
+            titulo="Plan Anual de Formación PESV"
+            subtitulo="Planeación, ejecución y seguimiento de la formación en seguridad vial"
+            icono={GraduationCap}
+            rutaRegreso="/admin/pesv"
+            textoRegreso="Regresar a PESV"
+            permitirPersonalizacion={false}
+          />
         </div>
 
 
         {/* ==================================================
-            RESUMEN
+            RESUMEN Y ACCIONES
         ================================================== */}
 
-        <div
-          className="
-            grid
-            grid-cols-2
-            md:grid-cols-3
-            xl:grid-cols-6
-            gap-3
-          "
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <TarjetaResumen
             icono="fa-list-check"
             titulo="Actividades"
-            valor={
-              resumen.total_actividades ||
-              0
-            }
+            valor={resumen.total_actividades || 0}
           />
 
           <TarjetaResumen
             icono="fa-clock"
             titulo="Programadas"
-            valor={
-              resumen.programadas ||
-              0
-            }
-          />
-
-          <TarjetaResumen
-            icono="fa-spinner"
-            titulo="En ejecución"
-            valor={
-              resumen.en_ejecucion ||
-              0
-            }
+            valor={resumen.programadas || 0}
           />
 
           <TarjetaResumen
             icono="fa-circle-check"
             titulo="Ejecutadas"
-            valor={
-              resumen.ejecutadas ||
-              0
-            }
+            valor={resumen.ejecutadas || 0}
           />
 
-          <TarjetaResumen
-            icono="fa-calendar-days"
-            titulo="Reprogramadas"
-            valor={
-              resumen.reprogramadas ||
-              0
-            }
-          />
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
+              <i className="fas fa-calendar-days"></i>
+            </div>
 
-          <TarjetaResumen
-            icono="fa-link"
-            titulo="Con ejecución"
-            valor={
-              resumen.actividades_con_ejecucion ||
-              0
-            }
-          />
+            <div className="min-w-0 flex-1">
+              <label className="block text-[10px] uppercase font-semibold tracking-wide text-slate-500 mb-1">
+                Vigencia
+              </label>
+              <select
+                value={anio}
+                onChange={event => setAnio(Number(event.target.value))}
+                className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white font-semibold"
+              >
+                {opcionesAnio.map(item => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center">
+        <BotonPdf
+          type="button"
+          onClick={generarDocumento}
+          disabled={!plan}
+        >
+          <FileText size={15} />
+          Generar PDF
+        </BotonPdf>
+        </div>
         </div>
 
 
@@ -2470,79 +2548,32 @@ export default function PlanFormacionPesvPage() {
             DATOS DEL PLAN
         ================================================== */}
 
-        <div
-          className="
-            bg-white
-            border
-            border-slate-200
-            rounded-2xl
-            shadow-sm
-            overflow-hidden
-          "
-        >
-          <div
-            className="
-              bg-[var(--primary-dark)]
-              text-white
-              px-4
-              py-3
-              flex
-              items-center
-              justify-between
-              gap-3
-            "
+        <div className="bg-white border border-slate-200 rounded-t-2xl shadow-sm overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setMostrarDatosPlan(actual => !actual)}
+            className="w-full bg-slate-600 text-white px-4 py-2.5 flex items-center justify-between gap-3 text-left hover:bg-slate-700 transition"
           >
-            <div
-              className="
-                flex
-                items-center
-                gap-2
-              "
-            >
-              <i
-                className="
-                  fas
-                  fa-clipboard-list
-                "
-              ></i>
-
+            <div className="flex items-center gap-2">
+              <i className="fas fa-clipboard-list text-white"></i>
               <div>
-                <h2
-                  className="
-                    text-sm
-                    font-semibold
-                  "
-                >
+                <h2 className="text-sm font-semibold">
                   Datos del Plan Anual de Formación
                 </h2>
-
-                <p
-                  className="
-                    text-[10px]
-                    opacity-80
-                  "
-                >
+                <p className="text-[10px] text-slate-200">
                   Información general del plan para el año {anio}
                 </p>
               </div>
             </div>
 
-            {plan && (
-              <EstadoPlanPill
-                estado={
-                  plan.estado
-                }
-              />
-            )}
-          </div>
+            <div className="flex items-center gap-3">
+              {plan && <EstadoPlanPill estado={plan.estado} />}
+              {mostrarDatosPlan ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+            </div>
+          </button>
 
-
-          <div
-            className="
-              p-4
-              space-y-3
-            "
-          >
+          {mostrarDatosPlan && (
+          <div className="p-4 space-y-3">
             <div
               className="
                 grid
@@ -2874,6 +2905,7 @@ export default function PlanFormacionPesvPage() {
               </button>
             </div>
           </div>
+          )}
         </div>
 
 
@@ -2891,126 +2923,6 @@ export default function PlanFormacionPesvPage() {
             overflow-hidden
           "
         >
-          <div
-            className="
-              bg-slate-800
-              text-white
-              px-4
-              py-3
-              flex
-              flex-col
-              md:flex-row
-              md:items-center
-              md:justify-between
-              gap-3
-            "
-          >
-            <div
-              className="
-                flex
-                items-center
-                gap-2
-              "
-            >
-              <i
-                className="
-                  fas
-                  fa-chalkboard-user
-                "
-              ></i>
-
-              <div>
-                <h2
-                  className="
-                    text-sm
-                    font-semibold
-                  "
-                >
-                  Actividades de formación
-                </h2>
-
-                <p
-                  className="
-                    text-[10px]
-                    opacity-80
-                  "
-                >
-                  Planeación y seguimiento de actividades del año {anio}
-                </p>
-              </div>
-            </div>
-
-
-            <div
-              className="
-                flex
-                gap-2
-              "
-            >
-              <button
-                type="button"
-                onClick={
-                  irAReuniones
-                }
-                className="
-                  bg-blue-600
-                  hover:bg-blue-700
-                  text-white
-                  rounded-lg
-                  px-3
-                  py-2
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i
-                  className="
-                    fas
-                    fa-calendar-plus
-                  "
-                ></i>
-
-                Programar capacitación
-              </button>
-
-
-              <button
-                type="button"
-                onClick={
-                  nuevaActividad
-                }
-                disabled={
-                  !plan
-                }
-                className="
-                  bg-emerald-600
-                  hover:bg-emerald-700
-                  disabled:opacity-40
-                  text-white
-                  rounded-lg
-                  px-3
-                  py-2
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i
-                  className="
-                    fas
-                    fa-plus
-                  "
-                ></i>
-
-                Agregar actividad
-              </button>
-            </div>
-          </div>
-
-
           {/* ==============================================
               FILTROS
           ============================================== */}
@@ -3143,33 +3055,51 @@ export default function PlanFormacionPesvPage() {
           </div>
 
 
+
+          <TituloSeccion
+            titulo="Actividades de formación"
+            subtitulo={`Planeación y seguimiento de actividades del año ${anio}`}
+            className="rounded-t-xl"
+            icono={
+              <i className="fas fa-chalkboard-user"></i>
+            }
+            acciones={
+              <BotonClaro
+                type="button"
+                onClick={nuevaActividad}
+                disabled={!plan}
+              >
+                <i className="fas fa-plus"></i>
+                Agregar actividad
+              </BotonClaro>
+            }
+          />
+
+
+
           {/* ==============================================
               TABLA
           ============================================== */}
 
-          <div
-            className="
-              overflow-x-auto
-            "
-          >
+          <MarcoTabla className="overflow-x-auto !rounded-t-none">
             <table
               className="
                 w-full
-                min-w-[1350px]
+                min-w-[1120px]
                 border-collapse
                 text-[11px]
               "
             >
               <thead
-                className="
-                  bg-slate-800
-                  text-white
+                className=" 
+                  bg-blue-100
+                  text-slate-700
                 "
               >
                 <tr>
                   <th
                     className="
-                      border
+
                       p-2
                     "
                   >
@@ -3178,7 +3108,7 @@ export default function PlanFormacionPesvPage() {
 
                   <th
                     className="
-                      border
+
                       p-2
                     "
                   >
@@ -3187,7 +3117,7 @@ export default function PlanFormacionPesvPage() {
 
                   <th
                     className="
-                      border
+
                       p-2
                     "
                   >
@@ -3196,7 +3126,7 @@ export default function PlanFormacionPesvPage() {
 
                   <th
                     className="
-                      border
+
                       p-2
                     "
                   >
@@ -3205,7 +3135,7 @@ export default function PlanFormacionPesvPage() {
 
                   <th
                     className="
-                      border
+
                       p-2
                     "
                   >
@@ -3214,7 +3144,7 @@ export default function PlanFormacionPesvPage() {
 
                   <th
                     className="
-                      border
+
                       p-2
                     "
                   >
@@ -3223,25 +3153,15 @@ export default function PlanFormacionPesvPage() {
 
                   <th
                     className="
-                      border
+
                       p-2
                     "
                   >
                     Duración
                   </th>
-
-                  <th
+<th
                     className="
-                      border
-                      p-2
-                    "
-                  >
-                    Ejecuciones
-                  </th>
 
-                  <th
-                    className="
-                      border
                       p-2
                     "
                   >
@@ -3250,7 +3170,7 @@ export default function PlanFormacionPesvPage() {
 
                   <th
                     className="
-                      border
+
                       p-2
                     "
                   >
@@ -3260,11 +3180,11 @@ export default function PlanFormacionPesvPage() {
               </thead>
 
 
-              <tbody>
+              <tbody className="">
                 {cargando ? (
                   <tr>
                     <td
-                      colSpan={10}
+                      colSpan={9}
                       className="
                         p-6
                         text-center
@@ -3278,7 +3198,7 @@ export default function PlanFormacionPesvPage() {
                   0 ? (
                   <tr>
                     <td
-                      colSpan={10}
+                      colSpan={9}
                       className="
                         p-6
                         text-center
@@ -3305,7 +3225,7 @@ export default function PlanFormacionPesvPage() {
                       >
                         <td
                           className="
-                            border
+
                             p-2
                             text-center
                             font-semibold
@@ -3320,9 +3240,9 @@ export default function PlanFormacionPesvPage() {
 
                         <td
                           className="
-                            border
+
                             p-2
-                            min-w-[280px]
+                            min-w-[210px] max-w-[250px]
                           "
                         >
                           <div
@@ -3356,7 +3276,7 @@ export default function PlanFormacionPesvPage() {
 
                         <td
                           className="
-                            border
+
                             p-2
                             text-center
                           "
@@ -3370,7 +3290,7 @@ export default function PlanFormacionPesvPage() {
 
                         <td
                           className="
-                            border
+
                             p-2
                             text-center
                           "
@@ -3403,7 +3323,7 @@ export default function PlanFormacionPesvPage() {
 
                         <td
                           className="
-                            border
+
                             p-2
                             text-center
                             whitespace-nowrap
@@ -3440,7 +3360,7 @@ export default function PlanFormacionPesvPage() {
 
                         <td
                           className="
-                            border
+
                             p-2
                             text-center
                           "
@@ -3454,7 +3374,7 @@ export default function PlanFormacionPesvPage() {
 
                         <td
                           className="
-                            border
+
                             p-2
                             text-center
                           "
@@ -3467,39 +3387,12 @@ export default function PlanFormacionPesvPage() {
                         </td>
 
 
-                        <td
-                          className="
-                            border
-                            p-2
-                            text-center
-                          "
-                        >
-                          <span
-                            className="
-                              inline-flex
-                              min-w-7
-                              h-7
-                              items-center
-                              justify-center
-                              rounded-full
-                              bg-slate-100
-                              border
-                              border-slate-200
-                              font-bold
-                            "
-                          >
-                            {
-                              actividad.ejecuciones
-                                ?.length ||
-                              0
-                            }
-                          </span>
-                        </td>
+                        
 
 
                         <td
                           className="
-                            border
+
                             p-2
                             text-center
                           "
@@ -3514,7 +3407,7 @@ export default function PlanFormacionPesvPage() {
 
                         <td
                           className="
-                            border
+
                             p-2
                           "
                         >
@@ -3575,6 +3468,39 @@ export default function PlanFormacionPesvPage() {
                                 className="
                                   fas
                                   fa-pen
+                                "
+                              ></i>
+                            </button>
+
+
+                            <button
+                              type="button"
+                              onClick={
+                                () =>
+                                  abrirCitacion(
+                                    actividad
+                                  )
+                              }
+                              disabled={
+                                mayusculas(actividad.estado) === 'EJECUTADA' ||
+                                mayusculas(actividad.estado) === 'CANCELADA'
+                              }
+                              className="
+                                w-8
+                                h-8
+                                rounded-lg
+                                bg-slate-700
+                                hover:bg-slate-900
+                                disabled:bg-slate-300
+                                disabled:cursor-not-allowed
+                                text-white
+                              "
+                              title="Generar citación desde esta actividad"
+                            >
+                              <i
+                                className="
+                                  fas
+                                  fa-envelope
                                 "
                               ></i>
                             </button>
@@ -3653,6 +3579,84 @@ export default function PlanFormacionPesvPage() {
                 )}
               </tbody>
             </table>
+          </MarcoTabla>
+
+
+          {/* ==============================================
+              RESUMEN TRIMESTRAL Y ACUMULADO ANUAL
+          ============================================== */}
+
+          <div className="mt-4">
+            <TituloSeccion
+              titulo="Resumen trimestral y acumulado anual"
+              subtitulo={`Cumplimiento de las actividades del Plan de Formación ${anio}`}
+              className="rounded-t-xl"
+              icono={
+                <i className="fas fa-chart-column"></i>
+              }
+            />
+
+            <MarcoTabla className="overflow-x-auto !rounded-t-none">
+              <table
+                className="
+                  w-full
+                  min-w-[620px]
+                  border-collapse
+                  text-[11px]
+                "
+              >
+                <thead
+                  className="
+                    bg-blue-100
+                    text-slate-700
+                  "
+                >
+                  <tr>
+                    <th className="p-2">Periodo</th>
+                    <th className="p-2 text-center">Programadas</th>
+                    <th className="p-2 text-center">Ejecutadas</th>
+                    <th className="p-2 text-center">Cumplimiento</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {resumenFormacion.trimestres.map(
+                    (item, indice) => (
+                      <tr
+                        key={item.trimestre}
+                        className="odd:bg-white even:bg-slate-50"
+                      >
+                        <td className="p-2 font-semibold text-slate-700">
+                          {`${indice + 1}° Trimestre`}
+                        </td>
+                        <td className="p-2 text-center">
+                          {item.programadas}
+                        </td>
+                        <td className="p-2 text-center">
+                          {item.ejecutadas}
+                        </td>
+                        <td className="p-2 text-center font-semibold">
+                          {`${item.cumplimiento.toFixed(2)}%`}
+                        </td>
+                      </tr>
+                    )
+                  )}
+
+                  <tr className="bg-slate-100 font-bold text-slate-800">
+                    <td className="p-2">Acumulado anual</td>
+                    <td className="p-2 text-center">
+                      {resumenFormacion.anual.programadas}
+                    </td>
+                    <td className="p-2 text-center">
+                      {resumenFormacion.anual.ejecutadas}
+                    </td>
+                    <td className="p-2 text-center">
+                      {`${resumenFormacion.anual.cumplimiento.toFixed(2)}%`}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </MarcoTabla>
           </div>
         </div>
 
@@ -3698,6 +3702,27 @@ export default function PlanFormacionPesvPage() {
           />
         )}
       </div>
+
+
+      {/* ====================================================
+          MODAL CITACIÓN PESV
+      ==================================================== */}
+
+      {mostrarModalCitacion &&
+        actividadCitacion && (
+          <ModalCitacionPesv
+            actividad={actividadCitacion}
+            form={formCitacion}
+            cambiar={cambiarCitacion}
+            guardar={guardarCitacion}
+            guardando={guardandoCitacion}
+            cerrar={() => {
+              setMostrarModalCitacion(false)
+              setActividadCitacion(null)
+              setFormCitacion(CITACION_INICIAL)
+            }}
+          />
+        )}
 
 
       {/* ====================================================
@@ -4019,34 +4044,57 @@ function FormularioActividad({
           />
 
 
-          <SelectCampo
-            label="Área participante"
-            name="area_participante"
-            value={
-              form.area_participante
-            }
-            onChange={
-              cambiarActividad
-            }
-            opciones={
-              AREAS
-            }
-            clase="lg:col-span-3"
-          />
+          <div
+            className="lg:col-span-2"
+          >
+            <label
+              className="
+                block
+                text-xs
+                font-semibold
+                mb-1
+              "
+            >
+              Personas programadas
+            </label>
 
+            <div
+              className="
+                w-full
+                min-h-[38px]
+                border
+                border-slate-300
+                rounded-lg
+                px-3
+                py-2
+                text-sm
+                bg-slate-100
+                text-slate-700
+                font-semibold
+              "
+            >
+              {
+                form.personas_programadas !==
+                  '' &&
+                form.personas_programadas !==
+                  null &&
+                form.personas_programadas !==
+                  undefined
+                  ? form.personas_programadas
+                  : 'Automático al guardar'
+              }
+            </div>
 
-          <Campo
-            label="Personas programadas"
-            type="number"
-            name="personas_programadas"
-            value={
-              form.personas_programadas
-            }
-            onChange={
-              cambiarActividad
-            }
-            clase="lg:col-span-2"
-          />
+            <p
+              className="
+                text-[9px]
+                text-slate-500
+                mt-1
+              "
+            >
+              Calculado según la población objetivo y los perfiles activos.
+            </p>
+          </div>
 
 
           <Campo
@@ -4187,20 +4235,17 @@ function FormularioActividad({
           </div>
 
 
-          <SelectCampo
-            label="Estado"
-            name="estado"
-            value={
-              form.estado
-            }
-            onChange={
-              cambiarActividad
-            }
-            opciones={
-              ESTADOS_ACTIVIDAD
-            }
-            clase="lg:col-span-2"
-          />
+          <div className="lg:col-span-2">
+            <label className="block text-xs font-semibold mb-1">
+              Estado
+            </label>
+            <div className="w-full min-h-[38px] border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-100 text-slate-700 font-semibold">
+              {form.estado || 'PROGRAMADA'}
+            </div>
+            <p className="text-[9px] text-slate-500 mt-1">
+              El estado se actualiza automáticamente según la ejecución y la asistencia.
+            </p>
+          </div>
         </div>
 
 
@@ -4209,7 +4254,7 @@ function FormularioActividad({
         ================================================ */}
 
         <SeccionTitulo
-          titulo="Evidencia, indicador y meta"
+          titulo="Evidencia y meta"
         />
 
 
@@ -4232,69 +4277,6 @@ function FormularioActividad({
             }
             clase="lg:col-span-4"
           />
-
-
-          <div
-            className="
-              lg:col-span-4
-            "
-          >
-            <label
-              className="
-                block
-                text-xs
-                font-semibold
-                mb-1
-              "
-            >
-              Indicador asociado
-            </label>
-
-            <select
-              name="indicador_id"
-              value={
-                form.indicador_id
-              }
-              onChange={
-                cambiarActividad
-              }
-              className="
-                w-full
-                border
-                border-slate-300
-                rounded-lg
-                px-3
-                py-2
-                text-sm
-                bg-white
-              "
-            >
-              <option value="">
-                -- Sin indicador específico --
-              </option>
-
-              {indicadores.map(
-                (
-                  indicador
-                ) => (
-                  <option
-                    key={
-                      indicador.id
-                    }
-                    value={
-                      indicador.id
-                    }
-                  >
-                    {
-                      indicador.codigo
-                        ? `${indicador.codigo} - ${indicador.nombre}`
-                        : indicador.nombre
-                    }
-                  </option>
-                )
-              )}
-            </select>
-          </div>
 
 
           <Campo
@@ -4390,6 +4372,175 @@ function FormularioActividad({
                   : 'Guardar actividad'
             }
           </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+// ============================================================
+// MODAL EJECUCIÓN
+// ============================================================
+
+function ModalCitacionPesv({
+  actividad,
+  form,
+  cambiar,
+  guardar,
+  guardando,
+  cerrar,
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+      onClick={cerrar}
+    >
+      <div
+        className="bg-white w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl"
+        onClick={event => event.stopPropagation()}
+      >
+        <div className="bg-slate-800 text-white px-4 py-3 flex justify-between items-center">
+          <div>
+            <p className="text-[10px] opacity-70 uppercase">
+              Plan de Formación PESV
+            </p>
+            <h3 className="text-sm font-bold">
+              Generar citación
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            onClick={cerrar}
+            className="w-8 h-8 rounded-lg hover:bg-white/10"
+          >
+            <i className="fas fa-xmark"></i>
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div className="border border-slate-200 bg-slate-50 rounded-xl p-3">
+            <p className="text-[9px] uppercase font-bold tracking-wide text-slate-500">
+              Actividad del plan
+            </p>
+            <p className="text-sm font-semibold text-slate-800 mt-1">
+              {actividad.codigo ? `${actividad.codigo} - ` : ''}
+              {actividad.nombre}
+            </p>
+            <p className="text-[10px] text-slate-500 mt-1">
+              Fecha programada: {formatearFecha(actividad.fecha_programada)} · {calcularTrimestre(actividad.fecha_programada)}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Campo
+              label="Tipo de reunión *"
+              name="tipo_reunion"
+              value={form.tipo_reunion}
+              onChange={cambiar}
+            />
+
+            <SelectCampo
+              label="Modalidad"
+              name="modalidad"
+              value={form.modalidad}
+              onChange={cambiar}
+              opciones={MODALIDADES}
+            />
+          </div>
+
+          <AreaTexto
+            label="Descripción / tema de la citación *"
+            name="descripcion"
+            value={form.descripcion}
+            onChange={cambiar}
+            rows={3}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Campo
+              label="Fecha *"
+              type="date"
+              name="fecha_programada"
+              value={form.fecha_programada}
+              onChange={cambiar}
+            />
+
+            <Campo
+              label="Hora inicio *"
+              type="time"
+              name="hora_inicio"
+              value={form.hora_inicio}
+              onChange={cambiar}
+            />
+
+            <Campo
+              label="Hora fin *"
+              type="time"
+              name="hora_fin"
+              value={form.hora_fin}
+              onChange={cambiar}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold mb-1">
+                Dirigido a *
+              </label>
+              <select
+                name="dirigido_a"
+                value={form.dirigido_a}
+                onChange={cambiar}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+              >
+                <option value="Todo el personal">Todo el personal</option>
+                <option value="Instructores">Instructores</option>
+                <option value="Administrativo">Administrativo</option>
+              </select>
+            </div>
+
+            <Campo
+              label="Responsable"
+              name="responsable"
+              value={form.responsable}
+              onChange={cambiar}
+            />
+          </div>
+
+          <Campo
+            label="Lugar / salón / enlace de referencia"
+            name="lugar"
+            value={form.lugar}
+            onChange={cambiar}
+            placeholder="Ej. Salón principal"
+          />
+
+          <div className="border border-slate-200 rounded-xl p-3 text-xs text-slate-600 bg-slate-50">
+            Al generar la citación, DATA-CEA conservará la relación con esta actividad del Plan de Formación, guardará la fotografía histórica de las personas citadas y enviará los correos correspondientes.
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
+            <button
+              type="button"
+              onClick={cerrar}
+              disabled={guardando}
+              className="bg-slate-500 hover:bg-slate-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              onClick={guardar}
+              disabled={guardando}
+              className="bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-semibold"
+            >
+              <i className="fas fa-paper-plane mr-2"></i>
+              {guardando ? 'Generando citación...' : 'Generar y enviar citación'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -5078,13 +5229,6 @@ function ModalDetalleActividad({
             />
 
             <Detalle
-              titulo="Área participante"
-              valor={
-                actividad.area_participante
-              }
-            />
-
-            <Detalle
               titulo="Formador / perfil requerido"
               valor={
                 actividad.formador_perfil_requerido
@@ -5162,7 +5306,7 @@ function ModalDetalleActividad({
                 mb-2
               "
             >
-              Seguimiento / Ejecuciones
+              Seguimiento de la actividad
             </h4>
 
             {actividad.ejecuciones
@@ -5355,9 +5499,12 @@ function SeccionTitulo({
   return (
     <div
       className="
-        border-b
-        border-slate-200
-        pb-2
+        rounded-md
+        border
+        border-slate-300
+        bg-slate-100
+        px-3
+        py-2
       "
     >
       <p

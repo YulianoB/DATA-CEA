@@ -67,9 +67,32 @@ const SELECT_SINIESTRO = `
 `
 
 
+const ESTADO_ACTA_BORRADOR = 'BORRADOR'
+const ESTADO_ACTA_FINALIZADA = 'FINALIZADA'
+
+const SELECT_ACTA = `
+  id,
+  siniestro_id,
+  numero_acta,
+  fecha_acta,
+  tratamiento_realizado,
+  acciones_preventivas,
+  acuerdos_compromisos,
+  responsables_compromisos,
+  fecha_seguimiento,
+  participantes,
+  observaciones,
+  estado,
+  elaborado_por,
+  finalizado_por,
+  fecha_finalizacion,
+  created_at,
+  updated_at
+`
+
+
 // ============================================================
 // SELECT VEHÍCULOS
-// app/api/admin/consultas/siniestros/route.js
 // ============================================================
 
 const SELECT_VEHICULO = `
@@ -1130,6 +1153,633 @@ async function obtenerSiniestroPorId(
 }
 
 
+
+// ============================================================
+// ACTA DE TRATAMIENTO DEL SINIESTRO
+// ============================================================
+
+async function obtenerActaPorSiniestro(
+  supabase,
+  siniestroId
+) {
+  const {
+    data,
+    error,
+  } =
+    await supabase
+      .from('siniestros_actas')
+      .select(
+        SELECT_ACTA
+      )
+      .eq(
+        'siniestro_id',
+        siniestroId
+      )
+      .maybeSingle()
+
+  if (error) {
+    throw new Error(
+      `No fue posible consultar el acta del siniestro: ${error.message}`
+    )
+  }
+
+  return data || null
+}
+
+
+function normalizarParticipantes(valor) {
+  if (!Array.isArray(valor)) {
+    return []
+  }
+
+  return valor
+    .map(
+      participante => {
+        if (
+          typeof participante ===
+          'string'
+        ) {
+          const nombre =
+            normalizarTexto(
+              participante
+            )
+
+          return nombre
+            ? { nombre }
+            : null
+        }
+
+        if (
+          participante &&
+          typeof participante ===
+            'object'
+        ) {
+          const nombre =
+            normalizarTexto(
+              participante.nombre ||
+              participante.nombre_completo ||
+              ''
+            )
+
+          const cargo =
+            normalizarTexto(
+              participante.cargo ||
+              participante.rol ||
+              ''
+            )
+
+          const documento =
+            normalizarTexto(
+              participante.documento ||
+              participante.identificacion ||
+              ''
+            )
+
+          if (!nombre) {
+            return null
+          }
+
+          return {
+            nombre,
+            cargo:
+              cargo || null,
+            documento:
+              documento || null,
+          }
+        }
+
+        return null
+      }
+    )
+    .filter(Boolean)
+}
+
+
+function construirNumeroActa(
+  siniestro
+) {
+  const consecutivo =
+    normalizarMayusculas(
+      siniestro?.consecutivo
+    )
+      .replace(
+        /[^A-Z0-9_-]+/g,
+        '-'
+      )
+
+  return consecutivo
+    ? `ACT-${consecutivo}`
+    : `ACT-SIN-${siniestro.id}`
+}
+
+
+function validarDatosActa({
+  siniestro,
+  fechaActa,
+  tratamientoRealizado,
+  accionesPreventivas,
+  acuerdosCompromisos,
+  participantes,
+  finalizar = false,
+}) {
+  if (
+    !fechaActa ||
+    !fechaValida(
+      fechaActa
+    )
+  ) {
+    return 'La fecha del acta es obligatoria y debe ser válida.'
+  }
+
+  const hoy =
+    hoyBogota()
+
+  if (
+    fechaActa >
+    hoy
+  ) {
+    return 'La fecha del acta no puede ser futura.'
+  }
+
+  if (
+    siniestro?.fecha_siniestro &&
+    fechaActa <
+      siniestro.fecha_siniestro
+  ) {
+    return 'La fecha del acta no puede ser anterior a la fecha del siniestro.'
+  }
+
+  if (!finalizar) {
+    return ''
+  }
+
+  if (
+    !tratamientoRealizado
+  ) {
+    return 'Debe registrar el tratamiento realizado antes de finalizar el acta.'
+  }
+
+  if (
+    !accionesPreventivas
+  ) {
+    return 'Debe registrar las acciones preventivas antes de finalizar el acta.'
+  }
+
+  if (
+    !acuerdosCompromisos
+  ) {
+    return 'Debe registrar los acuerdos y compromisos antes de finalizar el acta.'
+  }
+
+  if (
+    !Array.isArray(
+      participantes
+    ) ||
+    participantes.length === 0
+  ) {
+    return 'Debe registrar al menos un participante en el tratamiento del siniestro.'
+  }
+
+  return ''
+}
+
+
+function obtenerCostosDesdeBody(
+  body,
+  actual
+) {
+  return {
+    costo_dir_choque_simple:
+      Number(
+        body?.costo_dir_choque_simple ??
+        actual?.costo_dir_choque_simple ??
+        0
+      ),
+
+    costo_indi_choque_simple:
+      Number(
+        body?.costo_indi_choque_simple ??
+        actual?.costo_indi_choque_simple ??
+        0
+      ),
+
+    costo_dir_heridos_l:
+      Number(
+        body?.costo_dir_heridos_l ??
+        actual?.costo_dir_heridos_l ??
+        0
+      ),
+
+    costo_indi_heridos_l:
+      Number(
+        body?.costo_indi_heridos_l ??
+        actual?.costo_indi_heridos_l ??
+        0
+      ),
+
+    costo_dir_heridos_g:
+      Number(
+        body?.costo_dir_heridos_g ??
+        actual?.costo_dir_heridos_g ??
+        0
+      ),
+
+    costo_indi_heridos_g:
+      Number(
+        body?.costo_indi_heridos_g ??
+        actual?.costo_indi_heridos_g ??
+        0
+      ),
+
+    costo_dir_fatalidad:
+      Number(
+        body?.costo_dir_fatalidad ??
+        actual?.costo_dir_fatalidad ??
+        0
+      ),
+
+    costo_indi_fatalidad:
+      Number(
+        body?.costo_indi_fatalidad ??
+        actual?.costo_indi_fatalidad ??
+        0
+      ),
+  }
+}
+
+
+function validarCostos(
+  costos
+) {
+  const etiquetas = {
+    costo_dir_choque_simple:
+      'costo directo de choques simples',
+
+    costo_indi_choque_simple:
+      'costo indirecto de choques simples',
+
+    costo_dir_heridos_l:
+      'costo directo de heridos leves',
+
+    costo_indi_heridos_l:
+      'costo indirecto de heridos leves',
+
+    costo_dir_heridos_g:
+      'costo directo de heridos graves',
+
+    costo_indi_heridos_g:
+      'costo indirecto de heridos graves',
+
+    costo_dir_fatalidad:
+      'costo directo de fatalidades',
+
+    costo_indi_fatalidad:
+      'costo indirecto de fatalidades',
+  }
+
+  for (
+    const [
+      campo,
+      valor,
+    ] of
+      Object.entries(
+        costos
+      )
+  ) {
+    if (
+      !validarNumeroMin0(
+        valor
+      )
+    ) {
+      return `El ${etiquetas[campo]} debe ser un número válido mayor o igual a cero.`
+    }
+  }
+
+  return ''
+}
+
+
+async function actualizarDatosTratamientoSiniestro({
+  supabase,
+  id,
+  actual,
+  body,
+}) {
+  const costos =
+    obtenerCostosDesdeBody(
+      body,
+      actual
+    )
+
+  const errorCostos =
+    validarCostos(
+      costos
+    )
+
+  if (errorCostos) {
+    return {
+      error:
+        errorCostos,
+    }
+  }
+
+  const payload = {
+    resumen_analisis:
+      normalizarTexto(
+        body?.resumen_analisis ??
+        actual?.resumen_analisis
+      ) ||
+      null,
+
+    numero_ipat:
+      normalizarTexto(
+        body?.numero_ipat ??
+        actual?.numero_ipat
+      ) ||
+      null,
+
+    autoridad:
+      normalizarTexto(
+        body?.autoridad ??
+        actual?.autoridad
+      ) ||
+      null,
+
+    ...costos,
+  }
+
+  const {
+    data,
+    error,
+  } =
+    await supabase
+      .from('siniestros')
+      .update(
+        payload
+      )
+      .eq(
+        'id',
+        id
+      )
+      .select(
+        SELECT_SINIESTRO
+      )
+      .maybeSingle()
+
+  if (error) {
+    return {
+      error:
+        `No fue posible actualizar los datos del tratamiento: ${error.message}`,
+    }
+  }
+
+  return {
+    registro:
+      data,
+  }
+}
+
+
+async function guardarActa({
+  supabase,
+  siniestro,
+  body,
+  responsable,
+  finalizar = false,
+}) {
+  const existente =
+    await obtenerActaPorSiniestro(
+      supabase,
+      siniestro.id
+    )
+
+  if (
+    existente?.estado ===
+      ESTADO_ACTA_FINALIZADA &&
+    !finalizar
+  ) {
+    return {
+      status:
+        409,
+
+      error:
+        'El acta ya está FINALIZADA y no puede ser modificada.',
+    }
+  }
+
+  const fechaActa =
+    normalizarTexto(
+      body?.fecha_acta ||
+      existente?.fecha_acta ||
+      hoyBogota()
+    )
+
+  const tratamientoRealizado =
+    normalizarTexto(
+      body?.tratamiento_realizado ??
+      existente?.tratamiento_realizado
+    )
+
+  const accionesPreventivas =
+    normalizarTexto(
+      body?.acciones_preventivas ??
+      existente?.acciones_preventivas
+    )
+
+  const acuerdosCompromisos =
+    normalizarTexto(
+      body?.acuerdos_compromisos ??
+      existente?.acuerdos_compromisos
+    )
+
+  const responsablesCompromisos =
+    normalizarTexto(
+      body?.responsables_compromisos ??
+      existente?.responsables_compromisos
+    )
+
+  const fechaSeguimiento =
+    normalizarTexto(
+      body?.fecha_seguimiento ??
+      existente?.fecha_seguimiento
+    )
+
+  const participantes =
+    normalizarParticipantes(
+      body?.participantes ??
+      existente?.participantes
+    )
+
+  const observaciones =
+    normalizarTexto(
+      body?.observaciones ??
+      existente?.observaciones
+    )
+
+  const errorActa =
+    validarDatosActa({
+      siniestro,
+      fechaActa,
+      tratamientoRealizado,
+      accionesPreventivas,
+      acuerdosCompromisos,
+      participantes,
+      finalizar,
+    })
+
+  if (errorActa) {
+    return {
+      status:
+        400,
+
+      error:
+        errorActa,
+    }
+  }
+
+  if (
+    fechaSeguimiento &&
+    !fechaValida(
+      fechaSeguimiento
+    )
+  ) {
+    return {
+      status:
+        400,
+
+      error:
+        'La fecha de seguimiento no tiene un formato válido.',
+    }
+  }
+
+  if (
+    fechaSeguimiento &&
+    fechaSeguimiento <
+      fechaActa
+  ) {
+    return {
+      status:
+        400,
+
+      error:
+        'La fecha de seguimiento no puede ser anterior a la fecha del acta.',
+    }
+  }
+
+  const ahora =
+    new Date()
+      .toISOString()
+
+  const payload = {
+    siniestro_id:
+      siniestro.id,
+
+    numero_acta:
+      existente?.numero_acta ||
+      construirNumeroActa(
+        siniestro
+      ),
+
+    fecha_acta:
+      fechaActa,
+
+    tratamiento_realizado:
+      tratamientoRealizado,
+
+    acciones_preventivas:
+      accionesPreventivas,
+
+    acuerdos_compromisos:
+      acuerdosCompromisos,
+
+    responsables_compromisos:
+      responsablesCompromisos ||
+      null,
+
+    fecha_seguimiento:
+      fechaSeguimiento ||
+      null,
+
+    participantes,
+
+    observaciones:
+      observaciones ||
+      null,
+
+    estado:
+      finalizar
+        ? ESTADO_ACTA_FINALIZADA
+        : ESTADO_ACTA_BORRADOR,
+
+    elaborado_por:
+      existente?.elaborado_por ||
+      responsable,
+
+    finalizado_por:
+      finalizar
+        ? responsable
+        : existente?.finalizado_por ||
+          null,
+
+    fecha_finalizacion:
+      finalizar
+        ? ahora
+        : existente?.fecha_finalizacion ||
+          null,
+
+    updated_at:
+      ahora,
+  }
+
+  let consulta
+
+  if (existente) {
+    consulta =
+      supabase
+        .from('siniestros_actas')
+        .update(
+          payload
+        )
+        .eq(
+          'id',
+          existente.id
+        )
+  } else {
+    consulta =
+      supabase
+        .from('siniestros_actas')
+        .insert(
+          payload
+        )
+  }
+
+  const {
+    data,
+    error,
+  } =
+    await consulta
+      .select(
+        SELECT_ACTA
+      )
+      .maybeSingle()
+
+  if (error) {
+    return {
+      status:
+        500,
+
+      error:
+        `No fue posible guardar el acta: ${error.message}`,
+    }
+  }
+
+  return {
+    acta:
+      data,
+  }
+}
+
+
 // ============================================================
 // GET
 // app/api/admin/consultas/siniestros/route.js
@@ -1179,6 +1829,91 @@ export async function GET(request) {
         )
       ) ||
       'vehiculos'
+
+
+    // ========================================================
+    // GET ACTA DE UN SINIESTRO
+    // recurso=acta&id=<siniestro_id>
+    // ========================================================
+
+    if (
+      recurso ===
+      'acta'
+    ) {
+      const id =
+        Number(
+          searchParams.get(
+            'id'
+          )
+        )
+
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
+        return NextResponse.json(
+          {
+            status:
+              'failed',
+
+            message:
+              'El ID del siniestro no es válido.',
+          },
+          {
+            status:
+              400,
+          }
+        )
+      }
+
+      const siniestro =
+        await obtenerSiniestroPorId(
+          supabase,
+          id
+        )
+
+      if (!siniestro) {
+        return NextResponse.json(
+          {
+            status:
+              'failed',
+
+            message:
+              'El siniestro no existe.',
+          },
+          {
+            status:
+              404,
+          }
+        )
+      }
+
+      const acta =
+        await obtenerActaPorSiniestro(
+          supabase,
+          id
+        )
+
+      return NextResponse.json({
+        status:
+          'success',
+
+        empresa: {
+          nit:
+            empresa?.nit ||
+            '',
+
+          nombre:
+            empresa?.nombre ||
+            empresa?.razon_social ||
+            '',
+        },
+
+        siniestro,
+
+        acta,
+      })
+    }
 
 
     // ========================================================
@@ -1922,18 +2657,168 @@ export async function PATCH(request) {
 
 
     // ========================================================
-    // ACCIÓN: CERRAR SINIESTRO
-    // app/api/admin/consultas/siniestros/route.js
+    // ACCIÓN: GUARDAR TRATAMIENTO SIN CERRAR
+    //
+    // Permite guardar por etapas el análisis administrativo
+    // y los costos antes de elaborar el acta.
     // ========================================================
 
     if (
       accion ===
-      'cerrar_siniestro'
+      'guardar_tratamiento'
     ) {
-      // ======================================================
-      // YA ESTÁ CERRADO
-      // ======================================================
+      if (
+        estadoActual !==
+        ESTADO_ANALISIS
+      ) {
+        return NextResponse.json(
+          {
+            status: 'failed',
+            message: 'El siniestro debe estar EN ANÁLISIS para guardar el tratamiento.',
+          },
+          { status: 409 }
+        )
+      }
 
+      const actualizacion =
+        await actualizarDatosTratamientoSiniestro({
+          supabase,
+          id,
+          actual,
+          body,
+        })
+
+      if (actualizacion.error) {
+        return NextResponse.json(
+          {
+            status: 'failed',
+            message: actualizacion.error,
+          },
+          { status: 400 }
+        )
+      }
+
+      return NextResponse.json({
+        status: 'success',
+        message: 'Información del tratamiento guardada correctamente.',
+        registro: actualizacion.registro,
+      })
+    }
+
+
+    // ========================================================
+    // ACCIÓN: GUARDAR ACTA EN BORRADOR
+    // ========================================================
+
+    if (
+      accion ===
+      'guardar_acta'
+    ) {
+      if (
+        estadoActual !==
+        ESTADO_ANALISIS
+      ) {
+        return NextResponse.json(
+          {
+            status:
+              'failed',
+
+            message:
+              'El siniestro debe estar EN ANÁLISIS para elaborar o modificar el acta.',
+          },
+          {
+            status:
+              409,
+          }
+        )
+      }
+
+      const actualizacion =
+        await actualizarDatosTratamientoSiniestro({
+          supabase,
+          id,
+          actual,
+          body,
+        })
+
+      if (
+        actualizacion.error
+      ) {
+        return NextResponse.json(
+          {
+            status:
+              'failed',
+
+            message:
+              actualizacion.error,
+          },
+          {
+            status:
+              400,
+          }
+        )
+      }
+
+      const resultado =
+        await guardarActa({
+          supabase,
+          siniestro:
+            actualizacion.registro ||
+            actual,
+          body,
+          responsable,
+          finalizar:
+            false,
+        })
+
+      if (
+        resultado.error
+      ) {
+        return NextResponse.json(
+          {
+            status:
+              'failed',
+
+            message:
+              resultado.error,
+          },
+          {
+            status:
+              resultado.status ||
+              400,
+          }
+        )
+      }
+
+      return NextResponse.json({
+        status:
+          'success',
+
+        message:
+          'Borrador del acta guardado correctamente.',
+
+        registro:
+          actualizacion.registro,
+
+        acta:
+          resultado.acta,
+      })
+    }
+
+
+    // ========================================================
+    // ACCIÓN: FINALIZAR ACTA Y CERRAR SINIESTRO
+    //
+    // Regla:
+    // - el siniestro debe estar EN ANÁLISIS
+    // - el acta debe quedar FINALIZADA
+    // - solamente entonces el siniestro pasa a CERRADO
+    // ========================================================
+
+    if (
+      accion ===
+      'finalizar_acta'
+    ) {
       if (
         estadoActual ===
         ESTADO_CERRADO
@@ -1956,11 +2841,6 @@ export async function PATCH(request) {
         )
       }
 
-
-      // ======================================================
-      // SOLO EN ANÁLISIS PUEDE CERRARSE
-      // ======================================================
-
       if (
         estadoActual !==
         ESTADO_ANALISIS
@@ -1971,7 +2851,7 @@ export async function PATCH(request) {
               'failed',
 
             message:
-              'El siniestro debe estar EN ANÁLISIS antes de cerrarse.',
+              'El siniestro debe estar EN ANÁLISIS antes de finalizar el acta.',
           },
           {
             status:
@@ -1980,20 +2860,16 @@ export async function PATCH(request) {
         )
       }
 
-
-      // ======================================================
-      // RESUMEN DE ANÁLISIS
-      // ======================================================
-
-      const resumenAnalisis =
-        normalizarTexto(
-          body
-            ?.resumen_analisis
-        )
-
+      const actualizacion =
+        await actualizarDatosTratamientoSiniestro({
+          supabase,
+          id,
+          actual,
+          body,
+        })
 
       if (
-        !resumenAnalisis
+        actualizacion.error
       ) {
         return NextResponse.json(
           {
@@ -2001,7 +2877,7 @@ export async function PATCH(request) {
               'failed',
 
             message:
-              'El resumen de análisis es obligatorio para cerrar el siniestro.',
+              actualizacion.error,
           },
           {
             status:
@@ -2010,91 +2886,23 @@ export async function PATCH(request) {
         )
       }
 
-
-      // ======================================================
-      // FECHA COMITÉ
-      // app/api/admin/consultas/siniestros/route.js
-      //
-      // Campo requerido por la evidencia de la
-      // Superintendencia.
-      // ======================================================
-
-      const fechaComiteAnalisis =
-        normalizarTexto(
-          body
-            ?.fecha_comite_analisis
-        )
-
-
-      if (
-        !fechaComiteAnalisis
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'failed',
-
-            message:
-              'La fecha del comité donde fue analizado el siniestro es obligatoria para cerrar.',
-          },
-          {
-            status:
-              400,
-          }
-        )
-      }
-
-
-      if (
-        !fechaValida(
-          fechaComiteAnalisis
-        )
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'failed',
-
-            message:
-              'La fecha del comité no tiene un formato válido.',
-          },
-          {
-            status:
-              400,
-          }
-        )
-      }
-
-
-      const hoy =
-        hoyBogota()
-
-
-      if (
-        fechaComiteAnalisis >
-        hoy
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'failed',
-
-            message:
-              'La fecha del comité no puede ser una fecha futura.',
-          },
-          {
-            status:
-              400,
-          }
-        )
-      }
-
-
-      if (
+      const siniestroActualizado =
+        actualizacion.registro ||
         actual
-          ?.fecha_siniestro &&
-        fechaComiteAnalisis <
-          actual.fecha_siniestro
+
+      const resultadoActa =
+        await guardarActa({
+          supabase,
+          siniestro:
+            siniestroActualizado,
+          body,
+          responsable,
+          finalizar:
+            true,
+        })
+
+      if (
+        resultadoActa.error
       ) {
         return NextResponse.json(
           {
@@ -2102,250 +2910,30 @@ export async function PATCH(request) {
               'failed',
 
             message:
-              'La fecha del comité no puede ser anterior a la fecha del siniestro.',
+              resultadoActa.error,
           },
           {
             status:
+              resultadoActa.status ||
               400,
           }
         )
       }
-
-
-      // ======================================================
-      // COSTOS
-      // ======================================================
-
-      const costoDirChoque =
-        Number(
-          body
-            ?.costo_dir_choque_simple ??
-          0
-        )
-
-
-      const costoIndChoque =
-        Number(
-          body
-            ?.costo_indi_choque_simple ??
-          0
-        )
-
-
-      const costoDirLeves =
-        Number(
-          body
-            ?.costo_dir_heridos_l ??
-          0
-        )
-
-
-      const costoIndLeves =
-        Number(
-          body
-            ?.costo_indi_heridos_l ??
-          0
-        )
-
-
-      const costoDirGraves =
-        Number(
-          body
-            ?.costo_dir_heridos_g ??
-          0
-        )
-
-
-      const costoIndGraves =
-        Number(
-          body
-            ?.costo_indi_heridos_g ??
-          0
-        )
-
-
-      const costoDirFatalidad =
-        Number(
-          body
-            ?.costo_dir_fatalidad ??
-          0
-        )
-
-
-      const costoIndFatalidad =
-        Number(
-          body
-            ?.costo_indi_fatalidad ??
-          0
-        )
-
-
-      // ======================================================
-      // VALIDACIÓN DE LOS 8 COSTOS
-      // ======================================================
-
-      const costosValidar = [
-        {
-          nombre:
-            'costo directo de choques simples',
-
-          valor:
-            costoDirChoque,
-        },
-        {
-          nombre:
-            'costo indirecto de choques simples',
-
-          valor:
-            costoIndChoque,
-        },
-        {
-          nombre:
-            'costo directo de heridos leves',
-
-          valor:
-            costoDirLeves,
-        },
-        {
-          nombre:
-            'costo indirecto de heridos leves',
-
-          valor:
-            costoIndLeves,
-        },
-        {
-          nombre:
-            'costo directo de heridos graves',
-
-          valor:
-            costoDirGraves,
-        },
-        {
-          nombre:
-            'costo indirecto de heridos graves',
-
-          valor:
-            costoIndGraves,
-        },
-        {
-          nombre:
-            'costo directo de fatalidades',
-
-          valor:
-            costoDirFatalidad,
-        },
-        {
-          nombre:
-            'costo indirecto de fatalidades',
-
-          valor:
-            costoIndFatalidad,
-        },
-      ]
-
-
-      for (
-        const costoItem of
-          costosValidar
-      ) {
-        if (
-          !validarNumeroMin0(
-            costoItem.valor
-          )
-        ) {
-          return NextResponse.json(
-            {
-              status:
-                'failed',
-
-              message:
-                `El ${costoItem.nombre} debe ser un número válido mayor o igual a cero.`,
-            },
-            {
-              status:
-                400,
-            }
-          )
-        }
-      }
-
-
-      // ======================================================
-      // FECHA DE CIERRE
-      // ======================================================
 
       const fechaCierre =
         hoyBogota()
 
-
-      // ======================================================
-      // PAYLOAD DEFINITIVO DE CIERRE
-      // app/api/admin/consultas/siniestros/route.js
-      // ======================================================
-
-      const payload = {
-        estado_analisis:
-          ESTADO_CERRADO,
-
-        fecha_estado_cerrado:
-          fechaCierre,
-
-        nombre_usuario_cerrado:
-          responsable,
-
-        resumen_analisis:
-          resumenAnalisis,
-
-        numero_ipat:
-          normalizarTexto(
-            body
-              ?.numero_ipat
-          ) ||
-          null,
-
-        autoridad:
-          normalizarTexto(
-            body
-              ?.autoridad
-          ) ||
-          null,
-
-        fecha_comite_analisis:
-          fechaComiteAnalisis,
-
-        costo_dir_choque_simple:
-          costoDirChoque,
-
-        costo_indi_choque_simple:
-          costoIndChoque,
-
-        costo_dir_heridos_l:
-          costoDirLeves,
-
-        costo_indi_heridos_l:
-          costoIndLeves,
-
-        costo_dir_heridos_g:
-          costoDirGraves,
-
-        costo_indi_heridos_g:
-          costoIndGraves,
-
-        costo_dir_fatalidad:
-          costoDirFatalidad,
-
-        costo_indi_fatalidad:
-          costoIndFatalidad,
-      }
-
-
-      // ======================================================
-      // ACTUALIZAR CIERRE
-      //
-      // La condición estado_analisis = EN ANÁLISIS evita
-      // cerrar un registro cuyo estado haya cambiado
-      // simultáneamente.
-      // ======================================================
+      const resumenAnalisis =
+        normalizarTexto(
+          body?.resumen_analisis ??
+          siniestroActualizado
+            ?.resumen_analisis
+        ) ||
+        normalizarTexto(
+          body?.tratamiento_realizado ??
+          resultadoActa.acta
+            ?.tratamiento_realizado
+        )
 
       const {
         data,
@@ -2353,9 +2941,28 @@ export async function PATCH(request) {
       } =
         await supabase
           .from('siniestros')
-          .update(
-            payload
-          )
+          .update({
+            estado_analisis:
+              ESTADO_CERRADO,
+
+            fecha_estado_cerrado:
+              fechaCierre,
+
+            nombre_usuario_cerrado:
+              responsable,
+
+            resumen_analisis:
+              resumenAnalisis ||
+              null,
+
+            // Campo histórico. Ya no representa un comité.
+            // Se conserva sin modificar hasta retirar la
+            // columna en una migración posterior.
+            fecha_comite_analisis:
+              siniestroActualizado
+                ?.fecha_comite_analisis ||
+              null,
+          })
           .eq(
             'id',
             id
@@ -2369,7 +2976,6 @@ export async function PATCH(request) {
           )
           .maybeSingle()
 
-
       if (error) {
         return NextResponse.json(
           {
@@ -2377,7 +2983,7 @@ export async function PATCH(request) {
               'failed',
 
             message:
-              `No fue posible cerrar el siniestro: ${error.message}`,
+              `El acta quedó finalizada, pero no fue posible cerrar el siniestro: ${error.message}. Intente finalizar nuevamente.`,
           },
           {
             status:
@@ -2386,17 +2992,14 @@ export async function PATCH(request) {
         )
       }
 
-
-      if (
-        !data
-      ) {
+      if (!data) {
         return NextResponse.json(
           {
             status:
               'failed',
 
             message:
-              'El estado del siniestro cambió antes de completar el cierre. Actualice la consulta e inténtelo nuevamente.',
+              'El acta quedó finalizada, pero el estado del siniestro cambió antes de completar el cierre. Actualice la consulta.',
           },
           {
             status:
@@ -2405,17 +3008,46 @@ export async function PATCH(request) {
         )
       }
 
-
       return NextResponse.json({
         status:
           'success',
 
         message:
-          'Análisis del siniestro cerrado correctamente.',
+          'Acta finalizada y siniestro cerrado correctamente.',
 
         registro:
           data,
+
+        acta:
+          resultadoActa.acta,
       })
+    }
+
+
+    // ========================================================
+    // ACCIÓN HISTÓRICA: CERRAR SINIESTRO
+    //
+    // Se bloquea el cierre directo. El cierre ahora depende
+    // de la finalización del acta de tratamiento.
+    // ========================================================
+
+    if (
+      accion ===
+      'cerrar_siniestro'
+    ) {
+      return NextResponse.json(
+        {
+          status:
+            'failed',
+
+          message:
+            'El cierre directo fue reemplazado por el acta de tratamiento. Finalice el acta para cerrar el siniestro.',
+        },
+        {
+          status:
+            409,
+        }
+      )
     }
 
 

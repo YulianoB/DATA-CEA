@@ -92,6 +92,186 @@ function idOpcional(
 }
 
 
+
+const POBLACIONES_FORMACION = new Set([
+  'TODO EL PERSONAL',
+  'INSTRUCTORES',
+  'ADMINISTRATIVO',
+])
+
+
+function normalizarPoblacion(
+  valor
+) {
+  const normalizada =
+    texto(
+      valor
+    ).toUpperCase()
+
+  if (
+    normalizada ===
+    'PERSONAL ADMINISTRATIVO'
+  ) {
+    return 'Administrativo'
+  }
+
+  if (
+    normalizada ===
+    'TODO EL PERSONAL'
+  ) {
+    return 'Todo el personal'
+  }
+
+  if (
+    normalizada ===
+    'INSTRUCTORES'
+  ) {
+    return 'Instructores'
+  }
+
+  if (
+    normalizada ===
+    'ADMINISTRATIVO'
+  ) {
+    return 'Administrativo'
+  }
+
+  return null
+}
+
+
+async function obtenerPersonasProgramadas(
+  supabase,
+  dirigidoA
+) {
+  const poblacion =
+    normalizarPoblacion(
+      dirigidoA
+    )
+
+  if (!poblacion) {
+    throw new Error(
+      'La población objetivo no es válida. Use Todo el personal, Instructores o Personal administrativo.'
+    )
+  }
+
+  const {
+    data,
+    error,
+  } =
+    await supabase
+      .from('personal')
+      .select(`
+        id,
+        documento,
+        estado,
+        perfiles_usuario (
+          rol,
+          estado
+        )
+      `)
+      .eq(
+        'estado',
+        'activo'
+      )
+
+  if (error) {
+    throw error
+  }
+
+  const documentos =
+    new Set()
+
+  for (
+    const persona
+    of data || []
+  ) {
+    const documento =
+      texto(
+        persona?.documento
+      )
+
+    if (!documento) {
+      continue
+    }
+
+    if (
+      poblacion ===
+      'Todo el personal'
+    ) {
+      documentos.add(
+        documento
+      )
+
+      continue
+    }
+
+    const rolesActivos =
+      (
+        persona
+          ?.perfiles_usuario ||
+        []
+      )
+        .filter(
+          perfil =>
+            texto(
+              perfil?.estado
+            ).toLowerCase() ===
+            'activo'
+        )
+        .map(
+          perfil =>
+            texto(
+              perfil?.rol
+            ).toUpperCase()
+        )
+
+    if (
+      poblacion ===
+      'Instructores'
+    ) {
+      if (
+        rolesActivos.includes(
+          'INSTRUCTOR_TEORIA'
+        ) ||
+        rolesActivos.includes(
+          'INSTRUCTOR_PRACTICA'
+        )
+      ) {
+        documentos.add(
+          documento
+        )
+      }
+
+      continue
+    }
+
+    if (
+      poblacion ===
+      'Administrativo' &&
+      (
+        rolesActivos.includes(
+          'ADMINISTRATIVO'
+        ) ||
+        rolesActivos.includes(
+          'AUXILIAR_ADMINISTRATIVO'
+        )
+      )
+    ) {
+      documentos.add(
+        documento
+      )
+    }
+  }
+
+  return {
+    poblacion,
+    total:
+      documentos.size,
+  }
+}
+
+
 function usuarioActualizacion(
   body
 ) {
@@ -563,7 +743,6 @@ async function obtenerActividades(
           objetivo,
           dirigido_a,
           formador_perfil_requerido,
-          area_participante,
           personas_programadas,
           modalidad,
           responsable_personal_id,
@@ -572,7 +751,6 @@ async function obtenerActividades(
           trimestre,
           duracion_horas,
           evidencia_esperada,
-          indicador_id,
           meta,
           estado,
           observaciones,
@@ -635,7 +813,6 @@ async function obtenerActividadPorId(
           objetivo,
           dirigido_a,
           formador_perfil_requerido,
-          area_participante,
           personas_programadas,
           modalidad,
           responsable_personal_id,
@@ -644,7 +821,6 @@ async function obtenerActividadPorId(
           trimestre,
           duracion_horas,
           evidencia_esperada,
-          indicador_id,
           meta,
           estado,
           observaciones,
@@ -1456,15 +1632,6 @@ export async function GET(
         ) => ({
           ...actividad,
 
-          indicador:
-            indicadores.find(
-              (
-                indicador
-              ) =>
-                indicador.id ===
-                actividad.indicador_id
-            ) || null,
-
           ejecuciones:
             ejecucionesPorActividad[
               String(
@@ -1776,31 +1943,19 @@ export async function POST(
         )
       }
 
+      // El estado de una actividad nueva siempre nace en PROGRAMADA.
+      // No se acepta un estado enviado manualmente desde la interfaz.
       const estado =
-        validarEstadoActividad(
-          body?.estado
-        )
+        'PROGRAMADA'
 
-      if (!estado) {
-        return respuestaError(
-          'El estado de la actividad no es válido.'
+      const poblacionCalculada =
+        await obtenerPersonasProgramadas(
+          supabase,
+          body?.dirigido_a
         )
-      }
 
       const personasProgramadas =
-        numeroOpcional(
-          body?.personas_programadas
-        )
-
-      if (
-        personasProgramadas !==
-          null &&
-        personasProgramadas < 0
-      ) {
-        return respuestaError(
-          'El número de personas programadas no puede ser negativo.'
-        )
-      }
+        poblacionCalculada.total
 
       const duracion =
         numeroOpcional(
@@ -1853,20 +2008,12 @@ export async function POST(
           null,
 
         dirigido_a:
-          texto(
-            body?.dirigido_a
-          ) ||
-          null,
+          poblacionCalculada
+            .poblacion,
 
         formador_perfil_requerido:
           texto(
             body?.formador_perfil_requerido
-          ) ||
-          null,
-
-        area_participante:
-          texto(
-            body?.area_participante
           ) ||
           null,
 
@@ -1906,11 +2053,6 @@ export async function POST(
             body?.evidencia_esperada
           ) ||
           null,
-
-        indicador_id:
-          idOpcional(
-            body?.indicador_id
-          ),
 
         meta:
           texto(
@@ -2562,31 +2704,20 @@ export async function PATCH(
         )
       }
 
+      // La edición de datos de la actividad no modifica su estado.
+      // El estado se conserva y cambia únicamente por el flujo de ejecución/asistencia.
       const estado =
-        validarEstadoActividad(
-          body?.estado
-        )
+        existente.estado ||
+        'PROGRAMADA'
 
-      if (!estado) {
-        return respuestaError(
-          'El estado de la actividad no es válido.'
+      const poblacionCalculada =
+        await obtenerPersonasProgramadas(
+          supabase,
+          body?.dirigido_a
         )
-      }
 
       const personasProgramadas =
-        numeroOpcional(
-          body?.personas_programadas
-        )
-
-      if (
-        personasProgramadas !==
-          null &&
-        personasProgramadas < 0
-      ) {
-        return respuestaError(
-          'El número de personas programadas no puede ser negativo.'
-        )
-      }
+        poblacionCalculada.total
 
       const duracion =
         numeroOpcional(
@@ -2636,20 +2767,12 @@ export async function PATCH(
           null,
 
         dirigido_a:
-          texto(
-            body?.dirigido_a
-          ) ||
-          null,
+          poblacionCalculada
+            .poblacion,
 
         formador_perfil_requerido:
           texto(
             body?.formador_perfil_requerido
-          ) ||
-          null,
-
-        area_participante:
-          texto(
-            body?.area_participante
           ) ||
           null,
 
@@ -2689,11 +2812,6 @@ export async function PATCH(
             body?.evidencia_esperada
           ) ||
           null,
-
-        indicador_id:
-          idOpcional(
-            body?.indicador_id
-          ),
 
         meta:
           texto(
