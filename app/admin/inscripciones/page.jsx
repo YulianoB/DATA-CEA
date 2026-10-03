@@ -2164,8 +2164,8 @@ export default function InscripcionesPage() {
                                 }
                                 className="
                                   min-w-[155px]
-                                  bg-emerald-600
-                                  hover:bg-emerald-700
+                                  bg-[#4682B4]
+                                  hover:bg-[#356A96]
                                   hover:-translate-y-0.5
                                   hover:shadow-md
                                   text-white
@@ -2192,8 +2192,8 @@ export default function InscripcionesPage() {
                                 }
                                 className="
                                   min-w-[125px]
-                                  bg-[#4682B4]
-                                  hover:bg-[#356A96]
+                                  bg-[#5F9EA0]
+                                  hover:bg-[#4D8587]
                                   hover:-translate-y-0.5
                                   hover:shadow-md
                                   text-white
@@ -2240,7 +2240,7 @@ export default function InscripcionesPage() {
           ></div>
 
           <div className="relative z-10 w-full max-w-[1180px] max-h-[94vh] bg-white shadow-2xl rounded-xl overflow-y-auto border border-gray-300">
-            <div className="sticky top-0 z-20 bg-[#173A57] text-white border-b border-[#29465D] px-4 py-3">
+            <div className="sticky top-0 z-20 relative bg-[#173A57] text-white border-b border-[#29465D] px-4 py-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[11px] uppercase font-semibold text-white">
@@ -2267,34 +2267,14 @@ export default function InscripcionesPage() {
                 </button>
               </div>
 
-              {matriculasExpediente.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {matriculasExpediente.map(matricula => {
-                    const seleccionada =
-                      String(matriculaSeleccionada?.id) === String(matricula.id)
-
-                    return (
-                      <button
-                        type="button"
-                        key={matricula.id}
-                        onClick={() => setMatriculaSeleccionada(matricula)}
-                        className={`
-                          rounded-lg border px-3 py-1.5 text-left transition-all duration-200
-                          hover:-translate-y-0.5
-                          ${seleccionada
-                            ? 'bg-white text-[#173A57] border-white shadow-md'
-                            : 'bg-white/10 text-white border-white/30 hover:bg-white/20'}
-                        `}
-                      >
-                        <span className="text-[10px] opacity-80">
-                          Matrícula {matricula.consecutivo || '-'}
-                        </span>
-                        <span className="ml-2 text-sm font-black">
-                          {matricula.categoria || '-'}
-                        </span>
-                      </button>
-                    )
-                  })}
+              {matriculaSeleccionada && (
+                <div className="absolute right-16 top-1/2 -translate-y-1/2 text-right text-white pr-3">
+                  <div className="text-xs text-white">
+                    Matrícula {matriculaSeleccionada.consecutivo || '-'}
+                  </div>
+                  <div className="text-lg font-black leading-tight text-white">
+                    {matriculaSeleccionada.categoria || '-'}
+                  </div>
                 </div>
               )}
             </div>
@@ -2313,9 +2293,9 @@ export default function InscripcionesPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-3">
                   <div className="border border-gray-300 rounded-lg overflow-hidden">
-                    <div className="bg-[#3B617D] text-white px-3 py-2 text-xs font-semibold">
+                    <div className="bg-[#B2CBE2] text-[#263746] px-3 py-2 text-xs font-semibold">
                       Datos Personales
                     </div>
 
@@ -2347,11 +2327,11 @@ export default function InscripcionesPage() {
 
                   <div className="space-y-3">
                     <div className="border border-gray-300 rounded-lg overflow-hidden">
-                      <div className="bg-[#3B617D] text-white px-3 py-2 text-xs font-semibold">
+                      <div className="bg-[#B2CBE2] text-[#263746] px-3 py-2 text-xs font-semibold">
                         Estado de Procesos Externos
                       </div>
 
-                      <div className="p-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="p-2 grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                         <TarjetaProcesoExterno titulo="RUNT" icono="fa-road" estado={estadoRunt} />
                         <TarjetaProcesoExterno titulo="SICOV" icono="fa-fingerprint" estado={estadoSicov} />
                         <TarjetaProcesoExterno titulo="SIET" icono="fa-graduation-cap" estado={estadoSiet} />
@@ -2361,7 +2341,7 @@ export default function InscripcionesPage() {
                     {matriculaSeleccionada?.control_runt && (
                       <div className="border border-gray-300 rounded-lg overflow-hidden">
                         <div className="bg-[#B2CBE2] text-[#263746] px-3 py-2 text-xs font-semibold">Detalle RUNT</div>
-                        <div className="p-2 grid grid-cols-2 gap-1.5">
+                        <div className="p-2 grid grid-cols-2 xl:grid-cols-4 gap-1.5">
                           <Campo label="Proceso" valor={`#${matriculaSeleccionada.control_runt.numero_proceso || 1}`} />
                           <Campo label="Verificación" valor={matriculaSeleccionada.control_runt.resultado_verificacion || 'PENDIENTE'} />
                           <Campo label="Registro" valor={matriculaSeleccionada.control_runt.estado_registro || 'PENDIENTE'} />
@@ -2373,7 +2353,7 @@ export default function InscripcionesPage() {
                     {matriculaSeleccionada?.control_sicov && (
                       <div className="border border-gray-300 rounded-lg overflow-hidden">
                         <div className="bg-[#B2CBE2] text-[#263746] px-3 py-2 text-xs font-semibold">Detalle SICOV</div>
-                        <div className="p-2 grid grid-cols-2 gap-1.5">
+                        <div className="p-2 grid grid-cols-2 xl:grid-cols-4 gap-1.5">
                           <Campo label="Registro" valor={matriculaSeleccionada.control_sicov.estado_registro || 'PENDIENTE'} />
                           <Campo label="Fecha registro" valor={formatearFecha(matriculaSeleccionada.control_sicov.fecha_registro)} />
                           <Campo label="Certificación" valor={matriculaSeleccionada.control_sicov.estado_certificacion || 'PENDIENTE'} />
@@ -2385,7 +2365,7 @@ export default function InscripcionesPage() {
                     {matriculaSeleccionada?.control_siet && (
                       <div className="border border-gray-300 rounded-lg overflow-hidden">
                         <div className="bg-[#B2CBE2] text-[#263746] px-3 py-2 text-xs font-semibold">Detalle SIET</div>
-                        <div className="p-2 grid grid-cols-2 gap-1.5">
+                        <div className="p-2 grid grid-cols-2 xl:grid-cols-4 gap-1.5">
                           <Campo label="Estado" valor={matriculaSeleccionada.control_siet.estado || 'PENDIENTE'} />
                           <Campo label="Fecha registro" valor={formatearFecha(matriculaSeleccionada.control_siet.fecha_registro)} />
                           <Campo label="Usuario registro" valor={matriculaSeleccionada.control_siet.usuario_registro} />
