@@ -7,6 +7,7 @@ import { crearClienteEmpresa } from '@/lib/supabaseDinamico'
 
 const COOKIE_NAME = process.env.COOKIE_NAME || 'cea_session'
 const secureCookies = process.env.NODE_ENV === 'production'
+const SESSION_DURATION_SECONDS = 60 * 60 * 8
 
 const ENC = new TextEncoder()
 
@@ -16,7 +17,7 @@ function getSecret() {
   return ENC.encode(secret)
 }
 
-async function firmarSesion(payload, expSeconds = 60 * 60 * 8) {
+async function firmarSesion(payload, expSeconds = SESSION_DURATION_SECONDS) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
     .setIssuedAt()
@@ -208,7 +209,7 @@ export async function POST(req) {
       secure: secureCookies,
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 30,
+      maxAge: SESSION_DURATION_SECONDS,
     })
 
     return res
