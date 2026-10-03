@@ -1801,7 +1801,7 @@ return (
                   </div>
 
                   <div className="p-3 flex items-stretch">
-                    <div className="grid grid-cols-2 gap-3 w-full items-stretch">
+                    <div className="grid grid-cols-2 print:grid-cols-1 gap-3 w-full items-stretch">
                       <FotoVehiculo
                         titulo=""
                         url={fotoFrontalUrl}
