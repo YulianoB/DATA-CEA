@@ -63,6 +63,7 @@ export const ESTILO_BOTONES = {
   pdf: { fondo: '#EB9C58', hover: '#C96816', texto: '#FFFFFF', borde: '#EB9C58' },
   excel: { fondo: '#217346', hover: '#185C37', texto: '#FFFFFF', borde: '#217346' },
   secundario: { fondo: '#FFFFFF', hover: '#F1F5F9', texto: '#29465D', borde: '#CBD5E1' },
+  limpiar: { fondo: '#6B7280', hover: '#374151', texto: '#FFFFFF', borde: '#6B7280' },
 
   // Acciones estandarizadas para tablas y documentos
   documentos: { fondo: '#4682B4', hover: '#356A96', texto: '#FFFFFF', borde: '#4682B4' },
@@ -129,6 +130,7 @@ export const BotonEliminar = (props) => <BotonAccion tipo="eliminar" {...props} 
 export const BotonCancelar = (props) => <BotonAccion tipo="cancelar" {...props} />
 export const BotonExcel = (props) => <BotonAccion tipo="excel" {...props} />
 export const BotonSecundario = (props) => <BotonAccion tipo="secundario" {...props} />
+export const BotonLimpiar = (props) => <BotonAccion tipo="limpiar" {...props} />
 
 // Acciones de tablas / documentos
 export const BotonDocumentos = (props) => <BotonAccion tipo="documentos" {...props} />
