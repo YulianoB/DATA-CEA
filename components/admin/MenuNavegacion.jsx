@@ -128,13 +128,13 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
   )
 }
 
-export function GrupoNavegacion({ titulo, opciones = [], columnas = 4 }) {
+export function GrupoNavegacion({ titulo, opciones = [], columnas = 5 }) {
   const columnasClase = {
     2: 'lg:grid-cols-2',
     3: 'lg:grid-cols-3',
     4: 'lg:grid-cols-4',
     5: 'lg:grid-cols-5',
-  }[columnas] || 'lg:grid-cols-4'
+  }[columnas] || 'lg:grid-cols-5'
 
   return (
     <section style={{ marginTop: ESTILO_GRUPO_MENU.separacionSuperior }}>
@@ -189,10 +189,11 @@ export default function MenuNavegacion({
     <main className="min-h-screen" style={{ backgroundColor: ESTILO_MENU.fondoPagina }}>
       <header className="border-b" style={{ backgroundColor: ESTILO_MENU.fondoCabecera, borderColor: ESTILO_MENU.bordeCabecera }}>
         <div className="mx-auto flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6" style={{ maxWidth: ESTILO_MENU.anchoMaximo }}>
-          <div className="flex min-w-0 items-center gap-4">
+          <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-4">
             <Image src="/logo.png" alt="DATA CEA" width={145} height={68} priority className="h-[50px] w-auto shrink-0 object-contain" />
-            <div className="min-w-0 border-l pl-4" style={{ borderColor: ESTILO_MENU.bordeCabecera }}>
-              <h1 className="text-base font-black uppercase tracking-wide md:text-lg" style={{ color: ESTILO_MENU.textoTitulo }}>{titulo}</h1>
+
+            <div className="min-w-0 text-center">
+              <h1 className="text-base font-black uppercase tracking-wide md:text-xl" style={{ color: ESTILO_MENU.textoTitulo }}>{titulo}</h1>
               {subtitulo && <p className="mt-0.5 text-xs" style={{ color: ESTILO_MENU.textoSubtitulo }}>{subtitulo}</p>}
               {user && (
                 <p className="mt-1 text-[10px]" style={{ color: ESTILO_MENU.textoUsuario }}>
@@ -201,9 +202,8 @@ export default function MenuNavegacion({
                 </p>
               )}
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex min-w-[145px] flex-wrap items-center justify-end gap-2">
             {mostrarRegresar && (
               <BotonMenuSuperior tipo="regresar" onClick={() => router.push(rutaRegreso)}>
                 <ArrowLeft size={14} />{textoRegreso}
@@ -214,6 +214,7 @@ export default function MenuNavegacion({
                 <LogOut size={14} />Cerrar Sesión
               </BotonMenuSuperior>
             )}
+            </div>
           </div>
         </div>
       </header>
