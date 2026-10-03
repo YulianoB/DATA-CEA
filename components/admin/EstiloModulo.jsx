@@ -17,16 +17,16 @@ export const ESTILO_SECCIONES = {
 
 // Franjas secundarias dentro de modales, formularios y bloques de detalle.
 export const ESTILO_SECCIONES_SECUNDARIAS = {
-  fondo: '#34A6F4',
+  fondo: '#99A1AF',
   texto: '#FFFFFF',
-  borde: '#34A6F4',
+  borde: '#99A1AF',
   grosorBorde: 1,
   radio: 8,
 }
 
 // 2. TABLAS - ENCABEZADOS
 export const ESTILO_ENCABEZADO_TABLA = {
-  fondo: '#74D4FF',
+  fondo: '#CEFAFE',
   texto: '#263746',
   fondoHover: '#A6C2DB',
   textoHover: '#1E2F3D',
