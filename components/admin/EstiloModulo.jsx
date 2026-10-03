@@ -63,6 +63,13 @@ export const ESTILO_BOTONES = {
   pdf: { fondo: '#EB9C58', hover: '#C96816', texto: '#FFFFFF', borde: '#EB9C58' },
   excel: { fondo: '#217346', hover: '#185C37', texto: '#FFFFFF', borde: '#217346' },
   secundario: { fondo: '#FFFFFF', hover: '#F1F5F9', texto: '#29465D', borde: '#CBD5E1' },
+
+  // Acciones estandarizadas para tablas y documentos
+  documentos: { fondo: '#4682B4', hover: '#356A96', texto: '#FFFFFF', borde: '#4682B4' },
+  expediente: { fondo: '#5F9EA0', hover: '#4D8587', texto: '#FFFFFF', borde: '#5F9EA0' },
+  vistaPrevia: { fondo: '#5F9EA0', hover: '#4D8587', texto: '#FFFFFF', borde: '#5F9EA0' },
+  imprimir: { fondo: '#71717B', hover: '#5B5B63', texto: '#FFFFFF', borde: '#71717B' },
+  cargarPdf: { fondo: '#7C86FF', hover: '#626DDF', texto: '#FFFFFF', borde: '#7C86FF' },
 }
 
 // 7. MOVIMIENTO COMUN PARA ELEMENTOS INTERACTIVOS
@@ -118,6 +125,13 @@ export const BotonEliminar = (props) => <BotonAccion tipo="eliminar" {...props} 
 export const BotonCancelar = (props) => <BotonAccion tipo="cancelar" {...props} />
 export const BotonExcel = (props) => <BotonAccion tipo="excel" {...props} />
 export const BotonSecundario = (props) => <BotonAccion tipo="secundario" {...props} />
+
+// Acciones de tablas / documentos
+export const BotonDocumentos = (props) => <BotonAccion tipo="documentos" {...props} />
+export const BotonExpediente = (props) => <BotonAccion tipo="expediente" {...props} />
+export const BotonVistaPrevia = (props) => <BotonAccion tipo="vistaPrevia" {...props} />
+export const BotonImprimir = (props) => <BotonAccion tipo="imprimir" {...props} />
+export const BotonCargarPdf = (props) => <BotonAccion tipo="cargarPdf" {...props} />
 
 // Compatibilidad con paginas que ya usan estos nombres.
 export const BotonPrincipal = BotonGuardar
