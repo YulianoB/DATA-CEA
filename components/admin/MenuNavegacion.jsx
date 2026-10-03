@@ -217,7 +217,7 @@ export default function MenuNavegacion({
             <div className="min-w-0 text-center">
               <div className="flex items-center justify-center gap-2">
                 {IconoTitulo && <IconoTitulo size={24} strokeWidth={2} style={{ color: ESTILO_MENU.textoTitulo }} />}
-                <h1 className="text-lg font-semibold tracking-normal md:text-2xl" style={{ color: ESTILO_MENU.textoTitulo }}>{titulo}</h1>
+                <h1 className="text-lg font-bold tracking-normal md:text-2xl" style={{ color: ESTILO_MENU.textoTitulo }}>{titulo}</h1>
               </div>
               {subtitulo && <p className="mt-0.5 text-xs" style={{ color: ESTILO_MENU.textoSubtitulo }}>{subtitulo}</p>}
               {user && (
