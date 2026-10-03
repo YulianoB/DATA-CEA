@@ -1720,7 +1720,7 @@ return (
             <td className="contenido-hoja-vida-print p-0 border-0 align-top">
 
               <div className="cabecera-datos-vehiculo bg-white border rounded-xl shadow-lg overflow-hidden print:shadow-none">
-                <div className="grid grid-cols-1 xl:grid-cols-[0.78fr_1.72fr_1.5fr] print:grid-cols-[0.78fr_1.72fr_1.5fr] gap-0">
+                <div className="grid grid-cols-1 xl:grid-cols-[0.76fr_1.54fr_1.7fr] print:grid-cols-[0.76fr_1.54fr_1.7fr] gap-0">
 
                   <div className="p-4 border-b xl:border-b-0 xl:border-r print:border-b-0 print:border-r flex flex-col justify-center">
                     <h1 className="text-3xl sm:text-4xl font-black text-[var(--primary)] tracking-wide leading-none">
@@ -1791,7 +1791,7 @@ return (
                     </BloqueDatosCabecera>
                   </div>
 
-                  <div className="p-3 flex items-center">
+                  <div className="p-3 flex items-start">
                     <div className="grid grid-cols-2 gap-3 w-full">
                       <FotoVehiculo
                         titulo=""
@@ -3273,7 +3273,7 @@ function BloqueDatosCabecera({
         {titulo}
       </div>
 
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+      <div className="grid grid-cols-2 md:grid-cols-3 print:grid-cols-3 gap-x-3 gap-y-1">
         {children}
       </div>
     </div>
@@ -3385,48 +3385,42 @@ function FotoVehiculo({
   onArchivo,
 }) {
   return (
-    <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
+    <div>
+      <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
+        <div className="aspect-[4/3] min-h-[150px] print:min-h-0 print:h-[34mm] flex items-center justify-center bg-gray-100 overflow-hidden">
 
-      {titulo && (
-        <div className="px-3 py-2 border-b bg-gray-50 font-semibold text-sm text-center">
-          <i className="fas fa-camera mr-2 text-gray-500"></i>
-          {titulo}
+          {url ? (
+
+            <img
+              src={url}
+              alt={titulo || 'Fotografía del vehículo'}
+              className="w-full h-full object-cover"
+            />
+
+          ) : (
+
+            <div className="text-center text-gray-400">
+
+              <i className="fas fa-camera text-3xl mb-2"></i>
+
+              <p className="text-sm font-semibold">
+                Sin fotografía
+              </p>
+
+              <p className="text-xs">
+                {path
+                  ? 'Imagen registrada'
+                  : 'No se ha cargado.'}
+              </p>
+
+            </div>
+
+          )}
+
         </div>
-      )}
-
-      <div className="aspect-[3/2] max-h-56 print:max-h-32 flex items-center justify-center bg-gray-100 overflow-hidden">
-
-        {url ? (
-
-          <img
-            src={url}
-            alt={titulo}
-            className="w-full h-full object-cover"
-          />
-
-        ) : (
-
-          <div className="text-center text-gray-400">
-
-            <i className="fas fa-camera text-3xl mb-2"></i>
-
-            <p className="text-sm font-semibold">
-              Sin fotografía
-            </p>
-
-            <p className="text-xs">
-              {path
-                ? 'Imagen registrada'
-                : 'No se ha cargado.'}
-            </p>
-
-          </div>
-
-        )}
-
       </div>
 
-      <div className="p-2 border-t bg-white print:hidden">
+      <div className="pt-2 print:hidden">
 
         <input
           ref={inputRef}
