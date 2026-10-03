@@ -14,6 +14,7 @@ import {
   Monitor,
   Receipt,
   Settings,
+  LayoutDashboard,
   Users,
   UserRoundCog,
   Wrench,
@@ -55,6 +56,7 @@ export default function AdminPage() {
   return (
     <MenuNavegacion
       titulo="Menú Administrativo"
+      iconoTitulo={LayoutDashboard}
       subtitulo="Gestión integral y operación del Centro de Enseñanza Automovilística"
       grupos={GRUPOS_MENU}
       mostrarRegresar={false}
