@@ -995,11 +995,9 @@ export default function InscripcionesPage() {
         } catch (
           errorResumen
         ) {
-          console.error(
-            'Error consultando resumen de matrículas:',
-            errorResumen
-          )
-
+          // El resumen es información complementaria.
+          // Un fallo transitorio de red no debe interrumpir
+          // la navegación ni mostrar un error al usuario.
           setResumenCategorias({})
         }
       },
