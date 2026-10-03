@@ -1001,6 +1001,90 @@ async function consultarAprendices({
 }
 
 // =========================================================
+// RESUMEN DE MATRÍCULAS POR CATEGORÍA
+// =========================================================
+
+async function obtenerResumenMatriculas({
+  supabase,
+  fechaInicio,
+  fechaFin,
+}) {
+  let consulta =
+    supabase
+      .from(
+        'aprendices'
+      )
+      .select(
+        'categorias'
+      )
+
+  if (
+    fechaInicio
+  ) {
+    consulta =
+      consulta.gte(
+        'fecha_matricula',
+        fechaInicio
+      )
+  }
+
+  if (
+    fechaFin
+  ) {
+    consulta =
+      consulta.lte(
+        'fecha_matricula',
+        fechaFin
+      )
+  }
+
+  const {
+    data,
+    error,
+  } =
+    await consulta
+
+  if (
+    error
+  ) {
+    throw new Error(
+      `No fue posible consultar el resumen de matrículas: ${error.message}`
+    )
+  }
+
+  const conteos = {}
+
+  for (
+    const registro of
+      (
+        Array.isArray(
+          data
+        )
+          ? data
+          : []
+      )
+  ) {
+    const categorias =
+      limpiarCategorias(
+        registro?.categorias
+      )
+
+    for (
+      const categoria of
+        categorias
+    ) {
+      conteos[categoria] =
+        (
+          conteos[categoria] ||
+          0
+        ) + 1
+    }
+  }
+
+  return conteos
+}
+
+// =========================================================
 // CONTROLES EXTERNOS PARA EXPEDIENTE
 // =========================================================
 
@@ -3500,6 +3584,112 @@ export async function GET(
           'success',
 
         ...expediente,
+
+        empresa:
+          construirEmpresaRespuesta(
+            empresa
+          ),
+      })
+    }
+
+    // =====================================================
+    // RESUMEN POR CATEGORÍA
+    // =====================================================
+
+    if (
+      recurso ===
+      'resumen'
+    ) {
+      const fechaInicio =
+        normalizarTexto(
+          searchParams.get(
+            'fecha_inicio'
+          )
+        )
+
+      const fechaFin =
+        normalizarTexto(
+          searchParams.get(
+            'fecha_fin'
+          )
+        )
+
+      if (
+        !fechaValida(
+          fechaInicio
+        ) ||
+        !fechaValida(
+          fechaFin
+        )
+      ) {
+        return NextResponse.json(
+          {
+            status:
+              'error',
+
+            message:
+              'El rango de fechas del resumen no es válido.',
+          },
+          {
+            status:
+              400,
+          }
+        )
+      }
+
+      if (
+        fechaFin <
+        fechaInicio
+      ) {
+        return NextResponse.json(
+          {
+            status:
+              'error',
+
+            message:
+              'La fecha final no puede ser anterior a la fecha inicial.',
+          },
+          {
+            status:
+              400,
+          }
+        )
+      }
+
+      const resumen =
+        await obtenerResumenMatriculas({
+          supabase,
+          fechaInicio,
+          fechaFin,
+        })
+
+      return NextResponse.json({
+        status:
+          'success',
+
+        data:
+          resumen,
+
+        total:
+          Object.values(
+            resumen
+          ).reduce(
+            (
+              acumulado,
+              cantidad
+            ) =>
+              acumulado +
+              cantidad,
+            0
+          ),
+
+        filtros: {
+          fecha_inicio:
+            fechaInicio,
+
+          fecha_fin:
+            fechaFin,
+        },
 
         empresa:
           construirEmpresaRespuesta(
