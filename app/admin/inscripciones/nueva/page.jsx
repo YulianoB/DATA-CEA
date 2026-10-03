@@ -3866,6 +3866,47 @@ const guardar =
                       />
                     </div>
 
+
+
+                    {!esMenor && (
+                      <div className="col-span-2 mt-2 border-t border-gray-200 pt-3">
+                        <div className="text-[11px] font-bold text-gray-700 mb-2">
+                          Contacto de Emergencia
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-semibold mb-1">
+                              Nombre completo
+                            </label>
+                            <input
+                              className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                              value={form.emergencia_nombre}
+                              onChange={event =>
+                                setF(
+                                  'emergencia_nombre',
+                                  event.target.value
+                                )
+                              }
+                            />
+                            <FieldError msg={errors.emergencia_nombre} />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold mb-1">
+                              Celular
+                            </label>
+                            <input
+                              className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                              value={form.emergencia_celular}
+                              onChange={setNumeric('emergencia_celular')}
+                              inputMode="numeric"
+                            />
+                            <FieldError msg={errors.emergencia_celular} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                 </div>
@@ -4140,11 +4181,218 @@ const guardar =
           {(
             <div className="space-y-4">
 
+              {/* ACUDIENTE / EMERGENCIA */}
+
+              {esMenor ? (
+                <div className="border border-gray-300 rounded-lg p-4">
+
+                  <div className="font-semibold text-sm mb-3 text-[var(--primary)]">
+                    Acudiente
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+                    <div>
+                      <label className="block text-[11px] font-semibold mb-1">
+                        Nombres
+                      </label>
+
+                      <input
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        value={
+                          form.acudi_nombres
+                        }
+                        onChange={
+                          event =>
+                            setF(
+                              'acudi_nombres',
+                              event
+                                .target
+                                .value
+                            )
+                        }
+                      />
+
+                      <FieldError
+                        msg={
+                          errors.acudi_nombres
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold mb-1">
+                        Apellidos
+                      </label>
+
+                      <input
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        value={
+                          form.acudi_apellidos
+                        }
+                        onChange={
+                          event =>
+                            setF(
+                              'acudi_apellidos',
+                              event
+                                .target
+                                .value
+                            )
+                        }
+                      />
+
+                      <FieldError
+                        msg={
+                          errors.acudi_apellidos
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold mb-1">
+                        Tipo Doc.
+                      </label>
+
+                      <select
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        value={
+                          form.acudi_tipo_doc
+                        }
+                        onChange={
+                          event =>
+                            setF(
+                              'acudi_tipo_doc',
+                              event
+                                .target
+                                .value
+                            )
+                        }
+                      >
+                        {TIPOS_DOC.map(
+                          tipo => (
+                            <option
+                              key={
+                                tipo
+                              }
+                              value={
+                                tipo
+                              }
+                            >
+                              {tipo}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold mb-1">
+                        Documento
+                      </label>
+
+                      <input
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        value={
+                          form.acudi_documento
+                        }
+                        onChange={
+                          setNumeric(
+                            'acudi_documento'
+                          )
+                        }
+                      />
+
+                      <FieldError
+                        msg={
+                          errors.acudi_documento
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold mb-1">
+                        Celular
+                      </label>
+
+                      <input
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        value={
+                          form.acudi_celular
+                        }
+                        onChange={
+                          setNumeric(
+                            'acudi_celular'
+                          )
+                        }
+                      />
+
+                      <FieldError
+                        msg={
+                          errors.acudi_celular
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold mb-1">
+                        Dirección
+                      </label>
+
+                      <input
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        value={
+                          form.acudi_direccion
+                        }
+                        onChange={
+                          event =>
+                            setF(
+                              'acudi_direccion',
+                              event
+                                .target
+                                .value
+                            )
+                        }
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-[11px] font-semibold mb-1">
+                        Correo
+                      </label>
+
+                      <input
+                        type="email"
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        value={
+                          form.acudi_correo
+                        }
+                        onChange={
+                          event =>
+                            setF(
+                              'acudi_correo',
+                              event
+                                .target
+                                .value,
+                              {
+                                upper:
+                                  false,
+                              }
+                            )
+                        }
+                      />
+                    </div>
+
+                  </div>
+
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 items-start">
               {/* MATRÍCULA */}
 
-              <div className="border border-gray-300 rounded-lg p-4">
+              <div className="border border-gray-300 rounded-lg p-3 min-w-0">
 
-                <div className="font-semibold text-sm mb-3 text-[var(--primary)]">
+                <div className="font-semibold text-xs mb-3 text-[var(--primary)]">
                   Datos de Matrícula
                 </div>
 
@@ -4152,7 +4400,7 @@ const guardar =
                   className="
                     grid
                     grid-cols-1
-                    md:grid-cols-3
+                    grid-cols-1
                     gap-4
                   "
                 >
@@ -4388,7 +4636,7 @@ const guardar =
                     )}
                   </div>
 
-                  <div className="md:col-span-3">
+                  <div>
 
                     <div
                       className="
@@ -4405,25 +4653,7 @@ const guardar =
                         Categoría o categorías
                       </label>
 
-                      <span
-                        className="
-                          text-[10px]
-                          font-semibold
-                          text-blue-700
-                          bg-blue-50
-                          border
-                          border-blue-200
-                          rounded-full
-                          px-2
-                          py-1
-                        "
-                      >
-                        {nivelCea || 'NIVEL CEA'}
-                        {' · '}
-                        {categoriasHabilitadas.join(
-                          ' / '
-                        ) || 'Sin categorías'}
-                      </span>
+
                     </div>
 
                     {categoriasHabilitadas.length ===
@@ -4521,6 +4751,7 @@ const guardar =
               </div>
 
 
+
               {/* ===============================================
                   INFORMACIÓN FINANCIERA
               =============================================== */}
@@ -4531,15 +4762,16 @@ const guardar =
                   border-gray-300
                   rounded-lg
                   overflow-hidden
+                  min-w-0
                 "
               >
                 <div
                   className="
                     bg-slate-800
                     text-white
-                    px-4
+                    px-3
                     py-2
-                    text-sm
+                    text-xs
                     font-semibold
                     flex
                     items-center
@@ -4551,7 +4783,7 @@ const guardar =
                   Información Financiera
                 </div>
 
-                <div className="p-4 space-y-4">
+                <div className="p-3 space-y-3">
 
                   <div
                     className="
@@ -4590,7 +4822,7 @@ const guardar =
                       className="
                         grid
                         grid-cols-1
-                        md:grid-cols-2
+                        grid-cols-1
                         gap-3
                       "
                     >
@@ -4904,275 +5136,6 @@ const guardar =
                 </div>
               </div>
 
-              {/* ACUDIENTE / EMERGENCIA */}
-
-              {esMenor ? (
-                <div className="border border-gray-300 rounded-lg p-4">
-
-                  <div className="font-semibold text-sm mb-3 text-[var(--primary)]">
-                    Acudiente
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Nombres
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_nombres
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_nombres',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.acudi_nombres
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Apellidos
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_apellidos
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_apellidos',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.acudi_apellidos
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Tipo Doc.
-                      </label>
-
-                      <select
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_tipo_doc
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_tipo_doc',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      >
-                        {TIPOS_DOC.map(
-                          tipo => (
-                            <option
-                              key={
-                                tipo
-                              }
-                              value={
-                                tipo
-                              }
-                            >
-                              {tipo}
-                            </option>
-                          )
-                        )}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Documento
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_documento
-                        }
-                        onChange={
-                          setNumeric(
-                            'acudi_documento'
-                          )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.acudi_documento
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Celular
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_celular
-                        }
-                        onChange={
-                          setNumeric(
-                            'acudi_celular'
-                          )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.acudi_celular
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Dirección
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_direccion
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_direccion',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Correo
-                      </label>
-
-                      <input
-                        type="email"
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_correo
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_correo',
-                              event
-                                .target
-                                .value,
-                              {
-                                upper:
-                                  false,
-                              }
-                            )
-                        }
-                      />
-                    </div>
-
-                  </div>
-
-                </div>
-              ) : (
-                <div className="border border-gray-300 rounded-lg p-4">
-
-                  <div className="font-semibold text-sm mb-3 text-[var(--primary)]">
-                    Contacto de Emergencia
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
-                    <div className="md:col-span-2">
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Nombre completo
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                        value={
-                          form.emergencia_nombre
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'emergencia_nombre',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.emergencia_nombre
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Celular
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                        value={
-                          form.emergencia_celular
-                        }
-                        onChange={
-                          setNumeric(
-                            'emergencia_celular'
-                          )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.emergencia_celular
-                        }
-                      />
-                    </div>
-
-                  </div>
-
-                </div>
-              )}
 
               {/* ===============================================
                   VERIFICACIÓN RUNT
@@ -5184,15 +5147,16 @@ const guardar =
                   border-gray-300
                   rounded-lg
                   overflow-hidden
+                  min-w-0
                 "
               >
                 <div
                   className="
                     bg-slate-800
                     text-white
-                    px-4
+                    px-3
                     py-2
-                    text-sm
+                    text-xs
                     font-semibold
                     flex
                     items-center
@@ -5204,7 +5168,7 @@ const guardar =
                   Verificación Inicial RUNT
                 </div>
 
-                <div className="p-4">
+                <div className="p-3">
 
                   <div
                     className="
@@ -5295,7 +5259,7 @@ const guardar =
                         Resultado de la consulta
                       </label>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3">
 
                         <button
                           type="button"
@@ -5427,6 +5391,9 @@ const guardar =
                   )}
 
                 </div>
+              </div>
+
+
               </div>
 
             </div>
