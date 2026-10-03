@@ -25,6 +25,15 @@ import {
   cerrarSesion,
 } from '@/lib/auth/logout'
 
+import {
+  ESTILO_SECCIONES,
+  ESTILO_ENCABEZADO_TABLA,
+  ESTILO_CELDAS_TABLA,
+  BotonAccion,
+  BotonImprimir,
+  BotonSecundario,
+} from '@/components/admin/EstiloModulo'
+
 // ============================================================
 // CONSTANTES
 // ============================================================
@@ -1670,29 +1679,29 @@ return (
         </div>
 
         <div className="flex flex-wrap justify-end gap-2">
-          <button
+          <BotonImprimir
+            type="button"
             onClick={() => window.print()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
           >
-            <i className="fas fa-print mr-2"></i>
+            <i className="fas fa-print"></i>
             Imprimir
-          </button>
+          </BotonImprimir>
 
-          <Link
-            href="/admin/vehiculos"
-            className="bg-gray-700 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm"
-          >
-            <i className="fas fa-arrow-left mr-2"></i>
-            Vehículos
+          <Link href="/admin/vehiculos">
+            <BotonSecundario type="button">
+              <i className="fas fa-arrow-left"></i>
+              Vehículos
+            </BotonSecundario>
           </Link>
 
-          <button
+          <BotonAccion
+            tipo="eliminar"
+            type="button"
             onClick={() => cerrarSesion(router)}
-            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-4 py-2 rounded-lg text-sm"
           >
-            <i className="fas fa-sign-out-alt mr-2"></i>
+            <i className="fas fa-sign-out-alt"></i>
             Cerrar Sesión
-          </button>
+          </BotonAccion>
         </div>
       </div>
 
@@ -2010,7 +2019,7 @@ return (
 
               <table className="min-w-full text-sm border">
 
-                <thead className="bg-gray-100">
+                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
                   <tr>
 
@@ -2111,7 +2120,7 @@ return (
 
               <table className="min-w-full text-sm border">
 
-                <thead className="bg-gray-100">
+                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
                   <tr>
                     <th className="border p-2 text-left">
@@ -2238,7 +2247,7 @@ return (
 
               <table className="min-w-full text-sm border">
 
-                <thead className="bg-gray-100">
+                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
                   <tr>
                     <th className="border p-2 text-left">
@@ -2376,7 +2385,7 @@ return (
 
               <table className="min-w-full text-sm border">
 
-                <thead className="bg-gray-100">
+                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
                   <tr>
                     <th className="border p-2 text-left">
@@ -2534,7 +2543,7 @@ return (
 
               <table className="min-w-full text-sm border">
 
-                <thead className="bg-gray-100">
+                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
                   <tr>
                     <th className="border p-2 text-left">
@@ -2636,7 +2645,7 @@ return (
 
             <table className="min-w-full text-sm border">
 
-              <thead className="bg-gray-100">
+              <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
                 <tr>
                   <th className="border p-2">
@@ -2756,7 +2765,7 @@ return (
 
             <table className="min-w-full text-sm border">
 
-              <thead className="bg-gray-100">
+              <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
                 <tr>
                   <th className="border p-2 text-left">
@@ -2891,6 +2900,11 @@ return (
       ====================================================== */}
 
       <style jsx global>{`
+        .contenido-hoja-vida-print section table th,
+        .contenido-hoja-vida-print section table td {
+          border-color: ${ESTILO_CELDAS_TABLA.borde} !important;
+        }
+
         @media print {
 
           @page {
@@ -2958,6 +2972,11 @@ return (
 
           .cabecera-datos-vehiculo {
             border-radius: 10px !important;
+            break-inside: auto !important;
+            page-break-inside: auto !important;
+          }
+
+          .cabecera-datos-vehiculo > div > div {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
           }
@@ -3311,7 +3330,14 @@ function Seccion({
       }`}
     >
 
-      <div className="bg-gray-900 text-white px-4 py-2.5 font-semibold flex items-center gap-2">
+      <div
+        className="px-4 py-2.5 font-semibold flex items-center gap-2"
+        style={{
+          backgroundColor: ESTILO_SECCIONES.fondo,
+          color: ESTILO_SECCIONES.texto,
+          borderColor: ESTILO_SECCIONES.borde,
+        }}
+      >
         <i className={`fas ${icono}`}></i>
         {titulo}
       </div>
@@ -3387,14 +3413,14 @@ function FotoVehiculo({
   return (
     <div>
       <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
-        <div className="aspect-[4/3] min-h-[150px] print:min-h-0 print:h-[34mm] flex items-center justify-center bg-gray-100 overflow-hidden">
+        <div className="aspect-[4/3] min-h-[165px] print:min-h-0 print:h-[38mm] flex items-center justify-center bg-gray-100 overflow-hidden">
 
           {url ? (
 
             <img
               src={url}
               alt={titulo || 'Fotografía del vehículo'}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
 
           ) : (
@@ -3435,20 +3461,21 @@ function FotoVehiculo({
           }
         />
 
-        <button
+        <BotonAccion
+          tipo="editarVehiculo"
           type="button"
           disabled={cargando}
           onClick={() =>
             inputRef.current?.click()
           }
-          className="w-full bg-[var(--primary)] text-white rounded-lg px-3 py-2 text-xs font-semibold"
+          className="w-full"
         >
           {cargando
             ? 'Cargando...'
             : url
             ? 'Reemplazar fotografía'
             : 'Cargar fotografía'}
-        </button>
+        </BotonAccion>
 
       </div>
 
