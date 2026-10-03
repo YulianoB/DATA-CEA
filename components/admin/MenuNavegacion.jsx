@@ -20,6 +20,8 @@ export const ESTILO_MENU = {
   textoSubtitulo: '#64748B',
   textoUsuario: '#475569',
   bordeCabecera: '#DCE4EB',
+  lineaTitulo: '#173A57',
+  grosorLineaTitulo: 3,
   anchoMaximo: '1500px',
 }
 
@@ -33,13 +35,16 @@ export const ESTILO_GRUPO_MENU = {
 // 3. TARJETAS DE NAVEGACION
 export const ESTILO_TARJETA_MENU = {
   fondo: '#FFFFFF',
-  borde: '#D8E0E8',
-  bordeHover: '#6F94B1',
+  borde: '#6F8190',
+  bordeHover: '#173A57',
+  fondoHover: '#173A57',
   textoTitulo: '#263746',
+  textoTituloHover: '#FFFFFF',
   textoDescripcion: '#64748B',
   fondoIcono: '#EEF4F8',
   textoIcono: '#36566F',
-  fondoIconoHover: '#DDEAF3',
+  fondoIconoHover: '#FFFFFF',
+  textoIconoHover: '#173A57',
   radio: 12,
   sombra: '0 2px 8px rgba(15, 23, 42, 0.05)',
   sombraHover: '0 10px 24px rgba(15, 23, 42, 0.12)',
@@ -92,18 +97,34 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
       }}
       onMouseEnter={(event) => {
         if (deshabilitada) return
+        event.currentTarget.style.backgroundColor = ESTILO_TARJETA_MENU.fondoHover
         event.currentTarget.style.borderColor = ESTILO_TARJETA_MENU.bordeHover
         event.currentTarget.style.boxShadow = ESTILO_TARJETA_MENU.sombraHover
         event.currentTarget.style.transform = ESTILO_TARJETA_MENU.movimientoHover
         const icono = event.currentTarget.querySelector('[data-menu-icon]')
-        if (icono) icono.style.backgroundColor = ESTILO_TARJETA_MENU.fondoIconoHover
+        const titulo = event.currentTarget.querySelector('[data-menu-title]')
+        const flecha = event.currentTarget.querySelector('[data-menu-arrow]')
+        if (icono) {
+          icono.style.backgroundColor = ESTILO_TARJETA_MENU.fondoIconoHover
+          icono.style.color = ESTILO_TARJETA_MENU.textoIconoHover
+        }
+        if (titulo) titulo.style.color = ESTILO_TARJETA_MENU.textoTituloHover
+        if (flecha) flecha.style.color = ESTILO_TARJETA_MENU.textoTituloHover
       }}
       onMouseLeave={(event) => {
+        event.currentTarget.style.backgroundColor = ESTILO_TARJETA_MENU.fondo
         event.currentTarget.style.borderColor = ESTILO_TARJETA_MENU.borde
         event.currentTarget.style.boxShadow = ESTILO_TARJETA_MENU.sombra
         event.currentTarget.style.transform = 'translateY(0)'
         const icono = event.currentTarget.querySelector('[data-menu-icon]')
-        if (icono) icono.style.backgroundColor = ESTILO_TARJETA_MENU.fondoIcono
+        const titulo = event.currentTarget.querySelector('[data-menu-title]')
+        const flecha = event.currentTarget.querySelector('[data-menu-arrow]')
+        if (icono) {
+          icono.style.backgroundColor = ESTILO_TARJETA_MENU.fondoIcono
+          icono.style.color = ESTILO_TARJETA_MENU.textoIcono
+        }
+        if (titulo) titulo.style.color = ESTILO_TARJETA_MENU.textoTitulo
+        if (flecha) flecha.style.color = ''
       }}
     >
       {Icono && (
@@ -117,13 +138,13 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
       )}
 
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold" style={{ color: ESTILO_TARJETA_MENU.textoTitulo }}>{titulo}</span>
+        <span data-menu-title className="block text-sm font-bold" style={{ color: ESTILO_TARJETA_MENU.textoTitulo, transition: ESTILO_TARJETA_MENU.transicion }}>{titulo}</span>
         {descripcion && (
           <span className="mt-1 block text-[11px] leading-4" style={{ color: ESTILO_TARJETA_MENU.textoDescripcion }}>{descripcion}</span>
         )}
       </span>
 
-      <ChevronRight size={17} className="shrink-0 opacity-40 transition-transform group-hover:translate-x-0.5" />
+      <ChevronRight data-menu-arrow size={17} className="shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" />
     </button>
   )
 }
@@ -217,6 +238,13 @@ export default function MenuNavegacion({
             </div>
           </div>
         </div>
+        <div
+          className="w-full"
+          style={{
+            height: `${ESTILO_MENU.grosorLineaTitulo}px`,
+            backgroundColor: ESTILO_MENU.lineaTitulo,
+          }}
+        />
       </header>
 
       <div className="mx-auto px-4 pb-10 pt-2 md:px-6" style={{ maxWidth: ESTILO_MENU.anchoMaximo }}>
