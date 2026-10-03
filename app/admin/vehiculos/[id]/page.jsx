@@ -1724,8 +1724,8 @@ return (
           </tr>
         </thead>
 
-        <tbody>
-          <tr>
+        <tbody className="cuerpo-hoja-vida-print">
+          <tr className="fila-documento-principal">
             <td className="contenido-hoja-vida-print p-0 border-0 align-top">
 
               <div className="cabecera-datos-vehiculo bg-white border rounded-xl shadow-lg overflow-hidden print:shadow-none">
@@ -2974,6 +2974,7 @@ return (
             border-radius: 10px !important;
             break-inside: auto !important;
             page-break-inside: auto !important;
+            margin-top: 0 !important;
           }
 
           .cabecera-datos-vehiculo > div > div {
@@ -3112,6 +3113,17 @@ return (
             break-inside: avoid !important;
             page-break-inside: avoid !important;
             page-break-after: auto !important;
+          }
+
+          .estructura-hoja-vida-print > .cuerpo-hoja-vida-print > .fila-documento-principal {
+            break-inside: auto !important;
+            page-break-inside: auto !important;
+            page-break-after: auto !important;
+          }
+
+          .estructura-hoja-vida-print > .cuerpo-hoja-vida-print > .fila-documento-principal > .contenido-hoja-vida-print {
+            break-inside: auto !important;
+            page-break-inside: auto !important;
           }
 
           th,
@@ -3413,7 +3425,7 @@ function FotoVehiculo({
   return (
     <div>
       <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
-        <div className="aspect-[4/3] min-h-[165px] print:min-h-0 print:h-[38mm] flex items-center justify-center bg-gray-100 overflow-hidden">
+        <div className="aspect-[4/3] min-h-[165px] print:min-h-0 flex items-center justify-center bg-gray-100 overflow-hidden">
 
           {url ? (
 
