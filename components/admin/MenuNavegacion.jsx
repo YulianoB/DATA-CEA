@@ -54,7 +54,7 @@ export const ESTILO_TARJETA_MENU = {
 
 // 4. BOTONES SUPERIORES
 export const ESTILO_BOTONES_MENU = {
-  regresar: { fondo: '#DCEEF9', hover: '#C7E3F5', texto: '#173A57', borde: '#8FB4CC' },
+  regresar: { fondo: '#3B617D', hover: '#29465D', texto: '#FFFFFF', borde: '#3B617D' },
   cerrarSesion: { fondo: '#C93C3C', hover: '#A92F2F', texto: '#FFFFFF', borde: '#C93C3C' },
   movimientoHover: 'translateY(-2px)',
   transicion: 'all 180ms ease',
