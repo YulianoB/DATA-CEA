@@ -2043,6 +2043,7 @@ export default function VehiculosAdminPage() {
 
       )}
 
+      </div>
     </div>
   )
 }
