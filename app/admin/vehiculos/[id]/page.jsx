@@ -32,6 +32,7 @@ import {
   BotonAccion,
   BotonImprimir,
   BotonSecundario,
+  BotonRegresar,
 } from '@/components/admin/EstiloModulo'
 
 // ============================================================
@@ -1688,10 +1689,10 @@ return (
           </BotonImprimir>
 
           <Link href="/admin/vehiculos">
-            <BotonSecundario type="button">
+            <BotonRegresar type="button">
               <i className="fas fa-arrow-left"></i>
-              Vehículos
-            </BotonSecundario>
+              Regresar
+            </BotonRegresar>
           </Link>
 
           <BotonAccion
