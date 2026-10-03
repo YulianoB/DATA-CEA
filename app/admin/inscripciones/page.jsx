@@ -22,6 +22,8 @@ import {
   ESTILO_CELDAS_TABLA,
   BotonConsultar,
   BotonSecundario,
+  BotonDocumentos,
+  BotonExpediente,
 } from '@/components/admin/EstiloModulo'
 
 // ============================================================
@@ -2151,7 +2153,7 @@ export default function InscripcionesPage() {
                             "
                           >
                             <div className="flex items-center justify-center gap-2">
-                              <button
+                              <BotonDocumentos
                                 type="button"
                                 onClick={() =>
                                   router.push(
@@ -2160,27 +2162,13 @@ export default function InscripcionesPage() {
                                     )}`
                                   )
                                 }
-                                className="
-                                  min-w-[155px]
-                                  bg-[#4682B4]
-                                  hover:bg-[#356A96]
-                                  hover:-translate-y-0.5
-                                  hover:shadow-md
-                                  text-white
-                                  px-3
-                                  py-1.5
-                                  rounded-lg
-                                  text-[11px]
-                                  whitespace-nowrap
-                                  transition-all
-                                  duration-200
-                                "
+                                className="min-w-[155px] !text-[11px] !py-1.5"
                               >
                                 <i className="fas fa-file-alt mr-1"></i>
                                 Documentos de Matrícula
-                              </button>
+                              </BotonDocumentos>
 
-                              <button
+                              <BotonExpediente
                                 type="button"
                                 onClick={() =>
                                   consultarExpediente(
@@ -2188,25 +2176,11 @@ export default function InscripcionesPage() {
                                     row.id
                                   )
                                 }
-                                className="
-                                  min-w-[125px]
-                                  bg-[#5F9EA0]
-                                  hover:bg-[#4D8587]
-                                  hover:-translate-y-0.5
-                                  hover:shadow-md
-                                  text-white
-                                  px-3
-                                  py-1.5
-                                  rounded-lg
-                                  text-[11px]
-                                  whitespace-nowrap
-                                  transition-all
-                                  duration-200
-                                "
+                                className="min-w-[125px] !text-[11px] !py-1.5"
                               >
                                 <i className="fas fa-folder-open mr-1"></i>
                                 Ver Expediente
-                              </button>
+                              </BotonExpediente>
                             </div>
                           </td>
 
