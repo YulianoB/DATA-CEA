@@ -54,7 +54,7 @@ export const ESTILO_TARJETA_MENU = {
 
 // 4. BOTONES SUPERIORES
 export const ESTILO_BOTONES_MENU = {
-  regresar: { fondo: '#FFFFFF', hover: '#F1F5F9', texto: '#36566F', borde: '#CBD5E1' },
+  regresar: { fondo: '#DCEEF9', hover: '#C7E3F5', texto: '#173A57', borde: '#8FB4CC' },
   cerrarSesion: { fondo: '#C93C3C', hover: '#A92F2F', texto: '#FFFFFF', borde: '#C93C3C' },
   movimientoHover: 'translateY(-2px)',
   transicion: 'all 180ms ease',
@@ -174,6 +174,7 @@ export function GrupoNavegacion({ titulo, opciones = [], columnas = 5 }) {
 export default function MenuNavegacion({
   titulo,
   subtitulo,
+  iconoTitulo: IconoTitulo,
   grupos = [],
   mostrarRegresar = false,
   rutaRegreso = '/admin',
@@ -214,7 +215,10 @@ export default function MenuNavegacion({
             <Image src="/logo.png" alt="DATA CEA" width={145} height={68} priority className="h-[50px] w-auto shrink-0 object-contain" />
 
             <div className="min-w-0 text-center">
-              <h1 className="text-base font-black uppercase tracking-wide md:text-xl" style={{ color: ESTILO_MENU.textoTitulo }}>{titulo}</h1>
+              <div className="flex items-center justify-center gap-2">
+                {IconoTitulo && <IconoTitulo size={24} strokeWidth={2} style={{ color: ESTILO_MENU.textoTitulo }} />}
+                <h1 className="text-lg font-semibold tracking-normal md:text-2xl" style={{ color: ESTILO_MENU.textoTitulo }}>{titulo}</h1>
+              </div>
               {subtitulo && <p className="mt-0.5 text-xs" style={{ color: ESTILO_MENU.textoSubtitulo }}>{subtitulo}</p>}
               {user && (
                 <p className="mt-1 text-[10px]" style={{ color: ESTILO_MENU.textoUsuario }}>
