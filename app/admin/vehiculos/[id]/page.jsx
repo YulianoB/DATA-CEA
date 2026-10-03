@@ -2991,6 +2991,14 @@ return (
             object-position: center !important;
           }
 
+          .foto-vehiculo-print {
+            width: 33.33mm !important;
+            max-width: 100% !important;
+            justify-self: center !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+          }
+
           /* ==========================================
              CONTENEDOR GENERAL
           ========================================== */
@@ -3426,7 +3434,7 @@ function FotoVehiculo({
   onArchivo,
 }) {
   return (
-    <div className="flex h-full min-w-0 flex-col">
+    <div className="foto-vehiculo-print flex h-full min-w-0 flex-col">
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-white shadow-sm">
         <div className="flex min-h-[165px] w-full flex-1 items-center justify-center overflow-hidden bg-gray-100 print:h-[25mm] print:min-h-0 print:flex-none">
 
