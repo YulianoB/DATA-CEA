@@ -105,7 +105,7 @@ export default function EncabezadoModulo({
 
   return (
     <header
-      className="relative px-4 py-3 md:px-5"
+      className="relative rounded-t-xl px-4 py-3 md:px-5"
       style={{
         background: fondo,
         color: ESTILO_ENCABEZADO.colorTexto,
