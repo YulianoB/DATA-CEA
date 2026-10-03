@@ -2198,6 +2198,11 @@ export default function DocumentosMatriculaPage() {
                     justify-between
                     gap-3
                   "
+                
+                  style={{
+                    backgroundColor: ESTILO_SECCIONES.fondo,
+                    color: ESTILO_SECCIONES.texto,
+                  }}
                 >
 
                   <div
@@ -2206,12 +2211,7 @@ export default function DocumentosMatriculaPage() {
                       font-black
                       uppercase
                       text-gray-700
-                    "
-                  
-                    style={{
-                      backgroundColor: ESTILO_SECCIONES.fondo,
-                      color: ESTILO_SECCIONES.texto,
-                    }}>
+                    ">
                     Documentos
                   </div>
 
@@ -2277,7 +2277,12 @@ export default function DocumentosMatriculaPage() {
                     "
                   >
 
-                    <thead>
+                    <thead
+                    style={{
+                      backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo,
+                      color: ESTILO_ENCABEZADO_TABLA.texto,
+                    }}
+                  >
 
                       <tr
                         className="
@@ -2291,7 +2296,7 @@ export default function DocumentosMatriculaPage() {
                             text-left
                             px-3
                             py-2
-                            border-b
+                            border
                             border-gray-300
                             font-black
                             uppercase
@@ -2306,7 +2311,7 @@ export default function DocumentosMatriculaPage() {
                             text-left
                             px-3
                             py-2
-                            border-b
+                            border
                             border-gray-300
                             font-black
                             uppercase
@@ -2322,7 +2327,7 @@ export default function DocumentosMatriculaPage() {
                             text-center
                             px-3
                             py-2
-                            border-b
+                            border
                             border-gray-300
                             font-black
                             uppercase
@@ -2338,7 +2343,7 @@ export default function DocumentosMatriculaPage() {
                             text-center
                             px-3
                             py-2
-                            border-b
+                            border
                             border-gray-300
                             font-black
                             uppercase
@@ -2513,7 +2518,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirControlClases
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#87CEFA] hover:bg-[#69BCEB] text-[#173A57]"
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
@@ -2525,7 +2530,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirControlClases
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#9F9FA9] hover:bg-[#85858F] text-white"
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
@@ -2541,7 +2546,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirContrato
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#87CEFA] hover:bg-[#69BCEB] text-[#173A57]"
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
@@ -2553,7 +2558,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirContrato
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#9F9FA9] hover:bg-[#85858F] text-white"
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
@@ -2569,7 +2574,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirCodigoConducta
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#87CEFA] hover:bg-[#69BCEB] text-[#173A57]"
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
@@ -2581,7 +2586,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirCodigoConducta
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#9F9FA9] hover:bg-[#85858F] text-white"
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
@@ -2597,7 +2602,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirAutorizacionDatos
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#87CEFA] hover:bg-[#69BCEB] text-[#173A57]"
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
@@ -2609,7 +2614,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirAutorizacionDatos
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#9F9FA9] hover:bg-[#85858F] text-white"
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
@@ -2629,7 +2634,7 @@ export default function DocumentosMatriculaPage() {
                                                 documentoFila
                                               )
                                             }
-                                            className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#87CEFA] hover:bg-[#69BCEB] text-[#173A57]"
+                                            className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#5F9EA0] hover:bg-[#4D8587] text-white"
                                           >
                                             <i className="fas fa-eye mr-1"></i>
 
@@ -2643,7 +2648,7 @@ export default function DocumentosMatriculaPage() {
                                                 documentoFila
                                               )
                                             }
-                                            className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#9F9FA9] hover:bg-[#85858F] text-white"
+                                            className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#71717B] hover:bg-[#5B5B63] text-white"
                                           >
                                             <i className="fas fa-print mr-1"></i>
 
