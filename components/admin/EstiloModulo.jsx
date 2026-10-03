@@ -7,26 +7,26 @@
 
 // 1. BLOQUES / TITULOS DE SECCION
 export const ESTILO_SECCIONES = {
-  fondo: '#3B617D',
+  fondo: '#24638C',
   texto: '#FFFFFF',
   subtitulo: '#DCE6ED',
-  borde: '#3B617D',
+  borde: '#24638C',
   grosorBorde: 1,
   radio: 10,
 }
 
 // Franjas secundarias dentro de modales, formularios y bloques de detalle.
 export const ESTILO_SECCIONES_SECUNDARIAS = {
-  fondo: '#B2CBE2',
-  texto: '#263746',
-  borde: '#A9BDCC',
+  fondo: '#34A6F4',
+  texto: '#FFFFFF',
+  borde: '#34A6F4',
   grosorBorde: 1,
   radio: 8,
 }
 
 // 2. TABLAS - ENCABEZADOS
 export const ESTILO_ENCABEZADO_TABLA = {
-  fondo: '#B2CBE2',
+  fondo: '#74D4FF',
   texto: '#263746',
   fondoHover: '#A6C2DB',
   textoHover: '#1E2F3D',
