@@ -176,7 +176,7 @@ export default function InstructorPracticaPage() {
       <div className="max-w-2xl w-full bg-white rounded-xl border border-[#DCE4EB] shadow-lg p-6">
 
         {/* CABECERA COMPACTA: conserva el ancho móvil del contenedor */}
-        <div className="relative grid grid-cols-[52px_1fr_auto] items-start gap-2 mb-3">
+        <div className="relative grid grid-cols-[52px_1fr_52px] items-start gap-2 mb-3">
           <div className="flex justify-start">
             <img
               src="/logo.png"
@@ -204,15 +204,14 @@ export default function InstructorPracticaPage() {
           <div className="flex justify-end">
             <button
               onClick={handleLogout}
-              className="h-9 px-3 rounded-lg border border-[#C93C3C] bg-[#C93C3C] text-white
-                         flex items-center justify-center gap-1.5 shadow-sm
+              className="h-9 w-9 rounded-lg border border-[#C93C3C] bg-[#C93C3C] text-white
+                         flex items-center justify-center shadow-sm
                          hover:bg-[#A92F2F] hover:border-[#A92F2F]
-                         hover:-translate-y-0.5 transition-all text-xs font-medium whitespace-nowrap"
+                         hover:-translate-y-0.5 transition-all"
               title="Cerrar sesión"
               aria-label="Cerrar sesión"
             >
-              <LogOut size={16} />
-              <span>Cerrar Sesión</span>
+              <LogOut size={18} />
             </button>
           </div>
         </div>
