@@ -76,6 +76,7 @@ export default function ConsultasHomePage() {
       subtitulo="Seleccione la información que desea consultar"
       iconoTitulo={Database}
       grupos={GRUPOS_CONSULTAS}
+      anchoContenido="1050px"
       mostrarRegresar
       rutaRegreso="/admin"
       textoRegreso="Regresar"
