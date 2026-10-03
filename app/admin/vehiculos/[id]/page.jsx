@@ -1801,7 +1801,7 @@ return (
                   </div>
 
                   <div className="p-3 flex items-stretch">
-                    <div className="grid grid-cols-2 print:grid-cols-1 gap-3 w-full items-stretch">
+                    <div className="grid grid-cols-2 print:grid-cols-1 gap-3 w-full items-stretch print:content-start">
                       <FotoVehiculo
                         titulo=""
                         url={fotoFrontalUrl}
@@ -3428,7 +3428,7 @@ function FotoVehiculo({
   return (
     <div className="flex h-full min-w-0 flex-col">
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-white shadow-sm">
-        <div className="flex min-h-[165px] w-full flex-1 items-center justify-center overflow-hidden bg-gray-100 print:min-h-0">
+        <div className="flex min-h-[165px] w-full flex-1 items-center justify-center overflow-hidden bg-gray-100 print:h-[25mm] print:min-h-0 print:flex-none">
 
           {url ? (
 
