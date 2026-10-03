@@ -25,6 +25,7 @@ import {
   BotonAccion,
   BotonCancelar,
   BotonGuardar,
+  BotonLimpiar,
 } from '@/components/admin/EstiloModulo'
 
 import {
@@ -441,6 +442,43 @@ export default function VehiculosAdminPage() {
       busqueda,
       filtroEstado,
     ])
+
+  const resumenVehiculos =
+    useMemo(() => {
+      const porTipo = new Map()
+      let activos = 0
+      let inactivos = 0
+      let documentosVencidos = 0
+
+      for (const vehiculo of vehiculos) {
+        const tipo = String(vehiculo.tipo_vehiculo || 'Sin tipo').trim() || 'Sin tipo'
+        const actual = porTipo.get(tipo) || { total: 0, gps: 0 }
+        actual.total += 1
+        if (String(vehiculo.gps || '').trim().toUpperCase() === 'SI') actual.gps += 1
+        porTipo.set(tipo, actual)
+
+        const estado = String(vehiculo.estado || '').trim().toUpperCase()
+        if (estado === ESTADO_ACTIVO) activos += 1
+        else if (estado === ESTADO_INACTIVO) inactivos += 1
+
+        if (
+          String(vehiculo.soat?.estado || '').toUpperCase() === 'VENCIDO' ||
+          String(vehiculo.rtm?.estado || '').toUpperCase() === 'VENCIDO'
+        ) {
+          documentosVencidos += 1
+        }
+      }
+
+      return {
+        activos,
+        inactivos,
+        documentosVencidos,
+        gpsPorTipo: Array.from(porTipo.entries()).map(([tipo, datos]) => ({
+          tipo,
+          ...datos,
+        })),
+      }
+    }, [vehiculos])
 
   // ==========================================================
   // CHANGE FORM
@@ -1548,9 +1586,22 @@ export default function VehiculosAdminPage() {
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E0E8] overflow-hidden">
           <div className="px-4 py-3" style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto }}>
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <h2 className="text-sm font-bold">Vehículos Registrados</h2>
-                <p className="text-[11px] opacity-80">{vehiculosFiltrados.length} vehículo(s) encontrados.</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+                  <h2 className="text-sm font-bold whitespace-nowrap">Vehículos Registrados</h2>
+                  <span className="opacity-80">{vehiculosFiltrados.length} vehículo(s) encontrados</span>
+                  <span className="opacity-40">|</span>
+                  <span>Activos <strong>{resumenVehiculos.activos}</strong></span>
+                  <span>Inactivos <strong>{resumenVehiculos.inactivos}</strong></span>
+                  <span>Documento vencido <strong>{resumenVehiculos.documentosVencidos}</strong></span>
+                  <span className="opacity-40">|</span>
+                  <span className="opacity-80">GPS:</span>
+                  {resumenVehiculos.gpsPorTipo.map((item) => (
+                    <span key={item.tipo} className="whitespace-nowrap">
+                      {item.tipo} <strong>{item.gps}/{item.total}</strong>
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -1578,9 +1629,10 @@ export default function VehiculosAdminPage() {
                 <option value={ESTADO_INACTIVO}>Inactivos</option>
               </select>
 
-              <BotonCancelar type="button" onClick={() => { setBusqueda(''); setFiltroEstado('TODOS') }}>
+              <BotonLimpiar type="button" onClick={() => { setBusqueda(''); setFiltroEstado('TODOS') }}>
+                <i className="fas fa-eraser"></i>
                 Limpiar
-              </BotonCancelar>
+              </BotonLimpiar>
 
               <BotonAccion
                 tipo="agregar"
@@ -1617,7 +1669,7 @@ export default function VehiculosAdminPage() {
                       <tr key={vehiculo.id} className="hover:bg-slate-50">
                         <td className="border border-slate-300 p-2 text-center font-bold">{vehiculo.placa}</td>
                         <td className="border border-slate-300 p-2 text-center">{vehiculo.tipo_vehiculo || '-'}</td>
-                        <td className="border border-slate-300 p-2 text-center">{vehiculo.marca || '-'}</td>
+                        <td className="border border-slate-300 p-2 text-left">{vehiculo.marca || '-'}</td>
                         <td className="border border-slate-300 p-2 text-center">{vehiculo.modelo || '-'}</td>
                         <td className="border border-slate-300 p-2 text-center">{String(vehiculo.gps || '').toUpperCase() === 'SI' ? 'Sí' : String(vehiculo.gps || '').toUpperCase() === 'NO' ? 'No' : '-'}</td>
                         <td className="border border-slate-300 p-2 text-center">{estadoVigencia(vehiculo.soat)}</td>
