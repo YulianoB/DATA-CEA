@@ -20,6 +20,8 @@ import {
   ESTILO_SECCIONES,
   ESTILO_ENCABEZADO_TABLA,
   ESTILO_CELDAS_TABLA,
+  BotonConsultar,
+  BotonSecundario,
 } from '@/components/admin/EstiloModulo'
 
 // ============================================================
@@ -1624,6 +1626,62 @@ export default function InscripcionesPage() {
           "
         >
 
+          {CATEGORIAS
+            .filter(
+              categoria =>
+                Number(
+                  resumenCategorias[
+                    categoria
+                  ] ||
+                  0
+                ) >
+                0
+            )
+            .map(
+              categoria => (
+                <div
+                  key={categoria}
+                  className="
+                    h-9
+                    min-w-[62px]
+                    px-2.5
+                    rounded-lg
+                    border
+                    border-[#A9BDCC]
+                    bg-[#DCEEF9]
+                    flex
+                    items-center
+                    justify-center
+                    gap-1.5
+                    whitespace-nowrap
+                  "
+                  title={`Matrículas ${categoria}`}
+                >
+                  <span
+                    className="
+                      text-[10px]
+                      font-bold
+                      text-emerald-700
+                    "
+                  >
+                    {categoria}
+                  </span>
+
+                  <span
+                    className="
+                      text-sm
+                      font-black
+                      text-[#173A57]
+                    "
+                  >
+                    {resumenCategorias[
+                      categoria
+                    ]}
+                  </span>
+                </div>
+              )
+            )}
+
           {/* BUSCAR */}
 
           <div className="relative flex-1 min-w-[260px]">
@@ -1718,34 +1776,7 @@ export default function InscripcionesPage() {
 
           </div>
 
-          <button
-            type="button"
-            onClick={() => consultar()}
-            disabled={loading}
-            className="
-              h-9
-              bg-[var(--primary)]
-              hover:bg-[var(--primary-dark)]
-              hover:-translate-y-0.5
-              text-white
-              px-3
-              rounded-lg
-              text-xs
-              flex
-              items-center
-              justify-center
-              gap-1.5
-              disabled:opacity-50
-              transition-all
-              whitespace-nowrap
-            "
-          >
-            <i className="fas fa-search"></i>
 
-            {loading
-              ? 'Consultando...'
-              : 'Consultar'}
-          </button>
 
           <button
             type="button"
@@ -1802,61 +1833,7 @@ export default function InscripcionesPage() {
           </button>
 
 
-          {CATEGORIAS
-            .filter(
-              categoria =>
-                Number(
-                  resumenCategorias[
-                    categoria
-                  ] ||
-                  0
-                ) >
-                0
-            )
-            .map(
-              categoria => (
-                <div
-                  key={categoria}
-                  className="
-                    h-9
-                    min-w-[62px]
-                    px-2.5
-                    rounded-lg
-                    border
-                    border-[#A9BDCC]
-                    bg-[#DCEEF9]
-                    flex
-                    items-center
-                    justify-center
-                    gap-1.5
-                    whitespace-nowrap
-                  "
-                  title={`Matrículas ${categoria}`}
-                >
-                  <span
-                    className="
-                      text-[10px]
-                      font-bold
-                      text-[#36566F]
-                    "
-                  >
-                    {categoria}
-                  </span>
 
-                  <span
-                    className="
-                      text-sm
-                      font-black
-                      text-[#173A57]
-                    "
-                  >
-                    {resumenCategorias[
-                      categoria
-                    ]}
-                  </span>
-                </div>
-              )
-            )}
 
         </div>
 
@@ -2190,16 +2167,7 @@ export default function InscripcionesPage() {
                                 )
                               }
                               
-                              className="
-                                bg-emerald-600
-                                hover:bg-[var(--primary-dark)]
-                                text-white
-                                px-3
-                                py-1.5
-                                rounded
-                                text-[11px]
-                                whitespace-nowrap
-                              "
+                              className={`${BotonSecundario} min-w-[170px] justify-center !text-[11px] !py-1.5`}
                             >
                               <i className="fas fa-file-alt mr-1"></i>
 
@@ -2224,16 +2192,7 @@ export default function InscripcionesPage() {
                                   row.id
                                 )
                               }
-                              className="
-                                bg-[var(--primary)]
-                                hover:bg-[var(--primary-dark)]
-                                text-white
-                                px-3
-                                py-1.5
-                                rounded
-                                text-[11px]
-                                whitespace-nowrap
-                              "
+                              className={`${BotonConsultar} min-w-[125px] justify-center !text-[11px] !py-1.5`}
                             >
                               <i className="fas fa-folder-open mr-1"></i>
 
@@ -2259,11 +2218,11 @@ export default function InscripcionesPage() {
       </div>
 
       {/* ====================================================
-          DRAWER EXPEDIENTE
+          MODAL EXPEDIENTE
       ==================================================== */}
 
       {drawerOpen && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6">
 
           {/* FONDO */}
 
@@ -2282,15 +2241,17 @@ export default function InscripcionesPage() {
 
           <div
             className="
-              absolute
-              right-0
-              top-0
-              h-full
+              relative
+              z-10
               w-full
-              sm:w-[780px]
+              max-w-[1080px]
+              max-h-[92vh]
               bg-white
               shadow-2xl
+              rounded-xl
               overflow-y-auto
+              border
+              border-gray-300
             "
           >
 
@@ -2303,10 +2264,12 @@ export default function InscripcionesPage() {
                 sticky
                 top-0
                 z-20
-                bg-white
+                bg-[#173A57]
+                text-white
                 border-b
-                border-gray-300
-                p-4
+                border-[#29465D]
+                px-4
+                py-3
                 flex
                 justify-between
                 items-center
@@ -2331,7 +2294,7 @@ export default function InscripcionesPage() {
                   className="
                     text-lg
                     font-bold
-                    text-[var(--primary)]
+                    text-white
                   "
                 >
                   {aprendiz
@@ -2367,9 +2330,10 @@ export default function InscripcionesPage() {
                   w-9
                   h-9
                   border
-                  border-gray-300
+                  border-white/30
+                  text-white
                   rounded-lg
-                  hover:bg-gray-100
+                  hover:bg-white/10
                 "
               >
                 <i className="fas fa-times"></i>
@@ -2397,8 +2361,8 @@ export default function InscripcionesPage() {
               aprendiz ? (
               <div
                 className="
-                  p-4
-                  space-y-4
+                  p-3
+                  space-y-3
                 "
               >
 
@@ -2437,7 +2401,7 @@ export default function InscripcionesPage() {
 
                   <div
                     className="
-                      bg-slate-800
+                      bg-[#3B617D]
                       text-white
                       px-3
                       py-2
@@ -2450,11 +2414,11 @@ export default function InscripcionesPage() {
 
                   <div
                     className="
-                      p-3
+                      p-2
                       grid
                       grid-cols-1
                       sm:grid-cols-2
-                      gap-2
+                      gap-1.5
                     "
                   >
 
@@ -2598,14 +2562,14 @@ export default function InscripcionesPage() {
 
                   <div
                     className="
-                      bg-slate-800
+                      bg-[#3B617D]
                       text-white
                       px-3
                       py-2
                       flex
                       items-center
                       justify-between
-                      gap-2
+                      gap-1.5
                     "
                   >
 
@@ -2679,7 +2643,7 @@ export default function InscripcionesPage() {
                                 flex-wrap
                                 items-center
                                 justify-between
-                                gap-2
+                                gap-1.5
                               "
                             >
 
@@ -2690,7 +2654,7 @@ export default function InscripcionesPage() {
                                     flex
                                     flex-wrap
                                     items-center
-                                    gap-2
+                                    gap-1.5
                                   "
                                 >
 
@@ -2788,7 +2752,7 @@ export default function InscripcionesPage() {
                           grid
                           grid-cols-2
                           sm:grid-cols-4
-                          gap-2
+                          gap-1.5
                         "
                       >
 
@@ -2946,7 +2910,7 @@ export default function InscripcionesPage() {
                             text-xs
                             flex
                             items-center
-                            gap-2
+                            gap-1.5
                           "
                         >
                           <i className="fas fa-file-alt"></i>
@@ -3058,7 +3022,7 @@ export default function InscripcionesPage() {
                             grid
                             grid-cols-2
                             sm:grid-cols-4
-                            gap-2
+                            gap-1.5
                           "
                         >
 
@@ -3143,7 +3107,7 @@ export default function InscripcionesPage() {
                             grid
                             grid-cols-2
                             sm:grid-cols-4
-                            gap-2
+                            gap-1.5
                           "
                         >
 
@@ -3230,7 +3194,7 @@ export default function InscripcionesPage() {
                             grid
                             grid-cols-2
                             sm:grid-cols-4
-                            gap-2
+                            gap-1.5
                           "
                         >
 
@@ -3319,7 +3283,7 @@ export default function InscripcionesPage() {
                         grid
                         grid-cols-1
                         sm:grid-cols-2
-                        gap-2
+                        gap-1.5
                       "
                     >
 
