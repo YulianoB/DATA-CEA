@@ -1545,30 +1545,7 @@ export default function InscripcionesPage() {
               "
             >
 
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin/inscripciones/nueva'
-                  )
-                }
-                className="
-                  bg-emerald-600
-                  hover:bg-emerald-700
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-user-plus"></i>
 
-                Nueva Matrícula
-              </button>
 
               <button
                 type="button"
@@ -1708,227 +1685,196 @@ export default function InscripcionesPage() {
         )}
 
         {/* ==================================================
-            CONSULTA
+            FILTROS Y ACCIONES
         ================================================== */}
 
         <div
           className="
-            border
-            border-gray-300
-            rounded-lg
-            overflow-hidden
-            mb-4
+            mb-3
+            flex
+            flex-col
+            xl:flex-row
+            xl:items-end
+            gap-2
           "
         >
 
-          <div
+          {/* BUSCAR */}
+
+          <div className="relative flex-1 min-w-[260px]">
+
+            <i
+              className="
+                fas
+                fa-search
+                absolute
+                left-3
+                top-1/2
+                -translate-y-1/2
+                text-gray-400
+                text-xs
+                pointer-events-none
+              "
+            ></i>
+
+            <input
+              type="text"
+              name="q"
+              value={filtros.q}
+              onChange={cambiarFiltro}
+              placeholder="Documento, nombre, apellido, matrícula o categoría..."
+              aria-label="Criterio de búsqueda"
+              className="
+                w-full
+                h-9
+                border
+                border-gray-300
+                rounded-lg
+                pl-9
+                pr-3
+                text-xs
+                bg-white
+                focus:outline-none
+                focus:ring-2
+                focus:ring-blue-200
+                focus:border-[var(--primary)]
+              "
+            />
+
+          </div>
+
+          {/* FECHA INICIO */}
+
+          <div className="w-full xl:w-[145px]">
+
+            <input
+              type="date"
+              name="fecha_inicio"
+              value={filtros.fecha_inicio}
+              onChange={cambiarFiltro}
+              aria-label="Desde"
+              title="Desde"
+              className="
+                w-full
+                h-9
+                border
+                border-gray-300
+                rounded-lg
+                px-2
+                text-xs
+                bg-white
+              "
+            />
+
+          </div>
+
+          {/* FECHA FIN */}
+
+          <div className="w-full xl:w-[145px]">
+
+            <input
+              type="date"
+              name="fecha_fin"
+              value={filtros.fecha_fin}
+              onChange={cambiarFiltro}
+              aria-label="Hasta"
+              title="Hasta"
+              className="
+                w-full
+                h-9
+                border
+                border-gray-300
+                rounded-lg
+                px-2
+                text-xs
+                bg-white
+              "
+            />
+
+          </div>
+
+          <button
+            type="button"
+            onClick={() => consultar()}
+            disabled={loading}
             className="
-              bg-slate-800
+              h-9
+              bg-[var(--primary)]
+              hover:bg-[var(--primary-dark)]
+              hover:-translate-y-0.5
               text-white
-              px-4
-              py-3
-              text-sm
-              font-semibold
+              px-3
+              rounded-lg
+              text-xs
+              flex
+              items-center
+              justify-center
+              gap-1.5
+              disabled:opacity-50
+              transition-all
+              whitespace-nowrap
             "
           >
-            <i className="fas fa-search mr-2"></i>
+            <i className="fas fa-search"></i>
 
-            Consulta de Matrículas
-          </div>
+            {loading
+              ? 'Consultando...'
+              : 'Consultar'}
+          </button>
 
-          <div className="p-4">
+          <button
+            type="button"
+            onClick={limpiarFiltros}
+            className="
+              h-9
+              bg-gray-500
+              hover:bg-gray-700
+              hover:-translate-y-0.5
+              text-white
+              px-3
+              rounded-lg
+              text-xs
+              flex
+              items-center
+              justify-center
+              gap-1.5
+              transition-all
+              whitespace-nowrap
+            "
+          >
+            <i className="fas fa-eraser"></i>
 
-            <div
-              className="
-                grid
-                grid-cols-1
-                lg:grid-cols-5
-                gap-3
-              "
-            >
+            Limpiar
+          </button>
 
-              {/* BUSCAR */}
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                '/admin/inscripciones/nueva'
+              )
+            }
+            className="
+              h-9
+              bg-emerald-600
+              hover:bg-emerald-700
+              hover:-translate-y-0.5
+              text-white
+              px-3
+              rounded-lg
+              text-xs
+              flex
+              items-center
+              justify-center
+              gap-1.5
+              transition-all
+              whitespace-nowrap
+            "
+          >
+            <i className="fas fa-user-plus"></i>
 
-              <div className="lg:col-span-3">
-
-                <label
-                  className="
-                    block
-                    text-[11px]
-                    font-semibold
-                    mb-1
-                  "
-                >
-                  Criterio de búsqueda
-                </label>
-
-                <input
-                  type="text"
-                  name="q"
-                  value={
-                    filtros.q
-                  }
-                  onChange={
-                    cambiarFiltro
-                  }
-                  placeholder="Documento, nombre, apellido, matrícula o categoría..."
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                  "
-                />
-
-                <p
-                  className="
-                    text-[10px]
-                    text-gray-500
-                    mt-1
-                  "
-                >
-                  La búsqueda inicia automáticamente al escribir 3 caracteres.
-                </p>
-
-              </div>
-
-              {/* FECHA INICIO */}
-
-              <div>
-
-                <label
-                  className="
-                    block
-                    text-[11px]
-                    font-semibold
-                    mb-1
-                  "
-                >
-                  Desde
-                </label>
-
-                <input
-                  type="date"
-                  name="fecha_inicio"
-                  value={
-                    filtros.fecha_inicio
-                  }
-                  onChange={
-                    cambiarFiltro
-                  }
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                  "
-                />
-
-              </div>
-
-              {/* FECHA FIN */}
-
-              <div>
-
-                <label
-                  className="
-                    block
-                    text-[11px]
-                    font-semibold
-                    mb-1
-                  "
-                >
-                  Hasta
-                </label>
-
-                <input
-                  type="date"
-                  name="fecha_fin"
-                  value={
-                    filtros.fecha_fin
-                  }
-                  onChange={
-                    cambiarFiltro
-                  }
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                  "
-                />
-
-              </div>
-
-            </div>
-
-            <div
-              className="
-                mt-3
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-
-              <button
-                type="button"
-                onClick={() =>
-                  consultar()
-                }
-                disabled={
-                  loading
-                }
-                className="
-                  bg-[var(--primary)]
-                  hover:bg-[var(--primary-dark)]
-                  text-white
-                  px-4
-                  py-2
-                  rounded-lg
-                  text-xs
-                  disabled:opacity-50
-                "
-              >
-                <i className="fas fa-search mr-2"></i>
-
-                {loading
-                  ? 'Consultando...'
-                  : 'Consultar'}
-              </button>
-
-              <button
-                type="button"
-                onClick={
-                  limpiarFiltros
-                }
-                className="
-                  bg-gray-500
-                  hover:bg-gray-700
-                  text-white
-                  px-4
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-eraser mr-2"></i>
-
-                Limpiar
-              </button>
-
-            </div>
-
-          </div>
+            Nueva Matrícula
+          </button>
 
         </div>
 
