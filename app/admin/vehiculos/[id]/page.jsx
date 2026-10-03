@@ -3177,12 +3177,12 @@ return (
         </Seccion>
 
         
-      </div>
-
             </td>
           </tr>
         </tbody>
       </table>
+
+      </div>
 
       {/* ======================================================
           ESTILOS DE IMPRESIÓN
