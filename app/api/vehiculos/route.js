@@ -1600,16 +1600,163 @@ export async function GET(
         )
       }
 
+      const vehiculos =
+        Array.isArray(data)
+          ? data
+          : []
+
+      // ===================================================
+      // VIGENCIAS ACTUALES SOAT / RTM PARA EL LISTADO
+      // ===================================================
+
+      const placas =
+        vehiculos
+          .map((vehiculo) =>
+            normalizarMayusculas(
+              vehiculo.placa
+            )
+          )
+          .filter(Boolean)
+
+      let vigenciasPorPlaca =
+        new Map()
+
+      if (placas.length > 0) {
+        const {
+          data: documentos,
+          error: documentosError,
+        } =
+          await supabase
+            .from(
+              'vencimientos_vehiculos'
+            )
+            .select(`
+              id,
+              placa,
+              documento,
+              fecha_vigencia,
+              fecha_actualizacion
+            `)
+            .in(
+              'placa',
+              placas
+            )
+            .in(
+              'documento',
+              [
+                'SOAT',
+                'RTM',
+              ]
+            )
+            .order(
+              'fecha_actualizacion',
+              {
+                ascending: false,
+                nullsFirst: false,
+              }
+            )
+            .order(
+              'id',
+              {
+                ascending: false,
+              }
+            )
+
+        if (documentosError) {
+          throw new Error(
+            `No fue posible consultar las vigencias SOAT/RTM: ${documentosError.message}`
+          )
+        }
+
+        for (
+          const documento of
+          Array.isArray(documentos)
+            ? documentos
+            : []
+        ) {
+          const placa =
+            normalizarMayusculas(
+              documento.placa
+            )
+
+          const tipo =
+            normalizarMayusculas(
+              documento.documento
+            )
+
+          const clave =
+            `${placa}:${tipo}`
+
+          // La consulta viene ordenada del registro más reciente
+          // al más antiguo. Conservamos únicamente el actual.
+          if (
+            !vigenciasPorPlaca.has(
+              clave
+            )
+          ) {
+            vigenciasPorPlaca.set(
+              clave,
+              {
+                fecha_vigencia:
+                  documento.fecha_vigencia ||
+                  null,
+
+                estado:
+                  documento.fecha_vigencia
+                    ? (
+                        String(
+                          documento.fecha_vigencia
+                        ) < hoyBogota()
+                          ? 'VENCIDO'
+                          : 'VIGENTE'
+                      )
+                    : 'SIN REGISTRO',
+              }
+            )
+          }
+        }
+      }
+
+      const vehiculosConVigencias =
+        vehiculos.map(
+          (vehiculo) => {
+            const placa =
+              normalizarMayusculas(
+                vehiculo.placa
+              )
+
+            const soat =
+              vigenciasPorPlaca.get(
+                `${placa}:SOAT`
+              ) ||
+              {
+                fecha_vigencia: null,
+                estado: 'SIN REGISTRO',
+              }
+
+            const rtm =
+              vigenciasPorPlaca.get(
+                `${placa}:RTM`
+              ) ||
+              {
+                fecha_vigencia: null,
+                estado: 'SIN REGISTRO',
+              }
+
+            return {
+              ...vehiculo,
+              soat,
+              rtm,
+            }
+          }
+        )
+
       return NextResponse.json({
         status:
           'success',
 
         vehiculos:
-          Array.isArray(
-            data
-          )
-            ? data
-            : [],
+          vehiculosConVigencias,
       })
     }
 
