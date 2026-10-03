@@ -278,6 +278,173 @@ function crearFormularioDocumento(
   }
 }
 
+
+function texto(valor) {
+  return String(valor ?? '').trim()
+}
+
+function normalizarClave(valor) {
+  return texto(valor)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+}
+
+function valorDocumento(tipo, documento) {
+  switch (tipo) {
+    case 'NOMBRE_DOCUMENTO':
+      return texto(documento?.nombre_documento)
+    case 'CODIGO':
+      return texto(documento?.codigo)
+    case 'FECHA_EDICION':
+      return formatearFecha(documento?.fecha_edicion)
+    case 'VERSION':
+      return texto(documento?.version)
+    case 'VIGENCIA':
+      return formatearFecha(documento?.vigencia)
+    // La paginación física la administra el navegador al imprimir.
+    // Se conserva la celda configurada sin inventar un total de páginas.
+    case 'PAGINACION':
+      return ''
+    default:
+      return ''
+  }
+}
+
+function EncabezadoDocumento({ encabezado, documento, logo }) {
+  const estructura =
+    encabezado?.estructura && typeof encabezado.estructura === 'object'
+      ? encabezado.estructura
+      : {}
+
+  const celdas = Array.isArray(estructura?.celdas) ? estructura.celdas : []
+  const filas = Array.isArray(estructura?.filas) ? estructura.filas : []
+  const columnas = Array.isArray(estructura?.columnas) ? estructura.columnas : []
+  const configuracion =
+    estructura?.configuracion && typeof estructura.configuracion === 'object'
+      ? estructura.configuracion
+      : {}
+
+  const cantidadFilas = Number(encabezado?.filas) || filas.length || 2
+  const cantidadColumnas = Number(encabezado?.columnas) || columnas.length || 3
+
+  const anchos = Array.from({ length: cantidadColumnas }, (_, indice) => {
+    const item = columnas[indice]
+    const ancho = Number(item?.ancho ?? item?.width ?? item)
+    return Number.isFinite(ancho) && ancho > 0 ? ancho : 1
+  })
+
+  const alturas = Array.from({ length: cantidadFilas }, (_, indice) => {
+    const item = filas[indice]
+    const alto = Number(item?.alto ?? item?.altura ?? item?.height ?? item)
+    return Number.isFinite(alto) && alto > 0 ? `${alto}mm` : 'auto'
+  })
+
+  const grosorBorde = Number(configuracion?.grosor_borde) || 1
+  const paddingConfigurado = Number(configuracion?.padding)
+  const paddingCelda = Number.isFinite(paddingConfigurado) ? paddingConfigurado : 4
+
+  if (celdas.length === 0) {
+    return (
+      <div className="border border-black p-3 text-center">
+        <div className="text-[12px] font-black uppercase">
+          {documento?.nombre_documento || 'HOJA DE VIDA VEHICULOS'}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="grid w-full bg-white"
+      style={{
+        gridTemplateColumns: anchos.map(ancho => `${ancho}fr`).join(' '),
+        gridTemplateRows: alturas.join(' '),
+      }}
+    >
+      {celdas.map(celda => {
+        const elementos = Array.isArray(celda?.elementos) ? celda.elementos : []
+        const fila = Number(celda?.fila) || 1
+        const columna = Number(celda?.columna) || 1
+        const rowSpan = Number(celda?.rowSpan ?? celda?.row_span) || 1
+        const colSpan = Number(celda?.colSpan ?? celda?.col_span) || 1
+        const horizontal = celda?.alineacion_horizontal || 'center'
+        const vertical = celda?.alineacion_vertical || 'center'
+
+        return (
+          <div
+            key={celda?.id || `${fila}-${columna}`}
+            className="flex overflow-hidden"
+            style={{
+              gridRow: `${fila} / span ${rowSpan}`,
+              gridColumn: `${columna} / span ${colSpan}`,
+              justifyContent:
+                horizontal === 'left' ? 'flex-start' :
+                horizontal === 'right' ? 'flex-end' : 'center',
+              alignItems:
+                vertical === 'top' ? 'flex-start' :
+                vertical === 'bottom' ? 'flex-end' : 'center',
+              textAlign: horizontal,
+              padding: `${paddingCelda}px`,
+              borderTop: celda?.borde_superior === false ? 'none' : `${grosorBorde}px solid #000`,
+              borderBottom: celda?.borde_inferior === false ? 'none' : `${grosorBorde}px solid #000`,
+              borderLeft: celda?.borde_izquierdo === false ? 'none' : `${grosorBorde}px solid #000`,
+              borderRight: celda?.borde_derecho === false ? 'none' : `${grosorBorde}px solid #000`,
+            }}
+          >
+            <div className="w-full">
+              {elementos.map((elemento, indice) => {
+                const tipo = texto(elemento?.tipo).toUpperCase()
+                if (tipo === 'VACIO') return null
+
+                if (tipo === 'LOGO') {
+                  return (
+                    <div
+                      key={`${tipo}-${indice}`}
+                      className="flex h-full w-full items-center justify-center"
+                    >
+                      {logo?.url ? (
+                        <img
+                          src={logo.url}
+                          alt="Logo institucional"
+                          className="max-h-[15mm] max-w-full object-contain"
+                        />
+                      ) : (
+                        <span className="text-[7px] text-gray-400">LOGO</span>
+                      )}
+                    </div>
+                  )
+                }
+
+                const valor =
+                  tipo === 'TEXTO'
+                    ? texto(elemento?.valor)
+                    : valorDocumento(tipo, documento)
+
+                return (
+                  <div
+                    key={`${tipo}-${indice}`}
+                    style={{
+                      fontSize: `${Number(elemento?.tamano_fuente) || 8}px`,
+                      fontWeight: elemento?.negrita === true ? 700 : 400,
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    {texto(elemento?.prefijo)}
+                    {valor}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ============================================================
 // BADGE VIGENCIA
 // ============================================================
@@ -357,6 +524,29 @@ export default function HojaVidaVehiculoPage() {
     vehiculo,
     setVehiculo,
   ] = useState(null)
+
+  const [
+    encabezadoDocumento,
+    setEncabezadoDocumento,
+  ] = useState(null)
+
+  const [
+    configuracionHojaVida,
+    setConfiguracionHojaVida,
+  ] = useState(null)
+
+  const [
+    logoDocumento,
+    setLogoDocumento,
+  ] = useState({
+    path: '',
+    url: '',
+  })
+
+  const [
+    errorDocumento,
+    setErrorDocumento,
+  ] = useState('')
 
   const [
     historial,
@@ -481,6 +671,139 @@ export default function HojaVidaVehiculoPage() {
       router.push('/login')
     }
   }, [router])
+
+  // ==========================================================
+  // CONFIGURACIÓN DOCUMENTAL DE LA HOJA DE VIDA
+  // ==========================================================
+
+  useEffect(() => {
+    if (!nitActual) {
+      return
+    }
+
+    let activo = true
+
+    async function cargarConfiguracionDocumento() {
+      try {
+        setErrorDocumento('')
+
+        const headers = {
+          'x-cea-nit': nitActual,
+        }
+
+        const [
+          respuestaConfiguracion,
+          respuestaLogo,
+        ] = await Promise.all([
+          fetch(
+            '/api/admin/configuracion-documentos',
+            {
+              method: 'GET',
+              headers,
+              cache: 'no-store',
+            }
+          ),
+          fetch(
+            '/api/admin/configuracion-academica/logo',
+            {
+              method: 'GET',
+              headers,
+              cache: 'no-store',
+            }
+          ),
+        ])
+
+        const dataConfiguracion =
+          await respuestaConfiguracion.json()
+
+        const dataLogo =
+          await respuestaLogo.json()
+
+        if (
+          !respuestaConfiguracion.ok ||
+          dataConfiguracion?.ok !== true
+        ) {
+          throw new Error(
+            dataConfiguracion?.error ||
+            'No fue posible consultar la configuración documental.'
+          )
+        }
+
+        if (!respuestaLogo.ok) {
+          throw new Error(
+            dataLogo?.error ||
+            'No fue posible consultar el logo institucional.'
+          )
+        }
+
+        const documentos =
+          Array.isArray(dataConfiguracion?.documentos)
+            ? dataConfiguracion.documentos
+            : []
+
+        const documentoEncontrado =
+          documentos.find(
+            item =>
+              normalizarClave(item?.nombre_documento) ===
+              'HOJA_DE_VIDA_VEHICULOS'
+          ) ||
+          documentos.find(item => {
+            const clave = normalizarClave(item?.nombre_documento)
+            return (
+              clave.includes('HOJA_DE_VIDA') &&
+              clave.includes('VEHICUL')
+            )
+          })
+
+        if (!documentoEncontrado) {
+          throw new Error(
+            'No se encontró "HOJA DE VIDA VEHICULOS" en Configuración de Documentos > Otros Documentos.'
+          )
+        }
+
+        if (documentoEncontrado?.activo === false) {
+          throw new Error(
+            'El documento HOJA DE VIDA VEHICULOS se encuentra inactivo en Configuración de Documentos.'
+          )
+        }
+
+        if (activo) {
+          setEncabezadoDocumento(
+            dataConfiguracion?.encabezado || null
+          )
+
+          setConfiguracionHojaVida(
+            documentoEncontrado
+          )
+
+          setLogoDocumento({
+            path:
+              dataLogo?.paths?.actual || '',
+            url:
+              dataLogo?.logo?.actual || '',
+          })
+        }
+      } catch (error) {
+        console.error(
+          'Error cargando configuración documental de Hoja de Vida:',
+          error
+        )
+
+        if (activo) {
+          setErrorDocumento(
+            error?.message ||
+            'No fue posible preparar el encabezado documental.'
+          )
+        }
+      }
+    }
+
+    cargarConfiguracionDocumento()
+
+    return () => {
+      activo = false
+    }
+  }, [nitActual])
 
   // ==========================================================
   // CARGAR FOTOS
@@ -1315,6 +1638,36 @@ return (
     />
 
     <div className="max-w-7xl mx-auto space-y-5">
+
+      {errorDocumento && (
+        <div className="print:hidden mb-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <i className="fas fa-exclamation-triangle mr-2"></i>
+          {errorDocumento}
+        </div>
+      )}
+
+      <table className="estructura-hoja-vida-print w-full border-collapse">
+        <thead className="encabezado-documental-repetido">
+          <tr>
+            <td className="p-0 border-0">
+              <div className="margen-superior-documento"></div>
+
+              <div className="encabezado-documental-hoja-vida">
+                <EncabezadoDocumento
+                  encabezado={encabezadoDocumento}
+                  documento={configuracionHojaVida}
+                  logo={logoDocumento}
+                />
+              </div>
+
+              <div className="separador-encabezado-documento"></div>
+            </td>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td className="contenido-hoja-vida-print p-0 border-0 align-top">
 
       {/* ==================================================
           ENCABEZADO GENERAL
@@ -2826,6 +3179,11 @@ return (
         
       </div>
 
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
       {/* ======================================================
           ESTILOS DE IMPRESIÓN
       ====================================================== */}
@@ -2835,7 +3193,7 @@ return (
 
           @page {
             size: A4 portrait;
-            margin: 8mm;
+            margin: 0;
           }
 
           html,
@@ -2848,6 +3206,52 @@ return (
           body {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+
+          .estructura-hoja-vida-print {
+            width: calc(100% - 20mm) !important;
+            margin: 0 10mm 10mm 10mm !important;
+            border-collapse: collapse !important;
+            box-sizing: border-box !important;
+          }
+
+          .estructura-hoja-vida-print > thead {
+            display: table-header-group !important;
+          }
+
+          .estructura-hoja-vida-print > tbody {
+            display: table-row-group !important;
+          }
+
+          .estructura-hoja-vida-print > thead > tr > td,
+          .estructura-hoja-vida-print > tbody > tr > td {
+            border: 0 !important;
+            padding: 0 !important;
+          }
+
+          .encabezado-documental-repetido {
+            display: table-header-group !important;
+          }
+
+          .encabezado-documental-hoja-vida {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          .margen-superior-documento {
+            display: block !important;
+            height: 10mm !important;
+            width: 100% !important;
+          }
+
+          .separador-encabezado-documento {
+            display: block !important;
+            height: 4mm !important;
+            width: 100% !important;
+          }
+
+          .contenido-hoja-vida-print {
+            vertical-align: top !important;
           }
 
           /* ==========================================
