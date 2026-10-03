@@ -4400,7 +4400,6 @@ const guardar =
                   className="
                     grid
                     grid-cols-1
-                    grid-cols-1
                     gap-4
                   "
                 >
