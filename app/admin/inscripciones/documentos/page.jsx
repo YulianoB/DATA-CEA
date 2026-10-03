@@ -2513,7 +2513,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirControlClases
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#87CEFA] hover:bg-[#69BCEB] text-[#173A57]" !text-[10px] !py-1.5 justify-center`}
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#87CEFA] hover:bg-[#69BCEB] text-[#173A57]"
                                       >
                                         <i className="fas fa-eye mr-1"></i>
 
@@ -2525,7 +2525,7 @@ export default function DocumentosMatriculaPage() {
                                         onClick={
                                           abrirControlClases
                                         }
-                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#9F9FA9] hover:bg-[#85858F] text-white" !text-[10px] !py-1.5 justify-center`}
+                                        className="w-full px-2.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md bg-[#9F9FA9] hover:bg-[#85858F] text-white"
                                       >
                                         <i className="fas fa-print mr-1"></i>
 
