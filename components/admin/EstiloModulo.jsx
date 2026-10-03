@@ -1,251 +1,234 @@
 'use client'
 
-/*
-  ============================================================
-  ESTILO VISUAL COMPARTIDO - DATA CEA
-  Archivo sugerido:
-  components/admin/EstiloModulo.jsx
+// ============================================================
+// SISTEMA VISUAL COMPARTIDO - DATA CEA
+// PAGINAS DE TRABAJO
+// ============================================================
 
-  IMPORTANTE:
-  Los colores principales están concentrados en PALETA.
-  Puede probar otros colores cambiando solamente los códigos HEX.
-
-  Ejemplo:
-  tituloSeccion: '#082745'
-
-  No es necesario buscar clases Tailwind en cada página para cambiar
-  estos colores.
-  ============================================================
-*/
-
-const PALETA = {
-  // Fondo de títulos de secciones, por ejemplo "Actividades de formación".
-  tituloSeccion: '#3b617d',
-
-  // Color del texto principal dentro del título de sección.
-  textoTituloSeccion: '#FFFFFF',
-
-  // Color del subtítulo dentro del título de sección.
-  textoSubtituloSeccion: '#DCE6ED',
-
-  // Fondo de encabezados de tablas.
-  encabezadoTabla: '#b2cbe2',
-
-  // Texto de encabezados de tablas.
-  textoEncabezadoTabla: '#263746',
-
-  // Color ÚNICO de toda la cuadrícula de las tablas:
-  // borde exterior, divisiones del encabezado y divisiones de registros.
-  bordeTabla: '#CBD5E1',
-
-  // Fondo general de tarjetas o matrices.
-  fondoContenido: '#FFFFFF',
-
-  // Botón principal normal.
-  botonPrincipal: '#0968b0',
-  botonPrincipalHover: '#29465D',
-
-  // Botón para generar PDF. Se deja separado para que destaque.
-  botonPdf: '#eb9c58',
-  botonPdfHover: '#C96816',
-
-  // Botón claro usado dentro de encabezados oscuros.
-  botonClaro: '#FFFFFF',
-  textoBotonClaro: '#29465D',
-  botonClaroHover: '#F1F5F9',
+// 1. BLOQUES / TITULOS DE SECCION
+export const ESTILO_SECCIONES = {
+  fondo: '#3B617D',
+  texto: '#FFFFFF',
+  subtitulo: '#DCE6ED',
+  borde: '#3B617D',
+  grosorBorde: 1,
+  radio: 10,
 }
 
+// 2. TABLAS - ENCABEZADOS
+export const ESTILO_ENCABEZADO_TABLA = {
+  fondo: '#B2CBE2',
+  texto: '#263746',
+  fondoHover: '#A6C2DB',
+  textoHover: '#1E2F3D',
+}
 
-/*
-  ============================================================
-  TITULO DE SECCIÓN
-  Aplica a franjas como:
-  "Actividades de formación"
-  "Planeación y seguimiento de actividades..."
-  ============================================================
-*/
-export function TituloSeccion({
-  titulo,
-  subtitulo,
-  icono = null,
-  acciones = null,
-  className = '',
-}) {
+// 3. TABLAS - CELDAS Y CUADRICULA
+export const ESTILO_CELDAS_TABLA = {
+  borde: '#CBD5E1',
+  grosorBorde: 1,
+  fondo: '#FFFFFF',
+  fondoFilaHover: '#F8FAFC',
+}
+
+// 4. CONTENEDORES
+export const ESTILO_CONTENEDORES = {
+  fondo: '#FFFFFF',
+  borde: '#D8E0E8',
+  grosorBorde: 1,
+  radio: 12,
+  sombra: '0 2px 8px rgba(15, 23, 42, 0.06)',
+}
+
+// 5. TARJETAS
+export const ESTILO_TARJETAS = {
+  fondo: '#FFFFFF',
+  borde: '#D8E0E8',
+  bordeHover: '#7A9AB4',
+  grosorBorde: 1,
+  radio: 12,
+  sombra: '0 2px 8px rgba(15, 23, 42, 0.06)',
+  sombraHover: '0 8px 20px rgba(15, 23, 42, 0.12)',
+  movimientoHover: 'translateY(-3px)',
+}
+
+// 6. BOTONES SEGUN SU FUNCION
+export const ESTILO_BOTONES = {
+  guardar: { fondo: '#0968B0', hover: '#07548E', texto: '#FFFFFF', borde: '#0968B0' },
+  agregar: { fondo: '#198754', hover: '#146C43', texto: '#FFFFFF', borde: '#198754' },
+  editar: { fondo: '#D98C20', hover: '#B87316', texto: '#FFFFFF', borde: '#D98C20' },
+  consultar: { fondo: '#3B617D', hover: '#29465D', texto: '#FFFFFF', borde: '#3B617D' },
+  eliminar: { fondo: '#C93C3C', hover: '#A92F2F', texto: '#FFFFFF', borde: '#C93C3C' },
+  cancelar: { fondo: '#FFFFFF', hover: '#F1F5F9', texto: '#475569', borde: '#CBD5E1' },
+  pdf: { fondo: '#EB9C58', hover: '#C96816', texto: '#FFFFFF', borde: '#EB9C58' },
+  excel: { fondo: '#217346', hover: '#185C37', texto: '#FFFFFF', borde: '#217346' },
+  secundario: { fondo: '#FFFFFF', hover: '#F1F5F9', texto: '#29465D', borde: '#CBD5E1' },
+}
+
+// 7. MOVIMIENTO COMUN PARA ELEMENTOS INTERACTIVOS
+export const MOVIMIENTO_INTERACTIVO = {
+  transformHover: 'translateY(-2px)',
+  transformActivo: 'translateY(0)',
+  transicion: 'all 180ms ease',
+}
+
+function aplicarHoverBoton(event, tipo, activo) {
+  const estilo = ESTILO_BOTONES[tipo] || ESTILO_BOTONES.guardar
+  event.currentTarget.style.backgroundColor = activo ? estilo.hover : estilo.fondo
+  event.currentTarget.style.transform = activo
+    ? MOVIMIENTO_INTERACTIVO.transformHover
+    : MOVIMIENTO_INTERACTIVO.transformActivo
+  event.currentTarget.style.boxShadow = activo
+    ? '0 5px 12px rgba(15, 23, 42, 0.14)'
+    : '0 1px 3px rgba(15, 23, 42, 0.08)'
+}
+
+export function BotonAccion({ tipo = 'guardar', children, className = '', style = {}, ...props }) {
+  const estilo = ESTILO_BOTONES[tipo] || ESTILO_BOTONES.guardar
+  return (
+    <button
+      {...props}
+      className={`inline-flex w-fit items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold shadow-sm disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      style={{
+        backgroundColor: estilo.fondo,
+        color: estilo.texto,
+        borderColor: estilo.borde,
+        transition: MOVIMIENTO_INTERACTIVO.transicion,
+        ...style,
+      }}
+      onMouseEnter={(event) => {
+        if (!props.disabled) aplicarHoverBoton(event, tipo, true)
+        props.onMouseEnter?.(event)
+      }}
+      onMouseLeave={(event) => {
+        aplicarHoverBoton(event, tipo, false)
+        props.onMouseLeave?.(event)
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+export const BotonGuardar = (props) => <BotonAccion tipo="guardar" {...props} />
+export const BotonAgregar = (props) => <BotonAccion tipo="agregar" {...props} />
+export const BotonEditar = (props) => <BotonAccion tipo="editar" {...props} />
+export const BotonConsultar = (props) => <BotonAccion tipo="consultar" {...props} />
+export const BotonEliminar = (props) => <BotonAccion tipo="eliminar" {...props} />
+export const BotonCancelar = (props) => <BotonAccion tipo="cancelar" {...props} />
+export const BotonExcel = (props) => <BotonAccion tipo="excel" {...props} />
+export const BotonSecundario = (props) => <BotonAccion tipo="secundario" {...props} />
+
+// Compatibilidad con paginas que ya usan estos nombres.
+export const BotonPrincipal = BotonGuardar
+export const BotonClaro = BotonSecundario
+export const BotonPdf = (props) => <BotonAccion tipo="pdf" {...props} />
+
+export function TituloSeccion({ titulo, subtitulo, icono = null, acciones = null, className = '' }) {
   return (
     <div
       className={`flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between ${className}`}
       style={{
-        backgroundColor: PALETA.tituloSeccion,
-        color: PALETA.textoTituloSeccion,
+        backgroundColor: ESTILO_SECCIONES.fondo,
+        color: ESTILO_SECCIONES.texto,
+        border: `${ESTILO_SECCIONES.grosorBorde}px solid ${ESTILO_SECCIONES.borde}`,
+        borderRadius: `${ESTILO_SECCIONES.radio}px`,
       }}
     >
       <div className="flex items-center gap-2">
         {icono}
-
         <div>
-          <h2 className="text-sm font-semibold">
-            {titulo}
-          </h2>
-
-          {subtitulo && (
-            <p
-              className="text-[10px]"
-              style={{ color: PALETA.textoSubtituloSeccion }}
-            >
-              {subtitulo}
-            </p>
-          )}
+          <h2 className="text-sm font-semibold">{titulo}</h2>
+          {subtitulo && <p className="text-[10px]" style={{ color: ESTILO_SECCIONES.subtitulo }}>{subtitulo}</p>}
         </div>
       </div>
-
-      {acciones && (
-        <div className="flex flex-wrap items-center gap-2">
-          {acciones}
-        </div>
-      )}
+      {acciones && <div className="flex flex-wrap items-center gap-2">{acciones}</div>}
     </div>
   )
 }
 
+export function ContenedorModulo({ children, className = '', style = {}, ...props }) {
+  return (
+    <section
+      {...props}
+      className={className}
+      style={{
+        backgroundColor: ESTILO_CONTENEDORES.fondo,
+        border: `${ESTILO_CONTENEDORES.grosorBorde}px solid ${ESTILO_CONTENEDORES.borde}`,
+        borderRadius: `${ESTILO_CONTENEDORES.radio}px`,
+        boxShadow: ESTILO_CONTENEDORES.sombra,
+        ...style,
+      }}
+    >
+      {children}
+    </section>
+  )
+}
 
-/*
-  ============================================================
-  MARCO DE TABLA / MATRIZ
-  Aplica al borde exterior redondeado y a TODA la cuadrícula.
-
-  bordeTabla controla con un solo color:
-  - borde exterior
-  - líneas de los encabezados
-  - líneas de todos los registros
-  ============================================================
-*/
-export function MarcoTabla({
-  children,
-  className = '',
-}) {
+export function TarjetaModulo({ children, className = '', interactiva = true, style = {}, ...props }) {
   return (
     <div
-      className={`overflow-hidden rounded-xl ${className}`}
+      {...props}
+      className={className}
       style={{
-        border: `1px solid ${PALETA.bordeTabla}`,
-        backgroundColor: PALETA.fondoContenido,
+        backgroundColor: ESTILO_TARJETAS.fondo,
+        border: `${ESTILO_TARJETAS.grosorBorde}px solid ${ESTILO_TARJETAS.borde}`,
+        borderRadius: `${ESTILO_TARJETAS.radio}px`,
+        boxShadow: ESTILO_TARJETAS.sombra,
+        transition: MOVIMIENTO_INTERACTIVO.transicion,
+        ...style,
+      }}
+      onMouseEnter={(event) => {
+        if (interactiva) {
+          event.currentTarget.style.borderColor = ESTILO_TARJETAS.bordeHover
+          event.currentTarget.style.boxShadow = ESTILO_TARJETAS.sombraHover
+          event.currentTarget.style.transform = ESTILO_TARJETAS.movimientoHover
+        }
+        props.onMouseEnter?.(event)
+      }}
+      onMouseLeave={(event) => {
+        if (interactiva) {
+          event.currentTarget.style.borderColor = ESTILO_TARJETAS.borde
+          event.currentTarget.style.boxShadow = ESTILO_TARJETAS.sombra
+          event.currentTarget.style.transform = 'translateY(0)'
+        }
+        props.onMouseLeave?.(event)
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function MarcoTabla({ children, className = '' }) {
+  return (
+    <div
+      className={`overflow-hidden ${className}`}
+      style={{
+        border: `${ESTILO_CONTENEDORES.grosorBorde}px solid ${ESTILO_CONTENEDORES.borde}`,
+        borderRadius: `${ESTILO_CONTENEDORES.radio}px`,
+        backgroundColor: ESTILO_CELDAS_TABLA.fondo,
       }}
     >
       <style jsx>{`
-        div :global(table) {
-          border-collapse: collapse;
-        }
-
+        div :global(table) { border-collapse: collapse; width: 100%; }
         div :global(table th),
         div :global(table td) {
-          border: 1px solid ${PALETA.bordeTabla} !important;
+          border: ${ESTILO_CELDAS_TABLA.grosorBorde}px solid ${ESTILO_CELDAS_TABLA.borde} !important;
         }
-
         div :global(table thead) {
-          background-color: ${PALETA.encabezadoTabla} !important;
-          color: ${PALETA.textoEncabezadoTabla} !important;
+          background-color: ${ESTILO_ENCABEZADO_TABLA.fondo} !important;
+          color: ${ESTILO_ENCABEZADO_TABLA.texto} !important;
+        }
+        div :global(table thead th:hover) {
+          background-color: ${ESTILO_ENCABEZADO_TABLA.fondoHover} !important;
+          color: ${ESTILO_ENCABEZADO_TABLA.textoHover} !important;
+        }
+        div :global(table tbody tr:hover) {
+          background-color: ${ESTILO_CELDAS_TABLA.fondoFilaHover};
         }
       `}</style>
-
       {children}
     </div>
-  )
-}
-
-
-/*
-  ============================================================
-  BOTÓN GENERAR PDF
-  Se mantiene compacto y con un color diferente a los títulos.
-  Modifique botonPdf y botonPdfHover en PALETA para probar colores.
-  ============================================================
-*/
-export function BotonPdf({
-  children,
-  className = '',
-  ...props
-}) {
-  return (
-    <button
-      {...props}
-      className={`inline-flex w-fit items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
-      style={{ backgroundColor: PALETA.botonPdf }}
-      onMouseEnter={(event) => {
-        if (!props.disabled) {
-          event.currentTarget.style.backgroundColor = PALETA.botonPdfHover
-        }
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.backgroundColor = PALETA.botonPdf
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-
-/*
-  ============================================================
-  BOTÓN CLARO
-  Útil para acciones dentro de un título oscuro, por ejemplo:
-  "Agregar actividad".
-  ============================================================
-*/
-export function BotonClaro({
-  children,
-  className = '',
-  ...props
-}) {
-  return (
-    <button
-      {...props}
-      className={`inline-flex w-fit items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-bold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      style={{
-        backgroundColor: PALETA.botonClaro,
-        color: PALETA.textoBotonClaro,
-      }}
-      onMouseEnter={(event) => {
-        if (!props.disabled) {
-          event.currentTarget.style.backgroundColor = PALETA.botonClaroHover
-        }
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.backgroundColor = PALETA.botonClaro
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-
-/*
-  ============================================================
-  BOTÓN PRINCIPAL
-  Para guardar, crear, actualizar u otras acciones principales.
-  ============================================================
-*/
-export function BotonPrincipal({
-  children,
-  className = '',
-  ...props
-}) {
-  return (
-    <button
-      {...props}
-      className={`inline-flex w-fit items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      style={{ backgroundColor: PALETA.botonPrincipal }}
-      onMouseEnter={(event) => {
-        if (!props.disabled) {
-          event.currentTarget.style.backgroundColor = PALETA.botonPrincipalHover
-        }
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.backgroundColor = PALETA.botonPrincipal
-      }}
-    >
-      {children}
-    </button>
   )
 }
