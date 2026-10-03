@@ -1801,7 +1801,7 @@ return (
                   </div>
 
                   <div className="p-3 flex items-stretch">
-                    <div className="grid grid-cols-2 gap-3 w-full items-stretch print:content-start">
+                    <div className="fotos-grid-print grid grid-cols-2 print:grid-cols-1 gap-3 w-full items-stretch">
                       <FotoVehiculo
                         titulo=""
                         url={fotoFrontalUrl}
@@ -2995,6 +2995,22 @@ return (
             width: 100% !important;
             max-width: 100% !important;
             min-width: 0 !important;
+            height: 100% !important;
+            min-height: 0 !important;
+          }
+
+          .fotos-grid-print {
+            height: 100% !important;
+            min-height: 0 !important;
+            grid-template-columns: 1fr !important;
+            grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+            align-items: stretch !important;
+          }
+
+          .marco-foto-print {
+            height: 100% !important;
+            min-height: 0 !important;
+            flex: 1 1 auto !important;
           }
 
           /* ==========================================
@@ -3434,7 +3450,7 @@ function FotoVehiculo({
   return (
     <div className="foto-vehiculo-print flex h-full min-w-0 flex-col">
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-white shadow-sm">
-        <div className="flex aspect-[4/3] min-h-[165px] w-full flex-1 items-center justify-center overflow-hidden bg-gray-100 print:min-h-0 print:flex-none">
+        <div className="marco-foto-print flex min-h-[165px] w-full flex-1 items-center justify-center overflow-hidden bg-gray-100 print:min-h-0">
 
           {url ? (
 
