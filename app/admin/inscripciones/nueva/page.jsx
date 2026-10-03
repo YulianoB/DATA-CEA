@@ -5408,8 +5408,12 @@ const guardar =
             <div
               className="
                 fixed
-                inset-4
-                md:inset-8
+                left-1/2
+                top-6
+                bottom-6
+                w-[calc(100%-2rem)]
+                max-w-[960px]
+                -translate-x-1/2
                 z-50
                 overflow-y-auto
                 rounded-xl
@@ -5417,7 +5421,7 @@ const guardar =
                 border-gray-300
                 bg-white
                 p-4
-                md:p-6
+                md:p-5
                 shadow-[0_0_0_100vmax_rgba(15,23,42,0.55)]
                 space-y-4
               "
@@ -5466,7 +5470,14 @@ const guardar =
 
                 <div className="border border-gray-300 rounded-lg p-3">
 
-                  <div className="font-semibold text-xs mb-2 text-[var(--primary)]">
+                  <div
+                    className="rounded-t-lg px-3 py-2 text-xs font-semibold"
+                    style={{
+                      backgroundColor: ESTILO_SECCIONES.fondo,
+                      color: ESTILO_SECCIONES.texto,
+                      borderColor: ESTILO_SECCIONES.borde,
+                    }}
+                  >
                     Datos básicos
                   </div>
 
@@ -5528,7 +5539,14 @@ const guardar =
 
                 <div className="border border-gray-300 rounded-lg p-3">
 
-                  <div className="font-semibold text-xs mb-2 text-[var(--primary)]">
+                  <div
+                    className="rounded-t-lg px-3 py-2 text-xs font-semibold"
+                    style={{
+                      backgroundColor: ESTILO_SECCIONES.fondo,
+                      color: ESTILO_SECCIONES.texto,
+                      borderColor: ESTILO_SECCIONES.borde,
+                    }}
+                  >
                     Contacto
                   </div>
 
@@ -5578,7 +5596,14 @@ const guardar =
 
                 <div className="border border-gray-300 rounded-lg p-3">
 
-                  <div className="font-semibold text-xs mb-2 text-[var(--primary)]">
+                  <div
+                    className="rounded-t-lg px-3 py-2 text-xs font-semibold"
+                    style={{
+                      backgroundColor: ESTILO_SECCIONES.fondo,
+                      color: ESTILO_SECCIONES.texto,
+                      borderColor: ESTILO_SECCIONES.borde,
+                    }}
+                  >
                     Matrícula
                   </div>
 
@@ -5654,6 +5679,7 @@ const guardar =
               </div>
 
 
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
               {/* INFORMACIÓN FINANCIERA */}
 
               <div
@@ -5665,14 +5691,12 @@ const guardar =
                 "
               >
                 <div
-                  className="
-                    bg-slate-800
-                    text-white
-                    px-4
-                    py-2
-                    text-sm
-                    font-semibold
-                  "
+                  className="px-3 py-2 text-xs font-semibold"
+                  style={{
+                    backgroundColor: ESTILO_SECCIONES.fondo,
+                    color: ESTILO_SECCIONES.texto,
+                    borderColor: ESTILO_SECCIONES.borde,
+                  }}
                 >
                   <i className="fas fa-file-invoice-dollar mr-2"></i>
 
@@ -5684,7 +5708,7 @@ const guardar =
                     p-4
                     grid
                     grid-cols-1
-                    md:grid-cols-2
+                    grid-cols-1
                     gap-3
                   "
                 >
@@ -5794,7 +5818,7 @@ const guardar =
                     .observaciones_financieras && (
                     <div
                       className="
-                        md:col-span-2
+                        col-span-1
                         border
                         border-gray-200
                         rounded-lg
@@ -5818,7 +5842,14 @@ const guardar =
 
               <div className="border border-gray-300 rounded-lg overflow-hidden">
 
-                <div className="bg-slate-800 text-white px-4 py-2 text-sm font-semibold">
+                <div
+                  className="px-3 py-2 text-xs font-semibold"
+                  style={{
+                    backgroundColor: ESTILO_SECCIONES.fondo,
+                    color: ESTILO_SECCIONES.texto,
+                    borderColor: ESTILO_SECCIONES.borde,
+                  }}
+                >
                   <i className="fas fa-road mr-2"></i>
 
                   Verificación Inicial RUNT
@@ -5904,6 +5935,9 @@ const guardar =
                   )}
 
                 </div>
+
+              </div>
+
 
               </div>
 
