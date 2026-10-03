@@ -1661,9 +1661,9 @@ export default function VehiculosAdminPage() {
                     const activo = String(vehiculo.estado || '').toUpperCase() === ESTADO_ACTIVO
                     const estadoVigencia = (dato) => {
                       const estado = String(dato?.estado || 'SIN REGISTRO').toUpperCase()
-                      if (estado === 'VIGENTE') return <span className="font-semibold text-green-700">Vigente</span>
-                      if (estado === 'VENCIDO') return <span className="font-semibold text-red-600">Vencido</span>
-                      return <span className="text-slate-500">Sin registro</span>
+                      if (estado === 'VIGENTE') return <span className="text-[11px] font-semibold text-green-700">Vigente</span>
+                      if (estado === 'VENCIDO') return <span className="text-[11px] font-semibold text-red-600">Vencido</span>
+                      return <span className="text-[11px] text-slate-500">Sin registro</span>
                     }
                     return (
                       <tr key={vehiculo.id} className="hover:bg-slate-50">
@@ -1675,7 +1675,7 @@ export default function VehiculosAdminPage() {
                         <td className="border border-slate-300 p-2 text-center">{estadoVigencia(vehiculo.soat)}</td>
                         <td className="border border-slate-300 p-2 text-center">{estadoVigencia(vehiculo.rtm)}</td>
                         <td className="border border-slate-300 p-2 text-center">
-                          <span className={`font-semibold ${activo ? 'text-green-700' : 'text-red-600'}`}>
+                          <span className={`text-[11px] font-semibold ${activo ? 'text-green-700' : 'text-red-600'}`}>
                             {activo ? 'Activo' : 'Inactivo'}
                           </span>
                         </td>
@@ -2039,7 +2039,7 @@ export default function VehiculosAdminPage() {
 
               <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
 
-                <button
+                <BotonLimpiar
                   type="button"
                   onClick={() =>
                     setModalEstado(
@@ -2049,14 +2049,18 @@ export default function VehiculosAdminPage() {
                   disabled={
                     actualizandoEstado
                   }
-                  className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm"
                 >
-
                   Cancelar
+                </BotonLimpiar>
 
-                </button>
-
-                <button
+                <BotonAccion
+                  tipo={
+                    modalEstado
+                      .accion ===
+                    'inactivar'
+                      ? 'inactivar'
+                      : 'activar'
+                  }
                   type="button"
                   onClick={
                     confirmarCambioEstado
@@ -2064,17 +2068,7 @@ export default function VehiculosAdminPage() {
                   disabled={
                     actualizandoEstado
                   }
-                  className={`px-4 py-2 rounded-lg text-white text-sm font-semibold ${
-                    actualizandoEstado
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : modalEstado
-                          .accion ===
-                        'inactivar'
-                      ? 'bg-red-600 hover:bg-red-700'
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}
                 >
-
                   {actualizandoEstado
                     ? 'Procesando...'
                     : modalEstado
@@ -2082,8 +2076,7 @@ export default function VehiculosAdminPage() {
                       'inactivar'
                     ? 'Confirmar Desvinculación'
                     : 'Confirmar Vinculación'}
-
-                </button>
+                </BotonAccion>
 
               </div>
 
