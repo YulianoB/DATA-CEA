@@ -5691,7 +5691,7 @@ const guardar =
                 "
               >
                 <div
-                  className="px-3 py-2 text-xs font-semibold"
+                  className="px-3 py-1.5 text-[11px] font-semibold"
                   style={{
                     backgroundColor: ESTILO_SECCIONES.fondo,
                     color: ESTILO_SECCIONES.texto,
@@ -5705,11 +5705,11 @@ const guardar =
 
                 <div
                   className="
-                    p-4
+                    p-2
                     grid
                     grid-cols-1
                     grid-cols-1
-                    gap-3
+                    gap-2
                   "
                 >
                   {form.categorias.map(
@@ -5722,14 +5722,14 @@ const guardar =
                           border
                           border-gray-300
                           rounded-lg
-                          p-3
+                          p-2
                         "
                       >
-                        <div className="text-[10px] text-gray-500 uppercase">
+                        <div className="text-[9px] text-gray-500 uppercase">
                           Curso {cat}
                         </div>
 
-                        <div className="text-lg font-bold text-gray-900 mt-1">
+                        <div className="text-[11px] font-bold text-gray-900 mt-0.5">
                           {formatMoneda(
                             finanzas.valores_curso?.[cat] ||
                             0
@@ -5746,21 +5746,21 @@ const guardar =
                         border
                         border-gray-300
                         rounded-lg
-                        p-3
+                        p-2
                       "
                     >
-                      <div className="text-[10px] text-gray-500 uppercase">
+                      <div className="text-[9px] text-gray-500 uppercase">
                         Examen Médico
                       </div>
 
-                      <div className="text-lg font-bold text-gray-900 mt-1">
+                      <div className="text-[11px] font-bold text-gray-900 mt-0.5">
                         {formatMoneda(
                           finanzas
                             .valor_examen_medico
                         )}
                       </div>
 
-                      <div className="text-[10px] text-gray-500 mt-1">
+                      <div className="text-[9px] text-gray-500 mt-0.5">
                         Aplica a{' '}
 
                         <strong>
@@ -5779,14 +5779,14 @@ const guardar =
                       border-blue-200
                       bg-blue-50
                       rounded-lg
-                      p-3
+                      p-2
                     "
                   >
-                    <div className="text-[10px] text-blue-700 uppercase">
+                    <div className="text-[9px] text-blue-700 uppercase">
                       Total obligaciones iniciales
                     </div>
 
-                    <div className="text-lg font-bold text-blue-900 mt-1">
+                    <div className="text-[11px] font-bold text-blue-900 mt-0.5">
                       {formatMoneda(
                         form.categorias.reduce(
                           (
@@ -5822,8 +5822,8 @@ const guardar =
                         border
                         border-gray-200
                         rounded-lg
-                        p-3
-                        text-xs
+                        p-2
+                        text-[11px]
                         text-gray-600
                       "
                     >
@@ -5843,7 +5843,7 @@ const guardar =
               <div className="border border-gray-300 rounded-lg overflow-hidden">
 
                 <div
-                  className="px-3 py-2 text-xs font-semibold"
+                  className="px-3 py-1.5 text-[11px] font-semibold"
                   style={{
                     backgroundColor: ESTILO_SECCIONES.fondo,
                     color: ESTILO_SECCIONES.texto,
@@ -5855,14 +5855,14 @@ const guardar =
                   Verificación Inicial RUNT
                 </div>
 
-                <div className="p-4">
+                <div className="p-2">
 
                   {runtConsultado ? (
                     <div
                       className={`
                         border
                         rounded-lg
-                        p-4
+                        p-2
                         ${
                           runtResultado ===
                           'INSCRITO'
@@ -5871,23 +5871,23 @@ const guardar =
                         }
                       `}
                     >
-                      <div className="text-xs text-gray-600">
+                      <div className="text-[11px] text-gray-600">
                         Estado
                       </div>
 
-                      <div className="font-bold text-sm mt-1">
+                      <div className="font-bold text-[11px] mt-0.5">
                         VERIFICADO
                       </div>
 
-                      <div className="text-xs text-gray-600 mt-3">
+                      <div className="text-[11px] text-gray-600 mt-0.5">
                         Resultado
                       </div>
 
                       <div
                         className={`
                           font-bold
-                          text-sm
-                          mt-1
+                          text-[11px]
+                          mt-0.5
                           ${
                             runtResultado ===
                             'INSCRITO'
@@ -5902,11 +5902,11 @@ const guardar =
                           : 'NO APARECE INSCRITO EN RUNT'}
                       </div>
 
-                      <div className="text-xs text-gray-600 mt-3">
+                      <div className="text-[11px] text-gray-600 mt-0.5">
                         Verificado por
                       </div>
 
-                      <div className="font-semibold text-xs mt-1">
+                      <div className="font-semibold text-[11px] mt-0.5">
                         {nombreUsuario(
                           user
                         ) ||
@@ -5921,14 +5921,14 @@ const guardar =
                         border
                         border-amber-300
                         rounded-lg
-                        p-4
+                        p-2
                       "
                     >
-                      <div className="font-bold text-sm text-amber-700">
+                      <div className="font-bold text-[11px] text-amber-700">
                         PENDIENTE DE VERIFICACIÓN RUNT
                       </div>
 
-                      <p className="text-xs text-gray-600 mt-2">
+                      <p className="text-[11px] text-gray-600 mt-0.5">
                         La matrícula puede guardarse, pero aparecerá como pendiente en el módulo Control RUNT.
                       </p>
                     </div>
