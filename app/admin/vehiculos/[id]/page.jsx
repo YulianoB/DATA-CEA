@@ -1719,7 +1719,7 @@ return (
           <tr>
             <td className="contenido-hoja-vida-print p-0 border-0 align-top">
 
-              <div className="cabecera-datos-vehiculo bg-white border rounded-xl shadow-lg overflow-hidden print:shadow-none print:rounded-none">
+              <div className="cabecera-datos-vehiculo bg-white border rounded-xl shadow-lg overflow-hidden print:shadow-none">
                 <div className="grid grid-cols-1 xl:grid-cols-[0.78fr_1.72fr_1.5fr] print:grid-cols-[0.78fr_1.72fr_1.5fr] gap-0">
 
                   <div className="p-4 border-b xl:border-b-0 xl:border-r print:border-b-0 print:border-r flex flex-col justify-center">
@@ -2492,6 +2492,7 @@ return (
         <Seccion
           titulo="Siniestros Viales"
           icono="fa-car-crash"
+          evitarCorte
         >
 
           <div className="grid grid-cols-2 gap-3 mb-4">
@@ -2911,7 +2912,7 @@ return (
 
           .estructura-hoja-vida-print {
             width: calc(100% - 20mm) !important;
-            margin: 0 10mm 10mm 10mm !important;
+            margin: 0 10mm 12mm 10mm !important;
             border-collapse: collapse !important;
             box-sizing: border-box !important;
           }
@@ -2953,6 +2954,12 @@ return (
 
           .contenido-hoja-vida-print {
             vertical-align: top !important;
+          }
+
+          .cabecera-datos-vehiculo {
+            border-radius: 10px !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
 
           /* ==========================================
@@ -3049,8 +3056,14 @@ return (
           ========================================== */
 
           section {
+            margin-top: 4mm !important;
             break-inside: auto;
             page-break-inside: auto;
+          }
+
+          section.print-avoid-break {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
 
           section > div:first-child {
