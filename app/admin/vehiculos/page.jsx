@@ -14,12 +14,26 @@ import {
 
 import Link from 'next/link'
 
-import { Car, Search, Plus, X } from 'lucide-react'
+import {
+  Car,
+  Search,
+  Plus,
+  X,
+  Eraser,
+  Pencil,
+  ClipboardList,
+  Power,
+  PowerOff,
+  Save,
+  Ban,
+  Check,
+} from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 
 import {
   ESTILO_SECCIONES,
+  ESTILO_SECCIONES_SECUNDARIAS,
   ESTILO_ENCABEZADO_TABLA,
   ESTILO_CELDAS_TABLA,
   BotonAccion,
@@ -1148,7 +1162,11 @@ export default function VehiculosAdminPage() {
           className="bg-white w-full max-w-6xl rounded-xl shadow-2xl border overflow-hidden max-h-[94vh] flex flex-col"
         >
 
-          <div className="relative shrink-0 px-5 py-3" style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto }}>
+          <div className="relative shrink-0 px-5 py-3" style={{
+          backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+          color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+          borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+        }}>
             <div className="flex items-center justify-between gap-3 pr-10">
 
             <div>
@@ -1564,11 +1582,12 @@ export default function VehiculosAdminPage() {
               onClick={() => { limpiarFormulario(); setModalFormulario(false) }}
               disabled={guardando}
             >
+              <Ban size={14} />
               {editandoId ? 'Cancelar edición' : 'Cancelar'}
             </BotonCancelar>
 
             <BotonGuardar type="submit" disabled={guardando}>
-              <i className="fas fa-save mr-1"></i>
+              <Save size={14} />
               {guardando ? 'Guardando...' : editandoId ? 'Guardar Cambios' : 'Registrar Vehículo'}
             </BotonGuardar>
 
@@ -1630,7 +1649,7 @@ export default function VehiculosAdminPage() {
               </select>
 
               <BotonLimpiar type="button" onClick={() => { setBusqueda(''); setFiltroEstado('TODOS') }}>
-                <i className="fas fa-eraser"></i>
+                <Eraser size={14} />
                 Limpiar
               </BotonLimpiar>
 
@@ -1686,7 +1705,7 @@ export default function VehiculosAdminPage() {
                             </BotonAccion>
                             <Link href={`/admin/vehiculos/${vehiculo.id}`}>
                               <BotonAccion tipo="hojaVida" type="button" className="!px-2.5 !py-1.5">
-                                Hoja de Vida
+                                <ClipboardList size={14} /> Hoja de Vida
                               </BotonAccion>
                             </Link>
                             <BotonAccion
@@ -1695,6 +1714,7 @@ export default function VehiculosAdminPage() {
                               className="!px-2.5 !py-1.5"
                               onClick={() => abrirModalEstado(vehiculo, activo ? 'inactivar' : 'activar')}
                             >
+                              {activo ? <PowerOff size={14} /> : <Power size={14} />}
                               {activo ? 'Inactivar' : 'Activar'}
                             </BotonAccion>
                           </div>
@@ -2050,7 +2070,7 @@ export default function VehiculosAdminPage() {
                     actualizandoEstado
                   }
                 >
-                  Cancelar
+                  <Ban size={14} /> Cancelar
                 </BotonLimpiar>
 
                 <BotonAccion
@@ -2069,6 +2089,7 @@ export default function VehiculosAdminPage() {
                     actualizandoEstado
                   }
                 >
+                  {modalEstado.accion === 'inactivar' ? <PowerOff size={14} /> : <Check size={14} />}
                   {actualizandoEstado
                     ? 'Procesando...'
                     : modalEstado
