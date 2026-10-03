@@ -1604,9 +1604,9 @@ export default function VehiculosAdminPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E0E8] overflow-hidden">
           <div className="px-4 py-3" style={{
-          backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
-          color: ESTILO_SECCIONES_SECUNDARIAS.texto,
-          borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+          backgroundColor: ESTILO_SECCIONES.fondo,
+          color: ESTILO_SECCIONES.texto,
+          borderColor: ESTILO_SECCIONES.borde,
         }}>
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="min-w-0 flex-1">
@@ -2132,7 +2132,11 @@ function Seccion({
 
       <div
         className="px-4 py-2 text-sm font-semibold flex items-center gap-2"
-        style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto }}
+        style={{
+          backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+          color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+          borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+        }}
       >
 
         <i
