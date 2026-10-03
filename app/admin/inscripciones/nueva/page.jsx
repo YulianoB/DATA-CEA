@@ -22,7 +22,6 @@ import { UserPlus } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import {
   ESTILO_SECCIONES,
-  ESTILO_SECCIONES_SECUNDARIAS,
   BotonGuardar,
   BotonCancelar,
   BotonLimpiar,
@@ -3392,27 +3391,6 @@ const guardar =
           textoRegreso="Regresar"
         />
 
-        <div
-          className="mt-4 rounded-lg border px-4 py-3 text-sm"
-          style={{
-            backgroundColor:
-              '#F8FAFC',
-            borderColor:
-              '#DCE4EB',
-          }}
-        >
-          <strong>
-            Diligenciamiento continuo:
-          </strong>{' '}
-          complete los datos del aprendiz y de la matrícula sin bloqueos entre secciones. Al finalizar, use
-          {' '}
-          <strong>
-            Revisar y confirmar
-          </strong>
-          {' '}
-          para validar y visualizar toda la información antes de guardar.
-        </div>
-
         {/* ==================================================
             CONTENIDO
         ================================================== */}
@@ -3449,14 +3427,14 @@ const guardar =
 
                 {/* IDENTIFICACIÓN */}
 
-                <div className="h-full overflow-hidden rounded-lg border-2 border-slate-400 bg-white">
+                <div className="h-full overflow-hidden rounded-lg border border-slate-500 bg-white">
 
                   <div
                     className="px-3 py-2 text-xs font-semibold"
                     style={{
-                      backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
-                      color: ESTILO_SECCIONES_SECUNDARIAS.texto,
-                      borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                      backgroundColor: ESTILO_SECCIONES.fondo,
+                      color: ESTILO_SECCIONES.texto,
+                      borderColor: ESTILO_SECCIONES.borde,
                     }}
                   >
                     Identificación
@@ -3473,7 +3451,7 @@ const guardar =
                       </label>
 
                       <select
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.tipo_doc
                         }
@@ -3520,7 +3498,7 @@ const guardar =
                       <div className="flex items-center gap-2">
 
                         <input
-                          className="flex-1 min-w-0 border border-gray-300 rounded px-2 py-1 text-xs"
+                          className="flex-1 min-w-0 border border-gray-700 rounded px-2 py-1 text-xs"
                           value={
                             documentoFmt
                           }
@@ -3585,7 +3563,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.lugar_expedicion
                         }
@@ -3607,7 +3585,7 @@ const guardar =
                       </label>
 
                       <select
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.genero
                         }
@@ -3646,7 +3624,7 @@ const guardar =
                     </label>
 
                     <input
-                      className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                      className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                       value={
                         form.nombres
                       }
@@ -3674,7 +3652,7 @@ const guardar =
                     </label>
 
                     <input
-                      className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                      className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                       value={
                         form.apellidos
                       }
@@ -3703,7 +3681,7 @@ const guardar =
 
                     <input
                       type="date"
-                      className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                      className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                       value={
                         form.fecha_nacimiento
                       }
@@ -3746,14 +3724,14 @@ const guardar =
 
                 {/* CONTACTO */}
 
-                <div className="h-full overflow-hidden rounded-lg border-2 border-slate-400 bg-white">
+                <div className="h-full overflow-hidden rounded-lg border border-slate-500 bg-white">
 
                   <div
                     className="px-3 py-2 text-xs font-semibold"
                     style={{
-                      backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
-                      color: ESTILO_SECCIONES_SECUNDARIAS.texto,
-                      borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                      backgroundColor: ESTILO_SECCIONES.fondo,
+                      color: ESTILO_SECCIONES.texto,
+                      borderColor: ESTILO_SECCIONES.borde,
                     }}
                   >
                     Contacto
@@ -3769,7 +3747,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.celular
                         }
@@ -3795,7 +3773,7 @@ const guardar =
 
                       <input
                         type="email"
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.correo
                         }
@@ -3827,7 +3805,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.direccion
                         }
@@ -3849,7 +3827,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.barrio
                         }
@@ -3871,7 +3849,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.ciudad
                         }
@@ -3901,7 +3879,7 @@ const guardar =
                               Nombre completo
                             </label>
                             <input
-                              className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                              className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                               value={form.emergencia_nombre}
                               onChange={event =>
                                 setF(
@@ -3918,7 +3896,7 @@ const guardar =
                               Celular
                             </label>
                             <input
-                              className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                              className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                               value={form.emergencia_celular}
                               onChange={setNumeric('emergencia_celular')}
                               inputMode="numeric"
@@ -3935,14 +3913,14 @@ const guardar =
 
                 {/* COMPLEMENTARIA */}
 
-                <div className="h-full overflow-hidden rounded-lg border-2 border-slate-400 bg-white">
+                <div className="h-full overflow-hidden rounded-lg border border-slate-500 bg-white">
 
                   <div
                     className="px-3 py-2 text-xs font-semibold"
                     style={{
-                      backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
-                      color: ESTILO_SECCIONES_SECUNDARIAS.texto,
-                      borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                      backgroundColor: ESTILO_SECCIONES.fondo,
+                      color: ESTILO_SECCIONES.texto,
+                      borderColor: ESTILO_SECCIONES.borde,
                     }}
                   >
                     Información complementaria
@@ -3958,7 +3936,7 @@ const guardar =
                       </label>
 
                       <select
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.estado_civil
                         }
@@ -3999,7 +3977,7 @@ const guardar =
                       </label>
 
                       <select
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.ocupacion
                         }
@@ -4040,7 +4018,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.eps
                         }
@@ -4062,7 +4040,7 @@ const guardar =
                       </label>
 
                       <select
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.estrato
                         }
@@ -4103,7 +4081,7 @@ const guardar =
                       </label>
 
                       <select
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.nivel_educativo
                         }
@@ -4230,7 +4208,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.acudi_nombres
                         }
@@ -4258,7 +4236,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.acudi_apellidos
                         }
@@ -4286,7 +4264,7 @@ const guardar =
                       </label>
 
                       <select
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.acudi_tipo_doc
                         }
@@ -4323,7 +4301,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.acudi_documento
                         }
@@ -4347,7 +4325,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.acudi_celular
                         }
@@ -4371,7 +4349,7 @@ const guardar =
                       </label>
 
                       <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.acudi_direccion
                         }
@@ -4394,7 +4372,7 @@ const guardar =
 
                       <input
                         type="email"
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                         value={
                           form.acudi_correo
                         }
@@ -4422,14 +4400,14 @@ const guardar =
               <div className="mt-5 grid grid-cols-1 xl:grid-cols-3 gap-3 items-stretch">
               {/* MATRÍCULA */}
 
-              <div className="h-full min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white">
+              <div className="h-full min-w-0 overflow-hidden rounded-lg border border-slate-500 bg-white">
 
                 <div
                   className="px-3 py-2 text-xs font-semibold"
                   style={{
-                    backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
-                    color: ESTILO_SECCIONES_SECUNDARIAS.texto,
-                    borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                    backgroundColor: ESTILO_SECCIONES.fondo,
+                    color: ESTILO_SECCIONES.texto,
+                    borderColor: ESTILO_SECCIONES.borde,
                   }}
                 >
                   Datos de Matrícula
@@ -4454,7 +4432,7 @@ const guardar =
                       className="
                         w-full
                         border
-                        border-gray-300
+                        border-gray-700
                         rounded
                         px-2
                         py-2
@@ -4532,7 +4510,7 @@ const guardar =
                         <div className="flex gap-2">
 
                           <select
-                            className="flex-1 min-w-0 border border-gray-300 rounded px-2 py-2 text-xs"
+                            className="flex-1 min-w-0 border border-gray-700 rounded px-2 py-2 text-xs"
                             value={
                               form.convenio_id
                             }
@@ -4803,17 +4781,17 @@ const guardar =
                   min-w-0
                   overflow-hidden
                   rounded-lg
-                  border-2
-                  border-slate-400
+                  border
+                  border-slate-500
                   bg-white
                 "
               >
                 <div
                   className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
                   style={{
-                    backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
-                    color: ESTILO_SECCIONES_SECUNDARIAS.texto,
-                    borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                    backgroundColor: ESTILO_SECCIONES.fondo,
+                    color: ESTILO_SECCIONES.texto,
+                    borderColor: ESTILO_SECCIONES.borde,
                   }}
                 >
                   <i className="fas fa-file-invoice-dollar"></i>
@@ -4822,19 +4800,9 @@ const guardar =
 
                 <div className="p-3 space-y-3">
 
-                  <div
-                    className="
-                      bg-blue-50
-                      border
-                      border-blue-200
-                      rounded-lg
-                      p-3
-                      text-xs
-                      text-gray-700
-                    "
-                  >
+                  <p className="text-xs leading-relaxed text-gray-600">
                     Defina el valor comercial realmente acordado. Aquí se crea la obligación financiera; el ingreso de dinero se registra posteriormente en Caja.
-                  </div>
+                  </p>
 
                   {form
                     .categorias
@@ -4928,7 +4896,7 @@ const guardar =
                                 className="
                                   w-full
                                   border
-                                  border-gray-300
+                                  border-gray-700
                                   rounded
                                   pl-7
                                   pr-2
@@ -5062,7 +5030,7 @@ const guardar =
                               className="
                                 w-full
                                 border
-                                border-gray-300
+                                border-gray-700
                                 rounded
                                 pl-7
                                 pr-2
@@ -5142,7 +5110,7 @@ const guardar =
                       className="
                         w-full
                         border
-                        border-gray-300
+                        border-gray-700
                         rounded
                         px-2
                         py-2
@@ -5184,17 +5152,17 @@ const guardar =
                   min-w-0
                   overflow-hidden
                   rounded-lg
-                  border-2
-                  border-slate-400
+                  border
+                  border-slate-500
                   bg-white
                 "
               >
                 <div
                   className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
                   style={{
-                    backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
-                    color: ESTILO_SECCIONES_SECUNDARIAS.texto,
-                    borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                    backgroundColor: ESTILO_SECCIONES.fondo,
+                    color: ESTILO_SECCIONES.texto,
+                    borderColor: ESTILO_SECCIONES.borde,
                   }}
                 >
                   <i className="fas fa-road"></i>
@@ -5981,7 +5949,7 @@ const guardar =
             ACCIONES DEL FORMULARIO
         ================================================== */}
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
           <BotonLimpiar
             type="button"
             onClick={
@@ -6125,7 +6093,7 @@ const guardar =
                 </label>
 
                 <input
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
                   value={
                     formConvenio.nombre
                   }
@@ -6153,7 +6121,7 @@ const guardar =
                 </label>
 
                 <input
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
                   value={
                     formConvenio.documento
                   }
@@ -6179,7 +6147,7 @@ const guardar =
                 </label>
 
                 <input
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
                   value={
                     formConvenio.celular
                   }
@@ -6208,7 +6176,7 @@ const guardar =
                 </label>
 
                 <input
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
                   value={
                     formConvenio.direccion
                   }
@@ -6236,7 +6204,7 @@ const guardar =
 
                 <input
                   type="email"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
                   value={
                     formConvenio.correo
                   }
