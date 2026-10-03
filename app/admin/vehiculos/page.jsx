@@ -1163,9 +1163,9 @@ export default function VehiculosAdminPage() {
         >
 
           <div className="relative shrink-0 px-5 py-3" style={{
-          backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
-          color: ESTILO_SECCIONES_SECUNDARIAS.texto,
-          borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+          backgroundColor: ESTILO_SECCIONES.fondo,
+          color: ESTILO_SECCIONES.texto,
+          borderColor: ESTILO_SECCIONES.borde,
         }}>
             <div className="flex items-center justify-between gap-3 pr-10">
 
@@ -1603,7 +1603,11 @@ export default function VehiculosAdminPage() {
         ================================================== */}
 
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E0E8] overflow-hidden">
-          <div className="px-4 py-3" style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto }}>
+          <div className="px-4 py-3" style={{
+          backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+          color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+          borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+        }}>
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
@@ -1701,7 +1705,7 @@ export default function VehiculosAdminPage() {
                         <td className="border border-slate-300 p-2 text-center">
                           <div className="flex flex-wrap items-center justify-center gap-1.5">
                             <BotonAccion tipo="editarVehiculo" type="button" className="!px-2.5 !py-1.5" onClick={() => editarVehiculo(vehiculo)}>
-                              Editar
+                              <Pencil size={14} /> Editar
                             </BotonAccion>
                             <Link href={`/admin/vehiculos/${vehiculo.id}`}>
                               <BotonAccion tipo="hojaVida" type="button" className="!px-2.5 !py-1.5">
