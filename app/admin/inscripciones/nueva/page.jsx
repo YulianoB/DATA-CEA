@@ -18,9 +18,14 @@ import {
   toast,
 } from 'sonner'
 
+import { UserPlus } from 'lucide-react'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+  ESTILO_SECCIONES,
+  BotonGuardar,
+  BotonCancelar,
+  BotonLimpiar,
+} from '@/components/admin/EstiloModulo'
 
 // ============================================================
 // CONSTANTES
@@ -502,6 +507,12 @@ export default function NuevaInscripcionPage() {
   const [
     saving,
     setSaving,
+  ] =
+    useState(false)
+
+  const [
+    confirmarOpen,
+    setConfirmarOpen,
   ] =
     useState(false)
 
@@ -1986,6 +1997,10 @@ export default function NuevaInscripcionPage() {
 
       clearAllErrors()
 
+      setConfirmarOpen(
+        false
+      )
+
       setStep(
         1
       )
@@ -2940,6 +2955,141 @@ export default function NuevaInscripcionPage() {
   ])
 
   // ==========================================================
+  // NAVEGACIÓN POR TECLADO Y CONFIRMACIÓN
+  // ==========================================================
+
+  const enfocarPrimerError =
+    () => {
+      window.setTimeout(
+        () => {
+          const primerError =
+            document.querySelector(
+              '[aria-invalid="true"], .border-red-500, .border-red-600'
+            )
+
+          if (
+            primerError &&
+            typeof primerError.focus ===
+              'function'
+          ) {
+            primerError.focus({
+              preventScroll:
+                false,
+            })
+          }
+        },
+        50
+      )
+    }
+
+  const abrirConfirmacion =
+    () => {
+      const ok1 =
+        validarPaso1()
+
+      const ok2 =
+        validarPaso2()
+
+      const okRunt =
+        validarRunt()
+
+      if (
+        !ok1 ||
+        !ok2 ||
+        !okRunt
+      ) {
+        toast.warning(
+          'Complete o corrija los campos señalados antes de confirmar la matrícula.'
+        )
+
+        enfocarPrimerError()
+        return
+      }
+
+      setConfirmarOpen(
+        true
+      )
+    }
+
+  const manejarEnter =
+    event => {
+      if (
+        event.key !==
+          'Enter' ||
+        event.shiftKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.metaKey
+      ) {
+        return
+      }
+
+      const actual =
+        event.target
+
+      if (
+        !actual ||
+        actual.tagName ===
+          'TEXTAREA' ||
+        actual.tagName ===
+          'BUTTON' ||
+        actual.type ===
+          'checkbox' ||
+        actual.type ===
+          'radio' ||
+        actual.type ===
+          'submit'
+      ) {
+        return
+      }
+
+      const contenedor =
+        event.currentTarget
+
+      const controles =
+        Array.from(
+          contenedor.querySelectorAll(
+            'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])'
+          )
+        ).filter(
+          elemento =>
+            elemento.offsetParent !==
+              null &&
+            elemento.tabIndex !==
+              -1
+        )
+
+      const indice =
+        controles.indexOf(
+          actual
+        )
+
+      if (
+        indice < 0
+      ) {
+        return
+      }
+
+      const siguiente =
+        controles
+          .slice(
+            indice + 1
+          )
+          .find(
+            elemento =>
+              elemento.tagName !==
+                'BUTTON'
+          )
+
+      if (
+        siguiente
+      ) {
+        event.preventDefault()
+        siguiente.focus()
+      }
+    }
+
+  // ==========================================================
 // GUARDAR
 // ==========================================================
 
@@ -3233,226 +3383,33 @@ const guardar =
         "
       >
 
-        {/* ==================================================
-            ENCABEZADO
-        ================================================== */}
+        <EncabezadoModulo
+          titulo="Nueva Matrícula"
+          subtitulo="Registre los datos del aprendiz, la matrícula y la verificación inicial en RUNT."
+          icono={UserPlus}
+          rutaRegreso="/admin/inscripciones"
+          textoRegreso="Regresar"
+        />
 
         <div
-          className="
-            bg-white
-            border
-            border-gray-500
-            rounded-lg
-            shadow-sm
-            p-4
-            mb-4
-          "
+          className="mt-4 rounded-lg border px-4 py-3 text-sm"
+          style={{
+            backgroundColor:
+              '#F8FAFC',
+            borderColor:
+              '#DCE4EB',
+          }}
         >
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-4
-            "
-          >
-            <div>
-              <p
-                className="
-                  text-xs
-                  uppercase
-                  tracking-wide
-                  font-semibold
-                  text-gray-500
-                  mb-1
-                "
-              >
-                Consultas y Matrículas
-              </p>
-
-              <h1
-                className="
-                  text-2xl
-                  font-bold
-                  text-[var(--primary)]
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-user-plus"></i>
-
-                Nueva Matrícula
-              </h1>
-
-              <p
-                className="
-                  text-sm
-                  text-gray-600
-                  mt-1
-                "
-              >
-                Registre los datos del aprendiz, la categoría y la verificación inicial en RUNT.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin/inscripciones'
-                  )
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-arrow-left"></i>
-
-                Regresar a Consultas y Matrículas
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  hover:bg-[var(--danger-dark)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-sign-out-alt"></i>
-
-                Cerrar Sesión
-              </button>
-
-            </div>
-          </div>
-        </div>
-
-        {/* ==================================================
-            USUARIO
-        ================================================== */}
-
-        <div
-          className="
-            bg-white
-            border
-            border-gray-500
-            rounded-lg
-            shadow-sm
-            p-3
-            mb-4
-            text-sm
-            text-gray-700
-          "
-        >
-          <div
-            className="
-              flex
-              flex-wrap
-              justify-between
-              gap-2
-            "
-          >
-            <span>
-              Usuario:{' '}
-
-              <strong>
-                {nombreUsuario(
-                  user
-                ) ||
-                  '-'}
-              </strong>
-
-              {user.rol && (
-                <>
-                  {' '}
-                  ({user.rol})
-                </>
-              )}
-            </span>
-
-            {user.nombreEmpresa && (
-              <span>
-                CEA:{' '}
-
-                <strong>
-                  {user.nombreEmpresa}
-                </strong>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* ==================================================
-            STEPPER
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-gray-300
-            rounded-lg
-            p-3
-            mb-4
-          "
-        >
-          <div className="flex flex-wrap items-center gap-4">
-
-            <Step
-              n={1}
-              title="Datos del aprendiz"
-              active={
-                step === 1
-              }
-            />
-
-            <i className="fas fa-ellipsis-h text-gray-300"></i>
-
-            <Step
-              n={2}
-              title="Matrícula"
-              active={
-                step === 2
-              }
-            />
-
-            <i className="fas fa-ellipsis-h text-gray-300"></i>
-
-            <Step
-              n={3}
-              title="Confirmar"
-              active={
-                step === 3
-              }
-            />
-
-          </div>
+          <strong>
+            Diligenciamiento continuo:
+          </strong>{' '}
+          complete los datos del aprendiz y de la matrícula sin bloqueos entre secciones. Al finalizar, use
+          {' '}
+          <strong>
+            Revisar y confirmar
+          </strong>
+          {' '}
+          para validar y visualizar toda la información antes de guardar.
         </div>
 
         {/* ==================================================
@@ -3465,14 +3422,18 @@ const guardar =
             border-gray-300
             rounded-lg
             p-4
+            mt-4
           "
+          onKeyDown={
+            manejarEnter
+          }
         >
 
           {/* =================================================
               PASO 1
           ================================================= */}
 
-          {step === 1 && (
+          {(
             <div className="space-y-4">
 
               <div
@@ -4176,7 +4137,7 @@ const guardar =
               PASO 2
           ================================================= */}
 
-          {step === 2 && (
+          {(
             <div className="space-y-4">
 
               {/* MATRÍCULA */}
@@ -5475,8 +5436,61 @@ const guardar =
               PASO 3
           ================================================= */}
 
-          {step === 3 && (
-            <div className="space-y-4">
+          {confirmarOpen && (
+            <div
+              className="
+                fixed
+                inset-4
+                md:inset-8
+                z-50
+                overflow-y-auto
+                rounded-xl
+                border
+                border-gray-300
+                bg-white
+                p-4
+                md:p-6
+                shadow-[0_0_0_100vmax_rgba(15,23,42,0.55)]
+                space-y-4
+              "
+              role="dialog"
+              aria-modal="true"
+              aria-label="Confirmar matrícula"
+            >
+              <div
+                className="rounded-lg px-4 py-3"
+                style={{
+                  backgroundColor:
+                    ESTILO_SECCIONES.fondo,
+                  color:
+                    ESTILO_SECCIONES.texto,
+                }}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold">
+                      Confirmar Matrícula
+                    </div>
+                    <div className="mt-1 text-xs opacity-90">
+                      Revise toda la información antes de guardar.
+                    </div>
+                  </div>
+
+                  <BotonCancelar
+                    type="button"
+                    onClick={() =>
+                      setConfirmarOpen(
+                        false
+                      )
+                    }
+                    disabled={
+                      saving
+                    }
+                  >
+                    Cerrar
+                  </BotonCancelar>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
 
@@ -5925,150 +5939,74 @@ const guardar =
 
               </div>
 
+              <div className="flex flex-wrap justify-end gap-2 border-t border-gray-200 pt-4">
+                <BotonCancelar
+                  type="button"
+                  onClick={() =>
+                    setConfirmarOpen(
+                      false
+                    )
+                  }
+                  disabled={
+                    saving
+                  }
+                >
+                  Volver a editar
+                </BotonCancelar>
+
+                <BotonGuardar
+                  type="button"
+                  onClick={
+                    guardar
+                  }
+                  disabled={
+                    saving
+                  }
+                >
+                  <i className="fas fa-save mr-1"></i>
+                  {saving
+                    ? 'Guardando...'
+                    : form.categorias.length > 1
+                      ? `Confirmar y guardar ${form.categorias.length} matrículas`
+                      : 'Confirmar y guardar matrícula'}
+                </BotonGuardar>
+              </div>
+
             </div>
           )}
 
         </div>
 
         {/* ==================================================
-            NAVEGACIÓN
+            ACCIONES DEL FORMULARIO
         ================================================== */}
 
-        <div className="flex justify-between mt-4">
-
-          <button
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <BotonLimpiar
             type="button"
-            onClick={() =>
-              setStep(
-                Math.max(
-                  1,
-                  step - 1
-                )
-              )
+            onClick={
+              limpiar
             }
             disabled={
-              step === 1 ||
               saving
             }
-            className="
-              border
-              border-gray-300
-              px-3
-              py-2
-              rounded-lg
-              text-xs
-              hover:bg-gray-50
-              disabled:opacity-50
-            "
           >
-            <i className="fas fa-chevron-left mr-1"></i>
+            <i className="fas fa-eraser mr-1"></i>
+            Limpiar
+          </BotonLimpiar>
 
-            Volver
-          </button>
-
-          {step < 3 ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (
-                  step ===
-                    1 &&
-                  !validarPaso1()
-                ) {
-                  return
-                }
-
-                if (
-                  step ===
-                    2 &&
-                  (
-                    !validarPaso2() ||
-                    !validarRunt()
-                  )
-                ) {
-                  return
-                }
-
-                setStep(
-                  step + 1
-                )
-              }}
-              className="
-                bg-[var(--primary)]
-                hover:bg-[var(--primary-dark)]
-                text-white
-                px-4
-                py-2
-                rounded-lg
-                text-xs
-              "
-            >
-              Siguiente
-
-              <i className="fas fa-chevron-right ml-1"></i>
-            </button>
-          ) : (
-            <div className="flex gap-2">
-
-              <button
-                type="button"
-                onClick={
-                  limpiar
-                }
-                disabled={
-                  saving
-                }
-                className="
-                  bg-gray-500
-                  hover:bg-gray-700
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  disabled:opacity-50
-                "
-              >
-                <i className="fas fa-eraser mr-1"></i>
-
-                Limpiar
-              </button>
-
-              <button
-                type="button"
-                onClick={
-                  guardar
-                }
-                disabled={
-                  saving
-                }
-                className="
-                  bg-[var(--primary)]
-                  hover:bg-[var(--primary-dark)]
-                  text-white
-                  px-4
-                  py-2
-                  rounded-lg
-                  text-xs
-                  font-semibold
-                  disabled:opacity-60
-                "
-              >
-                <i className="fas fa-save mr-1"></i>
-
-                {saving
-                  ? 'Guardando...'
-                  : form
-                      .categorias
-                      .length >
-                    1
-                    ? `Guardar ${form.categorias.length} matrículas`
-                    : 'Guardar matrícula'}
-              </button>
-
-            </div>
-          )}
-
+          <BotonGuardar
+            type="button"
+            onClick={
+              abrirConfirmacion
+            }
+            disabled={
+              saving
+            }
+          >
+            <i className="fas fa-clipboard-check mr-1"></i>
+            Revisar y confirmar
+          </BotonGuardar>
         </div>
 
       </div>
