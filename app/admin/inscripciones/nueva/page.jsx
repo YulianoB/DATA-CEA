@@ -22,6 +22,7 @@ import { UserPlus } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import {
   ESTILO_SECCIONES,
+  ESTILO_SECCIONES_SECUNDARIAS,
   BotonGuardar,
   BotonCancelar,
   BotonLimpiar,
@@ -3442,16 +3443,26 @@ const guardar =
                   grid-cols-1
                   lg:grid-cols-3
                   gap-3
+                  items-stretch
                 "
               >
 
                 {/* IDENTIFICACIÓN */}
 
-                <div className="border border-gray-300 rounded-lg p-3">
+                <div className="h-full overflow-hidden rounded-lg border-2 border-slate-400 bg-white">
 
-                  <div className="font-semibold text-xs mb-3 text-[var(--primary)]">
+                  <div
+                    className="px-3 py-2 text-xs font-semibold"
+                    style={{
+                      backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                      color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                      borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                    }}
+                  >
                     Identificación
                   </div>
+
+                  <div className="p-3">
 
                   <div className="grid grid-cols-5 gap-2 mb-2">
 
@@ -3730,15 +3741,25 @@ const guardar =
 
                   </div>
 
+                  </div>
                 </div>
 
                 {/* CONTACTO */}
 
-                <div className="border border-gray-300 rounded-lg p-3">
+                <div className="h-full overflow-hidden rounded-lg border-2 border-slate-400 bg-white">
 
-                  <div className="font-semibold text-xs mb-3 text-[var(--primary)]">
+                  <div
+                    className="px-3 py-2 text-xs font-semibold"
+                    style={{
+                      backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                      color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                      borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                    }}
+                  >
                     Contacto
                   </div>
+
+                  <div className="p-3">
 
                   <div className="grid grid-cols-2 gap-2">
 
@@ -3909,15 +3930,25 @@ const guardar =
                     )}
                   </div>
 
+                  </div>
                 </div>
 
                 {/* COMPLEMENTARIA */}
 
-                <div className="border border-gray-300 rounded-lg p-3">
+                <div className="h-full overflow-hidden rounded-lg border-2 border-slate-400 bg-white">
 
-                  <div className="font-semibold text-xs mb-3 text-[var(--primary)]">
+                  <div
+                    className="px-3 py-2 text-xs font-semibold"
+                    style={{
+                      backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                      color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                      borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                    }}
+                  >
                     Información complementaria
                   </div>
+
+                  <div className="p-3">
 
                   <div className="grid grid-cols-2 gap-2">
 
@@ -4109,6 +4140,7 @@ const guardar =
 
                   </div>
 
+                  </div>
                 </div>
 
               </div>
@@ -4387,14 +4419,23 @@ const guardar =
                 </div>
               ) : null}
 
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 items-start">
+              <div className="mt-5 grid grid-cols-1 xl:grid-cols-3 gap-3 items-stretch">
               {/* MATRÍCULA */}
 
-              <div className="border border-gray-300 rounded-lg p-3 min-w-0">
+              <div className="h-full min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white">
 
-                <div className="font-semibold text-xs mb-3 text-[var(--primary)]">
+                <div
+                  className="px-3 py-2 text-xs font-semibold"
+                  style={{
+                    backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                    color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                  }}
+                >
                   Datos de Matrícula
                 </div>
+
+                <div className="p-3">
 
                 <div
                   className="
@@ -4747,6 +4788,7 @@ const guardar =
 
                 </div>
 
+                </div>
               </div>
 
 
@@ -4757,28 +4799,24 @@ const guardar =
 
               <div
                 className="
-                  border
-                  border-gray-300
-                  rounded-lg
-                  overflow-hidden
+                  h-full
                   min-w-0
+                  overflow-hidden
+                  rounded-lg
+                  border-2
+                  border-slate-400
+                  bg-white
                 "
               >
                 <div
-                  className="
-                    bg-slate-800
-                    text-white
-                    px-3
-                    py-2
-                    text-xs
-                    font-semibold
-                    flex
-                    items-center
-                    gap-2
-                  "
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
+                  style={{
+                    backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                    color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                  }}
                 >
                   <i className="fas fa-file-invoice-dollar"></i>
-
                   Información Financiera
                 </div>
 
@@ -5142,28 +5180,24 @@ const guardar =
 
               <div
                 className="
-                  border
-                  border-gray-300
-                  rounded-lg
-                  overflow-hidden
+                  h-full
                   min-w-0
+                  overflow-hidden
+                  rounded-lg
+                  border-2
+                  border-slate-400
+                  bg-white
                 "
               >
                 <div
-                  className="
-                    bg-slate-800
-                    text-white
-                    px-3
-                    py-2
-                    text-xs
-                    font-semibold
-                    flex
-                    items-center
-                    gap-2
-                  "
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
+                  style={{
+                    backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                    color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderColor: ESTILO_SECCIONES_SECUNDARIAS.borde,
+                  }}
                 >
                   <i className="fas fa-road"></i>
-
                   Verificación Inicial RUNT
                 </div>
 
