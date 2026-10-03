@@ -14,9 +14,8 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+import { FileSignature } from 'lucide-react'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 
 // ============================================================
 // CONSTANTES
@@ -897,17 +896,6 @@ export default function InscripcionesPage() {
       ]
     )
 
-  const usuarioActual =
-    useMemo(
-      () =>
-        obtenerNombreUsuario(
-          user
-        ),
-      [
-        user,
-      ]
-    )
-
   // ==========================================================
   // CONSULTAR
   // ==========================================================
@@ -1461,204 +1449,19 @@ export default function InscripcionesPage() {
           border-gray-200
           shadow-lg
           rounded-lg
-          p-4
-          md:p-6
+          overflow-hidden
         "
       >
 
-        {/* ==================================================
-            ENCABEZADO
-        ================================================== */}
+        <EncabezadoModulo
+          titulo="Inscripciones"
+          subtitulo="Consulte matrículas, historial del aprendiz y estado de los procesos externos."
+          icono={FileSignature}
+          rutaRegreso="/admin"
+          textoRegreso="Regresar"
+        />
 
-        <div
-          className="
-            border
-            border-gray-500
-            rounded-xl
-            px-4
-            py-3
-            mb-3
-            bg-white
-          "
-        >
-
-
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-3
-            "
-          >
-
-            <div>
-
-              <p
-                className="
-                  text-[9px]
-                  uppercase
-                  tracking-wider
-                  font-bold
-                  text-gray-500
-                "
-              >
-                Administración
-              </p>
-
-              <h1
-                className="
-                  mt-0.5
-                  text-xl
-                  md:text-2xl
-                  font-black
-                  text-[var(--primary)]
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-file-signature"></i>
-
-                Inscripciones
-              </h1>
-
-              <p
-                className="
-                  mt-0.5
-                  text-[10px]
-                  text-gray-500
-                "
-              >
-                Consulte matrículas, historial del aprendiz y estado de los procesos externos.
-              </p>
-
-            </div>
-
-            <div
-              className="
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-
-
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin'
-                  )
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-arrow-left"></i>
-
-                Menú Administrativo
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  hover:bg-[var(--danger-dark)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-sign-out-alt"></i>
-
-                Cerrar Sesión
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* ==================================================
-            USUARIO
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-gray-500
-            rounded-lg
-            bg-gray-50
-            px-3
-            py-2
-            mb-3
-          "
-        >
-
-          <div
-            className="
-              flex
-              flex-wrap
-              justify-between
-              gap-2
-            "
-          >
-
-            <span>
-              Usuario:{' '}
-
-              <strong>
-                {usuarioActual ||
-                  '-'}
-              </strong>
-
-              {user?.rol && (
-                <>
-                  {' '}
-                  ({user.rol})
-                </>
-              )}
-            </span>
-
-            {(user?.nombreEmpresa ||
-              user?.nombre_empresa) && (
-              <span>
-                CEA:{' '}
-
-                <strong>
-                  {user.nombreEmpresa ||
-                    user.nombre_empresa}
-                </strong>
-              </span>
-            )}
-
-          </div>
-
-        </div>
+        <div className="p-4 md:p-6">
 
         {/* ==================================================
             ERROR
@@ -1728,7 +1531,7 @@ export default function InscripcionesPage() {
                 w-full
                 h-9
                 border
-                border-gray-300
+                border-[#A9BDCC]
                 rounded-lg
                 pl-9
                 pr-3
@@ -1758,7 +1561,7 @@ export default function InscripcionesPage() {
                 w-full
                 h-9
                 border
-                border-gray-300
+                border-[#A9BDCC]
                 rounded-lg
                 px-2
                 text-xs
@@ -1783,7 +1586,7 @@ export default function InscripcionesPage() {
                 w-full
                 h-9
                 border
-                border-gray-300
+                border-[#A9BDCC]
                 rounded-lg
                 px-2
                 text-xs
@@ -3386,6 +3189,8 @@ export default function InscripcionesPage() {
 
         </div>
       )}
+
+        </div>
 
     </div>
   )
