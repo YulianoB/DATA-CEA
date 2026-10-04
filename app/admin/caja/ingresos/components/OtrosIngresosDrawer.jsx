@@ -1903,7 +1903,7 @@ function imprimirIngresoHistorico(
             ),
 
           naturaleza:
-            formConcepto.naturaleza,
+            'INGRESO',
 
           requiere_aprendiz:
             formConcepto.requiere_aprendiz,
@@ -2404,8 +2404,10 @@ function imprimirIngresoHistorico(
                               value,
 
                             descripcion:
-                              conceptoNuevo?.nombre ||
-                              actual.descripcion,
+                              mayusculas(
+                                conceptoNuevo?.descripcion ||
+                                ''
+                              ),
 
                             categoria:
                               esRefuerzo
@@ -3241,26 +3243,10 @@ function imprimirIngresoHistorico(
                         }
                       />
 
-                      <CampoSelect
+                      <CampoInput
                         label="Naturaleza"
-                        value={
-                          formConcepto.naturaleza
-                        }
-                        onChange={
-                          value =>
-                            setFormConcepto(
-                              actual => ({
-                                ...actual,
-                                naturaleza:
-                                  value,
-                              })
-                            )
-                        }
-                        options={[
-                          { value: 'INGRESO', label: 'INGRESO' },
-                          { value: 'EGRESO', label: 'EGRESO' },
-                          { value: 'AMBOS', label: 'AMBOS' },
-                        ]}
+                        value="INGRESO"
+                        disabled={true}
                       />
 
                       <label
