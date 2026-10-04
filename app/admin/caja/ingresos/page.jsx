@@ -12,9 +12,13 @@ import {
   useRouter,
 } from 'next/navigation'
 
+import { HandCoins, RefreshCw } from 'lucide-react'
+
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+  BotonSecundario,
+  ESTILO_CONTENEDORES,
+} from '@/components/admin/EstiloModulo'
 
 import OtrosIngresosDrawer
   from './components/OtrosIngresosDrawer'
@@ -2941,249 +2945,41 @@ const ingresosLibresFiltrados =
       "
     >
       <div
-        className="
-          max-w-7xl
-          mx-auto
-          bg-white
-          border
-          border-gray-200
-          rounded-xl
-          shadow-lg
-          p-4
-          md:p-6
-        "
+        className="max-w-7xl mx-auto overflow-hidden"
+        style={{
+          backgroundColor: ESTILO_CONTENEDORES.fondo,
+          border: `${ESTILO_CONTENEDORES.grosorBorde}px solid ${ESTILO_CONTENEDORES.borde}`,
+          borderRadius: `${ESTILO_CONTENEDORES.radio}px`,
+          boxShadow: ESTILO_CONTENEDORES.sombra,
+        }}
       >
 
-        {/* ==================================================
-            HEADER
-        ================================================== */}
+        <EncabezadoModulo
+          titulo="Registrar Ingresos"
+          subtitulo="Pagos, abonos, refuerzos, exámenes médicos y otros conceptos."
+          icono={HandCoins}
+          rutaRegreso="/admin/caja"
+          textoRegreso="Volver a Caja"
+        />
 
-        <div
-          className="
-            border
-            border-gray-400
-            rounded-xl
-            p-4
-            mb-4
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-4
-            "
+        <div className="flex justify-end px-4 pt-3 md:px-6">
+          <BotonSecundario
+            type="button"
+            onClick={async () => {
+              await cargarTodo()
+
+              if (tipoConsulta !== 'OBLIGACIONES') {
+                await cargarIngresosLibres()
+              }
+            }}
+            disabled={cargando}
           >
-            <div>
-              <p
-                className="
-                  text-[10px]
-                  uppercase
-                  tracking-wide
-                  font-bold
-                  text-gray-500
-                "
-              >
-                Caja · Ingresos
-              </p>
-
-              <h1
-                className="
-                  text-2xl
-                  font-black
-                  text-[var(--primary)]
-                  mt-1
-                "
-              >
-                <i className="fas fa-hand-holding-dollar mr-2"></i>
-
-                Registrar Ingresos
-              </h1>
-
-              <p
-                className="
-                  text-xs
-                  text-gray-500
-                  mt-1
-                "
-              >
-                Pagos, abonos, refuerzos, exámenes médicos y otros conceptos.
-              </p>
-            </div>
-
-            <div
-              className="
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-              <button
-                type="button"
-                onClick={
-                  async () => {
-                    await cargarTodo()
-
-                    if (
-                      tipoConsulta !==
-                      'OBLIGACIONES'
-                    ) {
-                      await cargarIngresosLibres()
-                    }
-                  }
-                }
-                disabled={
-                  cargando
-                }
-                className="
-                  border
-                  border-gray-300
-                  bg-white
-                  hover:bg-gray-100
-                  text-gray-700
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i
-                  className={`
-                    fas
-                    fa-sync-alt
-                    mr-2
-                    ${
-                      cargando
-                        ? 'fa-spin'
-                        : ''
-                    }
-                  `}
-                ></i>
-
-                Actualizar
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin/caja'
-                  )
-                }
-                className="
-                  border
-                  border-gray-300
-                  bg-white
-                  hover:bg-gray-100
-                  text-gray-700
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-arrow-left mr-2"></i>
-
-                Volver a Caja
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin'
-                  )
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-home mr-2"></i>
-
-                Menú Administrativo
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-sign-out-alt mr-2"></i>
-
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
+            <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
+            Actualizar
+          </BotonSecundario>
         </div>
 
-        {/* ==================================================
-            EMPRESA
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-gray-300
-            bg-gray-50
-            rounded-xl
-            p-3
-            mb-4
-            text-xs
-            flex
-            flex-col
-            md:flex-row
-            md:justify-between
-            gap-1
-          "
-        >
-          <span>
-            Usuario:{' '}
-
-            <strong>
-              {usuarioOperacion ||
-                '-'}
-            </strong>
-          </span>
-
-          <span>
-            CEA:{' '}
-
-            <strong>
-              {empresaNombre ||
-                '-'}
-            </strong>
-
-            {' · '}
-
-            NIT{' '}
-
-            <strong>
-              {nit ||
-                '-'}
-            </strong>
-          </span>
-        </div>
-
+        <div className="px-4 pb-4 pt-3 md:px-6 md:pb-6">
         {/* ==================================================
             MENSAJES
         ================================================== */}
@@ -4643,6 +4439,8 @@ const ingresosLibresFiltrados =
                       </div>
                     )}
                     </div>
+
+        </div>
 
       {/* ====================================================
           DRAWER NUEVA OBLIGACIÓN
