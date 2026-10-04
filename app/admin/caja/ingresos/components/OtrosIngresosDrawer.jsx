@@ -3325,32 +3325,14 @@ function imprimirIngresoHistorico(
       <div className="p-4">
         <div
           className="
-            px-3
-            py-2
-            text-[10px]
-            font-bold
-          "
-          style={{
-            backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
-            color: ESTILO_SECCIONES_SECUNDARIAS.texto,
-            borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
-          }}
-        >
-          <i className="fas fa-search mr-2"></i>
-          Filtros del historial
-        </div>
-
-        <div
-          className="
             grid
             grid-cols-1
             md:grid-cols-12
             gap-2
             items-end
             border
-            border-t-0
             border-slate-300
-            rounded-b-xl
+            rounded-xl
             p-3
             mb-4
           "
