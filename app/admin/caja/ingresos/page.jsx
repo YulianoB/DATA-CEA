@@ -4298,11 +4298,10 @@ const ingresosLibresFiltrados =
                             </tbody>
                           </table>
                         </div>
-                      </div>
+                      </MarcoTabla>
                     )}
-                    </div>
 
-        </MarcoTabla>
+        </div>
 
       {/* ====================================================
           DRAWER NUEVA OBLIGACIÓN
