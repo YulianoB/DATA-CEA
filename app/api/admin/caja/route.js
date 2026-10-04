@@ -2423,6 +2423,138 @@ async function consultarCuentas({
   estado = '',
   convenioId = null,
 }) {
+  const termino =
+    limpiarBusqueda(
+      busqueda
+    )
+
+  // =======================================================
+  // RESOLVER CUENTAS DESDE APRENDICES
+  // =======================================================
+  //
+  // cuentas_aprendiz no almacena nombres ni apellidos.
+  // Cuando existe un término de búsqueda, localizamos primero
+  // las matrículas coincidentes y luego sus cuentas mediante
+  // cuentas_aprendiz_detalle.
+  //
+  // =======================================================
+
+  let cuentaIdsAprendiz =
+    []
+
+  if (
+    termino
+  ) {
+    const {
+      data:
+        aprendicesCoincidentes,
+
+      error:
+        errorAprendices,
+    } =
+      await supabase
+        .from(
+          'aprendices'
+        )
+        .select(
+          'id'
+        )
+        .or(
+          [
+            `documento.ilike.%${termino}%`,
+            `nombres.ilike.%${termino}%`,
+            `apellidos.ilike.%${termino}%`,
+            `consecutivo.ilike.%${termino}%`,
+          ].join(
+            ','
+          )
+        )
+        .limit(
+          LIMITE_CONSULTA
+        )
+
+    if (
+      errorAprendices
+    ) {
+      throw new Error(
+        `No fue posible buscar aprendices para Caja: ${errorAprendices.message}`
+      )
+    }
+
+    const matriculaIds =
+      (
+        aprendicesCoincidentes ||
+        []
+      )
+        .map(
+          item =>
+            toInt(
+              item.id
+            )
+        )
+        .filter(
+          Boolean
+        )
+
+    if (
+      matriculaIds.length >
+      0
+    ) {
+      const {
+        data:
+          detallesCoincidentes,
+
+        error:
+          errorDetalles,
+      } =
+        await supabase
+          .from(
+            'cuentas_aprendiz_detalle'
+          )
+          .select(
+            'cuenta_id'
+          )
+          .in(
+            'matricula_id',
+            matriculaIds
+          )
+          .eq(
+            'estado',
+            'ACTIVO'
+          )
+          .limit(
+            LIMITE_CONSULTA
+          )
+
+      if (
+        errorDetalles
+      ) {
+        throw new Error(
+          `No fue posible relacionar el aprendiz con su cuenta: ${errorDetalles.message}`
+        )
+      }
+
+      cuentaIdsAprendiz =
+        [
+          ...new Set(
+            (
+              detallesCoincidentes ||
+              []
+            )
+              .map(
+                item =>
+                  toInt(
+                    item.cuenta_id
+                  )
+              )
+              .filter(
+                Boolean
+              )
+          ),
+        ]
+    }
+  }
+
   let consulta =
     supabase
       .from(
@@ -2485,20 +2617,29 @@ async function consultarCuentas({
       )
   }
 
-  const termino =
-    limpiarBusqueda(
-      busqueda
-    )
-
   if (
     termino
   ) {
+    const filtros =
+      [
+        `documento.ilike.%${termino}%`,
+        `descripcion.ilike.%${termino}%`,
+      ]
+
+    if (
+      cuentaIdsAprendiz.length >
+      0
+    ) {
+      filtros.push(
+        `id.in.(${cuentaIdsAprendiz.join(
+          ','
+        )})`
+      )
+    }
+
     consulta =
       consulta.or(
-        [
-          `documento.ilike.%${termino}%`,
-          `descripcion.ilike.%${termino}%`,
-        ].join(
+        filtros.join(
           ','
         )
       )
@@ -2536,19 +2677,14 @@ async function consultarCuentas({
     )
 
   // =======================================================
-  // BÚSQUEDA COMPLEMENTARIA
-  // =======================================================
-  //
-  // La cabecera no contiene nombres/consecutivos/categorías.
-  // Por eso filtramos también sobre la información enriquecida.
-  //
+  // VALIDACIÓN COMPLEMENTARIA SOBRE DATOS ENRIQUECIDOS
   // =======================================================
 
   if (
     termino
   ) {
-    const terminoMayusculas =
-      mayusculas(
+    const terminoNormalizado =
+      normalizarComparacion(
         termino
       )
 
@@ -2560,31 +2696,32 @@ async function consultarCuentas({
             {}
 
           const textoBusqueda =
-            [
-              cuenta.documento,
-              cuenta.descripcion,
-              aprendiz.nombres,
-              aprendiz.apellidos,
-              aprendiz.nombre_completo,
-              cuenta.consecutivo_matricula,
-              (
-                cuenta.categorias ||
-                []
-              ).join(
-                ' '
-              ),
-              cuenta.convenio?.nombre,
-            ]
-              .filter(
-                Boolean
-              )
-              .join(
-                ' '
-              )
-              .toUpperCase()
+            normalizarComparacion(
+              [
+                cuenta.documento,
+                cuenta.descripcion,
+                aprendiz.nombres,
+                aprendiz.apellidos,
+                aprendiz.nombre_completo,
+                cuenta.consecutivo_matricula,
+                (
+                  cuenta.categorias ||
+                  []
+                ).join(
+                  ' '
+                ),
+                cuenta.convenio?.nombre,
+              ]
+                .filter(
+                  Boolean
+                )
+                .join(
+                  ' '
+                )
+            )
 
           return textoBusqueda.includes(
-            terminoMayusculas
+            terminoNormalizado
           )
         }
       )
