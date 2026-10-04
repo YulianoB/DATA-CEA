@@ -2581,11 +2581,11 @@ const ingresosLibresFiltrados =
               padding: 0;
               font-family: Arial, Helvetica, sans-serif;
               color: #000;
-              background: #fff;
+              background: #E5E7EB;
             }
 
             body {
-              padding: 4mm;
+              padding: 18px 0 32px;
             }
 
             .center {
@@ -2593,46 +2593,83 @@ const ingresosLibresFiltrados =
             }
 
             .toolbar {
+              width: min(216mm, calc(100vw - 32px));
+              margin: 0 auto 12px;
               display: flex;
               justify-content: flex-end;
               gap: 8px;
-              margin-bottom: 10px;
             }
 
             .toolbar button {
-              border: 1px solid #444;
-              background: #fff;
-              padding: 7px 12px;
-              border-radius: 5px;
+              min-height: 34px;
+              padding: 7px 13px;
+              border-radius: 8px;
               cursor: pointer;
               font-size: 12px;
-              font-weight: bold;
+              font-weight: 700;
+              transition:
+                background-color 0.15s ease,
+                border-color 0.15s ease;
+            }
+
+            .btn-print {
+              background: #2F6F89;
+              border: 1px solid #2F6F89;
+              color: #FFFFFF;
+            }
+
+            .btn-print:hover {
+              background: #24586D;
+              border-color: #24586D;
+            }
+
+            .btn-close {
+              background: #FFFFFF;
+              border: 1px solid #CBD5E1;
+              color: #475569;
+            }
+
+            .btn-close:hover {
+              background: #F1F5F9;
             }
 
             .grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 3mm;
-              align-items: start;
+              display: flex;
+              flex-direction: column;
+              width: 216mm;
+              height: 279mm;
+              margin: 0 auto;
+              gap: 0;
+              background: #FFFFFF;
+              box-shadow: 0 4px 18px rgba(15, 23, 42, 0.18);
             }
 
             .receipt {
               width: 100%;
               min-width: 0;
+              height: 132mm;
+              padding: 6mm 7mm;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+
+            .receipt + .receipt {
+              border-top: 1px dashed #777;
             }
 
             table {
               width: 100%;
               border-collapse: collapse;
               table-layout: fixed;
-              font-size: 7.4px;
-              line-height: 1.12;
+              font-size: 8px;
+              line-height: 1.15;
             }
 
             th,
             td {
               border: 1px solid #000;
-              padding: 2px 3px;
+              padding: 3px 4px;
               vertical-align: middle;
               overflow-wrap: anywhere;
             }
@@ -2644,18 +2681,18 @@ const ingresosLibresFiltrados =
 
             .head {
               text-align: center;
-              padding: 8px 4px;
+              padding: 6px 4px;
             }
 
             .title {
-              font-size: 18px;
+              font-size: 14px;
               font-weight: 900;
               line-height: 1.2;
             }
 
             .company {
               margin-top: 1px;
-              font-size: 10px;
+              font-size: 9px;
               font-weight: 700;
             }
 
@@ -2665,13 +2702,13 @@ const ingresosLibresFiltrados =
             }
 
             .section {
-            text-align: center;
-            font-weight: 900;
-            font-size: 9px;
-            padding: 5px 3px;
-            line-height: 1.2;
-            background: #f3f4f6;
-          }
+              text-align: center;
+              font-weight: 900;
+              font-size: 8.5px;
+              padding: 4px 3px;
+              line-height: 1.2;
+              background: #f3f4f6;
+            }
 
             .money {
               text-align: right;
@@ -2683,11 +2720,11 @@ const ingresosLibresFiltrados =
             }
 
             .signature {
-              height: 28px;
+              height: 34px;
               text-align: center;
               vertical-align: bottom;
-              padding-bottom: 2px;
-              font-size: 6.8px;
+              padding-bottom: 3px;
+              font-size: 7px;
             }
 
             @page {
@@ -2698,13 +2735,14 @@ const ingresosLibresFiltrados =
             @media print {
               html,
               body {
-                width: 8.5in;
-                min-height: 11in;
-                margin: 0;
-                padding: 0;
+                background: #FFFFFF;
               }
 
               body {
+                width: auto;
+                min-height: auto;
+                margin: 0;
+                padding: 0;
                 overflow: visible;
               }
 
@@ -2713,25 +2751,28 @@ const ingresosLibresFiltrados =
               }
 
               .grid {
-                display: grid;
-
-                grid-template-columns:
-                  minmax(0, 1fr)
-                  minmax(0, 1fr);
-
-                gap: 3mm;
-
-                align-items: stretch;
-
+                display: flex;
+                flex-direction: column;
                 width: 100%;
-
-                max-width: 100%;
+                height: auto;
+                margin: 0;
+                gap: 0;
+                box-shadow: none;
               }
 
               .receipt {
                 width: 100%;
-                height: 100%;
-                min-width: 0;
+                height: 132mm;
+                padding: 5mm 6mm;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                break-inside: avoid;
+                page-break-inside: avoid;
+              }
+
+              .receipt + .receipt {
+                border-top: 1px dashed #777;
               }
             }
           </style>
@@ -2739,11 +2780,17 @@ const ingresosLibresFiltrados =
 
         <body>
           <div class="toolbar">
-            <button onclick="window.print()">
+            <button
+              class="btn-print"
+              onclick="window.print()"
+            >
               IMPRIMIR
             </button>
 
-            <button onclick="window.close()">
+            <button
+              class="btn-close"
+              onclick="window.close()"
+            >
               CERRAR
             </button>
           </div>
