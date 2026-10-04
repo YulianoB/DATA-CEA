@@ -87,7 +87,7 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
       type="button"
       onClick={onClick}
       disabled={deshabilitada}
-      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? (descripcion ? 'min-h-[100px] gap-1.5 px-3 py-2.5' : 'h-[78px] gap-1 px-2 py-2') : 'min-h-[112px] gap-2 p-3'}`}
+      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? (descripcion ? 'min-h-[90px] gap-1 px-3 py-2' : 'h-[78px] gap-1 px-2 py-2') : 'min-h-[112px] gap-2 p-3'}`}
       style={{
         backgroundColor: ESTILO_TARJETA_MENU.fondo,
         borderColor: ESTILO_TARJETA_MENU.borde,
