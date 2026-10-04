@@ -183,7 +183,7 @@ export default function MenuNavegacion({
   anchoContenido,
   contenedorTarjetas = false,
   mostrarPie = false,
-  textoPie = 'DATA CEA · Sistema de Gestión Integral — © 2026 Yuliano Armando Buitrago López · Todos los derechos reservados',
+  textoPie = 'DATA CEA · Sistema de Registro y Control de Datos para Centros de Enseñanza Automovilística · © 2026 Yuliano Armando Buitrago López. Todos los derechos reservados.',
 }) {
   const router = useRouter()
   const [user, setUser] = useState(null)
