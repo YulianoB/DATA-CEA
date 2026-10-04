@@ -64,6 +64,7 @@ export default function AdminPage() {
       mostrarCerrarSesion
       anchoContenido="1180px"
       contenedorTarjetas
+      mostrarPie
     />
   )
 }
