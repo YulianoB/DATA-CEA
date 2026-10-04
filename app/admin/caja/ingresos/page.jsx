@@ -16,12 +16,14 @@ import { HandCoins, RefreshCw } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import {
+  BotonActualizar,
   BotonAgregar,
-  BotonSecundario,
-  ESTILO_CELDAS_TABLA,
+  BotonVerDetalle,
   ESTILO_CONTENEDORES,
   ESTILO_ENCABEZADO_TABLA,
   ESTILO_SECCIONES,
+  ESTILO_TARJETAS,
+  MarcoTabla,
 } from '@/components/admin/EstiloModulo'
 
 import OtrosIngresosDrawer
@@ -666,79 +668,30 @@ function TarjetaResumen({
 }) {
   return (
     <div
-      className="
-        bg-white
-        border
-        border-gray-200
-        rounded-xl
-        p-4
-        shadow-sm
-      "
+      className="flex min-h-[82px] items-center justify-between gap-3 px-3 py-2.5"
+      style={{
+        backgroundColor: ESTILO_TARJETAS.fondo,
+        border: `1px solid #B8C6D1`,
+        borderRadius: `${ESTILO_TARJETAS.radio}px`,
+        boxShadow: '0 2px 7px rgba(15, 23, 42, 0.09)',
+      }}
     >
-      <div
-        className="
-          flex
-          justify-between
-          items-start
-          gap-3
-        "
-      >
-        <div>
-          <p
-            className="
-              text-[9px]
-              uppercase
-              tracking-wide
-              font-bold
-              text-gray-500
-            "
-          >
-            {titulo}
+      <div className="min-w-0">
+        <p className="text-[9px] font-bold uppercase tracking-wide text-gray-500">
+          {titulo}
+        </p>
+        <p className="mt-0.5 text-lg font-black text-gray-900">
+          {valor}
+        </p>
+        {subtitulo && (
+          <p className="mt-0.5 text-[9px] text-gray-500">
+            {subtitulo}
           </p>
+        )}
+      </div>
 
-          <p
-            className="
-              text-xl
-              md:text-2xl
-              font-black
-              text-gray-900
-              mt-1
-            "
-          >
-            {valor}
-          </p>
-
-          {subtitulo && (
-            <p
-              className="
-                text-[10px]
-                text-gray-500
-                mt-1
-              "
-            >
-              {subtitulo}
-            </p>
-          )}
-        </div>
-
-        <div
-          className="
-            w-10
-            h-10
-            rounded-xl
-            bg-blue-50
-            text-blue-700
-            flex
-            items-center
-            justify-center
-          "
-        >
-          <i
-            className={
-              icono
-            }
-          ></i>
-        </div>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+        <i className={icono}></i>
       </div>
     </div>
   )
@@ -3013,18 +2966,38 @@ const ingresosLibresFiltrados =
             RESUMEN
         ================================================== */}
 
-        <div
+        <section
+          className="mb-4 rounded-xl border bg-white px-4 pb-4 pt-3"
+          style={{
+            borderColor: '#B8C6D1',
+            boxShadow: '0 6px 18px rgba(15, 23, 42, 0.10)',
+          }}
+        >
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-[0.06em]" style={{ color: '#3B617D' }}>
+                Resumen de ingresos del día
+              </h2>
+              <p className="mt-0.5 text-[9px] text-gray-500">
+                Distribución de los ingresos registrados en la jornada.
+              </p>
+            </div>
+            <span className="text-[9px] font-semibold text-gray-500">
+              {hoyColombia()}
+            </span>
+          </div>
+
+          <div
           className="
             grid
             grid-cols-1
             sm:grid-cols-2
             xl:grid-cols-4
             gap-3
-            mb-4
           "
         >
           <TarjetaResumen
-            titulo="Ingresos Hoy"
+            titulo="Ingresos"
             valor={
               formatearMoneda(
                 resumenDia
@@ -3040,41 +3013,39 @@ const ingresosLibresFiltrados =
           />
 
           <TarjetaResumen
-            titulo="Cursos Hoy"
+            titulo="Cursos"
             valor={
               formatearMoneda(
                 resumenDia
                   ?.total_cursos
               )
             }
-            subtitulo="Ingresos recibidos hoy"
             icono="fas fa-car"
           />
 
           <TarjetaResumen
-            titulo="Refuerzos Hoy"
+            titulo="Refuerzos"
             valor={
               formatearMoneda(
                 resumenDia
                   ?.total_refuerzos
               )
             }
-            subtitulo="Ingresos recibidos hoy"
             icono="fas fa-road"
           />
 
           <TarjetaResumen
-            titulo="Exámenes Médicos Hoy"
+            titulo="Exámenes Médicos"
             valor={
               formatearMoneda(
                 resumenDia
                   ?.total_examenes_medicos
               )
             }
-            subtitulo="Ingresos recibidos hoy"
             icono="fas fa-stethoscope"
           />
         </div>
+        </section>
 
        {/* ==================================================
             FILTROS
@@ -3086,7 +3057,7 @@ const ingresosLibresFiltrados =
             grid
             grid-cols-1
             sm:grid-cols-2
-            lg:grid-cols-6
+            lg:grid-cols-12
             gap-2
             items-center
           "
@@ -3136,7 +3107,7 @@ const ingresosLibresFiltrados =
                   }
                 }
               }
-              className="
+              className="lg:col-span-3 
                 border
                 border-gray-300
                 rounded-lg
@@ -3164,7 +3135,7 @@ const ingresosLibresFiltrados =
                 BÚSQUEDA
             ============================================== */}
 
-            <div className="relative">
+            <div className="relative lg:col-span-3">
               <i
                 className="
                   fas
@@ -3224,7 +3195,7 @@ const ingresosLibresFiltrados =
                       e.target.value
                     )
                 }
-                className="
+                className="lg:col-span-1 
                   border
                   border-gray-300
                   rounded-lg
@@ -3274,7 +3245,7 @@ const ingresosLibresFiltrados =
                   items-center
                 "
               >
-                <i className="fas fa-receipt mr-2 text-blue-600"></i>
+                <i className="lg:col-span-2 fas fa-receipt mr-2 text-blue-600"></i>
 
                 Recibos de otros ingresos
               </div>
@@ -3294,7 +3265,7 @@ const ingresosLibresFiltrados =
                     e.target.value
                   )
               }
-              className="
+              className="lg:col-span-2 
                 border
                 border-gray-300
                 rounded-lg
@@ -3341,7 +3312,7 @@ const ingresosLibresFiltrados =
                     e.target.value
                   )
               }
-              className="
+              className="lg:col-span-2 
                 border
                 border-gray-300
                 rounded-lg
@@ -3370,7 +3341,7 @@ const ingresosLibresFiltrados =
               )}
             </select>
 
-            <BotonSecundario
+            <BotonActualizar
               type="button"
               onClick={async () => {
                 await cargarTodo()
@@ -3380,11 +3351,11 @@ const ingresosLibresFiltrados =
                 }
               }}
               disabled={cargando}
-              className="w-full justify-center"
+              className="w-full justify-center lg:col-span-1 !px-2"
             >
               <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
               Actualizar
-            </BotonSecundario>
+            </BotonActualizar>
         </div>
         {/* ==================================================
     TABLA
@@ -3392,17 +3363,7 @@ const ingresosLibresFiltrados =
 
 {tipoConsulta ===
   'OBLIGACIONES' ? (
-  <div
-    className="
-      border
-      rounded-xl
-      overflow-hidden
-    "
-    style={{
-      borderColor: ESTILO_CELDAS_TABLA.borde,
-      backgroundColor: ESTILO_CELDAS_TABLA.fondo,
-    }}
-  >
+  <MarcoTabla>
     <div
       className="
         px-4
@@ -3771,8 +3732,7 @@ const ingresosLibresFiltrados =
                         Registrar Pago
                       </button>
                     ) : (
-                      <button
-                        type="button"
+                      <BotonVerDetalle
                         onClick={() =>
                           abrirDetalleCuenta(
                             cuenta
@@ -3781,22 +3741,11 @@ const ingresosLibresFiltrados =
                         disabled={
                           cargandoDetalle
                         }
-                        className="
-                          bg-blue-600
-                          hover:bg-blue-700
-                          disabled:opacity-50
-                          text-white
-                          rounded-lg
-                          px-3
-                          py-1.5
-                          text-[10px]
-                          font-bold
-                        "
+                        className="!px-3 !py-1.5 !text-[10px]"
                       >
-                        <i className="fas fa-eye mr-1"></i>
-
+                        <i className="fas fa-eye"></i>
                         Ver Detalle
-                      </button>
+                      </BotonVerDetalle>
                     )}
                   </td>
                 </tr>
@@ -3806,19 +3755,9 @@ const ingresosLibresFiltrados =
         </tbody>
       </table>
     </div>
-  </div>
+  </MarcoTabla>
 ) : (
-  <div
-    className="
-      border
-      rounded-xl
-      overflow-hidden
-    "
-    style={{
-      borderColor: ESTILO_CELDAS_TABLA.borde,
-      backgroundColor: ESTILO_CELDAS_TABLA.fondo,
-    }}
-  >
+  <MarcoTabla>
     {/* ==============================================
         ENCABEZADO OTROS INGRESOS / REFUERZOS
     ============================================== */}
@@ -4363,7 +4302,7 @@ const ingresosLibresFiltrados =
                     )}
                     </div>
 
-        </div>
+        </MarcoTabla>
 
       {/* ====================================================
           DRAWER NUEVA OBLIGACIÓN
