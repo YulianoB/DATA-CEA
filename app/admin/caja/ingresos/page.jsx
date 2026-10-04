@@ -16,8 +16,12 @@ import { HandCoins, RefreshCw } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import {
+  BotonAgregar,
   BotonSecundario,
+  ESTILO_CELDAS_TABLA,
   ESTILO_CONTENEDORES,
+  ESTILO_ENCABEZADO_TABLA,
+  ESTILO_SECCIONES,
 } from '@/components/admin/EstiloModulo'
 
 import OtrosIngresosDrawer
@@ -2962,23 +2966,6 @@ const ingresosLibresFiltrados =
           textoRegreso="Volver a Caja"
         />
 
-        <div className="flex justify-end px-4 pt-3 md:px-6">
-          <BotonSecundario
-            type="button"
-            onClick={async () => {
-              await cargarTodo()
-
-              if (tipoConsulta !== 'OBLIGACIONES') {
-                await cargarIngresosLibres()
-              }
-            }}
-            disabled={cargando}
-          >
-            <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
-            Actualizar
-          </BotonSecundario>
-        </div>
-
         <div className="px-4 pb-4 pt-3 md:px-6 md:pb-6">
         {/* ==================================================
             MENSAJES
@@ -3090,123 +3077,20 @@ const ingresosLibresFiltrados =
         </div>
 
        {/* ==================================================
-            OTROS INGRESOS
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-blue-200
-            bg-blue-50
-            rounded-xl
-            p-4
-            mb-4
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              sm:flex-row
-              sm:items-center
-              sm:justify-between
-              gap-3
-            "
-          >
-            <div>
-              <h2
-                className="
-                  text-sm
-                  font-black
-                  text-blue-900
-                "
-              >
-                <i className="fas fa-plus-circle mr-2"></i>
-
-                + Otros Ingresos
-              </h2>
-
-              <p
-                className="
-                  text-[10px]
-                  text-blue-700
-                  mt-1
-                "
-              >
-                Exámenes médicos, refuerzos, manejo defensivo,
-                pruebas u otros servicios.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                setDrawerOtrosIngresos(
-                  true
-                )
-              }
-              className="
-                shrink-0
-                bg-blue-600
-                hover:bg-blue-700
-                text-white
-                rounded-lg
-                px-4
-                py-2.5
-                text-[10px]
-                font-black
-              "
-            >
-              <i className="fas fa-plus mr-2"></i>
-
-              REGISTRAR INGRESO
-            </button>
-          </div>
-        </div>
-
-       {/* ==================================================
             FILTROS
         ================================================== */}
 
         <div
           className="
-            border
-            border-gray-300
-            rounded-xl
-            overflow-hidden
-            mb-4
+            mb-3
+            grid
+            grid-cols-1
+            sm:grid-cols-2
+            lg:grid-cols-6
+            gap-2
+            items-center
           "
         >
-          <div
-            className="
-              bg-slate-800
-              text-white
-              px-4
-              py-2.5
-            "
-          >
-            <span
-              className="
-                text-xs
-                font-bold
-              "
-            >
-              <i className="fas fa-filter mr-2"></i>
-
-              Filtros
-            </span>
-          </div>
-
-          <div
-            className="
-              p-3
-              grid
-              grid-cols-1
-              sm:grid-cols-2
-              lg:grid-cols-5
-              gap-2
-            "
-          >
             {/* ==============================================
                 TIPO DE CONSULTA
             ============================================== */}
@@ -3267,12 +3151,12 @@ const ingresosLibresFiltrados =
                 Obligaciones de aprendices
               </option>
 
-              <option value="OTROS_INGRESOS">
-                Otros ingresos
-              </option>
-
               <option value="REFUERZOS">
                 Refuerzos prácticos
+              </option>
+
+              <option value="OTROS_INGRESOS">
+                Otros ingresos
               </option>
             </select>
 
@@ -3485,7 +3369,22 @@ const ingresosLibresFiltrados =
                 )
               )}
             </select>
-          </div>
+
+            <BotonSecundario
+              type="button"
+              onClick={async () => {
+                await cargarTodo()
+
+                if (tipoConsulta !== 'OBLIGACIONES') {
+                  await cargarIngresosLibres()
+                }
+              }}
+              disabled={cargando}
+              className="w-full justify-center"
+            >
+              <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
+              Actualizar
+            </BotonSecundario>
         </div>
         {/* ==================================================
     TABLA
@@ -3496,15 +3395,16 @@ const ingresosLibresFiltrados =
   <div
     className="
       border
-      border-gray-300
       rounded-xl
       overflow-hidden
     "
+    style={{
+      borderColor: ESTILO_CELDAS_TABLA.borde,
+      backgroundColor: ESTILO_CELDAS_TABLA.fondo,
+    }}
   >
     <div
       className="
-        bg-slate-800
-        text-white
         px-4
         py-3
         flex
@@ -3512,6 +3412,10 @@ const ingresosLibresFiltrados =
         items-center
         gap-3
       "
+      style={{
+        backgroundColor: ESTILO_SECCIONES.fondo,
+        color: ESTILO_SECCIONES.texto,
+      }}
     >
       <div>
         <h2
@@ -3536,14 +3440,18 @@ const ingresosLibresFiltrados =
         </p>
       </div>
 
-      <span
-        className="
-          text-[10px]
-          text-gray-300
-        "
-      >
-        {cuentasFiltradas.length} registro(s)
-      </span>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px]" style={{ color: ESTILO_SECCIONES.subtitulo }}>
+          {cuentasFiltradas.length} registro(s)
+        </span>
+        <BotonAgregar
+          type="button"
+          onClick={() => setDrawerOtrosIngresos(true)}
+        >
+          <i className="fas fa-plus"></i>
+          Registrar Ingreso
+        </BotonAgregar>
+      </div>
     </div>
 
     <div className="overflow-x-auto">
@@ -3554,7 +3462,12 @@ const ingresosLibresFiltrados =
           border-collapse
         "
       >
-        <thead className="bg-gray-100">
+        <thead
+          style={{
+            backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo,
+            color: ESTILO_ENCABEZADO_TABLA.texto,
+          }}
+        >
           <tr>
             <th className="border p-2">
               Matrícula
@@ -3898,10 +3811,13 @@ const ingresosLibresFiltrados =
   <div
     className="
       border
-      border-gray-300
       rounded-xl
       overflow-hidden
     "
+    style={{
+      borderColor: ESTILO_CELDAS_TABLA.borde,
+      backgroundColor: ESTILO_CELDAS_TABLA.fondo,
+    }}
   >
     {/* ==============================================
         ENCABEZADO OTROS INGRESOS / REFUERZOS
@@ -3909,8 +3825,6 @@ const ingresosLibresFiltrados =
 
     <div
       className="
-        bg-slate-800
-        text-white
         px-4
         py-3
         flex
@@ -3918,6 +3832,10 @@ const ingresosLibresFiltrados =
         items-center
         gap-3
       "
+      style={{
+        backgroundColor: ESTILO_SECCIONES.fondo,
+        color: ESTILO_SECCIONES.texto,
+      }}
     >
       <div>
         <h2
@@ -3948,18 +3866,18 @@ const ingresosLibresFiltrados =
         </p>
       </div>
 
-      <span
-        className="
-          text-[10px]
-          text-gray-300
-        "
-      >
-        {
-          ingresosLibresFiltrados
-            .length
-        }{' '}
-        registro(s)
-      </span>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px]" style={{ color: ESTILO_SECCIONES.subtitulo }}>
+          {ingresosLibresFiltrados.length} registro(s)
+        </span>
+        <BotonAgregar
+          type="button"
+          onClick={() => setDrawerOtrosIngresos(true)}
+        >
+          <i className="fas fa-plus"></i>
+          Registrar Ingreso
+        </BotonAgregar>
+      </div>
     </div>
 
     {/* ==============================================
@@ -3974,7 +3892,12 @@ const ingresosLibresFiltrados =
           border-collapse
         "
       >
-        <thead className="bg-gray-100">
+        <thead
+          style={{
+            backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo,
+            color: ESTILO_ENCABEZADO_TABLA.texto,
+          }}
+        >
           <tr>
             <th className="border p-2">
               Fecha
