@@ -13,13 +13,24 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import { WalletCards, RefreshCw } from 'lucide-react'
+import Image from 'next/image'
+import {
+  ArrowLeft,
+  HandCoins,
+  Handshake,
+  LogOut,
+  RefreshCw,
+  WalletCards,
+} from 'lucide-react'
 
-import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { cerrarSesion } from '@/lib/auth/logout'
+import {
+  ESTILO_BOTONES_MENU,
+  ESTILO_MENU,
+  TarjetaNavegacion,
+} from '@/components/admin/MenuNavegacion'
 import {
   BotonSecundario,
-  ContenedorModulo,
-  TituloSeccion,
 } from '@/components/admin/EstiloModulo'
 
 // =========================================================
@@ -322,221 +333,6 @@ function TarjetaResumen({
         </div>
       </div>
     </div>
-  )
-}
-
-// =========================================================
-// TARJETA ACCESO
-// =========================================================
-
-function TarjetaAcceso({
-  titulo,
-  descripcion,
-  icono,
-  onClick,
-  color = 'azul',
-}) {
-  const estilos = {
-    azul: {
-      borde:
-        'border-blue-300',
-
-      fondo:
-        'bg-blue-50/80',
-
-      fondoIcono:
-        'bg-blue-100',
-
-      textoIcono:
-        'text-blue-700',
-
-      flecha:
-        'text-blue-500',
-
-      hover:
-        'hover:border-blue-500 hover:bg-blue-100/80 hover:shadow-md',
-    },
-
-    rojo: {
-      borde:
-        'border-red-300',
-
-      fondo:
-        'bg-red-50/80',
-
-      fondoIcono:
-        'bg-red-100',
-
-      textoIcono:
-        'text-red-700',
-
-      flecha:
-        'text-red-500',
-
-      hover:
-        'hover:border-red-500 hover:bg-red-100/80 hover:shadow-md',
-    },
-
-    gris: {
-      borde:
-        'border-slate-300',
-
-      fondo:
-        'bg-slate-50',
-
-      fondoIcono:
-        'bg-slate-200',
-
-      textoIcono:
-        'text-slate-700',
-
-      flecha:
-        'text-slate-500',
-
-      hover:
-        'hover:border-slate-500 hover:bg-slate-100 hover:shadow-md',
-    },
-
-    verde: {
-      borde:
-        'border-emerald-300',
-
-      fondo:
-        'bg-emerald-50/80',
-
-      fondoIcono:
-        'bg-emerald-100',
-
-      textoIcono:
-        'text-emerald-700',
-
-      flecha:
-        'text-emerald-500',
-
-      hover:
-        'hover:border-emerald-500 hover:bg-emerald-100/80 hover:shadow-md',
-    },
-  }
-
-  const estilo =
-    estilos[
-      color
-    ] ||
-    estilos.azul
-
-  return (
-    <button
-      type="button"
-      onClick={
-        onClick
-      }
-      className={`
-        group
-        w-full
-        min-h-[96px]
-        text-left
-        border
-        ${estilo.borde}
-        ${estilo.fondo}
-        ${estilo.hover}
-        rounded-xl
-        px-3
-        py-3
-        shadow-sm
-        transition-all
-        duration-200
-        flex
-        items-center
-        gap-3
-        cursor-pointer
-      `}
-    >
-      <div
-        className={`
-          shrink-0
-          w-12
-          h-12
-          rounded-xl
-          flex
-          items-center
-          justify-center
-          text-lg
-          ${estilo.fondoIcono}
-          ${estilo.textoIcono}
-          group-hover:scale-105
-          transition-transform
-        `}
-      >
-        <i
-          className={
-            icono
-          }
-        ></i>
-      </div>
-
-      <div
-        className="
-          flex-1
-          min-w-0
-        "
-      >
-        <h3
-          className="
-            text-xs
-            md:text-sm
-            font-black
-            text-gray-900
-            leading-tight
-          "
-        >
-          {titulo}
-        </h3>
-
-        <p
-          className="
-            mt-1
-            text-[10px]
-            leading-snug
-            text-gray-600
-          "
-        >
-          {descripcion}
-        </p>
-
-        <div
-          className="
-            mt-2
-            text-[9px]
-            font-bold
-            text-gray-500
-            group-hover:text-gray-800
-            transition
-          "
-        >
-          INGRESAR AL MÓDULO
-        </div>
-      </div>
-
-      <div
-        className={`
-          shrink-0
-          w-8
-          h-8
-          rounded-full
-          bg-white/80
-          border
-          border-white
-          flex
-          items-center
-          justify-center
-          ${estilo.flecha}
-          group-hover:translate-x-1
-          transition-transform
-        `}
-      >
-        <i className="fas fa-chevron-right text-xs"></i>
-      </div>
-    </button>
   )
 }
 
@@ -867,306 +663,218 @@ export default function CajaPage() {
   // RENDER
   // =======================================================
 
+  const estiloBotonMenu = (tipo) => {
+    const estilo = ESTILO_BOTONES_MENU[tipo]
+    return {
+      backgroundColor: estilo.fondo,
+      color: estilo.texto,
+      borderColor: estilo.borde,
+      transition: ESTILO_BOTONES_MENU.transicion,
+    }
+  }
+
+  const hoverBotonMenu = (event, tipo, activo) => {
+    const estilo = ESTILO_BOTONES_MENU[tipo]
+    event.currentTarget.style.backgroundColor = activo ? estilo.hover : estilo.fondo
+    event.currentTarget.style.transform = activo
+      ? ESTILO_BOTONES_MENU.movimientoHover
+      : 'translateY(0)'
+  }
+
   return (
-    <div
-      className="
-        min-h-screen
-        bg-gradient-to-br
-        from-gray-100
-        to-gray-200
-        p-4
-        md:p-6
-      "
-    >
-      <ContenedorModulo className="max-w-7xl mx-auto overflow-hidden">
-
-        <EncabezadoModulo
-          titulo="Caja"
-          subtitulo="Gestión de ingresos, egresos, cierre de caja y cartera del CEA."
-          icono={WalletCards}
-          rutaRegreso="/admin"
-          textoRegreso="Menú Administrativo"
-        />
-
-        <div className="px-4 pt-3 md:px-6">
-          <div className="flex justify-end">
-            <BotonSecundario
-              type="button"
-              onClick={cargarResumen}
-              disabled={cargando}
-            >
-              <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
-              Actualizar
-            </BotonSecundario>
-          </div>
-        </div>
-
-        {/* ==================================================
-            ERROR
-        ================================================== */}
-
-        {error && (
-          <div
-            className="
-              bg-red-50
-              border
-              border-red-300
-              text-red-700
-              rounded-lg
-              p-3
-              mx-4
-              md:mx-6
-              mt-3
-              mb-3
-              text-xs
-            "
-          >
-            <i className="fas fa-exclamation-triangle mr-2"></i>
-
-            {error}
-          </div>
-        )}
-
-        <div className="px-4 pb-4 md:px-6 md:pb-6">
-        {/* ==================================================
-            RESUMEN HOY
-        ================================================== */}
-
+    <main className="min-h-screen" style={{ backgroundColor: ESTILO_MENU.fondoPagina }}>
+      <header
+        className="border-b"
+        style={{
+          backgroundColor: ESTILO_MENU.fondoCabecera,
+          borderColor: ESTILO_MENU.bordeCabecera,
+        }}
+      >
         <div
-          className="
-            mb-2
-            flex
-            items-center
-            justify-between
-            gap-3
-          "
+          className="mx-auto px-4 py-4 md:px-6"
+          style={{ maxWidth: ESTILO_MENU.anchoMaximo }}
         >
-          <div>
-            <h2
-              className="
-                text-xs
-                font-black
-                text-gray-800
-              "
-            >
-              Resumen del día
-            </h2>
+          <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-4">
+            <Image
+              src="/logo.png"
+              alt="DATA CEA"
+              width={145}
+              height={68}
+              priority
+              className="h-[50px] w-auto shrink-0 object-contain"
+            />
 
-            <p
-              className="
-                text-[9px]
-                text-gray-500
-              "
-            >
-              Movimiento registrado durante el día.
-            </p>
-          </div>
+            <div className="min-w-0 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <WalletCards size={24} strokeWidth={2} style={{ color: ESTILO_MENU.textoTitulo }} />
+                <h1
+                  className="text-lg font-bold tracking-normal md:text-2xl"
+                  style={{ color: ESTILO_MENU.textoTitulo }}
+                >
+                  Caja
+                </h1>
+              </div>
+              <p className="mt-0.5 text-xs" style={{ color: ESTILO_MENU.textoSubtitulo }}>
+                Gestión de ingresos, egresos, cierre de caja y cartera del CEA.
+              </p>
+              <p className="mt-1 text-[10px]" style={{ color: ESTILO_MENU.textoUsuario }}>
+                {usuarioOperacion || '-'}
+                {empresaNombre && <> · {empresaNombre}</>}
+              </p>
+            </div>
 
-          <span
-            className="
-              text-[9px]
-              font-bold
-              text-gray-500
-            "
-          >
-            {hoyColombia()}
-          </span>
-        </div>
+            <div className="flex min-w-[145px] flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => router.push('/admin')}
+                className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold shadow-sm"
+                style={estiloBotonMenu('regresar')}
+                onMouseEnter={(event) => hoverBotonMenu(event, 'regresar', true)}
+                onMouseLeave={(event) => hoverBotonMenu(event, 'regresar', false)}
+              >
+                <ArrowLeft size={14} />
+                Regresar
+              </button>
 
-        <div
-          className="
-            grid
-            grid-cols-1
-            md:grid-cols-3
-            gap-3
-            mb-4
-          "
-        >
-          <TarjetaResumen
-            titulo="Ingresos Hoy"
-            valor={
-              formatearMoneda(
-                resumen
-                  ?.total_ingresos
-              )
-            }
-            subtitulo={`${Number(
-              resumen
-                ?.cantidad_recibos ||
-              0
-            )} recibo(s) activo(s)`}
-            icono="fas fa-arrow-trend-up"
-            tono="verde"
-          />
-
-          <TarjetaResumen
-            titulo="Egresos Hoy"
-            valor={
-              formatearMoneda(
-                resumen
-                  ?.total_egresos
-              )
-            }
-            subtitulo={`${Number(
-              resumen
-                ?.cantidad_egresos ||
-              0
-            )} egreso(s) activo(s)`}
-            icono="fas fa-arrow-trend-down"
-            tono="rojo"
-          />
-
-          <TarjetaResumen
-            titulo="Movimiento Neto"
-            valor={
-              formatearMoneda(
-                resumen
-                  ?.movimiento_neto
-              )
-            }
-            subtitulo="Ingresos menos egresos"
-            icono="fas fa-wallet"
-            tono="azul"
-          />
-        </div>
-
-        {/* ==================================================
-            OPERACIONES
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-gray-300
-            rounded-xl
-            overflow-hidden
-          "
-        >
-          <TituloSeccion
-            titulo="Operaciones de Caja"
-            subtitulo="Seleccione el módulo que desea consultar o administrar."
-            icono={<i className="fas fa-border-all" />}
-            className="rounded-none border-0"
-          />
-
-          <div
-            className="
-              p-3
-              bg-gray-50
-            "
-          >
-            <div
-              className="
-                grid
-                grid-cols-1
-                sm:grid-cols-2
-                xl:grid-cols-4
-                gap-3
-              "
-            >
-
-              {/* INGRESOS */}
-
-              <TarjetaAcceso
-                titulo="Registrar Ingreso"
-                descripcion="Pagos, abonos y otros ingresos de Caja."
-                icono="fas fa-hand-holding-dollar"
-                color="azul"
-                onClick={() =>
-                  router.push(
-                    '/admin/caja/ingresos'
-                  )
-                }
-              />
-
-              {/* EGRESOS */}
-
-              <TarjetaAcceso
-                titulo="Registrar Egreso"
-                descripcion="Pagos, gastos y salidas de dinero."
-                icono="fas fa-money-bill-transfer"
-                color="rojo"
-                onClick={() =>
-                  router.push(
-                    '/admin/caja/egresos'
-                  )
-                }
-              />
-
-              {/* CIERRE DE CAJA */}
-
-              <TarjetaAcceso
-                titulo="Cierre de Caja"
-                descripcion="Arqueos de turno, entrega de caja y cierre diario."
-                icono="fas fa-cash-register"
-                color="gris"
-                onClick={() =>
-                  router.push(
-                    '/admin/caja/cierre'
-                  )
-                }
-              />
-
-              {/* CONVENIOS */}
-
-              <TarjetaAcceso
-                titulo="Convenios"
-                descripcion="Cartera, pagos y estado de aprendices por convenio."
-                icono="fas fa-handshake"
-                color="verde"
-                onClick={() =>
-                  router.push(
-                    '/admin/caja/convenios'
-                  )
-                }
-              />
+              <button
+                type="button"
+                onClick={() => cerrarSesion(router)}
+                className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold shadow-sm"
+                style={estiloBotonMenu('cerrarSesion')}
+                onMouseEnter={(event) => hoverBotonMenu(event, 'cerrarSesion', true)}
+                onMouseLeave={(event) => hoverBotonMenu(event, 'cerrarSesion', false)}
+              >
+                <LogOut size={14} />
+                Cerrar Sesión
+              </button>
             </div>
           </div>
         </div>
 
-        {/* ==================================================
-            INFORMACIÓN OPERATIVA
-        ================================================== */}
-
         <div
-          className="
-            mt-3
-            border
-            border-gray-200
-            rounded-lg
-            bg-gray-50
-            px-3
-            py-2
-          "
+          className="mx-auto px-4 md:px-6"
+          style={{ maxWidth: ESTILO_MENU.anchoMaximo }}
         >
           <div
-            className="
-              flex
-              items-start
-              gap-2
-              text-[10px]
-              leading-relaxed
-              text-gray-500
-            "
-          >
-            <i
-              className="
-                fas
-                fa-circle-info
-                text-blue-600
-                mt-0.5
-              "
-            ></i>
+            className="w-full"
+            style={{
+              height: `${ESTILO_MENU.grosorLineaTitulo}px`,
+              backgroundColor: ESTILO_MENU.lineaTitulo,
+            }}
+          />
+        </div>
+      </header>
 
-            <p>
-              Los movimientos de Caja conservan su trazabilidad.
-              Los recibos y egresos con errores se anulan registrando
-              usuario, fecha y motivo, sin eliminar el movimiento original.
+      <div className="mx-auto px-4 pb-5 pt-4 md:px-6" style={{ maxWidth: '1050px' }}>
+        {error && (
+          <div className="mb-3 rounded-lg border border-red-300 bg-red-50 p-3 text-xs text-red-700">
+            <i className="fas fa-exclamation-triangle mr-2"></i>
+            {error}
+          </div>
+        )}
+
+        <section className="mb-4">
+          <div className="mb-2 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xs font-black text-gray-800">Resumen del día</h2>
+              <p className="text-[9px] text-gray-500">
+                Movimiento registrado durante el día · {hoyColombia()}
+              </p>
+            </div>
+
+            <BotonSecundario
+              type="button"
+              onClick={cargarResumen}
+              disabled={cargando}
+              className="!py-1.5"
+            >
+              <RefreshCw size={13} className={cargando ? 'animate-spin' : ''} />
+              Actualizar
+            </BotonSecundario>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <TarjetaResumen
+              titulo="Ingresos Hoy"
+              valor={formatearMoneda(resumen?.total_ingresos)}
+              subtitulo={`${Number(resumen?.cantidad_recibos || 0)} recibo(s) activo(s)`}
+              icono="fas fa-arrow-trend-up"
+              tono="verde"
+            />
+            <TarjetaResumen
+              titulo="Egresos Hoy"
+              valor={formatearMoneda(resumen?.total_egresos)}
+              subtitulo={`${Number(resumen?.cantidad_egresos || 0)} egreso(s) activo(s)`}
+              icono="fas fa-arrow-trend-down"
+              tono="rojo"
+            />
+            <TarjetaResumen
+              titulo="Movimiento Neto"
+              valor={formatearMoneda(resumen?.movimiento_neto)}
+              subtitulo="Ingresos menos egresos"
+              icono="fas fa-wallet"
+              tono="azul"
+            />
+          </div>
+        </section>
+
+        <section
+          className="rounded-xl border bg-white px-5 pb-5 pt-4 md:px-6"
+          style={{
+            borderColor: '#B8C6D1',
+            borderWidth: '1px',
+            boxShadow: '0 10px 28px rgba(15, 23, 42, 0.14)',
+          }}
+        >
+          <div className="mb-3 text-center">
+            <h2 className="text-xs font-black uppercase tracking-[0.08em]" style={{ color: '#3B617D' }}>
+              Operaciones de Caja
+            </h2>
+            <p className="mt-0.5 text-[9px]" style={{ color: ESTILO_MENU.textoSubtitulo }}>
+              Seleccione el módulo que desea consultar o administrar.
             </p>
           </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <TarjetaNavegacion
+              titulo="Registrar Ingreso"
+              descripcion="Pagos, abonos y otros ingresos de Caja."
+              icono={HandCoins}
+              compacta
+              onClick={() => router.push('/admin/caja/ingresos')}
+            />
+            <TarjetaNavegacion
+              titulo="Registrar Egreso"
+              descripcion="Pagos, gastos y salidas de dinero."
+              icono={WalletCards}
+              compacta
+              onClick={() => router.push('/admin/caja/egresos')}
+            />
+            <TarjetaNavegacion
+              titulo="Cierre de Caja"
+              descripcion="Arqueos de turno, entrega de caja y cierre diario."
+              icono={WalletCards}
+              compacta
+              onClick={() => router.push('/admin/caja/cierre')}
+            />
+            <TarjetaNavegacion
+              titulo="Convenios"
+              descripcion="Cartera, pagos y estado de aprendices por convenio."
+              icono={Handshake}
+              compacta
+              onClick={() => router.push('/admin/caja/convenios')}
+            />
+          </div>
+        </section>
+      </div>
+
+      <footer className="mx-auto px-4 pb-5 pt-1 text-center md:px-6" style={{ maxWidth: '1050px' }}>
+        <div className="border-t pt-3" style={{ borderColor: ESTILO_MENU.bordeCabecera }}>
+          <p className="text-[10px] font-medium tracking-wide" style={{ color: '#7A8895' }}>
+            DATA CEA · Sistema de Registro y Control de Datos para Centros de Enseñanza Automovilística · © 2026 Yuliano Armando Buitrago López. Todos los derechos reservados.
+          </p>
         </div>
-        </div>
-      </ContenedorModulo>
-    </div>
+      </footer>
+    </main>
   )
 }
