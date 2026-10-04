@@ -22,6 +22,7 @@ const GRUPOS_CONSULTAS = [
   {
     id: 'consultas-administrativas',
     columnas: 3,
+    compacta: true,
     opciones: [
       {
         id: 'horarios',
@@ -76,11 +77,13 @@ export default function ConsultasHomePage() {
       subtitulo="Seleccione la información que desea consultar"
       iconoTitulo={Database}
       grupos={GRUPOS_CONSULTAS}
-      anchoContenido="1050px"
+      anchoContenido="940px"
       mostrarRegresar
       rutaRegreso="/admin"
       textoRegreso="Regresar"
       mostrarCerrarSesion
+      contenedorTarjetas
+      mostrarPie
     />
   )
 }
