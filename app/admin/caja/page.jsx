@@ -13,7 +13,7 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import { CashRegister, RefreshCw } from 'lucide-react'
+import { WalletCards, RefreshCw } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import {
@@ -883,7 +883,7 @@ export default function CajaPage() {
         <EncabezadoModulo
           titulo="Caja"
           subtitulo="Gestión de ingresos, egresos, cierre de caja y cartera del CEA."
-          icono={CashRegister}
+          icono={WalletCards}
           rutaRegreso="/admin"
           textoRegreso="Menú Administrativo"
         />
