@@ -17,6 +17,8 @@ import {
   BotonEditar,
   BotonActualizar,
   BotonCancelar,
+  BotonLimpiar,
+  BotonImprimir,
   BotonAccion,
   ContenedorModulo,
   MarcoTabla,
@@ -525,7 +527,9 @@ const [
 const [
   fechaInicioHistorial,
   setFechaInicioHistorial,
-] = useState('')
+] = useState(
+  hoyColombia()
+)
 
 const [
   modalConceptoAbierto,
@@ -535,7 +539,9 @@ const [
 const [
   fechaFinHistorial,
   setFechaFinHistorial,
-] = useState('')
+] = useState(
+  hoyColombia()
+)
 
   // =======================================================
   // CONCEPTOS DISPONIBLES
@@ -1024,58 +1030,45 @@ async function cargarHistorialIngresos() {
 useEffect(
   () => {
     if (
-      abierto &&
-      pestana ===
+      !abierto ||
+      pestana !==
         'HISTORIAL'
     ) {
-      cargarHistorialIngresos()
+      return
     }
+
+    const timer =
+      setTimeout(
+        () => {
+          cargarHistorialIngresos()
+        },
+        350
+      )
+
+    return () =>
+      clearTimeout(
+        timer
+      )
   },
   [
     abierto,
     pestana,
+    buscarHistorial,
+    fechaInicioHistorial,
+    fechaFinHistorial,
   ]
 )
 
-async function limpiarHistorial() {
+function limpiarHistorial() {
   setBuscarHistorial('')
-  setFechaInicioHistorial('')
-  setFechaFinHistorial('')
-
-  try {
-    setCargandoHistorial(
-      true
-    )
-
-    setError('')
-
-    const data =
-      await fetchJsonSeguro(
-        construirUrl(
-          'ingresos_libres'
-        )
-      )
-
-    setHistorialIngresos(
-      Array.isArray(
-        data?.data
-      )
-        ? data.data
-        : []
-    )
-  } catch (
-    errorHistorial
-  ) {
-    setError(
-      errorHistorial?.message ||
-      'No fue posible consultar el historial.'
-    )
-  } finally {
-    setCargandoHistorial(
-      false
-    )
-  }
+  setFechaInicioHistorial(
+    hoyColombia()
+  )
+  setFechaFinHistorial(
+    hoyColombia()
+  )
 }
+
   // =======================================================
   // SELECCIONAR MATRÍCULA
   // =======================================================
@@ -2599,6 +2592,7 @@ function imprimirIngresoHistorico(
 
                   <CampoInput
                     label="Valor recibido"
+                    prefijo="$"
                     value={
                       form.valor
                         ? Number(
@@ -3326,501 +3320,260 @@ function imprimirIngresoHistorico(
 
 {pestana ===
   'HISTORIAL' && (
-  <>
-    {/* ===========================================
-        FILTROS
-    =========================================== */}
-
-    <div
-      className="
-        border
-        border-gray-300
-        rounded-xl
-        overflow-hidden
-      "
-    >
-      <div
-        className="
-          bg-slate-800
-          text-white
-          px-3
-          py-2
-          text-[10px]
-          font-bold
-        "
-      >
-        <i className="fas fa-search mr-2"></i>
-
-        Buscar recibos
-      </div>
-
-      <div
-        className="
-          p-3
-          space-y-3
-        "
-      >
-        <CampoInput
-          label="Cliente, documento o descripción"
-          value={
-            buscarHistorial
-          }
-          onChange={
-            setBuscarHistorial
-          }
-          placeholder="Ej. PEPITO, 7897645, EXAMEN MEDICO..."
-        />
-
+  <div className="p-4">
+    <ContenedorModulo className="overflow-hidden">
+      <div className="p-4">
         <div
           className="
-            grid
-            grid-cols-2
-            gap-2
-          "
-        >
-          <CampoInput
-            label="Fecha inicial"
-            type="date"
-            value={
-              fechaInicioHistorial
-            }
-            onChange={
-              setFechaInicioHistorial
-            }
-          />
-
-          <CampoInput
-            label="Fecha final"
-            type="date"
-            value={
-              fechaFinHistorial
-            }
-            onChange={
-              setFechaFinHistorial
-            }
-          />
-        </div>
-
-        <div
-          className="
-            grid
-            grid-cols-2
-            gap-2
-          "
-        >
-          <button
-            type="button"
-            onClick={
-              cargarHistorialIngresos
-            }
-            disabled={
-              cargandoHistorial
-            }
-            className="
-              bg-blue-600
-              hover:bg-blue-700
-              disabled:opacity-50
-              text-white
-              rounded-lg
-              py-2.5
-              text-[10px]
-              font-black
-            "
-          >
-            <i
-              className={`
-                fas
-                fa-search
-                mr-2
-                ${
-                  cargandoHistorial
-                    ? 'fa-spin fa-spinner'
-                    : ''
-                }
-              `}
-            ></i>
-
-            CONSULTAR
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setBuscarHistorial(
-                ''
-              )
-
-              setFechaInicioHistorial(
-                ''
-              )
-
-              setFechaFinHistorial(
-                ''
-              )
-
-              setTimeout(
-                () => {
-                  cargarHistorialIngresos()
-                },
-                50
-              )
-            }}
-            disabled={
-              cargandoHistorial
-            }
-            className="
-              border
-              border-gray-300
-              bg-white
-              hover:bg-gray-100
-              text-gray-700
-              rounded-lg
-              py-2.5
-              text-[10px]
-              font-black
-            "
-          >
-            <i className="fas fa-eraser mr-2"></i>
-
-            LIMPIAR
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {/* ===========================================
-        RESULTADOS
-    =========================================== */}
-
-    <div
-      className="
-        border
-        border-gray-300
-        rounded-xl
-        overflow-hidden
-      "
-    >
-      <div
-        className="
-          bg-gray-100
-          px-3
-          py-2
-          flex
-          justify-between
-          items-center
-          gap-3
-        "
-      >
-        <span
-          className="
+            px-3
+            py-2
             text-[10px]
-            font-black
-            text-gray-700
+            font-bold
           "
+          style={{
+            backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+            color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+            borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+          }}
         >
-          Recibos registrados
-        </span>
-
-        <span
-          className="
-            text-[9px]
-            text-gray-500
-          "
-        >
-          {historialIngresos.length}
-          {' '}
-          registro(s)
-        </span>
-      </div>
-
-      {cargandoHistorial ? (
-        <div
-          className="
-            p-10
-            text-center
-            text-xs
-            text-gray-500
-          "
-        >
-          <i className="fas fa-spinner fa-spin mr-2"></i>
-
-          Consultando historial...
+          <i className="fas fa-search mr-2"></i>
+          Filtros del historial
         </div>
-      ) : historialIngresos.length ===
-        0 ? (
+
         <div
           className="
-            p-10
-            text-center
-            text-xs
-            text-gray-500
+            grid
+            grid-cols-1
+            md:grid-cols-12
+            gap-2
+            items-end
+            border
+            border-t-0
+            border-slate-300
+            rounded-b-xl
+            p-3
+            mb-4
           "
         >
-          <i
-            className="
-              fas
-              fa-receipt
-              block
-              text-3xl
-              text-gray-300
-              mb-2
-            "
-          ></i>
+          <div className="md:col-span-6">
+            <CampoInput
+              label="Cliente, documento o descripción"
+              value={
+                buscarHistorial
+              }
+              onChange={
+                setBuscarHistorial
+              }
+              placeholder="Buscar automáticamente..."
+            />
+          </div>
 
-          No se encontraron ingresos.
+          <div className="md:col-span-2">
+            <CampoInput
+              label="Fecha inicial"
+              type="date"
+              value={
+                fechaInicioHistorial
+              }
+              onChange={
+                setFechaInicioHistorial
+              }
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <CampoInput
+              label="Fecha final"
+              type="date"
+              value={
+                fechaFinHistorial
+              }
+              onChange={
+                setFechaFinHistorial
+              }
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <BotonLimpiar
+              type="button"
+              onClick={
+                limpiarHistorial
+              }
+              disabled={
+                cargandoHistorial
+              }
+              className="w-full"
+            >
+              <i className="fas fa-eraser"></i>
+              Limpiar
+            </BotonLimpiar>
+          </div>
         </div>
-      ) : (
+
         <div
           className="
-            divide-y
-            divide-gray-200
+            px-3
+            py-2
+            flex
+            justify-between
+            items-center
+            gap-3
+            text-[10px]
+            font-bold
           "
+          style={{
+            backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+            color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+            borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+          }}
         >
-          {historialIngresos.map(
-            recibo => {
-              const estado =
-                mayusculas(
-                  recibo?.estado
-                )
+          <span>
+            <i className="fas fa-receipt mr-2"></i>
+            Recibos registrados
+          </span>
 
-              const medio =
-                nombreMedioPagoVisible(
-                  recibo
-                    ?.medio_pago
-                    ?.nombre
-                ) ||
-                recibo
-                  ?.medio_pago
-                  ?.nombre ||
-                '-'
+          <span className="text-[9px] font-semibold">
+            {historialIngresos.length} registro(s)
+          </span>
+        </div>
 
-              const concepto =
-                recibo
-                  ?.concepto
-                  ?.nombre ||
-                recibo
-                  ?.descripcion ||
-                '-'
-
-              return (
-                <div
-                  key={
-                    recibo.id
-                  }
-                  className="
-                    p-3
-                    hover:bg-gray-50
-                  "
-                >
-                  <div
-                    className="
-                      flex
-                      justify-between
-                      items-start
-                      gap-3
-                    "
-                  >
-                    <div
-                      className="
-                        min-w-0
-                      "
-                    >
-                      <div
-                        className="
-                          flex
-                          flex-wrap
-                          items-center
-                          gap-2
-                        "
-                      >
-                        <span
-                          className="
-                            text-[11px]
-                            font-black
-                            text-gray-900
-                          "
-                        >
-                          {recibo.consecutivo ||
-                            `RC-${String(
-                              recibo.id
-                            ).padStart(
-                              6,
-                              '0'
-                            )}`}
-                        </span>
-
-                        <span
-                          className={`
-                            inline-flex
-                            rounded-full
-                            border
-                            px-2
-                            py-0.5
-                            text-[8px]
-                            font-black
-                            ${
-                              estado ===
-                              'ANULADO'
-                                ? 'bg-red-50 text-red-700 border-red-200'
-                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            }
-                          `}
-                        >
-                          {estado ||
-                            '-'}
-                        </span>
-                      </div>
-
-                      <div
-                        className="
-                          text-[9px]
-                          text-gray-500
-                          mt-1
-                        "
-                      >
-                        {formatearFecha(
-                          recibo.fecha
-                        )}
-
-                        {' · '}
-
-                        {medio}
-                      </div>
-
-                      <div
-                        className="
-                          text-[10px]
-                          font-black
-                          text-gray-800
-                          mt-2
-                        "
-                      >
-                        {recibo.nombre_cliente ||
-                          recibo.nombre_pagador ||
-                          '-'}
-                      </div>
-
-                      <div
-                        className="
-                          text-[9px]
-                          text-gray-500
-                          mt-0.5
-                        "
-                      >
-                        {recibo.tipo_documento_cliente ||
-                          ''}
-
-                        {' '}
-
-                        {recibo.documento_cliente ||
-                          recibo.documento ||
-                          '-'}
-                      </div>
-
-                      <div
-                        className="
-                          text-[10px]
-                          text-blue-800
-                          font-bold
-                          mt-2
-                        "
-                      >
-                        {mayusculas(
-                          concepto
-                        )}
-                      </div>
-
-                      {recibo.descripcion &&
+        {cargandoHistorial ? (
+          <div className="p-10 text-center text-xs text-gray-500">
+            <i className="fas fa-spinner fa-spin mr-2"></i>
+            Consultando historial...
+          </div>
+        ) : historialIngresos.length === 0 ? (
+          <div className="p-10 text-center text-xs text-gray-500">
+            <i className="fas fa-receipt block text-3xl text-gray-300 mb-2"></i>
+            No se encontraron ingresos.
+          </div>
+        ) : (
+          <MarcoTabla className="rounded-t-none">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-[10px]">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-2 text-left">Recibo</th>
+                    <th className="px-3 py-2 text-left">Fecha</th>
+                    <th className="px-3 py-2 text-left">Cliente</th>
+                    <th className="px-3 py-2 text-left">Documento</th>
+                    <th className="px-3 py-2 text-left">Concepto / Descripción</th>
+                    <th className="px-3 py-2 text-left">Medio de pago</th>
+                    <th className="px-3 py-2 text-right">Valor</th>
+                    <th className="px-3 py-2 text-center">Estado</th>
+                    <th className="px-3 py-2 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historialIngresos.map(
+                    recibo => {
+                      const estado =
                         mayusculas(
-                          recibo.descripcion
-                        ) !==
-                          mayusculas(
-                            concepto
-                          ) && (
-                          <div
-                            className="
-                              text-[9px]
-                              text-gray-500
-                              mt-0.5
-                            "
-                          >
-                            {recibo.descripcion}
-                          </div>
-                        )}
-                    </div>
+                          recibo?.estado
+                        )
 
-                    <div
-                      className="
-                        text-right
-                        shrink-0
-                      "
-                    >
-                      <div
-                        className="
-                          text-sm
-                          font-black
-                          text-gray-900
-                        "
-                      >
-                        {formatearMoneda(
-                          recibo.valor
-                        )}
-                      </div>
+                      const medio =
+                        nombreMedioPagoVisible(
+                          recibo
+                            ?.medio_pago
+                            ?.nombre
+                        ) ||
+                        recibo
+                          ?.medio_pago
+                          ?.nombre ||
+                        '-'
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          imprimirIngresoHistorico(
-                            recibo
-                          )
-                        }
-                        className="
-                          mt-2
-                          bg-blue-600
-                          hover:bg-blue-700
-                          text-white
-                          rounded-md
-                          px-2.5
-                          py-1.5
-                          text-[9px]
-                          font-black
-                        "
-                      >
-                        <i className="fas fa-print mr-1"></i>
+                      const concepto =
+                        recibo
+                          ?.concepto
+                          ?.nombre ||
+                        '-'
 
-                        IMPRIMIR COPIA
-                      </button>
-                    </div>
-                  </div>
+                      return (
+                        <tr key={recibo.id}>
+                          <td className="px-3 py-2 font-bold whitespace-nowrap">
+                            {recibo.consecutivo ||
+                              `RC-${String(
+                                recibo.id
+                              ).padStart(
+                                6,
+                                '0'
+                              )}`}
+                          </td>
 
-                  {texto(
-                    recibo.referencia_pago
-                  ) && (
-                    <div
-                      className="
-                        mt-2
-                        border-t
-                        border-gray-100
-                        pt-2
-                        text-[9px]
-                        text-gray-500
-                      "
-                    >
-                      Entidad financiera:{' '}
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {formatearFecha(
+                              recibo.fecha
+                            )}
+                          </td>
 
-                      <strong>
-                        {recibo.referencia_pago}
-                      </strong>
-                    </div>
+                          <td className="px-3 py-2 font-semibold">
+                            {recibo.nombre_cliente ||
+                              recibo.nombre_pagador ||
+                              '-'}
+                          </td>
+
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {recibo.tipo_documento_cliente ||
+                              ''}{' '}
+                            {recibo.documento_cliente ||
+                              recibo.documento ||
+                              '-'}
+                          </td>
+
+                          <td className="px-3 py-2">
+                            <div className="font-semibold">
+                              {concepto}
+                            </div>
+                            {recibo.descripcion && (
+                              <div className="mt-0.5 text-[9px] text-slate-500">
+                                {recibo.descripcion}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="px-3 py-2">
+                            {medio}
+                          </td>
+
+                          <td className="px-3 py-2 text-right font-bold whitespace-nowrap">
+                            {formatearMoneda(
+                              recibo.valor
+                            )}
+                          </td>
+
+                          <td className="px-3 py-2 text-center font-bold">
+                            {estado || '-'}
+                          </td>
+
+                          <td className="px-3 py-2">
+                            <div className="flex justify-center">
+                              <BotonImprimir
+                                type="button"
+                                onClick={() =>
+                                  imprimirIngresoHistorico(
+                                    recibo
+                                  )
+                                }
+                              >
+                                <i className="fas fa-print"></i>
+                                Imprimir copia
+                              </BotonImprimir>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    }
                   )}
-                </div>
-              )
-            }
-          )}
-        </div>
-      )}
-    </div>
-  </>
+                </tbody>
+              </table>
+            </div>
+          </MarcoTabla>
+        )}
+      </div>
+    </ContenedorModulo>
+  </div>
 )}
 
         </div>
@@ -3841,6 +3594,7 @@ function CampoInput({
   type = 'text',
   placeholder = '',
   disabled = false,
+  prefijo = '',
 }) {
   return (
     <div>
@@ -3855,6 +3609,24 @@ function CampoInput({
       >
         {label}
       </label>
+
+      <div className="relative">
+        {prefijo && (
+          <span
+            className="
+              absolute
+              left-3
+              top-1/2
+              -translate-y-1/2
+              text-xs
+              font-bold
+              text-slate-500
+              pointer-events-none
+            "
+          >
+            {prefijo}
+          </span>
+        )}
 
       <input
         type={
@@ -3875,19 +3647,20 @@ function CampoInput({
         disabled={
           disabled
         }
-        className="
+        className={`
           w-full
           border
           border-slate-400
           rounded-lg
-          px-3
           py-2
           text-xs
           disabled:bg-slate-100
           disabled:text-slate-600
           disabled:cursor-not-allowed
-        "
+          ${prefijo ? 'pl-7 pr-3' : 'px-3'}
+        `}
       />
+      </div>
     </div>
   )
 }
