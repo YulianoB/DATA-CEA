@@ -19,9 +19,12 @@ import {
   BotonActualizar,
   BotonAgregar,
   BotonVerDetalle,
+  BotonGuardar,
+  BotonCancelar,
   ESTILO_CONTENEDORES,
   ESTILO_ENCABEZADO_TABLA,
   ESTILO_SECCIONES,
+  ESTILO_SECCIONES_SECUNDARIAS,
   ESTILO_TARJETAS,
   MarcoTabla,
 } from '@/components/admin/EstiloModulo'
@@ -2769,8 +2772,18 @@ const ingresosLibresFiltrados =
     const valor =
       Number(formPago.valor)
 
+    if (!texto(formPago.valor)) {
+      setError('Ingrese el valor recibido.')
+      return
+    }
+
     if (!formPago.medio_pago_id) {
       setError('Seleccione el medio de pago.')
+      return
+    }
+
+    if (!texto(formPago.pagado_por)) {
+      setError('Seleccione quién realiza el pago.')
       return
     }
 
@@ -4686,51 +4699,64 @@ const ingresosLibresFiltrados =
       ==================================================== */}
 
       {drawerPago && (
-        <div className="fixed inset-0 z-50">
+        <div
+          className="
+            fixed
+            inset-0
+            z-[70]
+            bg-black/40
+            flex
+            items-center
+            justify-center
+            p-4
+          "
+          onMouseDown={cerrarDrawerPago}
+        >
           <div
-            className="absolute inset-0 bg-black/35"
-            onClick={cerrarDrawerPago}
-          ></div>
-
-          <aside
             className="
-              absolute
-              right-0
-              top-0
-              h-full
               w-full
-              sm:w-[430px]
+              max-w-2xl
+              max-h-[92vh]
               bg-white
+              rounded-xl
               shadow-2xl
               overflow-y-auto
             "
+            onMouseDown={
+              e =>
+                e.stopPropagation()
+            }
           >
             <div
               className="
-                sticky
-                top-0
-                z-20
-                bg-white
-                border-b
-                border-gray-300
                 px-4
                 py-3
                 flex
                 justify-between
-                items-start
+                items-center
                 gap-3
               "
+              style={{
+                backgroundColor:
+                  ESTILO_SECCIONES.fondo,
+                color:
+                  ESTILO_SECCIONES.texto,
+                borderRadius:
+                  ESTILO_SECCIONES.radioSuperior,
+              }}
             >
               <div>
-                <p className="text-[9px] uppercase font-bold text-gray-500">
-                  Caja · Ingreso
-                </p>
-
-                <h2 className="text-base font-black text-[var(--primary)] mt-0.5">
+                <h2 className="text-sm font-black">
                   Registrar Pago
                 </h2>
 
-                <p className="text-[10px] text-gray-500 mt-0.5">
+                <p
+                  className="text-[10px] mt-0.5"
+                  style={{
+                    color:
+                      ESTILO_SECCIONES.subtitulo,
+                  }}
+                >
                   {nombreCompletoCuenta(cuentaPago)}
                 </p>
               </div>
@@ -4738,14 +4764,40 @@ const ingresosLibresFiltrados =
               <button
                 type="button"
                 onClick={cerrarDrawerPago}
-                className="w-8 h-8 border border-gray-300 rounded-lg hover:bg-gray-100"
+                className="
+                  w-8
+                  h-8
+                  rounded-lg
+                  hover:bg-white/15
+                "
+                aria-label="Cerrar"
               >
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
             <div className="p-4 space-y-3">
-              <div className="border border-gray-300 rounded-lg p-3">
+              <div
+                className="
+                  px-3
+                  py-2
+                  text-[10px]
+                  font-bold
+                "
+                style={{
+                  backgroundColor:
+                    ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                  color:
+                    ESTILO_SECCIONES_SECUNDARIAS.texto,
+                  borderRadius:
+                    ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+                }}
+              >
+                <i className="fas fa-file-invoice-dollar mr-2"></i>
+                Información de la obligación
+              </div>
+
+              <div className="border border-slate-300 rounded-lg p-3">
                 <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                   <Dato
                     label="Matrícula"
@@ -4912,6 +4964,7 @@ const ingresosLibresFiltrados =
 
               <CampoInput
                 label="Valor recibido"
+                prefijo="$"
                 value={
                   formPago.valor
                     ? Number(
@@ -4987,26 +5040,47 @@ const ingresosLibresFiltrados =
                 }
               />
 
-              <button
-                type="button"
-                onClick={registrarPago}
-                disabled={procesando}
-                className="
-                  w-full
-                  bg-emerald-600
-                  hover:bg-emerald-700
-                  disabled:opacity-50
-                  text-white
-                  rounded-lg
-                  py-2.5
-                  text-xs
-                  font-bold
-                "
-              >
-                {procesando ? 'Registrando...' : 'Registrar Pago'}
-              </button>
+              {error && (
+                <div
+                  className="
+                    border
+                    border-red-200
+                    bg-red-50
+                    text-red-700
+                    rounded-lg
+                    px-3
+                    py-2
+                    text-[10px]
+                    font-semibold
+                  "
+                >
+                  <i className="fas fa-exclamation-circle mr-2"></i>
+                  {error}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-1">
+                <BotonCancelar
+                  type="button"
+                  onClick={cerrarDrawerPago}
+                  disabled={procesando}
+                >
+                  Cancelar
+                </BotonCancelar>
+
+                <BotonGuardar
+                  type="button"
+                  onClick={registrarPago}
+                  disabled={procesando}
+                >
+                  <i className="fas fa-dollar-sign"></i>
+                  {procesando
+                    ? 'Registrando...'
+                    : 'Registrar Pago'}
+                </BotonGuardar>
+              </div>
             </div>
-          </aside>
+          </div>
         </div>
       )}
 
@@ -5529,6 +5603,7 @@ function CampoInput({
   onChange,
   type = 'text',
   placeholder = '',
+  prefijo = '',
 }) {
   return (
     <div>
@@ -5544,32 +5619,51 @@ function CampoInput({
         {label}
       </label>
 
-      <input
-        type={
-          type
-        }
-        value={
-          value
-        }
-        onChange={
-          e =>
-            onChange(
-              e.target.value
-            )
-        }
-        placeholder={
-          placeholder
-        }
-        className="
-          w-full
-          border
-          border-gray-300
-          rounded-lg
-          px-3
-          py-2
-          text-xs
-        "
-      />
+      <div className="relative">
+        {prefijo && (
+          <span
+            className="
+              absolute
+              left-3
+              top-1/2
+              -translate-y-1/2
+              text-xs
+              font-bold
+              text-slate-500
+              pointer-events-none
+            "
+          >
+            {prefijo}
+          </span>
+        )}
+
+        <input
+          type={
+            type
+          }
+          value={
+            value
+          }
+          onChange={
+            e =>
+              onChange(
+                e.target.value
+              )
+          }
+          placeholder={
+            placeholder
+          }
+          className={`
+            w-full
+            border
+            border-slate-400
+            rounded-lg
+            py-2
+            text-xs
+            ${prefijo ? 'pl-7 pr-3' : 'px-3'}
+          `}
+        />
+      </div>
     </div>
   )
 }
