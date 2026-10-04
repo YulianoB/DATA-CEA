@@ -4161,17 +4161,6 @@ function CampoTextarea({
       />
     </div>
   )
-',
-      '&gt;'
-    )
-    .replaceAll(
-      '"',
-      '&quot;'
-    )
-    .replaceAll(
-      "'",
-      '&#039;'
-    )
 }
 
 function nombreCompletoMatricula(
