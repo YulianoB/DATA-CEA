@@ -105,6 +105,9 @@ export default function PesvPage() {
       rutaRegreso="/admin"
       textoRegreso="Regresar"
       mostrarCerrarSesion
+      anchoContenido="1180px"
+      contenedorTarjetas
+      mostrarPie
     />
   )
 }
