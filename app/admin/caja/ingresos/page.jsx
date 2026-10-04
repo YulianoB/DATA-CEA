@@ -5226,8 +5226,24 @@ const ingresosLibresFiltrados =
             </div>
 
             <div className="p-4 space-y-3">
-              <div className="border border-gray-300 rounded-lg p-3">
-                <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+              <div
+                className="
+                  border
+                  border-slate-300
+                  rounded-lg
+                  px-3
+                  py-2.5
+                "
+              >
+                <div
+                  className="
+                    grid
+                    grid-cols-2
+                    md:grid-cols-4
+                    gap-x-4
+                    gap-y-2
+                  "
+                >
                   <Dato
                     label="Matrícula"
                     value={
@@ -5238,13 +5254,6 @@ const ingresosLibresFiltrados =
                   />
 
                   <Dato
-                    label="Categoría"
-                    value={textoCategoriasCuenta(
-                      detalleFinanciero?.cuenta
-                    )}
-                  />
-
-                  <Dato
                     label="Documento"
                     value={
                       detalleFinanciero
@@ -5252,6 +5261,28 @@ const ingresosLibresFiltrados =
                         ?.documento
                     }
                   />
+
+                  <Dato
+                    label="Categoría"
+                    value={textoCategoriasCuenta(
+                      detalleFinanciero?.cuenta
+                    )}
+                  />
+
+                  <div>
+                    <div className="text-[9px] uppercase tracking-wide text-gray-500">
+                      Estado
+                    </div>
+                    <div className="mt-1">
+                      <BadgeEstado
+                        estado={
+                          detalleFinanciero
+                            ?.cuenta
+                            ?.estado
+                        }
+                      />
+                    </div>
+                  </div>
 
                   <Dato
                     label="Fecha matrícula"
@@ -5275,79 +5306,27 @@ const ingresosLibresFiltrados =
                       empresaNombre
                     )}
                   />
-
-                  <div>
-                    <div
-                      className="
-                        text-[9px]
-                        uppercase
-                        tracking-wide
-                        text-gray-500
-                      "
-                    >
-                      Estado
-                    </div>
-
-                    <div className="mt-1">
-                      <BadgeEstado
-                        estado={
-                          detalleFinanciero
-                            ?.cuenta
-                            ?.estado
-                        }
-                      />
-                    </div>
-                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                <ResumenPago
-                  label="Obligación"
-                  value={formatearMoneda(
-                    detalleFinanciero
-                      ?.cuenta
-                      ?.valor_total
-                  )}
-                />
-
-                <ResumenPago
-                  label="Abonado"
-                  value={formatearMoneda(
-                    detalleFinanciero
-                      ?.cuenta
-                      ?.total_abonado
-                  )}
-                />
-
-                <ResumenPago
-                  label="Saldo"
-                  value={formatearMoneda(
-                    detalleFinanciero
-                      ?.cuenta
-                      ?.saldo
-                  )}
-                />
-              </div>
-
-              <div
-                className="
-                  border
-                  border-gray-300
-                  rounded-lg
-                  overflow-hidden
-                "
-              >
+              <div>
                 <div
                   className="
-                    bg-gray-100
                     px-3
                     py-2
                     text-[10px]
                     font-bold
-                    text-gray-700
                   "
+                  style={{
+                    backgroundColor:
+                      ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                    color:
+                      ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderRadius:
+                      ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+                  }}
                 >
+                  <i className="fas fa-list-ul mr-2"></i>
                   Desglose de la obligación
                 </div>
 
@@ -5359,84 +5338,135 @@ const ingresosLibresFiltrados =
                 detalleFinanciero
                   .cuenta
                   .detalles
-                  .length >
-                  0 ? (
-                  <div className="divide-y divide-gray-100">
-                    {detalleFinanciero
-                      .cuenta
-                      .detalles
-                      .map(
-                        detalle => (
-                          <div
-                            key={detalle.id}
-                            className="
-                              px-3
-                              py-2
-                              flex
-                              items-center
-                              justify-between
-                              gap-3
-                            "
+                  .length > 0 ? (
+                  <MarcoTabla className="rounded-t-none">
+                    <table className="w-full text-[10px] border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="px-3 py-2 text-left border border-slate-300">
+                            Concepto
+                          </th>
+                          <th className="px-3 py-2 text-left border border-slate-300 w-32">
+                            Categoría
+                          </th>
+                          <th className="px-3 py-2 text-right border border-slate-300 w-36">
+                            Valor
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detalleFinanciero
+                          .cuenta
+                          .detalles
+                          .map(
+                            detalle => (
+                              <tr key={detalle.id}>
+                                <td className="px-3 py-2 border border-slate-300 font-semibold">
+                                  {detalle?.concepto?.nombre ||
+                                    detalle?.descripcion ||
+                                    'CONCEPTO'}
+                                </td>
+                                <td className="px-3 py-2 border border-slate-300">
+                                  {(Array.isArray(
+                                    detalle?.categorias
+                                  )
+                                    ? detalle.categorias
+                                    : []
+                                  ).join(' / ') || '-'}
+                                </td>
+                                <td className="px-3 py-2 border border-slate-300 text-right font-bold whitespace-nowrap">
+                                  {formatearMoneda(
+                                    detalle?.valor
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                          )}
+
+                        <tr>
+                          <td
+                            colSpan={2}
+                            className="px-3 py-1.5 border border-slate-300 text-right font-bold"
                           >
-                            <div>
-                              <div className="text-[10px] font-bold text-gray-800">
-                                {detalle?.concepto?.nombre ||
-                                  detalle?.descripcion ||
-                                  'CONCEPTO'}
-                              </div>
-
-                              <div className="text-[9px] text-gray-500">
-                                {(Array.isArray(
-                                  detalle?.categorias
-                                )
-                                  ? detalle.categorias
-                                  : []
-                                ).join(' / ') || '-'}
-                              </div>
-                            </div>
-
-                            <div className="text-[10px] font-black whitespace-nowrap">
-                              {formatearMoneda(
-                                detalle?.valor
-                              )}
-                            </div>
-                          </div>
-                        )
-                      )}
-                  </div>
+                            Total obligación
+                          </td>
+                          <td className="px-3 py-1.5 border border-slate-300 text-right font-black whitespace-nowrap">
+                            {formatearMoneda(
+                              detalleFinanciero
+                                ?.cuenta
+                                ?.valor_total
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            colSpan={2}
+                            className="px-3 py-1.5 border border-slate-300 text-right font-bold"
+                          >
+                            Abonado
+                          </td>
+                          <td className="px-3 py-1.5 border border-slate-300 text-right font-black whitespace-nowrap">
+                            {formatearMoneda(
+                              detalleFinanciero
+                                ?.cuenta
+                                ?.total_abonado
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            colSpan={2}
+                            className="px-3 py-1.5 border border-slate-300 text-right font-bold"
+                          >
+                            Saldo
+                          </td>
+                          <td className="px-3 py-1.5 border border-slate-300 text-right font-black whitespace-nowrap">
+                            {formatearMoneda(
+                              detalleFinanciero
+                                ?.cuenta
+                                ?.saldo
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </MarcoTabla>
                 ) : (
-                  <div className="p-3 bg-amber-50 text-amber-800 text-[10px]">
+                  <div className="border border-slate-300 rounded-b-lg p-3 bg-amber-50 text-amber-800 text-[10px]">
                     <i className="fas fa-exclamation-triangle mr-2"></i>
                     Registro histórico sin desglose financiero. Puede consultar
-                    sus recibos existentes, pero no registrar nuevos abonos.
+                    sus pagos existentes, pero no registrar nuevos abonos.
                   </div>
                 )}
               </div>
 
-              <div
-                className="
-                  border
-                  border-gray-300
-                  rounded-lg
-                  overflow-hidden
-                "
-              >
+              <div>
                 <div
                   className="
-                    bg-slate-800
-                    text-white
                     px-3
                     py-2
                     flex
                     justify-between
-                    gap-2
+                    items-center
+                    gap-3
+                    text-[10px]
+                    font-bold
                   "
+                  style={{
+                    backgroundColor:
+                      ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                    color:
+                      ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderRadius:
+                      ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+                  }}
                 >
-                  <span className="text-[10px] font-bold">
-                    Historial de Recibos
+                  <span>
+                    <i className="fas fa-receipt mr-2"></i>
+                    Historial de pagos
                   </span>
 
-                  <span className="text-[9px] text-gray-300">
+                  <span className="text-[9px] font-semibold">
                     {Array.isArray(
                       detalleFinanciero?.recibos
                     )
@@ -5451,95 +5481,105 @@ const ingresosLibresFiltrados =
                 ) ||
                 detalleFinanciero
                   .recibos
-                  .length ===
-                  0 ? (
-                  <div className="p-4 text-center text-[10px] text-gray-500">
-                    No hay recibos registrados para esta obligación.
+                  .length === 0 ? (
+                  <div className="border border-slate-300 rounded-b-lg p-4 text-center text-[10px] text-gray-500">
+                    No hay pagos registrados para esta obligación.
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-200">
-                    {detalleFinanciero
-                      .recibos
-                      .map(
-                        recibo => (
-                          <div
-                            key={recibo.id}
-                            className="
-                              p-3
-                              flex
-                              items-center
-                              justify-between
-                              gap-3
-                            "
-                          >
-                            <div>
-                              <div className="text-[10px] font-black text-gray-800">
-                                {recibo.consecutivo ||
-                                  `RC-${String(
-                                    recibo.id
-                                  ).padStart(
-                                    6,
-                                    '0'
-                                  )}`}
-                              </div>
+                  <MarcoTabla className="rounded-t-none">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[10px] border-collapse">
+                        <thead>
+                          <tr>
+                            <th className="px-3 py-2 text-left border border-slate-300">
+                              N.º recibo
+                            </th>
+                            <th className="px-3 py-2 text-left border border-slate-300">
+                              Fecha
+                            </th>
+                            <th className="px-3 py-2 text-left border border-slate-300">
+                              Medio de pago
+                            </th>
+                            <th className="px-3 py-2 text-center border border-slate-300">
+                              Estado
+                            </th>
+                            <th className="px-3 py-2 text-right border border-slate-300">
+                              Valor pagado
+                            </th>
+                            <th className="px-3 py-2 text-center border border-slate-300">
+                              Acción
+                            </th>
+                          </tr>
+                        </thead>
 
-                              <div className="text-[9px] text-gray-500 mt-0.5">
-                                {formatearFecha(
-                                  recibo.fecha
-                                )}
-                                {' · '}
-                                {nombreMedioPagoVisible(
-                                  recibo
-                                    ?.medio_pago
-                                    ?.nombre
-                                ) ||
-                                  recibo
-                                    ?.medio_pago
-                                    ?.nombre ||
-                                  '-'}
-                              </div>
+                        <tbody>
+                          {detalleFinanciero
+                            .recibos
+                            .map(
+                              recibo => (
+                                <tr key={recibo.id}>
+                                  <td className="px-3 py-2 border border-slate-300 font-bold whitespace-nowrap">
+                                    {recibo.consecutivo ||
+                                      `RC-${String(
+                                        recibo.id
+                                      ).padStart(
+                                        6,
+                                        '0'
+                                      )}`}
+                                  </td>
 
-                              <div
-                                className={`text-[9px] mt-0.5 font-bold ${
-                                  mayusculas(
-                                    recibo.estado
-                                  ) ===
-                                  'ANULADO'
-                                    ? 'text-red-600'
-                                    : 'text-emerald-700'
-                                }`}
-                              >
-                                {mayusculas(
-                                  recibo.estado
-                                )}
-                              </div>
-                            </div>
+                                  <td className="px-3 py-2 border border-slate-300 whitespace-nowrap">
+                                    {formatearFecha(
+                                      recibo.fecha
+                                    )}
+                                  </td>
 
-                            <div className="text-right">
-                              <div className="text-[11px] font-black text-gray-900">
-                                {formatearMoneda(
-                                  recibo.valor
-                                )}
-                              </div>
+                                  <td className="px-3 py-2 border border-slate-300">
+                                    {nombreMedioPagoVisible(
+                                      recibo
+                                        ?.medio_pago
+                                        ?.nombre
+                                    ) ||
+                                      recibo
+                                        ?.medio_pago
+                                        ?.nombre ||
+                                      '-'}
+                                  </td>
 
-                              <BotonImprimir
-                                type="button"
-                                onClick={() =>
-                                  imprimirRecibo(
-                                    recibo,
-                                    detalleFinanciero
-                                  )
-                                }
-                                className="mt-1 !px-2 !py-1 !text-[9px]"
-                              >
-                                <i className="fas fa-print"></i>
-                                Imprimir
-                              </BotonImprimir>
-                            </div>
-                          </div>
-                        )
-                      )}
-                  </div>
+                                  <td className="px-3 py-2 border border-slate-300 text-center font-bold">
+                                    {mayusculas(
+                                      recibo.estado
+                                    )}
+                                  </td>
+
+                                  <td className="px-3 py-2 border border-slate-300 text-right font-black whitespace-nowrap">
+                                    {formatearMoneda(
+                                      recibo.valor
+                                    )}
+                                  </td>
+
+                                  <td className="px-3 py-2 border border-slate-300 text-center">
+                                    <BotonImprimir
+                                      type="button"
+                                      onClick={() =>
+                                        imprimirRecibo(
+                                          recibo,
+                                          detalleFinanciero
+                                        )
+                                      }
+                                      className="!px-2 !py-1 !text-[9px]"
+                                    >
+                                      <i className="fas fa-print"></i>
+                                      Imprimir
+                                    </BotonImprimir>
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </MarcoTabla>
                 )}
               </div>
             </div>
