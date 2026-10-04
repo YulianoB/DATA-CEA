@@ -21,6 +21,7 @@ import {
   BotonVerDetalle,
   BotonGuardar,
   BotonCancelar,
+  BotonImprimir,
   ESTILO_CONTENEDORES,
   ESTILO_ENCABEZADO_TABLA,
   ESTILO_SECCIONES,
@@ -3714,52 +3715,54 @@ const ingresosLibresFiltrados =
                       text-center
                     "
                   >
-                    {[
-                      'PENDIENTE',
-                      'ABONADO',
-                    ].includes(
-                      mayusculas(
-                        cuenta.estado
-                      )
-                    ) ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          abrirRegistrarPago(
-                            cuenta
-                          )
-                        }
-                        className="
-                          bg-emerald-600
-                          hover:bg-emerald-700
-                          text-white
-                          rounded-lg
-                          px-3
-                          py-1.5
-                          text-[10px]
-                          font-bold
-                        "
-                      >
-                        <i className="fas fa-dollar-sign mr-1"></i>
+                    <div className="flex justify-center flex-wrap gap-1.5">
+                      {[
+                        'PENDIENTE',
+                        'ABONADO',
+                      ].includes(
+                        mayusculas(
+                          cuenta.estado
+                        )
+                      ) && (
+                        <BotonAgregar
+                          type="button"
+                          onClick={() =>
+                            abrirRegistrarPago(
+                              cuenta
+                            )
+                          }
+                          className="!px-3 !py-1.5 !text-[10px]"
+                        >
+                          <i className="fas fa-dollar-sign"></i>
+                          Registrar Pago
+                        </BotonAgregar>
+                      )}
 
-                        Registrar Pago
-                      </button>
-                    ) : (
-                      <BotonVerDetalle
-                        onClick={() =>
-                          abrirDetalleCuenta(
-                            cuenta
-                          )
-                        }
-                        disabled={
-                          cargandoDetalle
-                        }
-                        className="!px-3 !py-1.5 !text-[10px]"
-                      >
-                        <i className="fas fa-eye"></i>
-                        Ver Detalle
-                      </BotonVerDetalle>
-                    )}
+                      {[
+                        'ABONADO',
+                        'PAZ_Y_SALVO',
+                        'PAZ Y SALVO',
+                      ].includes(
+                        mayusculas(
+                          cuenta.estado
+                        )
+                      ) && (
+                        <BotonVerDetalle
+                          onClick={() =>
+                            abrirDetalleCuenta(
+                              cuenta
+                            )
+                          }
+                          disabled={
+                            cargandoDetalle
+                          }
+                          className="!px-3 !py-1.5 !text-[10px]"
+                        >
+                          <i className="fas fa-eye"></i>
+                          Ver Detalle
+                        </BotonVerDetalle>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )
@@ -5145,51 +5148,67 @@ const ingresosLibresFiltrados =
       ==================================================== */}
 
       {drawerDetalle && detalleFinanciero && (
-        <div className="fixed inset-0 z-[55]">
+        <div
+          className="
+            fixed
+            inset-0
+            z-[70]
+            bg-black/40
+            flex
+            items-center
+            justify-center
+            p-4
+          "
+          onMouseDown={cerrarDrawerDetalle}
+        >
           <div
-            className="absolute inset-0 bg-black/35"
-            onClick={cerrarDrawerDetalle}
-          ></div>
-
-          <aside
             className="
-              absolute
-              right-0
-              top-0
-              h-full
               w-full
-              sm:w-[500px]
+              max-w-3xl
+              max-h-[92vh]
               bg-white
+              rounded-xl
               shadow-2xl
               overflow-y-auto
             "
+            onMouseDown={
+              e =>
+                e.stopPropagation()
+            }
           >
             <div
               className="
                 sticky
                 top-0
                 z-20
-                bg-white
-                border-b
-                border-gray-300
                 px-4
                 py-3
                 flex
                 justify-between
-                items-start
+                items-center
                 gap-3
               "
+              style={{
+                backgroundColor:
+                  ESTILO_SECCIONES.fondo,
+                color:
+                  ESTILO_SECCIONES.texto,
+                borderRadius:
+                  ESTILO_SECCIONES.radioSuperior,
+              }}
             >
               <div>
-                <p className="text-[9px] uppercase font-bold text-gray-500">
-                  Caja · Consulta
-                </p>
-
-                <h2 className="text-base font-black text-[var(--primary)] mt-0.5">
+                <h2 className="text-sm font-black">
                   Detalle Financiero
                 </h2>
 
-                <p className="text-[10px] text-gray-500 mt-0.5">
+                <p
+                  className="text-[10px] mt-0.5"
+                  style={{
+                    color:
+                      ESTILO_SECCIONES.subtitulo,
+                  }}
+                >
                   {nombreCompletoCuenta(
                     detalleFinanciero?.cuenta
                   )}
@@ -5199,7 +5218,8 @@ const ingresosLibresFiltrados =
               <button
                 type="button"
                 onClick={cerrarDrawerDetalle}
-                className="w-8 h-8 border border-gray-300 rounded-lg hover:bg-gray-100"
+                className="w-8 h-8 rounded-lg hover:bg-white/15"
+                aria-label="Cerrar"
               >
                 <i className="fas fa-times"></i>
               </button>
@@ -5502,7 +5522,7 @@ const ingresosLibresFiltrados =
                                 )}
                               </div>
 
-                              <button
+                              <BotonImprimir
                                 type="button"
                                 onClick={() =>
                                   imprimirRecibo(
@@ -5510,21 +5530,11 @@ const ingresosLibresFiltrados =
                                     detalleFinanciero
                                   )
                                 }
-                                className="
-                                  mt-1
-                                  bg-blue-600
-                                  hover:bg-blue-700
-                                  text-white
-                                  rounded-md
-                                  px-2
-                                  py-1
-                                  text-[9px]
-                                  font-bold
-                                "
+                                className="mt-1 !px-2 !py-1 !text-[9px]"
                               >
-                                <i className="fas fa-print mr-1"></i>
+                                <i className="fas fa-print"></i>
                                 Imprimir
-                              </button>
+                              </BotonImprimir>
                             </div>
                           </div>
                         )
@@ -5533,7 +5543,7 @@ const ingresosLibresFiltrados =
                 )}
               </div>
             </div>
-          </aside>
+          </div>
         </div>
       )}
 
