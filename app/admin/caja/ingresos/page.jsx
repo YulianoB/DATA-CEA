@@ -3057,7 +3057,7 @@ const ingresosLibresFiltrados =
             grid
             grid-cols-1
             sm:grid-cols-2
-            lg:grid-cols-12
+            lg:grid-cols-24
             gap-2
             items-center
           "
@@ -3107,7 +3107,7 @@ const ingresosLibresFiltrados =
                   }
                 }
               }
-              className="lg:col-span-2 
+              className="lg:col-span-5 
                 border
                 border-gray-300
                 rounded-lg
@@ -3135,7 +3135,7 @@ const ingresosLibresFiltrados =
                 BÚSQUEDA
             ============================================== */}
 
-            <div className="relative lg:col-span-3">
+            <div className="relative lg:col-span-6">
               <i
                 className="
                   fas
@@ -3195,7 +3195,7 @@ const ingresosLibresFiltrados =
                       e.target.value
                     )
                 }
-                className="lg:col-span-2 
+                className="lg:col-span-3 
                   border
                   border-gray-300
                   rounded-lg
@@ -3233,7 +3233,7 @@ const ingresosLibresFiltrados =
             ) : (
               <div
                 className="
-                  lg:col-span-2
+                  lg:col-span-3
                   border
                   border-gray-200
                   bg-gray-50
@@ -3266,7 +3266,7 @@ const ingresosLibresFiltrados =
                     e.target.value
                   )
               }
-              className="lg:col-span-2 
+              className="lg:col-span-4 
                 border
                 border-gray-300
                 rounded-lg
@@ -3313,7 +3313,7 @@ const ingresosLibresFiltrados =
                     e.target.value
                   )
               }
-              className="lg:col-span-2 
+              className="lg:col-span-4 
                 border
                 border-gray-300
                 rounded-lg
@@ -3352,7 +3352,7 @@ const ingresosLibresFiltrados =
                 }
               }}
               disabled={cargando}
-              className="w-full justify-center lg:col-span-1 !px-2"
+              className="w-full justify-center lg:col-span-2 !px-2"
             >
               <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
               Actualizar
