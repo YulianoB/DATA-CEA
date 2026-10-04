@@ -3107,7 +3107,7 @@ const ingresosLibresFiltrados =
                   }
                 }
               }
-              className="lg:col-span-3 
+              className="lg:col-span-2 
                 border
                 border-gray-300
                 rounded-lg
@@ -3195,7 +3195,7 @@ const ingresosLibresFiltrados =
                       e.target.value
                     )
                 }
-                className="lg:col-span-1 
+                className="lg:col-span-2 
                   border
                   border-gray-300
                   rounded-lg
@@ -3233,6 +3233,7 @@ const ingresosLibresFiltrados =
             ) : (
               <div
                 className="
+                  lg:col-span-2
                   border
                   border-gray-200
                   bg-gray-50
@@ -3245,7 +3246,7 @@ const ingresosLibresFiltrados =
                   items-center
                 "
               >
-                <i className="lg:col-span-2 fas fa-receipt mr-2 text-blue-600"></i>
+                <i className="fas fa-receipt mr-2 text-blue-600"></i>
 
                 Recibos de otros ingresos
               </div>
