@@ -26,6 +26,7 @@ const GRUPOS_PESV = [
     id: 'gestion-pesv',
     columnas: 3,
     compacta: true,
+    compactaAlta: true,
     opciones: [
       {
         id: 'tablero',
@@ -105,7 +106,7 @@ export default function PesvPage() {
       rutaRegreso="/admin"
       textoRegreso="Regresar"
       mostrarCerrarSesion
-      anchoContenido="940px"
+      anchoContenido="900px"
       contenedorTarjetas
       mostrarPie
     />
