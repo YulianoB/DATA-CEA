@@ -13,9 +13,14 @@ import {
   useRouter,
 } from 'next/navigation'
 
+import { CashRegister, RefreshCw } from 'lucide-react'
+
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+  BotonSecundario,
+  ContenedorModulo,
+  TituloSeccion,
+} from '@/components/admin/EstiloModulo'
 
 // =========================================================
 // CONSTANTES
@@ -873,235 +878,26 @@ export default function CajaPage() {
         md:p-6
       "
     >
-      <div
-        className="
-          max-w-7xl
-          mx-auto
-          bg-white
-          border
-          border-gray-200
-          shadow-lg
-          rounded-xl
-          p-4
-          md:p-6
-        "
-      >
+      <ContenedorModulo className="max-w-7xl mx-auto overflow-hidden">
 
-        {/* ==================================================
-            HEADER
-        ================================================== */}
+        <EncabezadoModulo
+          titulo="Caja"
+          subtitulo="Gestión de ingresos, egresos, cierre de caja y cartera del CEA."
+          icono={CashRegister}
+          rutaRegreso="/admin"
+          textoRegreso="Menú Administrativo"
+        />
 
-        <div
-          className="
-            border
-            border-gray-500
-            rounded-xl
-            px-4
-            py-3
-            mb-3
-            bg-white
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-3
-            "
-          >
-            <div>
-              <p
-                className="
-                  text-[9px]
-                  uppercase
-                  tracking-wider
-                  font-bold
-                  text-gray-500
-                "
-              >
-                Administración Financiera
-              </p>
-
-              <h1
-                className="
-                  mt-0.5
-                  text-xl
-                  md:text-2xl
-                  font-black
-                  text-[var(--primary)]
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-cash-register"></i>
-
-                Caja
-              </h1>
-
-              <p
-                className="
-                  mt-0.5
-                  text-[10px]
-                  text-gray-500
-                "
-              >
-                Gestión de ingresos, egresos, cierre de caja y cartera del CEA.
-              </p>
-            </div>
-
-            <div
-              className="
-                flex
-                flex-wrap
-                gap-2
-              "
+        <div className="px-4 pt-3 md:px-6">
+          <div className="flex justify-end">
+            <BotonSecundario
+              type="button"
+              onClick={cargarResumen}
+              disabled={cargando}
             >
-              <button
-                type="button"
-                onClick={
-                  cargarResumen
-                }
-                disabled={
-                  cargando
-                }
-                className="
-                  border
-                  border-gray-300
-                  bg-white
-                  hover:bg-gray-100
-                  text-gray-700
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  disabled:opacity-50
-                "
-              >
-                <i
-                  className={`
-                    fas
-                    fa-sync-alt
-                    mr-2
-                    ${
-                      cargando
-                        ? 'fa-spin'
-                        : ''
-                    }
-                  `}
-                ></i>
-
-                Actualizar
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin'
-                  )
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-arrow-left"></i>
-
-                Menú Administrativo
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  hover:bg-[var(--danger-dark)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-sign-out-alt"></i>
-
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ==================================================
-            EMPRESA
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-gray-500
-            rounded-lg
-            bg-gray-50
-            px-3
-            py-2
-            mb-3
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              sm:flex-row
-              sm:justify-between
-              gap-1
-              text-[10px]
-              text-gray-600
-            "
-          >
-            <span>
-              Usuario:{' '}
-
-              <strong
-                className="
-                  text-gray-900
-                "
-              >
-                {usuarioOperacion ||
-                  '-'}
-              </strong>
-            </span>
-
-            <span>
-              CEA:{' '}
-
-              <strong
-                className="
-                  text-gray-900
-                "
-              >
-                {empresaNombre ||
-                  '-'}
-              </strong>
-              
-            </span>
+              <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
+              Actualizar
+            </BotonSecundario>
           </div>
         </div>
 
@@ -1118,6 +914,9 @@ export default function CajaPage() {
               text-red-700
               rounded-lg
               p-3
+              mx-4
+              md:mx-6
+              mt-3
               mb-3
               text-xs
             "
@@ -1128,6 +927,7 @@ export default function CajaPage() {
           </div>
         )}
 
+        <div className="px-4 pb-4 md:px-6 md:pb-6">
         {/* ==================================================
             RESUMEN HOY
         ================================================== */}
@@ -1242,54 +1042,12 @@ export default function CajaPage() {
             overflow-hidden
           "
         >
-          <div
-            className="
-              bg-slate-800
-              text-white
-              px-4
-              py-2.5
-              flex
-              flex-col
-              sm:flex-row
-              sm:items-center
-              sm:justify-between
-              gap-1
-            "
-          >
-            <div>
-              <h2
-                className="
-                  text-xs
-                  font-bold
-                "
-              >
-                <i className="fas fa-border-all mr-2"></i>
-
-                Operaciones de Caja
-              </h2>
-
-              <p
-                className="
-                  mt-0.5
-                  text-[9px]
-                  text-slate-300
-                "
-              >
-                Seleccione el módulo que desea consultar o administrar.
-              </p>
-            </div>
-
-            <div
-              className="
-                text-[9px]
-                text-slate-400
-              "
-            >
-              <i className="fas fa-arrow-pointer mr-1"></i>
-
-              Accesos rápidos
-            </div>
-          </div>
+          <TituloSeccion
+            titulo="Operaciones de Caja"
+            subtitulo="Seleccione el módulo que desea consultar o administrar."
+            icono={<i className="fas fa-border-all" />}
+            className="rounded-none border-0"
+          />
 
           <div
             className="
@@ -1407,7 +1165,8 @@ export default function CajaPage() {
             </p>
           </div>
         </div>
-      </div>
+        </div>
+      </ContenedorModulo>
     </div>
   )
 }
