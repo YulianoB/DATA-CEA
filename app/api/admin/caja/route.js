@@ -3091,7 +3091,8 @@ async function actualizarEstadoCuenta(
 
 async function buscarAprendices(
   supabase,
-  busqueda
+  busqueda,
+  soloDocumento = false
 ) {
   const termino =
     limpiarBusqueda(
@@ -3134,6 +3135,14 @@ async function buscarAprendices(
     )
 
   if (
+    soloDocumento
+  ) {
+    consulta =
+      consulta.ilike(
+        'documento',
+        `%${termino}%`
+      )
+  } else if (
     CATEGORIAS_VALIDAS.has(
       categoria
     )
@@ -3414,7 +3423,8 @@ async function buscarClientesCaja(
     await Promise.all([
       buscarAprendices(
         supabase,
-        termino
+        termino,
+        true
       ),
 
       supabase
@@ -3439,13 +3449,9 @@ async function buscarClientesCaja(
           'estado',
           'ACTIVO'
         )
-        .or(
-          [
-            `nombre_cliente.ilike.%${termino}%`,
-            `documento_cliente.ilike.%${termino}%`,
-          ].join(
-            ','
-          )
+        .ilike(
+          'documento_cliente',
+          `%${termino}%`
         )
         .order(
           'created_at',
