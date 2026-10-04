@@ -24,7 +24,6 @@ import MenuNavegacion from '@/components/admin/MenuNavegacion'
 const GRUPOS_PESV = [
   {
     id: 'gestion-pesv',
-    titulo: 'Gestión del PESV',
     columnas: 3,
     compacta: true,
     opciones: [
@@ -106,7 +105,7 @@ export default function PesvPage() {
       rutaRegreso="/admin"
       textoRegreso="Regresar"
       mostrarCerrarSesion
-      anchoContenido="1180px"
+      anchoContenido="1000px"
       contenedorTarjetas
       mostrarPie
     />
