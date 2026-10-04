@@ -32,6 +32,7 @@ const GRUPOS_MENU = [
   {
     id: 'menu-administrativo',
     columnas: 5,
+    compacta: true,
     opciones: [
       { id: 'matriculas', titulo: 'Matrículas y Consultas', icono: GraduationCap, ruta: '/admin/inscripciones' },
       { id: 'caja', titulo: 'Caja', icono: Receipt, ruta: '/admin/caja' },
@@ -61,6 +62,7 @@ export default function AdminPage() {
       grupos={GRUPOS_MENU}
       mostrarRegresar={false}
       mostrarCerrarSesion
+      anchoContenido="1180px"
     />
   )
 }
