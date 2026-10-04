@@ -1989,6 +1989,7 @@ function imprimirIngresoHistorico(
             style={{
               backgroundColor: ESTILO_SECCIONES.fondo,
               color: ESTILO_SECCIONES.texto,
+              borderRadius: ESTILO_SECCIONES.radioSuperior,
             }}
           >
             <div>
@@ -2238,6 +2239,7 @@ function imprimirIngresoHistorico(
                 style={{
                     backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
                     color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
                   }}
                 >
                   <i className="fas fa-tags mr-2"></i>
@@ -2556,6 +2558,7 @@ function imprimirIngresoHistorico(
                   style={{
                     backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
                     color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
                   }}
                 >
                     <i className="fas fa-user mr-2"></i>
@@ -2594,6 +2597,14 @@ function imprimirIngresoHistorico(
                                   ...actual,
                                   documento_cliente:
                                     documento,
+                                  tipo_documento_cliente:
+                                    'CC',
+                                  nombre_cliente:
+                                    '',
+                                  celular_cliente:
+                                    '',
+                                  correo_cliente:
+                                    '',
                                 })
                               )
 
@@ -2766,16 +2777,6 @@ function imprimirIngresoHistorico(
                       placeholder="Nombre completo"
                     />
 
-                    {matriculaSeleccionada && (
-                      <div className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2 text-[9px] text-blue-800">
-                        <i className="fas fa-user-graduate mr-1"></i>
-                        Vinculado a matrícula{' '}
-                        <strong>
-                          {matriculaSeleccionada.consecutivo}
-                        </strong>
-                      </div>
-                    )}
-
                     <div
                       className="
                         grid
@@ -2848,6 +2849,7 @@ function imprimirIngresoHistorico(
                   style={{
                     backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
                     color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
                   }}
                 >
                   <i className="fas fa-credit-card mr-2"></i>
