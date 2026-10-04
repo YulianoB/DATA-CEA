@@ -63,6 +63,7 @@ export default function AdminPage() {
       mostrarRegresar={false}
       mostrarCerrarSesion
       anchoContenido="1180px"
+      contenedorTarjetas
     />
   )
 }
