@@ -62,7 +62,7 @@ export default function AdminPage() {
       grupos={GRUPOS_MENU}
       mostrarRegresar={false}
       mostrarCerrarSesion
-      anchoContenido="1180px"
+      anchoContenido="1000px"
     />
   )
 }
