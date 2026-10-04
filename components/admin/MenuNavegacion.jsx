@@ -81,13 +81,13 @@ function BotonMenuSuperior({ tipo, children, ...props }) {
   )
 }
 
-export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, deshabilitada = false }) {
+export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, deshabilitada = false, compacta = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={deshabilitada}
-      className="group relative flex min-h-[112px] w-full flex-col items-center justify-center gap-2 border p-3 text-center disabled:cursor-not-allowed disabled:opacity-50"
+      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? 'min-h-[88px] gap-1.5 p-2.5' : 'min-h-[112px] gap-2 p-3'}`}
       style={{
         backgroundColor: ESTILO_TARJETA_MENU.fondo,
         borderColor: ESTILO_TARJETA_MENU.borde,
@@ -130,15 +130,15 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
       {Icono && (
         <span
           data-menu-icon
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+          className={`flex shrink-0 items-center justify-center rounded-lg ${compacta ? 'h-8 w-8' : 'h-10 w-10'}`}
           style={{ backgroundColor: ESTILO_TARJETA_MENU.fondoIcono, color: ESTILO_TARJETA_MENU.textoIcono, transition: ESTILO_TARJETA_MENU.transicion }}
         >
-          <Icono size={29} strokeWidth={2} />
+          <Icono size={compacta ? 23 : 29} strokeWidth={2} />
         </span>
       )}
 
       <span className="min-w-0 flex-1">
-        <span data-menu-title className="block text-sm font-semibold leading-snug tracking-normal" style={{ color: ESTILO_TARJETA_MENU.textoTitulo, transition: ESTILO_TARJETA_MENU.transicion }}>{titulo}</span>
+        <span data-menu-title className={`block font-semibold leading-snug tracking-normal ${compacta ? 'text-[13px]' : 'text-sm'}`} style={{ color: ESTILO_TARJETA_MENU.textoTitulo, transition: ESTILO_TARJETA_MENU.transicion }}>{titulo}</span>
         {descripcion && (
           <span className="mt-1 block text-[11px] leading-4" style={{ color: ESTILO_TARJETA_MENU.textoDescripcion }}>{descripcion}</span>
         )}
@@ -149,7 +149,7 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
   )
 }
 
-export function GrupoNavegacion({ titulo, opciones = [], columnas = 5 }) {
+export function GrupoNavegacion({ titulo, opciones = [], columnas = 5, compacta = false }) {
   const columnasClase = {
     2: 'lg:grid-cols-2',
     3: 'lg:grid-cols-3',
@@ -164,8 +164,8 @@ export function GrupoNavegacion({ titulo, opciones = [], columnas = 5 }) {
           <h2 className="text-xs font-black uppercase tracking-[0.08em]" style={{ color: ESTILO_GRUPO_MENU.titulo }}>{titulo}</h2>
         </div>
       )}
-      <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${columnasClase}`}>
-        {opciones.map((opcion) => <TarjetaNavegacion key={opcion.id || opcion.titulo} {...opcion} />)}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${compacta ? 'gap-2.5' : 'gap-3'} ${columnasClase}`}>
+        {opciones.map((opcion) => <TarjetaNavegacion key={opcion.id || opcion.titulo} {...opcion} compacta={compacta} />)}
       </div>
     </section>
   )
@@ -256,7 +256,7 @@ export default function MenuNavegacion({
 
       <div className="mx-auto px-4 pb-10 pt-2 md:px-6" style={{ maxWidth: anchoContenido || ESTILO_MENU.anchoMaximo }}>
         {gruposConNavegacion.map((grupo) => (
-          <GrupoNavegacion key={grupo.id || grupo.titulo} titulo={grupo.titulo} opciones={grupo.opciones} columnas={grupo.columnas} />
+          <GrupoNavegacion key={grupo.id || grupo.titulo} titulo={grupo.titulo} opciones={grupo.opciones} columnas={grupo.columnas} compacta={grupo.compacta} />
         ))}
       </div>
     </main>
