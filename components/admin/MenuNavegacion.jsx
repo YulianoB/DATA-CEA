@@ -181,6 +181,7 @@ export default function MenuNavegacion({
   textoRegreso = 'Menú anterior',
   mostrarCerrarSesion = true,
   anchoContenido,
+  contenedorTarjetas = false,
 }) {
   const router = useRouter()
   const [user, setUser] = useState(null)
@@ -254,10 +255,18 @@ export default function MenuNavegacion({
         </div>
       </header>
 
-      <div className="mx-auto px-4 pb-10 pt-2 md:px-6" style={{ maxWidth: anchoContenido || ESTILO_MENU.anchoMaximo }}>
-        {gruposConNavegacion.map((grupo) => (
-          <GrupoNavegacion key={grupo.id || grupo.titulo} titulo={grupo.titulo} opciones={grupo.opciones} columnas={grupo.columnas} compacta={grupo.compacta} />
-        ))}
+      <div className="mx-auto px-4 pb-10 pt-5 md:px-6" style={{ maxWidth: anchoContenido || ESTILO_MENU.anchoMaximo }}>
+        <div
+          className={contenedorTarjetas ? 'rounded-xl border bg-white px-5 pb-5 pt-1 md:px-6 md:pb-6' : ''}
+          style={contenedorTarjetas ? {
+            borderColor: '#DCE4EB',
+            boxShadow: '0 6px 20px rgba(15, 23, 42, 0.08)',
+          } : undefined}
+        >
+          {gruposConNavegacion.map((grupo) => (
+            <GrupoNavegacion key={grupo.id || grupo.titulo} titulo={grupo.titulo} opciones={grupo.opciones} columnas={grupo.columnas} compacta={grupo.compacta} />
+          ))}
+        </div>
       </div>
     </main>
   )
