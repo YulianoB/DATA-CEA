@@ -4867,186 +4867,234 @@ const ingresosLibresFiltrados =
                 </div>
               </div>
 
-              <div
-                className="
-                  border
-                  border-gray-300
-                  rounded-lg
-                  overflow-hidden
-                "
-              >
+              <div>
                 <div
                   className="
-                    bg-gray-100
                     px-3
                     py-2
                     text-[10px]
                     font-bold
-                    text-gray-700
                   "
+                  style={{
+                    backgroundColor:
+                      ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                    color:
+                      ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderRadius:
+                      ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+                  }}
                 >
+                  <i className="fas fa-list-ul mr-2"></i>
                   Desglose de la obligación
                 </div>
 
-                <div className="divide-y divide-gray-100">
-                  {(Array.isArray(
-                    cuentaPago?.detalles
-                  )
-                    ? cuentaPago.detalles
-                    : []
-                  ).map(
-                    detalle => (
-                      <div
-                        key={detalle.id}
-                        className="
-                          px-3
-                          py-2
-                          flex
-                          items-center
-                          justify-between
-                          gap-3
-                        "
-                      >
-                        <div className="min-w-0">
-                          <div
-                            className="
-                              text-[10px]
-                              font-bold
-                              text-gray-800
-                            "
-                          >
-                            {detalle?.concepto?.nombre ||
-                              detalle?.descripcion ||
-                              'CONCEPTO'}
-                          </div>
+                <MarcoTabla className="rounded-t-none">
+                  <table className="w-full text-[10px] border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="px-3 py-2 text-left border border-slate-300">
+                          Concepto
+                        </th>
+                        <th className="px-3 py-2 text-left border border-slate-300 w-32">
+                          Categoría
+                        </th>
+                        <th className="px-3 py-2 text-right border border-slate-300 w-36">
+                          Valor
+                        </th>
+                      </tr>
+                    </thead>
 
-                          <div
-                            className="
-                              text-[9px]
-                              text-gray-500
-                            "
-                          >
-                            {(Array.isArray(
-                              detalle?.categorias
-                            )
-                              ? detalle.categorias
-                              : []
-                            ).join(' / ') || '-'}
-                          </div>
-                        </div>
+                    <tbody>
+                      {(Array.isArray(
+                        cuentaPago?.detalles
+                      )
+                        ? cuentaPago.detalles
+                        : []
+                      ).map(
+                        detalle => (
+                          <tr key={detalle.id}>
+                            <td className="px-3 py-2 border border-slate-300 font-semibold">
+                              {detalle?.concepto?.nombre ||
+                                detalle?.descripcion ||
+                                'CONCEPTO'}
+                            </td>
 
-                        <div
-                          className="
-                            text-[10px]
-                            font-black
-                            text-gray-900
-                            whitespace-nowrap
-                          "
+                            <td className="px-3 py-2 border border-slate-300">
+                              {(Array.isArray(
+                                detalle?.categorias
+                              )
+                                ? detalle.categorias
+                                : []
+                              ).join(' / ') || '-'}
+                            </td>
+
+                            <td className="px-3 py-2 border border-slate-300 text-right font-bold whitespace-nowrap">
+                              {formatearMoneda(
+                                detalle?.valor
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      )}
+
+                      <tr>
+                        <td
+                          colSpan={2}
+                          className="px-3 py-1.5 border border-slate-300 text-right font-bold"
                         >
+                          Total obligación
+                        </td>
+                        <td className="px-3 py-1.5 border border-slate-300 text-right font-black whitespace-nowrap">
                           {formatearMoneda(
-                            detalle?.valor
+                            cuentaPago?.valor_total
                           )}
-                        </div>
-                      </div>
-                    )
-                  )}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td
+                          colSpan={2}
+                          className="px-3 py-1.5 border border-slate-300 text-right font-bold"
+                        >
+                          Abonado
+                        </td>
+                        <td className="px-3 py-1.5 border border-slate-300 text-right font-black whitespace-nowrap">
+                          {formatearMoneda(
+                            cuentaPago?.total_abonado
+                          )}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td
+                          colSpan={2}
+                          className="px-3 py-1.5 border border-slate-300 text-right font-bold"
+                        >
+                          Saldo
+                        </td>
+                        <td className="px-3 py-1.5 border border-slate-300 text-right font-black whitespace-nowrap">
+                          {formatearMoneda(
+                            cuentaPago?.saldo
+                          )}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </MarcoTabla>
+              </div>
+
+              <div>
+                <div
+                  className="
+                    px-3
+                    py-2
+                    text-[10px]
+                    font-bold
+                  "
+                  style={{
+                    backgroundColor:
+                      ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                    color:
+                      ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    borderRadius:
+                      ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+                  }}
+                >
+                  <i className="fas fa-money-check-dollar mr-2"></i>
+                  Detalle del pago
+                </div>
+
+                <div
+                  className="
+                    border
+                    border-t-0
+                    border-slate-300
+                    rounded-b-lg
+                    p-3
+                    space-y-2
+                  "
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <CampoInput
+                      label="Valor recibido"
+                      prefijo="$"
+                      value={
+                        formPago.valor
+                          ? Number(
+                              String(formPago.valor).replace(/\D/g, '')
+                            ).toLocaleString('es-CO')
+                          : ''
+                      }
+                      onChange={(value) => {
+                        const valorLimpio = String(value || '').replace(/\D/g, '')
+
+                        setFormPago((actual) => ({
+                          ...actual,
+                          valor: valorLimpio,
+                        }))
+                      }}
+                    />
+
+                    <CampoSelect
+                      label="Medio de pago"
+                      value={formPago.medio_pago_id}
+                      onChange={value =>
+                        setFormPago(actual => ({
+                          ...actual,
+                          medio_pago_id: value,
+                        }))
+                      }
+                      options={mediosPago
+                        .map(item => ({
+                          value: item.id,
+                          label: nombreMedioPagoVisible(
+                            item.nombre
+                          ),
+                        }))
+                        .filter(item => item.label)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <CampoSelect
+                      label="Pagado por"
+                      value={formPago.pagado_por}
+                      onChange={value =>
+                        setFormPago(actual => ({
+                          ...actual,
+                          pagado_por: value,
+                        }))
+                      }
+                      options={
+                        opcionesPagadoPor
+                      }
+                    />
+
+                    <CampoInput
+                      label="Entidad financiera"
+                      value={formPago.referencia_pago}
+                      onChange={value =>
+                        setFormPago(actual => ({
+                          ...actual,
+                          referencia_pago: value,
+                        }))
+                      }
+                      placeholder="Ej. Bancolombia, Davivienda, Nequi..."
+                    />
+                  </div>
+
+                  <CampoTextarea
+                    label="Observaciones"
+                    value={formPago.observaciones}
+                    onChange={value =>
+                      setFormPago(actual => ({
+                        ...actual,
+                        observaciones: value,
+                      }))
+                    }
+                  />
                 </div>
               </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <ResumenPago
-                  label="Obligación"
-                  value={formatearMoneda(cuentaPago?.valor_total)}
-                />
-
-                <ResumenPago
-                  label="Abonado"
-                  value={formatearMoneda(cuentaPago?.total_abonado)}
-                />
-
-                <ResumenPago
-                  label="Saldo"
-                  value={formatearMoneda(cuentaPago?.saldo)}
-                />
-              </div>
-
-              <CampoInput
-                label="Valor recibido"
-                prefijo="$"
-                value={
-                  formPago.valor
-                    ? Number(
-                        String(formPago.valor).replace(/\D/g, '')
-                      ).toLocaleString('es-CO')
-                    : ''
-                }
-                onChange={(value) => {
-                  const valorLimpio = String(value || '').replace(/\D/g, '')
-
-                  setFormPago((actual) => ({
-                    ...actual,
-                    valor: valorLimpio,
-                  }))
-                }}
-              />
-
-              <div className="grid grid-cols-2 gap-2">
-                <CampoSelect
-                  label="Medio de pago"
-                  value={formPago.medio_pago_id}
-                  onChange={value =>
-                    setFormPago(actual => ({
-                      ...actual,
-                      medio_pago_id: value,
-                    }))
-                  }
-                  options={mediosPago
-                    .map(item => ({
-                      value: item.id,
-                      label: nombreMedioPagoVisible(
-                        item.nombre
-                      ),
-                    }))
-                    .filter(item => item.label)}
-                />
-
-                <CampoSelect
-                  label="Pagado por"
-                  value={formPago.pagado_por}
-                  onChange={value =>
-                    setFormPago(actual => ({
-                      ...actual,
-                      pagado_por: value,
-                    }))
-                  }
-                  options={
-                    opcionesPagadoPor
-                  }
-                />
-              </div>
-
-              <CampoInput
-                label="Entidad financiera"
-                value={formPago.referencia_pago}
-                onChange={value =>
-                  setFormPago(actual => ({
-                    ...actual,
-                    referencia_pago: value,
-                  }))
-                }
-                placeholder="Ej. Bancolombia, Davivienda, Nequi..."
-              />
-
-              <CampoTextarea
-                label="Observaciones"
-                value={formPago.observaciones}
-                onChange={value =>
-                  setFormPago(actual => ({
-                    ...actual,
-                    observaciones: value,
-                  }))
-                }
-              />
 
               {error && (
                 <div
