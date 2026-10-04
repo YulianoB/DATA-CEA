@@ -806,11 +806,7 @@ const [
               )
 
               if (
-                coincidenciaExacta &&
-                texto(
-                  form.documento_cliente
-                ) ===
-                  documentoBuscado
+                coincidenciaExacta
               ) {
                 seleccionarCliente(
                   coincidenciaExacta
@@ -841,7 +837,6 @@ const [
       tipoIngreso,
       busquedaAprendiz,
       construirUrl,
-      form.documento_cliente,
     ]
   )
 
