@@ -4524,6 +4524,74 @@ export async function GET(
       // 1. CONSULTAR RECIBOS LIBRES
       // ===================================================
 
+      // El historial de Otros Ingresos incluye recibos LIBRE
+      // y recibos de aprendices generados para conceptos distintos
+      // de CURSO. Los pagos ordinarios de CURSO continúan fuera
+      // de esta pestaña.
+      const {
+        data:
+          conceptosOtrosIngresos,
+        error:
+          errorConceptosOtrosIngresos,
+      } =
+        await supabase
+          .from(
+            'conceptos_caja'
+          )
+          .select(
+            'id, nombre, naturaleza'
+          )
+          .eq(
+            'naturaleza',
+            'INGRESO'
+          )
+
+      if (
+        errorConceptosOtrosIngresos
+      ) {
+        throw new Error(
+          `No fue posible identificar los conceptos de Otros Ingresos: ${errorConceptosOtrosIngresos.message}`
+        )
+      }
+
+      const conceptoIdsOtrosIngresos =
+        (
+          conceptosOtrosIngresos ||
+          []
+        )
+          .filter(
+            concepto =>
+              limpiarBusqueda(
+                concepto?.nombre
+              ) !==
+              'CURSO'
+          )
+          .map(
+            concepto =>
+              concepto.id
+          )
+          .filter(
+            Boolean
+          )
+
+      if (
+        conceptoIdsOtrosIngresos.length ===
+        0
+      ) {
+        return NextResponse.json({
+          status:
+            'success',
+          data:
+            [],
+          total:
+            0,
+          empresa:
+            empresaRespuesta(
+              empresa
+            ),
+        })
+      }
+
       let consulta =
         supabase
           .from(
@@ -4557,9 +4625,16 @@ export async function GET(
             categoria,
             cantidad_clases_refuerzo
           `)
-          .eq(
+          .in(
+            'concepto_id',
+            conceptoIdsOtrosIngresos
+          )
+          .in(
             'tipo_origen',
-            'LIBRE'
+            [
+              'LIBRE',
+              'MATRICULA',
+            ]
           )
 
       // ===================================================
