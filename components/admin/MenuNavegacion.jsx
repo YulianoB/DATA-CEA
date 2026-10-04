@@ -81,13 +81,13 @@ function BotonMenuSuperior({ tipo, children, ...props }) {
   )
 }
 
-export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, deshabilitada = false, compacta = false }) {
+export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, deshabilitada = false, compacta = false, compactaAlta = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={deshabilitada}
-      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? (descripcion ? 'min-h-[90px] gap-1 px-3 py-2' : 'h-[78px] gap-1 px-2 py-2') : 'min-h-[112px] gap-2 p-3'}`}
+      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? (descripcion ? (compactaAlta ? 'min-h-[78px] gap-0.5 px-3 py-1.5' : 'min-h-[90px] gap-1 px-3 py-2') : 'h-[78px] gap-1 px-2 py-2') : 'min-h-[112px] gap-2 p-3'}`}
       style={{
         backgroundColor: ESTILO_TARJETA_MENU.fondo,
         borderColor: ESTILO_TARJETA_MENU.borde,
@@ -149,7 +149,7 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
   )
 }
 
-export function GrupoNavegacion({ titulo, opciones = [], columnas = 5, compacta = false }) {
+export function GrupoNavegacion({ titulo, opciones = [], columnas = 5, compacta = false, compactaAlta = false }) {
   const columnasClase = {
     2: 'lg:grid-cols-2',
     3: 'lg:grid-cols-3',
@@ -158,14 +158,14 @@ export function GrupoNavegacion({ titulo, opciones = [], columnas = 5, compacta 
   }[columnas] || 'lg:grid-cols-5'
 
   return (
-    <section style={{ marginTop: ESTILO_GRUPO_MENU.separacionSuperior }}>
+    <section style={{ marginTop: compactaAlta ? 12 : ESTILO_GRUPO_MENU.separacionSuperior }}>
       {titulo && (
         <div className="mb-3 flex items-center gap-3 border-b pb-2" style={{ borderColor: ESTILO_GRUPO_MENU.linea }}>
           <h2 className="text-xs font-black uppercase tracking-[0.08em]" style={{ color: ESTILO_GRUPO_MENU.titulo }}>{titulo}</h2>
         </div>
       )}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${compacta ? 'gap-3' : 'gap-3'} ${columnasClase}`}>
-        {opciones.map((opcion) => <TarjetaNavegacion key={opcion.id || opcion.titulo} {...opcion} compacta={compacta} />)}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${compactaAlta ? 'gap-2' : 'gap-3'} ${columnasClase}`}>
+        {opciones.map((opcion) => <TarjetaNavegacion key={opcion.id || opcion.titulo} {...opcion} compacta={compacta} compactaAlta={compactaAlta} />)}
       </div>
     </section>
   )
@@ -267,7 +267,7 @@ export default function MenuNavegacion({
           } : undefined}
         >
           {gruposConNavegacion.map((grupo) => (
-            <GrupoNavegacion key={grupo.id || grupo.titulo} titulo={grupo.titulo} opciones={grupo.opciones} columnas={grupo.columnas} compacta={grupo.compacta} />
+            <GrupoNavegacion key={grupo.id || grupo.titulo} titulo={grupo.titulo} opciones={grupo.opciones} columnas={grupo.columnas} compacta={grupo.compacta} compactaAlta={grupo.compactaAlta} />
           ))}
         </div>
       </div>
