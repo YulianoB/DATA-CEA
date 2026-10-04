@@ -5442,6 +5442,14 @@ const ingresosLibresFiltrados =
           construirUrl
         }
 
+        onRegistrarPago={
+          cuenta => {
+            abrirRegistrarPago(
+              cuenta
+            )
+          }
+        }
+
         onActualizado={
           async () => {
             await Promise.all([
