@@ -773,6 +773,7 @@ const [
     },
     [
       abierto,
+      tipoIngreso,
       busquedaAprendiz,
       construirUrl,
     ]
