@@ -17,9 +17,9 @@ export const ESTILO_SECCIONES = {
 
 // Franjas secundarias dentro de modales, formularios y bloques de detalle.
 export const ESTILO_SECCIONES_SECUNDARIAS = {
-  fondo: '#99A1AF',
+  fondo: '#737B87',
   texto: '#FFFFFF',
-  borde: '#99A1AF',
+  borde: '#737B87',
   grosorBorde: 1,
   radio: 8,
 }
