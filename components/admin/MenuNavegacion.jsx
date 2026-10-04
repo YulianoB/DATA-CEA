@@ -182,6 +182,8 @@ export default function MenuNavegacion({
   mostrarCerrarSesion = true,
   anchoContenido,
   contenedorTarjetas = false,
+  mostrarPie = false,
+  textoPie = 'DATA CEA · Sistema de Gestión Integral — © 2026 Colombiana J&Y · Todos los derechos reservados',
 }) {
   const router = useRouter()
   const [user, setUser] = useState(null)
@@ -259,8 +261,9 @@ export default function MenuNavegacion({
         <div
           className={contenedorTarjetas ? 'rounded-xl border bg-white px-5 pb-5 pt-1 md:px-6 md:pb-6' : ''}
           style={contenedorTarjetas ? {
-            borderColor: '#DCE4EB',
-            boxShadow: '0 6px 20px rgba(15, 23, 42, 0.08)',
+            borderColor: '#B8C6D1',
+            borderWidth: '1px',
+            boxShadow: '0 10px 28px rgba(15, 23, 42, 0.14)',
           } : undefined}
         >
           {gruposConNavegacion.map((grupo) => (
@@ -268,6 +271,16 @@ export default function MenuNavegacion({
           ))}
         </div>
       </div>
+
+      {mostrarPie && (
+        <footer className="mx-auto px-4 pb-6 pt-1 text-center md:px-6" style={{ maxWidth: anchoContenido || ESTILO_MENU.anchoMaximo }}>
+          <div className="border-t pt-3" style={{ borderColor: '#DCE4EB' }}>
+            <p className="text-[10px] font-medium tracking-wide" style={{ color: '#7A8895' }}>
+              {textoPie}
+            </p>
+          </div>
+        </footer>
+      )}
     </main>
   )
 }
