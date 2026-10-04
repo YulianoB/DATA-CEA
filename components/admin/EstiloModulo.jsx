@@ -13,6 +13,7 @@ export const ESTILO_SECCIONES = {
   borde: '#24638C',
   grosorBorde: 1,
   radio: 10,
+  radioSuperior: '10px 10px 0 0',
 }
 
 // Franjas secundarias dentro de modales, formularios y bloques de detalle.
@@ -22,6 +23,7 @@ export const ESTILO_SECCIONES_SECUNDARIAS = {
   borde: '#737B87',
   grosorBorde: 1,
   radio: 8,
+  radioSuperior: '8px 8px 0 0',
 }
 
 // 2. TABLAS - ENCABEZADOS
