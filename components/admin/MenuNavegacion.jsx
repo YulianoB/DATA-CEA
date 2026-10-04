@@ -87,7 +87,7 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
       type="button"
       onClick={onClick}
       disabled={deshabilitada}
-      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? 'min-h-[72px] gap-1 p-2' : 'min-h-[112px] gap-2 p-3'}`}
+      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? 'min-h-[58px] gap-0.5 px-2 py-1.5' : 'min-h-[112px] gap-2 p-3'}`}
       style={{
         backgroundColor: ESTILO_TARJETA_MENU.fondo,
         borderColor: ESTILO_TARJETA_MENU.borde,
@@ -130,21 +130,21 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
       {Icono && (
         <span
           data-menu-icon
-          className={`flex shrink-0 items-center justify-center rounded-lg ${compacta ? 'h-7 w-7' : 'h-10 w-10'}`}
+          className={`flex shrink-0 items-center justify-center rounded-lg ${compacta ? 'h-6 w-6' : 'h-10 w-10'}`}
           style={{ backgroundColor: ESTILO_TARJETA_MENU.fondoIcono, color: ESTILO_TARJETA_MENU.textoIcono, transition: ESTILO_TARJETA_MENU.transicion }}
         >
-          <Icono size={compacta ? 20 : 29} strokeWidth={2} />
+          <Icono size={compacta ? 17 : 29} strokeWidth={2} />
         </span>
       )}
 
       <span className="min-w-0 flex-1">
-        <span data-menu-title className={`block font-semibold leading-snug tracking-normal ${compacta ? 'text-xs' : 'text-sm'}`} style={{ color: ESTILO_TARJETA_MENU.textoTitulo, transition: ESTILO_TARJETA_MENU.transicion }}>{titulo}</span>
+        <span data-menu-title className={`block font-semibold leading-snug tracking-normal ${compacta ? 'text-[11px]' : 'text-sm'}`} style={{ color: ESTILO_TARJETA_MENU.textoTitulo, transition: ESTILO_TARJETA_MENU.transicion }}>{titulo}</span>
         {descripcion && (
           <span className="mt-1 block text-[11px] leading-4" style={{ color: ESTILO_TARJETA_MENU.textoDescripcion }}>{descripcion}</span>
         )}
       </span>
 
-      <ChevronRight data-menu-arrow size={15} className="absolute right-3 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-70" />
+      <ChevronRight data-menu-arrow size={compacta ? 12 : 15} className={`absolute opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-70 ${compacta ? 'right-2' : 'right-3'}`} />
     </button>
   )
 }
@@ -164,7 +164,7 @@ export function GrupoNavegacion({ titulo, opciones = [], columnas = 5, compacta 
           <h2 className="text-xs font-black uppercase tracking-[0.08em]" style={{ color: ESTILO_GRUPO_MENU.titulo }}>{titulo}</h2>
         </div>
       )}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${compacta ? 'gap-2' : 'gap-3'} ${columnasClase}`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${compacta ? 'gap-1.5' : 'gap-3'} ${columnasClase}`}>
         {opciones.map((opcion) => <TarjetaNavegacion key={opcion.id || opcion.titulo} {...opcion} compacta={compacta} />)}
       </div>
     </section>
