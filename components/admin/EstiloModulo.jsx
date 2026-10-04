@@ -83,7 +83,7 @@ export const ESTILO_BOTONES = {
   documentos: { fondo: '#4682B4', hover: '#356A96', texto: '#FFFFFF', borde: '#4682B4' },
   expediente: { fondo: '#5F9EA0', hover: '#4D8587', texto: '#FFFFFF', borde: '#5F9EA0' },
   vistaPrevia: { fondo: '#5F9EA0', hover: '#4D8587', texto: '#FFFFFF', borde: '#5F9EA0' },
-  imprimir: { fondo: '#71717B', hover: '#5B5B63', texto: '#FFFFFF', borde: '#71717B' },
+  imprimir: { fondo: '#2F6F89', hover: '#24586D', texto: '#FFFFFF', borde: '#2F6F89' },
   cargarPdf: { fondo: '#7C86FF', hover: '#626DDF', texto: '#FFFFFF', borde: '#7C86FF' },
   editarVehiculo: { fondo: '#3991DB', hover: '#2879BC', texto: '#FFFFFF', borde: '#3991DB' },
   hojaVida: { fondo: '#41659C', hover: '#34517E', texto: '#FFFFFF', borde: '#41659C' },
