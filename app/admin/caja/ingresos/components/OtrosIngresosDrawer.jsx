@@ -2305,6 +2305,7 @@ function imprimirIngresoHistorico(
                     py-2
                     text-[10px]
                     font-bold
+                    rounded-t-xl
                   "
                 style={{
                     backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
@@ -2931,6 +2932,7 @@ function imprimirIngresoHistorico(
                     py-2
                     text-[10px]
                     font-bold
+                    rounded-t-xl
                   "
                   style={{
                     backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
@@ -4036,7 +4038,7 @@ function CampoInput({
         className="
           w-full
           border
-          border-gray-300
+          border-slate-400
           rounded-lg
           px-3
           py-2
@@ -4084,7 +4086,7 @@ function CampoSelect({
         className="
           w-full
           border
-          border-gray-300
+          border-slate-400
           rounded-lg
           px-3
           py-2
@@ -4151,7 +4153,7 @@ function CampoTextarea({
         className="
           w-full
           border
-          border-gray-300
+          border-slate-400
           rounded-lg
           px-3
           py-2
