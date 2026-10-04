@@ -4776,7 +4776,7 @@ const ingresosLibresFiltrados =
               </button>
             </div>
 
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-2.5">
               <div
                 className="
                   px-3
@@ -4797,8 +4797,16 @@ const ingresosLibresFiltrados =
                 Información de la obligación
               </div>
 
-              <div className="border border-slate-300 rounded-lg p-3">
-                <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+              <div className="border border-slate-300 rounded-lg px-3 py-2.5">
+                <div
+                  className="
+                    grid
+                    grid-cols-2
+                    md:grid-cols-4
+                    gap-x-4
+                    gap-y-2
+                  "
+                >
                   <Dato
                     label="Matrícula"
                     value={cuentaPago?.consecutivo_matricula}
