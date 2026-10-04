@@ -3411,7 +3411,7 @@ const ingresosLibresFiltrados =
           onClick={() => setDrawerOtrosIngresos(true)}
         >
           <i className="fas fa-plus"></i>
-          Registrar Ingreso
+          Otros Ingresos
         </BotonAgregar>
       </div>
     </div>
@@ -3701,15 +3701,14 @@ const ingresosLibresFiltrados =
                       text-center
                     "
                   >
-                    {Number(
-                      cuenta.saldo
-                    ) >
-                      0 &&
-                    Array.isArray(
-                      cuenta?.detalles
-                    ) &&
-                    cuenta.detalles.length >
-                      0 ? (
+                    {[
+                      'PENDIENTE',
+                      'ABONADO',
+                    ].includes(
+                      mayusculas(
+                        cuenta.estado
+                      )
+                    ) ? (
                       <button
                         type="button"
                         onClick={() =>
@@ -3815,7 +3814,7 @@ const ingresosLibresFiltrados =
           onClick={() => setDrawerOtrosIngresos(true)}
         >
           <i className="fas fa-plus"></i>
-          Registrar Ingreso
+          Otros Ingresos
         </BotonAgregar>
       </div>
     </div>
