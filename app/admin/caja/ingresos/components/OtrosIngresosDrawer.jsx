@@ -1879,6 +1879,11 @@ function imprimirIngresoHistorico(
         fixed
         inset-0
         z-[70]
+        flex
+        items-center
+        justify-center
+        p-3
+        sm:p-5
       "
     >
       <div
@@ -1897,14 +1902,19 @@ function imprimirIngresoHistorico(
       ></div>
 
       <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Registrar ingresos"
         className="
-          absolute
-          right-0
-          top-0
-          h-full
+          relative
+          z-10
           w-full
-          sm:w-[560px]
+          max-w-[900px]
+          max-h-[92vh]
           bg-white
+          rounded-xl
+          border
+          border-gray-300
           shadow-2xl
           overflow-y-auto
         "
@@ -1921,6 +1931,7 @@ function imprimirIngresoHistorico(
             bg-white
             border-b
             border-gray-300
+            rounded-t-xl
           "
         >
           <div
