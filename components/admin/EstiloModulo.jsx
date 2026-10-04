@@ -74,6 +74,8 @@ export const ESTILO_BOTONES = {
   secundario: { fondo: '#FFFFFF', hover: '#F1F5F9', texto: '#29465D', borde: '#CBD5E1' },
   regresar: { fondo: '#3B617D', hover: '#29465D', texto: '#FFFFFF', borde: '#3B617D' },
   limpiar: { fondo: '#6B7280', hover: '#374151', texto: '#FFFFFF', borde: '#6B7280' },
+  actualizar: { fondo: '#FFFFFF', hover: '#F1F5F9', texto: '#29465D', borde: '#94A3B8' },
+  verDetalle: { fondo: '#3B617D', hover: '#29465D', texto: '#FFFFFF', borde: '#3B617D' },
 
   // Acciones estandarizadas para tablas y documentos
   documentos: { fondo: '#4682B4', hover: '#356A96', texto: '#FFFFFF', borde: '#4682B4' },
@@ -142,6 +144,8 @@ export const BotonExcel = (props) => <BotonAccion tipo="excel" {...props} />
 export const BotonSecundario = (props) => <BotonAccion tipo="secundario" {...props} />
 export const BotonRegresar = (props) => <BotonAccion tipo="regresar" {...props} />
 export const BotonLimpiar = (props) => <BotonAccion tipo="limpiar" {...props} />
+export const BotonActualizar = (props) => <BotonAccion tipo="actualizar" {...props} />
+export const BotonVerDetalle = (props) => <BotonAccion tipo="verDetalle" {...props} />
 
 // Acciones de tablas / documentos
 export const BotonDocumentos = (props) => <BotonAccion tipo="documentos" {...props} />
