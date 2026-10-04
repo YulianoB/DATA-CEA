@@ -2642,27 +2642,27 @@ function imprimirIngresoHistorico(
                   >
                     <div className="relative">
                       <CampoInput
-                        label="Nombre del cliente"
+                        label="Número de documento"
                         value={
-                          form.nombre_cliente
+                          form.documento_cliente
                         }
                         onChange={
                           value => {
-                            const nombre =
-                              mayusculas(
+                            const documento =
+                              texto(
                                 value
                               )
 
                             setForm(
                               actual => ({
                                 ...actual,
-                                nombre_cliente:
-                                  nombre,
+                                documento_cliente:
+                                  documento,
                               })
                             )
 
                             setBusquedaAprendiz(
-                              nombre
+                              documento
                             )
 
                             setTipoIngreso(
@@ -2674,7 +2674,7 @@ function imprimirIngresoHistorico(
                             )
                           }
                         }
-                        placeholder="Escriba nombre o documento para buscar..."
+                        placeholder="Digite el número para buscar..."
                       />
 
                       {buscandoAprendiz && (
@@ -2694,7 +2694,7 @@ function imprimirIngresoHistorico(
                             z-40
                             bg-white
                             border
-                            border-gray-300
+                            border-slate-400
                             rounded-lg
                             shadow-xl
                             max-h-64
@@ -2724,7 +2724,7 @@ function imprimirIngresoHistorico(
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="text-[10px] font-black text-gray-800">
-                                    {item.nombre_completo || '-'}
+                                    {item.documento || 'Sin documento'}
                                   </span>
 
                                   <span
@@ -2751,7 +2751,7 @@ function imprimirIngresoHistorico(
                                 </div>
 
                                 <div className="mt-1 text-[9px] text-gray-500">
-                                  {item.documento || 'Sin documento'}
+                                  {item.nombre_completo || '-'}
 
                                   {item.consecutivo
                                     ? ` · Matrícula ${item.consecutivo}`
@@ -2774,96 +2774,49 @@ function imprimirIngresoHistorico(
                       )}
                     </div>
 
-                    <div
-                      className="
-                        grid
-                        grid-cols-3
-                        gap-2
-                      "
-                    >
-                      <CampoSelect
-                        label="Tipo"
-                        value={
-                          form.tipo_documento_cliente
-                        }
-                        onChange={
-                          value =>
-                            setForm(
-                              actual => ({
-                                ...actual,
+                    <CampoSelect
+                      label="Tipo de documento"
+                      value={
+                        form.tipo_documento_cliente
+                      }
+                      onChange={
+                        value =>
+                          setForm(
+                            actual => ({
+                              ...actual,
+                              tipo_documento_cliente:
+                                value,
+                            })
+                          )
+                      }
+                      options={[
+                        { value: 'CC', label: 'CC' },
+                        { value: 'CE', label: 'CE' },
+                        { value: 'TI', label: 'TI' },
+                        { value: 'PASAPORTE', label: 'PASAPORTE' },
+                        { value: 'NIT', label: 'NIT' },
+                      ]}
+                    />
 
-                                tipo_documento_cliente:
-                                  value,
-                              })
-                            )
-                        }
-                        options={[
-                          {
-                            value:
-                              'CC',
-
-                            label:
-                              'CC',
-                          },
-
-                          {
-                            value:
-                              'CE',
-
-                            label:
-                              'CE',
-                          },
-
-                          {
-                            value:
-                              'TI',
-
-                            label:
-                              'TI',
-                          },
-
-                          {
-                            value:
-                              'PASAPORTE',
-
-                            label:
-                              'PASAPORTE',
-                          },
-
-                          {
-                            value:
-                              'NIT',
-
-                            label:
-                              'NIT',
-                          },
-                        ]}
-                      />
-
-                      <div
-                        className="
-                          col-span-2
-                        "
-                      >
-                        <CampoInput
-                          label="Documento"
-                          value={
-                            form.documento_cliente
-                          }
-                          onChange={
-                            value =>
-                              setForm(
-                                actual => ({
-                                  ...actual,
-
-                                  documento_cliente:
-                                    value,
-                                })
-                              )
-                          }
-                        />
-                      </div>
-                    </div>
+                    <CampoInput
+                      label="Nombre del cliente"
+                      value={
+                        form.nombre_cliente
+                      }
+                      onChange={
+                        value =>
+                          setForm(
+                            actual => ({
+                              ...actual,
+                              nombre_cliente:
+                                mayusculas(
+                                  value
+                                ),
+                            })
+                          )
+                      }
+                      placeholder="Nombre completo"
+                    />
 
                     <div
                       className="
