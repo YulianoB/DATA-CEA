@@ -444,6 +444,14 @@ export default function OtrosIngresosDrawer({
       null
     )
 
+  const [
+    clienteSeleccionado,
+    setClienteSeleccionado,
+  ] =
+    useState(
+      null
+    )
+
   // =======================================================
   // CONCEPTOS
   // =======================================================
@@ -702,6 +710,9 @@ const [
     setMatriculaSeleccionada(
       null
     )
+    setClienteSeleccionado(
+      null
+    )
   }
 
   useEffect(
@@ -798,6 +809,52 @@ const [
       tipoIngreso,
       busquedaAprendiz,
       construirUrl,
+    ]
+  )
+
+  useEffect(
+    () => {
+      if (
+        !clienteSeleccionado
+      ) {
+        return
+      }
+
+      if (
+        texto(
+          form.documento_cliente
+        ) !==
+        texto(
+          clienteSeleccionado?.documento
+        )
+      ) {
+        setClienteSeleccionado(
+          null
+        )
+        setMatriculaSeleccionada(
+          null
+        )
+        setTipoIngreso(
+          'LIBRE'
+        )
+        setForm(
+          actual => ({
+            ...actual,
+            tipo_documento_cliente:
+              'CC',
+            nombre_cliente:
+              '',
+            celular_cliente:
+              '',
+            correo_cliente:
+              '',
+          })
+        )
+      }
+    },
+    [
+      form.documento_cliente,
+      clienteSeleccionado,
     ]
   )
 
@@ -1010,6 +1067,9 @@ async function limpiarHistorial() {
 
     setBusquedaAprendiz('')
     setResultadosAprendiz([])
+    setClienteSeleccionado(
+      cliente
+    )
 
     setForm(
       actual => ({
@@ -2612,11 +2672,19 @@ function imprimirIngresoHistorico(
                                 documento
                               )
 
+                              setResultadosAprendiz(
+                                []
+                              )
+
                               setTipoIngreso(
                                 'LIBRE'
                               )
 
                               setMatriculaSeleccionada(
+                                null
+                              )
+
+                              setClienteSeleccionado(
                                 null
                               )
                             }
@@ -2727,13 +2795,7 @@ function imprimirIngresoHistorico(
                         }
                         disabled={
                           Boolean(
-                            matriculaSeleccionada
-                          ) ||
-                          (
-                            tipoIngreso === 'LIBRE' &&
-                            !busquedaAprendiz &&
-                            Boolean(form.nombre_cliente) &&
-                            Boolean(form.documento_cliente)
+                            clienteSeleccionado
                           )
                         }
                         options={[
@@ -2764,16 +2826,10 @@ function imprimirIngresoHistorico(
                           )
                       }
                       disabled={
-                        Boolean(
-                          matriculaSeleccionada
-                        ) ||
-                        (
-                          tipoIngreso === 'LIBRE' &&
-                          !busquedaAprendiz &&
-                          Boolean(form.nombre_cliente) &&
-                          Boolean(form.documento_cliente)
-                        )
-                      }
+                          Boolean(
+                            clienteSeleccionado
+                          )
+                        }
                       placeholder="Nombre completo"
                     />
 
