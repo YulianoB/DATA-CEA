@@ -202,8 +202,7 @@ function categoriasMatricula(
   )
 }
 
-function nombreMedio<i className="fas fa-credit-card mr-2"></i>
-                  PagoVisible(
+function nombreMedioPagoVisible(
   nombre
 ) {
   const valor =
@@ -2927,14 +2926,18 @@ function imprimirIngresoHistorico(
               >
                 <div
                   className="
-                    bg-slate-800
                     text-white
                     px-3
                     py-2
                     text-[10px]
                     font-bold
                   "
+                  style={{
+                    backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                    color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                  }}
                 >
+                  <i className="fas fa-credit-card mr-2"></i>
                   Pago
                 </div>
 
