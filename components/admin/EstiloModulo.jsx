@@ -255,10 +255,6 @@ export function MarcoTabla({ children, className = '' }) {
           background-color: ${ESTILO_ENCABEZADO_TABLA.fondo} !important;
           color: ${ESTILO_ENCABEZADO_TABLA.texto} !important;
         }
-        div :global(table thead th:hover) {
-          background-color: ${ESTILO_ENCABEZADO_TABLA.fondoHover} !important;
-          color: ${ESTILO_ENCABEZADO_TABLA.textoHover} !important;
-        }
         div :global(table tbody tr:hover) {
           background-color: ${ESTILO_CELDAS_TABLA.fondoFilaHover};
         }
