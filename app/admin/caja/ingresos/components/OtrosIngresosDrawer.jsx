@@ -1784,6 +1784,20 @@ function imprimirIngresoHistorico(
 }
 
   
+  const conceptosAdminIngreso =
+    useMemo(
+      () =>
+        conceptosAdmin.filter(
+          item =>
+            mayusculas(
+              item?.naturaleza
+            ) === 'INGRESO'
+        ),
+      [
+        conceptosAdmin,
+      ]
+    )
+
   // =======================================================
   // CONCEPTOS CRUD
   // =======================================================
@@ -2968,47 +2982,6 @@ function imprimirIngresoHistorico(
             'CONCEPTOS' && (
             <div className="p-4">
               <ContenedorModulo className="overflow-hidden">
-                <div
-                  className="
-                    px-4
-                    py-3
-                    flex
-                    items-center
-                    justify-between
-                    gap-3
-                  "
-                  style={{
-                    backgroundColor: ESTILO_SECCIONES.fondo,
-                    color: ESTILO_SECCIONES.texto,
-                    borderRadius: ESTILO_SECCIONES.radioSuperior,
-                  }}
-                >
-                  <div>
-                    <div className="text-xs font-black">
-                      <i className="fas fa-tags mr-2"></i>
-                      Administrar conceptos
-                    </div>
-                    <div
-                      className="text-[9px] mt-0.5"
-                      style={{
-                        color: ESTILO_SECCIONES.subtitulo,
-                      }}
-                    >
-                      Configure los conceptos disponibles para otros ingresos.
-                    </div>
-                  </div>
-
-                  <BotonAgregar
-                    type="button"
-                    onClick={
-                      nuevoConcepto
-                    }
-                  >
-                    <i className="fas fa-plus"></i>
-                    Agregar concepto
-                  </BotonAgregar>
-                </div>
-
                 <div className="p-4">
                   <div
                     className="
@@ -3032,28 +3005,40 @@ function imprimirIngresoHistorico(
                       Conceptos registrados
                     </span>
 
-                    <BotonActualizar
-                      type="button"
-                      onClick={
-                        cargarConceptosAdmin
-                      }
-                      disabled={
-                        cargandoConceptos
-                      }
-                    >
-                      <i
-                        className={`
-                          fas
-                          fa-sync-alt
-                          ${
-                            cargandoConceptos
-                              ? 'fa-spin'
-                              : ''
-                          }
-                        `}
-                      ></i>
-                      Actualizar
-                    </BotonActualizar>
+                    <div className="flex items-center gap-2">
+                      <BotonAgregar
+                        type="button"
+                        onClick={
+                          nuevoConcepto
+                        }
+                      >
+                        <i className="fas fa-plus"></i>
+                        Agregar concepto
+                      </BotonAgregar>
+
+                      <BotonActualizar
+                        type="button"
+                        onClick={
+                          cargarConceptosAdmin
+                        }
+                        disabled={
+                          cargandoConceptos
+                        }
+                      >
+                        <i
+                          className={`
+                            fas
+                            fa-sync-alt
+                            ${
+                              cargandoConceptos
+                                ? 'fa-spin'
+                                : ''
+                            }
+                          `}
+                        ></i>
+                        Actualizar
+                      </BotonActualizar>
+                    </div>
                   </div>
 
                   {cargandoConceptos ? (
@@ -3061,7 +3046,7 @@ function imprimirIngresoHistorico(
                       <i className="fas fa-spinner fa-spin mr-2"></i>
                       Consultando...
                     </div>
-                  ) : conceptosAdmin.length === 0 ? (
+                  ) : conceptosAdminIngreso.length === 0 ? (
                     <div className="p-8 text-center text-xs text-gray-500">
                       No hay conceptos registrados.
                     </div>
@@ -3080,7 +3065,7 @@ function imprimirIngresoHistorico(
                             </tr>
                           </thead>
                           <tbody>
-                            {conceptosAdmin.map(
+                            {conceptosAdminIngreso.map(
                               item => (
                                 <tr key={item.id}>
                                   <td className="px-3 py-2 font-bold">
