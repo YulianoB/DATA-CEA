@@ -87,7 +87,7 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
       type="button"
       onClick={onClick}
       disabled={deshabilitada}
-      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? 'min-h-[58px] gap-0.5 px-2 py-1.5' : 'min-h-[112px] gap-2 p-3'}`}
+      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? 'h-[78px] gap-1 px-2 py-2' : 'min-h-[112px] gap-2 p-3'}`}
       style={{
         backgroundColor: ESTILO_TARJETA_MENU.fondo,
         borderColor: ESTILO_TARJETA_MENU.borde,
@@ -137,7 +137,7 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
         </span>
       )}
 
-      <span className="min-w-0 flex-1">
+      <span className={`min-w-0 ${compacta ? '' : 'flex-1'}`}>
         <span data-menu-title className={`block font-semibold leading-snug tracking-normal ${compacta ? 'text-[11px]' : 'text-sm'}`} style={{ color: ESTILO_TARJETA_MENU.textoTitulo, transition: ESTILO_TARJETA_MENU.transicion }}>{titulo}</span>
         {descripcion && (
           <span className="mt-1 block text-[11px] leading-4" style={{ color: ESTILO_TARJETA_MENU.textoDescripcion }}>{descripcion}</span>
@@ -164,7 +164,7 @@ export function GrupoNavegacion({ titulo, opciones = [], columnas = 5, compacta 
           <h2 className="text-xs font-black uppercase tracking-[0.08em]" style={{ color: ESTILO_GRUPO_MENU.titulo }}>{titulo}</h2>
         </div>
       )}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${compacta ? 'gap-1.5' : 'gap-3'} ${columnasClase}`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${compacta ? 'gap-3' : 'gap-3'} ${columnasClase}`}>
         {opciones.map((opcion) => <TarjetaNavegacion key={opcion.id || opcion.titulo} {...opcion} compacta={compacta} />)}
       </div>
     </section>
