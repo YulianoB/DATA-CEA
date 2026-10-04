@@ -754,6 +754,9 @@ const [
         setResultadosAprendiz(
           []
         )
+        setBuscandoAprendiz(
+          false
+        )
 
         return
       }
@@ -777,13 +780,42 @@ const [
                   )
                 )
 
-              setResultadosAprendiz(
+              const resultados =
                 Array.isArray(
                   data?.data
                 )
                   ? data.data
                   : []
+
+              const documentoBuscado =
+                texto(
+                  busquedaAprendiz
+                )
+
+              const coincidenciaExacta =
+                resultados.find(
+                  item =>
+                    texto(
+                      item?.documento
+                    ) ===
+                    documentoBuscado
+                ) || null
+
+              setResultadosAprendiz(
+                []
               )
+
+              if (
+                coincidenciaExacta &&
+                texto(
+                  form.documento_cliente
+                ) ===
+                  documentoBuscado
+              ) {
+                seleccionarCliente(
+                  coincidenciaExacta
+                )
+              }
             } catch (
               errorBusqueda
             ) {
@@ -809,6 +841,7 @@ const [
       tipoIngreso,
       busquedaAprendiz,
       construirUrl,
+      form.documento_cliente,
     ]
   )
 
@@ -2698,84 +2731,6 @@ function imprimirIngresoHistorico(
                           </div>
                         )}
 
-                        {resultadosAprendiz.length > 0 && (
-                          <div
-                            className="
-                              absolute
-                              left-0
-                              right-0
-                              top-full
-                              mt-1
-                              z-40
-                              bg-white
-                              border
-                              border-slate-400
-                              rounded-lg
-                              shadow-xl
-                              max-h-64
-                              overflow-y-auto
-                            "
-                          >
-                            {resultadosAprendiz.map(
-                              item => (
-                                <button
-                                  key={
-                                    `${item.tipo_cliente}-${item.id}`
-                                  }
-                                  type="button"
-                                  onClick={() =>
-                                    seleccionarCliente(
-                                      item
-                                    )
-                                  }
-                                  className="
-                                    w-full
-                                    text-left
-                                    p-3
-                                    border-b
-                                    border-gray-100
-                                    hover:bg-blue-50
-                                  "
-                                >
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[10px] font-black text-gray-800">
-                                      {item.documento || 'Sin documento'}
-                                    </span>
-
-                                    <span
-                                      className={`
-                                        shrink-0
-                                        rounded-full
-                                        px-2
-                                        py-0.5
-                                        text-[8px]
-                                        font-black
-                                        ${
-                                          item.tipo_cliente ===
-                                          'APRENDIZ'
-                                            ? 'bg-blue-50 text-blue-700'
-                                            : 'bg-slate-100 text-slate-600'
-                                        }
-                                      `}
-                                    >
-                                      {item.tipo_cliente === 'APRENDIZ'
-                                        ? 'APRENDIZ'
-                                        : 'CLIENTE ANTERIOR'}
-                                    </span>
-                                  </div>
-
-                                  <div className="mt-1 text-[9px] text-gray-500">
-                                    {item.nombre_completo || '-'}
-
-                                    {item.consecutivo
-                                      ? ` · Matrícula ${item.consecutivo}`
-                                      : ''}
-                                  </div>
-                                </button>
-                              )
-                            )}
-                          </div>
-                        )}
                       </div>
 
                       <CampoSelect
