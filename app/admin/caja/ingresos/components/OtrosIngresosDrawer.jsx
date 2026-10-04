@@ -2404,10 +2404,8 @@ function imprimirIngresoHistorico(
                               value,
 
                             descripcion:
-                              mayusculas(
-                                conceptoNuevo?.descripcion ||
-                                ''
-                              ),
+                              conceptoNuevo?.descripcion ||
+                              '',
 
                             categoria:
                               esRefuerzo
@@ -2437,7 +2435,7 @@ function imprimirIngresoHistorico(
                     }
                   />
 
-                  <CampoInput
+                  <CampoTextarea
                     label="Descripción"
                     value={
                       form.descripcion
@@ -2449,9 +2447,7 @@ function imprimirIngresoHistorico(
                             ...actual,
 
                             descripcion:
-                              mayusculas(
-                                value
-                              ),
+                              value,
                           })
                         )
                     }
@@ -4012,7 +4008,8 @@ function CampoTextarea({
           px-3
           py-2
           text-xs
-          resize-none
+          min-h-[72px]
+          resize-y
         "
       />
     </div>
