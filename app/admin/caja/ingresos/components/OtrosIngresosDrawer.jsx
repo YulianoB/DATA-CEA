@@ -326,7 +326,6 @@ export default function OtrosIngresosDrawer({
   postCaja,
   construirUrl,
   onActualizado,
-  onRegistrarPago,
 }) {
   const [
     pestana,
@@ -532,17 +531,33 @@ const [
             ? conceptos
             : []
         ).filter(
-          item =>
-            item?.activo !==
-              false &&
-            [
-              'INGRESO',
-              'AMBOS',
-            ].includes(
+          item => {
+            const nombre =
               mayusculas(
-                item?.naturaleza
+                item?.nombre
               )
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+
+            const esCurso =
+              nombre === 'CURSO' ||
+              nombre.startsWith('CURSO ')
+
+            return (
+              item?.activo !== false &&
+              [
+                'INGRESO',
+                'AMBOS',
+              ].includes(
+                mayusculas(
+                  item?.naturaleza
+                )
+              ) &&
+              !esCurso
             )
+          }
         )
       },
       [
@@ -593,68 +608,6 @@ const [
         conceptoSeleccionado,
       ]
     )
-
-  const esConceptoCurso =
-    useMemo(
-      () => {
-        const nombre =
-          mayusculas(
-            conceptoSeleccionado?.nombre
-          )
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/\s+/g, ' ')
-            .trim()
-
-        return (
-          nombre === 'CURSO' ||
-          nombre.startsWith('CURSO ')
-        )
-      },
-      [
-        conceptoSeleccionado,
-      ]
-    )
-
-  function cuentaCursoCobrable() {
-    if (
-      tipoIngreso !== 'APRENDIZ' ||
-      !matriculaSeleccionada
-    ) {
-      return null
-    }
-
-    return (
-      matriculaSeleccionada?.cuentas ||
-      []
-    ).find(
-      cuenta => {
-        const estado =
-          mayusculas(
-            cuenta?.estado
-          )
-
-        const descripcion =
-          mayusculas(
-            cuenta?.descripcion
-          )
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-
-        return (
-          [
-            'PENDIENTE',
-            'ABONADO',
-          ].includes(
-            estado
-          ) &&
-          descripcion.includes(
-            'CURSO'
-          )
-        )
-      }
-    ) || null
-  }
 
   // =======================================================
   // MEDIOS
@@ -1204,31 +1157,6 @@ function validarIngreso() {
   // =======================================================
 
   async function registrarIngreso() {
-    if (
-      tipoIngreso === 'APRENDIZ' &&
-      esConceptoCurso
-    ) {
-      const cuenta =
-        cuentaCursoCobrable()
-
-      if (
-        cuenta &&
-        typeof onRegistrarPago ===
-          'function'
-      ) {
-        onCerrar()
-        onRegistrarPago(
-          cuenta
-        )
-        return
-      }
-
-      setError(
-        'El aprendiz no tiene una obligación de curso pendiente o abonada para registrar este pago.'
-      )
-      return
-    }
-
     const validacion =
       validarIngreso()
 
@@ -2640,163 +2568,172 @@ function imprimirIngresoHistorico(
                       space-y-3
                     "
                   >
-                    <div className="relative">
-                      <CampoInput
-                        label="Número de documento"
-                        value={
-                          form.documento_cliente
-                        }
-                        onChange={
-                          value => {
-                            const documento =
-                              texto(
-                                value
+                    <div
+                      className="
+                        grid
+                        grid-cols-3
+                        gap-2
+                        items-start
+                      "
+                    >
+                      <div className="col-span-2 relative">
+                        <CampoInput
+                          label="Documento"
+                          value={
+                            form.documento_cliente
+                          }
+                          onChange={
+                            value => {
+                              const documento =
+                                texto(
+                                  value
+                                )
+
+                              setForm(
+                                actual => ({
+                                  ...actual,
+                                  documento_cliente:
+                                    documento,
+                                })
                               )
 
+                              setBusquedaAprendiz(
+                                documento
+                              )
+
+                              setTipoIngreso(
+                                'LIBRE'
+                              )
+
+                              setMatriculaSeleccionada(
+                                null
+                              )
+                            }
+                          }
+                          placeholder="Digite el número para buscar..."
+                        />
+
+                        {buscandoAprendiz && (
+                          <div className="absolute right-3 top-8 text-blue-500">
+                            <i className="fas fa-spinner fa-spin"></i>
+                          </div>
+                        )}
+
+                        {resultadosAprendiz.length > 0 && (
+                          <div
+                            className="
+                              absolute
+                              left-0
+                              right-0
+                              top-full
+                              mt-1
+                              z-40
+                              bg-white
+                              border
+                              border-slate-400
+                              rounded-lg
+                              shadow-xl
+                              max-h-64
+                              overflow-y-auto
+                            "
+                          >
+                            {resultadosAprendiz.map(
+                              item => (
+                                <button
+                                  key={
+                                    `${item.tipo_cliente}-${item.id}`
+                                  }
+                                  type="button"
+                                  onClick={() =>
+                                    seleccionarCliente(
+                                      item
+                                    )
+                                  }
+                                  className="
+                                    w-full
+                                    text-left
+                                    p-3
+                                    border-b
+                                    border-gray-100
+                                    hover:bg-blue-50
+                                  "
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[10px] font-black text-gray-800">
+                                      {item.documento || 'Sin documento'}
+                                    </span>
+
+                                    <span
+                                      className={`
+                                        shrink-0
+                                        rounded-full
+                                        px-2
+                                        py-0.5
+                                        text-[8px]
+                                        font-black
+                                        ${
+                                          item.tipo_cliente ===
+                                          'APRENDIZ'
+                                            ? 'bg-blue-50 text-blue-700'
+                                            : 'bg-slate-100 text-slate-600'
+                                        }
+                                      `}
+                                    >
+                                      {item.tipo_cliente === 'APRENDIZ'
+                                        ? 'APRENDIZ'
+                                        : 'CLIENTE ANTERIOR'}
+                                    </span>
+                                  </div>
+
+                                  <div className="mt-1 text-[9px] text-gray-500">
+                                    {item.nombre_completo || '-'}
+
+                                    {item.consecutivo
+                                      ? ` · Matrícula ${item.consecutivo}`
+                                      : ''}
+                                  </div>
+                                </button>
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <CampoSelect
+                        label="Tipo"
+                        value={
+                          form.tipo_documento_cliente
+                        }
+                        onChange={
+                          value =>
                             setForm(
                               actual => ({
                                 ...actual,
-                                documento_cliente:
-                                  documento,
+                                tipo_documento_cliente:
+                                  value,
                               })
                             )
-
-                            setBusquedaAprendiz(
-                              documento
-                            )
-
-                            setTipoIngreso(
-                              'LIBRE'
-                            )
-
-                            setMatriculaSeleccionada(
-                              null
-                            )
-                          }
                         }
-                        placeholder="Digite el número para buscar..."
-                      />
-
-                      {buscandoAprendiz && (
-                        <div className="absolute right-3 top-8 text-blue-500">
-                          <i className="fas fa-spinner fa-spin"></i>
-                        </div>
-                      )}
-
-                      {resultadosAprendiz.length > 0 && (
-                        <div
-                          className="
-                            absolute
-                            left-0
-                            right-0
-                            top-full
-                            mt-1
-                            z-40
-                            bg-white
-                            border
-                            border-slate-400
-                            rounded-lg
-                            shadow-xl
-                            max-h-64
-                            overflow-y-auto
-                          "
-                        >
-                          {resultadosAprendiz.map(
-                            item => (
-                              <button
-                                key={
-                                  `${item.tipo_cliente}-${item.id}`
-                                }
-                                type="button"
-                                onClick={() =>
-                                  seleccionarCliente(
-                                    item
-                                  )
-                                }
-                                className="
-                                  w-full
-                                  text-left
-                                  p-3
-                                  border-b
-                                  border-gray-100
-                                  hover:bg-blue-50
-                                "
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="text-[10px] font-black text-gray-800">
-                                    {item.documento || 'Sin documento'}
-                                  </span>
-
-                                  <span
-                                    className={`
-                                      shrink-0
-                                      rounded-full
-                                      px-2
-                                      py-0.5
-                                      text-[8px]
-                                      font-black
-                                      ${
-                                        item.tipo_cliente ===
-                                        'APRENDIZ'
-                                          ? 'bg-blue-50 text-blue-700'
-                                          : 'bg-slate-100 text-slate-600'
-                                      }
-                                    `}
-                                  >
-                                    {item.tipo_cliente ===
-                                    'APRENDIZ'
-                                      ? 'APRENDIZ'
-                                      : 'CLIENTE ANTERIOR'}
-                                  </span>
-                                </div>
-
-                                <div className="mt-1 text-[9px] text-gray-500">
-                                  {item.nombre_completo || '-'}
-
-                                  {item.consecutivo
-                                    ? ` · Matrícula ${item.consecutivo}`
-                                    : ''}
-                                </div>
-                              </button>
-                            )
-                          )}
-                        </div>
-                      )}
-
-                      {matriculaSeleccionada && (
-                        <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2 text-[9px] text-blue-800">
-                          <i className="fas fa-user-graduate mr-1"></i>
-                          Vinculado a matrícula{' '}
-                          <strong>
-                            {matriculaSeleccionada.consecutivo}
-                          </strong>
-                        </div>
-                      )}
-                    </div>
-
-                    <CampoSelect
-                      label="Tipo de documento"
-                      value={
-                        form.tipo_documento_cliente
-                      }
-                      onChange={
-                        value =>
-                          setForm(
-                            actual => ({
-                              ...actual,
-                              tipo_documento_cliente:
-                                value,
-                            })
+                        disabled={
+                          Boolean(
+                            matriculaSeleccionada
+                          ) ||
+                          (
+                            tipoIngreso === 'LIBRE' &&
+                            !busquedaAprendiz &&
+                            Boolean(form.nombre_cliente) &&
+                            Boolean(form.documento_cliente)
                           )
-                      }
-                      options={[
-                        { value: 'CC', label: 'CC' },
-                        { value: 'CE', label: 'CE' },
-                        { value: 'TI', label: 'TI' },
-                        { value: 'PASAPORTE', label: 'PASAPORTE' },
-                        { value: 'NIT', label: 'NIT' },
-                      ]}
-                    />
+                        }
+                        options={[
+                          { value: 'CC', label: 'CC' },
+                          { value: 'CE', label: 'CE' },
+                          { value: 'TI', label: 'TI' },
+                          { value: 'PASAPORTE', label: 'PASAPORTE' },
+                          { value: 'NIT', label: 'NIT' },
+                        ]}
+                      />
+                    </div>
 
                     <CampoInput
                       label="Nombre del cliente"
@@ -2815,8 +2752,29 @@ function imprimirIngresoHistorico(
                             })
                           )
                       }
+                      disabled={
+                        Boolean(
+                          matriculaSeleccionada
+                        ) ||
+                        (
+                          tipoIngreso === 'LIBRE' &&
+                          !busquedaAprendiz &&
+                          Boolean(form.nombre_cliente) &&
+                          Boolean(form.documento_cliente)
+                        )
+                      }
                       placeholder="Nombre completo"
                     />
+
+                    {matriculaSeleccionada && (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2 text-[9px] text-blue-800">
+                        <i className="fas fa-user-graduate mr-1"></i>
+                        Vinculado a matrícula{' '}
+                        <strong>
+                          {matriculaSeleccionada.consecutivo}
+                        </strong>
+                      </div>
+                    )}
 
                     <div
                       className="
@@ -3957,6 +3915,7 @@ function CampoInput({
   onChange,
   type = 'text',
   placeholder = '',
+  disabled = false,
 }) {
   return (
     <div>
@@ -3988,6 +3947,9 @@ function CampoInput({
         placeholder={
           placeholder
         }
+        disabled={
+          disabled
+        }
         className="
           w-full
           border
@@ -3996,6 +3958,9 @@ function CampoInput({
           px-3
           py-2
           text-xs
+          disabled:bg-slate-100
+          disabled:text-slate-600
+          disabled:cursor-not-allowed
         "
       />
     </div>
@@ -4011,6 +3976,7 @@ function CampoSelect({
   value,
   onChange,
   options,
+  disabled = false,
 }) {
   return (
     <div>
@@ -4027,6 +3993,9 @@ function CampoSelect({
       </label>
 
       <select
+        disabled={
+          disabled
+        }
         value={
           value
         }
@@ -4044,6 +4013,9 @@ function CampoSelect({
           px-3
           py-2
           text-xs
+          disabled:bg-slate-100
+          disabled:text-slate-600
+          disabled:cursor-not-allowed
         "
       >
         <option value="">
