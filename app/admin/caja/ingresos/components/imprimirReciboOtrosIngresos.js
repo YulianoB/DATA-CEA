@@ -714,29 +714,37 @@ export function imprimirReciboOtrosIngresos(
           }
 
           .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 3mm;
-            align-items: start;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 4mm;
           }
 
           .receipt {
             width: 100%;
             min-width: 0;
+            height: 122mm;
+            display: flex;
+            align-items: flex-start;
+          }
+
+          .receipt + .receipt {
+            border-top: 1px dashed #777;
+            padding-top: 4mm;
           }
 
           table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            font-size: 8px;
-            line-height: 1.15;
+            font-size: 9px;
+            line-height: 1.25;
           }
 
           th,
           td {
             border: 1px solid #000;
-            padding: 3px;
+            padding: 4px 5px;
             vertical-align: middle;
             overflow-wrap: anywhere;
           }
@@ -748,29 +756,29 @@ export function imprimirReciboOtrosIngresos(
 
           .head {
             text-align: center;
-            padding: 5px;
+            padding: 7px 5px;
           }
 
           .title {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 900;
           }
 
           .company {
             margin-top: 2px;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
           }
 
           .copy {
             margin-top: 2px;
-            font-size: 7px;
+            font-size: 8px;
           }
 
           .section {
             text-align: center;
             font-weight: 900;
-            padding: 3px;
+            padding: 4px;
           }
 
           .money {
@@ -783,11 +791,11 @@ export function imprimirReciboOtrosIngresos(
           }
 
           .signature {
-            height: 34px;
+            height: 42px;
             text-align: center;
             vertical-align: bottom;
             padding-bottom: 3px;
-            font-size: 7px;
+            font-size: 8px;
           }
 
           @page {
@@ -806,8 +814,17 @@ export function imprimirReciboOtrosIngresos(
             }
 
             .grid {
-              grid-template-columns: 1fr 1fr;
-              gap: 3mm;
+              display: flex;
+              flex-direction: column;
+              gap: 0;
+            }
+
+            .receipt {
+              height: 132mm;
+            }
+
+            .receipt + .receipt {
+              padding-top: 4mm;
             }
 
           }
