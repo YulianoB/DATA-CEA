@@ -707,9 +707,7 @@ const [
   useEffect(
     () => {
       if (
-        !abierto ||
-        tipoIngreso !==
-          'APRENDIZ'
+        !abierto
       ) {
         return
       }
@@ -738,7 +736,7 @@ const [
               const data =
                 await fetchJsonSeguro(
                   construirUrl(
-                    'buscar_aprendices',
+                    'buscar_clientes',
                     {
                       q:
                         busquedaAprendiz,
@@ -775,7 +773,6 @@ const [
     },
     [
       abierto,
-      tipoIngreso,
       busquedaAprendiz,
       construirUrl,
     ]
@@ -963,11 +960,29 @@ async function limpiarHistorial() {
   // SELECCIONAR MATRÍCULA
   // =======================================================
 
-  function seleccionarMatricula(
-    matricula
+  function seleccionarCliente(
+    cliente
   ) {
+    const esAprendiz =
+      cliente?.tipo_cliente ===
+      'APRENDIZ'
+
+    setTipoIngreso(
+      esAprendiz
+        ? 'APRENDIZ'
+        : 'LIBRE'
+    )
+
     setMatriculaSeleccionada(
-      matricula
+      esAprendiz
+        ? {
+            ...cliente,
+            tipo_doc:
+              cliente.tipo_documento ||
+              cliente.tipo_doc ||
+              'CC',
+          }
+        : null
     )
 
     setBusquedaAprendiz('')
@@ -978,27 +993,32 @@ async function limpiarHistorial() {
         ...actual,
 
         nombre_cliente:
-          nombreCompletoMatricula(
-            matricula
+          mayusculas(
+            cliente?.nombre_completo ||
+            ''
           ),
-
-        documento_cliente:
-          matricula?.documento ||
-          '',
 
         tipo_documento_cliente:
           mayusculas(
-            matricula?.tipo_doc
-          ) ||
-          'CC',
+            cliente?.tipo_documento ||
+            cliente?.tipo_doc ||
+            'CC'
+          ),
+
+        documento_cliente:
+          texto(
+            cliente?.documento
+          ),
 
         celular_cliente:
-          matricula?.celular ||
-          '',
+          texto(
+            cliente?.celular
+          ),
 
         correo_cliente:
-          matricula?.correo ||
-          '',
+          texto(
+            cliente?.correo
+          ),
       })
     )
   }
@@ -2008,6 +2028,10 @@ function imprimirIngresoHistorico(
   className="
     grid
     grid-cols-3
+    gap-1
+    px-4
+    pt-3
+    bg-gray-50
     border-t
     border-gray-200
   "
@@ -2027,8 +2051,8 @@ function imprimirIngresoHistorico(
       ${
         pestana ===
         'REGISTRAR'
-          ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
-          : 'text-gray-500 hover:bg-gray-50'
+          ? 'bg-white text-blue-700 border border-gray-300 border-b-white rounded-t-lg -mb-px'
+          : 'bg-gray-100 text-gray-500 border border-transparent rounded-t-lg hover:bg-gray-200'
       }
     `}
   >
@@ -2052,8 +2076,8 @@ function imprimirIngresoHistorico(
       ${
         pestana ===
         'CONCEPTOS'
-          ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
-          : 'text-gray-500 hover:bg-gray-50'
+          ? 'bg-white text-blue-700 border border-gray-300 border-b-white rounded-t-lg -mb-px'
+          : 'bg-gray-100 text-gray-500 border border-transparent rounded-t-lg hover:bg-gray-200'
       }
     `}
   >
@@ -2077,8 +2101,8 @@ function imprimirIngresoHistorico(
       ${
         pestana ===
         'HISTORIAL'
-          ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
-          : 'text-gray-500 hover:bg-gray-50'
+          ? 'bg-white text-blue-700 border border-gray-300 border-b-white rounded-t-lg -mb-px'
+          : 'bg-gray-100 text-gray-500 border border-transparent rounded-t-lg hover:bg-gray-200'
       }
     `}
   >
@@ -2094,6 +2118,8 @@ function imprimirIngresoHistorico(
           {error && (
             <div
               className="
+                mx-4
+                mt-3
                 bg-red-50
                 border
                 border-red-300
@@ -2112,6 +2138,8 @@ function imprimirIngresoHistorico(
           {mensaje && (
             <div
               className="
+                mx-4
+                mt-3
                 bg-emerald-50
                 border
                 border-emerald-300
@@ -2133,308 +2161,28 @@ function imprimirIngresoHistorico(
 
           {pestana ===
             'REGISTRAR' && (
-            <>
-              {/* ===========================================
-                  TIPO
-              =========================================== */}
-
-              <div
-                className="
-                  grid
-                  grid-cols-2
-                  gap-2
-                "
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTipoIngreso(
-                      'LIBRE'
-                    )
-
-                    setMatriculaSeleccionada(
-                      null
-                    )
-                  }}
-                  className={`
-                    border
-                    rounded-xl
-                    p-3
-                    text-left
-                    ${
-                      tipoIngreso ===
-                      'LIBRE'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 bg-white hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <div
-                    className="
-                      text-[10px]
-                      font-black
-                    "
-                  >
-                    SIN MATRÍCULA
-                  </div>
-
-                  <div
-                    className="
-                      text-[9px]
-                      text-gray-500
-                      mt-1
-                    "
-                  >
-                    Cliente ocasional o servicio independiente.
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setTipoIngreso(
-                      'APRENDIZ'
-                    )
-                  }
-                  className={`
-                    border
-                    rounded-xl
-                    p-3
-                    text-left
-                    ${
-                      tipoIngreso ===
-                      'APRENDIZ'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 bg-white hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <div
-                    className="
-                      text-[10px]
-                      font-black
-                    "
-                  >
-                    APRENDIZ
-                  </div>
-
-                  <div
-                    className="
-                      text-[9px]
-                      text-gray-500
-                      mt-1
-                    "
-                  >
-                    Concepto adicional asociado a una matrícula.
-                  </div>
-                </button>
-              </div>
-
-              {/* ===========================================
-                  BUSCADOR APRENDIZ
-              =========================================== */}
-
-              {tipoIngreso ===
-                'APRENDIZ' && (
-                <div>
-                  {!matriculaSeleccionada ? (
-                    <div
-                      className="
-                        relative
-                      "
-                    >
-                      <CampoInput
-                        label="Buscar aprendiz / matrícula"
-                        value={
-                          busquedaAprendiz
-                        }
-                        onChange={
-                          setBusquedaAprendiz
-                        }
-                        placeholder="Documento, nombre o matrícula..."
-                      />
-
-                      {buscandoAprendiz && (
-                        <div
-                          className="
-                            absolute
-                            right-3
-                            top-8
-                            text-blue-500
-                          "
-                        >
-                          <i className="fas fa-spinner fa-spin"></i>
-                        </div>
-                      )}
-
-                      {resultadosAprendiz.length >
-                        0 && (
-                        <div
-                          className="
-                            absolute
-                            left-0
-                            right-0
-                            top-full
-                            mt-1
-                            z-30
-                            bg-white
-                            border
-                            border-gray-300
-                            rounded-lg
-                            shadow-xl
-                            max-h-64
-                            overflow-y-auto
-                          "
-                        >
-                          {resultadosAprendiz.map(
-                            item => (
-                              <button
-                                key={
-                                  item.id
-                                }
-                                type="button"
-                                onClick={() =>
-                                  seleccionarMatricula(
-                                    item
-                                  )
-                                }
-                                className="
-                                  w-full
-                                  text-left
-                                  p-3
-                                  border-b
-                                  border-gray-100
-                                  hover:bg-blue-50
-                                "
-                              >
-                                <div
-                                  className="
-                                    text-[10px]
-                                    font-black
-                                    text-gray-800
-                                  "
-                                >
-                                  {nombreCompletoMatricula(
-                                    item
-                                  )}
-                                </div>
-
-                                <div
-                                  className="
-                                    text-[9px]
-                                    text-gray-500
-                                    mt-1
-                                  "
-                                >
-                                  {item.documento}
-                                  {' · '}
-                                  {item.consecutivo}
-                                  {' · '}
-                                  {categoriasMatricula(
-                                    item
-                                  )}
-                                </div>
-                              </button>
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div
-                      className="
-                        border
-                        border-blue-200
-                        bg-blue-50
-                        rounded-xl
-                        p-3
-                      "
-                    >
-                      <div
-                        className="
-                          flex
-                          justify-between
-                          gap-3
-                        "
-                      >
-                        <div>
-                          <div
-                            className="
-                              text-xs
-                              font-black
-                              text-blue-900
-                            "
-                          >
-                            {nombreCompletoMatricula(
-                              matriculaSeleccionada
-                            )}
-                          </div>
-
-                          <div
-                            className="
-                              text-[9px]
-                              text-blue-700
-                              mt-1
-                            "
-                          >
-                            {matriculaSeleccionada.documento}
-                            {' · '}
-                            {matriculaSeleccionada.consecutivo}
-                            {' · '}
-                            {categoriasMatricula(
-                              matriculaSeleccionada
-                            )}
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMatriculaSeleccionada(
-                              null
-                            )
-
-                            setForm(
-                              actual => ({
-                                ...actual,
-
-                                nombre_cliente:
-                                  '',
-
-                                documento_cliente:
-                                  '',
-
-                                celular_cliente:
-                                  '',
-
-                                correo_cliente:
-                                  '',
-                              })
-                            )
-                          }}
-                          className="
-                            text-blue-700
-                            text-xs
-                          "
-                        >
-                          <i className="fas fa-times"></i>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
+            <div
+              className="
+                grid
+                grid-cols-1
+                xl:grid-cols-3
+                gap-4
+                p-4
+                items-start
+              "
+            >
              {/* ===========================================
                   CONCEPTO
               =========================================== */}
 
               <div
                 className="
+                  order-2
                   border
                   border-gray-300
                   rounded-xl
                   overflow-hidden
+                  bg-white
                 "
               >
                 <div
@@ -2739,16 +2487,16 @@ function imprimirIngresoHistorico(
                   CLIENTE
               =========================================== */}
 
-              {tipoIngreso ===
-                'LIBRE' && (
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-xl
-                    overflow-hidden
-                  "
-                >
+              <div
+                className="
+                  order-1
+                  border
+                  border-gray-300
+                  rounded-xl
+                  overflow-visible
+                  bg-white
+                "
+              >
                   <div
                     className="
                       bg-slate-800
@@ -2768,25 +2516,139 @@ function imprimirIngresoHistorico(
                       space-y-3
                     "
                   >
-                    <CampoInput
-                      label="Nombre"
-                      value={
-                        form.nombre_cliente
-                      }
-                      onChange={
-                        value =>
-                          setForm(
-                            actual => ({
-                              ...actual,
+                    <div className="relative">
+                      <CampoInput
+                        label="Nombre del cliente"
+                        value={
+                          form.nombre_cliente
+                        }
+                        onChange={
+                          value => {
+                            const nombre =
+                              mayusculas(
+                                value
+                              )
 
-                              nombre_cliente:
-                                mayusculas(
-                                  value
-                                ),
-                            })
-                          )
-                      }
-                    />
+                            setForm(
+                              actual => ({
+                                ...actual,
+                                nombre_cliente:
+                                  nombre,
+                              })
+                            )
+
+                            setBusquedaAprendiz(
+                              nombre
+                            )
+
+                            setTipoIngreso(
+                              'LIBRE'
+                            )
+
+                            setMatriculaSeleccionada(
+                              null
+                            )
+                          }
+                        }
+                        placeholder="Escriba nombre o documento para buscar..."
+                      />
+
+                      {buscandoAprendiz && (
+                        <div className="absolute right-3 top-8 text-blue-500">
+                          <i className="fas fa-spinner fa-spin"></i>
+                        </div>
+                      )}
+
+                      {resultadosAprendiz.length > 0 && (
+                        <div
+                          className="
+                            absolute
+                            left-0
+                            right-0
+                            top-full
+                            mt-1
+                            z-40
+                            bg-white
+                            border
+                            border-gray-300
+                            rounded-lg
+                            shadow-xl
+                            max-h-64
+                            overflow-y-auto
+                          "
+                        >
+                          {resultadosAprendiz.map(
+                            item => (
+                              <button
+                                key={
+                                  `${item.tipo_cliente}-${item.id}`
+                                }
+                                type="button"
+                                onClick={() =>
+                                  seleccionarCliente(
+                                    item
+                                  )
+                                }
+                                className="
+                                  w-full
+                                  text-left
+                                  p-3
+                                  border-b
+                                  border-gray-100
+                                  hover:bg-blue-50
+                                "
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-black text-gray-800">
+                                    {item.nombre_completo || '-'}
+                                  </span>
+
+                                  <span
+                                    className={`
+                                      shrink-0
+                                      rounded-full
+                                      px-2
+                                      py-0.5
+                                      text-[8px]
+                                      font-black
+                                      ${
+                                        item.tipo_cliente ===
+                                        'APRENDIZ'
+                                          ? 'bg-blue-50 text-blue-700'
+                                          : 'bg-slate-100 text-slate-600'
+                                      }
+                                    `}
+                                  >
+                                    {item.tipo_cliente ===
+                                    'APRENDIZ'
+                                      ? 'APRENDIZ'
+                                      : 'CLIENTE ANTERIOR'}
+                                  </span>
+                                </div>
+
+                                <div className="mt-1 text-[9px] text-gray-500">
+                                  {item.documento || 'Sin documento'}
+
+                                  {item.consecutivo
+                                    ? ` · Matrícula ${item.consecutivo}`
+                                    : ''}
+                                </div>
+                              </button>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {matriculaSeleccionada && (
+                        <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2 text-[9px] text-blue-800">
+                          <i className="fas fa-user-graduate mr-1"></i>
+                          Vinculado a matrícula{' '}
+                          <strong>
+                            {matriculaSeleccionada.consecutivo}
+                          </strong>
+                        </div>
+                      )}
+                    </div>
 
                     <div
                       className="
@@ -2924,7 +2786,6 @@ function imprimirIngresoHistorico(
                     </div>
                   </div>
                 </div>
-              )}
 
               {/* ===========================================
                   PAGO
@@ -2932,6 +2793,7 @@ function imprimirIngresoHistorico(
 
               <div
                 className="
+                  order-3
                   border
                   border-gray-300
                   rounded-xl
@@ -3059,7 +2921,7 @@ function imprimirIngresoHistorico(
                   </button>
                 </div>
               </div>
-            </>
+            </div>
           )}
 
           {/* ===============================================
