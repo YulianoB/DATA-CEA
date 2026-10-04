@@ -3377,6 +3377,309 @@ async function buscarAprendices(
   )
 }
 
+
+// =========================================================
+// BUSCAR CLIENTES DE CAJA
+// =========================================================
+//
+// Consolida dos orígenes:
+// 1. Aprendices/matrículas.
+// 2. Clientes externos de ingresos libres anteriores.
+//
+// El frontend puede distinguirlos mediante tipo_cliente.
+// Los clientes históricos se deduplican por documento y se
+// conserva el recibo más reciente con sus datos disponibles.
+// =========================================================
+
+async function buscarClientesCaja(
+  supabase,
+  busqueda
+) {
+  const termino =
+    limpiarBusqueda(
+      busqueda
+    )
+
+  if (
+    termino.length <
+    2
+  ) {
+    return []
+  }
+
+  const [
+    aprendices,
+    clientesResult,
+  ] =
+    await Promise.all([
+      buscarAprendices(
+        supabase,
+        termino
+      ),
+
+      supabase
+        .from(
+          'recibos_caja'
+        )
+        .select(`
+          id,
+          nombre_cliente,
+          tipo_documento_cliente,
+          documento_cliente,
+          celular_cliente,
+          correo_cliente,
+          fecha,
+          created_at
+        `)
+        .eq(
+          'tipo_origen',
+          'LIBRE'
+        )
+        .eq(
+          'estado',
+          'ACTIVO'
+        )
+        .or(
+          [
+            `nombre_cliente.ilike.%${termino}%`,
+            `documento_cliente.ilike.%${termino}%`,
+          ].join(
+            ','
+          )
+        )
+        .order(
+          'created_at',
+          {
+            ascending:
+              false,
+          }
+        )
+        .limit(
+          100
+        ),
+    ])
+
+  if (
+    clientesResult.error
+  ) {
+    throw new Error(
+      `No fue posible buscar clientes anteriores de Caja: ${clientesResult.error.message}`
+    )
+  }
+
+  const resultadosAprendices =
+    (
+      aprendices ||
+      []
+    ).map(
+      aprendiz => ({
+        tipo_cliente:
+          'APRENDIZ',
+
+        id:
+          aprendiz.id,
+
+        matricula_id:
+          aprendiz.id,
+
+        consecutivo:
+          aprendiz.consecutivo ||
+          '',
+
+        nombre_completo:
+          aprendiz.nombre_completo ||
+          [
+            aprendiz.nombres,
+            aprendiz.apellidos,
+          ]
+            .filter(
+              Boolean
+            )
+            .join(
+              ' '
+            )
+            .trim(),
+
+        nombres:
+          aprendiz.nombres ||
+          '',
+
+        apellidos:
+          aprendiz.apellidos ||
+          '',
+
+        tipo_documento:
+          aprendiz.tipo_doc ||
+          'CC',
+
+        documento:
+          aprendiz.documento ||
+          '',
+
+        celular:
+          aprendiz.celular ||
+          '',
+
+        correo:
+          aprendiz.correo ||
+          '',
+
+        categorias:
+          Array.isArray(
+            aprendiz.categorias
+          )
+            ? aprendiz.categorias
+            : [],
+
+        estado:
+          aprendiz.estado ||
+          '',
+
+        cuentas:
+          Array.isArray(
+            aprendiz.cuentas
+          )
+            ? aprendiz.cuentas
+            : [],
+      })
+    )
+
+  const clientesPorDocumento =
+    new Map()
+
+  for (
+    const recibo of
+      clientesResult.data ||
+      []
+  ) {
+    const documento =
+      texto(
+        recibo.documento_cliente
+      )
+
+    const nombre =
+      texto(
+        recibo.nombre_cliente
+      )
+
+    if (
+      !documento &&
+      !nombre
+    ) {
+      continue
+    }
+
+    const clave =
+      documento
+        ? `DOC:${mayusculas(
+            documento
+          )}`
+        : `NOMBRE:${normalizarComparacion(
+            nombre
+          )}`
+
+    if (
+      clientesPorDocumento.has(
+        clave
+      )
+    ) {
+      continue
+    }
+
+    clientesPorDocumento.set(
+      clave,
+      {
+        tipo_cliente:
+          'CLIENTE',
+
+        id:
+          `CLIENTE-${recibo.id}`,
+
+        matricula_id:
+          null,
+
+        consecutivo:
+          '',
+
+        nombre_completo:
+          nombre,
+
+        nombres:
+          nombre,
+
+        apellidos:
+          '',
+
+        tipo_documento:
+          recibo.tipo_documento_cliente ||
+          'CC',
+
+        documento,
+
+        celular:
+          texto(
+            recibo.celular_cliente
+          ),
+
+        correo:
+          texto(
+            recibo.correo_cliente
+          ),
+
+        categorias:
+          [],
+
+        estado:
+          '',
+
+        cuentas:
+          [],
+
+        ultimo_ingreso_id:
+          recibo.id,
+
+        ultima_fecha:
+          recibo.fecha ||
+          null,
+      }
+    )
+  }
+
+  const documentosAprendices =
+    new Set(
+      resultadosAprendices
+        .map(
+          item =>
+            mayusculas(
+              item.documento
+            )
+        )
+        .filter(
+          Boolean
+        )
+    )
+
+  const clientesExternos =
+    [
+      ...clientesPorDocumento.values(),
+    ].filter(
+      cliente =>
+        !documentosAprendices.has(
+          mayusculas(
+            cliente.documento
+          )
+        )
+    )
+
+  return [
+    ...resultadosAprendices,
+    ...clientesExternos,
+  ].slice(
+    0,
+    50
+  )
+}
+
 // =========================================================
 // CONSULTAR EGRESOS
 // =========================================================
@@ -4652,6 +4955,64 @@ export async function GET(
 
         total:
           ingresos.length,
+
+        empresa:
+          empresaRespuesta(
+            empresa
+          ),
+      })
+    }
+
+    // =====================================================
+    // BUSCAR CLIENTES DE CAJA
+    // =====================================================
+
+    if (
+      recurso ===
+      'buscar_clientes'
+    ) {
+      const q =
+        texto(
+          searchParams.get(
+            'q'
+          )
+        )
+
+      if (
+        q.length <
+        2
+      ) {
+        return NextResponse.json({
+          status:
+            'success',
+
+          data:
+            [],
+
+          total:
+            0,
+
+          empresa:
+            empresaRespuesta(
+              empresa
+            ),
+        })
+      }
+
+      const data =
+        await buscarClientesCaja(
+          supabase,
+          q
+        )
+
+      return NextResponse.json({
+        status:
+          'success',
+
+        data,
+
+        total:
+          data.length,
 
         empresa:
           empresaRespuesta(
