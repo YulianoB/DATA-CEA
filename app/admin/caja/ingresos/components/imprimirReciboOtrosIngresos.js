@@ -689,35 +689,63 @@ export function imprimirReciboOtrosIngresos(
             padding: 0;
             font-family: Arial, Helvetica, sans-serif;
             color: #000;
-            background: #fff;
+            background: #E5E7EB;
           }
 
           body {
-            padding: 4mm;
+            padding: 18px 0 32px;
           }
 
           .toolbar {
+            width: min(216mm, calc(100vw - 32px));
+            margin: 0 auto 12px;
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            margin-bottom: 10px;
           }
 
           .toolbar button {
-            border: 1px solid #444;
-            background: #fff;
-            padding: 7px 12px;
-            border-radius: 5px;
+            min-height: 34px;
+            padding: 7px 13px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 700;
+            transition:
+              background-color 0.15s ease,
+              border-color 0.15s ease;
+          }
+
+          .btn-print {
+            background: #2F6F89;
+            border: 1px solid #2F6F89;
+            color: #FFFFFF;
+          }
+
+          .btn-print:hover {
+            background: #24586D;
+            border-color: #24586D;
+          }
+
+          .btn-close {
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            color: #475569;
+          }
+
+          .btn-close:hover {
+            background: #F1F5F9;
           }
 
           .grid {
             display: flex;
             flex-direction: column;
-            width: 100%;
+            width: 216mm;
+            height: 279mm;
+            margin: 0 auto;
             gap: 0;
+            background: #FFFFFF;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.18);
           }
 
           .receipt {
@@ -806,6 +834,11 @@ export function imprimirReciboOtrosIngresos(
 
           @media print {
 
+            html,
+            body {
+              background: #FFFFFF;
+            }
+
             body {
               padding: 0;
             }
@@ -817,7 +850,11 @@ export function imprimirReciboOtrosIngresos(
             .grid {
               display: flex;
               flex-direction: column;
+              width: 100%;
+              height: auto;
+              margin: 0;
               gap: 0;
+              box-shadow: none;
             }
 
             .receipt {
@@ -845,12 +882,14 @@ export function imprimirReciboOtrosIngresos(
         <div class="toolbar">
 
           <button
+            class="btn-print"
             onclick="window.print()"
           >
             IMPRIMIR
           </button>
 
           <button
+            class="btn-close"
             onclick="window.close()"
           >
             CERRAR
