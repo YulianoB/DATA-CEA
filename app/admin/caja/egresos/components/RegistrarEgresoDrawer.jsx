@@ -1580,7 +1580,7 @@ export default function RegistrarEgresoDrawer({
           {/* ===============================================
               MENSAJES
           =============================================== */}
-          {error && (
+          {error && pestana === 'CONCEPTOS' && (
             <div
               className="
                 bg-red-50
@@ -1620,124 +1620,9 @@ export default function RegistrarEgresoDrawer({
             'REGISTRAR' && (
             <>
               {/* ===========================================
-                  REGISTRO EXITOSO
-              =========================================== */}
-              {egresoRegistrado && (
-                <div
-                  className="
-                    border
-                    border-emerald-300
-                    bg-emerald-50
-                    rounded-xl
-                    overflow-hidden
-                  "
-                >
-                  <div
-                    className="
-                      px-3
-                      py-2.5
-                      bg-emerald-600
-                      text-white
-                    "
-                  >
-                    <div
-                      className="
-                        text-[10px]
-                        font-black
-                      "
-                    >
-                      <i className="fas fa-check-circle mr-2"></i>
-                      EGRESO REGISTRADO CORRECTAMENTE
-                    </div>
-                  </div>
-                  <div
-                    className="
-                      p-3
-                    "
-                  >
-                    <div
-                      className="
-                        grid
-                        grid-cols-2
-                        gap-3
-                      "
-                    >
-                      <DatoResumen
-                        label={
-                          egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                            ? 'Entrega'
-                            : 'Cuenta'
-                        }
-                        value={
-                          egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                            ? `#${egresoRegistrado?.id || ''}`
-                            : (egresoRegistrado?.numero_cuenta_cobro || `#${egresoRegistrado?.id || ''}`)
-                        }
-                      />
-                      <DatoResumen
-                        label="Valor ($)"
-                        value={
-                          formatearMoneda(
-                            egresoRegistrado
-                              ?.valor
-                          )
-                        }
-                      />
-                    </div>
-                    <div
-                      className="
-                        mt-3
-                      "
-                    >
-                      <DatoResumen
-                        label={
-                          egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                            ? 'Recibe el dinero'
-                            : 'Beneficiario'
-                        }
-                        value={
-                          egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                            ? egresoRegistrado?.receptor_dinero
-                            : egresoRegistrado?.beneficiario
-                        }
-                      />
-                    </div>
-                    <div
-                      className={
-                        egresoRegistrado?.modalidad === 'ENTREGA_PARA_LEGALIZAR' ||
-                        form.tipo_beneficiario !== 'FUNCIONARIO'
-                          ? 'mt-3 grid grid-cols-1 gap-2'
-                          : 'mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2'
-                      }
-                    >
-                      {egresoRegistrado?.modalidad !== 'ENTREGA_PARA_LEGALIZAR' &&
-                        form.tipo_beneficiario === 'FUNCIONARIO' && (
-                        <BotonImprimir
-                          type="button"
-                          onClick={imprimirEgresoRegistrado}
-                          className="!w-full !py-2.5 !text-[10px] !font-black"
-                        >
-                          <i className="fas fa-print"></i>
-                          IMPRIMIR CUENTA DE COBRO
-                        </BotonImprimir>
-                      )}
-                      <BotonAgregar
-                        type="button"
-                        onClick={reiniciarFormulario}
-                        className="!w-full !py-2.5 !text-[10px] !font-black"
-                      >
-                        <i className="fas fa-plus"></i>
-                        REGISTRAR OTRO EGRESO
-                      </BotonAgregar>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {/* ===========================================
                   FORMULARIO
               =========================================== */}
-              {!egresoRegistrado && (
-                <>
+              <>
                   {/* =======================================
                       DATOS EGRESO
                   ======================================= */}
@@ -2552,7 +2437,6 @@ export default function RegistrarEgresoDrawer({
                   </BotonGuardar>
                   </div>
                 </>
-              )}
             </>
           )}
           {/* ===============================================
@@ -2668,6 +2552,48 @@ export default function RegistrarEgresoDrawer({
           )}
         </div>
       </aside>
+      {(egresoRegistrado || (error && pestana === 'REGISTRAR')) && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/20" />
+          <div className={`relative z-10 w-full max-w-sm rounded-xl border-2 bg-white p-5 text-center shadow-2xl ${
+            egresoRegistrado ? 'border-emerald-500' : 'border-red-500'
+          }`}>
+            <div className={`mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 text-2xl ${
+              egresoRegistrado
+                ? 'border-emerald-500 bg-emerald-50 text-emerald-600'
+                : 'border-red-500 bg-red-50 text-red-600'
+            }`}>
+              <i className={`fas ${egresoRegistrado ? 'fa-check' : 'fa-exclamation-triangle'}`}></i>
+            </div>
+            <div className="text-sm font-black text-slate-800">
+              {egresoRegistrado
+                ? 'Egreso registrado satisfactoriamente'
+                : 'No fue posible registrar el egreso'}
+            </div>
+            {!egresoRegistrado && error && (
+              <div className="mt-2 text-[10px] text-slate-600">{error}</div>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                if (egresoRegistrado) {
+                  reiniciarFormulario()
+                } else {
+                  setError('')
+                }
+              }}
+              className={`mt-4 min-w-[110px] rounded-lg px-4 py-2 text-[10px] font-black text-white transition hover:-translate-y-0.5 hover:shadow-md ${
+                egresoRegistrado
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-red-600 hover:bg-red-700'
+              }`}
+            >
+              ACEPTAR
+            </button>
+          </div>
+        </div>
+      )}
+
       {mostrarFormularioConcepto && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
           <div
