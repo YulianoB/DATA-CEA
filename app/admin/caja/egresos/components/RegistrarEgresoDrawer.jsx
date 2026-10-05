@@ -1412,7 +1412,7 @@ export default function RegistrarEgresoDrawer({
           -translate-x-1/2
           -translate-y-1/2
           w-[calc(100%-1.5rem)]
-          max-w-7xl
+          max-w-[900px]
           max-h-[92vh]
           bg-white
           rounded-xl
@@ -1963,9 +1963,12 @@ export default function RegistrarEgresoDrawer({
                       MODALIDAD DEL EGRESO
                   ======================================= */}
                   <Seccion
-                    titulo="Modalidad del egreso"
-                    icono="fas fa-exchange-alt"
+                    titulo="Modalidad y beneficiario"
+                    icono="fas fa-money-check-alt"
                   >
+                    <div className="text-[10px] font-black text-slate-700">
+                      Modalidad del egreso
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <BotonTipo
                         activo={form.modalidad === 'PAGO_DIRECTO'}
@@ -1988,22 +1991,16 @@ export default function RegistrarEgresoDrawer({
                         Registre a la persona que recibe el dinero. El beneficiario final, la factura y el valor legalizado se completarán posteriormente al legalizar este egreso.
                       </div>
                     )}
-                  </Seccion>
+                    <div className="border-t border-gray-200 my-1"></div>
+
                   {/* =======================================
                       BENEFICIARIO / RECEPTOR
                   ======================================= */}
-                  <Seccion
-                    titulo={
-                      form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                    <div className="text-[10px] font-black text-slate-700">
+                      {form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
                         ? 'Persona que recibe el dinero'
-                        : 'Beneficiario'
-                    }
-                    icono={
-                      form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                        ? 'fas fa-user-clock'
-                        : 'fas fa-user-check'
-                    }
-                  >
+                        : 'Beneficiario'}
+                    </div>
                     <div
                       className="
                         grid
