@@ -18,7 +18,19 @@ import RegistrarEgresoDrawer
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 
-import { ReceiptText } from 'lucide-react'
+import { ReceiptText, RefreshCw } from 'lucide-react'
+
+import {
+  BotonActualizar,
+  BotonAgregar,
+  BotonLimpiar,
+  BotonVerDetalle,
+  ESTILO_CONTENEDORES,
+  ESTILO_ENCABEZADO_TABLA,
+  ESTILO_SECCIONES,
+  ESTILO_TARJETAS,
+  MarcoTabla,
+} from '@/components/admin/EstiloModulo'
 
 import {
   imprimirCuentaCobro,
@@ -305,84 +317,32 @@ function TarjetaResumen({
   valor,
   subtitulo,
   icono,
-  iconoFondo = 'bg-slate-100',
-  iconoColor = 'text-slate-700',
 }) {
   return (
     <div
-      className="
-        bg-white
-        border
-        border-gray-300
-        rounded-xl
-        p-3
-        shadow-sm
-      "
+      className="flex min-h-[82px] items-center justify-between gap-3 px-3 py-2.5"
+      style={{
+        backgroundColor: ESTILO_TARJETAS.fondo,
+        border: '1px solid #B8C6D1',
+        borderRadius: `${ESTILO_TARJETAS.radio}px`,
+        boxShadow: '0 2px 7px rgba(15, 23, 42, 0.09)',
+      }}
     >
-      <div
-        className="
-          flex
-          justify-between
-          items-start
-          gap-3
-        "
-      >
-        <div>
-          <p
-            className="
-              text-[9px]
-              uppercase
-              tracking-wide
-              font-bold
-              text-gray-500
-            "
-          >
-            {titulo}
+      <div className="min-w-0">
+        <p className="text-[9px] font-bold uppercase tracking-wide text-gray-500">
+          {titulo}
+        </p>
+        <p className="mt-0.5 text-lg font-black text-gray-900">
+          {valor}
+        </p>
+        {subtitulo && (
+          <p className="mt-0.5 text-[9px] text-gray-500">
+            {subtitulo}
           </p>
-
-          <p
-            className="
-              text-lg
-              md:text-xl
-              font-black
-              text-gray-900
-              mt-1
-            "
-          >
-            {valor}
-          </p>
-
-          {subtitulo && (
-            <p
-              className="
-                text-[10px]
-                text-gray-500
-                mt-1
-              "
-            >
-              {subtitulo}
-            </p>
-          )}
-        </div>
-
-        <div
-          className={`
-            w-9
-            h-9
-            rounded-lg
-            flex
-            items-center
-            justify-center
-            ${iconoFondo}
-            ${iconoColor}
-          `}
-        >
-          <i
-            className={
-              icono
-            }
-          ></i>
-        </div>
+        )}
+      </div>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+        <i className={icono}></i>
       </div>
     </div>
   )
@@ -1446,44 +1406,23 @@ export default function CajaEgresosPage() {
       "
     >
       <div
-        className="
-          max-w-7xl
-          mx-auto
-          bg-white
-          border
-          border-gray-200
-          rounded-xl
-          shadow-lg
-          p-4
-          md:p-6
-        "
+        className="max-w-7xl mx-auto overflow-hidden"
+        style={{
+          backgroundColor: ESTILO_CONTENEDORES.fondo,
+          border: `${ESTILO_CONTENEDORES.grosorBorde}px solid ${ESTILO_CONTENEDORES.borde}`,
+          borderRadius: `${ESTILO_CONTENEDORES.radio}px`,
+          boxShadow: ESTILO_CONTENEDORES.sombra,
+        }}
       >
+        <EncabezadoModulo
+          titulo="Registrar Egresos"
+          subtitulo="Gastos, pagos a terceros, funcionarios, vehículos y otros desembolsos."
+          icono={ReceiptText}
+          rutaRegreso="/admin/caja"
+          textoRegreso="Volver a Caja"
+        />
 
-        {/* ==================================================
-            ENCABEZADO DEL MÓDULO
-        ================================================== */}
-
-        <div className="mb-4 overflow-hidden rounded-xl shadow-sm">
-          <EncabezadoModulo
-            titulo="Registrar Egresos"
-            subtitulo="Gastos, pagos a terceros, funcionarios, vehículos y otros desembolsos."
-            icono={ReceiptText}
-            rutaRegreso="/admin/caja"
-            textoRegreso="Volver a Caja"
-          />
-        </div>
-
-        <div className="mb-3 flex justify-end">
-          <button
-            type="button"
-            onClick={cargarTodo}
-            disabled={cargando}
-            className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-[10px] font-bold text-gray-600 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
-          >
-            <i className={`fas fa-sync-alt mr-2 ${cargando ? 'fa-spin' : ''}`}></i>
-            Actualizar
-          </button>
-        </div>
+        <div className="px-4 pb-4 pt-3 md:px-6 md:pb-6">
 
         {/* ==================================================
             MENSAJES
@@ -1531,103 +1470,52 @@ export default function CajaEgresosPage() {
             RESUMEN HOY + ACCIÓN
         ================================================== */}
 
-        <div
-          className="
-            grid
-            grid-cols-1
-            xl:grid-cols-[minmax(0,1fr)_190px]
-            gap-3
-            mb-4
-          "
+        <section
+          className="mb-4 rounded-xl border bg-white px-4 pb-4 pt-3"
+          style={{
+            borderColor: '#B8C6D1',
+            boxShadow: '0 6px 18px rgba(15, 23, 42, 0.10)',
+          }}
         >
-          <div
-            className="
-              grid
-              grid-cols-1
-              sm:grid-cols-2
-              lg:grid-cols-4
-              gap-3
-            "
-          >
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-[0.06em]" style={{ color: '#3B617D' }}>
+                Resumen de egresos del día
+              </h2>
+              <p className="mt-0.5 text-[9px] text-gray-500">
+                Distribución de los egresos registrados en la jornada.
+              </p>
+            </div>
+            <span className="text-[9px] font-semibold text-gray-500">{hoyColombia()}</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <TarjetaResumen
-              titulo="Egresos Hoy"
+              titulo="Egresos"
               valor={formatearMoneda(resumenDia?.total_egresos)}
               subtitulo={`${Number(resumenDia?.cantidad_egresos || 0)} egreso(s) activo(s)`}
               icono="fas fa-money-bill-wave"
-              iconoFondo="bg-emerald-50"
-              iconoColor="text-emerald-700"
             />
-
             <TarjetaResumen
-              titulo="Efectivo Hoy"
+              titulo="Efectivo"
               valor={formatearMoneda(resumenDia?.total_efectivo)}
               subtitulo="Salidas registradas en efectivo"
               icono="fas fa-wallet"
-              iconoFondo="bg-blue-50"
-              iconoColor="text-blue-700"
             />
-
             <TarjetaResumen
               titulo="Otros Medios"
               valor={formatearMoneda(resumenDia?.total_otros_medios)}
               subtitulo="Transferencias y otros medios"
               icono="fas fa-building-columns"
-              iconoFondo="bg-amber-50"
-              iconoColor="text-amber-700"
             />
-
             <TarjetaResumen
-              titulo="Anulados Hoy"
+              titulo="Anulados"
               valor={Number(resumenDia?.cantidad_anulados || 0)}
               subtitulo="Movimientos anulados"
               icono="fas fa-ban"
-              iconoFondo="bg-red-50"
-              iconoColor="text-red-700"
             />
           </div>
-
-          <div
-            className="
-              border
-              border-slate-300
-              bg-slate-50
-              rounded-xl
-              p-3
-              shadow-sm
-              flex
-              items-center
-              justify-center
-            "
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setError('')
-                setMensaje('')
-                setDrawerEgreso(true)
-              }}
-              className="
-                inline-flex
-                items-center
-                justify-center
-                bg-[#36566F]
-                hover:bg-[#2d485d]
-                text-white
-                rounded-lg
-                px-4
-                py-2.5
-                text-[10px]
-                font-black
-                whitespace-nowrap
-                shadow-sm
-                transition-colors
-              "
-            >
-              <i className="fas fa-plus mr-2"></i>
-              REGISTRAR EGRESO
-            </button>
-          </div>
-        </div>
+        </section>
 
         {/* ==================================================
             FILTROS
@@ -1729,18 +1617,24 @@ export default function CajaEgresosPage() {
               ))}
             </select>
 
-            <button
+            <BotonLimpiar
               type="button"
               onClick={limpiarFiltros}
-              className="
-                shrink-0 border border-gray-300 bg-white
-                hover:bg-gray-100 text-gray-700 rounded-lg
-                px-3 py-2 text-[10px] font-bold
-              "
+              className="shrink-0 !px-3 !py-2 !text-[10px]"
             >
-              <i className="fas fa-eraser mr-1.5"></i>
+              <i className="fas fa-eraser"></i>
               Limpiar
-            </button>
+            </BotonLimpiar>
+
+            <BotonActualizar
+              type="button"
+              onClick={cargarTodo}
+              disabled={cargando}
+              className="shrink-0 !px-3 !py-2 !text-[10px]"
+            >
+              <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
+              Actualizar
+            </BotonActualizar>
           </div>
         </div>
 
@@ -1754,25 +1648,13 @@ export default function CajaEgresosPage() {
             HISTORIAL
         ================================================== */}
 
-        <div
-          className="
-            border
-            border-gray-300
-            rounded-xl
-            overflow-hidden
-          "
-        >
+        <MarcoTabla>
           <div
-            className="
-              bg-slate-800
-              text-white
-              px-4
-              py-3
-              flex
-              justify-between
-              items-center
-              gap-3
-            "
+            className="px-4 py-3 flex justify-between items-center gap-3"
+            style={{
+              backgroundColor: ESTILO_SECCIONES.fondo,
+              color: ESTILO_SECCIONES.texto,
+            }}
           >
             <div>
               <h2
@@ -1787,26 +1669,29 @@ export default function CajaEgresosPage() {
               </h2>
 
               <p
-                className="
-                  text-[9px]
-                  text-gray-300
-                  mt-0.5
-                "
+                className="text-[9px] mt-0.5" style={{ color: ESTILO_SECCIONES.subtitulo }}
               >
                 Movimientos registrados según los filtros seleccionados.
               </p>
             </div>
 
             <span
-              className="
-                text-[10px]
-                text-gray-300
-                whitespace-nowrap
-              "
+              className="text-[10px] whitespace-nowrap" style={{ color: ESTILO_SECCIONES.subtitulo }}
             >
               {egresos.length}{' '}
               registro(s)
             </span>
+            <BotonAgregar
+              type="button"
+              onClick={() => {
+                setError('')
+                setMensaje('')
+                setDrawerEgreso(true)
+              }}
+            >
+              <i className="fas fa-plus"></i>
+              Registrar Egreso
+            </BotonAgregar>
           </div>
 
           <div className="overflow-x-auto">
@@ -1817,7 +1702,7 @@ export default function CajaEgresosPage() {
                 border-collapse
               "
             >
-              <thead className="bg-gray-100">
+              <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                 <tr>
                   <th className="border p-2">
                     Cuenta
@@ -1906,9 +1791,7 @@ export default function CajaEgresosPage() {
                         key={
                           egreso.id
                         }
-                        className="
-                          hover:bg-red-50/40
-                        "
+                        className="hover:bg-blue-50"
                       >
 
                         {/* CUENTA */}
@@ -2083,32 +1966,15 @@ export default function CajaEgresosPage() {
                             text-center
                           "
                         >
-                          <button
+                          <BotonVerDetalle
                             type="button"
-                            onClick={() =>
-                              abrirDetalle(
-                                egreso
-                              )
-                            }
-                            disabled={
-                              cargandoDetalle
-                            }
-                            className="
-                              bg-blue-600
-                              hover:bg-blue-700
-                              disabled:opacity-50
-                              text-white
-                              rounded-lg
-                              px-3
-                              py-1.5
-                              text-[9px]
-                              font-bold
-                            "
+                            onClick={() => abrirDetalle(egreso)}
+                            disabled={cargandoDetalle}
+                            className="!px-3 !py-1.5 !text-[10px]"
                           >
-                            <i className="fas fa-eye mr-1"></i>
-
-                            Ver
-                          </button>
+                            <i className="fas fa-eye"></i>
+                            Ver Detalle
+                          </BotonVerDetalle>
                         </td>
 
                       </tr>
@@ -2119,8 +1985,11 @@ export default function CajaEgresosPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </MarcoTabla>
 
+      </div>
+
+        </div>
       </div>
 
       {/* ====================================================
