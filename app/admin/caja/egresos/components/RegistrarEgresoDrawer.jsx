@@ -2565,6 +2565,7 @@ export default function RegistrarEgresoDrawer({
         onCerrar={() => {
           if (egresoRegistrado) {
             reiniciarFormulario()
+            onCerrar()
           } else {
             setError('')
           }
