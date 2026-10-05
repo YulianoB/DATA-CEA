@@ -2452,8 +2452,11 @@ const ingresosLibresFiltrados =
               </table>
             </div>
 
-            <div class="receipt-bottom">
+            <div class="origin-block">
               <div class="origin"><span class="label">Origen:</span>${escaparHtml(origen)} <span class="origin-name">${escaparHtml(origenNombre)}</span></div>
+            </div>
+
+            <div class="signatures-block">
               <div class="signatures">
                 <div><div class="signature-line"></div>FIRMA PAGADOR</div>
                 <div><div class="signature-line"></div>RECIBIDO POR<div class="signature-name">${escaparHtml(usuarioOperacion || '-')}</div></div>
@@ -2525,10 +2528,10 @@ const ingresosLibresFiltrados =
             .receipt-number-label { font-size:7px; font-weight:800; color:#475569; }
             .receipt-number-value { margin-top:3px; padding:3px 8px; min-width:32mm; text-align:center; border:1px solid #94A3B8; border-radius:8px; font-size:12px; font-weight:900; background:#FFF; }
             .identity-wrap { margin:5px 6px 0; border:1px solid #CBD5E1; border-radius:7px; overflow:hidden; }
-            .identity-grid { display:grid; grid-template-columns:minmax(0,1.42fr) minmax(0,0.82fr); gap:4px 8px; padding:5px 7px; font-size:7.5px; }
+            .identity-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,0.75fr); gap:4px 8px; padding:5px 7px; font-size:7.5px; }
             .identity-right { padding-left:18px; }
             .label { font-weight:800; margin-right:4px; }
-            .section-block { margin-top:6px; border:1px solid #CBD5E1; border-radius:7px; overflow:hidden; background:#FFFFFF; }
+            .section-block { margin:6px 6px 0; border:1px solid #CBD5E1; border-radius:7px; overflow:hidden; background:#FFFFFF; }
             .section-title { padding:4px 6px; text-align:center; font-size:9px; font-weight:900; background:#FFFFFF; color:#263746; border-bottom:1px solid #CBD5E1; }
             table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:7px; line-height:1.1; }
             th,td { border-right:1px solid #CBD5E1; border-bottom:1px solid #CBD5E1; padding:3px 4px; min-height:16px; vertical-align:middle; overflow-wrap:anywhere; }
@@ -2542,13 +2545,14 @@ const ingresosLibresFiltrados =
             .money { text-align:right; white-space:nowrap; }
             .strong { font-weight:900; }
             .summary-row th { text-align:right; background:#FAFAFA; }
-            .receipt-bottom { margin-top:auto; padding:5px 7px 3px; }
-            .origin { font-size:7px; padding-bottom:4px; }
+            .origin-block { margin:6px 6px 0; padding:4px 7px; border:1px solid #CBD5E1; border-radius:7px; background:#FFFFFF; }
+            .origin { font-size:7px; }
             .origin-name { margin-left:8px; color:#475569; }
+            .signatures-block { margin-top:auto; padding:5px 7px 4px; }
             .signatures { display:grid; grid-template-columns:1fr 1fr; gap:20mm; text-align:center; font-size:6.5px; color:#334155; }
             .signature-line { width:70%; margin:8px auto 2px; border-top:1px solid #475569; }
             .signature-name { margin-top:1px; font-size:5.8px; font-weight:700; color:#475569; }
-            .cea-footer { min-height:12px; border-top:1px solid #E2E8F0; padding:2px 6px; text-align:center; font-size:6.2px; font-weight:600; color:#64748B; }
+            .cea-footer { min-height:12px; border-top:1px solid #CBD5E1; padding:2px 6px; text-align:center; font-size:6.2px; font-weight:700; color:#475569; }
             @page {
               size: 216mm 140mm;
               margin: 0;
@@ -2635,7 +2639,7 @@ const ingresosLibresFiltrados =
               }
 
               .section-block {
-                margin-top: 2mm;
+                margin: 2mm 1.5mm 0;
               }
 
               .section-title {
@@ -2648,17 +2652,18 @@ const ingresosLibresFiltrados =
                 height: 4.6mm;
               }
 
-              .receipt-bottom {
+              .origin-block {
+                margin: 1.6mm 1.5mm 0;
+                padding: 1mm 2mm;
+              }
+
+              .signatures-block {
+                margin-top: auto;
                 padding: 1.5mm 2mm 1mm;
               }
 
               .cea-footer {
-                margin-top: auto;
                 padding: 1mm 2mm;
-              }
-
-              .origin {
-                padding-bottom: 0.6mm;
               }
 
               .signature-line {
