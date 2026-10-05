@@ -2555,20 +2555,22 @@ const ingresosLibresFiltrados =
                 margin: 0;
                 padding: 0;
                 display: flex;
-                flex-direction: column;
+                flex-direction: row;
                 box-shadow: none;
                 overflow: hidden;
               }
 
               .receipt {
-                width: 216mm;
-                height: 70mm;
-                min-height: 70mm;
-                max-height: 70mm;
+                width: 108mm;
+                height: 140mm;
+                min-width: 108mm;
+                max-width: 108mm;
+                min-height: 140mm;
+                max-height: 140mm;
                 margin: 0;
-                padding: 2.5mm 5mm;
+                padding: 5mm 4mm;
                 display: flex;
-                align-items: center;
+                align-items: flex-start;
                 justify-content: center;
                 break-inside: avoid;
                 page-break-inside: avoid;
@@ -2576,12 +2578,13 @@ const ingresosLibresFiltrados =
               }
 
               .receipt + .receipt {
-                border-top: 0.25mm dashed #94A3B8;
+                border-top: 0;
+                border-left: 0.25mm dashed #94A3B8;
               }
 
               .receipt-card {
                 width: 100%;
-                max-height: 65mm;
+                max-height: 130mm;
                 border-radius: 2mm;
               }
 
