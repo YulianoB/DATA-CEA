@@ -1987,8 +1987,6 @@ export default function CajaEgresosPage() {
           </div>
         </MarcoTabla>
 
-      </div>
-
         </div>
       </div>
 
