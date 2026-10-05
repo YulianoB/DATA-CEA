@@ -2500,17 +2500,17 @@ const ingresosLibresFiltrados =
             .receipt { width:100%; height:132mm; padding:5mm 7mm; display:flex; align-items:center; justify-content:center; }
             .receipt + .receipt { border-top:1px dashed #94A3B8; }
             .receipt-card { width:100%; max-height:122mm; border:1px solid #64748B; border-radius:10px; overflow:hidden; background:#FFF; }
-            .receipt-header { display:grid; grid-template-columns:1fr 42mm; border-bottom:1px solid #94A3B8; }
-            .brand { text-align:center; padding:4px 8px; }
+            .receipt-header { position:relative; border-bottom:1px solid #94A3B8; }
+            .brand { width:100%; text-align:center; padding:4px 8px; }
             .title { font-size:13px; font-weight:900; }
             .company { margin-top:1px; font-size:8.5px; font-weight:800; }
             .nit,.copy { margin-top:1px; font-size:6.8px; color:#475569; }
-            .receipt-number { border-left:1px solid #94A3B8; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 7px; background:#F8FAFC; }
+            .receipt-number { position:absolute; top:50%; right:7px; transform:translateY(-50%); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px 0; background:transparent; }
             .receipt-number-label { font-size:7px; font-weight:800; color:#475569; }
             .receipt-number-value { margin-top:3px; padding:3px 8px; min-width:32mm; text-align:center; border:1px solid #94A3B8; border-radius:8px; font-size:12px; font-weight:900; background:#FFF; }
             .identity-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px 12px; padding:4px 7px; font-size:7.5px; border-bottom:1px solid #CBD5E1; }
             .label { font-weight:800; margin-right:4px; }
-            .section-title { padding:3px 6px; text-align:center; font-size:7.5px; font-weight:900; background:#F1F5F9; border-bottom:1px solid #94A3B8; }
+            .section-title { padding:3px 6px; text-align:center; font-size:7.5px; font-weight:900; background:#737B87; color:#FFFFFF; border-bottom:1px solid #737B87; }
             table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:7px; line-height:1.1; }
             th,td { border-right:1px solid #CBD5E1; border-bottom:1px solid #CBD5E1; padding:2px 4px; vertical-align:middle; overflow-wrap:anywhere; }
             th { text-align:left; font-weight:800; }
@@ -2568,9 +2568,9 @@ const ingresosLibresFiltrados =
                 min-height: 140mm;
                 max-height: 140mm;
                 margin: 0;
-                padding: 5mm 4mm;
+                padding: 7mm 4mm;
                 display: flex;
-                align-items: flex-start;
+                align-items: stretch;
                 justify-content: center;
                 break-inside: avoid;
                 page-break-inside: avoid;
@@ -2584,7 +2584,11 @@ const ingresosLibresFiltrados =
 
               .receipt-card {
                 width: 100%;
-                max-height: 130mm;
+                height: 126mm;
+                min-height: 126mm;
+                max-height: 126mm;
+                display: flex;
+                flex-direction: column;
                 border-radius: 2mm;
               }
 
@@ -2611,7 +2615,13 @@ const ingresosLibresFiltrados =
               }
 
               .receipt-bottom {
-                padding: 0.8mm 2mm 0.5mm;
+                margin-top: auto;
+                padding: 1.5mm 2mm 1mm;
+              }
+
+              .cea-footer {
+                margin-top: 1mm;
+                padding: 1mm 2mm;
               }
 
               .origin {
