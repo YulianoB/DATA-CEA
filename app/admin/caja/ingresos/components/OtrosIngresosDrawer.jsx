@@ -330,6 +330,8 @@ export default function OtrosIngresosDrawer({
   abierto,
   onCerrar,
   empresaNombre,
+  empresaDatos = {},
+  usuarioOperacion = '',
   conceptos = [],
   mediosPago = [],
   postCaja,
@@ -1649,6 +1651,8 @@ function validarIngreso() {
           datosImpresion,
           {
             empresaNombre,
+            empresaDatos,
+            usuarioOperacion,
           }
         )
       }
@@ -1759,6 +1763,8 @@ function imprimirIngresoHistorico(
       },
       {
         empresaNombre,
+        empresaDatos,
+        usuarioOperacion,
       }
     )
   } catch (
