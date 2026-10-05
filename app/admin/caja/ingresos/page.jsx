@@ -734,6 +734,16 @@ export default function CajaIngresosPage() {
     useState('')
 
   const [
+    empresaDatos,
+    setEmpresaDatos,
+  ] =
+    useState({
+      direccion: '',
+      telefono: '',
+      email_principal: '',
+    })
+
+  const [
     sesionLista,
     setSesionLista,
   ] =
@@ -1206,13 +1216,34 @@ const [
         if (
           data
             ?.empresa
-            ?.nombre
         ) {
-          setEmpresaNombre(
-            data
-              .empresa
-              .nombre
-          )
+          if (
+            data.empresa.nombre
+          ) {
+            setEmpresaNombre(
+              data.empresa.nombre
+            )
+          }
+
+          if (
+            data.empresa.nit
+          ) {
+            setNit(
+              data.empresa.nit
+            )
+          }
+
+          setEmpresaDatos({
+            direccion:
+              data.empresa.direccion ||
+              '',
+            telefono:
+              data.empresa.telefono ||
+              '',
+            email_principal:
+              data.empresa.email_principal ||
+              '',
+          })
         }
       },
       [
@@ -2267,27 +2298,29 @@ const ingresosLibresFiltrados =
         : []
 
     const filasDetalles =
-      detalles.length >
-      0
+      detalles.length > 0
         ? detalles
             .map(
               detalleItem => {
-                const descripcion =
+                const concepto =
+                  detalleItem?.concepto?.nombre ||
                   detalleItem?.descripcion ||
-                  detalleItem
-                    ?.concepto
-                    ?.nombre ||
                   'CONCEPTO'
+
+                const categoriaDetalle =
+                  (Array.isArray(detalleItem?.categorias)
+                    ? detalleItem.categorias
+                    : []
+                  ).join(' / ') ||
+                  categorias ||
+                  '-'
 
                 return `
                   <tr>
-                    <td colspan="3">${escaparHtml(
-                      descripcion
-                    )}</td>
+                    <td>${escaparHtml(concepto)}</td>
+                    <td>${escaparHtml(categoriaDetalle)}</td>
                     <td class="money">${escaparHtml(
-                      formatearMoneda(
-                        detalleItem?.valor
-                      )
+                      formatearMoneda(detalleItem?.valor)
                     )}</td>
                   </tr>
                 `
@@ -2296,15 +2329,13 @@ const ingresosLibresFiltrados =
             .join('')
         : `
             <tr>
-              <td colspan="3">OBLIGACIÓN</td>
+              <td>OBLIGACIÓN</td>
+              <td>${escaparHtml(categorias)}</td>
               <td class="money">${escaparHtml(
-                formatearMoneda(
-                  valorTotal
-                )
+                formatearMoneda(valorTotal)
               )}</td>
             </tr>
           `
-
     const filasHistorial =
       historialHastaRecibo.length >
       0
@@ -2338,12 +2369,12 @@ const ingresosLibresFiltrados =
                 return `
                   <tr>
                     <td>${escaparHtml(
+                      consecutivoItem
+                    )}</td>
+                    <td>${escaparHtml(
                       formatearFecha(
                         item?.fecha
                       )
-                    )}</td>
-                    <td>${escaparHtml(
-                      consecutivoItem
                     )}</td>
                     <td>${escaparHtml(
                       medioItem
@@ -2367,181 +2398,65 @@ const ingresosLibresFiltrados =
     const construirCopia =
       copia => `
         <section class="receipt">
-          <table>
-            <tbody>
-              <tr>
-                <td colspan="4" class="head">
-                  <div class="title">RECIBO DE CAJA</div>
-                  <div class="company">${escaparHtml(
-                    empresaNombre ||
-                    'CEA'
-                  )}</div>
-                  <div class="copy">${escaparHtml(
-                    copia
-                  )}</div>
-                </td>
-              </tr>
-              <tr>
-                <th>RECIBO</th>
-                <td>${escaparHtml(
-                  consecutivo
-                )}</td>
-                <th>FECHA</th>
-                <td>${escaparHtml(
-                  formatearFecha(
-                    recibo?.fecha
-                  )
-                )}</td>
-              </tr>
-              <tr>
-                <th>APRENDIZ</th>
-                <td>${escaparHtml(
-                  nombreAprendiz
-                )}</td>
-                <th>DOCUMENTO</th>
-                <td>${escaparHtml(
-                  documentoAprendiz
-                )}</td>
-              </tr>
-              <tr>
-                <th>MATRÍCULA</th>
-                <td>${escaparHtml(
-                  matricula
-                )}</td>
-                <th>CATEGORÍA</th>
-                <td>${escaparHtml(
-                  categorias
-                )}</td>
-              </tr>
-              <tr>
-                <th>ORIGEN</th>
-                <td>${escaparHtml(
-                  origen
-                )}</td>
-                <th>${
-                  origen ===
-                  'CONVENIO'
-                    ? 'CONVENIO'
-                    : 'CEA'
-                }</th>
-                <td>${escaparHtml(
-                  origenNombre
-                )}</td>
-              </tr>
-              <tr>
-                <td colspan="4" class="section">DETALLE DE LA OBLIGACIÓN</td>
-              </tr>
-              <tr>
-                <th colspan="3">CONCEPTO / DESCRIPCIÓN</th>
-                <th class="money">VALOR</th>
-              </tr>
-              ${filasDetalles}
-              <tr>
-                <th colspan="2">VALOR OBLIGACIÓN</th>
-                <td colspan="2" class="money strong">${escaparHtml(
-                  formatearMoneda(
-                    valorTotal
-                  )
-                )}</td>
-              </tr>
-              <tr>
-                <td colspan="4" class="section">HISTORIAL DE PAGOS</td>
-              </tr>
-              <tr>
-                <th>FECHA</th>
-                <th>RECIBO</th>
-                <th>MEDIO</th>
-                <th class="money">VALOR</th>
-              </tr>
-              ${filasHistorial}
-              <tr>
-                <th colspan="2">TOTAL ABONADO</th>
-                <td colspan="2" class="money">${escaparHtml(
-                  formatearMoneda(
-                    totalAbonadoAlRecibo
-                  )
-                )}</td>
-              </tr>
-              <tr>
-                <th colspan="2">SALDO</th>
-                <td colspan="2" class="money strong">${escaparHtml(
-                  formatearMoneda(
-                    saldoAlRecibo
-                  )
-                )}</td>
-              </tr>
-              <tr>
-                <th colspan="2">ESTADO AL RECIBO</th>
-                <td colspan="2" class="strong">${escaparHtml(
-                  saldoAlRecibo <= 0
-                    ? 'PAZ Y SALVO'
-                    : 'ABONADO'
-                )}</td>
-              </tr>
-              <tr>
-                <th>MEDIO PAGO</th>
-                <td>${escaparHtml(
-                  medioPago
-                )}</td>
-                <th>ENTIDAD</th>
-                <td>${escaparHtml(
-                  recibo?.referencia_pago ||
-                  '-'
-                )}</td>
-              </tr>
-              <tr>
-                <th>PAGADO POR</th>
-                <td>${escaparHtml(
-                  recibo?.pagado_por ||
-                  '-'
-                )}</td>
-                <th>PAGADOR</th>
-                <td>${escaparHtml(
-                  recibo?.nombre_pagador ||
-                  '-'
-                )}</td>
-              </tr>
-              <tr>
-                <th>DOC. PAGADOR</th>
-                <td>${escaparHtml(
-                  recibo?.documento_pagador ||
-                  '-'
-                )}</td>
-                <th>RECIBIDO POR</th>
-                <td>${escaparHtml(
-                  recibo?.recibido_por ||
-                  '-'
-                )}</td>
-              </tr>
-              ${
-                texto(
-                  recibo?.observaciones
-                )
-                  ? `
-                      <tr>
-                        <th>OBSERVACIONES</th>
-                        <td colspan="3">${escaparHtml(
-                          recibo.observaciones
-                        )}</td>
-                      </tr>
-                    `
-                  : ''
-              }
-              <tr>
-                <td colspan="2" class="signature">
-                  ___________________________<br>
-                  FIRMA PAGADOR
-                </td>
-                <td colspan="2" class="signature">
-                  ___________________________<br>
-                  RECIBIDO POR
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="receipt-card">
+            <header class="receipt-header">
+              <div class="brand">
+                <div class="title">RECIBO DE CAJA</div>
+                <div class="company">${escaparHtml(empresaNombre || 'CEA')}</div>
+                <div class="nit">NIT ${escaparHtml(nit || '-')}</div>
+                <div class="copy">${escaparHtml(copia)}</div>
+              </div>
+              <div class="receipt-number">
+                <div class="receipt-number-label">RECIBO N.º</div>
+                <div class="receipt-number-value">${escaparHtml(consecutivo)}</div>
+              </div>
+            </header>
+
+            <div class="identity-grid">
+              <div><span class="label">Fecha:</span>${escaparHtml(formatearFecha(recibo?.fecha))}</div>
+              <div><span class="label">Matrícula:</span>${escaparHtml(matricula)}</div>
+              <div><span class="label">Nombre:</span>${escaparHtml(nombreAprendiz)}</div>
+              <div><span class="label">Documento:</span>${escaparHtml(documentoAprendiz)}</div>
+            </div>
+
+            <div class="section-title">DETALLE DE LA OBLIGACIÓN</div>
+            <table class="detail-table">
+              <thead><tr><th>Concepto</th><th>Categoría</th><th class="money">Valor</th></tr></thead>
+              <tbody>
+                ${filasDetalles}
+                <tr class="summary-row"><th colspan="2">Total</th><td class="money strong">${escaparHtml(formatearMoneda(valorTotal))}</td></tr>
+                <tr class="summary-row"><th colspan="2">Abono</th><td class="money strong">${escaparHtml(formatearMoneda(totalAbonadoAlRecibo))}</td></tr>
+                <tr class="summary-row"><th colspan="2">Saldo</th><td class="money strong">${escaparHtml(formatearMoneda(saldoAlRecibo))}</td></tr>
+              </tbody>
+            </table>
+
+            <div class="section-title">HISTORIAL DE PAGOS</div>
+            <table class="history-table">
+              <thead><tr><th>Recibo</th><th>Fecha</th><th>Medio de pago</th><th class="money">Valor pagado</th></tr></thead>
+              <tbody>${filasHistorial}</tbody>
+            </table>
+
+            <div class="receipt-bottom">
+              <div class="origin"><span class="label">Origen:</span>${escaparHtml(origen)} <span class="origin-name">${escaparHtml(origenNombre)}</span></div>
+              <div class="signatures">
+                <div><div class="signature-line"></div>FIRMA PAGADOR</div>
+                <div><div class="signature-line"></div>RECIBIDO POR</div>
+              </div>
+            </div>
+
+            <footer class="cea-footer">
+              ${[
+                empresaDatos?.direccion,
+                empresaDatos?.telefono,
+                empresaDatos?.email_principal,
+              ]
+                .filter(Boolean)
+                .map(escaparHtml)
+                .join(' · ')}
+            </footer>
+          </div>
         </section>
       `
-
     const ventana =
       window.open(
         '',
@@ -2571,209 +2486,56 @@ const ingresosLibresFiltrados =
           )}</title>
 
           <style>
-            * {
-              box-sizing: border-box;
-            }
-
-            html,
-            body {
-              margin: 0;
-              padding: 0;
-              font-family: Arial, Helvetica, sans-serif;
-              color: #000;
-              background: #E5E7EB;
-            }
-
-            body {
-              padding: 18px 0 32px;
-            }
-
-            .center {
-              text-align: center;
-            }
-
-            .toolbar {
-              width: min(216mm, calc(100vw - 32px));
-              margin: 0 auto 12px;
-              display: flex;
-              justify-content: flex-end;
-              gap: 8px;
-            }
-
-            .toolbar button {
-              min-height: 34px;
-              padding: 7px 13px;
-              border-radius: 8px;
-              cursor: pointer;
-              font-size: 12px;
-              font-weight: 700;
-              transition:
-                background-color 0.15s ease,
-                border-color 0.15s ease;
-            }
-
-            .btn-print {
-              background: #2F6F89;
-              border: 1px solid #2F6F89;
-              color: #FFFFFF;
-            }
-
-            .btn-print:hover {
-              background: #24586D;
-              border-color: #24586D;
-            }
-
-            .btn-close {
-              background: #FFFFFF;
-              border: 1px solid #CBD5E1;
-              color: #475569;
-            }
-
-            .btn-close:hover {
-              background: #F1F5F9;
-            }
-
-            .grid {
-              display: flex;
-              flex-direction: column;
-              width: 216mm;
-              height: 279mm;
-              margin: 0 auto;
-              gap: 0;
-              background: #FFFFFF;
-              box-shadow: 0 4px 18px rgba(15, 23, 42, 0.18);
-            }
-
-            .receipt {
-              width: 100%;
-              min-width: 0;
-              height: 132mm;
-              padding: 6mm 7mm;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            }
-
-            .receipt + .receipt {
-              border-top: 1px dashed #777;
-            }
-
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              table-layout: fixed;
-              font-size: 8px;
-              line-height: 1.15;
-            }
-
-            th,
-            td {
-              border: 1px solid #000;
-              padding: 3px 4px;
-              vertical-align: middle;
-              overflow-wrap: anywhere;
-            }
-
-            th {
-              text-align: left;
-              font-weight: 700;
-            }
-
-            .head {
-              text-align: center;
-              padding: 6px 4px;
-            }
-
-            .title {
-              font-size: 14px;
-              font-weight: 900;
-              line-height: 1.2;
-            }
-
-            .company {
-              margin-top: 1px;
-              font-size: 9px;
-              font-weight: 700;
-            }
-
-            .copy {
-              margin-top: 1px;
-              font-size: 7px;
-            }
-
-            .section {
-              text-align: center;
-              font-weight: 900;
-              font-size: 8.5px;
-              padding: 4px 3px;
-              line-height: 1.2;
-              background: #f3f4f6;
-            }
-
-            .money {
-              text-align: right;
-              white-space: nowrap;
-            }
-
-            .strong {
-              font-weight: 900;
-            }
-
-            .signature {
-              height: 34px;
-              text-align: center;
-              vertical-align: bottom;
-              padding-bottom: 3px;
-              font-size: 7px;
-            }
-
-            @page {
-              size: 8.5in 11in;
-              margin: 5mm;
-            }
-
+            * { box-sizing: border-box; }
+            html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; color:#17202A; background:#E5E7EB; }
+            body { padding:18px 0 32px; }
+            .center { text-align:center; }
+            .toolbar { width:min(216mm,calc(100vw - 32px)); margin:0 auto 12px; display:flex; justify-content:flex-end; gap:8px; }
+            .toolbar button { min-height:34px; padding:7px 13px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700; }
+            .btn-print { background:#2F6F89; border:1px solid #2F6F89; color:#FFF; }
+            .btn-print:hover { background:#24586D; border-color:#24586D; }
+            .btn-close { background:#FFF; border:1px solid #CBD5E1; color:#475569; }
+            .btn-close:hover { background:#F1F5F9; }
+            .grid { display:flex; flex-direction:column; width:216mm; height:279mm; margin:0 auto; background:#FFF; box-shadow:0 4px 18px rgba(15,23,42,.18); }
+            .receipt { width:100%; height:132mm; padding:5mm 7mm; display:flex; align-items:center; justify-content:center; }
+            .receipt + .receipt { border-top:1px dashed #94A3B8; }
+            .receipt-card { width:100%; max-height:122mm; border:1px solid #64748B; border-radius:10px; overflow:hidden; background:#FFF; }
+            .receipt-header { display:grid; grid-template-columns:1fr 42mm; border-bottom:1px solid #94A3B8; }
+            .brand { text-align:center; padding:4px 8px; }
+            .title { font-size:13px; font-weight:900; }
+            .company { margin-top:1px; font-size:8.5px; font-weight:800; }
+            .nit,.copy { margin-top:1px; font-size:6.8px; color:#475569; }
+            .receipt-number { border-left:1px solid #94A3B8; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 7px; background:#F8FAFC; }
+            .receipt-number-label { font-size:7px; font-weight:800; color:#475569; }
+            .receipt-number-value { margin-top:3px; padding:3px 8px; min-width:32mm; text-align:center; border:1px solid #94A3B8; border-radius:8px; font-size:12px; font-weight:900; background:#FFF; }
+            .identity-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px 12px; padding:4px 7px; font-size:7.5px; border-bottom:1px solid #CBD5E1; }
+            .label { font-weight:800; margin-right:4px; }
+            .section-title { padding:3px 6px; text-align:center; font-size:7.5px; font-weight:900; background:#F1F5F9; border-bottom:1px solid #94A3B8; }
+            table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:7px; line-height:1.1; }
+            th,td { border-right:1px solid #CBD5E1; border-bottom:1px solid #CBD5E1; padding:2px 4px; vertical-align:middle; overflow-wrap:anywhere; }
+            th { text-align:left; font-weight:800; }
+            th:last-child,td:last-child { border-right:0; }
+            .detail-table th:nth-child(2),.detail-table td:nth-child(2) { width:23%; }
+            .detail-table th:nth-child(3),.detail-table td:nth-child(3) { width:25%; }
+            .history-table th:nth-child(1) { width:22%; }
+            .history-table th:nth-child(2) { width:19%; }
+            .history-table th:nth-child(4) { width:24%; }
+            .money { text-align:right; white-space:nowrap; }
+            .strong { font-weight:900; }
+            .summary-row th { text-align:right; background:#FAFAFA; }
+            .receipt-bottom { padding:4px 7px 3px; }
+            .origin { font-size:7px; padding-bottom:4px; }
+            .origin-name { margin-left:8px; color:#475569; }
+            .signatures { display:grid; grid-template-columns:1fr 1fr; gap:20mm; text-align:center; font-size:6.5px; color:#334155; }
+            .signature-line { width:70%; margin:7px auto 2px; border-top:1px solid #475569; }
+            .cea-footer { min-height:12px; border-top:1px solid #E2E8F0; padding:2px 6px; text-align:center; font-size:5.8px; color:#94A3B8; }
+            @page { size:8.5in 11in; margin:5mm; }
             @media print {
-              html,
-              body {
-                background: #FFFFFF;
-              }
-
-              body {
-                width: auto;
-                min-height: auto;
-                margin: 0;
-                padding: 0;
-                overflow: visible;
-              }
-
-              .toolbar {
-                display: none;
-              }
-
-              .grid {
-                display: flex;
-                flex-direction: column;
-                width: 100%;
-                height: auto;
-                margin: 0;
-                gap: 0;
-                box-shadow: none;
-              }
-
-              .receipt {
-                width: 100%;
-                height: 132mm;
-                padding: 5mm 6mm;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                break-inside: avoid;
-                page-break-inside: avoid;
-              }
-
-              .receipt + .receipt {
-                border-top: 1px dashed #777;
-              }
+              html,body { background:#FFF; }
+              body { margin:0; padding:0; overflow:visible; }
+              .toolbar { display:none; }
+              .grid { width:100%; height:auto; margin:0; box-shadow:none; }
+              .receipt { height:132mm; padding:4mm 6mm; break-inside:avoid; page-break-inside:avoid; }
             }
           </style>
         </head>
