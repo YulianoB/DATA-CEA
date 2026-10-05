@@ -330,14 +330,9 @@ export default function RegistrarEgresoDrawer({
             item =>
               item?.activo !==
                 false &&
-              [
-                'EGRESO',
-                'AMBOS',
-              ].includes(
-                mayusculas(
-                  item?.naturaleza
-                )
-              )
+              mayusculas(
+                item?.naturaleza
+              ) === 'EGRESO'
           )
           .sort(
             (
@@ -373,14 +368,9 @@ export default function RegistrarEgresoDrawer({
         )
           .filter(
             item =>
-              [
-                'EGRESO',
-                'AMBOS',
-              ].includes(
-                mayusculas(
-                  item?.naturaleza
-                )
-              )
+              mayusculas(
+                item?.naturaleza
+              ) === 'EGRESO'
           )
           .slice()
           .sort(
@@ -1419,7 +1409,7 @@ export default function RegistrarEgresoDrawer({
           -translate-x-1/2
           -translate-y-1/2
           w-[calc(100%-1.5rem)]
-          max-w-[900px]
+          max-w-7xl
           max-h-[92vh]
           bg-white
           rounded-xl
@@ -1752,7 +1742,7 @@ export default function RegistrarEgresoDrawer({
                     className="
                       grid
                       grid-cols-1
-                      lg:grid-cols-2
+                      lg:grid-cols-3
                       gap-3
                       items-start
                     "
@@ -1787,6 +1777,7 @@ export default function RegistrarEgresoDrawer({
                       />
                       <CampoInput
                         label="Valor"
+                        prefijo="$"
                         value={
                           form.valor
                             ? Number(
@@ -1873,6 +1864,97 @@ export default function RegistrarEgresoDrawer({
                       La descripción corresponde al concepto seleccionado. Use Observaciones para información particular del egreso.
                     </div>
                    </div>
+                  </Seccion>
+                  {/* =======================================
+                      PAGO
+                  ======================================= */}
+                  <Seccion
+                    titulo="Información del pago"
+                    icono="fas fa-wallet"
+                  >
+                    <CampoSelect
+                      label="Medio de pago"
+                      value={
+                        form.medio_pago_id
+                      }
+                      onChange={
+                        value =>
+                          setForm(
+                            actual => ({
+                              ...actual,
+                              medio_pago_id:
+                                value,
+                            })
+                          )
+                      }
+                      options={
+                        mediosVisibles.map(
+                          item => ({
+                            value:
+                              item.id,
+                            label:
+                              mayusculas(
+                                item.nombre
+                              ),
+                          })
+                        )
+                      }
+                    />
+                    <div
+                      className={
+                        form.modalidad === 'PAGO_DIRECTO'
+                          ? 'grid grid-cols-2 gap-2'
+                          : 'grid grid-cols-1 gap-2'
+                      }
+                    >
+                      {form.modalidad === 'PAGO_DIRECTO' && (
+                        <CampoInput
+                          label="Número de factura"
+                          value={form.numero_factura}
+                          onChange={value =>
+                            setForm(actual => ({
+                              ...actual,
+                              numero_factura: value,
+                            }))
+                          }
+                          placeholder="Opcional"
+                        />
+                      )}
+                      <CampoInput
+                        label="Referencia pago"
+                        value={form.referencia_pago}
+                        onChange={value =>
+                          setForm(actual => ({
+                            ...actual,
+                            referencia_pago: value,
+                          }))
+                        }
+                        placeholder="Opcional"
+                      />
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-[9px] text-gray-500">
+                      {form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
+                        ? 'La factura o soporte del tercero se registrará posteriormente durante la legalización.'
+                        : 'La factura y la referencia pueden registrarse posteriormente; no son obligatorias para realizar el desembolso.'}
+                    </div>
+                    <CampoTextarea
+                      label="Observaciones"
+                      value={
+                        form.observaciones
+                      }
+                      onChange={
+                        value =>
+                          setForm(
+                            actual => ({
+                              ...actual,
+                              observaciones:
+                                mayusculas(
+                                  value
+                                ),
+                            })
+                          )
+                      }
+                    />
                   </Seccion>
                   {/* =======================================
                       MODALIDAD DEL EGRESO
@@ -2437,97 +2519,6 @@ export default function RegistrarEgresoDrawer({
                       </div>
                     </Seccion>
                   )}
-                  {/* =======================================
-                      PAGO
-                  ======================================= */}
-                  <Seccion
-                    titulo="Información del pago"
-                    icono="fas fa-wallet"
-                  >
-                    <CampoSelect
-                      label="Medio de pago"
-                      value={
-                        form.medio_pago_id
-                      }
-                      onChange={
-                        value =>
-                          setForm(
-                            actual => ({
-                              ...actual,
-                              medio_pago_id:
-                                value,
-                            })
-                          )
-                      }
-                      options={
-                        mediosVisibles.map(
-                          item => ({
-                            value:
-                              item.id,
-                            label:
-                              mayusculas(
-                                item.nombre
-                              ),
-                          })
-                        )
-                      }
-                    />
-                    <div
-                      className={
-                        form.modalidad === 'PAGO_DIRECTO'
-                          ? 'grid grid-cols-2 gap-2'
-                          : 'grid grid-cols-1 gap-2'
-                      }
-                    >
-                      {form.modalidad === 'PAGO_DIRECTO' && (
-                        <CampoInput
-                          label="Número de factura"
-                          value={form.numero_factura}
-                          onChange={value =>
-                            setForm(actual => ({
-                              ...actual,
-                              numero_factura: value,
-                            }))
-                          }
-                          placeholder="Opcional"
-                        />
-                      )}
-                      <CampoInput
-                        label="Referencia pago"
-                        value={form.referencia_pago}
-                        onChange={value =>
-                          setForm(actual => ({
-                            ...actual,
-                            referencia_pago: value,
-                          }))
-                        }
-                        placeholder="Opcional"
-                      />
-                    </div>
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-[9px] text-gray-500">
-                      {form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                        ? 'La factura o soporte del tercero se registrará posteriormente durante la legalización.'
-                        : 'La factura y la referencia pueden registrarse posteriormente; no son obligatorias para realizar el desembolso.'}
-                    </div>
-                    <CampoTextarea
-                      label="Observaciones"
-                      value={
-                        form.observaciones
-                      }
-                      onChange={
-                        value =>
-                          setForm(
-                            actual => ({
-                              ...actual,
-                              observaciones:
-                                mayusculas(
-                                  value
-                                ),
-                            })
-                          )
-                      }
-                    />
-                  </Seccion>
                   </div>
                   {/* =======================================
                       BOTÓN PRINCIPAL
@@ -3131,6 +3122,7 @@ function CampoInput({
   type = 'text',
   placeholder = '',
   inputMode,
+  prefijo = '',
 }) {
   return (
     <div>
@@ -3145,6 +3137,12 @@ function CampoInput({
       >
         {label}
       </label>
+      <div className="relative">
+        {prefijo && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-600 pointer-events-none">
+            {prefijo}
+          </span>
+        )}
       <input
         type={
           type
@@ -3178,7 +3176,9 @@ function CampoInput({
           focus:ring-2
           focus:ring-[#3B617D]/10
         "
+        style={{ paddingLeft: prefijo ? '2rem' : undefined }}
       />
+      </div>
     </div>
   )
 }
