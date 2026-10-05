@@ -1540,8 +1540,8 @@ export default function RegistrarEgresoDrawer({
                 py-2.5 px-1 text-[9px] font-black
                 transition-all duration-200 hover:-translate-y-0.5
                 ${pestana === 'REGISTRAR'
-                  ? 'bg-[#3B617D] text-white border border-[#3B617D] rounded-lg shadow-sm'
-                  : 'bg-white text-[#3B617D] border border-gray-300 rounded-lg hover:bg-[#F1F5F9] hover:border-[#7A9AB4]'}
+                  ? 'bg-[#3B617D] text-white border border-[#3B617D] rounded-lg shadow-sm cursor-pointer hover:-translate-y-1 hover:bg-[#2F5068] hover:shadow-md active:translate-y-0 active:scale-[0.99]'
+                  : 'bg-white text-[#3B617D] border border-gray-300 rounded-lg cursor-pointer hover:-translate-y-1 hover:bg-[#E2E8F0] hover:border-[#3B617D] hover:shadow-md hover:ring-1 hover:ring-[#3B617D]/20 active:translate-y-0 active:scale-[0.99]'}
               `}
             >
               <i className="fas fa-money-bill-transfer mr-1"></i>
@@ -1559,8 +1559,8 @@ export default function RegistrarEgresoDrawer({
                 py-2.5 px-1 text-[9px] font-black
                 transition-all duration-200 hover:-translate-y-0.5
                 ${pestana === 'CONCEPTOS'
-                  ? 'bg-[#3B617D] text-white border border-[#3B617D] rounded-lg shadow-sm'
-                  : 'bg-white text-[#3B617D] border border-gray-300 rounded-lg hover:bg-[#F1F5F9] hover:border-[#7A9AB4]'}
+                  ? 'bg-[#3B617D] text-white border border-[#3B617D] rounded-lg shadow-sm cursor-pointer hover:-translate-y-1 hover:bg-[#2F5068] hover:shadow-md active:translate-y-0 active:scale-[0.99]'
+                  : 'bg-white text-[#3B617D] border border-gray-300 rounded-lg cursor-pointer hover:-translate-y-1 hover:bg-[#E2E8F0] hover:border-[#3B617D] hover:shadow-md hover:ring-1 hover:ring-[#3B617D]/20 active:translate-y-0 active:scale-[0.99]'}
               `}
             >
               <i className="fas fa-list mr-1"></i>
@@ -2836,11 +2836,18 @@ function BotonTipo({
         rounded-xl
         p-3
         text-left
-        transition
+        cursor-pointer
+        transition-all
+        duration-200
+        ease-out
+        hover:-translate-y-1
+        hover:shadow-md
+        active:translate-y-0
+        active:scale-[0.98]
         ${
           activo
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 bg-white hover:bg-gray-50'
+            ? 'border-blue-600 bg-blue-50 shadow-sm ring-1 ring-blue-200 hover:bg-blue-100'
+            : 'border-slate-400 bg-white hover:border-[#3B617D] hover:bg-slate-50 hover:ring-1 hover:ring-[#3B617D]/20'
         }
       `}
     >
@@ -2996,7 +3003,7 @@ function CampoInput({
         className="
           w-full
           border
-          border-slate-400
+          border-slate-500
           bg-slate-50
           rounded-lg
           px-3
@@ -3005,7 +3012,7 @@ function CampoInput({
           focus:bg-white
           focus:border-[#3B617D]
           focus:ring-2
-          focus:ring-[#3B617D]/10
+          focus:ring-[#3B617D]/20
         "
         style={{ paddingLeft: prefijo ? '2rem' : undefined }}
       />
@@ -3048,7 +3055,7 @@ function CampoSelect({
         className="
           w-full
           border
-          border-slate-400
+          border-slate-500
           bg-slate-50
           rounded-lg
           px-3
@@ -3057,7 +3064,7 @@ function CampoSelect({
           focus:bg-white
           focus:border-[#3B617D]
           focus:ring-2
-          focus:ring-[#3B617D]/10
+          focus:ring-[#3B617D]/20
           bg-white
         "
       >
@@ -3121,7 +3128,7 @@ function CampoTextarea({
         className="
           w-full
           border
-          border-slate-400
+          border-slate-500
           bg-slate-50
           rounded-lg
           px-3
@@ -3130,7 +3137,7 @@ function CampoTextarea({
           focus:bg-white
           focus:border-[#3B617D]
           focus:ring-2
-          focus:ring-[#3B617D]/10
+          focus:ring-[#3B617D]/20
           resize-none
         "
       />
