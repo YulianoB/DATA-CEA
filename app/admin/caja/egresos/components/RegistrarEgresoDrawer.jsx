@@ -14,6 +14,9 @@ import {
   BotonCancelar,
   BotonImprimir,
   BotonAccion,
+  BotonActualizar,
+  ContenedorModulo,
+  MarcoTabla,
   ESTILO_SECCIONES,
   ESTILO_SECCIONES_SECUNDARIAS,
 } from '@/components/admin/EstiloModulo'
@@ -2560,280 +2563,111 @@ export default function RegistrarEgresoDrawer({
           =============================================== */}
           {pestana ===
             'CONCEPTOS' && (
-            <>
-              <div
-                className="
-                  flex
-                  flex-col
-                  sm:flex-row
-                  sm:items-center
-                  justify-between
-                  gap-3
-                  rounded-xl
-                  border
-                  border-gray-200
-                  bg-slate-50
-                  p-3
-                "
-              >
-                <div>
-                  <div className="text-[11px] font-black text-slate-800">
-                    Catálogo de conceptos de egreso
-                  </div>
-                  <div className="text-[9px] text-gray-500 mt-0.5">
-                    Consulte, edite o cree únicamente los conceptos que necesite.
-                  </div>
-                </div>
-                {!mostrarFormularioConcepto && (
-                  <BotonAgregar
-                    type="button"
-                    onClick={() => {
-                      nuevoConcepto()
-                      setMostrarFormularioConcepto(true)
+            <div className="p-1">
+              <ContenedorModulo className="overflow-hidden">
+                <div className="p-4">
+                  <div
+                    className="px-3 py-2 flex items-center justify-between gap-3 text-[10px] font-bold"
+                    style={{
+                      backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                      color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                      borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
                     }}
-                    disabled={procesando}
-                    className="shrink-0 !px-4 !py-2.5 !text-[10px] !font-black"
                   >
-                    <i className="fas fa-plus"></i>
-                    NUEVO CONCEPTO
-                  </BotonAgregar>
-                )}
-              </div>
-              {/* ===========================================
-                  LISTADO CONCEPTOS
-              =========================================== */}
-              <div
-                className="
-                  border
-                  border-gray-300
-                  rounded-xl
-                  overflow-hidden
-                "
-              >
-                <div
-                  className="
-                    bg-gray-100
-                    px-3
-                    py-2
-                    flex
-                    justify-between
-                    items-center
-                  "
-                >
-                  <span
-                    className="
-                      text-[10px]
-                      font-black
-                      text-gray-700
-                    "
-                  >
-                    Conceptos registrados
-                  </span>
-                  <span
-                    className="
-                      text-[9px]
-                      text-gray-500
-                    "
-                  >
-                    {conceptosAdmin.length}
-                    {' '}
-                    registro(s)
-                  </span>
+                    <span>
+                      <i className="fas fa-list mr-2"></i>
+                      Conceptos de egreso registrados
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <BotonAgregar
+                        type="button"
+                        onClick={() => {
+                          nuevoConcepto()
+                          setMostrarFormularioConcepto(true)
+                        }}
+                        disabled={procesando}
+                      >
+                        <i className="fas fa-plus"></i>
+                        Agregar concepto
+                      </BotonAgregar>
+                      <BotonActualizar
+                        type="button"
+                        onClick={onActualizado}
+                        disabled={procesando}
+                      >
+                        <i className="fas fa-sync-alt"></i>
+                        Actualizar
+                      </BotonActualizar>
+                    </div>
+                  </div>
+
+                  {conceptosAdmin.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-gray-500">
+                      No hay conceptos de egreso registrados.
+                    </div>
+                  ) : (
+                    <MarcoTabla className="rounded-t-none">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-[10px]">
+                          <thead>
+                            <tr>
+                              <th className="px-3 py-2 text-left">Concepto</th>
+                              <th className="px-3 py-2 text-left">Descripción</th>
+                              <th className="px-3 py-2 text-center">Vehículo</th>
+                              <th className="px-3 py-2 text-center">PESV</th>
+                              <th className="px-3 py-2 text-center">Estado</th>
+                              <th className="px-3 py-2 text-center">Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {conceptosAdmin.map(item => (
+                              <tr key={item.id}>
+                                <td className="px-3 py-2 font-bold">
+                                  {mayusculas(item.nombre)}
+                                </td>
+                                <td className="px-3 py-2">
+                                  {item.descripcion || '-'}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  {item.requiere_vehiculo ? 'SÍ' : 'NO'}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  {item.es_gasto_pesv ? 'SÍ' : 'NO'}
+                                </td>
+                                <td className="px-3 py-2 text-center font-bold">
+                                  {item.activo ? 'ACTIVO' : 'INACTIVO'}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="flex justify-center gap-1">
+                                    <BotonEditar
+                                      type="button"
+                                      onClick={() => editarConcepto(item)}
+                                      disabled={procesando}
+                                    >
+                                      <i className="fas fa-pen"></i>
+                                      Editar
+                                    </BotonEditar>
+                                    <BotonAccion
+                                      type="button"
+                                      tipo={item.activo ? 'inactivar' : 'activar'}
+                                      onClick={() => cambiarEstadoConcepto(item)}
+                                      disabled={procesando}
+                                    >
+                                      <i className={`fas ${item.activo ? 'fa-ban' : 'fa-check'}`}></i>
+                                      {item.activo ? 'Inactivar' : 'Activar'}
+                                    </BotonAccion>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </MarcoTabla>
+                  )}
                 </div>
-                {conceptosAdmin.length ===
-                0 ? (
-                  <div
-                    className="
-                      p-8
-                      text-center
-                      text-xs
-                      text-gray-500
-                    "
-                  >
-                    No hay conceptos de egreso registrados.
-                  </div>
-                ) : (
-                  <div
-                    className="
-                      p-2
-                      space-y-2
-                      bg-gray-50
-                    "
-                  >
-                    {conceptosAdmin.map(
-                      item => (
-                        <div
-                          key={
-                            item.id
-                          }
-                          className={`
-                            p-3
-                            flex
-                            justify-between
-                            items-start
-                            gap-3
-                            border
-                            rounded-lg
-                            shadow-sm
-                            transition-all
-                            duration-500
-                            ${String(conceptoResaltadoId) === String(item.id)
-                              ? 'border-emerald-400 bg-emerald-50 ring-2 ring-emerald-200'
-                              : 'border-gray-300 bg-white hover:border-slate-400'}
-                          `}
-                        >
-                          <div
-                            className="
-                              min-w-0
-                            "
-                          >
-                            <div
-                              className="
-                                text-[10px]
-                                font-black
-                                text-gray-800
-                              "
-                            >
-                              {mayusculas(
-                                item.nombre
-                              )}
-                            </div>
-                            {item.descripcion && (
-                              <div
-                                className="
-                                  text-[9px]
-                                  text-gray-500
-                                  mt-1
-                                "
-                              >
-                                {item.descripcion}
-                              </div>
-                            )}
-                            <div
-                              className="
-                                flex
-                                flex-wrap
-                                gap-1
-                                mt-2
-                              "
-                            >
-                              <Etiqueta>
-                                {mayusculas(
-                                  item.naturaleza
-                                )}
-                              </Etiqueta>
-                              {item.requiere_vehiculo && (
-                                <Etiqueta>
-                                  REQUIERE VEHÍCULO
-                                </Etiqueta>
-                              )}
-                              {item.es_gasto_pesv && (
-                                <>
-                                  <Etiqueta>GASTO PESV</Etiqueta>
-                                  {item.categoria_pesv && (
-                                    <Etiqueta>{nombreCategoriaPesv(item.categoria_pesv)}</Etiqueta>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            <div
-                              className={`
-                                text-[9px]
-                                font-black
-                                mt-2
-                                ${
-                                  item.activo
-                                    ? 'text-emerald-700'
-                                    : 'text-red-600'
-                                }
-                              `}
-                            >
-                              {item.activo
-                                ? 'ACTIVO'
-                                : 'INACTIVO'}
-                            </div>
-                          </div>
-                          <div
-                            className="
-                              flex
-                              flex-col
-                              sm:flex-row
-                              gap-1
-                              shrink-0
-                            "
-                          >
-                            <button
-                              type="button"
-                              onClick={() =>
-                                editarConcepto(
-                                  item
-                                )
-                              }
-                              disabled={
-                                procesando
-                              }
-                              className="
-                                border
-                                border-blue-200
-                                text-blue-700
-                                hover:bg-blue-50
-                                rounded-md
-                                px-2
-                                py-1.5
-                                text-[9px]
-                                font-bold
-                              "
-                            >
-                              <i className="fas fa-pen mr-1"></i>
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                cambiarEstadoConcepto(
-                                  item
-                                )
-                              }
-                              disabled={
-                                procesando
-                              }
-                              className={`
-                                border
-                                rounded-md
-                                px-2
-                                py-1.5
-                                text-[9px]
-                                font-bold
-                                ${
-                                  item.activo
-                                    ? 'border-red-200 text-red-700 hover:bg-red-50'
-                                    : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
-                                }
-                              `}
-                            >
-                              <i
-                                className={`
-                                  fas
-                                  ${
-                                    item.activo
-                                      ? 'fa-ban'
-                                      : 'fa-check'
-                                  }
-                                  mr-1
-                                `}
-                              ></i>
-                              {item.activo
-                                ? 'Desactivar'
-                                : 'Activar'}
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
-            </>
+              </ContenedorModulo>
+            </div>
           )}
         </div>
       </aside>
