@@ -930,10 +930,14 @@ export default function CajaEgresosPage() {
                     : '',
 
                 fecha_inicio:
-                  fechaInicio,
+                  termino.length >= 3
+                    ? ''
+                    : fechaInicio,
 
                 fecha_fin:
-                  fechaFin,
+                  termino.length >= 3
+                    ? ''
+                    : fechaFin,
 
                 concepto_id:
                   conceptoFiltro,
