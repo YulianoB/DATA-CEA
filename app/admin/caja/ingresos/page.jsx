@@ -3673,7 +3673,7 @@ const ingresosLibresFiltrados =
                               cuenta
                             )
                           }
-                          className="!px-3 !py-1.5 !text-[10px]"
+                          className="!w-[116px] !px-3 !py-1.5 !text-[10px]"
                         >
                           <i className="fas fa-dollar-sign"></i>
                           Registrar Pago
@@ -3698,7 +3698,7 @@ const ingresosLibresFiltrados =
                           disabled={
                             cargandoDetalle
                           }
-                          className="!px-3 !py-1.5 !text-[10px]"
+                          className="!w-[116px] !px-3 !py-1.5 !text-[10px]"
                         >
                           <i className="fas fa-eye"></i>
                           Ver Detalle
