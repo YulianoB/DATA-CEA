@@ -545,6 +545,17 @@ export default function RegistrarEgresoDrawer({
     conceptoSeleccionado
       ?.requiere_vehiculo ===
     true
+
+  const formularioCompleto =
+    Boolean(form.fecha) &&
+    Boolean(form.concepto_id) &&
+    Number(form.valor) > 0 &&
+    Boolean(form.medio_pago_id) &&
+    Boolean(texto(form.descripcion)) &&
+    Boolean(texto(form.beneficiario)) &&
+    Boolean(texto(form.documento_beneficiario)) &&
+    (form.tipo_beneficiario !== 'FUNCIONARIO' || Boolean(form.personal_id)) &&
+    (!requiereVehiculo || Boolean(form.vehiculo_id))
   // =======================================================
   // FILTRAR PERSONAL
   // =======================================================
@@ -1741,7 +1752,7 @@ export default function RegistrarEgresoDrawer({
                     className="
                       grid
                       grid-cols-1
-                      lg:grid-cols-3
+                      lg:grid-cols-2
                       gap-3
                       items-start
                     "
