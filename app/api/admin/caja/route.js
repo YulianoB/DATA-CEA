@@ -758,6 +758,7 @@ async function obtenerMatricula(
         nombres,
         apellidos,
         celular,
+        direccion,
         correo,
         convenio,
         convenio_id,
@@ -867,6 +868,7 @@ async function obtenerMatriculasPorIds(
         nombres,
         apellidos,
         celular,
+        direccion,
         correo,
         convenio,
         convenio_id,
@@ -1917,6 +1919,7 @@ async function enriquecerCuentas(
               nombres,
               apellidos,
               celular,
+              direccion,
               correo,
               convenio,
               convenio_id,
@@ -2341,6 +2344,10 @@ async function enriquecerCuentas(
                   matriculaPrincipal.celular ||
                   '',
 
+                direccion:
+                  matriculaPrincipal.direccion ||
+                  '',
+
                 correo:
                   matriculaPrincipal.correo ||
                   '',
@@ -2388,6 +2395,9 @@ async function enriquecerCuentas(
                   '',
 
                 celular:
+                  '',
+
+                direccion:
                   '',
 
                 correo:
@@ -3132,6 +3142,7 @@ async function buscarAprendices(
         nombres,
         apellidos,
         celular,
+        direccion,
         correo,
         convenio,
         convenio_id,
