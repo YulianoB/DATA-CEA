@@ -1682,7 +1682,7 @@ export default function RegistrarEgresoDrawer({
                         }
                       />
                       <DatoResumen
-                        label="Valor"
+                        label="Valor ($)"
                         value={
                           formatearMoneda(
                             egresoRegistrado
@@ -2542,7 +2542,8 @@ export default function RegistrarEgresoDrawer({
                   <BotonGuardar
                     type="button"
                     onClick={registrarEgreso}
-                    disabled={procesando}
+                    disabled={procesando || !formularioCompleto}
+                    title={!formularioCompleto ? 'Complete los campos obligatorios para registrar el egreso.' : ''}
                     className="min-w-[190px] !px-5 !py-2.5 !text-[10px] !font-black"
                   >
                     {procesando ? (
@@ -3166,11 +3167,16 @@ function CampoInput({
         className="
           w-full
           border
-          border-gray-300
+          border-slate-400
+          bg-slate-50
           rounded-lg
           px-3
           py-2
           text-xs
+          focus:bg-white
+          focus:border-[#3B617D]
+          focus:ring-2
+          focus:ring-[#3B617D]/10
         "
       />
     </div>
@@ -3211,11 +3217,16 @@ function CampoSelect({
         className="
           w-full
           border
-          border-gray-300
+          border-slate-400
+          bg-slate-50
           rounded-lg
           px-3
           py-2
           text-xs
+          focus:bg-white
+          focus:border-[#3B617D]
+          focus:ring-2
+          focus:ring-[#3B617D]/10
           bg-white
         "
       >
@@ -3279,11 +3290,16 @@ function CampoTextarea({
         className="
           w-full
           border
-          border-gray-300
+          border-slate-400
+          bg-slate-50
           rounded-lg
           px-3
           py-2
           text-xs
+          focus:bg-white
+          focus:border-[#3B617D]
+          focus:ring-2
+          focus:ring-[#3B617D]/10
           resize-none
         "
       />
