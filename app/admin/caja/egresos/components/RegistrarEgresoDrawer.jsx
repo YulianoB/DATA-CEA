@@ -20,6 +20,7 @@ import {
   ESTILO_SECCIONES,
   ESTILO_SECCIONES_SECUNDARIAS,
 } from '@/components/admin/EstiloModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
 
 // =========================================================
 // HELPERS
@@ -2552,47 +2553,23 @@ export default function RegistrarEgresoDrawer({
           )}
         </div>
       </aside>
-      {(egresoRegistrado || (error && pestana === 'REGISTRAR')) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/20" />
-          <div className={`relative z-10 w-full max-w-sm rounded-xl border-2 bg-white p-5 text-center shadow-2xl ${
-            egresoRegistrado ? 'border-emerald-500' : 'border-red-500'
-          }`}>
-            <div className={`mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 text-2xl ${
-              egresoRegistrado
-                ? 'border-emerald-500 bg-emerald-50 text-emerald-600'
-                : 'border-red-500 bg-red-50 text-red-600'
-            }`}>
-              <i className={`fas ${egresoRegistrado ? 'fa-check' : 'fa-exclamation-triangle'}`}></i>
-            </div>
-            <div className="text-sm font-black text-slate-800">
-              {egresoRegistrado
-                ? 'Egreso registrado satisfactoriamente'
-                : 'No fue posible registrar el egreso'}
-            </div>
-            {!egresoRegistrado && error && (
-              <div className="mt-2 text-[10px] text-slate-600">{error}</div>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                if (egresoRegistrado) {
-                  reiniciarFormulario()
-                } else {
-                  setError('')
-                }
-              }}
-              className={`mt-4 min-w-[110px] rounded-lg px-4 py-2 text-[10px] font-black text-white transition hover:-translate-y-0.5 hover:shadow-md ${
-                egresoRegistrado
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              }`}
-            >
-              ACEPTAR
-            </button>
-          </div>
-        </div>
-      )}
+      <ModalResultado
+        abierto={Boolean(egresoRegistrado || (error && pestana === 'REGISTRAR'))}
+        tipo={egresoRegistrado ? 'exito' : 'error'}
+        titulo={
+          egresoRegistrado
+            ? 'Egreso registrado satisfactoriamente'
+            : 'No fue posible registrar el egreso'
+        }
+        mensaje={!egresoRegistrado ? error : ''}
+        onCerrar={() => {
+          if (egresoRegistrado) {
+            reiniciarFormulario()
+          } else {
+            setError('')
+          }
+        }}
+      />
 
       {mostrarFormularioConcepto && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
