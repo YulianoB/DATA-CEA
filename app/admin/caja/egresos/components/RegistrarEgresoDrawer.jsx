@@ -6,6 +6,18 @@ import {
   useRef,
   useState,
 } from 'react'
+
+import {
+  BotonAgregar,
+  BotonEditar,
+  BotonGuardar,
+  BotonCancelar,
+  BotonImprimir,
+  BotonAccion,
+  ESTILO_SECCIONES,
+  ESTILO_SECCIONES_SECUNDARIAS,
+} from '@/components/admin/EstiloModulo'
+
 // =========================================================
 // HELPERS
 // =========================================================
@@ -1396,10 +1408,10 @@ export default function RegistrarEgresoDrawer({
           -translate-x-1/2
           -translate-y-1/2
           w-[calc(100%-1.5rem)]
-          max-w-6xl
+          max-w-[900px]
           max-h-[92vh]
           bg-white
-          rounded-2xl
+          rounded-xl
           shadow-2xl
           overflow-y-auto
           scroll-smooth
@@ -1431,6 +1443,11 @@ export default function RegistrarEgresoDrawer({
               items-start
               gap-3
             "
+            style={{
+              backgroundColor: ESTILO_SECCIONES.fondo,
+              color: ESTILO_SECCIONES.texto,
+              borderRadius: ESTILO_SECCIONES.radioSuperior,
+            }}
           >
             <div>
               <p
@@ -1439,19 +1456,20 @@ export default function RegistrarEgresoDrawer({
                   uppercase
                   font-bold
                   tracking-wide
-                  text-gray-500
                 "
+                style={{ color: ESTILO_SECCIONES.subtitulo }}
               >
+                <i className="fas fa-cash-register mr-1"></i>
                 Caja · Egresos
               </p>
               <h2
                 className="
                   text-lg
                   font-black
-                  text-[var(--primary)]
                   mt-0.5
                 "
               >
+                <i className="fas fa-money-bill-transfer mr-2"></i>
                 {pestana === 'REGISTRAR'
                   ? 'Registrar egreso'
                   : 'Administrar conceptos'}
@@ -1459,9 +1477,9 @@ export default function RegistrarEgresoDrawer({
               <p
                 className="
                   text-[10px]
-                  text-gray-500
                   mt-1
                 "
+                style={{ color: ESTILO_SECCIONES.subtitulo }}
               >
                 {pestana === 'REGISTRAR'
                   ? 'Complete la información del gasto realizado por el CEA.'
@@ -1497,30 +1515,29 @@ export default function RegistrarEgresoDrawer({
             className="
               grid
               grid-cols-2
-              border-t
+              gap-2
+              mx-4
+              mt-4
+              p-1.5
+              bg-gray-100
+              border
               border-gray-200
+              rounded-xl
             "
           >
             <button
               type="button"
               onClick={() => {
-                setPestana(
-                  'REGISTRAR'
-                )
+                setPestana('REGISTRAR')
                 setError('')
                 setMensaje('')
               }}
               className={`
-                py-2.5
-                px-2
-                text-[9px]
-                font-black
-                ${
-                  pestana ===
-                  'REGISTRAR'
-                    ? 'bg-slate-100 text-slate-800 border-b-2 border-slate-700'
-                    : 'text-gray-500 hover:bg-gray-50'
-                }
+                py-2.5 px-1 text-[9px] font-black
+                transition-all duration-200 hover:-translate-y-0.5
+                ${pestana === 'REGISTRAR'
+                  ? 'bg-[#3B617D] text-white border border-[#3B617D] rounded-lg shadow-sm'
+                  : 'bg-white text-[#3B617D] border border-gray-300 rounded-lg hover:bg-[#F1F5F9] hover:border-[#7A9AB4]'}
               `}
             >
               <i className="fas fa-money-bill-transfer mr-1"></i>
@@ -1529,24 +1546,17 @@ export default function RegistrarEgresoDrawer({
             <button
               type="button"
               onClick={() => {
-                setPestana(
-                  'CONCEPTOS'
-                )
+                setPestana('CONCEPTOS')
                 nuevoConcepto()
                 setError('')
                 setMensaje('')
               }}
               className={`
-                py-2.5
-                px-2
-                text-[9px]
-                font-black
-                ${
-                  pestana ===
-                  'CONCEPTOS'
-                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:bg-gray-50'
-                }
+                py-2.5 px-1 text-[9px] font-black
+                transition-all duration-200 hover:-translate-y-0.5
+                ${pestana === 'CONCEPTOS'
+                  ? 'bg-[#3B617D] text-white border border-[#3B617D] rounded-lg shadow-sm'
+                  : 'bg-white text-[#3B617D] border border-gray-300 rounded-lg hover:bg-[#F1F5F9] hover:border-[#7A9AB4]'}
               `}
             >
               <i className="fas fa-list mr-1"></i>
@@ -1698,36 +1708,23 @@ export default function RegistrarEgresoDrawer({
                     >
                       {egresoRegistrado?.modalidad !== 'ENTREGA_PARA_LEGALIZAR' &&
                         form.tipo_beneficiario === 'FUNCIONARIO' && (
-                        <button
+                        <BotonImprimir
                           type="button"
                           onClick={imprimirEgresoRegistrado}
-                          className="border border-blue-300 bg-white hover:bg-blue-50 text-blue-700 rounded-lg py-2.5 px-3 text-[10px] font-black"
+                          className="!w-full !py-2.5 !text-[10px] !font-black"
                         >
-                          <i className="fas fa-print mr-2"></i>
+                          <i className="fas fa-print"></i>
                           IMPRIMIR CUENTA DE COBRO
-                        </button>
+                        </BotonImprimir>
                       )}
-                      <button
+                      <BotonAgregar
                         type="button"
-                        onClick={
-                          reiniciarFormulario
-                        }
-                        className="
-                          border
-                          border-gray-300
-                          bg-white
-                          hover:bg-gray-100
-                          text-gray-700
-                          rounded-lg
-                          py-2.5
-                          px-3
-                          text-[10px]
-                          font-black
-                        "
+                        onClick={reiniciarFormulario}
+                        className="!w-full !py-2.5 !text-[10px] !font-black"
                       >
-                        <i className="fas fa-plus mr-2"></i>
+                        <i className="fas fa-plus"></i>
                         REGISTRAR OTRO EGRESO
-                      </button>
+                      </BotonAgregar>
                     </div>
                   </div>
                 </div>
@@ -2531,31 +2528,11 @@ export default function RegistrarEgresoDrawer({
                       pt-1
                     "
                   >
-                  <button
+                  <BotonGuardar
                     type="button"
-                    onClick={
-                      registrarEgreso
-                    }
-                    disabled={
-                      procesando
-                    }
-                    className="
-                      inline-flex
-                      items-center
-                      justify-center
-                      min-w-[190px]
-                      bg-slate-700
-                      hover:bg-slate-800
-                      disabled:opacity-50
-                      text-white
-                      rounded-lg
-                      px-5
-                      py-2.5
-                      text-[10px]
-                      font-black
-                      shadow-sm
-                      transition-colors
-                    "
+                    onClick={registrarEgreso}
+                    disabled={procesando}
+                    className="min-w-[190px] !px-5 !py-2.5 !text-[10px] !font-black"
                   >
                     {procesando ? (
                       <>
@@ -2568,7 +2545,8 @@ export default function RegistrarEgresoDrawer({
                         REGISTRAR EGRESO
                       </>
                     )}
-                  </button>
+                  
+                  </BotonGuardar>
                   </div>
                 </>
               )}
@@ -2604,29 +2582,18 @@ export default function RegistrarEgresoDrawer({
                   </div>
                 </div>
                 {!mostrarFormularioConcepto && (
-                  <button
+                  <BotonAgregar
                     type="button"
                     onClick={() => {
                       nuevoConcepto()
                       setMostrarFormularioConcepto(true)
                     }}
                     disabled={procesando}
-                    className="
-                      shrink-0
-                      rounded-lg
-                      bg-slate-800
-                      hover:bg-slate-700
-                      disabled:opacity-50
-                      text-white
-                      px-4
-                      py-2.5
-                      text-[10px]
-                      font-black
-                    "
+                    className="shrink-0 !px-4 !py-2.5 !text-[10px] !font-black"
                   >
-                    <i className="fas fa-plus mr-2"></i>
+                    <i className="fas fa-plus"></i>
                     NUEVO CONCEPTO
-                  </button>
+                  </BotonAgregar>
                 )}
               </div>
               {/* ===========================================
@@ -2981,7 +2948,6 @@ function Seccion({
     >
       <div
         className="
-          bg-slate-800
           text-white
           px-3
           py-2
