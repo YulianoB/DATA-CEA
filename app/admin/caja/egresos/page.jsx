@@ -25,9 +25,11 @@ import {
   BotonAgregar,
   BotonLimpiar,
   BotonVerDetalle,
+  BotonImprimir,
   ESTILO_CONTENEDORES,
   ESTILO_ENCABEZADO_TABLA,
   ESTILO_SECCIONES,
+  ESTILO_SECCIONES_SECUNDARIAS,
   ESTILO_TARJETAS,
   MarcoTabla,
 } from '@/components/admin/EstiloModulo'
@@ -2056,471 +2058,186 @@ export default function CajaEgresosPage() {
 
       {drawerDetalle &&
         detalleEgreso && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-[75]
-          "
-        >
+        <div className="fixed inset-0 z-[75] flex items-center justify-center p-4">
           <div
-            className="
-              absolute
-              inset-0
-              bg-black/40
-            "
-            onClick={() =>
-              setDrawerDetalle(
-                false
-              )
-            }
+            className="absolute inset-0 bg-slate-950/50 backdrop-blur-[1px]"
+            onClick={() => setDrawerDetalle(false)}
           ></div>
 
-          <aside
-            className="
-              absolute
-              right-0
-              top-0
-              h-full
-              w-full
-              sm:w-[500px]
-              bg-white
-              shadow-2xl
-              overflow-y-auto
-            "
-          >
-
-            {/* =============================================
-                HEADER
-            ============================================= */}
-
+          <div className="relative z-10 w-full max-w-[760px] max-h-[88vh] overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-300">
             <div
-              className="
-                sticky
-                top-0
-                z-20
-                bg-white
-                border-b
-                border-gray-300
-                px-4
-                py-3
-                flex
-                justify-between
-                items-start
-                gap-3
-              "
+              className="sticky top-0 z-20 px-4 py-3 flex justify-between items-start gap-3 border-b border-gray-300"
+              style={{
+                backgroundColor: ESTILO_SECCIONES.fondo,
+                color: ESTILO_SECCIONES.texto,
+                borderRadius: ESTILO_SECCIONES.radioSuperior,
+              }}
             >
               <div>
                 <p
-                  className="
-                    text-[9px]
-                    uppercase
-                    font-bold
-                    text-gray-500
-                  "
+                  className="text-[9px] uppercase font-bold tracking-wide"
+                  style={{ color: ESTILO_SECCIONES.subtitulo }}
                 >
+                  <i className="fas fa-cash-register mr-1"></i>
                   Caja · Egresos
                 </p>
-
-                <h2
-                  className="
-                    text-lg
-                    font-black
-                    text-[var(--primary)]
-                    mt-0.5
-                  "
-                >
-                  Detalle del Egreso
+                <h2 className="text-lg font-black mt-0.5">
+                  Detalle del egreso
                 </h2>
-
                 <p
-                  className="
-                    text-[10px]
-                    text-gray-500
-                    mt-0.5
-                  "
+                  className="text-[10px] mt-0.5"
+                  style={{ color: ESTILO_SECCIONES.subtitulo }}
                 >
-                  {detalleEgreso
-                    .numero_cuenta_cobro ||
-                    `#${detalleEgreso.id}`}
+                  {detalleEgreso.numero_cuenta_cobro || `#${detalleEgreso.id}`}
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  setDrawerDetalle(
-                    false
-                  )
-                }
-                className="
-                  w-9
-                  h-9
-                  border
-                  border-gray-300
-                  rounded-lg
-                  hover:bg-gray-100
-                "
+                onClick={() => setDrawerDetalle(false)}
+                className="shrink-0 w-9 h-9 border border-white/60 rounded-lg hover:bg-white/15 transition-all hover:scale-105"
+                aria-label="Cerrar detalle"
               >
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
-            {/* =============================================
-                CONTENIDO
-            ============================================= */}
-
-            <div
-              className="
-                p-4
-                space-y-3
-              "
-            >
-
-              {/* DATOS GENERALES */}
-
-              <SeccionDetalle
-                titulo="Datos del egreso"
-                icono="fas fa-file-invoice-dollar"
-              >
-                <div
-                  className="
-                    grid
-                    grid-cols-2
-                    gap-3
-                  "
-                >
-                  <Dato
-                    label="Cuenta"
-                    value={
-                      detalleEgreso
-                        .numero_cuenta_cobro
-                    }
-                  />
-
-                  <Dato
-                    label="Fecha"
-                    value={
-                      formatearFecha(
-                        detalleEgreso
-                          .fecha
-                      )
-                    }
-                  />
-
-                  <Dato
-                    label="Concepto"
-                    value={
-                      detalleEgreso
-                        ?.concepto
-                        ?.nombre
-                    }
-                  />
-
-                  <Dato
-                    label="Valor"
-                    value={
-                      formatearMoneda(
-                        detalleEgreso
-                          .valor
-                      )
-                    }
-                  />
-
-                  <Dato
-                    label="Medio de pago"
-                    value={
-                      detalleEgreso
-                        ?.medio_pago
-                        ?.nombre
-                    }
-                  />
-
-                  <div>
-                    <div
-                      className="
-                        text-[9px]
-                        uppercase
-                        text-gray-500
-                      "
-                    >
-                      Estado
-                    </div>
-
-                    <div
-                      className="
-                        mt-1
-                      "
-                    >
-                      <BadgeEstado
-                        estado={
-                          detalleEgreso
-                            .estado
-                        }
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <SeccionDetalle
+                    titulo="Beneficiario"
+                    icono="fas fa-user"
+                  >
+                    <Dato
+                      label="Nombre / Razón social"
+                      value={detalleEgreso.beneficiario}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Dato
+                        label="Tipo documento"
+                        value={detalleEgreso.tipo_documento_beneficiario}
+                      />
+                      <Dato
+                        label="Documento"
+                        value={detalleEgreso.documento_beneficiario}
                       />
                     </div>
-                  </div>
-                </div>
-              </SeccionDetalle>
+                  </SeccionDetalle>
 
-              {/* BENEFICIARIO */}
-
-              <SeccionDetalle
-                titulo="Beneficiario"
-                icono="fas fa-user"
-              >
-                <Dato
-                  label="Nombre / Razón social"
-                  value={
-                    detalleEgreso
-                      .beneficiario
-                  }
-                />
-
-                <div
-                  className="
-                    grid
-                    grid-cols-2
-                    gap-3
-                  "
-                >
-                  <Dato
-                    label="Tipo documento"
-                    value={
-                      detalleEgreso
-                        .tipo_documento_beneficiario
-                    }
-                  />
-
-                  <Dato
-                    label="Documento"
-                    value={
-                      detalleEgreso
-                        .documento_beneficiario
-                    }
-                  />
-                </div>
-              </SeccionDetalle>
-
-              {/* VEHÍCULO */}
-
-              {detalleEgreso
-                .vehiculo_id && (
-                <SeccionDetalle
-                  titulo="Vehículo asociado"
-                  icono="fas fa-car"
-                >
-                  <div
-                    className="
-                      grid
-                      grid-cols-2
-                      gap-3
-                    "
+                  <SeccionDetalle
+                    titulo="Datos del egreso"
+                    icono="fas fa-file-invoice-dollar"
                   >
-                    <Dato
-                      label="Placa"
-                      value={
-                        detalleEgreso
-                          .placa
-                      }
-                    />
-
-                    <Dato
-                      label="Tipo"
-                      value={
-                        detalleEgreso
-                          ?.vehiculo
-                          ?.tipo_vehiculo
-                      }
-                    />
-
-                    <Dato
-                      label="Marca"
-                      value={
-                        detalleEgreso
-                          ?.vehiculo
-                          ?.marca
-                      }
-                    />
-
-                    <Dato
-                      label="Línea"
-                      value={
-                        detalleEgreso
-                          ?.vehiculo
-                          ?.linea
-                      }
-                    />
-                  </div>
-                </SeccionDetalle>
-              )}
-
-              {/* INFORMACIÓN ADICIONAL */}
-
-              <SeccionDetalle
-                titulo="Información adicional"
-                icono="fas fa-circle-info"
-              >
-                <Dato
-                  label="Descripción"
-                  value={
-                    detalleEgreso
-                      .descripcion
-                  }
-                />
-
-                <div
-                  className="
-                    grid
-                    grid-cols-2
-                    gap-3
-                  "
-                >
-                  <Dato
-                    label="Factura"
-                    value={
-                      detalleEgreso
-                        .numero_factura
-                    }
-                  />
-
-                  <Dato
-                    label="Referencia"
-                    value={
-                      detalleEgreso
-                        .referencia_pago
-                    }
-                  />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Dato
+                        label="Cuenta"
+                        value={detalleEgreso.numero_cuenta_cobro}
+                      />
+                      <Dato
+                        label="Fecha"
+                        value={formatearFecha(detalleEgreso.fecha)}
+                      />
+                      <Dato
+                        label="Concepto"
+                        value={detalleEgreso?.concepto?.nombre}
+                      />
+                      <Dato
+                        label="Valor"
+                        value={formatearMoneda(detalleEgreso.valor)}
+                      />
+                      <Dato
+                        label="Medio de pago"
+                        value={detalleEgreso?.medio_pago?.nombre}
+                      />
+                      <div>
+                        <div className="text-[9px] uppercase tracking-wide text-gray-500">
+                          Estado
+                        </div>
+                        <div className="mt-1">
+                          <BadgeEstado estado={detalleEgreso.estado} />
+                        </div>
+                      </div>
+                    </div>
+                  </SeccionDetalle>
                 </div>
 
-                <Dato
-                  label="Registrado por"
-                  value={
-                    detalleEgreso
-                      .pagado_por
-                  }
-                />
-
-                <Dato
-                  label="Observaciones"
-                  value={
-                    detalleEgreso
-                      .observaciones
-                  }
-                />
-              </SeccionDetalle>
-
-              {/* ANULADO */}
-
-              {mayusculas(
-                detalleEgreso
-                  .estado
-              ) ===
-                'ANULADO' && (
-                <div
-                  className="
-                    border
-                    border-red-300
-                    bg-red-50
-                    rounded-xl
-                    p-3
-                  "
-                >
-                  <div
-                    className="
-                      text-[10px]
-                      font-black
-                      text-red-700
-                    "
-                  >
-                    <i className="fas fa-ban mr-2"></i>
-
-                    EGRESO ANULADO
-                  </div>
-
-                  <div
-                    className="
-                      mt-2
-                      space-y-2
-                    "
+                <div className="space-y-4">
+                  <SeccionDetalle
+                    titulo="Información adicional"
+                    icono="fas fa-circle-info"
                   >
                     <Dato
-                      label="Motivo"
-                      value={
-                        detalleEgreso
-                          .motivo_anulacion
-                      }
+                      label="Descripción"
+                      value={detalleEgreso.descripcion}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Dato
+                        label="Factura"
+                        value={detalleEgreso.numero_factura}
+                      />
+                      <Dato
+                        label="Referencia"
+                        value={detalleEgreso.referencia_pago}
+                      />
+                    </div>
+                    <Dato
+                      label="Registrado por"
+                      value={detalleEgreso.pagado_por}
+                    />
+                    <Dato
+                      label="Observaciones"
+                      value={detalleEgreso.observaciones}
                     />
 
-                    <Dato
-                      label="Usuario"
-                      value={
-                        detalleEgreso
-                          .usuario_anulacion
-                      }
-                    />
+                    {detalleEgreso.vehiculo_id && (
+                      <div className="pt-3 mt-1 border-t border-gray-300">
+                        <div className="mb-2 text-[9px] font-black uppercase tracking-wide text-slate-600">
+                          <i className="fas fa-car mr-1"></i>
+                          Vehículo asociado
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Dato label="Placa" value={detalleEgreso.placa} />
+                          <Dato label="Tipo" value={detalleEgreso?.vehiculo?.tipo_vehiculo} />
+                          <Dato label="Marca" value={detalleEgreso?.vehiculo?.marca} />
+                          <Dato label="Línea" value={detalleEgreso?.vehiculo?.linea} />
+                        </div>
+                      </div>
+                    )}
+                  </SeccionDetalle>
+
+                  {mayusculas(detalleEgreso.estado) === 'ANULADO' && (
+                    <div className="border border-red-400 bg-red-50 rounded-xl p-3">
+                      <div className="text-[10px] font-black text-red-700">
+                        <i className="fas fa-ban mr-2"></i>
+                        EGRESO ANULADO
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-3">
+                        <Dato label="Motivo" value={detalleEgreso.motivo_anulacion} />
+                        <Dato label="Usuario" value={detalleEgreso.usuario_anulacion} />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end pt-1">
+                    <BotonImprimir
+                      type="button"
+                      onClick={() => imprimirCuentaCobroDesdePagina(detalleEgreso)}
+                    >
+                      <i className="fas fa-print"></i>
+                      Imprimir cuenta de cobro
+                    </BotonImprimir>
                   </div>
+
+                  {mayusculas(detalleEgreso.estado) === 'ANULADO' && (
+                    <p className="text-[9px] text-right text-red-600">
+                      Este movimiento se encuentra anulado.
+                    </p>
+                  )}
                 </div>
-              )}
-
-              {/* =============================================
-                  ACCIONES
-              ============================================= */}
-
-              <div
-                className="
-                  border
-                  border-gray-300
-                  rounded-xl
-                  p-3
-                  bg-gray-50
-                "
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    imprimirCuentaCobroDesdePagina(
-                        detalleEgreso
-                    )
-                    }
-                  className="
-                    w-full
-                    bg-blue-600
-                    hover:bg-blue-700
-                    text-white
-                    rounded-lg
-                    py-2.5
-                    px-3
-                    text-[10px]
-                    font-black
-                  "
-                >
-                  <i className="fas fa-print mr-2"></i>
-
-                  IMPRIMIR CUENTA DE COBRO
-                </button>
-
-                {mayusculas(
-                  detalleEgreso
-                    .estado
-                ) ===
-                  'ANULADO' && (
-                  <p
-                    className="
-                      mt-2
-                      text-[9px]
-                      text-center
-                      text-red-600
-                    "
-                  >
-                    Este movimiento se encuentra anulado.
-                  </p>
-                )}
               </div>
-
             </div>
-
-          </aside>
+          </div>
         </div>
       )}
 
@@ -2548,13 +2265,16 @@ function SeccionDetalle({
     >
       <div
         className="
-          bg-slate-800
-          text-white
           px-3
           py-2
           text-[10px]
           font-bold
         "
+        style={{
+          backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+          color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+          borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+        }}
       >
         <i
           className={`
