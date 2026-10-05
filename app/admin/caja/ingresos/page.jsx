@@ -2529,13 +2529,95 @@ const ingresosLibresFiltrados =
             .signatures { display:grid; grid-template-columns:1fr 1fr; gap:20mm; text-align:center; font-size:6.5px; color:#334155; }
             .signature-line { width:70%; margin:7px auto 2px; border-top:1px solid #475569; }
             .cea-footer { min-height:12px; border-top:1px solid #E2E8F0; padding:2px 6px; text-align:center; font-size:5.8px; color:#94A3B8; }
-            @page { size:8.5in 11in; margin:5mm; }
+            @page {
+              size: 216mm 140mm;
+              margin: 0;
+            }
+
             @media print {
-              html,body { background:#FFF; }
-              body { margin:0; padding:0; overflow:visible; }
-              .toolbar { display:none; }
-              .grid { width:100%; height:auto; margin:0; box-shadow:none; }
-              .receipt { height:132mm; padding:4mm 6mm; break-inside:avoid; page-break-inside:avoid; }
+              html,
+              body {
+                width: 216mm;
+                height: 140mm;
+                margin: 0;
+                padding: 0;
+                background: #FFF;
+                overflow: hidden;
+              }
+
+              .toolbar {
+                display: none;
+              }
+
+              .grid {
+                width: 216mm;
+                height: 140mm;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                box-shadow: none;
+                overflow: hidden;
+              }
+
+              .receipt {
+                width: 216mm;
+                height: 70mm;
+                min-height: 70mm;
+                max-height: 70mm;
+                margin: 0;
+                padding: 2.5mm 5mm;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                break-inside: avoid;
+                page-break-inside: avoid;
+                overflow: hidden;
+              }
+
+              .receipt + .receipt {
+                border-top: 0.25mm dashed #94A3B8;
+              }
+
+              .receipt-card {
+                width: 100%;
+                max-height: 65mm;
+                border-radius: 2mm;
+              }
+
+              .brand {
+                padding: 1mm 2mm;
+              }
+
+              .receipt-number {
+                padding: 1mm 2mm;
+              }
+
+              .identity-grid {
+                padding: 1mm 2mm;
+                gap: 0.5mm 3mm;
+              }
+
+              .section-title {
+                padding: 0.7mm 1.5mm;
+              }
+
+              th,
+              td {
+                padding: 0.45mm 1mm;
+              }
+
+              .receipt-bottom {
+                padding: 0.8mm 2mm 0.5mm;
+              }
+
+              .origin {
+                padding-bottom: 0.6mm;
+              }
+
+              .signature-line {
+                margin-top: 1.5mm;
+              }
             }
           </style>
         </head>
