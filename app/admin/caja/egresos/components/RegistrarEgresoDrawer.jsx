@@ -2948,13 +2948,17 @@ function Seccion({
     >
       <div
         className="
-          text-white
           px-3
           py-2
           text-[10px]
           font-bold
           rounded-t-xl
         "
+        style={{
+          backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+          color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+          borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+        }}
       >
         <i
           className={`
