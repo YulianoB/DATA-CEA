@@ -122,6 +122,18 @@ function empresaRespuesta(
         empresa
       ),
 
+    direccion:
+      empresa?.direccion ||
+      '',
+
+    telefono:
+      empresa?.telefono ||
+      '',
+
+    email_principal:
+      empresa?.email_principal ||
+      '',
+
     nivel_cea:
       empresa?.nivel_cea ||
       '',
