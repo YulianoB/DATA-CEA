@@ -5548,6 +5548,14 @@ const ingresosLibresFiltrados =
           empresaNombre
         }
 
+        empresaDatos={
+          empresaDatos
+        }
+
+        usuarioOperacion={
+          usuarioOperacion
+        }
+
         conceptos={
           conceptos
         }
