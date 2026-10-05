@@ -2257,6 +2257,14 @@ const ingresosLibresFiltrados =
       cuenta?.aprendiz?.documento ||
       '-'
 
+    const direccionAprendiz =
+      cuenta?.aprendiz?.direccion ||
+      '-'
+
+    const telefonoAprendiz =
+      cuenta?.aprendiz?.celular ||
+      '-'
+
     const matricula =
       cuenta?.consecutivo_matricula ||
       '-'
@@ -2412,14 +2420,19 @@ const ingresosLibresFiltrados =
               </div>
             </header>
 
-            <div class="identity-grid">
-              <div><span class="label">Fecha:</span>${escaparHtml(formatearFecha(recibo?.fecha))}</div>
-              <div><span class="label">Matrícula:</span>${escaparHtml(matricula)}</div>
-              <div><span class="label">Nombre:</span>${escaparHtml(nombreAprendiz)}</div>
-              <div><span class="label">Documento:</span>${escaparHtml(documentoAprendiz)}</div>
+            <div class="identity-wrap">
+              <div class="identity-grid">
+                <div><span class="label">Fecha:</span>${escaparHtml(formatearFecha(recibo?.fecha))}</div>
+                <div class="identity-right"><span class="label">Matrícula:</span>${escaparHtml(matricula)}</div>
+                <div><span class="label">Nombre:</span>${escaparHtml(nombreAprendiz)}</div>
+                <div class="identity-right"><span class="label">Documento:</span>${escaparHtml(documentoAprendiz)}</div>
+                <div><span class="label">Dirección:</span>${escaparHtml(direccionAprendiz)}</div>
+                <div class="identity-right"><span class="label">Teléfono:</span>${escaparHtml(telefonoAprendiz)}</div>
+              </div>
             </div>
 
-            <div class="section-title">DETALLE DE LA OBLIGACIÓN</div>
+            <div class="section-block">
+              <div class="section-title">DETALLE DE LA OBLIGACIÓN</div>
             <table class="detail-table">
               <thead><tr><th>Concepto</th><th>Categoría</th><th class="money">Valor</th></tr></thead>
               <tbody>
@@ -2429,18 +2442,21 @@ const ingresosLibresFiltrados =
                 <tr class="summary-row"><th colspan="2">Saldo</th><td class="money strong">${escaparHtml(formatearMoneda(saldoAlRecibo))}</td></tr>
               </tbody>
             </table>
+            </div>
 
-            <div class="section-title">HISTORIAL DE PAGOS</div>
-            <table class="history-table">
+            <div class="section-block">
+              <div class="section-title">HISTORIAL DE PAGOS</div>
+              <table class="history-table">
               <thead><tr><th>Recibo</th><th>Fecha</th><th>Medio de pago</th><th class="money">Valor pagado</th></tr></thead>
-              <tbody>${filasHistorial}</tbody>
-            </table>
+                <tbody>${filasHistorial}</tbody>
+              </table>
+            </div>
 
             <div class="receipt-bottom">
               <div class="origin"><span class="label">Origen:</span>${escaparHtml(origen)} <span class="origin-name">${escaparHtml(origenNombre)}</span></div>
               <div class="signatures">
                 <div><div class="signature-line"></div>FIRMA PAGADOR</div>
-                <div><div class="signature-line"></div>RECIBIDO POR</div>
+                <div><div class="signature-line"></div>RECIBIDO POR<div class="signature-name">${escaparHtml(usuarioOperacion || '-')}</div></div>
               </div>
             </div>
 
@@ -2486,7 +2502,7 @@ const ingresosLibresFiltrados =
           )}</title>
 
           <style>
-            * { box-sizing: border-box; }
+            * { box-sizing: border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
             html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; color:#17202A; background:#E5E7EB; }
             body { padding:18px 0 32px; }
             .center { text-align:center; }
@@ -2501,19 +2517,22 @@ const ingresosLibresFiltrados =
             .receipt + .receipt { border-top:1px dashed #94A3B8; }
             .receipt-card { width:100%; max-height:122mm; border:1px solid #64748B; border-radius:10px; overflow:hidden; background:#FFF; }
             .receipt-header { position:relative; border-bottom:1px solid #94A3B8; }
-            .brand { width:100%; text-align:center; padding:4px 8px; }
+            .brand { width:100%; text-align:center; padding:6px 8px 8px; }
             .title { font-size:13px; font-weight:900; }
             .company { margin-top:1px; font-size:8.5px; font-weight:800; }
             .nit,.copy { margin-top:1px; font-size:6.8px; color:#475569; }
             .receipt-number { position:absolute; top:50%; right:7px; transform:translateY(-50%); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px 0; background:transparent; }
             .receipt-number-label { font-size:7px; font-weight:800; color:#475569; }
             .receipt-number-value { margin-top:3px; padding:3px 8px; min-width:32mm; text-align:center; border:1px solid #94A3B8; border-radius:8px; font-size:12px; font-weight:900; background:#FFF; }
-            .identity-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px 12px; padding:4px 7px; font-size:7.5px; border-bottom:1px solid #CBD5E1; }
+            .identity-wrap { margin:5px 6px 0; border:1px solid #CBD5E1; border-radius:7px; overflow:hidden; }
+            .identity-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; padding:5px 7px; font-size:7.5px; }
+            .identity-right { padding-left:10px; }
             .label { font-weight:800; margin-right:4px; }
+            .section-block { margin-top:5px; }
             .section-title { padding:3px 6px; text-align:center; font-size:7.5px; font-weight:900; background:#737B87; color:#FFFFFF; border-bottom:1px solid #737B87; }
             table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:7px; line-height:1.1; }
-            th,td { border-right:1px solid #CBD5E1; border-bottom:1px solid #CBD5E1; padding:2px 4px; vertical-align:middle; overflow-wrap:anywhere; }
-            th { text-align:left; font-weight:800; }
+            th,td { border-right:1px solid #CBD5E1; border-bottom:1px solid #CBD5E1; padding:3px 4px; min-height:16px; vertical-align:middle; overflow-wrap:anywhere; }
+            th { text-align:left; font-weight:800; background:#E5E7EB; color:#263746; }
             th:last-child,td:last-child { border-right:0; }
             .detail-table th:nth-child(2),.detail-table td:nth-child(2) { width:23%; }
             .detail-table th:nth-child(3),.detail-table td:nth-child(3) { width:25%; }
@@ -2523,11 +2542,12 @@ const ingresosLibresFiltrados =
             .money { text-align:right; white-space:nowrap; }
             .strong { font-weight:900; }
             .summary-row th { text-align:right; background:#FAFAFA; }
-            .receipt-bottom { padding:4px 7px 3px; }
+            .receipt-bottom { padding:5px 7px 3px; }
             .origin { font-size:7px; padding-bottom:4px; }
             .origin-name { margin-left:8px; color:#475569; }
             .signatures { display:grid; grid-template-columns:1fr 1fr; gap:20mm; text-align:center; font-size:6.5px; color:#334155; }
-            .signature-line { width:70%; margin:7px auto 2px; border-top:1px solid #475569; }
+            .signature-line { width:70%; margin:8px auto 2px; border-top:1px solid #475569; }
+            .signature-name { margin-top:1px; font-size:5.8px; font-weight:700; color:#475569; }
             .cea-footer { min-height:12px; border-top:1px solid #E2E8F0; padding:2px 6px; text-align:center; font-size:5.8px; color:#94A3B8; }
             @page {
               size: 216mm 140mm;
@@ -2593,34 +2613,47 @@ const ingresosLibresFiltrados =
               }
 
               .brand {
-                padding: 1mm 2mm;
+                padding: 1.8mm 2mm 2.2mm;
               }
 
               .receipt-number {
                 padding: 1mm 2mm;
               }
 
+              .identity-wrap {
+                margin: 1.8mm 1.5mm 0;
+                border-radius: 1.8mm;
+              }
+
               .identity-grid {
-                padding: 1mm 2mm;
-                gap: 0.5mm 3mm;
+                padding: 1.4mm 2mm;
+                gap: 1mm 3mm;
+              }
+
+              .identity-right {
+                padding-left: 3mm;
+              }
+
+              .section-block {
+                margin-top: 2mm;
               }
 
               .section-title {
-                padding: 0.7mm 1.5mm;
+                padding: 0.9mm 1.5mm;
               }
 
               th,
               td {
-                padding: 0.45mm 1mm;
+                padding: 0.8mm 1mm;
+                height: 4.6mm;
               }
 
               .receipt-bottom {
-                margin-top: auto;
                 padding: 1.5mm 2mm 1mm;
               }
 
               .cea-footer {
-                margin-top: 1mm;
+                margin-top: auto;
                 padding: 1mm 2mm;
               }
 
