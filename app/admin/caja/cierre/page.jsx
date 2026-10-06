@@ -13,9 +13,13 @@ import {
   useRouter,
 } from 'next/navigation'
 
+import { CashRegister } from 'lucide-react'
+
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+
 import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+  BotonActualizar,
+} from '@/components/admin/EstiloModulo'
 
 import {
   imprimirCierreCaja,
@@ -1921,227 +1925,24 @@ export default function CierreCajaPage() {
         "
       >
 
-        {/* ==================================================
-            HEADER
-        ================================================== */}
+        <EncabezadoModulo
+          titulo="Cierre de Caja"
+          subtitulo="Arqueos de turno, entrega de caja y cierre diario de la jornada."
+          icono={CashRegister}
+          rutaRegreso="/admin/caja"
+          textoRegreso="Volver a Caja"
+        />
 
-        <div
-          className="
-            border
-            border-gray-400
-            rounded-xl
-            p-4
-            mb-4
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-4
-            "
+        <div className="flex justify-end px-4 pt-4 md:px-6">
+          <BotonActualizar
+            onClick={actualizarTodo}
+            disabled={cargando}
           >
-            <div>
-              <p
-                className="
-                  text-[10px]
-                  uppercase
-                  tracking-wide
-                  font-bold
-                  text-gray-500
-                "
-              >
-                Caja · Control Operativo
-              </p>
-
-              <h1
-                className="
-                  text-2xl
-                  font-black
-                  text-[var(--primary)]
-                  mt-1
-                "
-              >
-                <i className="fas fa-cash-register mr-2"></i>
-
-                Cierre de Caja
-              </h1>
-
-              <p
-                className="
-                  text-xs
-                  text-gray-500
-                  mt-1
-                "
-              >
-                Arqueos de turno, entrega de caja y cierre diario de la jornada.
-              </p>
-            </div>
-
-            <div
-              className="
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-              <button
-                type="button"
-                onClick={
-                  actualizarTodo
-                }
-                disabled={
-                  cargando
-                }
-                className="
-                  border
-                  border-gray-300
-                  bg-white
-                  hover:bg-gray-100
-                  text-gray-700
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i
-                  className={`
-                    fas
-                    fa-sync-alt
-                    mr-2
-                    ${
-                      cargando
-                        ? 'fa-spin'
-                        : ''
-                    }
-                  `}
-                ></i>
-
-                Actualizar
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin/caja'
-                  )
-                }
-                className="
-                  border
-                  border-gray-300
-                  bg-white
-                  hover:bg-gray-100
-                  text-gray-700
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-arrow-left mr-2"></i>
-
-                Volver a Caja
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin'
-                  )
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-home mr-2"></i>
-
-                Menú Administrativo
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-sign-out-alt mr-2"></i>
-
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ==================================================
-            EMPRESA
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-gray-300
-            bg-gray-50
-            rounded-xl
-            p-3
-            mb-4
-            text-xs
-            flex
-            flex-col
-            md:flex-row
-            md:justify-between
-            gap-1
-          "
-        >
-          <span>
-            Usuario:{' '}
-
-            <strong>
-              {usuarioOperacion ||
-                '-'}
-            </strong>
-          </span>
-
-          <span>
-            CEA:{' '}
-
-            <strong>
-              {empresaNombre ||
-                empresaDatos?.nombre ||
-                '-'}
-            </strong>
-
-            {' · '}
-
-            NIT{' '}
-
-            <strong>
-              {nit ||
-                empresaDatos?.nit ||
-                '-'}
-            </strong>
-          </span>
+            <i
+              className={`fas fa-sync-alt mr-2 ${cargando ? 'fa-spin' : ''}`}
+            ></i>
+            Actualizar
+          </BotonActualizar>
         </div>
 
         {/* ==================================================
@@ -2187,112 +1988,73 @@ export default function CierreCajaPage() {
         )}
 
         {/* ==================================================
-            TIPO
+            TIPO DE CIERRE
         ================================================== */}
 
-        <div
-          className="
-            grid
-            grid-cols-1
-            md:grid-cols-2
-            gap-3
-            mb-4
-          "
-        >
-          {TIPOS_CIERRE.map(
-            item => {
-              const activo =
-                tipoCierre ===
-                item.value
+        <div className="px-4 pt-1 md:px-6">
+          <div
+            className="
+              inline-flex
+              max-w-full
+              items-center
+              gap-1
+              rounded-lg
+              border
+              border-slate-200
+              bg-slate-100
+              p-1
+            "
+            role="tablist"
+            aria-label="Tipo de cierre"
+          >
+            {TIPOS_CIERRE.map(
+              item => {
+                const activo =
+                  tipoCierre ===
+                  item.value
 
-              return (
-                <button
-                  key={
-                    item.value
-                  }
-                  type="button"
-                  onClick={() => {
-                    setError('')
-                    setMensaje('')
-
-                    setTipoCierre(
-                      item.value
-                    )
-                  }}
-                  className={`
-                    border
-                    rounded-xl
-                    p-4
-                    text-left
-                    transition
-                    ${
-                      activo
-                        ? item.value ===
-                          'TURNO'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-emerald-500 bg-emerald-50'
-                        : 'border-gray-300 bg-white hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <div
-                    className="
-                      flex
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={activo}
+                    onClick={() => {
+                      setError('')
+                      setMensaje('')
+                      setTipoCierre(
+                        item.value
+                      )
+                    }}
+                    className={`
+                      inline-flex
                       items-center
-                      gap-3
-                    "
+                      gap-2
+                      whitespace-nowrap
+                      rounded-md
+                      border
+                      px-3
+                      py-2
+                      text-xs
+                      font-bold
+                      transition
+                      ${
+                        activo
+                          ? 'border-[#24638C] bg-white text-[#24638C] shadow-sm'
+                          : 'border-transparent bg-transparent text-slate-600 hover:bg-white hover:text-slate-800'
+                      }
+                    `}
                   >
-                    <div
-                      className={`
-                        w-10
-                        h-10
-                        rounded-xl
-                        flex
-                        items-center
-                        justify-center
-                        ${
-                          activo
-                            ? item.value ===
-                              'TURNO'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-emerald-600 text-white'
-                            : 'bg-gray-100 text-gray-500'
-                        }
-                      `}
-                    >
-                      <i
-                        className={
-                          item.icono
-                        }
-                      ></i>
-                    </div>
+                    <i
+                      className={item.icono}
+                    ></i>
 
-                    <div>
-                      <div
-                        className="
-                          text-sm
-                          font-black
-                          text-gray-800
-                        "
-                      >
-                        {item.label}
-                      </div>
-
-                      <div
-                        className="
-                          text-[10px]
-                          text-gray-500
-                          mt-0.5
-                        "
-                      >
-                        {item.descripcion}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            }
-          )}
+                    {item.label}
+                  </button>
+                )
+              }
+            )}
+          </div>
         </div>
 
         {/* ==================================================
