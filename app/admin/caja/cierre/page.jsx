@@ -13,7 +13,7 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import { CashRegister } from 'lucide-react'
+import { WalletCards } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 
@@ -1928,7 +1928,7 @@ export default function CierreCajaPage() {
         <EncabezadoModulo
           titulo="Cierre de Caja"
           subtitulo="Arqueos de turno, entrega de caja y cierre diario de la jornada."
-          icono={CashRegister}
+          icono={WalletCards}
           rutaRegreso="/admin/caja"
           textoRegreso="Volver a Caja"
         />
