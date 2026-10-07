@@ -19,6 +19,9 @@ import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 
 import {
   BotonActualizar,
+  BotonVerDetalle,
+  MarcoTabla,
+  TituloSeccion,
 } from '@/components/admin/EstiloModulo'
 
 import {
@@ -31,9 +34,6 @@ import {
 
 const API_URL =
   '/api/admin/caja/cierre'
-
-const ROL_RECIBE_CAJA =
-  'AUXILIAR_ADMINISTRATIVO'
 
 const TIPOS_CIERRE = [
   {
@@ -120,27 +120,6 @@ function obtenerNombreEmpresa(
     user?.nombre_empresa ||
     user?.empresa ||
     ''
-  )
-}
-
-function nombreCompletoPersonal(
-  persona
-) {
-  return (
-    persona?.nombre_completo ||
-    persona?.nombre ||
-    [
-      persona?.nombres,
-      persona?.apellidos,
-    ]
-      .filter(
-        Boolean
-      )
-      .join(
-        ' '
-      )
-      .trim() ||
-    '-'
   )
 }
 
@@ -733,12 +712,6 @@ export default function CierreCajaPage() {
       hoyColombia()
     )
 
-  const [
-    tipoFiltro,
-    setTipoFiltro,
-  ] =
-    useState('')
-
   // =======================================================
   // DETALLE
   // =======================================================
@@ -1251,7 +1224,7 @@ export default function CierreCajaPage() {
                   fechaFin,
 
                 tipo_cierre:
-                  tipoFiltro,
+                  'TURNO',
               }
             )
           )
@@ -1273,7 +1246,6 @@ export default function CierreCajaPage() {
         construirUrl,
         fechaInicio,
         fechaFin,
-        tipoFiltro,
         actualizarEmpresa,
       ]
     )
@@ -1320,6 +1292,49 @@ export default function CierreCajaPage() {
     [
       sesionLista,
       nit,
+    ]
+  )
+
+  // =======================================================
+  // HISTORIAL AUTOMÁTICO POR FECHA
+  // =======================================================
+
+  useEffect(
+    () => {
+      if (
+        !sesionLista ||
+        !nit
+      ) {
+        return
+      }
+
+      const timer =
+        setTimeout(
+          () => {
+            cargarHistorial()
+              .catch(
+                errorHistorial => {
+                  setError(
+                    errorHistorial?.message ||
+                    'No fue posible actualizar el historial de arqueos.'
+                  )
+                }
+              )
+          },
+          250
+        )
+
+      return () =>
+        clearTimeout(
+          timer
+        )
+    },
+    [
+      sesionLista,
+      nit,
+      fechaInicio,
+      fechaFin,
+      cargarHistorial,
     ]
   )
 
@@ -1485,20 +1500,6 @@ export default function CierreCajaPage() {
     ) {
       setError(
         'No fue posible identificar quién entrega la caja.'
-      )
-
-      return
-    }
-
-    if (
-      tipoCierre ===
-        'TURNO' &&
-      !texto(
-        usuarioRecibe
-      )
-    ) {
-      setError(
-        'Seleccione quién recibe la caja.'
       )
 
       return
@@ -2035,25 +2036,32 @@ export default function CierreCajaPage() {
 
         {tipoCierre === 'TURNO' && arqueo && (
           <div className="px-4 pb-2 pt-4 md:px-6">
-            <div className="mb-4">
-              <h2 className="text-lg font-black text-slate-800">
-                Arqueo de Turno
-              </h2>
-              <p className="mt-1 text-xs text-slate-500">
-                Verifique cuánto efectivo debería haber, cuente el dinero físico y registre cómo deja la caja.
-              </p>
+            <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-lg font-black text-slate-800">Arqueo de Turno</h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Verifique el efectivo esperado, cuente el dinero físico y registre cómo deja la caja.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <i className="fas fa-user-check text-[#24638C]"></i>
+                <div>
+                  <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">Responsable del arqueo</div>
+                  <div className="text-[10px] font-black text-slate-700">{usuarioOperacion || '-'}</div>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">1</span>
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-4">
+              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">1</span>
                   <div>
-                    <h3 className="text-xs font-black text-slate-800">Información del arqueo</h3>
-                    <p className="text-[10px] text-slate-500">Confirme la fecha y el saldo con el que inició la caja.</p>
+                    <h3 className="text-xs font-black text-slate-800">Información</h3>
+                    <p className="text-[9px] text-slate-500">Datos base del arqueo.</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
+                <div className="flex flex-1 flex-col gap-4 p-4">
                   <CampoInput label="Fecha" type="date" value={fecha} onChange={setFecha} />
                   <CampoInput
                     label="Saldo inicial en efectivo"
@@ -2062,78 +2070,55 @@ export default function CierreCajaPage() {
                     inputMode="numeric"
                     placeholder="0"
                   />
-                  <div>
-                    <div className="mb-1 text-[10px] font-semibold text-gray-600">Responsable del arqueo</div>
-                    <div className="min-h-[34px] rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-800">
-                      {usuarioOperacion || '-'}
-                    </div>
+                  <div className="mt-auto rounded-lg border border-blue-100 bg-blue-50 p-3 text-[9px] leading-relaxed text-blue-700">
+                    <i className="fas fa-circle-info mr-1"></i>
+                    El sistema toma automáticamente los movimientos del período.
                   </div>
                 </div>
               </section>
 
-              <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">2</span>
+              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">2</span>
                   <div>
                     <h3 className="text-xs font-black text-slate-800">Efectivo esperado</h3>
-                    <p className="text-[10px] text-slate-500">El sistema calcula automáticamente cuánto efectivo debería encontrar.</p>
+                    <p className="text-[9px] text-slate-500">Valor calculado por el sistema.</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
+                <div className="flex flex-1 flex-col gap-3 p-4">
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    <div className="text-[9px] font-bold uppercase text-slate-500">Saldo inicial</div>
-                    <div className="mt-1 text-base font-black text-slate-800">{formatearMoneda(arqueo?.saldo_inicial_efectivo)}</div>
+                    <div className="text-[8px] font-bold uppercase text-slate-500">Saldo inicial</div>
+                    <div className="mt-1 text-sm font-black text-slate-800">{formatearMoneda(arqueo?.saldo_inicial_efectivo)}</div>
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    <div className="text-[9px] font-bold uppercase text-slate-500">Movimiento neto</div>
-                    <div className="mt-1 text-base font-black text-slate-800">{formatearMoneda(arqueo?.movimiento_neto)}</div>
+                    <div className="text-[8px] font-bold uppercase text-slate-500">Movimiento neto</div>
+                    <div className="mt-1 text-sm font-black text-slate-800">{formatearMoneda(arqueo?.movimiento_neto)}</div>
                   </div>
                   <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-                    <div className="text-[9px] font-bold uppercase text-blue-700">Efectivo esperado</div>
-                    <div className="mt-1 text-xl font-black text-blue-900">{formatearMoneda(arqueo?.efectivo_esperado)}</div>
+                    <div className="text-[8px] font-bold uppercase text-blue-700">Debe haber en caja</div>
+                    <div className="mt-1 text-lg font-black text-blue-900">{formatearMoneda(arqueo?.efectivo_esperado)}</div>
                   </div>
+                  <details className="mt-auto rounded-lg border border-slate-200">
+                    <summary className="cursor-pointer px-3 py-2 text-[9px] font-bold text-[#24638C] hover:bg-slate-50">Ver cómo se calculó</summary>
+                    <div className="space-y-2 border-t border-slate-200 p-3">
+                      <DatoMoneda label="Ingresos" value={arqueo?.total_ingresos_sistema} />
+                      <DatoMoneda label="Egresos" value={arqueo?.total_egresos_sistema} />
+                      <Dato label="Desde" value={formatearFechaHora(arqueo?.periodo_desde)} />
+                      <Dato label="Hasta" value={formatearFechaHora(arqueo?.periodo_hasta)} />
+                    </div>
+                  </details>
                 </div>
-                <details className="border-t border-slate-200">
-                  <summary className="cursor-pointer px-4 py-3 text-[10px] font-bold text-[#24638C] transition hover:bg-slate-50">
-                    Ver cómo se calculó
-                  </summary>
-                  <div className="grid grid-cols-2 gap-3 border-t border-slate-100 bg-slate-50 p-4 md:grid-cols-4">
-                    <DatoMoneda label="Ingresos" value={arqueo?.total_ingresos_sistema} />
-                    <DatoMoneda label="Egresos" value={arqueo?.total_egresos_sistema} />
-                    <Dato label="Desde" value={formatearFechaHora(arqueo?.periodo_desde)} />
-                    <Dato label="Hasta" value={formatearFechaHora(arqueo?.periodo_hasta)} />
-                  </div>
-                  <div className="overflow-x-auto border-t border-slate-200">
-                    <table className="w-full border-collapse text-[10px]">
-                      <thead className="bg-slate-100">
-                        <tr><th className="border p-2">Medio</th><th className="border p-2">Ingresos</th><th className="border p-2">Egresos</th><th className="border p-2">Neto</th></tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(arqueo?.resumen_medios_pago || {}).length === 0 ? (
-                          <tr><td colSpan="4" className="border p-5 text-center text-slate-500">No hay movimientos en el período.</td></tr>
-                        ) : Object.entries(arqueo?.resumen_medios_pago || {}).map(([medio, resumen]) => (
-                          <tr key={medio}>
-                            <td className="border p-2 font-bold">{medio}</td>
-                            <td className="border p-2 text-right">{formatearMoneda(resumen?.ingresos)}</td>
-                            <td className="border p-2 text-right">{formatearMoneda(resumen?.egresos)}</td>
-                            <td className="border p-2 text-right font-black">{formatearMoneda(resumen?.neto)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </details>
               </section>
 
-              <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">3</span>
+              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">3</span>
                   <div>
-                    <h3 className="text-xs font-black text-slate-800">Cuente el efectivo</h3>
-                    <p className="text-[10px] text-slate-500">Ingrese únicamente el dinero físico que realmente encontró en caja.</p>
+                    <h3 className="text-xs font-black text-slate-800">Conteo físico</h3>
+                    <p className="text-[9px] text-slate-500">Cuente el dinero real.</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
+                <div className="flex flex-1 flex-col gap-4 p-4">
                   <CampoInput
                     label="Efectivo contado"
                     value={formatearValorInput(efectivoContado)}
@@ -2141,69 +2126,50 @@ export default function CierreCajaPage() {
                     inputMode="numeric"
                     placeholder="0"
                   />
-                  <div className={`rounded-xl border p-4 ${
+                  <div className={`rounded-xl border-2 p-4 ${
                     diferenciaActual === null ? 'border-slate-200 bg-slate-50' :
                     diferenciaActual === 0 ? 'border-emerald-200 bg-emerald-50' :
                     diferenciaActual > 0 ? 'border-amber-200 bg-amber-50' :
                     'border-red-200 bg-red-50'
                   }`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-[9px] font-bold uppercase text-slate-500">Resultado del conteo</div>
-                        <div className="mt-1 text-lg font-black text-slate-800">
-                          {diferenciaActual === null ? 'Ingrese el efectivo contado' :
-                           diferenciaActual === 0 ? 'Caja cuadrada' :
-                           diferenciaActual > 0 ? 'Sobrante' : 'Faltante'}
-                        </div>
-                        <div className="mt-1 text-xs font-bold text-slate-600">
-                          Diferencia: {diferenciaActual === null ? '-' : formatearMoneda(diferenciaActual)}
-                        </div>
-                      </div>
-                      {diferenciaActual !== null && <BadgeDiferencia valor={diferenciaActual} />}
+                    <div className="text-[8px] font-bold uppercase text-slate-500">Resultado</div>
+                    <div className="mt-1 text-base font-black text-slate-800">
+                      {diferenciaActual === null ? 'Pendiente de conteo' :
+                       diferenciaActual === 0 ? 'Caja cuadrada' :
+                       diferenciaActual > 0 ? 'Sobrante' : 'Faltante'}
                     </div>
+                    <div className="mt-2 text-xs font-bold text-slate-600">
+                      {diferenciaActual === null ? '-' : formatearMoneda(diferenciaActual)}
+                    </div>
+                    <div className="mt-2">{diferenciaActual !== null && <BadgeDiferencia valor={diferenciaActual} />}</div>
                   </div>
                 </div>
               </section>
 
-              <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">4</span>
+              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">4</span>
                   <div>
-                    <h3 className="text-xs font-black text-slate-800">Finalizar arqueo</h3>
-                    <p className="text-[10px] text-slate-500">Indique opcionalmente dónde o a quién deja la caja y registre cualquier novedad.</p>
+                    <h3 className="text-xs font-black text-slate-800">Finalizar</h3>
+                    <p className="text-[9px] text-slate-500">Registre cómo deja la caja.</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
+                <div className="flex flex-1 flex-col gap-3 p-4">
                   <div>
                     <label className="mb-1 block text-[10px] font-semibold text-gray-600">Entrega o destino <span className="font-normal text-slate-400">(opcional)</span></label>
-                    <input
-                      type="text"
-                      value={usuarioRecibe}
-                      onChange={e => setUsuarioRecibe(e.target.value)}
-                      placeholder="Ej. Directora, propietario, caja fuerte..."
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs"
-                    />
-                    <p className="mt-1 text-[9px] text-slate-500">No define quién operará el siguiente turno.</p>
+                    <input type="text" value={usuarioRecibe} onChange={e => setUsuarioRecibe(e.target.value)} placeholder="Directora, propietario, caja fuerte..." className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs" />
                   </div>
                   <div>
                     <label className="mb-1 block text-[10px] font-semibold text-gray-600">Observaciones <span className="font-normal text-slate-400">(opcional)</span></label>
-                    <textarea
-                      rows={3}
-                      value={observaciones}
-                      onChange={e => setObservaciones(e.target.value)}
-                      placeholder="Novedades encontradas durante el arqueo..."
-                      className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-xs"
-                    />
+                    <textarea rows={3} value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Novedades del arqueo..." className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-xs" />
                   </div>
-                </div>
-                <div className="flex justify-end border-t border-slate-200 bg-slate-50 p-4">
                   <button
                     type="button"
                     onClick={registrarCierre}
                     disabled={guardando || calculando || !texto(efectivoContado)}
-                    className="w-full rounded-lg bg-[#0968B0] px-5 py-2.5 text-[10px] font-black text-white transition hover:bg-[#07548E] disabled:opacity-50 md:w-auto md:min-w-[250px]"
+                    className="mt-auto w-full rounded-lg bg-[#0968B0] px-4 py-2.5 text-[9px] font-black text-white transition hover:bg-[#07548E] disabled:opacity-50"
                   >
-                    {guardando ? <><i className="fas fa-spinner fa-spin mr-2"></i>REGISTRANDO...</> : <><i className="fas fa-check mr-2"></i>FINALIZAR ARQUEO DE TURNO</>}
+                    {guardando ? <><i className="fas fa-spinner fa-spin mr-2"></i>REGISTRANDO...</> : <><i className="fas fa-check mr-2"></i>FINALIZAR ARQUEO</>}
                   </button>
                 </div>
               </section>
@@ -2245,445 +2211,78 @@ export default function CierreCajaPage() {
         )}
 
         {/* ==================================================
-            HISTORIAL
+            HISTORIAL DE ARQUEOS
         ================================================== */}
 
-        <div
-          className="
-            border
-            border-gray-300
-            rounded-xl
-            overflow-hidden
-          "
-        >
-          <div
-            className="
-              bg-slate-800
-              text-white
-              px-4
-              py-3
-            "
-          >
-            <div
-              className="
-                flex
-                flex-col
-                md:flex-row
-                md:items-center
-                md:justify-between
-                gap-3
-              "
-            >
-              <div>
-                <h2
-                  className="
-                    text-xs
-                    font-bold
-                  "
-                >
-                  <i className="fas fa-clock-rotate-left mr-2"></i>
-
-                  Historial de Cierres
-                </h2>
-
-                <p
-                  className="
-                    text-[9px]
-                    text-gray-300
-                    mt-0.5
-                  "
-                >
-                  Arqueos de turno y cierres diarios registrados.
-                </p>
-              </div>
-
-              <span
-                className="
-                  text-[10px]
-                  text-gray-300
-                "
-              >
-                {cierres.length}
-                {' '}
-                registro(s)
-              </span>
+        {tipoCierre === 'TURNO' && (
+          <div className="px-4 pb-6 pt-4 md:px-6">
+            <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2 md:max-w-xl">
+              <CampoInput label="Desde" type="date" value={fechaInicio} onChange={setFechaInicio} />
+              <CampoInput label="Hasta" type="date" value={fechaFin} onChange={setFechaFin} />
             </div>
-          </div>
-
-          <div
-            className="
-              p-3
-              bg-gray-50
-              border-b
-              border-gray-300
-              grid
-              grid-cols-1
-              sm:grid-cols-3
-              gap-2
-            "
-          >
-            <CampoInput
-              label="Desde"
-              type="date"
-              value={
-                fechaInicio
-              }
-              onChange={
-                setFechaInicio
-              }
-            />
-
-            <CampoInput
-              label="Hasta"
-              type="date"
-              value={
-                fechaFin
-              }
-              onChange={
-                setFechaFin
-              }
-            />
 
             <div>
-              <label
-                className="
-                  block
-                  text-[10px]
-                  font-semibold
-                  text-gray-600
-                  mb-1
-                "
-              >
-                Tipo
-              </label>
+              <TituloSeccion
+                titulo="Historial de Arqueos"
+                subtitulo={`${cierres.length} arqueo(s) encontrado(s) · La búsqueda se actualiza automáticamente por fecha.`}
+                icono={<i className="fas fa-clock-rotate-left"></i>}
+                className="!rounded-b-none"
+              />
 
-              <select
-                value={
-                  tipoFiltro
-                }
-                onChange={
-                  e =>
-                    setTipoFiltro(
-                      e.target.value
-                    )
-                }
-                className="
-                  w-full
-                  border
-                  border-gray-300
-                  bg-white
-                  rounded-lg
-                  px-3
-                  py-2
-                  text-xs
-                "
-              >
-                <option value="">
-                  Todos
-                </option>
-
-                <option value="TURNO">
-                  Arqueo de Turno
-                </option>
-
-                <option value="DIARIO">
-                  Cierre Diario
-                </option>
-              </select>
+              <MarcoTabla className="!rounded-t-none !border-t-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[10px]">
+                    <thead>
+                      <tr>
+                        <th className="p-2">Consecutivo</th>
+                        <th className="p-2">Fecha</th>
+                        <th className="p-2">Ingresos</th>
+                        <th className="p-2">Egresos</th>
+                        <th className="p-2">Efectivo</th>
+                        <th className="p-2">Diferencia</th>
+                        <th className="p-2">Responsable</th>
+                        <th className="p-2">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cierres.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" className="p-8 text-center text-gray-500">
+                            No hay arqueos registrados para las fechas seleccionadas.
+                          </td>
+                        </tr>
+                      ) : (
+                        cierres.map(item => (
+                          <tr key={item.id}>
+                            <td className="p-2 text-center font-black whitespace-nowrap">{item.consecutivo || `#${item.id}`}</td>
+                            <td className="p-2 text-center whitespace-nowrap">{formatearFecha(item.fecha)}</td>
+                            <td className="p-2 text-right">{formatearMoneda(item.total_ingresos_sistema)}</td>
+                            <td className="p-2 text-right">{formatearMoneda(item.total_egresos_sistema)}</td>
+                            <td className="p-2 text-right">{formatearMoneda(item.efectivo_contado)}</td>
+                            <td className="p-2 text-center">
+                              <div className="mb-1 font-black">{formatearMoneda(item.diferencia_efectivo)}</div>
+                              <BadgeDiferencia valor={item.diferencia_efectivo} />
+                            </td>
+                            <td className="p-2">
+                              <div className="font-bold">{item.usuario_cierre || '-'}</div>
+                              {item.usuario_recibe && <div className="mt-1 text-[8px] text-gray-500">Destino: {item.usuario_recibe}</div>}
+                            </td>
+                            <td className="p-2 text-center">
+                              <BotonVerDetalle onClick={() => abrirDetalle(item)} disabled={cargandoDetalle}>
+                                <i className="fas fa-eye"></i>
+                                Ver
+                              </BotonVerDetalle>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </MarcoTabla>
             </div>
           </div>
-
-          <div
-            className="
-              px-3
-              pb-3
-              bg-gray-50
-              flex
-              justify-end
-            "
-          >
-            <button
-              type="button"
-              onClick={
-                cargarHistorial
-              }
-              className="
-                bg-blue-600
-                hover:bg-blue-700
-                text-white
-                rounded-lg
-                px-3
-                py-2
-                text-[10px]
-                font-bold
-              "
-            >
-              <i className="fas fa-search mr-2"></i>
-
-              Consultar
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table
-              className="
-                w-full
-                text-[10px]
-                border-collapse
-              "
-            >
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="border p-2">
-                    Consecutivo
-                  </th>
-
-                  <th className="border p-2">
-                    Fecha
-                  </th>
-
-                  <th className="border p-2">
-                    Tipo
-                  </th>
-
-                  <th className="border p-2">
-                    Ingresos
-                  </th>
-
-                  <th className="border p-2">
-                    Egresos
-                  </th>
-
-                  <th className="border p-2">
-                    Efectivo
-                  </th>
-
-                  <th className="border p-2">
-                    Diferencia
-                  </th>
-
-                  <th className="border p-2">
-                    Usuario
-                  </th>
-
-                  <th className="border p-2">
-                    Acción
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {cierres.length ===
-                0 ? (
-                  <tr>
-                    <td
-                      colSpan="9"
-                      className="
-                        border
-                        p-8
-                        text-center
-                        text-gray-500
-                      "
-                    >
-                      No hay cierres registrados para los filtros seleccionados.
-                    </td>
-                  </tr>
-                ) : (
-                  cierres.map(
-                    item => (
-                      <tr
-                        key={
-                          item.id
-                        }
-                        className="
-                          hover:bg-gray-50
-                        "
-                      >
-                        <td
-                          className="
-                            border
-                            p-2
-                            text-center
-                            font-black
-                            whitespace-nowrap
-                          "
-                        >
-                          {item.consecutivo ||
-                            `#${item.id}`}
-                        </td>
-
-                        <td
-                          className="
-                            border
-                            p-2
-                            text-center
-                            whitespace-nowrap
-                          "
-                        >
-                          {formatearFecha(
-                            item.fecha
-                          )}
-                        </td>
-
-                        <td
-                          className="
-                            border
-                            p-2
-                            text-center
-                          "
-                        >
-                          <BadgeTipo
-                            tipo={
-                              item.tipo_cierre
-                            }
-                          />
-                        </td>
-
-                        <td
-                          className="
-                            border
-                            p-2
-                            text-right
-                          "
-                        >
-                          {formatearMoneda(
-                            item
-                              .total_ingresos_sistema
-                          )}
-                        </td>
-
-                        <td
-                          className="
-                            border
-                            p-2
-                            text-right
-                          "
-                        >
-                          {formatearMoneda(
-                            item
-                              .total_egresos_sistema
-                          )}
-                        </td>
-
-                        <td
-                          className="
-                            border
-                            p-2
-                            text-right
-                          "
-                        >
-                          {formatearMoneda(
-                            item
-                              .efectivo_contado
-                          )}
-                        </td>
-
-                        <td
-                          className="
-                            border
-                            p-2
-                            text-center
-                          "
-                        >
-                          <div
-                            className="
-                              font-black
-                              mb-1
-                            "
-                          >
-                            {formatearMoneda(
-                              item
-                                .diferencia_efectivo
-                            )}
-                          </div>
-
-                          <BadgeDiferencia
-                            valor={
-                              item
-                                .diferencia_efectivo
-                            }
-                          />
-                        </td>
-
-                        <td
-                          className="
-                            border
-                            p-2
-                          "
-                        >
-                          <div
-                            className="
-                              font-bold
-                            "
-                          >
-                            {item.usuario_cierre ||
-                              '-'}
-                          </div>
-
-                          {item.tipo_cierre ===
-                            'TURNO' && (
-                            <div
-                              className="
-                                text-[8px]
-                                text-gray-500
-                                mt-1
-                              "
-                            >
-                              Entrega:{' '}
-                              {item.usuario_entrega ||
-                                '-'}
-
-                              <br />
-
-                              Recibe:{' '}
-                              {item.usuario_recibe ||
-                                '-'}
-                            </div>
-                          )}
-                        </td>
-
-                        <td
-                          className="
-                            border
-                            p-2
-                            text-center
-                          "
-                        >
-                          <button
-                            type="button"
-                            onClick={() =>
-                              abrirDetalle(
-                                item
-                              )
-                            }
-                            disabled={
-                              cargandoDetalle
-                            }
-                            className="
-                              bg-blue-600
-                              hover:bg-blue-700
-                              disabled:opacity-50
-                              text-white
-                              rounded-lg
-                              px-3
-                              py-1.5
-                              text-[9px]
-                              font-bold
-                            "
-                          >
-                            <i className="fas fa-eye mr-1"></i>
-
-                            Ver
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* ====================================================
