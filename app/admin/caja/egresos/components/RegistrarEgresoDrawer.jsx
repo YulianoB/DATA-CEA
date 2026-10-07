@@ -540,6 +540,32 @@ export default function RegistrarEgresoDrawer({
       ?.requiere_vehiculo ===
     true
 
+  const medioPagoSeleccionado =
+    useMemo(
+      () =>
+        mediosVisibles.find(
+          item =>
+            String(
+              item?.id
+            ) ===
+            String(
+              form.medio_pago_id
+            )
+        ) ||
+        null,
+      [
+        mediosVisibles,
+        form.medio_pago_id,
+      ]
+    )
+
+  const pagoEnEfectivo =
+    mayusculas(
+      medioPagoSeleccionado?.nombre
+    ) ===
+    'EFECTIVO'
+
+
   const formularioCompleto =
     Boolean(form.fecha) &&
     Boolean(form.concepto_id) &&
@@ -1789,6 +1815,29 @@ export default function RegistrarEgresoDrawer({
                         )
                       }
                     />
+
+                    {form.medio_pago_id && (
+                      <div
+                        className={`rounded-lg border px-3 py-2.5 text-[9px] leading-relaxed ${
+                          pagoEnEfectivo
+                            ? 'border-amber-200 bg-amber-50 text-amber-800'
+                            : 'border-blue-200 bg-blue-50 text-blue-800'
+                        }`}
+                      >
+                        <div className="font-black">
+                          <i className={`${pagoEnEfectivo ? 'fas fa-money-bill-wave' : 'fas fa-building-columns'} mr-2`}></i>
+                          {pagoEnEfectivo
+                            ? 'Pago con efectivo físico de caja'
+                            : 'Pago con recursos fuera de la caja física'}
+                        </div>
+                        <div className="mt-1">
+                          {pagoEnEfectivo
+                            ? 'El sistema validará que exista suficiente efectivo disponible. Si se usaron recursos de reserva que entraron físicamente a caja, registre primero ese ingreso para conservar la trazabilidad.'
+                            : 'Este egreso se registrará por su valor completo, pero no disminuirá el efectivo físico del arqueo. Use el medio que corresponda realmente al pago realizado.'}
+                        </div>
+                      </div>
+                    )}
+
                     <div
                       className={
                         form.modalidad === 'PAGO_DIRECTO'
