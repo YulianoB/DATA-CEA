@@ -2318,7 +2318,6 @@ export default function CierreCajaPage() {
               <label className="mb-1 block text-[8px] font-bold uppercase text-white/80">Fecha de consulta</label>
               <input type="date" value={fechaConsulta} onChange={e => setFechaConsulta(e.target.value)} className="h-8 w-full rounded-md border border-white/30 bg-white px-2 text-[10px] font-semibold text-slate-700 outline-none" />
             </div>
-            </div>
           </div>
 
           <MarcoTabla className="!rounded-t-none !border-t-0">
