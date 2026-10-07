@@ -1300,7 +1300,6 @@ export default function CierreCajaPage() {
           try {
             await Promise.all([
               cargarHistorial(),
-              cargarPersonalRecibe(),
             ])
           } catch (
             errorCarga
