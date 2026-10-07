@@ -1980,106 +1980,6 @@ export default function CierreCajaPage() {
         )}
 
         {/* ==================================================
-            MOVIMIENTOS DEL DÍA
-        ================================================== */}
-
-        <div className="px-4 pt-2 md:px-6">
-          <TituloSeccion
-            titulo="Movimientos del día"
-            subtitulo={`${movimientosDia?.movimientos?.length || 0} movimiento(s) registrados · Ordenados por hora de registro.`}
-            icono={<i className="fas fa-list-check"></i>}
-            className="!rounded-b-none"
-          />
-
-          <div className="grid grid-cols-2 gap-2 border-x border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-            <DatoMoneda label="Ingresos del día" value={movimientosDia?.total_ingresos_sistema} />
-            <DatoMoneda label="Egresos del día" value={movimientosDia?.total_egresos_sistema} />
-            <DatoMoneda label="Ingresos en efectivo" value={movimientosDia?.ingresos_efectivo} />
-            <DatoMoneda label="Egresos en efectivo" value={movimientosDia?.egresos_efectivo} />
-          </div>
-
-          <MarcoTabla className="!rounded-t-none !border-t-0">
-            <div className="max-h-[360px] overflow-auto">
-              <table className="w-full min-w-[1050px] text-[10px]">
-                <thead className="sticky top-0 z-10">
-                  <tr>
-                    <th className="p-2 text-center">Hora</th>
-                    <th className="p-2 text-center">Tipo</th>
-                    <th className="p-2">Referencia</th>
-                    <th className="p-2">Cliente / Beneficiario</th>
-                    <th className="p-2">Concepto / Detalle</th>
-                    <th className="p-2">Medio</th>
-                    <th className="p-2 text-right">Valor</th>
-                    <th className="p-2 text-center">Estado</th>
-                    <th className="p-2">Responsable</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {!movimientosDia?.movimientos?.length ? (
-                    <tr>
-                      <td colSpan="9" className="p-8 text-center text-gray-500">
-                        No hay movimientos registrados para {formatearFecha(fecha)}.
-                      </td>
-                    </tr>
-                  ) : (
-                    movimientosDia.movimientos.map(item => {
-                      const ingreso = item.tipo_movimiento === 'INGRESO'
-                      const referencia = ingreso
-                        ? (item.referencia_pago || `REC-${item.id}`)
-                        : (item.numero_cuenta_cobro || item.numero_factura || item.referencia_pago || `EGR-${item.id}`)
-                      const tercero = ingreso
-                        ? (item.nombre_cliente || item.nombre_pagador || item.documento_cliente || item.documento || '-')
-                        : (item.beneficiario || '-')
-                      const responsable = ingreso
-                        ? (item.recibido_por || '-')
-                        : (item.pagado_por || '-')
-
-                      return (
-                        <tr key={`${item.tipo_movimiento}-${item.id}`} className={item.estado === 'ANULADO' ? 'bg-red-50 text-red-600' : ''}>
-                          <td className="p-2 text-center whitespace-nowrap">
-                            {new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit' }).format(new Date(item.created_at))}
-                          </td>
-                          <td className="p-2 text-center">
-                            <span className={`inline-flex rounded-full border px-2 py-1 text-[8px] font-black ${ingreso ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-                              {item.tipo_movimiento}
-                            </span>
-                          </td>
-                          <td className="p-2 font-bold whitespace-nowrap">{referencia}</td>
-                          <td className="p-2">{tercero}</td>
-                          <td className="p-2">
-                            <div className="font-bold">{item?.concepto?.nombre || item.descripcion || '-'}</div>
-                            {item.observaciones && <div className="mt-1 max-w-[280px] truncate text-[8px] text-slate-500" title={item.observaciones}>{item.observaciones}</div>}
-                          </td>
-                          <td className="p-2 whitespace-nowrap">{item?.medio_pago?.nombre || '-'}</td>
-                          <td className="p-2 text-right font-black whitespace-nowrap">{formatearMoneda(item.valor)}</td>
-                          <td className="p-2 text-center">{item.estado || '-'}</td>
-                          <td className="p-2">{responsable}</td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </MarcoTabla>
-
-          <div className="flex flex-col gap-2 rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[9px] text-slate-500">
-              Esta consulta se actualiza automáticamente con los movimientos registrados durante el día.
-            </p>
-            <button
-              type="button"
-              onClick={imprimirMovimientosDia}
-              disabled={!movimientosDia?.movimientos?.length}
-              className="rounded-lg bg-[#24638C] px-4 py-2.5 text-[9px] font-black text-white transition hover:bg-[#1D526F] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <i className="fas fa-file-pdf mr-2"></i>
-              IMPRIMIR / GUARDAR PDF
-            </button>
-          </div>
-        </div>
-
-        {/* ==================================================
             TIPO DE CIERRE
         ================================================== */}
 
@@ -2374,6 +2274,108 @@ export default function CierreCajaPage() {
               </section>
             </div>
           </div>
+        )}
+
+        {/* ==================================================
+            MOVIMIENTOS DEL DÍA
+        ================================================== */}
+
+        {tipoCierre === 'DIARIO' && (
+        <div className="px-4 pb-2 pt-4 md:px-6">
+          <TituloSeccion
+            titulo="Movimientos del día"
+            subtitulo={`${movimientosDia?.movimientos?.length || 0} movimiento(s) registrados · Ordenados por hora de registro.`}
+            icono={<i className="fas fa-list-check"></i>}
+            className="!rounded-b-none"
+          />
+
+          <div className="grid grid-cols-2 gap-2 border-x border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
+            <DatoMoneda label="Ingresos del día" value={movimientosDia?.total_ingresos_sistema} />
+            <DatoMoneda label="Egresos del día" value={movimientosDia?.total_egresos_sistema} />
+            <DatoMoneda label="Ingresos en efectivo" value={movimientosDia?.ingresos_efectivo} />
+            <DatoMoneda label="Egresos en efectivo" value={movimientosDia?.egresos_efectivo} />
+          </div>
+
+          <MarcoTabla className="!rounded-t-none !border-t-0">
+            <div className="max-h-[360px] overflow-auto">
+              <table className="w-full min-w-[1050px] text-[10px]">
+                <thead className="sticky top-0 z-10">
+                  <tr>
+                    <th className="p-2 text-center">Hora</th>
+                    <th className="p-2 text-center">Tipo</th>
+                    <th className="p-2">Referencia</th>
+                    <th className="p-2">Cliente / Beneficiario</th>
+                    <th className="p-2">Concepto / Detalle</th>
+                    <th className="p-2">Medio</th>
+                    <th className="p-2 text-right">Valor</th>
+                    <th className="p-2 text-center">Estado</th>
+                    <th className="p-2">Responsable</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {!movimientosDia?.movimientos?.length ? (
+                    <tr>
+                      <td colSpan="9" className="p-8 text-center text-gray-500">
+                        No hay movimientos registrados para {formatearFecha(fecha)}.
+                      </td>
+                    </tr>
+                  ) : (
+                    movimientosDia.movimientos.map(item => {
+                      const ingreso = item.tipo_movimiento === 'INGRESO'
+                      const referencia = ingreso
+                        ? (item.referencia_pago || `REC-${item.id}`)
+                        : (item.numero_cuenta_cobro || item.numero_factura || item.referencia_pago || `EGR-${item.id}`)
+                      const tercero = ingreso
+                        ? (item.nombre_cliente || item.nombre_pagador || item.documento_cliente || item.documento || '-')
+                        : (item.beneficiario || '-')
+                      const responsable = ingreso
+                        ? (item.recibido_por || '-')
+                        : (item.pagado_por || '-')
+
+                      return (
+                        <tr key={`${item.tipo_movimiento}-${item.id}`} className={item.estado === 'ANULADO' ? 'bg-red-50 text-red-600' : ''}>
+                          <td className="p-2 text-center whitespace-nowrap">
+                            {new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit' }).format(new Date(item.created_at))}
+                          </td>
+                          <td className="p-2 text-center">
+                            <span className={`inline-flex rounded-full border px-2 py-1 text-[8px] font-black ${ingreso ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                              {item.tipo_movimiento}
+                            </span>
+                          </td>
+                          <td className="p-2 font-bold whitespace-nowrap">{referencia}</td>
+                          <td className="p-2">{tercero}</td>
+                          <td className="p-2">
+                            <div className="font-bold">{item?.concepto?.nombre || item.descripcion || '-'}</div>
+                            {item.observaciones && <div className="mt-1 max-w-[280px] truncate text-[8px] text-slate-500" title={item.observaciones}>{item.observaciones}</div>}
+                          </td>
+                          <td className="p-2 whitespace-nowrap">{item?.medio_pago?.nombre || '-'}</td>
+                          <td className="p-2 text-right font-black whitespace-nowrap">{formatearMoneda(item.valor)}</td>
+                          <td className="p-2 text-center">{item.estado || '-'}</td>
+                          <td className="p-2">{responsable}</td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </MarcoTabla>
+
+          <div className="flex flex-col gap-2 rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[9px] text-slate-500">
+              Esta consulta se actualiza automáticamente con los movimientos registrados durante el día.
+            </p>
+            <button
+              type="button"
+              onClick={imprimirMovimientosDia}
+              disabled={!movimientosDia?.movimientos?.length}
+              className="rounded-lg bg-[#24638C] px-4 py-2.5 text-[9px] font-black text-white transition hover:bg-[#1D526F] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <i className="fas fa-file-pdf mr-2"></i>
+              IMPRIMIR / GUARDAR PDF
+            </button>
+          </div>
+        </div>
         )}
 
         {tipoCierre === 'DIARIO' && !cierreDiarioRealizado && arqueo && (
