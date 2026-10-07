@@ -1671,13 +1671,14 @@ export async function POST(
           ),
         ])
       // ===================================================
-      // CONTROL DE DISPONIBILIDAD DE EFECTIVO
+      // CONTROL / JUSTIFICACIÓN DE EFECTIVO INSUFICIENTE
       // ===================================================
       //
-      // Un egreso pagado desde banco, transferencia o reserva
-      // externa se registra normalmente con su medio real y no
-      // consume caja física. Si el medio seleccionado es
-      // EFECTIVO, sí debe existir ese dinero físicamente.
+      // El egreso debe conservarse por su valor real aunque
+      // supere el efectivo generado por la operación del CEA.
+      // En ese caso no se crea un ingreso artificial: se exige
+      // únicamente dejar en Observaciones la justificación del
+      // origen de los recursos con que se completó el pago.
       //
       if (
         mayusculas(
@@ -1703,32 +1704,40 @@ export async function POST(
               100
             ) / 100
 
-          return NextResponse.json(
-            {
-              status:
-                'error',
+          if (
+            !observaciones
+          ) {
+            return NextResponse.json(
+              {
+                status:
+                  'error',
 
-              code:
-                'EFECTIVO_INSUFICIENTE',
+                code:
+                  'JUSTIFICACION_RECURSOS_REQUERIDA',
 
-              message:
-                `El egreso es por ${valor.toLocaleString('es-CO')} y solo hay ${efectivo.disponible.toLocaleString('es-CO')} disponibles en efectivo. Faltan ${faltante.toLocaleString('es-CO')}. Si el pago se realizó desde una cuenta bancaria, transferencia u otro recurso del CEA, seleccione ese medio de pago. Si el dinero de reserva ingresó físicamente a caja, registre primero ese ingreso en efectivo con su justificación y luego registre el egreso.`,
+                message:
+                  `El egreso es por $${valor.toLocaleString('es-CO')} y el efectivo disponible es $${efectivo.disponible.toLocaleString('es-CO')}. Debe justificar en Observaciones de dónde provienen los $${faltante.toLocaleString('es-CO')} adicionales utilizados para completar el egreso.`,
 
-              data: {
-                valor_egreso:
-                  valor,
+                data: {
+                  valor_egreso:
+                    valor,
 
-                efectivo_disponible:
-                  efectivo.disponible,
+                  efectivo_disponible:
+                    efectivo.disponible,
 
-                faltante,
+                  recursos_adicionales:
+                    faltante,
+
+                  requiere_justificacion:
+                    true,
+                },
               },
-            },
-            {
-              status:
-                409,
-            }
-          )
+              {
+                status:
+                  400,
+              }
+            )
+          }
         }
       }
 
