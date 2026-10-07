@@ -259,6 +259,13 @@ export default function RegistrarEgresoDrawer({
     useState(
       null
     )
+  const [
+    requiereJustificacionRecursos,
+    setRequiereJustificacionRecursos,
+  ] =
+    useState(
+      false
+    )
   // =======================================================
   // PERSONAL
   // =======================================================
@@ -575,7 +582,118 @@ export default function RegistrarEgresoDrawer({
     Boolean(texto(form.beneficiario)) &&
     Boolean(texto(form.documento_beneficiario)) &&
     (form.tipo_beneficiario !== 'FUNCIONARIO' || Boolean(form.personal_id)) &&
-    (!requiereVehiculo || Boolean(form.vehiculo_id))
+    (!requiereVehiculo || Boolean(form.vehiculo_id)) &&
+    (!requiereJustificacionRecursos || Boolean(texto(form.observaciones)))
+  // =======================================================
+  // VALIDAR EFECTIVO Y PREPARAR JUSTIFICACIÓN
+  // =======================================================
+  useEffect(
+    () => {
+      let cancelado =
+        false
+
+      async function validarEfectivo() {
+        const valor =
+          Number(
+            form.valor
+          )
+
+        if (
+          !pagoEnEfectivo ||
+          !Number.isFinite(valor) ||
+          valor <= 0 ||
+          typeof postEgreso !== 'function'
+        ) {
+          setRequiereJustificacionRecursos(
+            false
+          )
+          return
+        }
+
+        try {
+          const respuesta =
+            await postEgreso({
+              accion:
+                'validar_efectivo',
+              medio_pago_id:
+                form.medio_pago_id,
+              valor,
+            })
+
+          if (
+            cancelado
+          ) {
+            return
+          }
+
+          const requiere =
+            respuesta?.data?.requiere_justificacion ===
+            true
+
+          setRequiereJustificacionRecursos(
+            requiere
+          )
+
+          if (
+            requiere &&
+            !texto(
+              form.observaciones
+            )
+          ) {
+            const faltante =
+              Number(
+                respuesta?.data?.recursos_adicionales ||
+                0
+              )
+
+            const faltanteVisible =
+              new Intl.NumberFormat(
+                'es-CO',
+                {
+                  maximumFractionDigits:
+                    0,
+                }
+              ).format(
+                faltante
+              )
+
+            setForm(
+              actual => ({
+                ...actual,
+                observaciones:
+                  `Recursos adicionales: El egreso supera el efectivo disponible en caja en ${faltanteVisible}. El valor adicional fue cubierto con recursos provenientes de: ________. Responsable/aportante: ________. Motivo: ________.`,
+              })
+            )
+          }
+        } catch (
+          errorValidacion
+        ) {
+          if (
+            !cancelado
+          ) {
+            console.error(
+              'Error validando efectivo disponible:',
+              errorValidacion
+            )
+          }
+        }
+      }
+
+      validarEfectivo()
+
+      return () => {
+        cancelado =
+          true
+      }
+    },
+    [
+      pagoEnEfectivo,
+      form.medio_pago_id,
+      form.valor,
+      postEgreso,
+    ]
+  )
+
   // =======================================================
   // FILTRAR PERSONAL
   // =======================================================
@@ -694,6 +812,9 @@ export default function RegistrarEgresoDrawer({
     )
     setEgresoRegistrado(
       null
+    )
+    setRequiereJustificacionRecursos(
+      false
     )
     setError('')
     setMensaje('')
@@ -1865,7 +1986,9 @@ export default function RegistrarEgresoDrawer({
                         </div>
                         <div className="mt-1">
                           {pagoEnEfectivo
-                            ? 'Si no hay suficiente efectivo en caja para cubrir este egreso, podrá registrarlo igualmente. Antes de guardarlo deberá indicar en Observaciones de dónde provino el dinero adicional utilizado para completar el pago.'
+                            ? requiereJustificacionRecursos
+                              ? 'Este egreso supera el efectivo disponible. Complete el texto guía de Observaciones indicando de dónde provino el dinero adicional antes de registrarlo.'
+                              : 'El sistema verificará el efectivo disponible. Si el valor del egreso lo supera, se preparará automáticamente una guía editable en Observaciones para justificar los recursos adicionales.'
                             : 'Este egreso se registrará por su valor completo, pero no disminuirá el efectivo físico del arqueo. Use el medio que corresponda realmente al pago realizado.'}
                         </div>
                       </div>
