@@ -1110,24 +1110,6 @@ export default function CierreCajaPage() {
             data?.empresa
           )
 
-          if (
-            !texto(
-              saldoInicial
-            ) &&
-            data
-              ?.data
-              ?.saldo_inicial_efectivo !==
-              undefined
-          ) {
-            setSaldoInicial(
-              String(
-                data
-                  .data
-                  .saldo_inicial_efectivo ||
-                0
-              )
-            )
-          }
         } catch (
           errorArqueo
         ) {
