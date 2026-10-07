@@ -688,24 +688,6 @@ export default function CierreCajaPage() {
     useState('')
 
   // =======================================================
-  // PERSONAL AUTORIZADO
-  // =======================================================
-
-  const [
-    personalRecibe,
-    setPersonalRecibe,
-  ] =
-    useState([])
-
-  const [
-    cargandoPersonal,
-    setCargandoPersonal,
-  ] =
-    useState(
-      false
-    )
-
-  // =======================================================
   // ARQUEO
   // =======================================================
 
@@ -1094,92 +1076,6 @@ export default function CierreCajaPage() {
       },
       [
         nit,
-      ]
-    )
-
-  // =======================================================
-  // CARGAR PERSONAL AUTORIZADO
-  // =======================================================
-
-  const cargarPersonalRecibe =
-    useCallback(
-      async () => {
-        if (
-          !nit
-        ) {
-          return
-        }
-
-        setCargandoPersonal(
-          true
-        )
-
-        try {
-          const data =
-            await fetchJsonSeguro(
-              construirUrl(
-                'personal'
-              )
-            )
-
-          const lista =
-            Array.isArray(
-              data?.data
-            )
-              ? data.data
-              : (
-                  Array.isArray(
-                    data?.data?.personal
-                  )
-                    ? data.data.personal
-                    : []
-                )
-
-          // Seguridad adicional del cliente.
-          // La API también debería devolver únicamente
-          // perfiles AUXILIAR_ADMINISTRATIVO activos.
-          const autorizados =
-            lista.filter(
-              item =>
-                mayusculas(
-                  item?.rol
-                ) ===
-                ROL_RECIBE_CAJA
-            )
-
-          setPersonalRecibe(
-            autorizados
-          )
-
-          actualizarEmpresa(
-            data?.empresa
-          )
-        } catch (
-          errorPersonal
-        ) {
-          console.error(
-            'Error cargando personal autorizado:',
-            errorPersonal
-          )
-
-          setPersonalRecibe(
-            []
-          )
-
-          setError(
-            errorPersonal?.message ||
-            'No fue posible cargar los funcionarios autorizados para recibir caja.'
-          )
-        } finally {
-          setCargandoPersonal(
-            false
-          )
-        }
-      },
-      [
-        nit,
-        construirUrl,
-        actualizarEmpresa,
       ]
     )
 
@@ -1719,12 +1615,12 @@ export default function CierreCajaPage() {
         tipoCierre ===
         'TURNO'
       ) {
-        const recibeActual =
-          usuarioRecibe
-
+        // El siguiente usuario que inicie sesión continuará
+        // operando la caja. El destino físico no define
+        // quién entrega el siguiente turno.
         setUsuarioEntrega(
           mayusculas(
-            recibeActual
+            usuarioOperacion
           )
         )
 
@@ -1854,7 +1750,6 @@ export default function CierreCajaPage() {
     try {
       await Promise.all([
         cargarHistorial(),
-        cargarPersonalRecibe(),
         calcularArqueo(),
       ])
     } catch (
@@ -2037,11 +1932,12 @@ export default function CierreCajaPage() {
                       py-2
                       text-xs
                       font-bold
-                      transition
+                      transition-all
+                      duration-200
                       ${
                         activo
-                          ? 'border-[#24638C] bg-white text-[#24638C] shadow-sm'
-                          : 'border-transparent bg-transparent text-slate-600 hover:bg-white hover:text-slate-800'
+                          ? 'border-[#24638C] bg-[#24638C] text-white shadow-md -translate-y-0.5'
+                          : 'border-slate-200 bg-white text-slate-600 shadow-sm hover:border-[#24638C] hover:bg-[#E8F3FA] hover:text-[#24638C] hover:-translate-y-0.5'
                       }
                     `}
                   >
@@ -2135,825 +2031,218 @@ export default function CierreCajaPage() {
         )}
 
         {/* ==================================================
-            DATOS OPERACIÓN
+            FLUJO PRINCIPAL
         ================================================== */}
 
-        {!(
-          tipoCierre ===
-            'DIARIO' &&
-          cierreDiarioRealizado
-        ) && (
-          <div
-            className="
-              border
-              border-gray-300
-              rounded-xl
-              overflow-hidden
-              mb-4
-            "
-          >
-            <div
-              className="
-                bg-slate-800
-                text-white
-                px-4
-                py-2.5
-              "
-            >
-              <span
-                className="
-                  text-xs
-                  font-bold
-                "
-              >
-                <i className="fas fa-sliders mr-2"></i>
-
-                {tipoCierre ===
-                'TURNO'
-                  ? 'Datos del Arqueo de Turno'
-                  : 'Datos del Cierre Diario'}
-              </span>
+        {tipoCierre === 'TURNO' && arqueo && (
+          <div className="px-4 pb-2 pt-4 md:px-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-black text-slate-800">
+                Arqueo de Turno
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Verifique cuánto efectivo debería haber, cuente el dinero físico y registre cómo deja la caja.
+              </p>
             </div>
 
-            <div
-              className="
-                p-4
-                grid
-                grid-cols-1
-                md:grid-cols-2
-                xl:grid-cols-4
-                gap-3
-              "
-            >
-              <CampoInput
-                label="Fecha"
-                type="date"
-                value={
-                  fecha
-                }
-                onChange={
-                  setFecha
-                }
-              />
-
-              <CampoInput
-                label="Saldo inicial en efectivo"
-                value={
-                  formatearValorInput(
-                    saldoInicial
-                  )
-                }
-                onChange={
-                  value =>
-                    setSaldoInicial(
-                      limpiarValorInput(
-                        value
-                      )
-                    )
-                }
-                inputMode="numeric"
-                placeholder="0"
-              />
-
-              {tipoCierre ===
-                'TURNO' && (
-                <>
+            <div className="space-y-4">
+              <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">1</span>
                   <div>
-                    <label
-                      className="
-                        block
-                        text-[10px]
-                        font-semibold
-                        text-gray-600
-                        mb-1
-                      "
-                    >
-                      Entrega la caja
-                    </label>
-
-                    <div
-                      className="
-                        border
-                        border-gray-300
-                        bg-gray-50
-                        rounded-lg
-                        px-3
-                        py-2
-                        text-xs
-                        font-semibold
-                        text-gray-800
-                        min-h-[34px]
-                      "
-                    >
-                      {usuarioEntrega ||
-                        '-'}
+                    <h3 className="text-xs font-black text-slate-800">Información del arqueo</h3>
+                    <p className="text-[10px] text-slate-500">Confirme la fecha y el saldo con el que inició la caja.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
+                  <CampoInput label="Fecha" type="date" value={fecha} onChange={setFecha} />
+                  <CampoInput
+                    label="Saldo inicial en efectivo"
+                    value={formatearValorInput(saldoInicial)}
+                    onChange={value => setSaldoInicial(limpiarValorInput(value))}
+                    inputMode="numeric"
+                    placeholder="0"
+                  />
+                  <div>
+                    <div className="mb-1 text-[10px] font-semibold text-gray-600">Responsable del arqueo</div>
+                    <div className="min-h-[34px] rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-800">
+                      {usuarioOperacion || '-'}
                     </div>
                   </div>
+                </div>
+              </section>
 
+              <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">2</span>
                   <div>
-                    <label
-                      className="
-                        block
-                        text-[10px]
-                        font-semibold
-                        text-gray-600
-                        mb-1
-                      "
-                    >
-                      Recibe la caja
-                    </label>
+                    <h3 className="text-xs font-black text-slate-800">Efectivo esperado</h3>
+                    <p className="text-[10px] text-slate-500">El sistema calcula automáticamente cuánto efectivo debería encontrar.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-[9px] font-bold uppercase text-slate-500">Saldo inicial</div>
+                    <div className="mt-1 text-base font-black text-slate-800">{formatearMoneda(arqueo?.saldo_inicial_efectivo)}</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-[9px] font-bold uppercase text-slate-500">Movimiento neto</div>
+                    <div className="mt-1 text-base font-black text-slate-800">{formatearMoneda(arqueo?.movimiento_neto)}</div>
+                  </div>
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                    <div className="text-[9px] font-bold uppercase text-blue-700">Efectivo esperado</div>
+                    <div className="mt-1 text-xl font-black text-blue-900">{formatearMoneda(arqueo?.efectivo_esperado)}</div>
+                  </div>
+                </div>
+                <details className="border-t border-slate-200">
+                  <summary className="cursor-pointer px-4 py-3 text-[10px] font-bold text-[#24638C] transition hover:bg-slate-50">
+                    Ver cómo se calculó
+                  </summary>
+                  <div className="grid grid-cols-2 gap-3 border-t border-slate-100 bg-slate-50 p-4 md:grid-cols-4">
+                    <DatoMoneda label="Ingresos" value={arqueo?.total_ingresos_sistema} />
+                    <DatoMoneda label="Egresos" value={arqueo?.total_egresos_sistema} />
+                    <Dato label="Desde" value={formatearFechaHora(arqueo?.periodo_desde)} />
+                    <Dato label="Hasta" value={formatearFechaHora(arqueo?.periodo_hasta)} />
+                  </div>
+                  <div className="overflow-x-auto border-t border-slate-200">
+                    <table className="w-full border-collapse text-[10px]">
+                      <thead className="bg-slate-100">
+                        <tr><th className="border p-2">Medio</th><th className="border p-2">Ingresos</th><th className="border p-2">Egresos</th><th className="border p-2">Neto</th></tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(arqueo?.resumen_medios_pago || {}).length === 0 ? (
+                          <tr><td colSpan="4" className="border p-5 text-center text-slate-500">No hay movimientos en el período.</td></tr>
+                        ) : Object.entries(arqueo?.resumen_medios_pago || {}).map(([medio, resumen]) => (
+                          <tr key={medio}>
+                            <td className="border p-2 font-bold">{medio}</td>
+                            <td className="border p-2 text-right">{formatearMoneda(resumen?.ingresos)}</td>
+                            <td className="border p-2 text-right">{formatearMoneda(resumen?.egresos)}</td>
+                            <td className="border p-2 text-right font-black">{formatearMoneda(resumen?.neto)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              </section>
 
-                    <select
-                      value={
-                        usuarioRecibe
-                      }
-                      onChange={
-                        e =>
-                          setUsuarioRecibe(
-                            e.target.value
-                          )
-                      }
-                      disabled={
-                        cargandoPersonal
-                      }
-                      className="
-                        w-full
-                        border
-                        border-gray-300
-                        bg-white
-                        rounded-lg
-                        px-3
-                        py-2
-                        text-xs
-                        disabled:opacity-60
-                      "
-                    >
-                      <option value="">
-                        {cargandoPersonal
-                          ? 'Cargando funcionarios...'
-                          : 'Seleccione funcionario...'}
-                      </option>
-
-                      {personalRecibe.map(
-                        persona => {
-                          const nombre =
-                            mayusculas(
-                              nombreCompletoPersonal(
-                                persona
-                              )
-                            )
-
-                          return (
-                            <option
-                              key={
-                                persona?.perfil_id ||
-                                persona?.id ||
-                                `${persona?.documento}-${nombre}`
-                              }
-                              value={
-                                nombre
-                              }
-                            >
-                              {nombre}
-                              {persona?.documento
-                                ? ` · ${persona.documento}`
-                                : ''}
-                            </option>
-                          )
-                        }
-                      )}
-                    </select>
-
-                    <div
-                      className="
-                        mt-1
-                        text-[8px]
-                        text-gray-500
-                      "
-                    >
-                      Personal con rol{' '}
-                      <strong>
-                        AUXILIAR_ADMINISTRATIVO
-                      </strong>
+              <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">3</span>
+                  <div>
+                    <h3 className="text-xs font-black text-slate-800">Cuente el efectivo</h3>
+                    <p className="text-[10px] text-slate-500">Ingrese únicamente el dinero físico que realmente encontró en caja.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
+                  <CampoInput
+                    label="Efectivo contado"
+                    value={formatearValorInput(efectivoContado)}
+                    onChange={value => setEfectivoContado(limpiarValorInput(value))}
+                    inputMode="numeric"
+                    placeholder="0"
+                  />
+                  <div className={`rounded-xl border p-4 ${
+                    diferenciaActual === null ? 'border-slate-200 bg-slate-50' :
+                    diferenciaActual === 0 ? 'border-emerald-200 bg-emerald-50' :
+                    diferenciaActual > 0 ? 'border-amber-200 bg-amber-50' :
+                    'border-red-200 bg-red-50'
+                  }`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[9px] font-bold uppercase text-slate-500">Resultado del conteo</div>
+                        <div className="mt-1 text-lg font-black text-slate-800">
+                          {diferenciaActual === null ? 'Ingrese el efectivo contado' :
+                           diferenciaActual === 0 ? 'Caja cuadrada' :
+                           diferenciaActual > 0 ? 'Sobrante' : 'Faltante'}
+                        </div>
+                        <div className="mt-1 text-xs font-bold text-slate-600">
+                          Diferencia: {diferenciaActual === null ? '-' : formatearMoneda(diferenciaActual)}
+                        </div>
+                      </div>
+                      {diferenciaActual !== null && <BadgeDiferencia valor={diferenciaActual} />}
                     </div>
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </section>
 
-            {/* CÁLCULO AUTOMÁTICO */}
-
-            <div
-              className="
-                px-4
-                pb-4
-              "
-            >
-              <div
-                className="
-                  border
-                  border-blue-200
-                  bg-blue-50
-                  rounded-lg
-                  px-3
-                  py-2
-                  text-[9px]
-                  text-blue-700
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                {calculando ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i>
-
-                    Actualizando movimientos de caja...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-circle-check"></i>
-
-                    Los movimientos y valores se calculan automáticamente.
-                  </>
-                )}
-              </div>
+              <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">4</span>
+                  <div>
+                    <h3 className="text-xs font-black text-slate-800">Finalizar arqueo</h3>
+                    <p className="text-[10px] text-slate-500">Indique opcionalmente dónde o a quién deja la caja y registre cualquier novedad.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold text-gray-600">Entrega o destino <span className="font-normal text-slate-400">(opcional)</span></label>
+                    <input
+                      type="text"
+                      value={usuarioRecibe}
+                      onChange={e => setUsuarioRecibe(e.target.value)}
+                      placeholder="Ej. Directora, propietario, caja fuerte..."
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs"
+                    />
+                    <p className="mt-1 text-[9px] text-slate-500">No define quién operará el siguiente turno.</p>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold text-gray-600">Observaciones <span className="font-normal text-slate-400">(opcional)</span></label>
+                    <textarea
+                      rows={3}
+                      value={observaciones}
+                      onChange={e => setObservaciones(e.target.value)}
+                      placeholder="Novedades encontradas durante el arqueo..."
+                      className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end border-t border-slate-200 bg-slate-50 p-4">
+                  <button
+                    type="button"
+                    onClick={registrarCierre}
+                    disabled={guardando || calculando || !texto(efectivoContado)}
+                    className="w-full rounded-lg bg-[#0968B0] px-5 py-2.5 text-[10px] font-black text-white transition hover:bg-[#07548E] disabled:opacity-50 md:w-auto md:min-w-[250px]"
+                  >
+                    {guardando ? <><i className="fas fa-spinner fa-spin mr-2"></i>REGISTRANDO...</> : <><i className="fas fa-check mr-2"></i>FINALIZAR ARQUEO DE TURNO</>}
+                  </button>
+                </div>
+              </section>
             </div>
           </div>
         )}
 
-        {/* ==================================================
-            RESUMEN
-        ================================================== */}
-
-        {arqueo &&
-          !cierreDiarioRealizado && (
-          <>
-            <div
-              className="
-                grid
-                grid-cols-1
-                sm:grid-cols-2
-                xl:grid-cols-4
-                gap-3
-                mb-4
-              "
-            >
-              <TarjetaResumen
-                titulo="Ingresos"
-                valor={
-                  formatearMoneda(
-                    arqueo
-                      ?.total_ingresos_sistema
-                  )
-                }
-                subtitulo={`${Number(
-                  arqueo
-                    ?.cantidad_recibos ||
-                  0
-                )} recibo(s) activo(s)`}
-                icono="fas fa-arrow-trend-up"
-              />
-
-              <TarjetaResumen
-                titulo="Egresos"
-                valor={
-                  formatearMoneda(
-                    arqueo
-                      ?.total_egresos_sistema
-                  )
-                }
-                subtitulo={`${Number(
-                  arqueo
-                    ?.cantidad_egresos ||
-                  0
-                )} egreso(s) activo(s)`}
-                icono="fas fa-arrow-trend-down"
-              />
-
-              <TarjetaResumen
-                titulo="Movimiento Neto"
-                valor={
-                  formatearMoneda(
-                    arqueo
-                      ?.movimiento_neto
-                  )
-                }
-                subtitulo="Ingresos menos egresos"
-                icono="fas fa-scale-balanced"
-              />
-
-              <TarjetaResumen
-                titulo="Efectivo Esperado"
-                valor={
-                  formatearMoneda(
-                    arqueo
-                      ?.efectivo_esperado
-                  )
-                }
-                subtitulo="Saldo inicial + ingresos - egresos"
-                icono="fas fa-money-bill-wave"
-              />
+        {tipoCierre === 'DIARIO' && !cierreDiarioRealizado && arqueo && (
+          <div className="px-4 pb-2 pt-4 md:px-6">
+            <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <h2 className="text-sm font-black text-emerald-900">Cierre Diario</h2>
+              <p className="mt-1 text-xs text-emerald-700">Finaliza definitivamente la jornada. Revise los valores antes de confirmar el cierre.</p>
             </div>
-
-            {/* PERÍODO */}
-
-            <div
-              className="
-                border
-                border-gray-300
-                bg-gray-50
-                rounded-xl
-                p-3
-                mb-4
-                grid
-                grid-cols-1
-                md:grid-cols-3
-                gap-3
-              "
-            >
-              <Dato
-                label="Tipo"
-                value={
-                  nombreTipoCierre(
-                    arqueo
-                      ?.tipo_cierre
-                  )
-                }
-              />
-
-              <Dato
-                label="Desde"
-                value={
-                  formatearFechaHora(
-                    arqueo
-                      ?.periodo_desde
-                  )
-                }
-              />
-
-              <Dato
-                label="Hasta"
-                value={
-                  formatearFechaHora(
-                    arqueo
-                      ?.periodo_hasta
-                  )
-                }
-              />
-            </div>
-
-            {/* MEDIOS */}
-
-            <div
-              className="
-                border
-                border-gray-300
-                rounded-xl
-                overflow-hidden
-                mb-4
-              "
-            >
-              <div
-                className="
-                  bg-slate-800
-                  text-white
-                  px-4
-                  py-2.5
-                  text-xs
-                  font-bold
-                "
-              >
-                <i className="fas fa-wallet mr-2"></i>
-
-                Resumen por Medio de Pago
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 lg:grid-cols-4">
+                <CampoInput label="Fecha" type="date" value={fecha} onChange={setFecha} />
+                <CampoInput label="Saldo inicial en efectivo" value={formatearValorInput(saldoInicial)} onChange={value => setSaldoInicial(limpiarValorInput(value))} inputMode="numeric" placeholder="0" />
+                <DatoMoneda label="Ingresos" value={arqueo?.total_ingresos_sistema} />
+                <DatoMoneda label="Egresos" value={arqueo?.total_egresos_sistema} />
               </div>
-
-              <div className="overflow-x-auto">
-                <table
-                  className="
-                    w-full
-                    text-[10px]
-                    border-collapse
-                  "
-                >
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="border p-2">
-                        Medio
-                      </th>
-
-                      <th className="border p-2">
-                        Ingresos
-                      </th>
-
-                      <th className="border p-2">
-                        Egresos
-                      </th>
-
-                      <th className="border p-2">
-                        Neto
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {Object.entries(
-                      arqueo
-                        ?.resumen_medios_pago ||
-                      {}
-                    ).length ===
-                    0 ? (
-                      <tr>
-                        <td
-                          colSpan="4"
-                          className="
-                            border
-                            p-6
-                            text-center
-                            text-gray-500
-                          "
-                        >
-                          No hay movimientos en el período.
-                        </td>
-                      </tr>
-                    ) : (
-                      Object.entries(
-                        arqueo
-                          ?.resumen_medios_pago ||
-                        {}
-                      ).map(
-                        ([
-                          medio,
-                          resumen,
-                        ]) => (
-                          <tr
-                            key={
-                              medio
-                            }
-                          >
-                            <td
-                              className="
-                                border
-                                p-2
-                                font-bold
-                              "
-                            >
-                              {medio}
-                            </td>
-
-                            <td
-                              className="
-                                border
-                                p-2
-                                text-right
-                              "
-                            >
-                              {formatearMoneda(
-                                resumen?.ingresos
-                              )}
-                            </td>
-
-                            <td
-                              className="
-                                border
-                                p-2
-                                text-right
-                              "
-                            >
-                              {formatearMoneda(
-                                resumen?.egresos
-                              )}
-                            </td>
-
-                            <td
-                              className="
-                                border
-                                p-2
-                                text-right
-                                font-black
-                              "
-                            >
-                              {formatearMoneda(
-                                resumen?.neto
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      )
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* CONTEO */}
-
-            <div
-              className="
-                border
-                border-gray-300
-                rounded-xl
-                overflow-hidden
-                mb-4
-              "
-            >
-              <div
-                className="
-                  bg-slate-800
-                  text-white
-                  px-4
-                  py-2.5
-                  text-xs
-                  font-bold
-                "
-              >
-                <i className="fas fa-coins mr-2"></i>
-
-                Conteo y Diferencia de Efectivo
-              </div>
-
-              <div
-                className="
-                  p-4
-                  grid
-                  grid-cols-1
-                  md:grid-cols-2
-                  gap-4
-                "
-              >
-                <div>
-                  <CampoInput
-                    label="Efectivo contado"
-                    value={
-                      formatearValorInput(
-                        efectivoContado
-                      )
-                    }
-                    onChange={
-                      value =>
-                        setEfectivoContado(
-                          limpiarValorInput(
-                            value
-                          )
-                        )
-                    }
-                    inputMode="numeric"
-                    placeholder="0"
-                  />
-
-                  <p
-                    className="
-                      text-[9px]
-                      text-gray-500
-                      mt-1.5
-                    "
-                  >
-                    Registre el efectivo físico realmente contado en caja.
-                  </p>
+              <div className="grid grid-cols-1 gap-4 border-t border-slate-200 p-4 md:grid-cols-2">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="text-[9px] font-bold uppercase text-emerald-700">Efectivo esperado</div>
+                  <div className="mt-1 text-xl font-black text-emerald-900">{formatearMoneda(arqueo?.efectivo_esperado)}</div>
                 </div>
-
-                <div
-                  className="
-                    border
-                    border-gray-200
-                    bg-gray-50
-                    rounded-xl
-                    p-4
-                  "
-                >
-                  <div
-                    className="
-                      flex
-                      justify-between
-                      gap-3
-                      mb-2
-                    "
-                  >
-                    <span
-                      className="
-                        text-[10px]
-                        text-gray-500
-                      "
-                    >
-                      Efectivo esperado
-                    </span>
-
-                    <strong className="text-xs">
-                      {formatearMoneda(
-                        arqueo
-                          ?.efectivo_esperado
-                      )}
-                    </strong>
-                  </div>
-
-                  <div
-                    className="
-                      flex
-                      justify-between
-                      gap-3
-                      mb-3
-                    "
-                  >
-                    <span
-                      className="
-                        text-[10px]
-                        text-gray-500
-                      "
-                    >
-                      Efectivo contado
-                    </span>
-
-                    <strong className="text-xs">
-                      {texto(
-                        efectivoContado
-                      )
-                        ? formatearMoneda(
-                            efectivoContado
-                          )
-                        : '-'}
-                    </strong>
-                  </div>
-
-                  <div
-                    className="
-                      border-t
-                      border-gray-300
-                      pt-3
-                      flex
-                      justify-between
-                      items-center
-                      gap-3
-                    "
-                  >
-                    <div>
-                      <div
-                        className="
-                          text-[9px]
-                          uppercase
-                          font-bold
-                          text-gray-500
-                        "
-                      >
-                        Diferencia
-                      </div>
-
-                      <div
-                        className={`
-                          text-lg
-                          font-black
-                          mt-0.5
-                          ${
-                            diferenciaActual ===
-                              null ||
-                            diferenciaActual ===
-                              0
-                              ? 'text-emerald-700'
-                              : diferenciaActual >
-                                0
-                                ? 'text-blue-700'
-                                : 'text-red-700'
-                          }
-                        `}
-                      >
-                        {diferenciaActual ===
-                        null
-                          ? '-'
-                          : formatearMoneda(
-                              diferenciaActual
-                            )}
-                      </div>
-                    </div>
-
-                    {diferenciaActual !==
-                      null && (
-                      <BadgeDiferencia
-                        valor={
-                          diferenciaActual
-                        }
-                      />
-                    )}
-                  </div>
-                </div>
+                <CampoInput label="Efectivo contado" value={formatearValorInput(efectivoContado)} onChange={value => setEfectivoContado(limpiarValorInput(value))} inputMode="numeric" placeholder="0" />
               </div>
-
-              <div
-                className="
-                  px-4
-                  pb-4
-                "
-              >
-                <label
-                  className="
-                    block
-                    text-[10px]
-                    font-semibold
-                    text-gray-600
-                    mb-1
-                  "
-                >
-                  Observaciones
-                </label>
-
-                <textarea
-                  rows={3}
-                  value={
-                    observaciones
-                  }
-                  onChange={
-                    e =>
-                      setObservaciones(
-                        e.target.value
-                      )
-                  }
-                  placeholder="Novedades del arqueo o cierre..."
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                    resize-none
-                  "
-                />
+              <div className="p-4 pt-0">
+                <label className="mb-1 block text-[10px] font-semibold text-gray-600">Observaciones</label>
+                <textarea rows={3} value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Novedades del cierre diario..." className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-xs" />
               </div>
-
-              {/* ACCIÓN */}
-
-              <div
-                className="
-                  border-t
-                  border-gray-200
-                  bg-gray-50
-                  p-4
-                  flex
-                  justify-end
-                "
-              >
-                <button
-                  type="button"
-                  onClick={
-                    registrarCierre
-                  }
-                  disabled={
-                    guardando ||
-                    calculando ||
-                    !texto(
-                      efectivoContado
-                    ) ||
-                    (
-                      tipoCierre ===
-                        'TURNO' &&
-                      !texto(
-                        usuarioRecibe
-                      )
-                    )
-                  }
-                  className={`
-                    w-full
-                    md:w-auto
-                    min-w-[250px]
-                    text-white
-                    rounded-lg
-                    px-5
-                    py-2.5
-                    text-[10px]
-                    font-black
-                    disabled:opacity-50
-                    ${
-                      tipoCierre ===
-                      'TURNO'
-                        ? 'bg-blue-600 hover:bg-blue-700'
-                        : 'bg-emerald-600 hover:bg-emerald-700'
-                    }
-                  `}
-                >
-                  {guardando ? (
-                    <>
-                      <i className="fas fa-spinner fa-spin mr-2"></i>
-
-                      REGISTRANDO...
-                    </>
-                  ) : tipoCierre ===
-                    'TURNO' ? (
-                    <>
-                      <i className="fas fa-right-left mr-2"></i>
-
-                      REGISTRAR ARQUEO DE TURNO
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-lock mr-2"></i>
-
-                      REALIZAR CIERRE DIARIO
-                    </>
-                  )}
+              <div className="flex justify-end border-t border-slate-200 bg-slate-50 p-4">
+                <button type="button" onClick={registrarCierre} disabled={guardando || calculando || !texto(efectivoContado)} className="w-full rounded-lg bg-emerald-600 px-5 py-2.5 text-[10px] font-black text-white transition hover:bg-emerald-700 disabled:opacity-50 md:w-auto md:min-w-[250px]">
+                  {guardando ? <><i className="fas fa-spinner fa-spin mr-2"></i>REGISTRANDO...</> : <><i className="fas fa-lock mr-2"></i>REALIZAR CIERRE DIARIO</>}
                 </button>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* ==================================================
