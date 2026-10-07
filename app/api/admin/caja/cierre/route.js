@@ -1497,7 +1497,12 @@ export async function GET(
       recurso ===
       'movimientos_dia'
     ) {
-      const fecha =
+      const fechaInicio =
+        texto(
+          searchParams.get(
+            'fecha_inicio'
+          )
+        ) ||
         texto(
           searchParams.get(
             'fecha'
@@ -1505,9 +1510,20 @@ export async function GET(
         ) ||
         hoyColombia()
 
+      const fechaFin =
+        texto(
+          searchParams.get(
+            'fecha_fin'
+          )
+        ) ||
+        fechaInicio
+
       if (
         !fechaValida(
-          fecha
+          fechaInicio
+        ) ||
+        !fechaValida(
+          fechaFin
         )
       ) {
         return NextResponse.json(
@@ -1515,7 +1531,25 @@ export async function GET(
             status:
               'error',
             message:
-              'La fecha no es válida.',
+              'El rango de fechas no es válido.',
+          },
+          {
+            status:
+              400,
+          }
+        )
+      }
+
+      if (
+        fechaFin <
+        fechaInicio
+      ) {
+        return NextResponse.json(
+          {
+            status:
+              'error',
+            message:
+              'La fecha final no puede ser anterior a la fecha inicial.',
           },
           {
             status:
@@ -1526,12 +1560,12 @@ export async function GET(
 
       const periodoDesde =
         inicioDiaColombia(
-          fecha
+          fechaInicio
         )
 
       const periodoHasta =
         finDiaColombia(
-          fecha
+          fechaFin
         )
 
       const [
@@ -1595,7 +1629,14 @@ export async function GET(
         status:
           'success',
         data: {
-          fecha,
+          fecha:
+            fechaInicio === fechaFin
+              ? fechaInicio
+              : null,
+          fecha_inicio:
+            fechaInicio,
+          fecha_fin:
+            fechaFin,
           periodo_desde:
             periodoDesde,
           periodo_hasta:
