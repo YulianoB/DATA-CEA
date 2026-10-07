@@ -882,6 +882,218 @@ async function obtenerResumen(
   }
 }
 // =========================================================
+// EFECTIVO DISPONIBLE PARA EGRESOS
+// =========================================================
+//
+// El control aplica únicamente cuando el medio de pago es
+// EFECTIVO. Los pagos realizados por transferencia, cuenta
+// bancaria u otros medios siguen registrándose completos,
+// pero no afectan el efectivo físico del arqueo.
+//
+// Si ingresan recursos de reserva físicamente a la caja,
+// primero deben registrarse como ingreso con medio EFECTIVO.
+// Así queda trazado el origen del dinero antes de gastarlo.
+//
+// =========================================================
+async function obtenerEfectivoDisponible(
+  supabase
+) {
+  const {
+    data:
+      ultimoCierre,
+    error:
+      errorCierre,
+  } =
+    await supabase
+      .from(
+        'cierres_caja'
+      )
+      .select(
+        'periodo_hasta'
+      )
+      .order(
+        'periodo_hasta',
+        {
+          ascending:
+            false,
+        }
+      )
+      .order(
+        'id',
+        {
+          ascending:
+            false,
+        }
+      )
+      .limit(
+        1
+      )
+      .maybeSingle()
+
+  if (
+    errorCierre
+  ) {
+    throw new Error(
+      `No fue posible consultar el último arqueo para validar el efectivo: ${errorCierre.message}`
+    )
+  }
+
+  const periodoDesde =
+    ultimoCierre?.periodo_hasta ||
+    '1970-01-01T00:00:00.000Z'
+
+  const [
+    respuestaIngresos,
+    respuestaEgresos,
+  ] =
+    await Promise.all([
+      supabase
+        .from(
+          'recibos_caja'
+        )
+        .select(`
+          valor,
+          estado,
+          medio_pago:medios_pago_caja (
+            nombre
+          )
+        `)
+        .gt(
+          'created_at',
+          periodoDesde
+        ),
+
+      supabase
+        .from(
+          'egresos_caja'
+        )
+        .select(`
+          valor,
+          estado,
+          medio_pago:medios_pago_caja (
+            nombre
+          )
+        `)
+        .gt(
+          'created_at',
+          periodoDesde
+        ),
+    ])
+
+  if (
+    respuestaIngresos.error
+  ) {
+    throw new Error(
+      `No fue posible validar los ingresos en efectivo: ${respuestaIngresos.error.message}`
+    )
+  }
+
+  if (
+    respuestaEgresos.error
+  ) {
+    throw new Error(
+      `No fue posible validar los egresos en efectivo: ${respuestaEgresos.error.message}`
+    )
+  }
+
+  const ingresosEfectivo =
+    (
+      respuestaIngresos.data ||
+      []
+    ).reduce(
+      (
+        total,
+        registro
+      ) => {
+        if (
+          mayusculas(
+            registro?.estado
+          ) ===
+            'ANULADO' ||
+          mayusculas(
+            registro
+              ?.medio_pago
+              ?.nombre
+          ) !==
+            'EFECTIVO'
+        ) {
+          return total
+        }
+
+        return (
+          total +
+          Number(
+            registro?.valor ||
+            0
+          )
+        )
+      },
+      0
+    )
+
+  const egresosEfectivo =
+    (
+      respuestaEgresos.data ||
+      []
+    ).reduce(
+      (
+        total,
+        registro
+      ) => {
+        if (
+          mayusculas(
+            registro?.estado
+          ) ===
+            'ANULADO' ||
+          mayusculas(
+            registro
+              ?.medio_pago
+              ?.nombre
+          ) !==
+            'EFECTIVO'
+        ) {
+          return total
+        }
+
+        return (
+          total +
+          Number(
+            registro?.valor ||
+            0
+          )
+        )
+      },
+      0
+    )
+
+  return {
+    ingresos_efectivo:
+      Math.round(
+        ingresosEfectivo *
+        100
+      ) / 100,
+
+    egresos_efectivo:
+      Math.round(
+        egresosEfectivo *
+        100
+      ) / 100,
+
+    disponible:
+      Math.max(
+        0,
+        Math.round(
+          (
+            ingresosEfectivo -
+            egresosEfectivo
+          ) *
+          100
+        ) / 100
+      ),
+  }
+}
+
+// =========================================================
 // GET
 // =========================================================
 export async function GET(
@@ -1458,6 +1670,68 @@ export async function POST(
             medioPagoId
           ),
         ])
+      // ===================================================
+      // CONTROL DE DISPONIBILIDAD DE EFECTIVO
+      // ===================================================
+      //
+      // Un egreso pagado desde banco, transferencia o reserva
+      // externa se registra normalmente con su medio real y no
+      // consume caja física. Si el medio seleccionado es
+      // EFECTIVO, sí debe existir ese dinero físicamente.
+      //
+      if (
+        mayusculas(
+          medioPago?.nombre
+        ) ===
+        'EFECTIVO'
+      ) {
+        const efectivo =
+          await obtenerEfectivoDisponible(
+            supabase
+          )
+
+        if (
+          valor >
+          efectivo.disponible
+        ) {
+          const faltante =
+            Math.round(
+              (
+                valor -
+                efectivo.disponible
+              ) *
+              100
+            ) / 100
+
+          return NextResponse.json(
+            {
+              status:
+                'error',
+
+              code:
+                'EFECTIVO_INSUFICIENTE',
+
+              message:
+                `El egreso es por ${valor.toLocaleString('es-CO')} y solo hay ${efectivo.disponible.toLocaleString('es-CO')} disponibles en efectivo. Faltan ${faltante.toLocaleString('es-CO')}. Si el pago se realizó desde una cuenta bancaria, transferencia u otro recurso del CEA, seleccione ese medio de pago. Si el dinero de reserva ingresó físicamente a caja, registre primero ese ingreso en efectivo con su justificación y luego registre el egreso.`,
+
+              data: {
+                valor_egreso:
+                  valor,
+
+                efectivo_disponible:
+                  efectivo.disponible,
+
+                faltante,
+              },
+            },
+            {
+              status:
+                409,
+            }
+          )
+        }
+      }
+
       // ===================================================
       // CLASIFICACIÓN PESV DEL CONCEPTO
       // ===================================================
