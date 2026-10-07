@@ -1491,6 +1491,128 @@ export async function GET(
     }
 
     // =====================================================
+    // MOVIMIENTOS COMPLETOS DEL DÍA
+    // =====================================================
+    if (
+      recurso ===
+      'movimientos_dia'
+    ) {
+      const fecha =
+        texto(
+          searchParams.get(
+            'fecha'
+          )
+        ) ||
+        hoyColombia()
+
+      if (
+        !fechaValida(
+          fecha
+        )
+      ) {
+        return NextResponse.json(
+          {
+            status:
+              'error',
+            message:
+              'La fecha no es válida.',
+          },
+          {
+            status:
+              400,
+          }
+        )
+      }
+
+      const periodoDesde =
+        inicioDiaColombia(
+          fecha
+        )
+
+      const periodoHasta =
+        finDiaColombia(
+          fecha
+        )
+
+      const [
+        ingresos,
+        egresos,
+      ] =
+        await Promise.all([
+          consultarIngresos(
+            supabase,
+            periodoDesde,
+            periodoHasta
+          ),
+          consultarEgresos(
+            supabase,
+            periodoDesde,
+            periodoHasta
+          ),
+        ])
+
+      const calculo =
+        calcularMovimientos({
+          ingresos,
+          egresos,
+          saldoInicialEfectivo:
+            0,
+          efectivoContado:
+            null,
+        })
+
+      const movimientos = [
+        ...ingresos.map(
+          item => ({
+            ...item,
+            tipo_movimiento:
+              'INGRESO',
+          })
+        ),
+        ...egresos.map(
+          item => ({
+            ...item,
+            tipo_movimiento:
+              'EGRESO',
+          })
+        ),
+      ].sort(
+        (
+          a,
+          b
+        ) =>
+          new Date(
+            a?.created_at ||
+            0
+          ).getTime() -
+          new Date(
+            b?.created_at ||
+            0
+          ).getTime()
+      )
+
+      return NextResponse.json({
+        status:
+          'success',
+        data: {
+          fecha,
+          periodo_desde:
+            periodoDesde,
+          periodo_hasta:
+            periodoHasta,
+          ...calculo,
+          ingresos,
+          egresos,
+          movimientos,
+        },
+        empresa:
+          construirEmpresaRespuesta(
+            empresa
+          ),
+      })
+    }
+
+    // =====================================================
     // ARQUEO / PREVISUALIZACIÓN
     // =====================================================
 
