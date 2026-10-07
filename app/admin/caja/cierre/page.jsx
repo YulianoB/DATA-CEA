@@ -686,6 +686,22 @@ export default function CierreCajaPage() {
     )
 
   const [
+    fechaConsultaInicio,
+    setFechaConsultaInicio,
+  ] =
+    useState(
+      hoyColombia()
+    )
+
+  const [
+    fechaConsultaFin,
+    setFechaConsultaFin,
+  ] =
+    useState(
+      hoyColombia()
+    )
+
+  const [
     cierreDiarioRealizado,
     setCierreDiarioRealizado,
   ] =
@@ -1077,7 +1093,10 @@ export default function CierreCajaPage() {
             construirUrl(
               'movimientos_dia',
               {
-                fecha,
+                fecha_inicio:
+                  fechaConsultaInicio,
+                fecha_fin:
+                  fechaConsultaFin,
               }
             )
           )
@@ -1093,7 +1112,8 @@ export default function CierreCajaPage() {
       },
       [
         nit,
-        fecha,
+        fechaConsultaInicio,
+        fechaConsultaFin,
         construirUrl,
         actualizarEmpresa,
       ]
@@ -1111,7 +1131,7 @@ export default function CierreCajaPage() {
       tipo_cierre:
         'DIARIO',
       consecutivo:
-        `MOVIMIENTOS-${fecha}`,
+        `MOVIMIENTOS-${fechaConsultaInicio}-${fechaConsultaFin}`,
       efectivo_contado:
         null,
       diferencia_efectivo:
@@ -1143,8 +1163,15 @@ export default function CierreCajaPage() {
         setError('')
 
         try {
+          const fechaOperacion =
+            tipoCierre ===
+              'DIARIO'
+              ? hoyColombia()
+              : fecha
+
           const extras = {
-            fecha,
+            fecha:
+              fechaOperacion,
 
             tipo_cierre:
               tipoCierre,
@@ -1214,7 +1241,7 @@ export default function CierreCajaPage() {
             setError('')
 
             setMensaje(
-              `La caja del ${fecha} ya fue cerrada con el consecutivo ${
+              `La caja del ${tipoCierre === 'DIARIO' ? hoyColombia() : fecha} ya fue cerrada con el consecutivo ${
                 cierreExistente?.consecutivo ||
                 `#${cierreExistente?.id || ''}`
               }.`
@@ -1429,7 +1456,8 @@ export default function CierreCajaPage() {
     [
       sesionLista,
       nit,
-      fecha,
+      fechaConsultaInicio,
+      fechaConsultaFin,
       cargarMovimientosDia,
     ]
   )
@@ -1639,7 +1667,11 @@ export default function CierreCajaPage() {
 
                 nit,
 
-                fecha,
+                fecha:
+                  tipoCierre ===
+                    'DIARIO'
+                    ? hoyColombia()
+                    : fecha,
 
                 tipo_cierre:
                   tipoCierre,
@@ -2282,26 +2314,34 @@ export default function CierreCajaPage() {
 
         {tipoCierre === 'DIARIO' && (
         <div className="px-4 pb-2 pt-4 md:px-6">
-          <TituloSeccion
-            titulo="Movimientos del día"
-            subtitulo={`${movimientosDia?.movimientos?.length || 0} movimiento(s) registrados · Ordenados por hora de registro.`}
-            icono={<i className="fas fa-list-check"></i>}
-            className="!rounded-b-none"
-          />
-
-          <div className="grid grid-cols-2 gap-2 border-x border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-            <DatoMoneda label="Ingresos del día" value={movimientosDia?.total_ingresos_sistema} />
-            <DatoMoneda label="Egresos del día" value={movimientosDia?.total_egresos_sistema} />
-            <DatoMoneda label="Ingresos en efectivo" value={movimientosDia?.ingresos_efectivo} />
-            <DatoMoneda label="Egresos en efectivo" value={movimientosDia?.egresos_efectivo} />
+          <div className="flex flex-col gap-3 rounded-t-xl bg-[#24638C] px-4 py-3 md:flex-row md:items-end md:justify-between">
+            <div className="text-white">
+              <div className="flex items-center gap-2 text-sm font-black">
+                <i className="fas fa-list-check"></i>
+                Movimientos del día
+              </div>
+              <div className="mt-1 text-[9px] text-white/80">
+                ${movimientosDia?.movimientos?.length || 0} movimiento(s) · Consulta ordenada por hora de registro.
+              </div>
+            </div>
+            <div className="flex flex-wrap items-end justify-end gap-2">
+              <div className="w-[145px]">
+                <label className="mb-1 block text-[8px] font-bold uppercase text-white/80">Desde</label>
+                <input type="date" value={fechaConsultaInicio} onChange={e => setFechaConsultaInicio(e.target.value)} className="h-8 w-full rounded-md border border-white/30 bg-white px-2 text-[10px] font-semibold text-slate-700 outline-none" />
+              </div>
+              <div className="w-[145px]">
+                <label className="mb-1 block text-[8px] font-bold uppercase text-white/80">Hasta</label>
+                <input type="date" value={fechaConsultaFin} onChange={e => setFechaConsultaFin(e.target.value)} className="h-8 w-full rounded-md border border-white/30 bg-white px-2 text-[10px] font-semibold text-slate-700 outline-none" />
+              </div>
+            </div>
           </div>
 
           <MarcoTabla className="!rounded-t-none !border-t-0">
-            <div className="max-h-[360px] overflow-auto">
+            <div className="max-h-[390px] overflow-auto">
               <table className="w-full min-w-[1050px] text-[10px]">
                 <thead className="sticky top-0 z-10">
                   <tr>
-                    <th className="p-2 text-center">Hora</th>
+                    <th className="p-2 text-center">Fecha / Hora</th>
                     <th className="p-2 text-center">Tipo</th>
                     <th className="p-2">Referencia</th>
                     <th className="p-2">Cliente / Beneficiario</th>
@@ -2316,7 +2356,7 @@ export default function CierreCajaPage() {
                   {!movimientosDia?.movimientos?.length ? (
                     <tr>
                       <td colSpan="9" className="p-8 text-center text-gray-500">
-                        No hay movimientos registrados para {formatearFecha(fecha)}.
+                        No hay movimientos registrados para el rango seleccionado.
                       </td>
                     </tr>
                   ) : (
@@ -2335,7 +2375,10 @@ export default function CierreCajaPage() {
                       return (
                         <tr key={`${item.tipo_movimiento}-${item.id}`} className={item.estado === 'ANULADO' ? 'bg-red-50 text-red-600' : ''}>
                           <td className="p-2 text-center whitespace-nowrap">
-                            {new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit' }).format(new Date(item.created_at))}
+                            {formatearFecha(item.fecha)}
+                            <div className="mt-0.5 text-[8px] text-slate-500">
+                              {new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit' }).format(new Date(item.created_at))}
+                            </div>
                           </td>
                           <td className="p-2 text-center">
                             <span className={`inline-flex rounded-full border px-2 py-1 text-[8px] font-black ${ingreso ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
@@ -2361,19 +2404,37 @@ export default function CierreCajaPage() {
             </div>
           </MarcoTabla>
 
-          <div className="flex flex-col gap-2 rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[9px] text-slate-500">
-              Esta consulta se actualiza automáticamente con los movimientos registrados durante el día.
-            </p>
-            <button
-              type="button"
-              onClick={imprimirMovimientosDia}
-              disabled={!movimientosDia?.movimientos?.length}
-              className="rounded-lg bg-[#24638C] px-4 py-2.5 text-[9px] font-black text-white transition hover:bg-[#1D526F] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <i className="fas fa-file-pdf mr-2"></i>
-              IMPRIMIR / GUARDAR PDF
-            </button>
+          <div className="flex flex-col gap-3 rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 p-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="text-[9px] text-slate-500">
+              Los filtros son únicamente para consulta e impresión de movimientos anteriores.
+            </div>
+            <div className="flex flex-col items-stretch gap-2 sm:items-end">
+              <div className="flex flex-wrap justify-end gap-x-5 gap-y-1 text-[9px]">
+                {Object.entries(movimientosDia?.resumen_medios_pago || {}).map(([medio, resumen]) => (
+                  <div key={medio} className="whitespace-nowrap">
+                    <span className="text-slate-500">Ingresos {medio}:</span>{' '}
+                    <span className="font-black text-slate-800">{formatearMoneda(resumen?.ingresos)}</span>
+                  </div>
+                ))}
+                <div className="whitespace-nowrap">
+                  <span className="text-slate-500">Total egresos:</span>{' '}
+                  <span className="font-black text-slate-800">{formatearMoneda(movimientosDia?.total_egresos_sistema)}</span>
+                </div>
+                <div className="whitespace-nowrap">
+                  <span className="text-slate-500">Resultado:</span>{' '}
+                  <span className="font-black text-[#24638C]">{formatearMoneda(movimientosDia?.movimiento_neto)}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={imprimirMovimientosDia}
+                disabled={!movimientosDia?.movimientos?.length}
+                className="rounded-lg bg-[#24638C] px-4 py-2.5 text-[9px] font-black text-white transition hover:bg-[#1D526F] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <i className="fas fa-file-pdf mr-2"></i>
+                IMPRIMIR / GUARDAR PDF
+              </button>
+            </div>
           </div>
         </div>
         )}
@@ -2385,8 +2446,7 @@ export default function CierreCajaPage() {
               <p className="mt-1 text-xs text-emerald-700">Finaliza definitivamente la jornada. Revise los valores antes de confirmar el cierre.</p>
             </div>
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 lg:grid-cols-4">
-                <CampoInput label="Fecha" type="date" value={fecha} onChange={setFecha} />
+              <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
                 <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><DatoMoneda label="Base inicial" value={0} /></div>
                 <DatoMoneda label="Ingresos" value={arqueo?.total_ingresos_sistema} />
                 <DatoMoneda label="Egresos" value={arqueo?.total_egresos_sistema} />
