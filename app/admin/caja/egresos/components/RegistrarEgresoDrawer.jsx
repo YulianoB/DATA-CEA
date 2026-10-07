@@ -1113,10 +1113,43 @@ export default function RegistrarEgresoDrawer({
         'Error registrando egreso:',
         errorRegistro
       )
-      setError(
+      const mensajeError =
         errorRegistro?.message ||
         'No fue posible registrar el egreso.'
+
+      setError(
+        mensajeError
       )
+
+      // Si la API detecta que el egreso supera el efectivo
+      // disponible, deja una base editable para documentar
+      // de dónde provienen los recursos adicionales.
+      if (
+        mensajeError.includes(
+          'Debe justificar en Observaciones'
+        ) &&
+        !texto(
+          form.observaciones
+        )
+      ) {
+        const coincidencia =
+          mensajeError.match(
+            /de dónde provienen los \$([\d.]+) adicionales/i
+          )
+
+        const valorAdicional =
+          coincidencia?.[1] ||
+          '________'
+
+        setForm(
+          actual => ({
+            ...actual,
+            observaciones:
+              `RECURSOS ADICIONALES: EL EGRESO SUPERA EL EFECTIVO DISPONIBLE EN CAJA EN ${valorAdicional}. EL VALOR ADICIONAL FUE CUBIERTO CON RECURSOS PROVENIENTES DE: ________. RESPONSABLE/APORTANTE: ________. MOTIVO: ________.`,
+          })
+        )
+      }
+
       setTimeout(
         () => {
           drawerRef.current
