@@ -694,70 +694,6 @@ export default function CierreCajaPage() {
     )
 
   // =======================================================
-  // MOVIMIENTOS DEL DÍA
-  // =======================================================
-
-  const cargarMovimientosDia =
-    useCallback(
-      async () => {
-        if (
-          !nit
-        ) {
-          return
-        }
-
-        const data =
-          await fetchJsonSeguro(
-            construirUrl(
-              'movimientos_dia',
-              {
-                fecha,
-              }
-            )
-          )
-
-        setMovimientosDia(
-          data?.data ||
-          null
-        )
-
-        actualizarEmpresa(
-          data?.empresa
-        )
-      },
-      [
-        nit,
-        fecha,
-        construirUrl,
-        actualizarEmpresa,
-      ]
-    )
-
-  function imprimirMovimientosDia() {
-    if (
-      !movimientosDia
-    ) {
-      return
-    }
-
-    imprimirCierreDesdePagina({
-      ...movimientosDia,
-      tipo_cierre:
-        'DIARIO',
-      consecutivo:
-        `MOVIMIENTOS-${fecha}`,
-      efectivo_contado:
-        null,
-      diferencia_efectivo:
-        0,
-      usuario_cierre:
-        usuarioOperacion,
-      observaciones:
-        'Consulta de movimientos registrados durante la jornada. Este documento no constituye el cierre definitivo de caja.',
-    })
-  }
-
-  // =======================================================
   // HISTORIAL
   // =======================================================
 
@@ -1122,6 +1058,70 @@ export default function CierreCajaPage() {
         nit,
       ]
     )
+
+  // =======================================================
+  // MOVIMIENTOS DEL DÍA
+  // =======================================================
+
+  const cargarMovimientosDia =
+    useCallback(
+      async () => {
+        if (
+          !nit
+        ) {
+          return
+        }
+
+        const data =
+          await fetchJsonSeguro(
+            construirUrl(
+              'movimientos_dia',
+              {
+                fecha,
+              }
+            )
+          )
+
+        setMovimientosDia(
+          data?.data ||
+          null
+        )
+
+        actualizarEmpresa(
+          data?.empresa
+        )
+      },
+      [
+        nit,
+        fecha,
+        construirUrl,
+        actualizarEmpresa,
+      ]
+    )
+
+  function imprimirMovimientosDia() {
+    if (
+      !movimientosDia
+    ) {
+      return
+    }
+
+    imprimirCierreDesdePagina({
+      ...movimientosDia,
+      tipo_cierre:
+        'DIARIO',
+      consecutivo:
+        `MOVIMIENTOS-${fecha}`,
+      efectivo_contado:
+        null,
+      diferencia_efectivo:
+        0,
+      usuario_cierre:
+        usuarioOperacion,
+      observaciones:
+        'Consulta de movimientos registrados durante la jornada. Este documento no constituye el cierre definitivo de caja.',
+    })
+  }
 
   // =======================================================
   // CALCULAR AUTOMÁTICAMENTE
