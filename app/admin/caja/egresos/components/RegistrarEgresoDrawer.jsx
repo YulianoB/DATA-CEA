@@ -1832,7 +1832,7 @@ export default function RegistrarEgresoDrawer({
                         </div>
                         <div className="mt-1">
                           {pagoEnEfectivo
-                            ? 'El sistema validará que exista suficiente efectivo disponible. Si se usaron recursos de reserva que entraron físicamente a caja, registre primero ese ingreso para conservar la trazabilidad.'
+                            ? 'Si el valor supera el efectivo disponible, el egreso podrá registrarse, pero será obligatorio justificar en Observaciones de dónde provienen los recursos adicionales utilizados para completar el pago.'
                             : 'Este egreso se registrará por su valor completo, pero no disminuirá el efectivo físico del arqueo. Use el medio que corresponda realmente al pago realizado.'}
                         </div>
                       </div>
