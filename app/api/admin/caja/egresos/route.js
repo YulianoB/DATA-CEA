@@ -1447,6 +1447,89 @@ export async function POST(
         body?.accion
       ).toLowerCase()
     // =====================================================
+    // VALIDAR DISPONIBILIDAD DE EFECTIVO
+    // =====================================================
+    if (
+      accion ===
+      'validar_efectivo'
+    ) {
+      const medioPagoId =
+        enteroPositivo(
+          body?.medio_pago_id
+        )
+
+      const valor =
+        numeroPositivo(
+          body?.valor
+        )
+
+      if (
+        !medioPagoId ||
+        valor === null
+      ) {
+        return NextResponse.json({
+          status: 'success',
+          data: {
+            requiere_justificacion: false,
+            efectivo_disponible: 0,
+            recursos_adicionales: 0,
+          },
+        })
+      }
+
+      const medioPago =
+        await obtenerMedioPago(
+          supabase,
+          medioPagoId
+        )
+
+      if (
+        mayusculas(
+          medioPago?.nombre
+        ) !==
+        'EFECTIVO'
+      ) {
+        return NextResponse.json({
+          status: 'success',
+          data: {
+            requiere_justificacion: false,
+            efectivo_disponible: null,
+            recursos_adicionales: 0,
+          },
+        })
+      }
+
+      const efectivo =
+        await obtenerEfectivoDisponible(
+          supabase
+        )
+
+      const faltante =
+        Math.max(
+          0,
+          Math.round(
+            (
+              valor -
+              efectivo.disponible
+            ) *
+            100
+          ) / 100
+        )
+
+      return NextResponse.json({
+        status: 'success',
+        data: {
+          requiere_justificacion:
+            faltante > 0,
+          efectivo_disponible:
+            efectivo.disponible,
+          recursos_adicionales:
+            faltante,
+        },
+      })
+    }
+
+    // =====================================================
     // REGISTRAR
     // =====================================================
     if (
