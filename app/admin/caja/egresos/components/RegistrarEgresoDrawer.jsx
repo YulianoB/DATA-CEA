@@ -1073,7 +1073,7 @@ export default function RegistrarEgresoDrawer({
             ) ||
             null,
           observaciones:
-            mayusculas(
+            texto(
               form.observaciones
             ) ||
             null,
@@ -1134,7 +1134,7 @@ export default function RegistrarEgresoDrawer({
       ) {
         const coincidencia =
           mensajeError.match(
-            /de dónde provienen los \$([\d.]+) adicionales/i
+            /de dónde provienen los \$?([\d.]+) adicionales/i
           )
 
         const valorAdicional =
@@ -1145,7 +1145,7 @@ export default function RegistrarEgresoDrawer({
           actual => ({
             ...actual,
             observaciones:
-              `RECURSOS ADICIONALES: EL EGRESO SUPERA EL EFECTIVO DISPONIBLE EN CAJA EN ${valorAdicional}. EL VALOR ADICIONAL FUE CUBIERTO CON RECURSOS PROVENIENTES DE: ________. RESPONSABLE/APORTANTE: ________. MOTIVO: ________.`,
+              `Recursos adicionales: El egreso supera el efectivo disponible en caja en ${valorAdicional}. El valor adicional fue cubierto con recursos provenientes de: ________. Responsable/aportante: ________. Motivo: ________.`,
           })
         )
       }
@@ -1865,7 +1865,7 @@ export default function RegistrarEgresoDrawer({
                         </div>
                         <div className="mt-1">
                           {pagoEnEfectivo
-                            ? 'Si el valor supera el efectivo disponible, el egreso podrá registrarse, pero será obligatorio justificar en Observaciones de dónde provienen los recursos adicionales utilizados para completar el pago.'
+                            ? 'Si no hay suficiente efectivo en caja para cubrir este egreso, podrá registrarlo igualmente. Antes de guardarlo deberá indicar en Observaciones de dónde provino el dinero adicional utilizado para completar el pago.'
                             : 'Este egreso se registrará por su valor completo, pero no disminuirá el efectivo físico del arqueo. Use el medio que corresponda realmente al pago realizado.'}
                         </div>
                       </div>
@@ -1919,9 +1919,7 @@ export default function RegistrarEgresoDrawer({
                             actual => ({
                               ...actual,
                               observaciones:
-                                mayusculas(
-                                  value
-                                ),
+                                value,
                             })
                           )
                       }
