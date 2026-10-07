@@ -2158,87 +2158,31 @@ export async function POST(
       // ===================================================
       // ARQUEO DE TURNO
       // ===================================================
+      // El arqueo registra el estado de la caja realizado
+      // por el usuario autenticado. La entrega o destino
+      // físico de la caja es informativo y opcional; no
+      // determina quién operará el siguiente turno.
 
       if (
         tipoCierre ===
-        'TURNO'
+        'TURNO' &&
+        !usuarioEntrega
       ) {
-        if (
-          !usuarioEntrega
-        ) {
-          return NextResponse.json(
-            {
-              status:
-                'error',
+        return NextResponse.json(
+          {
+            status:
+              'error',
 
-              message:
-                'No se pudo identificar quién entrega la caja.',
-            },
-            {
-              status:
-                400,
-            }
-          )
-        }
-
-        if (
-          !usuarioRecibe
-        ) {
-          return NextResponse.json(
-            {
-              status:
-                'error',
-
-              message:
-                'Seleccione quién recibe la caja.',
-            },
-            {
-              status:
-                400,
-            }
-          )
-        }
-
-        // =================================================
-        // VALIDAR QUE QUIEN RECIBE SEA
-        // AUXILIAR_ADMINISTRATIVO ACTIVO
-        // =================================================
-
-        const personalAutorizado =
-          await consultarPersonalRecibeCaja(
-            supabase
-          )
-
-        const receptorValido =
-          personalAutorizado.some(
-            persona =>
-              mayusculas(
-                persona
-                  ?.nombre_completo
-              ) ===
-              usuarioRecibe
-          )
-
-        if (
-          !receptorValido
-        ) {
-          return NextResponse.json(
-            {
-              status:
-                'error',
-
-              message:
-                'El funcionario seleccionado no tiene un perfil activo AUXILIAR_ADMINISTRATIVO.',
-            },
-            {
-              status:
-                400,
-            }
-          )
-        }
+            message:
+              'No se pudo identificar quién realiza el arqueo de turno.',
+          },
+          {
+            status:
+              400,
+          }
+        )
       }
 
-      // ===================================================
       // NO DUPLICAR CIERRE DIARIO
       // ===================================================
 
