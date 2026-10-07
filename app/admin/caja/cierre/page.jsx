@@ -686,16 +686,8 @@ export default function CierreCajaPage() {
     )
 
   const [
-    fechaConsultaInicio,
-    setFechaConsultaInicio,
-  ] =
-    useState(
-      hoyColombia()
-    )
-
-  const [
-    fechaConsultaFin,
-    setFechaConsultaFin,
+    fechaConsulta,
+    setFechaConsulta,
   ] =
     useState(
       hoyColombia()
@@ -1093,10 +1085,8 @@ export default function CierreCajaPage() {
             construirUrl(
               'movimientos_dia',
               {
-                fecha_inicio:
-                  fechaConsultaInicio,
-                fecha_fin:
-                  fechaConsultaFin,
+                fecha:
+                  fechaConsulta,
               }
             )
           )
@@ -1112,8 +1102,8 @@ export default function CierreCajaPage() {
       },
       [
         nit,
-        fechaConsultaInicio,
-        fechaConsultaFin,
+        fechaConsulta,
+        
         construirUrl,
         actualizarEmpresa,
       ]
@@ -1131,7 +1121,7 @@ export default function CierreCajaPage() {
       tipo_cierre:
         'DIARIO',
       consecutivo:
-        `MOVIMIENTOS-${fechaConsultaInicio}-${fechaConsultaFin}`,
+        `MOVIMIENTOS-${fechaConsulta}`,
       efectivo_contado:
         null,
       diferencia_efectivo:
@@ -1456,8 +1446,8 @@ export default function CierreCajaPage() {
     [
       sesionLista,
       nit,
-      fechaConsultaInicio,
-      fechaConsultaFin,
+      fechaConsulta,
+      
       cargarMovimientosDia,
     ]
   )
@@ -2324,15 +2314,10 @@ export default function CierreCajaPage() {
                 ${movimientosDia?.movimientos?.length || 0} movimiento(s) · Consulta ordenada por hora de registro.
               </div>
             </div>
-            <div className="flex flex-wrap items-end justify-end gap-2">
-              <div className="w-[145px]">
-                <label className="mb-1 block text-[8px] font-bold uppercase text-white/80">Desde</label>
-                <input type="date" value={fechaConsultaInicio} onChange={e => setFechaConsultaInicio(e.target.value)} className="h-8 w-full rounded-md border border-white/30 bg-white px-2 text-[10px] font-semibold text-slate-700 outline-none" />
-              </div>
-              <div className="w-[145px]">
-                <label className="mb-1 block text-[8px] font-bold uppercase text-white/80">Hasta</label>
-                <input type="date" value={fechaConsultaFin} onChange={e => setFechaConsultaFin(e.target.value)} className="h-8 w-full rounded-md border border-white/30 bg-white px-2 text-[10px] font-semibold text-slate-700 outline-none" />
-              </div>
+            <div className="w-[155px]">
+              <label className="mb-1 block text-[8px] font-bold uppercase text-white/80">Fecha de consulta</label>
+              <input type="date" value={fechaConsulta} onChange={e => setFechaConsulta(e.target.value)} className="h-8 w-full rounded-md border border-white/30 bg-white px-2 text-[10px] font-semibold text-slate-700 outline-none" />
+            </div>
             </div>
           </div>
 
@@ -2404,37 +2389,26 @@ export default function CierreCajaPage() {
             </div>
           </MarcoTabla>
 
-          <div className="flex flex-col gap-3 rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 p-3 lg:flex-row lg:items-end lg:justify-between">
-            <div className="text-[9px] text-slate-500">
-              Los filtros son únicamente para consulta e impresión de movimientos anteriores.
-            </div>
-            <div className="flex flex-col items-stretch gap-2 sm:items-end">
-              <div className="flex flex-wrap justify-end gap-x-5 gap-y-1 text-[9px]">
-                {Object.entries(movimientosDia?.resumen_medios_pago || {}).map(([medio, resumen]) => (
-                  <div key={medio} className="whitespace-nowrap">
-                    <span className="text-slate-500">Ingresos {medio}:</span>{' '}
-                    <span className="font-black text-slate-800">{formatearMoneda(resumen?.ingresos)}</span>
-                  </div>
-                ))}
-                <div className="whitespace-nowrap">
-                  <span className="text-slate-500">Total egresos:</span>{' '}
-                  <span className="font-black text-slate-800">{formatearMoneda(movimientosDia?.total_egresos_sistema)}</span>
+          <div className="flex flex-col items-end gap-5 rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 p-4">
+            <div className="flex w-full flex-wrap justify-end gap-2">
+              {Object.entries(movimientosDia?.resumen_medios_pago || {}).map(([medio, resumen]) => (
+                <div key={medio} className="min-w-[160px] rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-right">
+                  <div className="text-[10px] font-bold text-emerald-700">Ingresos · {medio}</div>
+                  <div className="mt-1 text-base font-black text-emerald-900">{formatearMoneda(resumen?.ingresos)}</div>
                 </div>
-                <div className="whitespace-nowrap">
-                  <span className="text-slate-500">Resultado:</span>{' '}
-                  <span className="font-black text-[#24638C]">{formatearMoneda(movimientosDia?.movimiento_neto)}</span>
-                </div>
+              ))}
+              <div className="min-w-[160px] rounded-lg border border-red-200 bg-red-50 p-3 text-right">
+                <div className="text-[10px] font-bold text-red-700">Total egresos</div>
+                <div className="mt-1 text-base font-black text-red-900">{formatearMoneda(movimientosDia?.total_egresos_sistema)}</div>
               </div>
-              <button
-                type="button"
-                onClick={imprimirMovimientosDia}
-                disabled={!movimientosDia?.movimientos?.length}
-                className="rounded-lg bg-[#24638C] px-4 py-2.5 text-[9px] font-black text-white transition hover:bg-[#1D526F] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <i className="fas fa-file-pdf mr-2"></i>
-                IMPRIMIR / GUARDAR PDF
-              </button>
+              <div className="min-w-[160px] rounded-lg border border-blue-200 bg-blue-50 p-3 text-right">
+                <div className="text-[10px] font-bold text-blue-700">Resultado del día</div>
+                <div className="mt-1 text-base font-black text-blue-900">{formatearMoneda(movimientosDia?.movimiento_neto)}</div>
+              </div>
             </div>
+            <button type="button" onClick={imprimirMovimientosDia} disabled={!movimientosDia?.movimientos?.length} className="mt-2 rounded-lg bg-[#24638C] px-5 py-3 text-[10px] font-black text-white hover:bg-[#1D526F] disabled:opacity-50">
+              <i className="fas fa-file-pdf mr-2"></i>IMPRIMIR / GUARDAR PDF
+            </button>
           </div>
         </div>
         )}
@@ -2445,28 +2419,31 @@ export default function CierreCajaPage() {
               <h2 className="text-sm font-black text-emerald-900">Cierre Diario</h2>
               <p className="mt-1 text-xs text-emerald-700">Finaliza definitivamente la jornada. Revise los valores antes de confirmar el cierre.</p>
             </div>
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><DatoMoneda label="Base inicial" value={0} /></div>
-                <DatoMoneda label="Ingresos" value={arqueo?.total_ingresos_sistema} />
-                <DatoMoneda label="Egresos" value={arqueo?.total_egresos_sistema} />
-              </div>
-              <div className="grid grid-cols-1 gap-4 border-t border-slate-200 p-4 md:grid-cols-2">
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                  <div className="text-[9px] font-bold uppercase text-emerald-700">Efectivo esperado</div>
-                  <div className="mt-1 text-xl font-black text-emerald-900">{formatearMoneda(arqueo?.efectivo_esperado)}</div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <section className="overflow-hidden rounded-xl border-2 border-blue-300 bg-white shadow-sm">
+                <h3 className="bg-[#24638C] px-4 py-3 text-sm font-black text-white">Información registrada en el sistema</h3>
+                <div className="space-y-3 p-4">
+                  <DatoMoneda label="Ingresos del sistema" value={arqueo?.total_ingresos_sistema} />
+                  <DatoMoneda label="Egresos del sistema" value={arqueo?.total_egresos_sistema} />
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                    <div className="text-[10px] font-bold text-blue-700">Efectivo esperado</div>
+                    <div className="mt-1 text-xl font-black text-blue-900">{formatearMoneda(arqueo?.efectivo_esperado)}</div>
+                  </div>
                 </div>
-                <CampoInput label="Efectivo contado" value={formatearValorInput(efectivoContado)} onChange={value => setEfectivoContado(limpiarValorInput(value))} inputMode="numeric" placeholder="0" />
-              </div>
-              <div className="p-4 pt-0">
-                <label className="mb-1 block text-[10px] font-semibold text-gray-600">Observaciones</label>
-                <textarea rows={3} value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Novedades del cierre diario..." className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-xs" />
-              </div>
-              <div className="flex justify-end border-t border-slate-200 bg-slate-50 p-4">
-                <button type="button" onClick={registrarCierre} disabled={guardando || calculando || !texto(efectivoContado)} className="w-full rounded-lg bg-emerald-600 px-5 py-2.5 text-[10px] font-black text-white transition hover:bg-emerald-700 disabled:opacity-50 md:w-auto md:min-w-[250px]">
-                  {guardando ? <><i className="fas fa-spinner fa-spin mr-2"></i>REGISTRANDO...</> : <><i className="fas fa-lock mr-2"></i>REALIZAR CIERRE DIARIO</>}
-                </button>
-              </div>
+              </section>
+              <section className="overflow-hidden rounded-xl border-2 border-slate-400 bg-white shadow-sm">
+                <h3 className="bg-slate-700 px-4 py-3 text-sm font-black text-white">Registro del cierre de hoy</h3>
+                <div className="space-y-4 p-4">
+                  <CampoInput label="Efectivo contado" value={formatearValorInput(efectivoContado)} onChange={value => setEfectivoContado(limpiarValorInput(value))} inputMode="numeric" placeholder="0" moneda destacado />
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold text-slate-700">Observaciones (opcional)</label>
+                    <textarea rows={4} value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Novedades del cierre diario..." className="w-full rounded-lg border-2 border-slate-400 px-3 py-2 text-xs focus:border-[#24638C] focus:outline-none" />
+                  </div>
+                  <button type="button" onClick={registrarCierre} disabled={guardando || calculando || !texto(efectivoContado)} className="w-full rounded-lg bg-emerald-600 px-5 py-3 text-[10px] font-black text-white hover:bg-emerald-700 disabled:opacity-50">
+                    {guardando ? 'REGISTRANDO...' : 'REALIZAR CIERRE DIARIO'}
+                  </button>
+                </div>
+              </section>
             </div>
           </div>
         )}
