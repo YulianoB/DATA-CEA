@@ -636,11 +636,10 @@ export default function CierreCajaPage() {
       hoyColombia()
     )
 
-  const [
-    saldoInicial,
-    setSaldoInicial,
-  ] =
-    useState('')
+  // El CEA no maneja base inicial de caja.
+  // Cada período de arqueo inicia en $0.
+  const saldoInicial =
+    '0'
 
   const [
     efectivoContado,
@@ -2053,31 +2052,31 @@ export default function CierreCajaPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-4">
-              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
+              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-400 bg-white shadow-sm">
                 <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">1</span>
                   <div>
-                    <h3 className="text-xs font-black text-slate-800">Información</h3>
-                    <p className="text-[9px] text-slate-500">Datos base del arqueo.</p>
+                    <h3 className="text-xs font-black text-slate-800">Período del arqueo</h3>
+                    <p className="text-[9px] text-slate-500">Confirme qué movimientos se revisarán.</p>
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-4 p-4">
-                  <CampoInput label="Fecha" type="date" value={fecha} onChange={setFecha} />
-                  <CampoInput
-                    label="Saldo inicial en efectivo"
-                    value={formatearValorInput(saldoInicial)}
-                    onChange={value => setSaldoInicial(limpiarValorInput(value))}
-                    inputMode="numeric"
-                    placeholder="0"
-                  />
-                  <div className="mt-auto rounded-lg border border-blue-100 bg-blue-50 p-3 text-[9px] leading-relaxed text-blue-700">
+                  <CampoInput label="Fecha del arqueo" type="date" value={fecha} onChange={setFecha} destacado />
+                  <div className="rounded-lg border border-slate-300 bg-slate-50 p-3">
+                    <div className="text-[8px] font-bold uppercase text-slate-500">Período calculado</div>
+                    <div className="mt-2 space-y-2">
+                      <Dato label="Desde" value={formatearFechaHora(arqueo?.periodo_desde)} />
+                      <Dato label="Hasta" value={formatearFechaHora(arqueo?.periodo_hasta)} />
+                    </div>
+                  </div>
+                  <div className="mt-auto rounded-lg border border-blue-200 bg-blue-50 p-3 text-[9px] leading-relaxed text-blue-700">
                     <i className="fas fa-circle-info mr-1"></i>
-                    El sistema toma automáticamente los movimientos del período.
+                    El arqueo inicia en $0. El sistema calcula únicamente los movimientos en efectivo registrados durante este período.
                   </div>
                 </div>
               </section>
 
-              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
+              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-400 bg-white shadow-sm">
                 <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">2</span>
                   <div>
@@ -2086,13 +2085,13 @@ export default function CierreCajaPage() {
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-3 p-4">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    <div className="text-[8px] font-bold uppercase text-slate-500">Saldo inicial</div>
-                    <div className="mt-1 text-sm font-black text-slate-800">{formatearMoneda(arqueo?.saldo_inicial_efectivo)}</div>
+                  <div className="rounded-lg border border-slate-300 bg-slate-50 p-3">
+                    <div className="text-[8px] font-bold uppercase text-slate-500">Ingresos en efectivo</div>
+                    <div className="mt-1 text-sm font-black text-slate-800">{formatearMoneda(arqueo?.ingresos_efectivo)}</div>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    <div className="text-[8px] font-bold uppercase text-slate-500">Movimiento neto</div>
-                    <div className="mt-1 text-sm font-black text-slate-800">{formatearMoneda(arqueo?.movimiento_neto)}</div>
+                  <div className="rounded-lg border border-slate-300 bg-slate-50 p-3">
+                    <div className="text-[8px] font-bold uppercase text-slate-500">Egresos en efectivo</div>
+                    <div className="mt-1 text-sm font-black text-slate-800">{formatearMoneda(arqueo?.egresos_efectivo)}</div>
                   </div>
                   <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                     <div className="text-[8px] font-bold uppercase text-blue-700">Debe haber en caja</div>
@@ -2110,7 +2109,7 @@ export default function CierreCajaPage() {
                 </div>
               </section>
 
-              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
+              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-400 bg-white shadow-sm">
                 <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">3</span>
                   <div>
@@ -2125,6 +2124,8 @@ export default function CierreCajaPage() {
                     onChange={value => setEfectivoContado(limpiarValorInput(value))}
                     inputMode="numeric"
                     placeholder="0"
+                    moneda
+                    destacado
                   />
                   <div className={`rounded-xl border-2 p-4 ${
                     diferenciaActual === null ? 'border-slate-200 bg-slate-50' :
@@ -2146,7 +2147,7 @@ export default function CierreCajaPage() {
                 </div>
               </section>
 
-              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
+              <section className="flex min-h-[310px] flex-col overflow-hidden rounded-xl border-2 border-slate-400 bg-white shadow-sm">
                 <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#24638C] text-xs font-black text-white">4</span>
                   <div>
@@ -2157,11 +2158,11 @@ export default function CierreCajaPage() {
                 <div className="flex flex-1 flex-col gap-3 p-4">
                   <div>
                     <label className="mb-1 block text-[10px] font-semibold text-gray-600">Entrega o destino <span className="font-normal text-slate-400">(opcional)</span></label>
-                    <input type="text" value={usuarioRecibe} onChange={e => setUsuarioRecibe(e.target.value)} placeholder="Directora, propietario, caja fuerte..." className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs" />
+                    <input type="text" value={usuarioRecibe} onChange={e => setUsuarioRecibe(e.target.value)} placeholder="Directora, propietario, caja fuerte..." className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-xs outline-none transition focus:border-[#24638C] focus:ring-2 focus:ring-[#24638C]/15" />
                   </div>
                   <div>
                     <label className="mb-1 block text-[10px] font-semibold text-gray-600">Observaciones <span className="font-normal text-slate-400">(opcional)</span></label>
-                    <textarea rows={3} value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Novedades del arqueo..." className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-xs" />
+                    <textarea rows={3} value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Novedades del arqueo..." className="w-full resize-none rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-xs outline-none transition focus:border-[#24638C] focus:ring-2 focus:ring-[#24638C]/15" />
                   </div>
                   <button
                     type="button"
@@ -2186,7 +2187,7 @@ export default function CierreCajaPage() {
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
               <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 lg:grid-cols-4">
                 <CampoInput label="Fecha" type="date" value={fecha} onChange={setFecha} />
-                <CampoInput label="Saldo inicial en efectivo" value={formatearValorInput(saldoInicial)} onChange={value => setSaldoInicial(limpiarValorInput(value))} inputMode="numeric" placeholder="0" />
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><DatoMoneda label="Base inicial" value={0} /></div>
                 <DatoMoneda label="Ingresos" value={arqueo?.total_ingresos_sistema} />
                 <DatoMoneda label="Egresos" value={arqueo?.total_egresos_sistema} />
               </div>
@@ -3131,6 +3132,8 @@ function CampoInput({
   type = 'text',
   placeholder = '',
   inputMode,
+  moneda = false,
+  destacado = false,
 }) {
   return (
     <div>
@@ -3146,35 +3149,35 @@ function CampoInput({
         {label}
       </label>
 
-      <input
-        type={
-          type
-        }
-        inputMode={
-          inputMode
-        }
-        value={
-          value
-        }
-        onChange={
-          e =>
-            onChange(
-              e.target.value
-            )
-        }
-        placeholder={
-          placeholder
-        }
-        className="
-          w-full
-          border
-          border-gray-300
-          rounded-lg
-          px-3
-          py-2
-          text-xs
-        "
-      />
+      <div className="relative">
+        {moneda && (
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-700">
+            $
+          </span>
+        )}
+
+        <input
+          type={type}
+          inputMode={inputMode}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`
+            w-full
+            rounded-lg
+            bg-white
+            py-2
+            text-xs
+            outline-none
+            transition
+            focus:border-[#24638C]
+            focus:ring-2
+            focus:ring-[#24638C]/15
+            ${moneda ? 'pl-7 pr-3' : 'px-3'}
+            ${destacado ? 'border-2 border-slate-400' : 'border border-gray-300'}
+          `}
+        />
+      </div>
     </div>
   )
 }
