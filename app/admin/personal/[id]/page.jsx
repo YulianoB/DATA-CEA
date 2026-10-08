@@ -214,6 +214,8 @@ export default function HojaVidaPersonalPage() {
   const [guardandoGeneral, setGuardandoGeneral] = useState(false)
   const [generandoPdf, setGenerandoPdf] = useState(false)
   const [vistaPreviaPdf, setVistaPreviaPdf] = useState(null)
+  const [fotoTemporal, setFotoTemporal] = useState(null)
+  const [procesandoFoto, setProcesandoFoto] = useState(false)
 
   const [experiencia, setExperiencia] = useState([])
   const [formExperiencia, setFormExperiencia] = useState(EXPERIENCIA_INICIAL)
@@ -351,6 +353,42 @@ export default function HojaVidaPersonalPage() {
     }
   }
 
+  async function seleccionarFotografia(event) {
+    const archivo = event.target.files?.[0]
+    event.target.value = ''
+    if (!archivo) return
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type) || archivo.size > 5 * 1024 * 1024) {
+      mostrarResultado('error', 'Seleccione una imagen JPG, PNG o WebP de máximo 5 MB.')
+      return
+    }
+    setProcesandoFoto(true)
+    try {
+      const url = URL.createObjectURL(archivo)
+      try {
+        const imagen = new Image()
+        imagen.src = url
+        await imagen.decode()
+        const canvas = document.createElement('canvas')
+        canvas.width = canvas.height = 480
+        const ctx = canvas.getContext('2d')
+        if (!ctx) throw new Error('No se pudo procesar la imagen.')
+        ctx.clearRect(0, 0, 480, 480)
+        ctx.beginPath()
+        ctx.arc(240, 240, 230, 0, Math.PI * 2)
+        ctx.clip()
+        const lado = Math.min(imagen.naturalWidth, imagen.naturalHeight)
+        ctx.drawImage(imagen, (imagen.naturalWidth - lado) / 2, (imagen.naturalHeight - lado) / 2, lado, lado, 10, 10, 460, 460)
+        setFotoTemporal(canvas.toDataURL('image/png'))
+      } finally {
+        URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      mostrarResultado('error', error.message || 'No fue posible procesar la fotografía.')
+    } finally {
+      setProcesandoFoto(false)
+    }
+  }
+
   function visualizarHojaVida() {
     try {
       const blob = generarHojaVidaPdf({
@@ -360,6 +398,7 @@ export default function HojaVidaPersonalPage() {
         licencias,
         perfiles: data.perfiles || data.personal?.perfiles_usuario || [],
         vistaPrevia: true,
+        fotoDataUrl: fotoTemporal,
       })
       const url = URL.createObjectURL(blob)
       setVistaPreviaPdf((anterior) => {
@@ -395,6 +434,7 @@ export default function HojaVidaPersonalPage() {
         perfiles: data.perfiles || data.personal?.perfiles_usuario || [],
         encabezado: config.encabezado,
         documento,
+        fotoDataUrl: fotoTemporal,
       })
     } catch (error) {
       mostrarResultado('error', error.message || 'No fue posible generar la hoja de vida.')
@@ -1654,6 +1694,9 @@ export default function HojaVidaPersonalPage() {
                 guardandoPerfil={guardandoPerfil}
                 onEditarGeneral={abrirEdicionGeneral}
                 onVisualizarPdf={visualizarHojaVida}
+                fotoTemporal={fotoTemporal}
+                onSeleccionarFoto={seleccionarFotografia}
+                procesandoFoto={procesandoFoto}
               />
             )}
             {tab === 'licencias' &&
@@ -1887,12 +1930,27 @@ function Resumen({ label, value }) {
   )
 }
 
-function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, setPerfilProfesional, guardarPerfilProfesional, guardandoPerfil, onEditarGeneral, onVisualizarPdf }) {
+function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, setPerfilProfesional, guardarPerfilProfesional, guardandoPerfil, onEditarGeneral, onVisualizarPdf, fotoTemporal, onSeleccionarFoto, procesandoFoto }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" onClick={onVisualizarPdf} className="inline-flex items-center gap-2 rounded-md border border-[#194567] bg-white px-3 py-2 text-xs font-semibold text-[#194567] hover:bg-slate-100"><i className="fas fa-eye" aria-hidden="true"></i> Vista previa hoja de vida PDF</button>
         <button type="button" onClick={onEditarGeneral} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-pen" aria-hidden="true"></i> Editar información general</button>
+      </div>
+      <div className="flex flex-wrap items-center gap-4 rounded-lg border border-slate-300 bg-slate-100 p-3">
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-slate-200 shadow-sm">
+          {fotoTemporal ? <img src={fotoTemporal} alt="Fotografía temporal del trabajador" className="h-full w-full object-cover" /> : <i className="fas fa-user text-3xl text-slate-500" aria-hidden="true"></i>}
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-[#194567]"><i className="fas fa-camera" aria-hidden="true"></i> Fotografía para la hoja de vida</h3>
+          <p className="text-xs text-slate-600">Vista preliminar: esta fotografía se utiliza en el PDF durante esta sesión y todavía no se guarda en el expediente.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]">
+              <i className="fas fa-upload" aria-hidden="true"></i>{procesandoFoto ? 'Procesando...' : 'Seleccionar fotografía'}
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onSeleccionarFoto} disabled={procesandoFoto} className="sr-only" />
+            </label>
+          </div>
+        </div>
       </div>
       <Seccion titulo="Datos personales">
         <Dato label="Tipo documento" value={personal.tipo_documento} />
