@@ -213,6 +213,7 @@ export default function HojaVidaPersonalPage() {
   const [formGeneral, setFormGeneral] = useState({})
   const [guardandoGeneral, setGuardandoGeneral] = useState(false)
   const [generandoPdf, setGenerandoPdf] = useState(false)
+  const [vistaPreviaPdf, setVistaPreviaPdf] = useState(null)
 
   const [experiencia, setExperiencia] = useState([])
   const [formExperiencia, setFormExperiencia] = useState(EXPERIENCIA_INICIAL)
@@ -347,6 +348,26 @@ export default function HojaVidaPersonalPage() {
       mostrarResultado('error', error.message || 'No fue posible cargar la hoja de vida.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  function visualizarHojaVida() {
+    try {
+      const blob = generarHojaVidaPdf({
+        personal: data.personal,
+        estudios,
+        experiencia,
+        licencias,
+        perfiles: data.perfiles || data.personal?.perfiles_usuario || [],
+        vistaPrevia: true,
+      })
+      const url = URL.createObjectURL(blob)
+      setVistaPreviaPdf((anterior) => {
+        if (anterior) URL.revokeObjectURL(anterior)
+        return url
+      })
+    } catch (error) {
+      mostrarResultado('error', error.message || 'No fue posible visualizar la hoja de vida.')
     }
   }
 
@@ -1513,6 +1534,19 @@ export default function HojaVidaPersonalPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <Toaster richColors position="top-right" />
+      {vistaPreviaPdf && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-3">
+          <div role="dialog" aria-modal="true" aria-label="Vista previa de hoja de vida PDF" className="flex h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between gap-3 bg-[#194567] px-4 py-3 text-white">
+              <h2 className="flex items-center gap-2 text-sm font-bold"><i className="fas fa-file-pdf" aria-hidden="true"></i> Vista previa · Hoja de vida</h2>
+              <button type="button" onClick={() => { URL.revokeObjectURL(vistaPreviaPdf); setVistaPreviaPdf(null) }} className="inline-flex items-center gap-2 rounded-md border border-white/50 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"><i className="fas fa-times" aria-hidden="true"></i> Cerrar</button>
+            </div>
+            <p className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-600">Vista de diseño: el encabezado institucional y la fotografía permanente se integrarán en la siguiente etapa.</p>
+            <iframe title="Documento PDF de hoja de vida" src={vistaPreviaPdf} className="min-h-0 w-full flex-1 border-0" />
+          </div>
+        </div>
+      )}
+
       {editarGeneralAbierto && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-3">
           <div role="dialog" aria-modal="true" aria-label="Editar información general" className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-300 bg-white shadow-2xl">
@@ -1619,6 +1653,7 @@ export default function HojaVidaPersonalPage() {
                 guardarPerfilProfesional={guardarPerfilProfesional}
                 guardandoPerfil={guardandoPerfil}
                 onEditarGeneral={abrirEdicionGeneral}
+                onVisualizarPdf={visualizarHojaVida}
               />
             )}
             {tab === 'licencias' &&
@@ -1852,10 +1887,13 @@ function Resumen({ label, value }) {
   )
 }
 
-function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, setPerfilProfesional, guardarPerfilProfesional, guardandoPerfil, onEditarGeneral }) {
+function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, setPerfilProfesional, guardarPerfilProfesional, guardandoPerfil, onEditarGeneral, onVisualizarPdf }) {
   return (
     <div className="space-y-3">
-      <div className="flex justify-end"><button type="button" onClick={onEditarGeneral} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-pen" aria-hidden="true"></i> Editar información general</button></div>
+      <div className="flex flex-wrap justify-end gap-2">
+        <button type="button" onClick={onVisualizarPdf} className="inline-flex items-center gap-2 rounded-md border border-[#194567] bg-white px-3 py-2 text-xs font-semibold text-[#194567] hover:bg-slate-100"><i className="fas fa-eye" aria-hidden="true"></i> Vista previa hoja de vida PDF</button>
+        <button type="button" onClick={onEditarGeneral} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-pen" aria-hidden="true"></i> Editar información general</button>
+      </div>
       <Seccion titulo="Datos personales">
         <Dato label="Tipo documento" value={personal.tipo_documento} />
         <Dato label="Documento" value={personal.documento} />
