@@ -214,6 +214,7 @@ export default function HojaVidaPersonalPage() {
   const [guardandoGeneral, setGuardandoGeneral] = useState(false)
   const [generandoPdf, setGenerandoPdf] = useState(false)
   const [vistaPreviaPdf, setVistaPreviaPdf] = useState(null)
+  const [nombreArchivoHojaVida, setNombreArchivoHojaVida] = useState('Hoja de vida.pdf')
   const [fotoTemporal, setFotoTemporal] = useState(null)
   const [procesandoFoto, setProcesandoFoto] = useState(false)
 
@@ -443,6 +444,9 @@ export default function HojaVidaPersonalPage() {
         ...configuracion,
         fotoDataUrl: fotoTemporal,
       })
+      const nombreCompleto = [data.personal?.nombres, data.personal?.apellidos].filter(Boolean).join(' ')
+      const nombreSeguro = nombreCompleto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\\/:*?"<>|\x00-\x1F]/g, '').replace(/\s+/g, ' ').trim()
+      setNombreArchivoHojaVida(`HV ${nombreSeguro || data.personal?.documento || data.personal?.id}.pdf`)
       const url = URL.createObjectURL(blob)
       setVistaPreviaPdf((anterior) => {
         if (anterior) URL.revokeObjectURL(anterior)
@@ -1610,7 +1614,10 @@ export default function HojaVidaPersonalPage() {
           <div role="dialog" aria-modal="true" aria-label="Vista previa de hoja de vida PDF" className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-white">
             <div className="flex items-center justify-between gap-3 bg-[#194567] px-4 py-3 text-white">
               <h2 className="flex items-center gap-2 text-sm font-bold"><i className="fas fa-file-pdf" aria-hidden="true"></i> Vista previa · Hoja de vida</h2>
-              <button type="button" onClick={() => { URL.revokeObjectURL(vistaPreviaPdf); setVistaPreviaPdf(null) }} className="inline-flex items-center gap-2 rounded-md border border-white/50 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"><i className="fas fa-times" aria-hidden="true"></i> Cerrar</button>
+              <div className="flex items-center gap-2">
+                <a href={vistaPreviaPdf} download={nombreArchivoHojaVida} className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-[#194567] hover:bg-slate-100"><i className="fas fa-download" aria-hidden="true"></i> Descargar PDF</a>
+                <button type="button" onClick={() => { URL.revokeObjectURL(vistaPreviaPdf); setVistaPreviaPdf(null) }} className="inline-flex items-center gap-2 rounded-md border border-white/50 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"><i className="fas fa-times" aria-hidden="true"></i> Cerrar</button>
+              </div>
             </div>
             <p className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-600">Vista de diseño: el encabezado institucional y la fotografía permanente se integrarán en la siguiente etapa.</p>
             <iframe title="Documento PDF de hoja de vida" src={vistaPreviaPdf} className="min-h-0 w-full flex-1 border-0" />
