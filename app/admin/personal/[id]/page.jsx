@@ -1277,7 +1277,7 @@ export default function HojaVidaPersonalPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-slate-50 p-3 md:p-5">
         <Toaster richColors position="top-right" />
         <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
           <p className="text-gray-600">Cargando hoja de vida...</p>
@@ -1306,54 +1306,47 @@ export default function HojaVidaPersonalPage() {
     <div className="min-h-screen bg-gray-100 p-6">
       <Toaster richColors position="top-right" />
 
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b pb-4 border-[var(--primary)]">
-            <div>
-              <h1 className="text-2xl font-bold text-[var(--primary)] flex items-center gap-3">
-                <i className="fas fa-file-alt"></i>
-                Hoja de Vida
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                {nombreCompleto} · Documento {personal.documento}
-              </p>
+      <div className="mx-auto max-w-7xl space-y-4">
+        <section className="overflow-hidden rounded-lg border border-slate-400 bg-white">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-[#194567] px-5 py-3 text-white">
+            <div className="flex items-center gap-2">
+              <i className="fas fa-file-alt" aria-hidden="true"></i>
+              <h1 className="text-base font-bold">Hoja de vida del personal</h1>
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Link href="/admin/personal" className="inline-flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-900 text-white px-4 py-2 rounded-md text-sm transition">
-                <i className="fas fa-arrow-left"></i>
-                Volver
-              </Link>
-              <button type="button" className="inline-flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded-md text-sm transition">
-                <i className="fas fa-print"></i>
-                Imprimir próximamente
-              </button>
-            </div>
+            <Link href="/admin/personal" className="inline-flex items-center gap-2 rounded-md border border-white/60 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10">
+              <i className="fas fa-arrow-left" aria-hidden="true"></i>
+              Volver a personal
+            </Link>
           </div>
-
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+          <div className="border-b border-slate-300 bg-slate-100 px-5 py-3">
+            <p className="text-base font-bold text-[#194567]">{nombreCompleto}</p>
+            <p className="mt-1 text-xs text-slate-600">Documento: {texto(personal.documento)}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <Resumen label="Cargo" value={personal.cargo} />
             <Resumen label="Grupo" value={personal.grupo_personal} />
             <Resumen label="Tipo personal" value={personal.tipo_personal} />
             <Resumen label="Estado" value={personal.estado} />
           </div>
-        </div>
+        </section>
 
-        <div className="bg-white rounded-lg shadow-lg border border-gray-200">
-          <div className="flex gap-2 overflow-x-auto border-b p-3">
+        <div className="overflow-hidden rounded-lg border border-slate-400 bg-white">
+          <div role="tablist" aria-label="Secciones de la hoja de vida" className="flex gap-2 overflow-x-auto border-b border-slate-300 bg-slate-100 p-3">
             {tabsVisibles.map((item) => (
               <button
                 key={item.key}
                 type="button"
+                role="tab"
+                aria-selected={tab === item.key}
                 onClick={() => setTab(item.key)}
-                className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition ${tab === item.key ? 'bg-[var(--primary)] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition ${tab === item.key ? 'bg-[#194567] text-white' : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-200'}`}
               >
                 {item.label}
               </button>
             ))}
           </div>
 
-          <div className="p-6">
+          <div className="p-3 md:p-5">
             {tab === 'general' && (
               <InformacionGeneral
                 personal={personal}
