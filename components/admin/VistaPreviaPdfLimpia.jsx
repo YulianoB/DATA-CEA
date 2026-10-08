@@ -4,6 +4,21 @@ const texto = (v) => String(v ?? '').trim()
 const fecha = (v) => texto(v).slice(0, 10)
 const dato = (etiqueta, valor) => texto(valor) ? <div className="mb-1 break-words"><strong>{etiqueta}: </strong>{texto(valor)}</div> : null
 
+const IconoContacto = ({ tipo }) => (
+  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="inline-block shrink-0 align-middle">
+    {tipo === 'celular' ? <>
+      <rect x="6.5" y="2.5" width="11" height="19" rx="2" />
+      <circle cx="12" cy="18.5" r="0.8" fill="currentColor" stroke="none" />
+    </> : tipo === 'correo' ? <>
+      <rect x="2" y="5" width="20" height="14" rx="1" />
+      <path d="m2 6 10 8 10-8" />
+    </> : <>
+      <path d="M19 10c0 5-7 12-7 12S5 15 5 10a7 7 0 1 1 14 0Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </>}
+  </svg>
+)
+
 export default function VistaPreviaPdfLimpia({ datos, documento, fotoDataUrl }) {
   if (!datos?.personal) return null
   const { personal, estudios = [], experiencia = [], licencias = [], perfiles = [] } = datos
@@ -33,9 +48,9 @@ export default function VistaPreviaPdfLimpia({ datos, documento, fotoDataUrl }) 
         <div className="grid min-h-[76.5%] grid-cols-[40.3%_59.7%]">
           <aside className="bg-[#d3d7dc] px-[14%] pb-6 pt-[39%] text-[clamp(9px,1.05vw,11px)] leading-[1.35]">
             {seccion('Contacto')}
-            <div className="mb-2"><strong><span className="relative top-[3px]">♧</span> Celular</strong><div className="pl-3 break-words">{texto(personal.telefono)}</div></div>
-            <div className="mb-2"><strong>✉ Correo electrónico</strong><div className="pl-3 break-all">{texto(personal.email)}</div></div>
-            <div className="mb-2"><strong>⌖ Dirección</strong><div className="pl-3 break-words">{[personal.direccion, personal.ciudad_residencia].filter(Boolean).join(', ')}</div></div>
+            <div className="mb-2"><strong className="inline-flex items-center gap-1.5"><IconoContacto tipo="celular" /> Celular</strong><div className="pl-3 break-words">{texto(personal.telefono)}</div></div>
+            <div className="mb-2"><strong className="inline-flex items-center gap-1.5"><IconoContacto tipo="correo" /> Correo electrónico</strong><div className="pl-3 break-all">{texto(personal.email)}</div></div>
+            <div className="mb-2"><strong className="inline-flex items-center gap-1.5"><IconoContacto tipo="direccion" /> Dirección</strong><div className="pl-3 break-words">{[personal.direccion, personal.ciudad_residencia].filter(Boolean).join(', ')}</div></div>
             {seccion('Información')}
             {dato('Documento', personal.documento)}
             {dato('Profesión', personal.profesion)}
