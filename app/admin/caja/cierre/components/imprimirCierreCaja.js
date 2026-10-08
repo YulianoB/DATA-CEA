@@ -2034,3 +2034,87 @@ export function imprimirCierreCaja(
 
   ventana.document.close()
 }
+
+export function imprimirTablaCierreDiario(cierre, opciones = {}) {
+  if (!cierre?.cierre_confirmado || cierre?.cierre_diario?.estado !== 'CERRADO') {
+    throw new Error('El cierre diario debe estar confirmado para imprimir.')
+  }
+  const registro = cierre.cierre_diario
+  const empresa = obtenerEmpresa(opciones.empresa || {})
+  const movimientos = [...(cierre.movimientos || [])].sort(
+    (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)
+  )
+  const filas = movimientos.map(item => {
+    const ingreso = item.tipo_movimiento === 'INGRESO'
+    const concepto = texto(item?.concepto?.nombre || item.descripcion || '-')
+    const categoria = ingreso && /curso|refuerzo/i.test(concepto) && item.categoria
+      ? '<small>Categoría(s): ' + escaparHtml(item.categoria) + '</small>' : ''
+    const referencia = ingreso
+      ? item.referencia_pago || 'REC-' + item.id
+      : item.numero_cuenta_cobro || item.numero_factura || item.referencia_pago || 'EGR-' + item.id
+    const tercero = ingreso
+      ? item.nombre_cliente || item.nombre_pagador || item.documento_cliente || item.documento || '-'
+      : item.beneficiario || '-'
+    const responsable = ingreso ? item.recibido_por : item.pagado_por
+    const columnas = [
+      escaparHtml(formatearFecha(item.fecha)) + '<small>' + escaparHtml(formatearHora(item.created_at)) + '</small>',
+      ingreso ? 'INGRESO' : 'EGRESO',
+      escaparHtml(referencia),
+      escaparHtml(tercero),
+      escaparHtml(concepto) + categoria,
+      escaparHtml(item?.medio_pago?.nombre || '-'),
+      escaparHtml(formatearMoneda(item.valor)),
+      escaparHtml(item.estado || '-'),
+      escaparHtml(responsable || '-')
+    ]
+    return '<tr>' + columnas.map((v, i) => '<td' + (i === 6 ? ' class="numero"' : '') + '>' + v + '</td>').join('') + '</tr>'
+  }).join('')
+  const medios = Object.entries(cierre.resumen_medios_pago || {})
+    .map(([medio, dato]) => '<div class="total ingreso"><span>Ingresos · ' + escaparHtml(medio) +
+      '</span><strong>' + escaparHtml(formatearMoneda(dato?.ingresos)) + '</strong></div>').join('')
+  const fechaImpresion = formatearFechaHora(new Date().toISOString())
+  const ventana = window.open('', '_blank', 'width=1200,height=850')
+  if (!ventana) throw new Error('El navegador bloqueó la ventana de impresión.')
+  ventana.document.write(`<!doctype html><html lang="es"><head><meta charset="UTF-8">
+<title>${escaparHtml(registro.consecutivo || 'Cierre diario')}</title>
+<style>
+@page{size:letter landscape;margin:12mm 12mm 14mm 12mm}
+*{box-sizing:border-box}body{font:9px Arial,sans-serif;color:#1e293b;margin:0}
+header{display:flex;justify-content:space-between;gap:18px;border-bottom:2px solid #24638c;padding-bottom:9px;margin-bottom:12px}
+h1{font-size:15px;margin:0 0 5px;color:#24638c}h2{font-size:11px;margin:14px 0 7px}
+.empresa{font-size:14px;font-weight:bold}.sub{font-size:8px;color:#475569;margin-top:4px}
+.meta{text-align:right;line-height:1.6}table{border-collapse:collapse;width:100%;table-layout:fixed}
+thead{display:table-header-group}th{background:#d9f1f6;color:#17354b;text-align:left}
+td,th{border:1px solid #cbd5e1;padding:6px 5px;vertical-align:top;overflow-wrap:anywhere}
+tr{break-inside:avoid;page-break-inside:avoid}small{display:block;font-size:8px;color:#64748b;margin-top:3px}
+.numero{text-align:right;white-space:nowrap;font-weight:bold}
+.totales{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:14px}
+.total{min-width:145px;text-align:right;padding:9px 12px;border:1px solid #cbd5e1;border-radius:5px}
+.total span{display:block;font-weight:bold;margin-bottom:6px}.total strong{font-size:13px}
+.ingreso{background:#ecfdf5;color:#065f46}.egreso{background:#fef2f2;color:#991b1b}.neto{background:#eff6ff;color:#1e40af}
+footer{display:flex;justify-content:space-between;margin-top:18px;padding-top:7px;border-top:1px solid #cbd5e1;color:#64748b;font-size:8px}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<header><div><div class="empresa">${escaparHtml(empresa.nombre || empresa.razon_social)}</div>
+<div class="sub">NIT ${escaparHtml(empresa.nit)} · ${escaparHtml([empresa.direccion,empresa.ciudad].filter(Boolean).join(' · '))}</div>
+<div class="sub">${escaparHtml([empresa.telefono,empresa.email].filter(Boolean).join(' · '))}</div></div>
+<div class="meta"><h1>CIERRE DIARIO DE CAJA</h1>
+<strong>${escaparHtml(registro.consecutivo || '')}</strong>
+<div>Fecha del cierre: ${escaparHtml(formatearFecha(registro.fecha || cierre.fecha))}</div>
+<div>Responsable: ${escaparHtml(registro.usuario_cierre || '-')}</div></div></header>
+<h2>Movimientos del día (${movimientos.length})</h2>
+<table><colgroup><col style="width:9%"><col style="width:7%"><col style="width:12%">
+<col style="width:16%"><col style="width:19%"><col style="width:9%">
+<col style="width:10%"><col style="width:7%"><col style="width:11%"></colgroup>
+<thead><tr><th>Fecha / Hora</th><th>Tipo</th><th>Referencia</th><th>Cliente / Beneficiario</th>
+<th>Concepto / Detalle</th><th>Medio</th><th>Valor</th><th>Estado</th><th>Responsable</th></tr></thead>
+<tbody>${filas}</tbody></table>
+<div class="totales">${medios}
+<div class="total egreso"><span>Total egresos</span><strong>${escaparHtml(formatearMoneda(cierre.total_egresos_sistema))}</strong></div>
+<div class="total neto"><span>Resultado del día</span><strong>${escaparHtml(formatearMoneda(cierre.movimiento_neto))}</strong></div></div>
+<footer><span>Documento generado desde el módulo de Caja · Cierre de Caja.</span>
+<span>Fecha de impresión: ${escaparHtml(fechaImpresion)}</span></footer>
+<script>window.onload=function(){setTimeout(function(){window.print()},300)}</script>
+</body></html>`)
+  ventana.document.close()
+}
