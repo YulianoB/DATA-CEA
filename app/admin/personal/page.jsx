@@ -1309,6 +1309,9 @@ export default function PersonalAdminPage() {
       return ''
     }
 
+  // Se reutiliza la validación completa del envío para habilitar Guardar.
+  const puedeGuardarPersonal = !loading && !validarFormulario()
+
   // ==========================================================
   // GUARDAR PERSONAL
   // ==========================================================
@@ -2159,7 +2162,7 @@ export default function PersonalAdminPage() {
                           />
 
                           <span className="font-semibold text-sm block">
-                            {tipo}
+                            {tipo === 'AUTOMÓVIL' ? 'AUTOMÓVIL/CAMIONETA' : tipo}
                           </span>
 
                         </label>
@@ -2545,7 +2548,7 @@ export default function PersonalAdminPage() {
 </section>
 <div className="flex justify-end gap-3 border-t border-slate-300 pt-4">
   <BotonCancelar type="button" onClick={cerrarFormulario} disabled={loading}><Ban size={15} /> Cancelar</BotonCancelar>
-  <BotonGuardar type="submit" disabled={loading}><Save size={15} /> {loading ? 'Guardando...' : 'Guardar personal'}</BotonGuardar>
+  <BotonGuardar type="submit" disabled={!puedeGuardarPersonal} title={!puedeGuardarPersonal && !loading ? validarFormulario() : undefined}><Save size={15} /> {loading ? 'Guardando...' : 'Guardar personal'}</BotonGuardar>
 </div>
           </form>
               </div>
