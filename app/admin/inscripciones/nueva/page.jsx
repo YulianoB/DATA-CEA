@@ -20,6 +20,8 @@ import {
 
 import { UserPlus } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import CampoCatalogo from '@/components/admin/CampoCatalogo'
+import CampoMunicipioBusqueda from '@/components/admin/CampoMunicipioBusqueda'
 import {
   ESTILO_SECCIONES,
   BotonGuardar,
@@ -495,6 +497,11 @@ export default function NuevaInscripcionPage() {
     setUser,
   ] =
     useState(null)
+
+  const nitCatalogos = obtenerNitUsuario(user)
+  const [departamentoResidencia, setDepartamentoResidencia] = useState('')
+  const [departamentosCatalogo, setDepartamentosCatalogo] = useState([])
+  const departamentoId = departamentosCatalogo.find((item) => item.nombre === departamentoResidencia)?.id || null
 
   // ==========================================================
   // ESTADO GENERAL
@@ -1879,6 +1886,7 @@ export default function NuevaInscripcionPage() {
 
   const limpiar =
     () => {
+      setDepartamentoResidencia('')
       setForm({
         tipo_doc:
           'CC',
@@ -3846,27 +3854,27 @@ const guardar =
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Ciudad / Municipio
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.ciudad
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'ciudad',
-                              event
-                                .target
-                                .value
-                            )
-                        }
+                      <CampoCatalogo
+                        catalogo="departamentos"
+                        label="Departamento"
+                        name="departamento_residencia_auxiliar"
+                        value={departamentoResidencia}
+                        nit={nitCatalogos}
+                        required={false}
+                        onOpcionesCargadas={setDepartamentosCatalogo}
+                        onChange={(event) => {
+                          setDepartamentoResidencia(event.target.value)
+                          setF('ciudad', '')
+                        }}
                       />
                     </div>
 
+                    <CampoMunicipioBusqueda
+                      nit={nitCatalogos}
+                      departamentoId={departamentoId}
+                      value={form.ciudad}
+                      onChange={(nombre) => setF('ciudad', nombre)}
+                    />
 
 
                     {!esMenor && (
@@ -4014,27 +4022,15 @@ const guardar =
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        EPS
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.eps
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'eps',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      />
-                    </div>
+                    <CampoCatalogo
+                      catalogo="eps"
+                      label="EPS"
+                      name="eps"
+                      value={form.eps}
+                      nit={nitCatalogos}
+                      required={false}
+                      onChange={(event) => setF('eps', event.target.value)}
+                    />
 
                     <div>
                       <label className="block text-[11px] font-semibold mb-1">
