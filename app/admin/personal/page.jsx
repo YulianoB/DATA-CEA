@@ -5,9 +5,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { IdCard, Plus, Search, X } from 'lucide-react'
+import { IdCard, Plus, Search, X, Users, Eraser, Save, Ban } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { FranjaSuperiorModal, MarcoTabla, BotonAgregar, BotonLimpiar } from '@/components/admin/EstiloModulo'
+import { FranjaSuperiorModal, FranjaSecundariaModal, MarcoTabla, BotonAgregar, BotonLimpiar, BotonCancelar, BotonGuardar } from '@/components/admin/EstiloModulo'
 import { Toaster, toast } from 'sonner'
 
 // ============================================================
@@ -433,6 +433,16 @@ export default function PersonalAdminPage() {
   ] = useState('')
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
+
+  const cerrarFormulario = () => {
+    if (loading) return
+    setMostrarFormulario(false)
+    setForm(INITIAL_FORM)
+    setRolesSeleccionados([])
+    setCrearAcceso(true)
+    setCertificadosInstructor([])
+    setLicenciasConduccion([])
+  }
 
   // ==========================================================
   // SESIÓN
@@ -1521,7 +1531,7 @@ export default function PersonalAdminPage() {
                   <h2 className="text-base font-bold">Registrar nuevo personal</h2>
                   <p className="text-xs opacity-85">Complete las secciones del formulario para registrar al colaborador.</p>
                 </div>
-                <button type="button" onClick={() => setMostrarFormulario(false)} disabled={loading} aria-label="Cerrar formulario" className="rounded-lg p-2 hover:bg-white/15 disabled:opacity-50"><X size={20} /></button>
+                <button type="button" onClick={cerrarFormulario} disabled={loading} aria-label="Cerrar formulario" className="rounded-lg p-2 hover:bg-white/15 disabled:opacity-50"><X size={20} /></button>
               </FranjaSuperiorModal>
               <div className="overflow-y-auto px-5 pb-5">
           <form
@@ -1531,17 +1541,16 @@ export default function PersonalAdminPage() {
             className="mt-5 space-y-5"
           >
 
-            {/* ==================================================
-                INFORMACIÓN BÁSICA
-            ================================================== */}
+{/* Primera fila: cuatro columnas de diligenciamiento */}
+<div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4 items-start">
+  <div className="min-w-0"><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
 
-            <section>
-
-              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
+              <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Información básica
-              </h2>
+              </FranjaSecundariaModal>
+<div className="p-3">
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-3">
 
                 <CampoSelect
                   label="Tipo de personal *"
@@ -1695,19 +1704,16 @@ export default function PersonalAdminPage() {
 
               </div>
 
-            </section>
+            </div>
+</section></div>
+  <div className="min-w-0 flex flex-col gap-4"><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
 
-            {/* ==================================================
-                CONTACTO
-            ================================================== */}
-
-            <section>
-
-              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
+              <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Contacto y datos personales
-              </h2>
+              </FranjaSecundariaModal>
+<div className="p-3">
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-3">
 
                 <CampoInput
                   label="Teléfono *"
@@ -1916,19 +1922,65 @@ export default function PersonalAdminPage() {
 
               </div>
 
-            </section>
+            </div>
+</section><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
 
-            {/* ==================================================
-                VINCULACIÓN
-            ================================================== */}
+              <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
+                Contacto de emergencia
+              </FranjaSecundariaModal>
+<div className="p-3">
 
-            <section>
+              <div className="grid grid-cols-1 gap-3">
 
-              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
+                <CampoInput
+                  label="Nombre contacto *"
+                  name="contacto_emergencia_nombre"
+                  value={
+                    form
+                      .contacto_emergencia_nombre
+                  }
+                  onChange={
+                    onChange
+                  }
+                />
+
+                <CampoInput
+                  label="Parentesco *"
+                  name="contacto_emergencia_parentesco"
+                  value={
+                    form
+                      .contacto_emergencia_parentesco
+                  }
+                  onChange={
+                    onChange
+                  }
+                />
+
+                <CampoInput
+                  label="Teléfono contacto *"
+                  name="contacto_emergencia_telefono"
+                  value={
+                    form
+                      .contacto_emergencia_telefono
+                  }
+                  onChange={
+                    onChange
+                  }
+                  inputMode="numeric"
+                />
+
+              </div>
+
+            </div>
+</section></div>
+  <div className="min-w-0"><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
+
+              <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Vinculación al CEA
-              </h2>
+              </FranjaSecundariaModal>
+<div className="p-3">
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-3">
 
                 <CampoSelect
                   label="Grupo personal *"
@@ -2090,17 +2142,14 @@ export default function PersonalAdminPage() {
 
               </div>
 
-            </section>
+            </div>
+</section></div>
+  <div className="min-w-0 flex flex-col gap-4"><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
 
-            {/* ==================================================
-                ROL INSTRUCTOR
-            ================================================== */}
-
-            <section>
-
-              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
+              <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Rol instructor
-              </h2>
+              </FranjaSecundariaModal>
+<div className="p-3">
 
               <label className="inline-flex items-center gap-2 text-sm text-gray-700">
 
@@ -2433,70 +2482,13 @@ export default function PersonalAdminPage() {
 
               )}
 
-            </section>
+            </div>
+</section><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
 
-            {/* ==================================================
-                CONTACTO EMERGENCIA
-            ================================================== */}
-
-            <section>
-
-              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
-                Contacto de emergencia
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-                <CampoInput
-                  label="Nombre contacto *"
-                  name="contacto_emergencia_nombre"
-                  value={
-                    form
-                      .contacto_emergencia_nombre
-                  }
-                  onChange={
-                    onChange
-                  }
-                />
-
-                <CampoInput
-                  label="Parentesco *"
-                  name="contacto_emergencia_parentesco"
-                  value={
-                    form
-                      .contacto_emergencia_parentesco
-                  }
-                  onChange={
-                    onChange
-                  }
-                />
-
-                <CampoInput
-                  label="Teléfono contacto *"
-                  name="contacto_emergencia_telefono"
-                  value={
-                    form
-                      .contacto_emergencia_telefono
-                  }
-                  onChange={
-                    onChange
-                  }
-                  inputMode="numeric"
-                />
-
-              </div>
-
-            </section>
-
-            {/* ==================================================
-                OBSERVACIONES
-            ================================================== */}
-
-            <section>
-
-              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
+              <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Observaciones
-              </h2>
+              </FranjaSecundariaModal>
+<div className="p-3">
 
               <div className="grid grid-cols-1 gap-4">
 
@@ -2516,21 +2508,19 @@ export default function PersonalAdminPage() {
 
               </div>
 
-            </section>
-
-            {/* ==================================================
-                ACCESO
-            ================================================== */}
-
-            <section className="bg-gray-50 border rounded-lg p-4">
+            </div>
+</section></div>
+</div>
+{/* Segunda fila: acceso y acciones */}
+<section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
+<FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">Acceso a la aplicación</FranjaSecundariaModal>
+<div className="p-3">
 
               <div className="flex items-center justify-between gap-4 flex-wrap">
 
                 <div>
 
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    Acceso a la aplicación
-                  </h2>
+                  
 
                   <p className="text-sm text-gray-600">
                     Selecciona los perfiles autorizados para esta persona.
@@ -2613,56 +2603,12 @@ export default function PersonalAdminPage() {
 
               )}
 
-            </section>
-
-            {/* ==================================================
-                BOTONES
-            ================================================== */}
-
-            <div className="flex justify-end gap-3 border-t pt-4">
-
-              <button
-                type="button"
-                onClick={() => {
-                  setForm(
-                    INITIAL_FORM
-                  )
-
-                  setRolesSeleccionados(
-                    []
-                  )
-
-                  setCrearAcceso(
-                    true
-                  )
-
-                  setCertificadosInstructor(
-                    []
-                  )
-
-                  setLicenciasConduccion(
-                    []
-                  )
-                }}
-                className="px-4 py-2 rounded-md border text-sm hover:bg-gray-100"
-              >
-                Limpiar
-              </button>
-
-              <button
-                type="submit"
-                disabled={
-                  loading
-                }
-                className="px-5 py-2 rounded-md bg-[var(--primary)] hover:bg-[var(--primary-dark)] disabled:bg-gray-400 text-white text-sm font-semibold"
-              >
-                {loading
-                  ? 'Guardando...'
-                  : 'Guardar personal'}
-              </button>
-
             </div>
-
+</section>
+<div className="flex justify-end gap-3 border-t border-slate-300 pt-4">
+  <BotonCancelar type="button" onClick={cerrarFormulario} disabled={loading}><Ban size={15} /> Cancelar</BotonCancelar>
+  <BotonGuardar type="submit" disabled={loading}><Save size={15} /> {loading ? 'Guardando...' : 'Guardar personal'}</BotonGuardar>
+</div>
           </form>
               </div>
             </div>
@@ -2683,10 +2629,10 @@ export default function PersonalAdminPage() {
                 className="h-9 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-xs outline-none focus:border-[#194567]"
               />
             </div>
-            <BotonLimpiar type="button" onClick={() => setBusqueda('')} disabled={!busqueda}>Limpiar</BotonLimpiar>
+            <BotonLimpiar type="button" onClick={() => setBusqueda('')} disabled={!busqueda}><Eraser size={15} /> Limpiar</BotonLimpiar>
           </div>
           <FranjaSuperiorModal className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <h2 className="text-sm font-bold">Personal registrado</h2>
+            <h2 className="flex items-center gap-2 text-sm font-bold"><Users size={17} /> Personal registrado</h2>
             <BotonAgregar type="button" onClick={() => setMostrarFormulario(true)}><Plus size={15} /> Agregar personal</BotonAgregar>
           </FranjaSuperiorModal>
 
@@ -2893,7 +2839,7 @@ function CampoInput({
           required
         }
         {...props}
-        className={`w-full border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] ${className}`}
+        className={`w-full border-2 border-slate-400 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20 ${className}`}
       />
 
     </div>
@@ -2923,7 +2869,7 @@ function CampoSelect({
           required
         }
         {...props}
-        className="w-full border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+        className="w-full border-2 border-slate-400 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20"
       >
 
         {options.map(
@@ -2974,7 +2920,7 @@ function CampoTextarea({
         }
         rows={4}
         {...props}
-        className="w-full border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+        className="w-full border-2 border-slate-400 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20"
       />
 
     </div>
