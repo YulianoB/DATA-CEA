@@ -12,9 +12,9 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import { Handshake } from 'lucide-react'
+import { Handshake, RefreshCw, Eraser, Eye, X } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonActualizar, BotonVerDetalle, MarcoTabla, TituloSeccion } from '@/components/admin/EstiloModulo'
+import { BotonActualizar, BotonVerDetalle, BotonLimpiar, BotonCancelar, MarcoTabla, TituloSeccion, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_SECCIONES } from '@/components/admin/EstiloModulo'
 
 // =========================================================
 // CONSTANTES
@@ -543,7 +543,7 @@ function DetalleCarteraModal({
         <div
           className="
             shrink-0
-            bg-slate-800
+            bg-[#737B87]
             text-white
             px-4
             py-3
@@ -576,24 +576,7 @@ function DetalleCarteraModal({
             </h2>
           </div>
 
-          <button
-            type="button"
-            onClick={
-              onClose
-            }
-            className="
-              w-9
-              h-9
-              rounded-lg
-              bg-white/10
-              hover:bg-white/20
-              flex
-              items-center
-              justify-center
-            "
-          >
-            <i className="fas fa-times"></i>
-          </button>
+          <button type="button" onClick={onClose} aria-label="Cerrar detalle" className="rounded-md p-2 text-white hover:bg-white/20"><X size={18} /></button>
         </div>
 
         {/* ===============================================
@@ -645,6 +628,7 @@ function DetalleCarteraModal({
             !error &&
             detalle && (
               <>
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {/* =========================================
                     APRENDIZ
                 ========================================= */}
@@ -670,7 +654,7 @@ function DetalleCarteraModal({
                       className="
                         text-[10px]
                         font-black
-                        text-gray-800
+                        text-white
                       "
                     >
                       <i className="fas fa-user-graduate mr-2 text-blue-600"></i>
@@ -768,7 +752,6 @@ function DetalleCarteraModal({
 
                 <div
                   className="
-                    mt-3
                     border
                     border-emerald-200
                     rounded-xl
@@ -788,7 +771,7 @@ function DetalleCarteraModal({
                       className="
                         text-[10px]
                         font-black
-                        text-emerald-800
+                        text-white
                       "
                     >
                       <i className="fas fa-handshake mr-2"></i>
@@ -865,6 +848,7 @@ function DetalleCarteraModal({
                   </div>
                 </div>
 
+                </div>
                 {/* =========================================
                     RESUMEN FINANCIERO
                 ========================================= */}
@@ -965,7 +949,7 @@ function DetalleCarteraModal({
                       className="
                         text-[10px]
                         font-black
-                        text-gray-800
+                        text-white
                       "
                     >
                       <i className="fas fa-file-invoice-dollar mr-2 text-blue-600"></i>
@@ -1110,7 +1094,7 @@ function DetalleCarteraModal({
                       className="
                         text-[10px]
                         font-black
-                        text-gray-800
+                        text-white
                       "
                     >
                       <i className="fas fa-clock-rotate-left mr-2 text-emerald-600"></i>
@@ -1250,24 +1234,7 @@ function DetalleCarteraModal({
             justify-end
           "
         >
-          <button
-            type="button"
-            onClick={
-              onClose
-            }
-            className="
-              bg-slate-700
-              hover:bg-slate-900
-              text-white
-              px-4
-              py-2
-              rounded-lg
-              text-xs
-              font-bold
-            "
-          >
-            Cerrar
-          </button>
+          <BotonCancelar type="button" onClick={onClose}><X size={14} />Cerrar</BotonCancelar>
         </div>
       </div>
     </div>
@@ -2032,7 +1999,7 @@ export default function ConveniosCajaPage() {
           <EncabezadoModulo titulo="Convenios y Asesores" subtitulo="Consulta del estado de los aprendices vinculados a convenios, tramitadores y asesores." icono={Handshake} rutaRegreso="/admin/caja" textoRegreso="Volver a Caja" />
           <div className="flex justify-end px-4 py-3">
             <BotonActualizar onClick={cargarCartera} disabled={cargando}>
-              <i className={`fas fa-sync-alt mr-2 ${cargando ? 'fa-spin' : ''}`}></i>Actualizar
+              <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />Actualizar
             </BotonActualizar>
           </div>
 
@@ -2469,9 +2436,7 @@ export default function ConveniosCajaPage() {
                   />
                 </div>
                 <div className="flex items-end">
-                  <button type="button" onClick={limpiarFiltros} className="h-[34px] w-full rounded-lg border border-slate-300 bg-white px-3 text-[10px] font-bold text-slate-700 hover:bg-slate-100">
-                    <i className="fas fa-eraser mr-1"></i>Limpiar filtros
-                  </button>
+                  <BotonLimpiar type="button" onClick={limpiarFiltros} className="w-full h-[34px]"><Eraser size={14} />Limpiar filtros</BotonLimpiar>
                 </div>
               </div>
             </div>
@@ -2481,33 +2446,8 @@ export default function ConveniosCajaPage() {
               TABLA
           ============================================== */}
 
-          <div className="overflow-hidden rounded-xl border border-slate-300">
-            <div
-              className="
-                bg-slate-800
-                text-white
-                px-4
-                py-2.5
-                flex
-                flex-col
-                sm:flex-row
-                sm:items-center
-                sm:justify-between
-                gap-2
-              "
-            >
-              <div className="min-w-0"><h2 className="text-xs font-bold"><i className="fas fa-users mr-2"></i>Aprendices por convenio</h2><p className="mt-0.5 text-[9px] text-slate-300">Consulte la obligación, pagos realizados y saldo pendiente.</p></div>
-              <div
-                className="
-                  text-[9px]
-                  text-slate-300
-                "
-              >
-                {cartera.length}{' '}
-                registro(s) mostrado(s)
-              </div>
-            </div>
-
+          <MarcoTabla className="!rounded-t-none">
+            <TituloSeccion titulo="Aprendices por convenio" subtitulo={`Consulte obligaciones, pagos y saldos · ${cartera.length} registro(s)`} icono={<i className="fas fa-users" />} className="!rounded-none" />
             <div
               className="
                 overflow-x-auto
@@ -2779,7 +2719,7 @@ export default function ConveniosCajaPage() {
                               text-center
                             "
                           >
-                            <BotonVerDetalle onClick={() => verDetalle(item)}>Detalle</BotonVerDetalle>
+                            <BotonVerDetalle onClick={() => verDetalle(item)}><Eye size={14} />Detalle</BotonVerDetalle>
                           </td>
                         </tr>
                       )
@@ -2833,7 +2773,7 @@ export default function ConveniosCajaPage() {
                   </span>
                 </div>
               )}
-          </div>
+          </MarcoTabla>
 
           {/* =============================================
               INFORMACIÓN
