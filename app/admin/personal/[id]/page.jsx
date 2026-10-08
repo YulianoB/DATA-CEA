@@ -2042,7 +2042,7 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
       </div>
       <div className="flex flex-wrap items-center gap-4 rounded-lg border border-slate-300 bg-slate-100 p-3">
         <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-slate-200 shadow-sm">
-          {fotoTemporal ? <img src={fotoTemporal} alt="Fotografía temporal del trabajador" className="h-full w-full object-cover" /> : <i className="fas fa-user text-3xl text-slate-500" aria-hidden="true"></i>}
+          {fotoTemporal ? <img src={fotoTemporal} alt="Fotografía del trabajador" className="h-full w-full object-cover" /> : <i className="fas fa-user text-3xl text-slate-500" aria-hidden="true"></i>}
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-[#194567]"><i className="fas fa-camera" aria-hidden="true"></i> Fotografía para la hoja de vida</h3>
@@ -2053,8 +2053,6 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onSeleccionarFoto} disabled={procesandoFoto} className="sr-only" />
             </label>
             {fotoTemporal && <button type="button" onClick={onEliminarFoto} disabled={procesandoFoto || eliminandoFoto} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">{eliminandoFoto ? 'Eliminando...' : 'Eliminar fotografía'}</button>}
-            <label className="hidden">
-            </label>
           </div>
         </div>
       </div>
