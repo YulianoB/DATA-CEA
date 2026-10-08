@@ -5649,8 +5649,9 @@ function abrirClase(
               grid
               grid-cols-1
               md:grid-cols-2
-              xl:grid-cols-[150px_1.5fr_170px_150px_1.4fr_150px_1fr_110px]
-              gap-2
+              xl:grid-cols-[150px_1.5fr_135px_150px_1.4fr_150px_minmax(165px,1.2fr)_110px]
+              gap-x-1.5
+              gap-y-2
               items-end
             "
           >
