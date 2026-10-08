@@ -1172,6 +1172,7 @@ async function existeCierreDiario(
         efectivo_contado,
         diferencia_efectivo,
         usuario_cierre,
+        observaciones,
         estado
       `)
       .eq(
