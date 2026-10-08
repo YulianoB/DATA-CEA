@@ -1525,7 +1525,7 @@ export default function PersonalAdminPage() {
 
         {mostrarFormulario && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 md:p-6" role="dialog" aria-modal="true" aria-label="Registrar nuevo personal">
-            <div className="flex w-full max-w-[1600px] max-h-[94vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex w-full max-w-4xl max-h-[94vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
               <FranjaSuperiorModal className="flex shrink-0 items-center justify-between gap-3 px-5 py-3">
                 <div>
                   <h2 className="text-base font-bold">Registrar nuevo personal</h2>
@@ -1541,9 +1541,9 @@ export default function PersonalAdminPage() {
             className="mt-5 space-y-5"
           >
 
-{/* Primera fila: cuatro columnas de diligenciamiento */}
-<div className="grid grid-cols-1 gap-3 lg:grid-cols-4 items-start">
-  <div className="min-w-0"><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
+{/* Secciones del formulario en filas independientes */}
+<div className="flex flex-col gap-4">
+  <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Información básica
@@ -1711,8 +1711,9 @@ export default function PersonalAdminPage() {
               </div>
 
             </div>
-</section></div>
-  <div className="min-w-0 flex flex-col gap-4"><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
+</section>
+
+  <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Contacto y datos personales
@@ -1932,7 +1933,9 @@ export default function PersonalAdminPage() {
               </div>
 
             </div>
-</section><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
+</section>
+
+  <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Contacto de emergencia
@@ -1982,8 +1985,9 @@ export default function PersonalAdminPage() {
               </div>
 
             </div>
-</section></div>
-  <div className="min-w-0"><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
+</section>
+
+  <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Vinculación al CEA
@@ -2154,8 +2158,9 @@ export default function PersonalAdminPage() {
               </div>
 
             </div>
-</section></div>
-  <div className="min-w-0 flex flex-col gap-4"><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
+</section>
+
+  <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Rol instructor
@@ -2494,7 +2499,9 @@ export default function PersonalAdminPage() {
               )}
 
             </div>
-</section><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
+</section>
+
+  <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Observaciones
@@ -2520,7 +2527,7 @@ export default function PersonalAdminPage() {
               </div>
 
             </div>
-</section></div>
+</section>
 </div>
 {/* Segunda fila: acceso y acciones */}
 <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
