@@ -1926,7 +1926,7 @@ export default function PersonalAdminPage() {
                   ]}
                 wrapperClass="col-span-12 md:col-span-3" />
 <CampoSelect
-                  label="Grupo funcional *"
+                  label="Grupo de trabajo *"
                   name="grupo_personal"
                   value={
                     form.grupo_personal
@@ -1963,7 +1963,7 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   placeholder="Ej: Instructor, auxiliar"
-                wrapperClass="col-span-12 md:col-span-5" />
+                wrapperClass="col-span-12 md:col-span-3" />
 <CampoSelect
                   label="Modalidad de contrato *"
                   name="tipo_contrato"
@@ -1999,7 +1999,7 @@ export default function PersonalAdminPage() {
                       'Otro',
                     ],
                   ]}
-                wrapperClass="col-span-12 md:col-span-4" /></div>
+                wrapperClass="col-span-12 md:col-span-3" /></div>
 <div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoSelect
                   label="Permanencia en el CEA *"
                   name="tipo_permanencia"
