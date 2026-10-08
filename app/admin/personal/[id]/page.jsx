@@ -72,6 +72,13 @@ const DOCUMENTO_INICIAL = {
   observaciones: '',
 }
 
+const PERFILES_DISPONIBLES = [
+  ['ADMINISTRATIVO', 'Administrativo'],
+  ['AUXILIAR_ADMINISTRATIVO', 'Auxiliar administrativo'],
+  ['INSTRUCTOR_TEORIA', 'Instructor teoría'],
+  ['INSTRUCTOR_PRACTICA', 'Instructor práctica'],
+]
+
 const CUENTA_INICIAL = {
   email_autorizado: '',
   estado: 'activo',
@@ -236,6 +243,7 @@ export default function HojaVidaPersonalPage() {
   const [cargandoDocumentos, setCargandoDocumentos] = useState(false)
 
   const [cuentaUsuario, setCuentaUsuario] = useState(null)
+  const [perfilesCuenta, setPerfilesCuenta] = useState([])
   const [formCuenta, setFormCuenta] = useState(CUENTA_INICIAL)
   const [guardandoCuenta, setGuardandoCuenta] = useState(false)
   const [cargandoCuenta, setCargandoCuenta] = useState(false)
@@ -1265,6 +1273,7 @@ export default function HojaVidaPersonalPage() {
 
       const cuenta = result.cuenta || null
       setCuentaUsuario(cuenta)
+      setPerfilesCuenta((cuenta?.perfiles_usuario || []).filter((perfil) => perfil.estado === 'activo').map((perfil) => perfil.rol))
       setFormCuenta({
         email_autorizado: cuenta?.email_autorizado || data?.personal?.email || '',
         estado: cuenta?.estado || 'activo',
@@ -1291,17 +1300,17 @@ export default function HojaVidaPersonalPage() {
     event.preventDefault()
 
     if (!formCuenta.email_autorizado) {
-      toast.warning('El correo autorizado es obligatorio.')
+      mostrarResultado('error', 'El correo autorizado es obligatorio.')
       return
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formCuenta.email_autorizado)) {
-      toast.warning('El correo autorizado no tiene un formato válido.')
+      mostrarResultado('error', 'El correo autorizado no tiene un formato válido.')
       return
     }
 
     if (!formCuenta.estado) {
-      toast.warning('Selecciona el estado de la cuenta.')
+      mostrarResultado('error', 'Selecciona el estado de la cuenta.')
       return
     }
 
@@ -1315,6 +1324,7 @@ export default function HojaVidaPersonalPage() {
           email_autorizado: formCuenta.email_autorizado,
           estado: formCuenta.estado,
           observaciones: formCuenta.observaciones,
+          perfiles: perfilesCuenta,
           actualizado_por: user?.nombreCompleto || user?.usuario || 'ADMINISTRATIVO',
         }),
       })
@@ -1660,6 +1670,8 @@ export default function HojaVidaPersonalPage() {
                 guardarCuenta={guardarCuenta}
                 guardandoCuenta={guardandoCuenta}
                 cargandoCuenta={cargandoCuenta}
+                perfilesCuenta={perfilesCuenta}
+                setPerfilesCuenta={setPerfilesCuenta}
               />
             )}
           </section>
@@ -1677,6 +1689,8 @@ function CuentaUsuario({
   guardarCuenta,
   guardandoCuenta,
   cargandoCuenta,
+  perfilesCuenta,
+  setPerfilesCuenta,
 }) {
   if (cargandoCuenta) {
     return <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando cuenta de usuario...</p>
@@ -1726,10 +1740,10 @@ function CuentaUsuario({
               value={formCuenta.estado}
               onChange={cambiarCuenta}
               options={[
-                ['pre_autorizado', 'Preautorizado'],
+                ...(formCuenta.estado === 'pre_autorizado' ? [['pre_autorizado', 'Preautorizado (pendiente de registro)']] : []),
                 ['activo', 'Activo'],
                 ['inactivo', 'Inactivo'],
-                ['suspendido', 'Suspendido'],
+                ...(formCuenta.estado === 'suspendido' ? [['suspendido', 'Suspendido (estado anterior)']] : []),
               ]}
             />
             <CampoInput
@@ -1757,18 +1771,16 @@ function CuentaUsuario({
             required={false}
           />
 
-          <div className="rounded-md border bg-white p-3 text-sm text-gray-700">
-            <p className="font-semibold text-gray-800">Perfiles autorizados</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {(perfiles || []).length === 0 ? (
-                <span className="text-gray-500">Sin perfiles asignados.</span>
-              ) : (
-                perfiles.map((perfil) => (
-                  <span key={perfil.id} className="rounded-md border bg-gray-100 px-2 py-1 text-xs">
-                    {perfil.rol} · {perfil.estado || 'activo'}
-                  </span>
-                ))
-              )}
+          <div className="rounded-md border border-slate-300 bg-white p-3 text-sm text-gray-700">
+            <h4 className="flex items-center gap-2 font-bold text-[#194567]"><i className="fas fa-user-shield" aria-hidden="true"></i> Perfiles autorizados</h4>
+            <p className="mt-1 text-xs text-slate-500">Seleccione los perfiles que podrá utilizar esta persona. Los perfiles desmarcados se inactivarán, sin borrar su historial.</p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {PERFILES_DISPONIBLES.map(([rol, etiqueta]) => (
+                <label key={rol} className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold">
+                  <input type="checkbox" checked={perfilesCuenta.includes(rol)} onChange={(event) => setPerfilesCuenta((prev) => event.target.checked ? [...prev, rol] : prev.filter((actual) => actual !== rol))} className="h-4 w-4 accent-[#194567]" />
+                  {etiqueta}
+                </label>
+              ))}
             </div>
           </div>
 
@@ -1783,7 +1795,7 @@ function CuentaUsuario({
               disabled={guardandoCuenta}
               className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:bg-gray-400"
             >
-              {guardandoCuenta ? 'Guardando...' : 'Guardar cambios de cuenta'}
+              <i className="fas fa-save mr-2" aria-hidden="true"></i>{guardandoCuenta ? 'Guardando...' : 'Guardar cambios de cuenta'}
             </button>
           </div>
         </form>
