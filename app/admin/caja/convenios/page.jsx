@@ -2224,44 +2224,11 @@ export default function ConveniosCajaPage() {
               mb-4
             "
           >
-            <div
-              className="
-                bg-slate-800
-                text-white
-                px-4
-                py-2.5
-                flex
-                items-center
-                justify-between
-                gap-3
-              "
-            >
-              <div>
-                
-
-                
-              </div>
-
-              <button
-                type="button"
-                onClick={
-                  limpiarFiltros
-                }
-                className="
-                  text-[10px]
-                  bg-white/10
-                  hover:bg-white/20
-                  px-3
-                  py-1.5
-                  rounded-lg
-                "
-              >
-                <i className="fas fa-eraser mr-1"></i>
-
-                Limpiar
+            <div className="flex justify-end px-3 pt-3">
+              <button type="button" onClick={limpiarFiltros} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:bg-slate-100">
+                <i className="fas fa-eraser mr-1"></i>Limpiar filtros
               </button>
             </div>
-
             <div
               className="
                 bg-gray-50
@@ -2593,29 +2560,7 @@ export default function ConveniosCajaPage() {
                 gap-2
               "
             >
-              <div>
-                <h2
-                  className="
-                    text-xs
-                    font-bold
-                  "
-                >
-                  <i className="fas fa-users mr-2"></i>
-
-                  Aprendices por convenio
-                </h2>
-
-                <p
-                  className="
-                    mt-0.5
-                    text-[9px]
-                    text-slate-300
-                  "
-                >
-                  Consulte la obligación, pagos realizados y saldo pendiente.
-                </p>
-              </div>
-
+              <div className="min-w-0"><h2 className="text-xs font-bold"><i className="fas fa-users mr-2"></i>Aprendices por convenio</h2><p className="mt-0.5 text-[9px] text-slate-300">Consulte la obligación, pagos realizados y saldo pendiente.</p></div>
               <div
                 className="
                   text-[9px]
