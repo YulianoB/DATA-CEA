@@ -1363,6 +1363,4014 @@ const estadosDisponibles =
           overflow-hidden
         "
       >
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
+        <div
+          className="
+            bg-slate-800
+            text-white
+            px-4
+            py-2.5
+            flex
+            items-center
+            justify-between
+            gap-3
+          "
+        >
+          <div>
+            <p
+              className="
+                text-[8px]
+                uppercase
+                tracking-wide
+                text-slate-300
+                font-bold
+              "
+            >
+              {modo ===
+              'NUEVA'
+                ? 'Nueva programación'
+                : 'Administrar clase'}
+            </p>
+
+            <h3
+              className="
+                text-xs
+                font-black
+              "
+            >
+              {modo ===
+              'NUEVA'
+                ? 'Programar clase práctica'
+                : 'Detalle de clase práctica'}
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              onCerrar
+            }
+            className="
+              w-7
+              h-7
+              rounded-lg
+              hover:bg-white/10
+            "
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+
+        {/* =================================================
+            CONTENIDO
+        ================================================= */}
+
+        <div
+          className="
+            p-3
+            max-h-[82vh]
+            overflow-y-auto
+          "
+        >
+          {/* =================================================
+              PERSONA
+          ================================================= */}
+
+          <div
+            className="
+              border
+              border-gray-200
+              rounded-lg
+              bg-gray-50
+              px-3
+              py-2
+            "
+          >
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                gap-2
+              "
+            >
+              <div
+                className="
+                  min-w-0
+                "
+              >
+                <p
+                  className="
+                    text-[10px]
+                    font-black
+                    text-gray-900
+                    truncate
+                  "
+                >
+                  {aprendizModal
+                    ?.nombre_completo ||
+                    [
+                      aprendizModal
+                        ?.nombres,
+                      aprendizModal
+                        ?.apellidos,
+                    ]
+                      .filter(
+                        Boolean
+                      )
+                      .join(
+                        ' '
+                      ) ||
+                    '-'}
+                </p>
+
+                <p
+                  className="
+                    mt-0.5
+                    text-[8px]
+                    text-gray-600
+                  "
+                >
+                  {aprendizModal
+                    ?.tipo_doc ||
+                    'Doc.'}{' '}
+                  {aprendizModal
+                    ?.documento ||
+                    '-'}
+                  {' · '}
+                  Cel.{' '}
+                  {aprendizModal
+                    ?.celular ||
+                    '-'}
+                </p>
+              </div>
+
+              <span
+                className={`
+                  shrink-0
+                  rounded-full
+                  border
+                  px-2
+                  py-1
+                  text-[7px]
+                  font-black
+                  ${
+                    tipoModal ===
+                    'REFUERZO'
+                      ? 'bg-purple-100 text-purple-700 border-purple-300'
+                      : 'bg-slate-100 text-slate-700 border-slate-300'
+                  }
+                `}
+              >
+                {tipoModal ===
+                'REFUERZO'
+                  ? 'REFUERZO'
+                  : 'CURSO'}
+              </span>
+            </div>
+          </div>
+
+          {/* =================================================
+              DATOS COMPACTOS
+          ================================================= */}
+
+          <div
+            className="
+              mt-2
+              grid
+              grid-cols-2
+              gap-1.5
+            "
+          >
+            <div
+              className="
+                border
+                border-gray-200
+                rounded-lg
+                px-2
+                py-1.5
+              "
+            >
+              <span
+                className="
+                  text-[7px]
+                  text-gray-500
+                "
+              >
+                Fecha / hora
+              </span>
+
+              <p
+                className="
+                  text-[9px]
+                  font-black
+                  text-gray-900
+                "
+              >
+                {formatearFecha(
+                  fechaModal
+                )}
+                {' · '}
+                {horaModal ||
+                  '-'}
+              </p>
+            </div>
+
+            <div
+              className="
+                border
+                border-gray-200
+                rounded-lg
+                px-2
+                py-1.5
+              "
+            >
+              <span
+                className="
+                  text-[7px]
+                  text-gray-500
+                "
+              >
+                Categoría / vehículo
+              </span>
+
+              <p
+                className="
+                  text-[9px]
+                  font-black
+                  text-gray-900
+                "
+              >
+                {categoriaModal ||
+                  '-'}
+                {' · '}
+                {vehiculoModal
+                  ?.placa ||
+                  '-'}
+              </p>
+            </div>
+          </div>
+
+          <div
+            className="
+              mt-1.5
+              border
+              border-gray-200
+              rounded-lg
+              px-2
+              py-1.5
+            "
+          >
+            <span
+              className="
+                text-[7px]
+                text-gray-500
+              "
+            >
+              Instructor
+            </span>
+
+            <p
+              className="
+                text-[9px]
+                font-black
+                text-gray-900
+              "
+            >
+              {instructorModal
+                ?.nombre_completo ||
+                [
+                  instructorModal
+                    ?.nombres,
+                  instructorModal
+                    ?.apellidos,
+                ]
+                  .filter(
+                    Boolean
+                  )
+                  .join(
+                    ' '
+                  ) ||
+                '-'}
+            </p>
+          </div>
+
+          {/* =================================================
+              NÚMERO CLASE
+          ================================================= */}
+
+          {modo ===
+            'NUEVA' &&
+            tipoModal ===
+              'CURSO_VIGENTE' &&
+            progreso && (
+              <div
+                className="
+                  mt-2
+                  bg-blue-50
+                  border
+                  border-blue-200
+                  rounded-lg
+                  px-3
+                  py-1.5
+                  flex
+                  items-center
+                  justify-between
+                "
+              >
+                <span
+                  className="
+                    text-[8px]
+                    text-blue-700
+                    font-bold
+                  "
+                >
+                  Clase práctica
+                </span>
+
+                <span
+                  className="
+                    text-sm
+                    font-black
+                    text-blue-900
+                  "
+                >
+                  {numeroClase}
+                  /
+                  {numero(
+                    progreso
+                      ?.clases_requeridas
+                  )}
+                </span>
+              </div>
+            )}
+
+          {/* =================================================
+              MODO EDITAR
+          ================================================= */}
+
+          {modo ===
+            'EDITAR' && (
+              <div
+                className="
+                  mt-3
+                  border-t
+                  border-gray-200
+                  pt-3
+                "
+              >
+                {/* ===========================================
+                    ESTADO ACTUAL
+                =========================================== */}
+
+                <div
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    gap-2
+                  "
+                >
+                  <span
+                    className="
+                      text-[8px]
+                      uppercase
+                      tracking-wide
+                      font-black
+                      text-gray-500
+                    "
+                  >
+                    Estado actual
+                  </span>
+
+                  <BadgeEstado
+                    estado={
+                      estadoActual
+                    }
+                  />
+                </div>
+
+                {/* ===========================================
+                    CANCELADA - ESTADO FINAL
+                =========================================== */}
+
+                {estadoActual ===
+                'CANCELADA' ? (
+                  <div
+                    className="
+                      mt-2
+                      bg-gray-100
+                      border
+                      border-gray-300
+                      rounded-lg
+                      px-3
+                      py-2
+                      text-[9px]
+                      text-gray-600
+                    "
+                  >
+                    <i className="fas fa-lock mr-2"></i>
+
+                    La clase está cancelada y no admite nuevos cambios de estado.
+                  </div>
+                ) : (
+                  <>
+                    {/* =======================================
+                        CAMBIOS DISPONIBLES
+                    ======================================= */}
+
+                    {estadoActual ===
+                      'AGENDADA' &&
+                      esClaseFutura && (
+                        <div
+                          className="
+                            mt-2
+                            border
+                            border-amber-200
+                            bg-amber-50
+                            rounded-lg
+                            px-3
+                            py-2
+                            text-[8px]
+                            text-amber-800
+                          "
+                        >
+                          <i className="fas fa-clock mr-1"></i>
+
+                          Esta clase aún no ha iniciado. Por ahora únicamente puede cancelarse.
+                        </div>
+                      )}
+
+                    <p
+                      className="
+                        mt-2
+                        mb-1.5
+                        text-[8px]
+                        font-bold
+                        text-gray-500
+                      "
+                    >
+                      {estadoActual ===
+                        'AGENDADA' &&
+                      esClaseFutura
+                        ? 'Acción disponible:'
+                        : 'Cambiar a:'}
+                    </p>
+
+                    <div
+                      className="
+                        grid
+                        grid-cols-2
+                        gap-1.5
+                      "
+                    >
+                      {estadosDisponibles.map(
+                        estado => (
+                          <button
+                            key={
+                              estado
+                            }
+                            type="button"
+                            onClick={() =>
+                              seleccionarEstado(
+                                estado
+                              )
+                            }
+                            className={`
+                              min-h-[34px]
+                              border
+                              rounded-lg
+                              px-2
+                              py-1.5
+                              text-[8px]
+                              font-black
+                              transition
+                              ${estiloBotonEstado(
+                                estado
+                              )}
+                            `}
+                          >
+                            {estado ===
+                            'CANCELADA' && (
+                              <i className="fas fa-ban mr-1"></i>
+                            )}
+
+                            {estado ===
+                            'DICTADA' && (
+                              <i className="fas fa-check mr-1"></i>
+                            )}
+
+                            {estado ===
+                            'NO_DICTADA' && (
+                              <i className="fas fa-circle-xmark mr-1"></i>
+                            )}
+
+                            {estado ===
+                            'PENDIENTE_CARGUE' && (
+                              <i className="fas fa-cloud-arrow-up mr-1"></i>
+                            )}
+
+                            {estado ===
+                            'AGENDADA' && (
+                              <i className="fas fa-calendar-check mr-1"></i>
+                            )}
+
+                            {texto(
+                              estado
+                            ).replace(
+                              /_/g,
+                              ' '
+                            )}
+                          </button>
+                        )
+                      )}
+                    </div>
+
+                    {/* =======================================
+                        NO DICTADA
+                    ======================================= */}
+
+                    {nuevoEstado ===
+                      'NO_DICTADA' && (
+                      <div
+                        className="
+                          mt-2
+                          bg-red-50
+                          border
+                          border-red-200
+                          rounded-lg
+                          p-2
+                        "
+                      >
+                        <div
+                          className="
+                            grid
+                            grid-cols-1
+                            sm:grid-cols-2
+                            gap-2
+                          "
+                        >
+                          <div>
+                            <label
+                              className="
+                                block
+                                text-[8px]
+                                font-bold
+                                text-red-700
+                                mb-1
+                              "
+                            >
+                              Motivo
+                            </label>
+
+                            <select
+                              value={
+                                motivoId
+                              }
+                              onChange={
+                                event =>
+                                  setMotivoId(
+                                    event
+                                      .target
+                                      .value
+                                  )
+                              }
+                              className="
+                                w-full
+                                h-[34px]
+                                border
+                                border-red-300
+                                rounded-lg
+                                px-2
+                                text-[9px]
+                                bg-white
+                              "
+                            >
+                              <option value="">
+                                Seleccione...
+                              </option>
+
+                              {motivos.map(
+                                motivo => (
+                                  <option
+                                    key={
+                                      motivo.id
+                                    }
+                                    value={
+                                      motivo.id
+                                    }
+                                  >
+                                    {
+                                      motivo.nombre
+                                    }
+                                  </option>
+                                )
+                              )}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label
+                              className="
+                                block
+                                text-[8px]
+                                font-bold
+                                text-red-700
+                                mb-1
+                              "
+                            >
+                              Observación
+                            </label>
+
+                            <textarea
+                              rows={
+                                2
+                              }
+                              value={
+                                observacion
+                              }
+                              onChange={
+                                event =>
+                                  setObservacion(
+                                    event
+                                      .target
+                                      .value
+                                  )
+                              }
+                              className="
+                                w-full
+                                border
+                                border-red-300
+                                rounded-lg
+                                px-2
+                                py-1.5
+                                text-[9px]
+                                resize-none
+                              "
+                              placeholder="Describa brevemente lo ocurrido..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* =======================================
+                        CONFIRMACIÓN CANCELACIÓN
+                    ======================================= */}
+
+                    {confirmandoCancelacion && (
+                      <div
+                        className="
+                          mt-2
+                          border
+                          border-gray-400
+                          bg-gray-100
+                          rounded-lg
+                          p-3
+                        "
+                      >
+                        <p
+                          className="
+                            text-[10px]
+                            font-black
+                            text-gray-900
+                            text-center
+                          "
+                        >
+                          ¿Está seguro de CANCELAR la clase?
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-[8px]
+                            text-gray-600
+                            text-center
+                          "
+                        >
+                          La cancelación libera el horario y quedará registrada en el historial.
+                        </p>
+
+                        <div
+                          className="
+                            mt-3
+                            flex
+                            justify-center
+                            gap-2
+                          "
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setConfirmandoCancelacion(
+                                false
+                              )
+
+                              setNuevoEstado(
+                                ''
+                              )
+                            }}
+                            disabled={
+                              guardando
+                            }
+                            className="
+                              border
+                              border-gray-300
+                              bg-white
+                              hover:bg-gray-50
+                              text-gray-700
+                              rounded-lg
+                              px-4
+                              py-2
+                              text-[9px]
+                              font-black
+                              disabled:opacity-50
+                            "
+                          >
+                            REGRESAR
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={
+                              confirmarCancelacion
+                            }
+                            disabled={
+                              guardando
+                            }
+                            className="
+                              bg-gray-800
+                              hover:bg-gray-900
+                              text-white
+                              rounded-lg
+                              px-4
+                              py-2
+                              text-[9px]
+                              font-black
+                              disabled:opacity-50
+                            "
+                          >
+                            {guardando ? (
+                              <>
+                                <i className="fas fa-spinner fa-spin mr-1"></i>
+
+                                CANCELANDO...
+                              </>
+                            ) : (
+                              <>
+                                <i className="fas fa-ban mr-1"></i>
+
+                                CONFIRMAR
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+          {/* =================================================
+              BOTONES
+          ================================================= */}
+
+          {!confirmandoCancelacion && (
+            <div
+              className="
+                mt-3
+                flex
+                justify-end
+                gap-2
+              "
+            >
+              <button
+                type="button"
+                onClick={
+                  onCerrar
+                }
+                disabled={
+                  guardando
+                }
+                className="
+                  border
+                  border-gray-300
+                  bg-white
+                  hover:bg-gray-100
+                  text-gray-700
+                  px-3
+                  py-2
+                  rounded-lg
+                  text-[9px]
+                  font-bold
+                  disabled:opacity-50
+                "
+              >
+                Cerrar
+              </button>
+
+              {modo ===
+              'NUEVA' ? (
+                <button
+                  type="button"
+                  onClick={
+                    onProgramar
+                  }
+                  disabled={
+                    guardando
+                  }
+                  className="
+                    bg-blue-600
+                    hover:bg-blue-700
+                    text-white
+                    px-4
+                    py-2
+                    rounded-lg
+                    text-[9px]
+                    font-black
+                    disabled:opacity-50
+                  "
+                >
+                  {guardando ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-1"></i>
+
+                      Registrando...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-calendar-check mr-1"></i>
+
+                      Programar clase
+                    </>
+                  )}
+                </button>
+              ) : estadoActual !==
+                'CANCELADA' &&
+                nuevoEstado && (
+                <button
+                  type="button"
+                  onClick={
+                    guardarEstado
+                  }
+                  disabled={
+                    guardando ||
+                    (
+                      nuevoEstado ===
+                        'NO_DICTADA' &&
+                      (
+                        !motivoId ||
+                        !texto(
+                          observacion
+                        )
+                      )
+                    )
+                  }
+                  className={`
+                    px-4
+                    py-2
+                    rounded-lg
+                    text-[9px]
+                    font-black
+                    text-white
+                    disabled:opacity-50
+                    ${
+                      nuevoEstado ===
+                      'CANCELADA'
+                        ? 'bg-gray-700 hover:bg-gray-900'
+                        : 'bg-slate-800 hover:bg-slate-900'
+                    }
+                  `}
+                >
+                  {guardando ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-1"></i>
+
+                      Guardando...
+                    </>
+                  ) : nuevoEstado ===
+                    'CANCELADA' ? (
+                    <>
+                      <i className="fas fa-ban mr-1"></i>
+
+                      Cancelar clase
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-save mr-1"></i>
+
+                      Guardar cambio
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =========================================================
+// PÁGINA
+// =========================================================
+
+export default function ProgramacionPage() {
+  const router =
+    useRouter()
+
+  // =======================================================
+  // SESIÓN
+  // =======================================================
+
+  const [
+    user,
+    setUser,
+  ] =
+    useState(
+      null
+    )
+
+  const [
+    nit,
+    setNit,
+  ] =
+    useState('')
+
+  const [
+    empresaNombre,
+    setEmpresaNombre,
+  ] =
+    useState('')
+
+  const [
+    sesionLista,
+    setSesionLista,
+  ] =
+    useState(
+      false
+    )
+
+  // =======================================================
+  // CATÁLOGOS
+  // =======================================================
+
+  const [
+    motivosNoDictada,
+    setMotivosNoDictada,
+  ] =
+    useState([])
+
+  // =======================================================
+  // FILTROS
+  // =======================================================
+
+  const [
+    tipoProgramacion,
+    setTipoProgramacion,
+  ] =
+    useState(
+      'CURSO_VIGENTE'
+    )
+
+  const [
+    busqueda,
+    setBusqueda,
+  ] =
+    useState('')
+
+  const [
+    resultadosAprendiz,
+    setResultadosAprendiz,
+  ] =
+    useState([])
+
+  const [
+    buscandoAprendiz,
+    setBuscandoAprendiz,
+  ] =
+    useState(
+      false
+    )
+
+  const [
+    aprendiz,
+    setAprendiz,
+  ] =
+    useState(
+      null
+    )
+
+  const [
+    detalleAprendiz,
+    setDetalleAprendiz,
+  ] =
+    useState(
+      null
+    )
+
+  const [
+    categoria,
+    setCategoria,
+  ] =
+    useState('')
+
+  const [
+    instructores,
+    setInstructores,
+  ] =
+    useState([])
+
+  const [
+    instructorId,
+    setInstructorId,
+  ] =
+    useState('')
+
+  const [
+    vehiculos,
+    setVehiculos,
+  ] =
+    useState([])
+
+  const [
+    vehiculoId,
+    setVehiculoId,
+  ] =
+    useState('')
+
+  // =======================================================
+  // SEMANA
+  // =======================================================
+
+  const [
+    inicioSemana,
+    setInicioSemana,
+  ] =
+    useState(
+      () =>
+        obtenerLunes(
+          new Date()
+        )
+    )
+
+  const semana =
+    useMemo(
+      () =>
+        Array.from(
+          {
+            length:
+              7,
+          },
+          (
+            _,
+            indice
+          ) => {
+            const fecha =
+              sumarDias(
+                inicioSemana,
+                indice
+              )
+
+            return {
+              fecha,
+
+              iso:
+                fechaISO(
+                  fecha
+                ),
+
+              nombre:
+                DIAS_SEMANA[
+                  indice
+                ],
+
+              dia:
+                String(
+                  fecha.getDate()
+                ).padStart(
+                  2,
+                  '0'
+                ),
+            }
+          }
+        ),
+      [
+        inicioSemana,
+      ]
+    )
+
+  const fechaInicioSemana =
+    semana[0]?.iso
+
+  const fechaFinSemana =
+    semana[
+      semana.length -
+      1
+    ]?.iso
+
+// =======================================================
+// VISTA DE PROGRAMACIÓN
+// =======================================================
+
+const [
+  vistaProgramacion,
+  setVistaProgramacion,
+] =
+  useState(
+    'AGENDA'
+  )
+
+// =======================================================
+// DISPONIBILIDAD DIARIA DE INSTRUCTORES
+// =======================================================
+
+const [
+  fechaDisponibilidad,
+  setFechaDisponibilidad,
+] =
+  useState(
+    () =>
+      hoyColombia()
+  )
+
+const [
+  disponibilidadInstructores,
+  setDisponibilidadInstructores,
+] =
+  useState(
+    null
+  )
+
+const [
+  cargandoDisponibilidad,
+  setCargandoDisponibilidad,
+] =
+  useState(
+    false
+  )
+
+  // =======================================================
+  // AGENDA
+  // =======================================================
+
+  const [
+    agenda,
+    setAgenda,
+  ] =
+    useState([])
+
+  const [
+    cargandoAgenda,
+    setCargandoAgenda,
+  ] =
+    useState(
+      false
+    )
+
+  // =======================================================
+  // MODAL
+  // =======================================================
+
+  const [
+    modalAbierto,
+    setModalAbierto,
+  ] =
+    useState(
+      false
+    )
+
+  const [
+    modoModal,
+    setModoModal,
+  ] =
+    useState(
+      'NUEVA'
+    )
+
+  const [
+    claseSeleccionada,
+    setClaseSeleccionada,
+  ] =
+    useState(
+      null
+    )
+
+  const [
+    fechaSeleccionada,
+    setFechaSeleccionada,
+  ] =
+    useState('')
+
+  const [
+    horaSeleccionada,
+    setHoraSeleccionada,
+  ] =
+    useState('')
+
+  // =======================================================
+  // MENSAJES
+  // =======================================================
+
+  const [
+    error,
+    setError,
+  ] =
+    useState('')
+
+  const [
+    exito,
+    setExito,
+  ] =
+    useState('')
+
+  const [
+    guardando,
+    setGuardando,
+  ] =
+    useState(
+      false
+    )
+  
+    // =======================================================
+// ALERTA DE VALIDACIÓN
+// =======================================================
+
+const [
+  alertaValidacion,
+  setAlertaValidacion,
+] =
+  useState(
+    null
+  )
+
+  // =======================================================
+  // SESIÓN
+  // =======================================================
+
+  useEffect(
+    () => {
+      try {
+        const stored =
+          localStorage.getItem(
+            'currentUser'
+          )
+
+        if (
+          !stored
+        ) {
+          router.push(
+            '/login'
+          )
+
+          return
+        }
+
+        const usuario =
+          JSON.parse(
+            stored
+          )
+
+        const nitUsuario =
+          obtenerNitUsuario(
+            usuario
+          )
+
+        if (
+          !nitUsuario
+        ) {
+          setError(
+            'No se encontró el NIT del CEA en la sesión actual.'
+          )
+
+          setSesionLista(
+            true
+          )
+
+          return
+        }
+
+        setUser(
+          usuario
+        )
+
+        setNit(
+          nitUsuario
+        )
+
+        setEmpresaNombre(
+          obtenerNombreEmpresa(
+            usuario
+          )
+        )
+
+        setSesionLista(
+          true
+        )
+      } catch (
+        errorSesion
+      ) {
+        console.error(
+          errorSesion
+        )
+
+        localStorage.removeItem(
+          'currentUser'
+        )
+
+        router.push(
+          '/login'
+        )
+      }
+    },
+    [
+      router,
+    ]
+  )
+  // =======================================================
+// MOSTRAR ALERTA DE VALIDACIÓN
+// =======================================================
+
+function mostrarAlertaValidacion(
+  mensaje,
+  titulo =
+    'Falta información'
+) {
+  setAlertaValidacion({
+    titulo,
+    mensaje,
+  })
+}
+  // =======================================================
+  // USUARIO
+  // =======================================================
+
+  const usuarioOperacion =
+    useMemo(
+      () =>
+        obtenerNombreUsuario(
+          user
+        ),
+      [
+        user,
+      ]
+    )
+
+  // =======================================================
+  // INSTRUCTOR SELECCIONADO
+  // =======================================================
+
+  const instructorSeleccionado =
+    useMemo(
+      () =>
+        instructores.find(
+          item =>
+            Number(
+              item?.id
+            ) ===
+            Number(
+              instructorId
+            )
+        ) ||
+        null,
+      [
+        instructores,
+        instructorId,
+      ]
+    )
+
+  // =======================================================
+  // VEHÍCULO SELECCIONADO
+  // =======================================================
+
+  const vehiculoSeleccionado =
+    useMemo(
+      () =>
+        vehiculos.find(
+          item =>
+            Number(
+              item?.id
+            ) ===
+            Number(
+              vehiculoId
+            )
+        ) ||
+        null,
+      [
+        vehiculos,
+        vehiculoId,
+      ]
+    )
+
+  // =======================================================
+  // PROGRESO CATEGORÍA
+  // =======================================================
+
+  const progresoCategoria =
+  useMemo(
+    
+    () => {
+      if (
+        aprendiz
+          ?.origen_programacion ===
+        'CLIENTE_EXTERNO'
+      ) {
+        return {
+          categoria:
+            detalleAprendiz
+              ?.categoria ||
+            categoria,
+
+          clases_compradas:
+            numero(
+              detalleAprendiz
+                ?.clases_compradas ||
+              detalleAprendiz
+                ?.cantidad_clases_refuerzo
+            ),
+
+          clases_comprometidas:
+            numero(
+              detalleAprendiz
+                ?.clases_comprometidas
+            ),
+
+          clases_disponibles:
+            numero(
+              detalleAprendiz
+                ?.clases_disponibles
+            ),
+
+          refuerzos_dictados:
+            numero(
+              detalleAprendiz
+                ?.clases_dictadas
+            ),
+        }
+      }
+
+      return (
+        detalleAprendiz
+          ?.progreso ||
+        []
+      ).find(
+        item =>
+          item?.categoria ===
+          categoria
+      ) ||
+      null
+    },
+    [
+      aprendiz,
+      detalleAprendiz,
+      categoria,
+    ]
+  )
+  // =======================================================
+// RESUMEN OPERATIVO DEL DÍA
+// =======================================================
+
+const resumenOperativo =
+  useMemo(
+    () => {
+      const lista =
+        Array.isArray(
+          disponibilidadInstructores
+            ?.instructores
+        )
+          ? disponibilidadInstructores
+              .instructores
+          : []
+
+      if (
+        lista.length ===
+        0
+      ) {
+        return {
+          totalInstructores:
+            0,
+
+          totalClases:
+            0,
+
+          cursoVigente:
+            0,
+
+          refuerzos:
+            0,
+
+          espaciosDisponibles:
+            0,
+
+          instructoresSinClases:
+            0,
+
+          instructoresConClases:
+            0,
+
+          horasMesAcumuladas:
+            0,
+
+          menorCarga:
+            null,
+
+          ranking:
+            [],
+        }
+      }
+
+      const totalInstructores =
+        lista.length
+
+      const totalClases =
+        lista.reduce(
+          (
+            acumulado,
+            item
+          ) =>
+            acumulado +
+            numero(
+              item
+                ?.total_clases_dia
+            ),
+          0
+        )
+
+      const cursoVigente =
+        lista.reduce(
+          (
+            acumulado,
+            item
+          ) =>
+            acumulado +
+            numero(
+              item
+                ?.clases_curso_vigente_dia
+            ),
+          0
+        )
+
+      const refuerzos =
+        lista.reduce(
+          (
+            acumulado,
+            item
+          ) =>
+            acumulado +
+            numero(
+              item
+                ?.refuerzos_dia
+            ),
+          0
+        )
+
+      const espaciosDisponibles =
+        lista.reduce(
+          (
+            acumulado,
+            item
+          ) =>
+            acumulado +
+            numero(
+              item
+                ?.horarios_disponibles
+            ),
+          0
+        )
+
+      const instructoresSinClases =
+        lista.filter(
+          item =>
+            numero(
+              item
+                ?.total_clases_dia
+            ) ===
+            0
+        ).length
+
+      const instructoresConClases =
+        totalInstructores -
+        instructoresSinClases
+
+      const horasMesAcumuladas =
+        lista.reduce(
+          (
+            acumulado,
+            item
+          ) =>
+            acumulado +
+            numero(
+              item
+                ?.horas_mes_curso_vigente
+            ),
+          0
+        )
+
+      const ranking =
+        [...lista]
+          .sort(
+            (
+              a,
+              b
+            ) => {
+              const diferenciaDia =
+                numero(
+                  a
+                    ?.total_clases_dia
+                ) -
+                numero(
+                  b
+                    ?.total_clases_dia
+                )
+
+              if (
+                diferenciaDia !==
+                0
+              ) {
+                return diferenciaDia
+              }
+
+              return (
+                numero(
+                  a
+                    ?.horas_mes_curso_vigente
+                ) -
+                numero(
+                  b
+                    ?.horas_mes_curso_vigente
+                )
+              )
+            }
+          )
+          .slice(
+            0,
+            3
+          )
+
+      return {
+        totalInstructores,
+
+        totalClases,
+
+        cursoVigente,
+
+        refuerzos,
+
+        espaciosDisponibles,
+
+        instructoresSinClases,
+
+        instructoresConClases,
+
+        horasMesAcumuladas,
+
+        menorCarga:
+          ranking[0] ||
+          null,
+
+        ranking,
+      }
+    },
+    [
+      disponibilidadInstructores,
+    ]
+  )
+  // =======================================================
+  // CARGA INICIAL
+  // =======================================================
+
+  const cargarInicial =
+    useCallback(
+      async () => {
+        if (
+          !nit
+        ) {
+          return
+        }
+
+        try {
+          const params =
+            new URLSearchParams()
+
+          params.set(
+            'recurso',
+            'inicial'
+          )
+
+          params.set(
+            'nit',
+            nit
+          )
+
+          const data =
+            await fetchJsonSeguro(
+              `${API_CATALOGOS}?${params.toString()}`
+            )
+
+          setMotivosNoDictada(
+            data
+              ?.data
+              ?.motivos_no_dictada ||
+            []
+          )
+
+          if (
+            data
+              ?.empresa
+              ?.nombre
+          ) {
+            setEmpresaNombre(
+              data
+                .empresa
+                .nombre
+            )
+          }
+        } catch (
+          errorInicial
+        ) {
+          console.error(
+            errorInicial
+          )
+        }
+      },
+      [
+        nit,
+      ]
+    )
+
+  // =======================================================
+  // PRECARGAR VEHÍCULOS
+  // =======================================================
+
+  const cargarVehiculos =
+    useCallback(
+      async (
+        categoriaFiltro =
+          ''
+      ) => {
+        if (
+          !nit
+        ) {
+          return
+        }
+
+        try {
+          const params =
+            new URLSearchParams()
+
+          params.set(
+            'recurso',
+            'vehiculos'
+          )
+
+          params.set(
+            'nit',
+            nit
+          )
+
+          params.set(
+            'fecha',
+            hoyColombia()
+          )
+
+          if (
+            categoriaFiltro
+          ) {
+            params.set(
+              'categoria',
+              categoriaFiltro
+            )
+          }
+
+          const data =
+            await fetchJsonSeguro(
+              `${API_CATALOGOS}?${params.toString()}`
+            )
+
+          setVehiculos(
+            Array.isArray(
+              data?.data
+            )
+              ? data.data
+              : []
+          )
+        } catch (
+          errorVehiculo
+        ) {
+          console.error(
+            errorVehiculo
+          )
+
+          setVehiculos(
+            []
+          )
+        }
+      },
+      [
+        nit,
+      ]
+    )
+
+  // =======================================================
+  // CARGA INICIAL
+  // =======================================================
+
+  useEffect(
+    () => {
+      if (
+        !sesionLista ||
+        !nit
+      ) {
+        return
+      }
+
+      cargarInicial()
+
+      cargarVehiculos()
+    },
+    [
+      sesionLista,
+      nit,
+      cargarInicial,
+      cargarVehiculos,
+    ]
+  )
+
+  // =======================================================
+  // BÚSQUEDA AUTOMÁTICA APRENDIZ
+  // =======================================================
+
+  useEffect(
+    () => {
+      const buscar =
+        texto(
+          busqueda
+        )
+
+      if (
+        aprendiz ||
+        !nit ||
+        buscar.length <
+          3
+      ) {
+        if (
+          buscar.length <
+          3
+        ) {
+          setResultadosAprendiz(
+            []
+          )
+        }
+
+        return
+      }
+
+      const timer =
+        setTimeout(
+          async () => {
+            setBuscandoAprendiz(
+              true
+            )
+
+            try {
+              const params =
+                new URLSearchParams()
+
+              params.set(
+                'recurso',
+                'personas'
+              )
+
+              params.set(
+                'nit',
+                nit
+              )
+
+              params.set(
+                'busqueda',
+                buscar
+              )
+
+              params.set(
+                'tipo_programacion',
+                tipoProgramacion
+              )
+
+              const data =
+                await fetchJsonSeguro(
+                  `${API_CATALOGOS}?${params.toString()}`
+                )
+
+              setResultadosAprendiz(
+                Array.isArray(
+                  data?.data
+                )
+                  ? data.data
+                  : []
+              )
+            } catch (
+              errorBusqueda
+            ) {
+              console.error(
+                errorBusqueda
+              )
+
+              setResultadosAprendiz(
+                []
+              )
+            } finally {
+              setBuscandoAprendiz(
+                false
+              )
+            }
+          },
+          400
+        )
+
+      return () =>
+        clearTimeout(
+          timer
+        )
+    },
+    [
+      nit,
+      busqueda,
+      aprendiz,
+      tipoProgramacion,
+    ]
+  )
+
+  // =======================================================
+  // CARGAR DETALLE APRENDIZ
+  // =======================================================
+
+  const cargarDetalleAprendiz =
+    useCallback(
+      async (
+        matriculaId,
+        fecha =
+          hoyColombia()
+      ) => {
+        if (
+          !nit ||
+          !matriculaId
+        ) {
+          return null
+        }
+
+        const params =
+          new URLSearchParams()
+
+        params.set(
+          'recurso',
+          'aprendiz'
+        )
+
+        params.set(
+          'nit',
+          nit
+        )
+
+        params.set(
+          'matricula_id',
+          String(
+            matriculaId
+          )
+        )
+
+        params.set(
+          'fecha',
+          fecha
+        )
+
+        params.set(
+          'tipo_programacion',
+          tipoProgramacion
+        )
+
+        const data =
+          await fetchJsonSeguro(
+            `${API_CATALOGOS}?${params.toString()}`
+          )
+
+        setDetalleAprendiz(
+          data?.data ||
+          null
+        )
+
+        return data?.data ||
+          null
+      },
+      [
+        nit,
+        tipoProgramacion,
+      ]
+    )
+
+  // =======================================================
+  // SELECCIONAR APRENDIZ
+  // =======================================================
+
+  async function seleccionarAprendiz(
+  item
+) {
+  setError('')
+  setExito('')
+
+  setAprendiz(
+    item
+  )
+
+  setBusqueda(
+    item?.nombre_completo ||
+    ''
+  )
+
+  setResultadosAprendiz(
+    []
+  )
+  
+  try {
+    // =====================================================
+    // CLIENTE EXTERNO DE REFUERZO
+    // =====================================================
+
+    if (
+      item?.origen_programacion ===
+      'CLIENTE_EXTERNO'
+    ) {
+      const reciboRefuerzoId =
+        Number(
+          item?.recibo_refuerzo_id
+        )
+
+      if (
+        !reciboRefuerzoId
+      ) {
+        throw new Error(
+          'No fue posible identificar el pago de refuerzo.'
+        )
+      }
+
+      const params =
+        new URLSearchParams()
+
+      params.set(
+        'recurso',
+        'refuerzo'
+      )
+
+      params.set(
+        'nit',
+        nit
+      )
+
+      params.set(
+        'recibo_refuerzo_id',
+        String(
+          reciboRefuerzoId
+        )
+      )
+
+      params.set(
+        'tipo_programacion',
+        'REFUERZO'
+      )
+
+      const data =
+        await fetchJsonSeguro(
+          `${API_CATALOGOS}?${params.toString()}`
+        )
+
+      const detalle =
+        data?.data ||
+        null
+
+      setDetalleAprendiz(
+        detalle
+      )
+
+      const categoriaRefuerzo =
+        detalle?.categoria ||
+        (
+          Array.isArray(
+            detalle?.categorias
+          )
+            ? detalle.categorias[0]
+            : ''
+        )
+
+      setCategoria(
+        categoriaRefuerzo ||
+        ''
+      )
+
+      return
+    }
+
+    // =====================================================
+    // APRENDIZ
+    // =====================================================
+
+    const matriculaId =
+      item?.matricula_id ||
+      item?.id
+
+    const detalle =
+      await cargarDetalleAprendiz(
+        matriculaId
+      )
+
+    const categorias =
+      Array.isArray(
+        detalle?.categorias
+      )
+        ? detalle.categorias
+        : []
+
+    if (
+      categorias.length ===
+      1
+    ) {
+      setCategoria(
+        categorias[0]
+      )
+    } else {
+      setCategoria(
+        ''
+      )
+    }
+  } catch (
+    errorDetalle
+  ) {
+    setError(
+      errorDetalle
+        ?.message ||
+      'No fue posible consultar la persona seleccionada.'
+    )
+  }
+}
+
+  // =======================================================
+// LIMPIAR PERSONA
+// =======================================================
+
+function limpiarAprendiz() {
+  setAprendiz(
+    null
+  )
+
+  setDetalleAprendiz(
+    null
+  )
+
+  setBusqueda(
+    ''
+  )
+
+  setResultadosAprendiz(
+    []
+  )
+
+  setCategoria(
+    ''
+  )
+
+  setVehiculoId(
+    ''
+  )
+
+  setError(
+    ''
+  )
+
+  setExito(
+    ''
+  )
+
+  // =====================================================
+  // IMPORTANTE
+  //
+  // NO limpiar instructor.
+  // NO limpiar agenda.
+  //
+  // El instructor representa la agenda que estamos
+  // consultando, independientemente de la persona que
+  // se vaya a programar.
+  // =====================================================
+
+  cargarInstructores(
+    ''
+  )
+
+  cargarVehiculos(
+    ''
+  )
+}
+
+  // =======================================================
+// LIMPIAR FILTROS
+// =======================================================
+
+function limpiarFiltros() {
+  setBusqueda('')
+
+  setResultadosAprendiz(
+    []
+  )
+
+  setAprendiz(
+    null
+  )
+
+  setDetalleAprendiz(
+    null
+  )
+
+  setCategoria(
+    ''
+  )
+
+  setInstructorId(
+    ''
+  )
+
+  setVehiculoId(
+    ''
+  )
+
+  setAgenda(
+    []
+  )
+
+  setError('')
+  setExito('')
+
+  // =====================================================
+  // VOLVER A CATÁLOGOS GENERALES
+  // =====================================================
+
+  cargarInstructores(
+    ''
+  )
+
+  cargarVehiculos(
+    ''
+  )
+}
+  // =======================================================
+// CAMBIAR TIPO DE PROGRAMACIÓN
+// =======================================================
+
+function cambiarTipoProgramacion(
+  valor
+) {
+  setTipoProgramacion(
+    valor
+  )
+
+  // =====================================================
+  // LIMPIAR SOLO DATOS DE LA NUEVA PROGRAMACIÓN
+  // =====================================================
+
+  setBusqueda(
+    ''
+  )
+
+  setResultadosAprendiz(
+    []
+  )
+
+  setAprendiz(
+    null
+  )
+
+  setDetalleAprendiz(
+    null
+  )
+
+  setCategoria(
+    ''
+  )
+
+  setVehiculoId(
+    ''
+  )
+
+  setError(
+    ''
+  )
+
+  setExito(
+    ''
+  )
+
+  // =====================================================
+  // NO TOCAR:
+  //
+  // instructorId
+  // agenda
+  //
+  // La agenda pertenece al instructor seleccionado.
+  // Cambiar CURSO/REFUERZO solamente cambia el tipo de
+  // nueva programación que se desea realizar.
+  // =====================================================
+
+  cargarVehiculos(
+    ''
+  )
+}
+  // =======================================================
+  // CAMBIAR CATEGORÍA
+  // =======================================================
+
+  function cambiarCategoria(
+  valor
+) {
+  setCategoria(
+    valor
+  )
+
+  setVehiculoId(
+    ''
+  )
+}
+
+  // =======================================================
+// INSTRUCTORES
+// =======================================================
+//
+// Sin categoría:
+// carga todos los instructores habilitados.
+//
+// Con categoría:
+// carga únicamente los compatibles.
+//
+// =======================================================
+
+const cargarInstructores =
+  useCallback(
+    async (
+      categoriaFiltro =
+        categoria
+    ) => {
+      if (
+        !nit
+      ) {
+        setInstructores(
+          []
+        )
+
+        return
+      }
+
+      try {
+        const params =
+          new URLSearchParams()
+
+        params.set(
+          'recurso',
+          'instructores'
+        )
+
+        params.set(
+          'nit',
+          nit
+        )
+
+        params.set(
+          'fecha',
+          hoyColombia()
+        )
+
+        params.set(
+          'tipo_programacion',
+          tipoProgramacion
+        )
+
+        if (
+          categoriaFiltro
+        ) {
+          params.set(
+            'categoria',
+            categoriaFiltro
+          )
+        }
+
+        const data =
+          await fetchJsonSeguro(
+            `${API_CATALOGOS}?${params.toString()}`
+          )
+
+        setInstructores(
+          Array.isArray(
+            data?.data
+          )
+            ? data.data
+            : []
+        )
+      } catch (
+        errorInstructor
+      ) {
+        console.error(
+          errorInstructor
+        )
+
+        setInstructores(
+          []
+        )
+
+        setError(
+          errorInstructor
+            ?.message ||
+          'No fue posible consultar instructores.'
+        )
+      }
+    },
+    [
+      nit,
+      categoria,
+      tipoProgramacion,
+    ]
+  )
+
+// =======================================================
+// PRECARGAR INSTRUCTORES AL ABRIR
+// =======================================================
+
+useEffect(
+  () => {
+    if (
+      !sesionLista ||
+      !nit
+    ) {
+      return
+    }
+
+    cargarInstructores('')
+  },
+  [
+    sesionLista,
+    nit,
+    tipoProgramacion,
+    cargarInstructores,
+  ]
+)
+
+// =======================================================
+// REFILTRAR RECURSOS AL CAMBIAR CATEGORÍA
+// =======================================================
+//
+// La categoría define:
+//
+// - instructores compatibles;
+// - vehículos compatibles.
+//
+// VEHÍCULOS:
+//
+// A2
+//   -> MOTOCICLETA
+//
+// B1 / C1 / RC1
+//   -> AUTOMOVIL / CAMIONETA
+//
+// C2
+//   -> CAMION
+//
+// =======================================================
+
+useEffect(
+  () => {
+    if (
+      !nit
+    ) {
+      return
+    }
+
+    cargarInstructores(
+      categoria
+    )
+
+    cargarVehiculos(
+      categoria
+    )
+  },
+  [
+    nit,
+    categoria,
+    cargarInstructores,
+    cargarVehiculos,
+  ]
+)
+
+// =======================================================
+// DISPONIBILIDAD DIARIA DE INSTRUCTORES
+// =======================================================
+
+const cargarDisponibilidadInstructores =
+  useCallback(
+    async (
+      fechaConsulta =
+        fechaDisponibilidad
+    ) => {
+      if (
+        !nit ||
+        !fechaConsulta
+      ) {
+        setDisponibilidadInstructores(
+          null
+        )
+
+        return
+      }
+
+      setCargandoDisponibilidad(
+        true
+      )
+
+      try {
+        const params =
+          new URLSearchParams()
+
+        params.set(
+          'recurso',
+          'disponibilidad_instructores'
+        )
+
+        params.set(
+          'nit',
+          nit
+        )
+
+        params.set(
+          'fecha',
+          fechaConsulta
+        )
+
+        params.set(
+          'tipo_programacion',
+          tipoProgramacion
+        )
+
+        // =================================================
+        // CATEGORÍA
+        //
+        // Si ya existe una categoría seleccionada,
+        // mostramos únicamente instructores compatibles.
+        //
+        // Si no existe categoría, mostramos todos los
+        // instructores documentalmente habilitados.
+        // =================================================
+
+        if (
+          categoria
+        ) {
+          params.set(
+            'categoria',
+            categoria
+          )
+        }
+
+        const data =
+          await fetchJsonSeguro(
+            `${API_CATALOGOS}?${params.toString()}`
+          )
+
+        setDisponibilidadInstructores(
+          data?.data ||
+          null
+        )
+      } catch (
+        errorDisponibilidad
+      ) {
+        console.error(
+          'Error cargando disponibilidad de instructores:',
+          errorDisponibilidad
+        )
+
+        setDisponibilidadInstructores(
+          null
+        )
+
+        setError(
+          errorDisponibilidad
+            ?.message ||
+          'No fue posible consultar la disponibilidad de instructores.'
+        )
+      } finally {
+        setCargandoDisponibilidad(
+          false
+        )
+      }
+    },
+    [
+      nit,
+      fechaDisponibilidad,
+      tipoProgramacion,
+      categoria,
+    ]
+  )
+
+// =======================================================
+// RECARGAR DISPONIBILIDAD
+// =======================================================
+
+useEffect(
+  () => {
+    if (
+      vistaProgramacion !==
+        'DISPONIBILIDAD' ||
+      !nit
+    ) {
+      return
+    }
+
+    cargarDisponibilidadInstructores(
+      fechaDisponibilidad
+    )
+  },
+  [
+    vistaProgramacion,
+    nit,
+    fechaDisponibilidad,
+    tipoProgramacion,
+    categoria,
+    cargarDisponibilidadInstructores,
+  ]
+)
+
+// =======================================================
+// NAVEGACIÓN DISPONIBILIDAD
+// =======================================================
+
+function disponibilidadAnterior() {
+  const fecha =
+    new Date(
+      `${fechaDisponibilidad}T12:00:00`
+    )
+
+  setFechaDisponibilidad(
+    fechaISO(
+      sumarDias(
+        fecha,
+        -1
+      )
+    )
+  )
+}
+
+function disponibilidadSiguiente() {
+  const fecha =
+    new Date(
+      `${fechaDisponibilidad}T12:00:00`
+    )
+
+  setFechaDisponibilidad(
+    fechaISO(
+      sumarDias(
+        fecha,
+        1
+      )
+    )
+  )
+}
+
+function disponibilidadHoy() {
+  setFechaDisponibilidad(
+    hoyColombia()
+  )
+}
+
+  // =======================================================
+  // AGENDA DEL INSTRUCTOR
+  // =======================================================
+
+  const cargarAgenda =
+  useCallback(
+    async () => {
+      if (
+        !nit ||
+        !fechaInicioSemana ||
+        !fechaFinSemana
+      ) {
+        setAgenda(
+          []
+        )
+
+        return
+      }
+
+      const tieneInstructor =
+        Boolean(
+          instructorId
+        )
+
+      const esClienteExterno =
+        aprendiz
+          ?.origen_programacion ===
+        'CLIENTE_EXTERNO'
+
+      const matriculaId =
+        !esClienteExterno
+          ? Number(
+              aprendiz
+                ?.matricula_id ||
+              aprendiz?.id ||
+              0
+            )
+          : 0
+
+      const reciboRefuerzoId =
+        esClienteExterno
+          ? Number(
+              aprendiz
+                ?.recibo_refuerzo_id ||
+              0
+            )
+          : 0
+
+      // ===================================================
+      // SIN CRITERIO DE CONSULTA
+      // ===================================================
+
+      if (
+        !tieneInstructor &&
+        !matriculaId &&
+        !reciboRefuerzoId
+      ) {
+        setAgenda(
+          []
+        )
+
+        return
+      }
+
+      setCargandoAgenda(
+        true
+      )
+
+      try {
+        const params =
+          new URLSearchParams()
+
+        params.set(
+          'recurso',
+          'agenda'
+        )
+
+        params.set(
+          'nit',
+          nit
+        )
+
+        params.set(
+          'fecha_inicio',
+          fechaInicioSemana
+        )
+
+        params.set(
+          'fecha_fin',
+          fechaFinSemana
+        )
+
+        // =================================================
+        // PRIORIDAD 1: INSTRUCTOR
+        //
+        // Si existe un instructor seleccionado,
+        // mostramos SIEMPRE TODA su agenda.
+        //
+        // NO enviar:
+        //
+        // categoria
+        // tipo_programacion
+        // matricula_id
+        // recibo_refuerzo_id
+        // documento_persona
+        //
+        // porque cualquier clase ya asignada al instructor
+        // ocupa físicamente ese horario, independientemente
+        // de:
+        //
+        // - la categoría;
+        // - CURSO o REFUERZO;
+        // - el aprendiz o cliente.
+        //
+        // Ejemplo:
+        //
+        // 10:00 · A2 · CURSO
+        //
+        // significa que ese instructor NO puede programarse
+        // a las 10:00 para:
+        //
+        // B1
+        // C1
+        // C2
+        // REFUERZO
+        // otra clase A2
+        //
+        // =================================================
+
+        if (
+          tieneInstructor
+        ) {
+          params.set(
+            'instructor_id',
+            String(
+              instructorId
+            )
+          )
+        }
+
+        // =================================================
+        // PRIORIDAD 2: PERSONA
+        //
+        // Si NO existe instructor seleccionado,
+        // mostramos toda la agenda de la persona.
+        //
+        // La consulta por documento permite reunir todas
+        // las matrículas/categorías del aprendiz o todos
+        // los refuerzos del cliente.
+        //
+        // =================================================
+
+        else if (
+          aprendiz?.documento
+        ) {
+          params.set(
+            'documento_persona',
+            String(
+              aprendiz.documento
+            )
+          )
+
+          params.set(
+            'origen_persona',
+            aprendiz
+              ?.origen_programacion ===
+              'CLIENTE_EXTERNO'
+              ? 'CLIENTE_EXTERNO'
+              : 'APRENDIZ'
+          )
+        }     
+        const data =
+                await fetchJsonSeguro(
+                  `${API_PROGRAMACION}?${params.toString()}`
+                )
+
+              setAgenda(
+                Array.isArray(
+                  data?.data
+                )
+                  ? data.data
+                  : []
+              )
+            } catch (
+              errorAgenda
+            ) {
+              console.error(
+                'Error cargando agenda:',
+                errorAgenda
+              )
+
+              setAgenda(
+                []
+              )
+
+              setError(
+                errorAgenda
+                  ?.message ||
+                'No fue posible consultar la agenda.'
+              )
+            } finally {
+              setCargandoAgenda(
+                false
+              )
+            }
+          },
+          [
+            nit,
+            instructorId,
+            aprendiz,
+            fechaInicioSemana,
+            fechaFinSemana,
+          ]
+        )
+
+  // =======================================================
+// RECARGAR AGENDA AUTOMÁTICAMENTE
+// =======================================================
+
+useEffect(
+  () => {
+    if (
+      !nit ||
+      !fechaInicioSemana ||
+      !fechaFinSemana
+    ) {
+      return
+    }
+
+    cargarAgenda()
+  },
+  [
+    cargarAgenda,
+  ]
+)
+  // =======================================================
+// CLASE EN HORARIO
+// =======================================================
+
+function obtenerClaseHorario(
+  fecha,
+  hora
+) {
+  return agenda.find(
+    item =>
+      item?.fecha ===
+        fecha &&
+      texto(
+        item?.hora_inicio
+      ).slice(
+        0,
+        5
+      ) ===
+        hora &&
+      texto(
+        item?.estado
+      ) !==
+        'CANCELADA'
+  )
+}
+
+// =======================================================
+// PROGRAMAR DESDE DISPONIBILIDAD DE INSTRUCTORES
+// =======================================================
+
+async function programarDesdeDisponibilidad(
+  instructor,
+  fecha,
+  hora
+) {
+  setError('')
+  setExito('')
+
+  if (
+    !instructor?.id
+  ) {
+    mostrarAlertaValidacion(
+      'No fue posible identificar el instructor seleccionado.',
+      'Instructor no válido'
+    )
+
+    return
+  }
+
+  // =====================================================
+  // SELECCIONAR INSTRUCTOR
+  // =====================================================
+
+  setInstructorId(
+    String(
+      instructor.id
+    )
+  )
+
+  // =====================================================
+  // IMPORTANTE
+  //
+  // No limpiamos:
+  // aprendiz
+  // categoria
+  // vehiculo
+  //
+  // La idea es conservar la preparación que ya hizo
+  // el usuario antes de consultar disponibilidad.
+  // =====================================================
+
+  // =====================================================
+  // VALIDAR DATOS BÁSICOS ANTES DE CONTINUAR
+  // =====================================================
+
+  if (
+    !aprendiz
+  ) {
+    mostrarAlertaValidacion(
+      tipoProgramacion ===
+        'REFUERZO'
+        ? 'Seleccione primero un aprendiz o cliente de refuerzo.'
+        : 'Seleccione primero un aprendiz.',
+      tipoProgramacion ===
+        'REFUERZO'
+        ? 'Seleccione un cliente'
+        : 'Seleccione un aprendiz'
+    )
+
+    return
+  }
+
+  if (
+    !categoria
+  ) {
+    mostrarAlertaValidacion(
+      'Seleccione primero la categoría que desea programar.',
+      'Seleccione una categoría'
+    )
+
+    return
+  }
+
+  if (
+    !vehiculoId
+  ) {
+    mostrarAlertaValidacion(
+      'Seleccione primero la placa del vehículo que se utilizará.',
+      'Seleccione un vehículo'
+    )
+
+    return
+  }
+
+  // =====================================================
+  // ABRIR FLUJO EXISTENTE
+  // =====================================================
+
+  await abrirNuevaClase(
+  fecha,
+  hora,
+  instructor
+)
+}
+  // =======================================================
+  // ABRIR NUEVA CLASE
+  // =======================================================
+
+ async function abrirNuevaClase(
+  fecha,
+  hora,
+  instructorForzado =
+    null
+) {
+    setError('')
+setExito('')
+
+// =====================================================
+// HORARIO NO DISPONIBLE
+// =====================================================
+
+if (
+  horarioYaPaso(
+    fecha,
+    hora
+  )
+) {
+  const mensaje =
+    'No es posible programar clases en fechas u horarios anteriores.'
+
+  setError(
+    mensaje
+  )
+
+  mostrarAlertaValidacion(
+    mensaje,
+    'Horario no disponible'
+  )
+
+  return
+}
+
+// =====================================================
+// PERSONA
+// =====================================================
+
+if (
+  !aprendiz
+) {
+  const mensaje =
+    tipoProgramacion ===
+      'REFUERZO'
+      ? 'Seleccione un aprendiz o cliente de refuerzo antes de programar.'
+      : 'Seleccione un aprendiz antes de programar.'
+
+  setError(
+    mensaje
+  )
+
+  mostrarAlertaValidacion(
+    mensaje,
+    tipoProgramacion ===
+      'REFUERZO'
+      ? 'Seleccione un cliente'
+      : 'Seleccione un aprendiz'
+  )
+
+  return
+}
+
+// =====================================================
+// CATEGORÍA
+// =====================================================
+
+if (
+  !categoria
+) {
+  const mensaje =
+    'Seleccione una categoría antes de programar la clase.'
+
+  setError(
+    mensaje
+  )
+
+  mostrarAlertaValidacion(
+    mensaje,
+    'Seleccione una categoría'
+  )
+
+  return
+}
+
+// =====================================================
+// INSTRUCTOR
+// =====================================================
+
+const instructorParaProgramar =
+  instructorForzado ||
+  instructorSeleccionado
+
+if (
+  !instructorParaProgramar
+) {
+  const mensaje =
+    'Seleccione un instructor para continuar con la programación.'
+
+  setError(
+    mensaje
+  )
+
+  mostrarAlertaValidacion(
+    mensaje,
+    'Falta seleccionar instructor'
+  )
+
+  return
+}
+
+// =====================================================
+// VEHÍCULO
+// =====================================================
+
+if (
+  !vehiculoSeleccionado
+) {
+  const mensaje =
+    'Seleccione la placa del vehículo que se utilizará en la clase.'
+
+  setError(
+    mensaje
+  )
+
+  mostrarAlertaValidacion(
+    mensaje,
+    'Falta seleccionar vehículo'
+  )
+
+  return
+}
+
+try {
+      // ===================================================
+      // REFRESCAR APRENDIZ PARA EL DÍA SELECCIONADO
+      // ===================================================
+
+      if (
+        aprendiz
+          ?.origen_programacion ===
+        'CLIENTE_EXTERNO'
+      ) {
+        const paramsRefuerzo =
+          new URLSearchParams()
+
+        paramsRefuerzo.set(
+          'recurso',
+          'refuerzo'
+        )
+
+        paramsRefuerzo.set(
+          'nit',
+          nit
+        )
+
+        paramsRefuerzo.set(
+          'recibo_refuerzo_id',
+          String(
+            aprendiz
+              ?.recibo_refuerzo_id
+          )
+        )
+
+        paramsRefuerzo.set(
+          'tipo_programacion',
+          'REFUERZO'
+        )
+
+  const dataRefuerzo =
+    await fetchJsonSeguro(
+      `${API_CATALOGOS}?${paramsRefuerzo.toString()}`
+    )
+
+  const detalleRefuerzo =
+    dataRefuerzo?.data ||
+    null
+
+  if (
+      numero(
+        detalleRefuerzo
+          ?.clases_disponibles
+      ) <=
+      0
+    ) {
+      const mensaje =
+        'El cliente ya no tiene clases de refuerzo disponibles.'
+
+      setError(
+        mensaje
+      )
+
+      mostrarAlertaValidacion(
+        mensaje,
+        'Sin clases disponibles'
+      )
+
+      return
+    }
+
+  setDetalleAprendiz(
+    detalleRefuerzo
+  )
+} else {
+  await cargarDetalleAprendiz(
+    aprendiz
+      ?.matricula_id ||
+    aprendiz?.id,
+    fecha
+  )
+}
+
+      // ===================================================
+      // REFRESCAR VEHÍCULO PARA FECHA/HORA
+      // ===================================================
+
+      const params =
+        new URLSearchParams()
+
+      params.set(
+        'recurso',
+        'vehiculos'
+      )
+
+      params.set(
+        'nit',
+        nit
+      )
+
+      params.set(
+        'categoria',
+        categoria
+      )
+
+      params.set(
+        'fecha',
+        fecha
+      )
+
+      params.set(
+        'hora',
+        hora
+      )
+
+      const data =
+        await fetchJsonSeguro(
+          `${API_CATALOGOS}?${params.toString()}`
+        )
+
+      const lista =
+        Array.isArray(
+          data?.data
+        )
+          ? data.data
+          : []
+
+      const vehiculoActual =
+        lista.find(
+          item =>
+            Number(
+              item?.id
+            ) ===
+            Number(
+              vehiculoId
+            )
+        )
+
+      if (
+        !vehiculoActual
+      ) {
+        const mensaje =
+          'El vehículo seleccionado no está habilitado para esta fecha o categoría.'
+
+        setError(
+          mensaje
+        )
+
+        mostrarAlertaValidacion(
+          mensaje,
+          'Vehículo no habilitado'
+        )
+
+        return
+      }
+
+      if (
+        !vehiculoActual
+          ?.disponible
+      ) {
+        const mensaje =
+          vehiculoActual
+            ?.motivo_no_disponible ||
+          'El vehículo seleccionado ya está ocupado en este horario.'
+
+        setError(
+          mensaje
+        )
+
+        mostrarAlertaValidacion(
+          mensaje,
+          'Vehículo no disponible'
+        )
+
+        return
+      }
+
+      if (
+        instructorForzado?.id
+      ) {
+        setInstructorId(
+          String(
+            instructorForzado.id
+          )
+        )
+      }
+
+      setFechaSeleccionada(
+        fecha
+      )
+
+      setHoraSeleccionada(
+        hora
+      )
+
+      setClaseSeleccionada(
+        null
+      )
+
+      setModoModal(
+        'NUEVA'
+      )
+
+      setModalAbierto(
+        true
+      )
+    } catch (
+      errorNueva
+    ) {
+      const mensaje =
+        errorNueva
+          ?.message ||
+        'No fue posible preparar la programación.'
+
+      setError(
+        mensaje
+      )
+
+      mostrarAlertaValidacion(
+        mensaje,
+        'No es posible continuar'
+      )
+    }
+  }
+
+// =======================================================
+// ABRIR CLASE DESDE DISPONIBILIDAD DE INSTRUCTORES
+// =======================================================
+
+async function abrirClaseDesdeDisponibilidad(
+  instructor,
+  horario
+) {
+  setError('')
+  setExito('')
+
+  const claseResumen =
+    horario?.clase ||
+    null
+
+  if (
+    !instructor?.id ||
+    !claseResumen?.id
+  ) {
+    mostrarAlertaValidacion(
+      'No fue posible identificar la clase seleccionada.',
+      'Clase no disponible'
+    )
+
+    return
+  }
+
+  try {
+    // =====================================================
+    // SELECCIONAR INSTRUCTOR
+    //
+    // Esto también permite que al regresar posteriormente
+    // a la agenda semanal quede seleccionado el instructor.
+    // =====================================================
+
+    setInstructorId(
+      String(
+        instructor.id
+      )
+    )
+
+    // =====================================================
+    // CONSULTAR LA CLASE COMPLETA
+    //
+    // La matriz únicamente contiene un resumen de la clase.
+    // Consultamos la agenda del instructor para ese día
+    // para obtener persona, vehículo, instructor, etc.
+    // =====================================================
+
+    const params =
+      new URLSearchParams()
+
+    params.set(
+      'recurso',
+      'agenda'
+    )
+
+    params.set(
+      'nit',
+      nit
+    )
+
+    params.set(
+      'instructor_id',
+      String(
+        instructor.id
+      )
+    )
+
+    params.set(
+      'fecha_inicio',
+      fechaDisponibilidad
+    )
+
+    params.set(
+      'fecha_fin',
+      fechaDisponibilidad
+    )
+
+    const data =
+      await fetchJsonSeguro(
+        `${API_PROGRAMACION}?${params.toString()}`
+      )
+
+    const clasesDia =
+      Array.isArray(
+        data?.data
+      )
+        ? data.data
+        : []
+
+    const claseCompleta =
+      clasesDia.find(
+        item =>
+          Number(
+            item?.id
+          ) ===
+          Number(
+            claseResumen.id
+          )
+      ) ||
+      null
+
+    if (
+      !claseCompleta
+    ) {
+      throw new Error(
+        'La clase ya no se encuentra disponible. Actualice la programación.'
+      )
+    }
+
+    // =====================================================
+    // ABRIR EL MISMO MODAL EXISTENTE
+    // =====================================================
+    setFechaDisponibilidad(
+      claseCompleta?.fecha ||
+      fechaDisponibilidad
+    )
+    abrirClase(
+      claseCompleta
+    )
+  } catch (
+    errorClase
+  ) {
+    console.error(
+      'Error abriendo clase desde disponibilidad:',
+      errorClase
+    )
+
+    const mensaje =
+      errorClase?.message ||
+      'No fue posible consultar la clase seleccionada.'
+
+    setError(
+      mensaje
+    )
+
+    mostrarAlertaValidacion(
+      mensaje,
+      'No fue posible abrir la clase'
+    )
+  }
+}
+
+  // =======================================================
+// ABRIR CLASE EXISTENTE
+// =======================================================
+
+function abrirClase(
+  clase
+) {
+  setError(
+    ''
+  )
+
+  setExito(
+    ''
+  )
+
+  // =====================================================
+  // TODA CLASE VISIBLE EN LA AGENDA DEL INSTRUCTOR
+  // PUEDE SER ADMINISTRADA.
+  //
+  // La persona seleccionada sirve para NUEVAS
+  // programaciones y para resaltado, pero no bloquea
+  // la administración de otras clases del instructor.
+  // =====================================================
+
+  setClaseSeleccionada(
+    clase
+  )
+
+  setModoModal(
+    'EDITAR'
+  )
+
+  setFechaSeleccionada(
+    clase?.fecha ||
+    ''
+  )
+
+  setHoraSeleccionada(
+    texto(
+      clase?.hora_inicio
+    ).slice(
+      0,
+      5
+    )
+  )
+
+  setModalAbierto(
+    true
+  )
+}
+  // =======================================================
+  // PROGRAMAR
+  // =======================================================
+
+  async function registrarClase() {
+  setGuardando(
+    true
+  )
+
+  setError('')
+  setExito('')
+
+  try {
+    const esClienteExterno =
+      aprendiz
+        ?.origen_programacion ===
+      'CLIENTE_EXTERNO'
+
+    const matriculaId =
+      esClienteExterno
+        ? null
+        : Number(
+            aprendiz
+              ?.matricula_id ||
+            aprendiz?.id
+          )
+
+    const reciboRefuerzoId =
+      esClienteExterno
+        ? Number(
+            aprendiz
+              ?.recibo_refuerzo_id
+          )
+        : null
+
+    const data =
+      await fetchJsonSeguro(
+        API_PROGRAMACION,
+        {
+          method:
+            'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+
+          body:
+            JSON.stringify({
+              accion:
+                'programar',
+
+              nit,
+
+              matricula_id:
+                matriculaId,
+
+              recibo_refuerzo_id:
+                reciboRefuerzoId,
+
+              instructor_id:
+                Number(
+                  instructorId
+                ),
+
+              vehiculo_id:
+                Number(
+                  vehiculoId
+                ),
+
+              categoria,
+
+              fecha:
+                fechaSeleccionada,
+
+              hora_inicio:
+                horaSeleccionada,
+
+              tipo_programacion:
+                tipoProgramacion,
+
+              usuario:
+                usuarioOperacion,
+            }),
+        }
+      )
+
+    setExito(
+      data?.message ||
+      'Clase programada correctamente.'
+    )
+
+    setModalAbierto(
+      false
+    )
+
+    // =====================================================
+    // REFRESCAR INFORMACIÓN DESPUÉS DE PROGRAMAR
+    // =====================================================
+
+    const tareas = [
+      cargarAgenda(),
+
+      cargarInstructores(
+        categoria
+      ),
+
+      cargarVehiculos(
+        categoria
+      ),
+
+      cargarDisponibilidadInstructores(
+        fechaSeleccionada
+      ),
+    ]
+
+    // =====================================================
+    // APRENDIZ
+    // =====================================================
+
+    if (
+      !esClienteExterno &&
+      matriculaId
+    ) {
+      tareas.push(
+        cargarDetalleAprendiz(
+          matriculaId,
+          fechaSeleccionada
+        )
+      )
+    }
+
+    // =====================================================
+    // CLIENTE EXTERNO DE REFUERZO
+    // =====================================================
+
+    if (
+      esClienteExterno &&
+      reciboRefuerzoId
+    ) {
+      tareas.push(
+        (async () => {
+          const params =
+            new URLSearchParams()
+
+          params.set(
+            'recurso',
+            'refuerzo'
+          )
+
+          params.set(
+            'nit',
+            nit
+          )
+
+          params.set(
+            'recibo_refuerzo_id',
+            String(
+              reciboRefuerzoId
+            )
+          )
+
+          params.set(
+            'tipo_programacion',
+            'REFUERZO'
+          )
+
+          const detalle =
+            await fetchJsonSeguro(
+              `${API_CATALOGOS}?${params.toString()}`
+            )
+
+          setDetalleAprendiz(
+            detalle?.data ||
+            null
+          )
+        })()
+      )
+    }
+
+    await Promise.all(
+      tareas
+    )
+  } catch (
+      errorRegistro
+    ) {
+      const mensaje =
+        errorRegistro
+          ?.message ||
+        'No fue posible programar la clase.'
+
+      setError(
+        mensaje
+      )
+
+      mostrarAlertaValidacion(
+        mensaje,
+        'No es posible programar la clase'
+      )
+    } finally {
+    setGuardando(
+      false
+    )
+  }
+}
+  // =======================================================
+  // CAMBIAR ESTADO
+  // =======================================================
+
+  async function cambiarEstadoClase(
+    cambios
+  ) {
+    if (
+      !claseSeleccionada?.id
+    ) {
+      return
+    }
+
+    setGuardando(
+      true
+    )
+
+    setError('')
+    setExito('')
+
+    try {
+      const data =
+        await fetchJsonSeguro(
+          API_PROGRAMACION,
+          {
+            method:
+              'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+
+            body:
+              JSON.stringify({
+                accion:
+                  'cambiar_estado',
+
+                nit,
+
+                id:
+                  claseSeleccionada.id,
+
+                usuario:
+                  usuarioOperacion,
+
+                ...cambios,
+              }),
+          }
+        )
+
+      setExito(
+        data?.message ||
+        'Estado actualizado correctamente.'
+      )
+
+      setModalAbierto(
+        false
+      )
+
+      await Promise.all([
+  // =====================================================
+  // AGENDA SEMANAL
+  // =====================================================
+
+  cargarAgenda(),
+
+  // =====================================================
+  // DISPONIBILIDAD DIARIA
+  //
+  // Siempre la actualizamos, aunque actualmente estemos
+  // visualizando la agenda semanal.
+  //
+  // Esto permite que al regresar a Disponibilidad la
+  // información ya esté actualizada.
+  // =====================================================
+
+  cargarDisponibilidadInstructores(
+    claseSeleccionada
+      ?.fecha ||
+    fechaDisponibilidad ||
+    hoyColombia()
+  ),
+
+  // =====================================================
+  // APRENDIZ
+  // =====================================================
+
+  aprendiz?.id &&
+  aprendiz
+    ?.origen_programacion !==
+      'CLIENTE_EXTERNO'
+    ? cargarDetalleAprendiz(
+        aprendiz
+          ?.matricula_id ||
+        aprendiz.id,
+        claseSeleccionada
+          ?.fecha ||
+          hoyColombia()
+      )
+    : Promise.resolve(),
+
+  // =====================================================
+  // INSTRUCTORES
+  // =====================================================
+
+  cargarInstructores(
+    categoria
+  ),
+])
+    } catch (
+      errorEstado
+    ) {
+      setError(
+        errorEstado
+          ?.message ||
+        'No fue posible actualizar el estado.'
+      )
+    } finally {
+      setGuardando(
+        false
+      )
+    }
+  }
+
+  // =======================================================
+  // NAVEGACIÓN SEMANA
+  // =======================================================
+
+  function semanaAnterior() {
+    setInicioSemana(
+      anterior =>
+        sumarDias(
+          anterior,
+          -7
+        )
+    )
+  }
+
+  function semanaSiguiente() {
+    setInicioSemana(
+      anterior =>
+        sumarDias(
+          anterior,
+          7
+        )
+    )
+  }
+
+  function semanaActual() {
+    setInicioSemana(
+      obtenerLunes(
+        new Date()
+      )
+    )
+  }
+
+  // =======================================================
+  // SESIÓN CARGANDO
+  // =======================================================
+
+  if (
+    !sesionLista
+  ) {
+    return (
+      <div
+        className="
+          min-h-screen
+          flex
+          items-center
+          justify-center
+          bg-gray-100
+          text-gray-500
+        "
+      >
+        <i className="fas fa-spinner fa-spin mr-2"></i>
+
+        Cargando Programación...
+      </div>
+    )
+  }
+
+  // =======================================================
+  // RENDER
+  // =======================================================
+
+  return (
+    <div
+      className="
+        min-h-screen
+        bg-gradient-to-br
+        from-gray-100
+        to-gray-200
+        p-3
+        md:p-4
+      "
+    >
+      <div
+        className="
+          max-w-[1700px]
+          mx-auto
+          bg-white
+          border
+          border-gray-200
+          shadow-lg
+          rounded-xl
+          p-3
+          md:p-4
+        "
+      >
         <div className="mb-3">
           <EncabezadoModulo
             titulo="Programación de Clases Prácticas"
