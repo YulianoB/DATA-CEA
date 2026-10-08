@@ -457,6 +457,31 @@ export default function PersonalAdminPage() {
     setBusqueda,
   ] = useState('')
 
+  const [cambiandoAccesoId, setCambiandoAccesoId] = useState(null)
+
+  const cambiarEstadoAcceso = async (item) => {
+    if (!item.cuenta) return toast.warning('Esta persona no tiene cuenta de acceso.')
+    const nuevoEstado = item.cuenta.estado === 'activo' ? 'inactivo' : 'activo'
+    const accion = nuevoEstado === 'inactivo' ? 'Inactivar' : 'Activar'
+    if (!window.confirm(`${accion} el acceso de ${item.nombres || ''} ${item.apellidos || ''}? Su estado laboral y su historial no cambiarán.`)) return
+    setCambiandoAccesoId(item.id)
+    try {
+      const nit = empresaNit || obtenerNitSesion()
+      const responseCuenta = await fetch(`/api/personal/${item.id}/cuenta?nit=${encodeURIComponent(nit)}`)
+      const detalle = await responseCuenta.json()
+      if (!responseCuenta.ok || detalle.status !== 'success' || !detalle.cuenta) throw new Error(detalle.message || 'No se pudo consultar la cuenta.')
+      const response = await fetch(`/api/personal/${item.id}/cuenta`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nit, email_autorizado: detalle.cuenta.email_autorizado || detalle.cuenta.email, estado: nuevoEstado, observaciones: detalle.cuenta.observaciones || '', actualizado_por: user?.nombreCompleto || user?.usuario || 'ADMINISTRATIVO' }),
+      })
+      const result = await response.json()
+      if (!response.ok || result.status !== 'success') throw new Error(result.message || 'No fue posible cambiar el acceso.')
+      toast.success(`Acceso ${nuevoEstado} correctamente.`)
+      await cargarListado(nit)
+    } catch (error) { toast.error(error.message || 'No fue posible cambiar el acceso.') }
+    finally { setCambiandoAccesoId(null) }
+  }
+
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
 
   const cerrarFormulario = () => {
@@ -2715,7 +2740,8 @@ export default function PersonalAdminPage() {
 
                       <td className="p-3">
 
-                        <Link
+                        <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
+<Link
                           href={`/admin/personal/${item.id}`}
                           className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--primary-dark)]"
                         >
@@ -2723,6 +2749,10 @@ export default function PersonalAdminPage() {
 
                           Hoja de vida
                         </Link>
+{item.cuenta ? (
+<button type="button" onClick={() => cambiarEstadoAcceso(item)} disabled={cambiandoAccesoId === item.id} className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 ${item.cuenta.estado === 'activo' ? 'bg-red-700 hover:bg-red-800' : 'bg-[#194567] hover:bg-[#12344e]'}`} title="Cambiar acceso sin modificar el estado laboral"><i className={`fas ${item.cuenta.estado === 'activo' ? 'fa-user-lock' : 'fa-user-check'}`} aria-hidden="true"></i>{cambiandoAccesoId === item.id ? 'Procesando...' : item.cuenta.estado === 'activo' ? 'Inactivar acceso' : 'Activar acceso'}</button>
+) : <span className="text-xs text-slate-500">Sin cuenta</span>}
+</div>
 
                       </td>
 
