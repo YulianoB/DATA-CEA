@@ -219,6 +219,7 @@ export default function HojaVidaPersonalPage() {
   const [nombreArchivoHojaVida, setNombreArchivoHojaVida] = useState('Hoja de vida.pdf')
   const [fotoTemporal, setFotoTemporal] = useState(null)
   const [procesandoFoto, setProcesandoFoto] = useState(false)
+  const [eliminandoFoto, setEliminandoFoto] = useState(false)
 
   const [experiencia, setExperiencia] = useState([])
   const [formExperiencia, setFormExperiencia] = useState(EXPERIENCIA_INICIAL)
@@ -348,11 +349,51 @@ export default function HojaVidaPersonalPage() {
       setData(result)
       setPerfilProfesional(result.personal?.perfil_profesional || '')
       setLicencias(result.personal?.licencias_personal || result.licencias || [])
+      await cargarFotografia()
     } catch (error) {
       console.error(error)
       mostrarResultado('error', error.message || 'No fue posible cargar la hoja de vida.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function cargarFotografia() {
+    setFotoTemporal(null)
+    const respuesta = await fetch(`/api/personal/${id}/fotografia?nit=${encodeURIComponent(nitActual)}`, { cache: 'no-store' })
+    const resultado = await respuesta.json()
+    if (!respuesta.ok || resultado.status !== 'success') {
+      throw new Error(resultado.message || 'No fue posible recuperar la fotografía.')
+    }
+    if (resultado.foto_signed_url) {
+      const imagen = await fetch(resultado.foto_signed_url, { cache: 'no-store' })
+      if (!imagen.ok) throw new Error('No fue posible descargar la fotografía guardada.')
+      const blob = await imagen.blob()
+      const dataUrl = await new Promise((resolve, reject) => {
+        const lector = new FileReader()
+        lector.onload = () => resolve(lector.result)
+        lector.onerror = () => reject(new Error('No fue posible procesar la fotografía guardada.'))
+        lector.readAsDataURL(blob)
+      })
+      setFotoTemporal(dataUrl)
+    }
+  }
+
+  async function eliminarFotografia() {
+    if (!fotoTemporal || eliminandoFoto || procesandoFoto) return
+    if (!window.confirm('¿Eliminar la fotografía permanente de este trabajador?')) return
+    setEliminandoFoto(true)
+    try {
+      const respuesta = await fetch(`/api/personal/${id}/fotografia?nit=${encodeURIComponent(nitActual)}`, { method: 'DELETE' })
+      const resultado = await respuesta.json()
+      if (!respuesta.ok || resultado.status !== 'success') throw new Error(resultado.message || 'No fue posible eliminar la fotografía.')
+      setFotoTemporal(null)
+      setData(prev => prev ? { ...prev, personal: { ...prev.personal, foto_url: null } } : prev)
+      mostrarResultado('exito', 'Fotografía eliminada correctamente.')
+    } catch (error) {
+      mostrarResultado('error', error.message || 'No fue posible eliminar la fotografía.')
+    } finally {
+      setEliminandoFoto(false)
     }
   }
 
@@ -381,7 +422,22 @@ export default function HojaVidaPersonalPage() {
         ctx.clip()
         const lado = Math.min(imagen.naturalWidth, imagen.naturalHeight)
         ctx.drawImage(imagen, (imagen.naturalWidth - lado) / 2, (imagen.naturalHeight - lado) / 2, lado, lado, 10, 10, 460, 460)
-        setFotoTemporal(canvas.toDataURL('image/png'))
+        const fotoProcesada = canvas.toDataURL('image/png')
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+        if (!blob) throw new Error('No fue posible preparar la fotografía.')
+        const formulario = new FormData()
+        formulario.append('foto', blob, 'fotografia.png')
+        const respuesta = await fetch(`/api/personal/${id}/fotografia?nit=${encodeURIComponent(nitActual)}`, {
+          method: 'POST',
+          body: formulario,
+        })
+        const resultado = await respuesta.json()
+        if (!respuesta.ok || resultado.status !== 'success') {
+          throw new Error(resultado.message || 'No fue posible guardar la fotografía.')
+        }
+        setFotoTemporal(fotoProcesada)
+        setData(prev => prev ? { ...prev, personal: { ...prev.personal, foto_url: resultado.foto_url } } : prev)
+        mostrarResultado('exito', 'Fotografía guardada permanentemente.')
       } finally {
         URL.revokeObjectURL(url)
       }
@@ -1741,6 +1797,8 @@ export default function HojaVidaPersonalPage() {
                 onVisualizarPdf={visualizarHojaVida}
                 fotoTemporal={fotoTemporal}
                 onSeleccionarFoto={seleccionarFotografia}
+                onEliminarFoto={eliminarFotografia}
+                eliminandoFoto={eliminandoFoto}
                 procesandoFoto={procesandoFoto}
               />
             )}
@@ -1975,7 +2033,7 @@ function Resumen({ label, value }) {
   )
 }
 
-function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, setPerfilProfesional, guardarPerfilProfesional, guardandoPerfil, onEditarGeneral, onVisualizarPdf, fotoTemporal, onSeleccionarFoto, procesandoFoto }) {
+function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, setPerfilProfesional, guardarPerfilProfesional, guardandoPerfil, onEditarGeneral, onVisualizarPdf, fotoTemporal, onSeleccionarFoto, onEliminarFoto, procesandoFoto, eliminandoFoto }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap justify-end gap-2">
@@ -1988,11 +2046,14 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-[#194567]"><i className="fas fa-camera" aria-hidden="true"></i> Fotografía para la hoja de vida</h3>
-          <p className="text-xs text-slate-600">Vista preliminar: esta fotografía se utiliza en el PDF durante esta sesión y todavía no se guarda en el expediente.</p>
+          <p className="text-xs text-slate-600">La fotografía se guarda permanentemente en el expediente del trabajador y se utiliza en la hoja de vida.</p>
           <div className="flex flex-wrap items-center gap-2">
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]">
               <i className="fas fa-upload" aria-hidden="true"></i>{procesandoFoto ? 'Procesando...' : 'Seleccionar fotografía'}
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onSeleccionarFoto} disabled={procesandoFoto} className="sr-only" />
+            </label>
+            {fotoTemporal && <button type="button" onClick={onEliminarFoto} disabled={procesandoFoto || eliminandoFoto} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">{eliminandoFoto ? 'Eliminando...' : 'Eliminar fotografía'}</button>}
+            <label className="hidden">
             </label>
           </div>
         </div>
