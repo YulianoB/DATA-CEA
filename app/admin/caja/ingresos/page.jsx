@@ -5066,6 +5066,7 @@ const ingresosLibresFiltrados =
                   onClick={cerrarDrawerPago}
                   disabled={procesando}
                 >
+                  <i className="fas fa-times" aria-hidden="true"></i>
                   Cancelar
                 </BotonCancelar>
 
