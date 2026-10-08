@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { IdCard, Plus, Search, X, Users, Eraser, Save, Ban } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { FranjaSuperiorModal, FranjaSecundariaModal, MarcoTabla, BotonAgregar, BotonLimpiar, BotonCancelar, BotonGuardar } from '@/components/admin/EstiloModulo'
+import { FranjaSuperiorModal, FranjaSecundariaModal, MarcoTabla, BotonAgregar, BotonLimpiar, BotonCancelar, BotonGuardar, ESTILO_CONTENEDORES, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { Toaster, toast } from 'sonner'
 
 // ============================================================
@@ -1525,7 +1525,7 @@ export default function PersonalAdminPage() {
 
         {mostrarFormulario && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 md:p-6" role="dialog" aria-modal="true" aria-label="Registrar nuevo personal">
-            <div className="flex w-full max-w-6xl max-h-[94vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex w-full max-w-[1600px] max-h-[94vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
               <FranjaSuperiorModal className="flex shrink-0 items-center justify-between gap-3 px-5 py-3">
                 <div>
                   <h2 className="text-base font-bold">Registrar nuevo personal</h2>
@@ -1542,8 +1542,8 @@ export default function PersonalAdminPage() {
           >
 
 {/* Primera fila: cuatro columnas de diligenciamiento */}
-<div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4 items-start">
-  <div className="min-w-0"><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
+<div className="grid grid-cols-1 gap-3 lg:grid-cols-4 items-start">
+  <div className="min-w-0"><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Información básica
@@ -1706,7 +1706,7 @@ export default function PersonalAdminPage() {
 
             </div>
 </section></div>
-  <div className="min-w-0 flex flex-col gap-4"><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
+  <div className="min-w-0 flex flex-col gap-4"><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Contacto y datos personales
@@ -1923,7 +1923,7 @@ export default function PersonalAdminPage() {
               </div>
 
             </div>
-</section><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
+</section><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Contacto de emergencia
@@ -1973,7 +1973,7 @@ export default function PersonalAdminPage() {
 
             </div>
 </section></div>
-  <div className="min-w-0"><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
+  <div className="min-w-0"><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Vinculación al CEA
@@ -2144,7 +2144,7 @@ export default function PersonalAdminPage() {
 
             </div>
 </section></div>
-  <div className="min-w-0 flex flex-col gap-4"><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
+  <div className="min-w-0 flex flex-col gap-4"><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Rol instructor
@@ -2483,7 +2483,7 @@ export default function PersonalAdminPage() {
               )}
 
             </div>
-</section><section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
+</section><section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Observaciones
@@ -2512,7 +2512,7 @@ export default function PersonalAdminPage() {
 </section></div>
 </div>
 {/* Segunda fila: acceso y acciones */}
-<section className="min-w-0 overflow-hidden rounded-lg border-2 border-slate-400 bg-white shadow-sm">
+<section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">Acceso a la aplicación</FranjaSecundariaModal>
 <div className="p-3">
 
@@ -2839,7 +2839,7 @@ function CampoInput({
           required
         }
         {...props}
-        className={`w-full border-2 border-slate-400 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20 ${className}`}
+        className={`w-full border border-slate-500 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20 ${className}`}
       />
 
     </div>
@@ -2869,7 +2869,7 @@ function CampoSelect({
           required
         }
         {...props}
-        className="w-full border-2 border-slate-400 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20"
+        className="w-full border border-slate-500 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20"
       >
 
         {options.map(
@@ -2920,7 +2920,7 @@ function CampoTextarea({
         }
         rows={4}
         {...props}
-        className="w-full border-2 border-slate-400 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20"
+        className="w-full border border-slate-500 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20"
       />
 
     </div>
