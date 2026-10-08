@@ -531,6 +531,7 @@ function DetalleCarteraModal({
           rounded-xl
           overflow-hidden
           bg-white
+          border border-slate-400
           shadow-2xl
           flex
           flex-col
@@ -636,16 +637,17 @@ function DetalleCarteraModal({
                 <div
                   className="
                     border
-                    border-gray-200
+                    border-slate-400
                     rounded-xl
                     overflow-hidden
+                    shadow-sm
                   "
                 >
                   <div
                     className="
-                      bg-gray-50
+                      bg-[#737B87] text-white
                       border-b
-                      border-gray-200
+                      border-slate-400
                       px-3
                       py-2
                     "
@@ -657,7 +659,7 @@ function DetalleCarteraModal({
                         text-white
                       "
                     >
-                      <i className="fas fa-user-graduate mr-2 text-blue-600"></i>
+                      <i className="fas fa-user-graduate mr-2 text-white"></i>
 
                       Aprendiz
                     </h3>
@@ -753,16 +755,17 @@ function DetalleCarteraModal({
                 <div
                   className="
                     border
-                    border-emerald-200
+                    border-slate-400
                     rounded-xl
                     overflow-hidden
+                    shadow-sm
                   "
                 >
                   <div
                     className="
-                      bg-emerald-50
+                      bg-[#737B87] text-white
                       border-b
-                      border-emerald-200
+                      border-slate-400
                       px-3
                       py-2
                     "
@@ -885,7 +888,7 @@ function DetalleCarteraModal({
                   <div
                     className="
                       border
-                      border-emerald-200
+                      border-slate-400
                       bg-emerald-50
                       rounded-lg
                       p-3
@@ -931,16 +934,17 @@ function DetalleCarteraModal({
                   className="
                     mt-3
                     border
-                    border-gray-200
+                    border-slate-400
                     rounded-xl
                     overflow-hidden
+                    shadow-sm
                   "
                 >
                   <div
                     className="
-                      bg-gray-50
+                      bg-[#737B87] text-white
                       border-b
-                      border-gray-200
+                      border-slate-400
                       px-3
                       py-2
                     "
@@ -952,7 +956,7 @@ function DetalleCarteraModal({
                         text-white
                       "
                     >
-                      <i className="fas fa-file-invoice-dollar mr-2 text-blue-600"></i>
+                      <i className="fas fa-file-invoice-dollar mr-2 text-white"></i>
 
                       Obligaciones
                     </h3>
@@ -1072,16 +1076,17 @@ function DetalleCarteraModal({
                   className="
                     mt-3
                     border
-                    border-gray-200
+                    border-slate-400
                     rounded-xl
                     overflow-hidden
+                    shadow-sm
                   "
                 >
                   <div
                     className="
-                      bg-gray-50
+                      bg-[#737B87] text-white
                       border-b
-                      border-gray-200
+                      border-slate-400
                       px-3
                       py-2
                       flex
@@ -1097,7 +1102,7 @@ function DetalleCarteraModal({
                         text-white
                       "
                     >
-                      <i className="fas fa-clock-rotate-left mr-2 text-emerald-600"></i>
+                      <i className="fas fa-clock-rotate-left mr-2 text-white"></i>
 
                       Historial de pagos
                     </h3>
@@ -1226,7 +1231,7 @@ function DetalleCarteraModal({
           className="
             shrink-0
             border-t
-            border-gray-200
+            border-slate-400
             bg-gray-50
             px-4
             py-3
@@ -2145,7 +2150,7 @@ export default function ConveniosCajaPage() {
                   grid
                   grid-cols-1
                   md:grid-cols-2
-                  xl:grid-cols-6
+                  xl:grid-cols-12
                   gap-3
                 "
               >
@@ -2153,7 +2158,7 @@ export default function ConveniosCajaPage() {
 
                 <div
                   className="
-                    xl:col-span-1
+                    xl:col-span-3
                   "
                 >
                   <label
@@ -2229,7 +2234,7 @@ export default function ConveniosCajaPage() {
 
                 {/* CONVENIO */}
 
-                <div>
+                <div className="xl:col-span-3 min-w-0">
                   <label
                     className="
                       block
@@ -2292,7 +2297,7 @@ export default function ConveniosCajaPage() {
 
                 {/* ESTADO */}
 
-                <div>
+                <div className="xl:col-span-2 min-w-0">
                   <label
                     className="
                       block
@@ -2435,7 +2440,7 @@ export default function ConveniosCajaPage() {
                     "
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="flex items-end xl:col-span-2">
                   <BotonLimpiar type="button" onClick={limpiarFiltros} className="w-full h-[34px]"><Eraser size={14} />Limpiar filtros</BotonLimpiar>
                 </div>
               </div>
@@ -2446,8 +2451,8 @@ export default function ConveniosCajaPage() {
               TABLA
           ============================================== */}
 
-          <MarcoTabla className="!rounded-t-none">
-            <TituloSeccion titulo="Aprendices por convenio" subtitulo={`Consulte obligaciones, pagos y saldos · ${cartera.length} registro(s)`} icono={<i className="fas fa-users" />} className="!rounded-none" />
+          <MarcoTabla className="!rounded-t-none !border-t-0">
+            <TituloSeccion titulo="Aprendices por convenio" subtitulo={`Consulte obligaciones, pagos y saldos · ${cartera.length} registro(s)`} icono={<i className="fas fa-users" />} className="!rounded-b-none" />
             <div
               className="
                 overflow-x-auto
