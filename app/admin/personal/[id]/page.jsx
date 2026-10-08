@@ -443,6 +443,7 @@ export default function HojaVidaPersonalPage() {
     if (generandoPdf) return
     setGenerandoPdf(true)
     try {
+      const datosPdf = await obtenerDatosPdf()
       const response = await fetch('/api/admin/configuracion-documentos', {
         headers: { 'x-cea-nit': nitActual },
         cache: 'no-store',
@@ -457,9 +458,7 @@ export default function HojaVidaPersonalPage() {
       if (!config.encabezado?.estructura) throw new Error('No se encontró el encabezado documental configurado.')
       generarHojaVidaPdf({
         personal: data.personal,
-        estudios,
-        experiencia,
-        licencias,
+        ...datosPdf,
         perfiles: data.perfiles || data.personal?.perfiles_usuario || [],
         encabezado: config.encabezado,
         documento,
