@@ -2669,9 +2669,6 @@ export default function PersonalAdminPage() {
           </div>
         )}
 
-
-        </div>
-
         {/* PERSONAL REGISTRADO: centro visual */}
         <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-end gap-2 px-4 py-3">
