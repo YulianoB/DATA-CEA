@@ -7,6 +7,13 @@ import {
   respuestaErrorEmpresa,
 } from '@/lib/supabaseEmpresaServer'
 
+const ROLES_PERMITIDOS = {
+  ADMINISTRATIVO: 'menu_administrativo',
+  AUXILIAR_ADMINISTRATIVO: 'menu_basico',
+  INSTRUCTOR_TEORIA: 'menu_basico',
+  INSTRUCTOR_PRACTICA: 'menu_instructor_practica',
+}
+
 function normalizarEmail(valor) {
   return String(valor || '').trim().toLowerCase()
 }
@@ -179,6 +186,17 @@ export async function PATCH(request, { params }) {
       )
     }
 
+    let perfilesSolicitados = null
+    if (Object.prototype.hasOwnProperty.call(body, 'perfiles')) {
+      if (!Array.isArray(body.perfiles) || body.perfiles.some((rol) => typeof rol !== 'string' || !Object.prototype.hasOwnProperty.call(ROLES_PERMITIDOS, rol))) {
+        return NextResponse.json({ status: 'failed', message: 'Los perfiles seleccionados no son válidos.' }, { status: 400 })
+      }
+      perfilesSolicitados = [...new Set(body.perfiles)]
+      if (estado === 'activo' && perfilesSolicitados.length === 0) {
+        return NextResponse.json({ status: 'failed', message: 'Una cuenta activa debe tener al menos un perfil autorizado.' }, { status: 400 })
+      }
+    }
+
     const emailAnterior =
       normalizarEmail(cuentaActual.email_autorizado)
 
@@ -277,6 +295,34 @@ export async function PATCH(request, { params }) {
         'El correo se actualizó en cuentas_usuario pero no en personal:',
         personalError
       )
+    }
+
+    if (perfilesSolicitados !== null) {
+      const { data: existentes, error: perfilesError } = await supabase
+        .from('perfiles_usuario')
+        .select('id, rol, estado')
+        .eq('personal_id', id)
+      if (perfilesError) return NextResponse.json({ status: 'failed', message: perfilesError.message }, { status: 500 })
+
+      for (const perfil of existentes || []) {
+        const estadoPerfil = perfilesSolicitados.includes(perfil.rol) ? 'activo' : 'inactivo'
+        if (perfil.estado === estadoPerfil) continue
+        const { error: actualizarError } = await supabase.from('perfiles_usuario').update({ estado: estadoPerfil }).eq('id', perfil.id)
+        if (actualizarError) return NextResponse.json({ status: 'failed', message: actualizarError.message }, { status: 500 })
+      }
+      const rolesExistentes = new Set((existentes || []).map((perfil) => perfil.rol))
+      const nuevos = perfilesSolicitados.filter((rol) => !rolesExistentes.has(rol)).map((rol) => ({
+        cuenta_usuario_id: cuentaActual.id,
+        personal_id: id,
+        rol,
+        menu_tipo: ROLES_PERMITIDOS[rol],
+        estado: 'activo',
+        asignado_por_nombre: actualizadoPor,
+      }))
+      if (nuevos.length) {
+        const { error: insertarError } = await supabase.from('perfiles_usuario').insert(nuevos)
+        if (insertarError) return NextResponse.json({ status: 'failed', message: insertarError.message }, { status: 500 })
+      }
     }
 
     return NextResponse.json({
