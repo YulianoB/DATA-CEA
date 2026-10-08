@@ -9,6 +9,7 @@ import { Toaster, toast } from 'sonner'
 import ModalResultado from '@/components/admin/ModalResultado'
 import CampoCatalogo from '@/components/admin/CampoCatalogo'
 import { generarHojaVidaPdf } from '@/lib/hojaVidaPdf'
+import VistaPreviaPdfLimpia from '@/components/admin/VistaPreviaPdfLimpia'
 
 
 const EXPERIENCIA_INICIAL = {
@@ -1619,9 +1620,7 @@ export default function HojaVidaPersonalPage() {
                 <button type="button" onClick={() => { URL.revokeObjectURL(vistaPreviaPdf); setVistaPreviaPdf(null) }} className="inline-flex items-center gap-2 rounded-md border border-white/50 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"><i className="fas fa-times" aria-hidden="true"></i> Cerrar</button>
               </div>
             </div>
-            <div className="flex min-h-0 flex-1 justify-center overflow-hidden bg-white p-2 sm:p-4">
-              <iframe title="Documento PDF de hoja de vida" src={`${vistaPreviaPdf}#view=FitH&navpanes=0`} className="h-full w-full max-w-[1000px] border-0 bg-white" />
-            </div>
+            <VistaPreviaPdfLimpia url={vistaPreviaPdf} />
           </div>
         </div>
       )}
