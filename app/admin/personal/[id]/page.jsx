@@ -1324,7 +1324,7 @@ export default function HojaVidaPersonalPage() {
           </div>
           <div className="grid grid-cols-1 gap-3 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <Resumen label="Cargo" value={personal.cargo} />
-            <Resumen label="Grupo funcional" value={personal.grupo_personal} />
+            <Resumen label="Grupo de trabajo" value={personal.grupo_personal} />
             <Resumen label="Relación con el CEA" value={personal.tipo_personal} />
             <Resumen label="Estado" value={personal.estado} />
           </div>
@@ -1618,7 +1618,7 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
       <Seccion titulo="Vinculación">
         <Dato label="Relación con el CEA" value={personal.tipo_personal} />
         <Dato label="Cargo" value={personal.cargo} />
-        <Dato label="Grupo funcional" value={personal.grupo_personal} />
+        <Dato label="Grupo de trabajo" value={personal.grupo_personal} />
         <Dato label="Modalidad de contrato" value={personal.tipo_contrato} />
         <Dato label="Permanencia en el CEA" value={personal.tipo_permanencia} />
         <Dato label="Fecha vinculación" value={fecha(personal.fecha_vinculacion)} />
