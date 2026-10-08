@@ -2763,22 +2763,18 @@ export default function PersonalAdminPage() {
                         {item.estado || '-'}
                       </td>
 
-                      <td className="p-3">
-
-                        <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
-<Link
-                          href={`/admin/personal/${item.id}`}
-                          className="inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--primary-dark)]"
-                        >
-                          <i className="fas fa-file-alt"></i>
-
-                          Hoja de vida
-                        </Link>
-{item.cuenta ? (
-<button type="button" onClick={() => solicitarCambioAcceso(item)} disabled={cambiandoAccesoId === item.id} className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 ${item.cuenta.estado === 'activo' ? 'bg-red-700 hover:bg-red-800' : 'bg-[#194567] hover:bg-[#12344e]'}`} title="Cambiar acceso sin modificar el estado laboral"><i className={`fas ${item.cuenta.estado === 'activo' ? 'fa-user-lock' : 'fa-user-check'}`} aria-hidden="true"></i>{cambiandoAccesoId === item.id ? 'Procesando...' : item.cuenta.estado === 'activo' ? 'Inactivar acceso' : 'Activar acceso'}</button>
-) : <span className="text-xs text-slate-500">Sin cuenta</span>}
-</div>
-
+                      <td className="p-3 align-middle">
+                        <div className="mx-auto flex w-full max-w-[180px] flex-col items-stretch gap-2">
+                          <Link href={`/admin/personal/${item.id}`} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-3 py-2 text-center text-xs font-semibold text-white hover:bg-[var(--primary-dark)]">
+                            <i className="fas fa-file-alt" aria-hidden="true"></i> Hoja de vida
+                          </Link>
+                          {item.cuenta ? (
+                            <button type="button" onClick={() => solicitarCambioAcceso(item)} disabled={cambiandoAccesoId === item.id} className={`inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-center text-xs font-semibold text-white disabled:opacity-50 ${item.cuenta.estado === 'activo' ? 'bg-red-700 hover:bg-red-800' : 'bg-[#194567] hover:bg-[#12344e]'}`} title="Cambiar acceso sin modificar el estado laboral">
+                              <i className={`fas ${item.cuenta.estado === 'activo' ? 'fa-user-lock' : 'fa-user-check'}`} aria-hidden="true"></i>
+                              {cambiandoAccesoId === item.id ? 'Procesando...' : item.cuenta.estado === 'activo' ? 'Inactivar acceso' : 'Activar acceso'}
+                            </button>
+                          ) : <span className="text-center text-xs text-slate-500">Sin cuenta</span>}
+                        </div>
                       </td>
 
                     </tr>
