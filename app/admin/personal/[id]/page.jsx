@@ -415,16 +415,32 @@ export default function HojaVidaPersonalPage() {
     }
   }
 
+  async function obtenerConfiguracionHojaVida() {
+    const response = await fetch('/api/admin/configuracion-documentos', {
+      headers: { 'x-cea-nit': nitActual },
+      cache: 'no-store',
+    })
+    const config = await response.json()
+    if (!response.ok || !config.ok) throw new Error(config.error || 'No fue posible consultar la configuración documental.')
+    const documento = (config.documentos || []).find((d) => d.activo !== false && (
+      String(d.tipo_documento || '').toUpperCase() === 'HOJA_VIDA_PERSONAL' ||
+      String(d.nombre_documento || '').trim().toUpperCase() === 'HOJA DE VIDA DEL PERSONAL'
+    ))
+    if (!documento) throw new Error('Primero configure el documento HOJA DE VIDA DEL PERSONAL en Configuración de documentos.')
+    return { documento, encabezado: config.encabezado }
+  }
+
   async function visualizarHojaVida() {
     if (generandoPdf) return
     setGenerandoPdf(true)
     try {
-      const datosPdf = await obtenerDatosPdf()
+      const [datosPdf, configuracion] = await Promise.all([obtenerDatosPdf(), obtenerConfiguracionHojaVida()])
       const blob = generarHojaVidaPdf({
         personal: data.personal,
         ...datosPdf,
         perfiles: data.perfiles || data.personal?.perfiles_usuario || [],
         vistaPrevia: true,
+        ...configuracion,
         fotoDataUrl: fotoTemporal,
       })
       const url = URL.createObjectURL(blob)
@@ -443,25 +459,12 @@ export default function HojaVidaPersonalPage() {
     if (generandoPdf) return
     setGenerandoPdf(true)
     try {
-      const datosPdf = await obtenerDatosPdf()
-      const response = await fetch('/api/admin/configuracion-documentos', {
-        headers: { 'x-cea-nit': nitActual },
-        cache: 'no-store',
-      })
-      const config = await response.json()
-      if (!response.ok || !config.ok) throw new Error(config.error || 'No fue posible consultar la configuración documental.')
-      const documento = (config.documentos || []).find((d) => d.activo !== false && (
-        String(d.tipo_documento || '').toUpperCase() === 'HOJA_VIDA_PERSONAL' ||
-        String(d.nombre_documento || '').trim().toUpperCase() === 'HOJA DE VIDA DEL PERSONAL'
-      ))
-      if (!documento) throw new Error('Primero configure el documento HOJA DE VIDA DEL PERSONAL en Configuración de documentos.')
-      if (!config.encabezado?.estructura) throw new Error('No se encontró el encabezado documental configurado.')
+      const [datosPdf, configuracion] = await Promise.all([obtenerDatosPdf(), obtenerConfiguracionHojaVida()])
       generarHojaVidaPdf({
         personal: data.personal,
         ...datosPdf,
         perfiles: data.perfiles || data.personal?.perfiles_usuario || [],
-        encabezado: config.encabezado,
-        documento,
+        ...configuracion,
         fotoDataUrl: fotoTemporal,
       })
     } catch (error) {
