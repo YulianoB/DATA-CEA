@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Toaster, toast } from 'sonner'
 import ModalResultado from '@/components/admin/ModalResultado'
 import CampoCatalogo from '@/components/admin/CampoCatalogo'
+import { generarHojaVidaPdf } from '@/lib/hojaVidaPdf'
 
 
 const EXPERIENCIA_INICIAL = {
@@ -211,6 +212,7 @@ export default function HojaVidaPersonalPage() {
   const [editarGeneralAbierto, setEditarGeneralAbierto] = useState(false)
   const [formGeneral, setFormGeneral] = useState({})
   const [guardandoGeneral, setGuardandoGeneral] = useState(false)
+  const [generandoPdf, setGenerandoPdf] = useState(false)
 
   const [experiencia, setExperiencia] = useState([])
   const [formExperiencia, setFormExperiencia] = useState(EXPERIENCIA_INICIAL)
@@ -345,6 +347,38 @@ export default function HojaVidaPersonalPage() {
       mostrarResultado('error', error.message || 'No fue posible cargar la hoja de vida.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function imprimirHojaVida() {
+    if (generandoPdf) return
+    setGenerandoPdf(true)
+    try {
+      const response = await fetch('/api/admin/configuracion-documentos', {
+        headers: { 'x-cea-nit': nitActual },
+        cache: 'no-store',
+      })
+      const config = await response.json()
+      if (!response.ok || !config.ok) throw new Error(config.error || 'No fue posible consultar la configuración documental.')
+      const documento = (config.documentos || []).find((d) => d.activo !== false && (
+        String(d.tipo_documento || '').toUpperCase() === 'HOJA_VIDA_PERSONAL' ||
+        String(d.nombre_documento || '').trim().toUpperCase() === 'HOJA DE VIDA DEL PERSONAL'
+      ))
+      if (!documento) throw new Error('Primero configure el documento HOJA DE VIDA DEL PERSONAL en Configuración de documentos.')
+      if (!config.encabezado?.estructura) throw new Error('No se encontró el encabezado documental configurado.')
+      generarHojaVidaPdf({
+        personal: data.personal,
+        estudios,
+        experiencia,
+        licencias,
+        perfiles: data.perfiles || data.personal?.perfiles_usuario || [],
+        encabezado: config.encabezado,
+        documento,
+      })
+    } catch (error) {
+      mostrarResultado('error', error.message || 'No fue posible generar la hoja de vida.')
+    } finally {
+      setGenerandoPdf(false)
     }
   }
 
@@ -1534,10 +1568,15 @@ export default function HojaVidaPersonalPage() {
               <i className="fas fa-file-alt" aria-hidden="true"></i>
               <h1 className="text-base font-bold">Hoja de vida del personal</h1>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={imprimirHojaVida} disabled={generandoPdf} className="inline-flex items-center gap-2 rounded-md border border-white/60 bg-white px-3 py-1.5 text-xs font-semibold text-[#194567] hover:bg-slate-100 disabled:opacity-60">
+                <i className="fas fa-file-pdf" aria-hidden="true"></i>{generandoPdf ? 'Generando...' : 'Generar hoja de vida PDF'}
+              </button>
             <Link href="/admin/personal" className="inline-flex items-center gap-2 rounded-md border border-white/60 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10">
               <i className="fas fa-arrow-left" aria-hidden="true"></i>
               Volver a personal
             </Link>
+            </div>
           </div>
           <div className="grid grid-cols-1 gap-3 bg-slate-100 px-4 py-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.6fr)_repeat(4,minmax(0,1fr))] xl:items-stretch">
             <div className="flex min-w-0 flex-col justify-center border-b border-slate-300 pb-2 md:col-span-2 xl:col-span-1 xl:border-b-0 xl:border-r xl:pb-0 xl:pr-3">
