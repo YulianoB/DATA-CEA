@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
  */
 export default function CampoCatalogo({
   catalogo, label, name, value = '', onChange, nit,
-  departamentoId, required = true, disabled = false, wrapperClass = '',
+  departamentoId, onOpcionesCargadas, required = true, disabled = false, wrapperClass = '',
 }) {
   const [opciones, setOpciones] = useState([])
   const [cargando, setCargando] = useState(false)
@@ -40,7 +40,10 @@ export default function CampoCatalogo({
         if (!respuesta.ok || resultado.status !== 'success') {
           throw new Error(resultado.message || 'No fue posible cargar las opciones.')
         }
-        if (!controlador.signal.aborted) setOpciones(resultado.data || [])
+        if (!controlador.signal.aborted) {
+          setOpciones(resultado.data || [])
+          onOpcionesCargadas?.(resultado.data || [])
+        }
       } catch (err) {
         if (!controlador.signal.aborted) setError(err.message || 'Error consultando el catálogo.')
       } finally {
