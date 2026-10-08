@@ -2339,9 +2339,9 @@ export default function CierreCajaPage() {
                     <th className="p-2">Cliente / Beneficiario</th>
                     <th className="p-2">Concepto / Detalle</th>
                     <th className="p-2">Medio</th>
-                    <th className="p-2 text-right">Valor</th>
                     <th className="p-2 text-center">Estado</th>
                     <th className="p-2">Responsable</th>
+                    <th className="p-2 text-right">Valor</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2389,9 +2389,9 @@ export default function CierreCajaPage() {
                             {item.observaciones && <div className="mt-1 max-w-[280px] truncate text-[8px] text-slate-500" title={item.observaciones}>{item.observaciones}</div>}
                           </td>
                           <td className="p-2 whitespace-nowrap">{item?.medio_pago?.nombre || '-'}</td>
-                          <td className="p-2 text-right font-black whitespace-nowrap">{formatearMoneda(item.valor)}</td>
                           <td className="p-2 text-center">{item.estado || '-'}</td>
                           <td className="p-2">{responsable}</td>
+                          <td className="p-2 text-right font-black whitespace-nowrap">{formatearMoneda(item.valor)}</td>
                         </tr>
                       )
                     })
