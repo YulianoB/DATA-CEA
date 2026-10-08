@@ -389,13 +389,40 @@ export default function HojaVidaPersonalPage() {
     }
   }
 
-  function visualizarHojaVida() {
+  async function obtenerDatosPdf() {
+    const base = `/api/personal/${id}`
+    const nit = encodeURIComponent(nitActual)
+    const consultar = async (recurso) => {
+      const respuesta = await fetch(`${base}/${recurso}?nit=${nit}`, { cache: 'no-store' })
+      const resultado = await respuesta.json()
+      if (!respuesta.ok || resultado.status !== 'success') {
+        throw new Error(resultado.message || `No fue posible cargar ${recurso} para el PDF.`)
+      }
+      return resultado
+    }
+    const [resEstudios, resExperiencia, resLicencias] = await Promise.all([
+      consultar('estudios'),
+      consultar('experiencia'),
+      puedeGestionarLicencias ? consultar('licencias') : Promise.resolve({ licencias: [] }),
+    ])
+    setEstudios(resEstudios.estudios || [])
+    setExperiencia(resExperiencia.experiencia || [])
+    setLicencias(resLicencias.licencias || [])
+    return {
+      estudios: resEstudios.estudios || [],
+      experiencia: resExperiencia.experiencia || [],
+      licencias: resLicencias.licencias || [],
+    }
+  }
+
+  async function visualizarHojaVida() {
+    if (generandoPdf) return
+    setGenerandoPdf(true)
     try {
+      const datosPdf = await obtenerDatosPdf()
       const blob = generarHojaVidaPdf({
         personal: data.personal,
-        estudios,
-        experiencia,
-        licencias,
+        ...datosPdf,
         perfiles: data.perfiles || data.personal?.perfiles_usuario || [],
         vistaPrevia: true,
         fotoDataUrl: fotoTemporal,
@@ -407,6 +434,8 @@ export default function HojaVidaPersonalPage() {
       })
     } catch (error) {
       mostrarResultado('error', error.message || 'No fue posible visualizar la hoja de vida.')
+    } finally {
+      setGenerandoPdf(false)
     }
   }
 
