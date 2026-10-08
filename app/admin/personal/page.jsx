@@ -5,6 +5,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { IdCard, Plus, Search, X } from 'lucide-react'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, BotonAgregar, BotonLimpiar, BotonCancelar, BotonGuardar } from '@/components/admin/EstiloModulo'
 import { Toaster, toast } from 'sonner'
 
 // ============================================================
@@ -429,6 +432,8 @@ export default function PersonalAdminPage() {
     setBusqueda,
   ] = useState('')
 
+  const [mostrarFormulario, setMostrarFormulario] = useState(false)
+
   // ==========================================================
   // SESIÓN
   // ==========================================================
@@ -527,9 +532,6 @@ export default function PersonalAdminPage() {
           return [
             item.documento,
             nombreCompleto,
-            item.cargo,
-            item.email,
-            roles,
           ].some(
             (value) =>
               String(
@@ -1463,6 +1465,7 @@ export default function PersonalAdminPage() {
         )
 
         await cargarListado()
+        setMostrarFormulario(false)
       } catch (error) {
         console.error(
           'Error registrando personal:',
@@ -1503,58 +1506,29 @@ export default function PersonalAdminPage() {
 
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ====================================================
-            REGISTRO
-        ==================================================== */}
+        <EncabezadoModulo
+          titulo="Gestión de Personal"
+          subtitulo="Consulta el personal registrado y administra nuevos registros."
+          icono={IdCard}
+          rutaRegreso="/admin"
+        />
 
-        <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b pb-4 border-[var(--primary)]">
-
-            <div>
-
-              <h1 className="text-2xl font-bold text-[var(--primary)] flex items-center gap-3">
-
-                <i className="fas fa-id-card"></i>
-
-                Registro de Personal
-
-              </h1>
-
-              <p className="text-sm text-gray-600 mt-1">
-                Registra colaboradores, contratistas, instructores y servicios generales en {nombreEmpresa}.
-              </p>
-
-            </div>
-
-            <Link
-              href="/admin"
-              className="inline-flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-900 text-white px-4 py-2 rounded-md text-sm transition"
-            >
-              <i className="fas fa-arrow-left"></i>
-
-              Menú administrativo
-            </Link>
-
-          </div>
-
-          <div className="mt-6 bg-gray-50 border rounded-lg p-4">
-
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              CEA / Empresa
-            </label>
-
-            <div className="w-full border rounded-md p-2 text-sm bg-white text-gray-700">
-              {nombreEmpresa}
-            </div>
-
-          </div>
-
+        {mostrarFormulario && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 md:p-6" role="dialog" aria-modal="true" aria-label="Registrar nuevo personal">
+            <div className="flex w-full max-w-6xl max-h-[94vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+              <div className="flex shrink-0 items-center justify-between gap-3 px-5 py-3" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo, color: ESTILO_FRANJA_SUPERIOR_MODAL.texto }}>
+                <div>
+                  <h2 className="text-base font-bold">Registrar nuevo personal</h2>
+                  <p className="text-xs opacity-85">Complete las secciones del formulario para registrar al colaborador.</p>
+                </div>
+                <button type="button" onClick={() => setMostrarFormulario(false)} disabled={loading} aria-label="Cerrar formulario" className="rounded-lg p-2 hover:bg-white/15 disabled:opacity-50"><X size={20} /></button>
+              </div>
+              <div className="overflow-y-auto px-5 pb-5">
           <form
             onSubmit={
               guardarPersonal
             }
-            className="mt-6 space-y-6"
+            className="mt-5 space-y-5"
           >
 
             {/* ==================================================
@@ -1563,11 +1537,11 @@ export default function PersonalAdminPage() {
 
             <section>
 
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
                 Información básica
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 <CampoSelect
                   label="Tipo de personal *"
@@ -1729,11 +1703,11 @@ export default function PersonalAdminPage() {
 
             <section>
 
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
                 Contacto y datos personales
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 <CampoInput
                   label="Teléfono *"
@@ -1950,11 +1924,11 @@ export default function PersonalAdminPage() {
 
             <section>
 
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
                 Vinculación al CEA
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 <CampoSelect
                   label="Grupo personal *"
@@ -2124,7 +2098,7 @@ export default function PersonalAdminPage() {
 
             <section>
 
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
                 Rol instructor
               </h2>
 
@@ -2467,11 +2441,11 @@ export default function PersonalAdminPage() {
 
             <section>
 
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
                 Contacto de emergencia
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
                 <CampoInput
                   label="Nombre contacto *"
@@ -2520,7 +2494,7 @@ export default function PersonalAdminPage() {
 
             <section>
 
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+              <h2 className="mb-4 rounded-md border-l-4 border-[#194567] bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">
                 Observaciones
               </h2>
 
@@ -2690,77 +2664,76 @@ export default function PersonalAdminPage() {
             </div>
 
           </form>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         </div>
 
-        {/* ====================================================
-            PERSONAL REGISTRADO
-        ==================================================== */}
-
-        <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-
-            <h2 className="text-xl font-bold text-gray-800">
-              Personal registrado
-            </h2>
-
-            <input
-              value={
-                busqueda
-              }
-              onChange={(e) =>
-                setBusqueda(
-                  e.target.value
-                )
-              }
-              placeholder="Buscar por documento, nombre, cargo o rol"
-              className="border rounded-md p-2 text-sm md:w-96 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            />
-
+        {/* PERSONAL REGISTRADO: centro visual */}
+        <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-end gap-2 px-4 py-3">
+            <div className="relative w-full sm:w-80">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="search"
+                aria-label="Buscar personal por nombre o documento"
+                value={busqueda}
+                onChange={(event) => setBusqueda(event.target.value)}
+                placeholder="Buscar nombre o documento..."
+                className="h-9 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-xs outline-none focus:border-[#194567]"
+              />
+            </div>
+            <BotonLimpiar type="button" onClick={() => setBusqueda('')} disabled={!busqueda}>Limpiar</BotonLimpiar>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo, color: ESTILO_FRANJA_SUPERIOR_MODAL.texto }}>
+            <h2 className="text-sm font-bold">Personal registrado</h2>
+            <BotonAgregar type="button" onClick={() => setMostrarFormulario(true)}><Plus size={15} /> Agregar personal</BotonAgregar>
           </div>
 
           <div className="overflow-x-auto">
 
-            <table className="min-w-full text-sm border">
+            <table className="min-w-full text-xs border-collapse">
 
-              <thead className="bg-gray-100 text-gray-700">
+              <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
                 <tr>
 
-                  <th className="text-left p-2 border">
+                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
                     Documento
                   </th>
 
-                  <th className="text-left p-2 border">
+                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
                     Nombre
                   </th>
 
-                  <th className="text-left p-2 border">
+                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
                     Cargo
                   </th>
 
-                  <th className="text-left p-2 border">
+                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
                     Grupo
                   </th>
 
-                  <th className="text-left p-2 border">
+                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
                     Correo
                   </th>
 
-                  <th className="text-left p-2 border">
+                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
                     Cuenta
                   </th>
 
-                  <th className="text-left p-2 border">
+                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
                     Perfiles
                   </th>
 
-                  <th className="text-left p-2 border">
+                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
                     Estado
                   </th>
 
-                  <th className="text-left p-2 border">
+                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
                     Acciones
                   </th>
 
@@ -2806,36 +2779,36 @@ export default function PersonalAdminPage() {
                       key={
                         item.id
                       }
-                      className="hover:bg-gray-50"
+                      className="hover:bg-slate-50 transition-colors"
                     >
 
-                      <td className="p-2 border">
+                      <td className="p-3 border border-slate-200">
                         {item.documento}
                       </td>
 
-                      <td className="p-2 border font-medium">
+                      <td className="p-3 border border-slate-200 font-semibold">
                         {`${item.nombres || ''} ${
                           item.apellidos || ''
                         }`.trim()}
                       </td>
 
-                      <td className="p-2 border">
+                      <td className="p-3 border border-slate-200">
                         {item.cargo || '-'}
                       </td>
 
-                      <td className="p-2 border">
+                      <td className="p-3 border border-slate-200">
                         {item.grupo_personal || '-'}
                       </td>
 
-                      <td className="p-2 border">
+                      <td className="p-3 border border-slate-200">
                         {item.email || '-'}
                       </td>
 
-                      <td className="p-2 border">
+                      <td className="p-3 border border-slate-200">
                         {item.cuenta?.estado || 'sin acceso'}
                       </td>
 
-                      <td className="p-2 border">
+                      <td className="p-3 border border-slate-200">
 
                         {(item.perfiles || []).length ===
                         0 ? (
@@ -2864,11 +2837,11 @@ export default function PersonalAdminPage() {
 
                       </td>
 
-                      <td className="p-2 border">
+                      <td className="p-3 border border-slate-200">
                         {item.estado || '-'}
                       </td>
 
-                      <td className="p-2 border">
+                      <td className="p-3 border border-slate-200">
 
                         <Link
                           href={`/admin/personal/${item.id}`}
