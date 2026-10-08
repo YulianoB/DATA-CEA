@@ -1811,13 +1811,13 @@ function TablaEstudios({ estudios, editarEstudio, eliminarEstudio }) {
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.institucion)}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{fecha(item.fecha_grado)}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.observaciones)}</td>
-              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => editarEstudio(item)} className="rounded-md bg-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-900">
-                    Editar
+              <td className="whitespace-nowrap border border-slate-300 px-2 py-2 align-middle text-xs text-slate-700">
+                <div className="flex flex-nowrap items-center gap-1.5 whitespace-nowrap">
+                  <button type="button" onClick={() => editarEstudio(item)} className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#194567] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#12344e]">
+                    <i className="fas fa-pen" aria-hidden="true"></i> Editar
                   </button>
-                  <button type="button" onClick={() => eliminarEstudio(item.id)} className="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700">
-                    Eliminar
+                  <button type="button" onClick={() => eliminarEstudio(item.id)} className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-800">
+                    <i className="fas fa-trash-alt" aria-hidden="true"></i> Eliminar
                   </button>
                 </div>
               </td>
@@ -1942,13 +1942,13 @@ function TablaExperiencia({ experiencia, editarExperiencia, eliminarExperiencia 
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{item.actualmente ? 'Sí' : 'No'}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.jefe_inmediato)}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.telefono_contacto)}</td>
-              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => editarExperiencia(item)} className="rounded-md bg-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-900">
-                    Editar
+              <td className="whitespace-nowrap border border-slate-300 px-2 py-2 align-middle text-xs text-slate-700">
+                <div className="flex flex-nowrap items-center gap-1.5 whitespace-nowrap">
+                  <button type="button" onClick={() => editarExperiencia(item)} className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#194567] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#12344e]">
+                    <i className="fas fa-pen" aria-hidden="true"></i> Editar
                   </button>
-                  <button type="button" onClick={() => eliminarExperiencia(item.id)} className="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700">
-                    Eliminar
+                  <button type="button" onClick={() => eliminarExperiencia(item.id)} className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-800">
+                    <i className="fas fa-trash-alt" aria-hidden="true"></i> Eliminar
                   </button>
                 </div>
               </td>
@@ -2379,21 +2379,21 @@ function TablaReferencias({ referencias, editarReferencia, eliminarReferencia })
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.telefono)}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.email)}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.relacion)}</td>
-              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
-                <div className="flex flex-wrap gap-2">
+              <td className="whitespace-nowrap border border-slate-300 px-2 py-2 align-middle text-xs text-slate-700">
+                <div className="flex flex-nowrap items-center gap-1.5 whitespace-nowrap">
                   <button
                     type="button"
                     onClick={() => editarReferencia(referencia)}
-                    className="rounded-md bg-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-900"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#194567] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#12344e]"
                   >
-                    Editar
+                    <i className="fas fa-pen" aria-hidden="true"></i> Editar
                   </button>
                   <button
                     type="button"
                     onClick={() => eliminarReferencia(referencia.id)}
-                    className="rounded-md bg-red-700 px-3 py-1 text-xs font-semibold text-white hover:bg-red-800"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-800"
                   >
-                    Eliminar
+                    <i className="fas fa-trash-alt" aria-hidden="true"></i> Eliminar
                   </button>
                 </div>
               </td>
@@ -2533,21 +2533,21 @@ function TablaEvaluaciones({ evaluaciones, editarEvaluacion, eliminarEvaluacion 
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.resultado)}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.evaluador)}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.observaciones)}</td>
-              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
-                <div className="flex flex-wrap gap-2">
+              <td className="whitespace-nowrap border border-slate-300 px-2 py-2 align-middle text-xs text-slate-700">
+                <div className="flex flex-nowrap items-center gap-1.5 whitespace-nowrap">
                   <button
                     type="button"
                     onClick={() => editarEvaluacion(evaluacion)}
-                    className="rounded-md bg-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-900"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#194567] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#12344e]"
                   >
-                    Editar
+                    <i className="fas fa-pen" aria-hidden="true"></i> Editar
                   </button>
                   <button
                     type="button"
                     onClick={() => eliminarEvaluacion(evaluacion.id)}
-                    className="rounded-md bg-red-700 px-3 py-1 text-xs font-semibold text-white hover:bg-red-800"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-800"
                   >
-                    Eliminar
+                    <i className="fas fa-trash-alt" aria-hidden="true"></i> Eliminar
                   </button>
                 </div>
               </td>
@@ -2709,21 +2709,21 @@ function TablaDocumentos({ documentos, editarDocumento, eliminarDocumento }) {
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{documento.vence ? 'Sí' : 'No'}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{fecha(documento.fecha_vencimiento)}</td>
               <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(documento.estado)}</td>
-              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
-                <div className="flex flex-wrap gap-2">
+              <td className="whitespace-nowrap border border-slate-300 px-2 py-2 align-middle text-xs text-slate-700">
+                <div className="flex flex-nowrap items-center gap-1.5 whitespace-nowrap">
                   <button
                     type="button"
                     onClick={() => editarDocumento(documento)}
-                    className="rounded-md bg-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-900"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#194567] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#12344e]"
                   >
-                    Editar
+                    <i className="fas fa-pen" aria-hidden="true"></i> Editar
                   </button>
                   <button
                     type="button"
                     onClick={() => eliminarDocumento(documento.id)}
-                    className="rounded-md bg-red-700 px-3 py-1 text-xs font-semibold text-white hover:bg-red-800"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-800"
                   >
-                    Eliminar
+                    <i className="fas fa-trash-alt" aria-hidden="true"></i> Eliminar
                   </button>
                 </div>
               </td>
