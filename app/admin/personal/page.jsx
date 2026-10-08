@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { IdCard, Plus, Search, X, Users, Eraser, Save, Ban } from 'lucide-react'
+import { IdCard, Plus, Search, X, Users, Eraser, Save, Ban, ShieldCheck, ClipboardCheck, BookOpen, CarFront, CheckCircle2 } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { FranjaSuperiorModal, FranjaSecundariaModal, MarcoTabla, BotonAgregar, BotonLimpiar, BotonCancelar, BotonGuardar, ESTILO_CONTENEDORES, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { Toaster, toast } from 'sonner'
@@ -36,6 +36,20 @@ const ROLES = [
     menu: 'menu_instructor_practica',
   },
 ]
+
+const DESCRIPCIONES_ROLES = {
+  ADMINISTRATIVO: 'Acceso a los módulos de registro, consulta, gestión y seguimiento operativo del CEA, incluyendo matrículas, caja, programación de clases, personal, vehículos y demás procesos administrativos autorizados.',
+  AUXILIAR_ADMINISTRATIVO: 'Registro de entrada y salida de la jornada laboral, así como de asistencia a reuniones y capacitaciones.',
+  INSTRUCTOR_TEORIA: 'Registro de entrada y salida de la jornada laboral, así como de asistencia a reuniones y capacitaciones.',
+  INSTRUCTOR_PRACTICA: 'Acceso a programación de clases prácticas, registro de horarios, inspecciones preoperacionales, mantenimientos, siniestros viales, fallas en ruta y actualización de documentos.',
+}
+
+const ICONOS_ROLES = {
+  ADMINISTRATIVO: ShieldCheck,
+  AUXILIAR_ADMINISTRATIVO: ClipboardCheck,
+  INSTRUCTOR_TEORIA: BookOpen,
+  INSTRUCTOR_PRACTICA: CarFront,
+}
 
 // ============================================================
 // CATÁLOGOS
@@ -2495,51 +2509,33 @@ export default function PersonalAdminPage() {
 
               {crearAcceso && (
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
-
-                  {ROLES.map(
-                    (rol) => (
-
-                    <label
-                      key={
-                        rol.value
-                      }
-                      className={`border rounded-md p-3 cursor-pointer transition ${
-                        rolesSeleccionados.includes(
-                          rol.value
-                        )
-                          ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
-                          : 'bg-white hover:bg-gray-100'
-                      }`}
-                    >
-
-                      <input
-                        type="checkbox"
-                        className="hidden"
-                        checked={
-                          rolesSeleccionados.includes(
-                            rol.value
-                          )
-                        }
-                        onChange={() =>
-                          toggleRol(
-                            rol.value
-                          )
-                        }
-                      />
-
-                      <span className="font-semibold text-sm block">
-                        {rol.label}
-                      </span>
-
-                      <span className="text-xs opacity-80">
-                        {rol.menu}
-                      </span>
-
-                    </label>
-
-                  ))}
-
+                <div className="grid grid-cols-1 gap-3 mt-4 sm:grid-cols-2">
+                  {ROLES.map((rol) => {
+                    const IconoRol = ICONOS_ROLES[rol.value]
+                    const seleccionado = rolesSeleccionados.includes(rol.value)
+                    return (
+                      <label
+                        key={rol.value}
+                        className={`relative flex min-w-0 cursor-pointer gap-3 rounded-lg border p-4 transition-colors ${seleccionado
+                          ? 'border-[#194567] bg-[#EAF3F9] text-[#194567]'
+                          : 'border-slate-400 bg-white text-slate-700 hover:bg-slate-50'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={seleccionado}
+                          onChange={() => toggleRol(rol.value)}
+                          aria-label={`Seleccionar perfil ${rol.label}`}
+                        />
+                        <IconoRol size={22} className="mt-0.5 shrink-0" aria-hidden="true" />
+                        <span className="flex min-w-0 flex-1 flex-col gap-1">
+                          <span className="text-sm font-bold">{rol.label}</span>
+                          <span className="text-xs leading-relaxed">{DESCRIPCIONES_ROLES[rol.value]}</span>
+                        </span>
+                        {seleccionado && <CheckCircle2 size={19} className="shrink-0" aria-hidden="true" />}
+                      </label>
+                    )
+                  })}
                 </div>
 
               )}
