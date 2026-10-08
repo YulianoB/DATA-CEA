@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { IdCard, Plus, Search, X } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, BotonAgregar, BotonLimpiar, BotonCancelar, BotonGuardar } from '@/components/admin/EstiloModulo'
+import { FranjaSuperiorModal, MarcoTabla, BotonAgregar, BotonLimpiar } from '@/components/admin/EstiloModulo'
 import { Toaster, toast } from 'sonner'
 
 // ============================================================
@@ -1516,13 +1516,13 @@ export default function PersonalAdminPage() {
         {mostrarFormulario && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 md:p-6" role="dialog" aria-modal="true" aria-label="Registrar nuevo personal">
             <div className="flex w-full max-w-6xl max-h-[94vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-              <div className="flex shrink-0 items-center justify-between gap-3 px-5 py-3" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo, color: ESTILO_FRANJA_SUPERIOR_MODAL.texto }}>
+              <FranjaSuperiorModal className="flex shrink-0 items-center justify-between gap-3 px-5 py-3">
                 <div>
                   <h2 className="text-base font-bold">Registrar nuevo personal</h2>
                   <p className="text-xs opacity-85">Complete las secciones del formulario para registrar al colaborador.</p>
                 </div>
                 <button type="button" onClick={() => setMostrarFormulario(false)} disabled={loading} aria-label="Cerrar formulario" className="rounded-lg p-2 hover:bg-white/15 disabled:opacity-50"><X size={20} /></button>
-              </div>
+              </FranjaSuperiorModal>
               <div className="overflow-y-auto px-5 pb-5">
           <form
             onSubmit={
@@ -2670,8 +2670,8 @@ export default function PersonalAdminPage() {
         )}
 
         {/* PERSONAL REGISTRADO: centro visual */}
-        <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-end gap-2 px-4 py-3">
+        <div className="bg-white">
+          <div className="flex flex-wrap items-center justify-end gap-2 pb-3">
             <div className="relative w-full sm:w-80">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
@@ -2685,52 +2685,52 @@ export default function PersonalAdminPage() {
             </div>
             <BotonLimpiar type="button" onClick={() => setBusqueda('')} disabled={!busqueda}>Limpiar</BotonLimpiar>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo, color: ESTILO_FRANJA_SUPERIOR_MODAL.texto }}>
+          <FranjaSuperiorModal className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <h2 className="text-sm font-bold">Personal registrado</h2>
             <BotonAgregar type="button" onClick={() => setMostrarFormulario(true)}><Plus size={15} /> Agregar personal</BotonAgregar>
-          </div>
+          </FranjaSuperiorModal>
 
-          <div className="overflow-x-auto">
+          <MarcoTabla className="overflow-x-auto rounded-t-none">
 
-            <table className="min-w-full text-xs border-collapse">
+            <table className="min-w-full text-xs">
 
-              <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
+              <thead>
 
                 <tr>
 
-                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Documento
                   </th>
 
-                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Nombre
                   </th>
 
-                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Cargo
                   </th>
 
-                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Grupo
                   </th>
 
-                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Correo
                   </th>
 
-                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Cuenta
                   </th>
 
-                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Perfiles
                   </th>
 
-                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Estado
                   </th>
 
-                  <th className="text-left p-3 border border-slate-300 font-bold whitespace-nowrap">
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Acciones
                   </th>
 
@@ -2779,33 +2779,33 @@ export default function PersonalAdminPage() {
                       className="hover:bg-slate-50 transition-colors"
                     >
 
-                      <td className="p-3 border border-slate-200">
+                      <td className="p-3">
                         {item.documento}
                       </td>
 
-                      <td className="p-3 border border-slate-200 font-semibold">
+                      <td className="p-3 font-semibold">
                         {`${item.nombres || ''} ${
                           item.apellidos || ''
                         }`.trim()}
                       </td>
 
-                      <td className="p-3 border border-slate-200">
+                      <td className="p-3">
                         {item.cargo || '-'}
                       </td>
 
-                      <td className="p-3 border border-slate-200">
+                      <td className="p-3">
                         {item.grupo_personal || '-'}
                       </td>
 
-                      <td className="p-3 border border-slate-200">
+                      <td className="p-3">
                         {item.email || '-'}
                       </td>
 
-                      <td className="p-3 border border-slate-200">
+                      <td className="p-3">
                         {item.cuenta?.estado || 'sin acceso'}
                       </td>
 
-                      <td className="p-3 border border-slate-200">
+                      <td className="p-3">
 
                         {(item.perfiles || []).length ===
                         0 ? (
@@ -2834,11 +2834,11 @@ export default function PersonalAdminPage() {
 
                       </td>
 
-                      <td className="p-3 border border-slate-200">
+                      <td className="p-3">
                         {item.estado || '-'}
                       </td>
 
-                      <td className="p-3 border border-slate-200">
+                      <td className="p-3">
 
                         <Link
                           href={`/admin/personal/${item.id}`}
@@ -2860,7 +2860,7 @@ export default function PersonalAdminPage() {
 
             </table>
 
-          </div>
+          </MarcoTabla>
 
         </div>
 
