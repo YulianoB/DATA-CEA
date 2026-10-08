@@ -1682,9 +1682,43 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
   )
 }
 
+function ModalExpediente({ abierto, titulo, cerrar, children }) {
+  useEffect(() => {
+    if (!abierto) return
+    const onKeyDown = (event) => { if (event.key === 'Escape') cerrar() }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [abierto, cerrar])
+  if (!abierto) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3" role="presentation">
+      <div role="dialog" aria-modal="true" aria-label={titulo} className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-slate-400 bg-white shadow-xl">
+        <div className="flex items-center justify-between bg-[#194567] px-4 py-3 text-white">
+          <h2 className="flex items-center gap-2 text-sm font-bold"><i className="fas fa-file-alt" aria-hidden="true"></i>{titulo}</h2>
+          <button type="button" onClick={cerrar} aria-label="Cerrar formulario" className="rounded p-1 hover:bg-white/20"><i className="fas fa-times" aria-hidden="true"></i></button>
+        </div>
+        <div className="overflow-y-auto p-3 sm:p-4">{children}</div>
+        <div className="border-t border-slate-200 bg-slate-50 px-4 py-2 text-right">
+          <button type="button" onClick={cerrar} className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200"><i className="fas fa-times" aria-hidden="true"></i> Cancelar</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Estudios({ estudios, formEstudio, cambiarEstudio, guardarEstudio, guardandoEstudio, cargandoEstudios, editarEstudio, eliminarEstudio, cancelarEdicionEstudio }) {
+  const [modalAbierto, setModalAbierto] = useState(false)
+  useEffect(() => {
+    if (formEstudio.id) setModalAbierto(true)
+  }, [formEstudio.id])
+  const cerrarModal = () => {
+    setModalAbierto(false)
+    cancelarEdicionEstudio()
+  }
+
   return (
     <div className="space-y-6">
+      <ModalExpediente abierto={modalAbierto} titulo={formEstudio.id ? 'Editar registro' : 'Nuevo registro'} cerrar={cerrarModal}>
       <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
@@ -1694,14 +1728,14 @@ function Estudios({ estudios, formEstudio, cambiarEstudio, guardarEstudio, guard
             <p className="text-sm text-gray-500">Registra o actualiza la formación académica de la persona.</p>
           </div>
           {formEstudio.id && (
-            <button type="button" onClick={cancelarEdicionEstudio} className="rounded-md border px-3 py-2 text-sm hover:bg-gray-100">
+            <button type="button" onClick={cerrarModal} className="rounded-md border px-3 py-2 text-sm hover:bg-gray-100">
               Cancelar edición
             </button>
           )}
         </div>
 
         <form onSubmit={guardarEstudio} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CampoSelect label="Nivel de estudio *" name="nivel_estudio" value={formEstudio.nivel_estudio} onChange={cambiarEstudio} options={[
               ['', 'Seleccione'],
               ['BACHILLER', 'Bachiller'],
@@ -1719,19 +1753,24 @@ function Estudios({ estudios, formEstudio, cambiarEstudio, guardarEstudio, guard
 
           <div className="flex justify-end gap-2">
             {formEstudio.id && (
-              <button type="button" onClick={cancelarEdicionEstudio} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
+              <button type="button" onClick={cerrarModal} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
                 Cancelar
               </button>
             )}
-            <button type="submit" disabled={guardandoEstudio} className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:bg-gray-400">
-              {guardandoEstudio ? 'Guardando...' : formEstudio.id ? 'Actualizar estudio' : 'Guardar estudio'}
+            <button type="submit" disabled={guardandoEstudio} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-4 py-2 text-xs font-semibold text-white hover:bg-[#12344e] disabled:bg-gray-400">
+              <i className="fas fa-save" aria-hidden="true"></i> {guardandoEstudio ? 'Guardando...' : formEstudio.id ? 'Actualizar estudio' : 'Guardar estudio'}
             </button>
           </div>
         </form>
       </div>
 
+      </ModalExpediente>
+
       <div>
-        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Estudios registrados</h3>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 bg-slate-100 px-3 py-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-[#194567]"><i className="fas fa-list" aria-hidden="true"></i> Estudios registrados</h3>
+          <button type="button" onClick={() => setModalAbierto(true)} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-plus" aria-hidden="true"></i> Agregar estudio</button>
+        </div>
         {cargandoEstudios ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando estudios...</p>
         ) : (
@@ -1791,8 +1830,18 @@ function TablaEstudios({ estudios, editarEstudio, eliminarEstudio }) {
 }
 
 function ExperienciaLaboral({ experiencia, formExperiencia, cambiarExperiencia, guardarExperiencia, guardandoExperiencia, cargandoExperiencia, editarExperiencia, eliminarExperiencia, cancelarEdicionExperiencia }) {
+  const [modalAbierto, setModalAbierto] = useState(false)
+  useEffect(() => {
+    if (formExperiencia.id) setModalAbierto(true)
+  }, [formExperiencia.id])
+  const cerrarModal = () => {
+    setModalAbierto(false)
+    cancelarEdicionExperiencia()
+  }
+
   return (
     <div className="space-y-6">
+      <ModalExpediente abierto={modalAbierto} titulo={formExperiencia.id ? 'Editar registro' : 'Nuevo registro'} cerrar={cerrarModal}>
       <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
@@ -1802,13 +1851,13 @@ function ExperienciaLaboral({ experiencia, formExperiencia, cambiarExperiencia, 
             <p className="text-sm text-gray-500">Registra o actualiza la experiencia laboral de la persona.</p>
           </div>
           {formExperiencia.id && (
-            <button type="button" onClick={cancelarEdicionExperiencia} className="rounded-md border px-3 py-2 text-sm hover:bg-gray-100">
+            <button type="button" onClick={cerrarModal} className="rounded-md border px-3 py-2 text-sm hover:bg-gray-100">
               Cancelar edición
             </button>
           )}
         </div>
         <form onSubmit={guardarExperiencia} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CampoInput label="Empresa *" name="empresa" value={formExperiencia.empresa} onChange={cambiarExperiencia} className="uppercase" />
             <CampoInput label="Cargo *" name="cargo" value={formExperiencia.cargo} onChange={cambiarExperiencia} className="uppercase" />
             <CampoInput label="Fecha inicio *" type="date" name="fecha_inicio" value={formExperiencia.fecha_inicio} onChange={cambiarExperiencia} />
@@ -1830,19 +1879,24 @@ function ExperienciaLaboral({ experiencia, formExperiencia, cambiarExperiencia, 
 
           <div className="flex justify-end gap-2">
             {formExperiencia.id && (
-              <button type="button" onClick={cancelarEdicionExperiencia} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
+              <button type="button" onClick={cerrarModal} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
                 Cancelar
               </button>
             )}
-            <button type="submit" disabled={guardandoExperiencia} className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:bg-gray-400">
-              {guardandoExperiencia ? 'Guardando...' : formExperiencia.id ? 'Actualizar experiencia' : 'Guardar experiencia'}
+            <button type="submit" disabled={guardandoExperiencia} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-4 py-2 text-xs font-semibold text-white hover:bg-[#12344e] disabled:bg-gray-400">
+              <i className="fas fa-save" aria-hidden="true"></i> {guardandoExperiencia ? 'Guardando...' : formExperiencia.id ? 'Actualizar experiencia' : 'Guardar experiencia'}
             </button>
           </div>
         </form>
       </div>
 
+      </ModalExpediente>
+
       <div>
-        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Experiencia registrada</h3>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 bg-slate-100 px-3 py-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-[#194567]"><i className="fas fa-list" aria-hidden="true"></i> Experiencia registrada</h3>
+          <button type="button" onClick={() => setModalAbierto(true)} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-plus" aria-hidden="true"></i> Agregar experiencia</button>
+        </div>
         {cargandoExperiencia ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando experiencia laboral...</p>
         ) : (
@@ -1917,8 +1971,18 @@ function Licencias({
   eliminarLicencia,
   cancelarEdicionLicencia,
 }) {
+  const [modalAbierto, setModalAbierto] = useState(false)
+  useEffect(() => {
+    if (formLicencia.id) setModalAbierto(true)
+  }, [formLicencia.id])
+  const cerrarModal = () => {
+    setModalAbierto(false)
+    cancelarEdicionLicencia()
+  }
+
   return (
     <div className="space-y-6">
+      <ModalExpediente abierto={modalAbierto} titulo={formLicencia.id ? 'Editar registro' : 'Nuevo registro'} cerrar={cerrarModal}>
       <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <h3 className="mb-1 text-sm font-bold text-[#194567]">
           {formLicencia.id
@@ -1933,7 +1997,7 @@ function Licencias({
         )}
 
         <form onSubmit={guardarLicencia} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CampoSelect
               label="Tipo *"
               name="tipo_licencia"
@@ -1982,7 +2046,7 @@ function Licencias({
             {formLicencia.id && (
               <button
                 type="button"
-                onClick={cancelarEdicionLicencia}
+                onClick={cerrarModal}
                 className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100"
               >
                 Cancelar
@@ -1992,7 +2056,7 @@ function Licencias({
             <button
               type="submit"
               disabled={guardandoLicencia}
-              className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:bg-gray-400"
+              className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-4 py-2 text-xs font-semibold text-white hover:bg-[#12344e] disabled:bg-gray-400"
             >
               {guardandoLicencia
                 ? 'Guardando...'
@@ -2004,10 +2068,15 @@ function Licencias({
         </form>
       </div>
 
+      </ModalExpediente>
+
       <div>
-        <h3 className="mb-1 text-sm font-bold text-[#194567]">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 bg-slate-100 px-3 py-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-[#194567]">
           Historial de licencias y certificados
         </h3>
+          <button type="button" onClick={() => setModalAbierto(true)} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-plus" aria-hidden="true"></i> Agregar licencia o certificado</button>
+        </div>
 
         <p className="mb-4 text-xs text-gray-600">
           Se conservan las renovaciones y recategorizaciones realizadas. Solo el registro más reciente de cada grupo puede generar una nueva renovación.
@@ -2196,8 +2265,18 @@ function Referencias({
   eliminarReferencia,
   cancelarEdicionReferencia,
 }) {
+  const [modalAbierto, setModalAbierto] = useState(false)
+  useEffect(() => {
+    if (formReferencia.id) setModalAbierto(true)
+  }, [formReferencia.id])
+  const cerrarModal = () => {
+    setModalAbierto(false)
+    cancelarEdicionReferencia()
+  }
+
   return (
     <div className="space-y-6">
+      <ModalExpediente abierto={modalAbierto} titulo={formReferencia.id ? 'Editar registro' : 'Nuevo registro'} cerrar={cerrarModal}>
       <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
@@ -2211,7 +2290,7 @@ function Referencias({
           {formReferencia.id && (
             <button
               type="button"
-              onClick={cancelarEdicionReferencia}
+              onClick={cerrarModal}
               className="rounded-md border px-3 py-2 text-sm hover:bg-gray-100"
             >
               Cancelar edición
@@ -2220,7 +2299,7 @@ function Referencias({
         </div>
 
         <form onSubmit={guardarReferencia} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CampoSelect label="Tipo referencia *" name="tipo_referencia" value={formReferencia.tipo_referencia} onChange={cambiarReferencia} options={[
               ['personal', 'Personal'],
               ['laboral', 'Laboral'],
@@ -2230,7 +2309,7 @@ function Referencias({
             <CampoInput label="Correo" type="email" name="email" value={formReferencia.email} onChange={cambiarReferencia} />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CampoInput label="Ocupación / cargo" name="ocupacion_cargo" value={formReferencia.ocupacion_cargo} onChange={cambiarReferencia} className="uppercase" />
             <CampoInput label="Empresa" name="empresa" value={formReferencia.empresa} onChange={cambiarReferencia} className="uppercase" />
             <CampoInput label="Relación / parentesco" name="relacion" value={formReferencia.relacion} onChange={cambiarReferencia} className="uppercase" />
@@ -2239,19 +2318,24 @@ function Referencias({
 
           <div className="flex justify-end gap-2">
             {formReferencia.id && (
-              <button type="button" onClick={cancelarEdicionReferencia} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
+              <button type="button" onClick={cerrarModal} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
                 Cancelar
               </button>
             )}
-            <button type="submit" disabled={guardandoReferencia} className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:bg-gray-400">
-              {guardandoReferencia ? 'Guardando...' : formReferencia.id ? 'Actualizar referencia' : 'Guardar referencia'}
+            <button type="submit" disabled={guardandoReferencia} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-4 py-2 text-xs font-semibold text-white hover:bg-[#12344e] disabled:bg-gray-400">
+              <i className="fas fa-save" aria-hidden="true"></i> {guardandoReferencia ? 'Guardando...' : formReferencia.id ? 'Actualizar referencia' : 'Guardar referencia'}
             </button>
           </div>
         </form>
       </div>
 
+      </ModalExpediente>
+
       <div>
-        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Referencias registradas</h3>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 bg-slate-100 px-3 py-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-[#194567]"><i className="fas fa-list" aria-hidden="true"></i> Referencias registradas</h3>
+          <button type="button" onClick={() => setModalAbierto(true)} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-plus" aria-hidden="true"></i> Agregar referencia</button>
+        </div>
         {cargandoReferencias ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando referencias...</p>
         ) : (
@@ -2334,8 +2418,18 @@ function Evaluaciones({
   eliminarEvaluacion,
   cancelarEdicionEvaluacion,
 }) {
+  const [modalAbierto, setModalAbierto] = useState(false)
+  useEffect(() => {
+    if (formEvaluacion.id) setModalAbierto(true)
+  }, [formEvaluacion.id])
+  const cerrarModal = () => {
+    setModalAbierto(false)
+    cancelarEdicionEvaluacion()
+  }
+
   return (
     <div className="space-y-6">
+      <ModalExpediente abierto={modalAbierto} titulo={formEvaluacion.id ? 'Editar registro' : 'Nuevo registro'} cerrar={cerrarModal}>
       <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
@@ -2349,7 +2443,7 @@ function Evaluaciones({
           {formEvaluacion.id && (
             <button
               type="button"
-              onClick={cancelarEdicionEvaluacion}
+              onClick={cerrarModal}
               className="rounded-md border px-3 py-2 text-sm hover:bg-gray-100"
             >
               Cancelar edición
@@ -2358,7 +2452,7 @@ function Evaluaciones({
         </div>
 
         <form onSubmit={guardarEvaluacion} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CampoSelect label="Tipo evaluación *" name="tipo_evaluacion" value={formEvaluacion.tipo_evaluacion} onChange={cambiarEvaluacion} options={[
               ['', 'Seleccione'],
               ['EVALUACIÓN DE COMPETENCIA', 'Evaluación de competencia'],
@@ -2382,19 +2476,24 @@ function Evaluaciones({
 
           <div className="flex justify-end gap-2">
             {formEvaluacion.id && (
-              <button type="button" onClick={cancelarEdicionEvaluacion} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
+              <button type="button" onClick={cerrarModal} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
                 Cancelar
               </button>
             )}
-            <button type="submit" disabled={guardandoEvaluacion} className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:bg-gray-400">
-              {guardandoEvaluacion ? 'Guardando...' : formEvaluacion.id ? 'Actualizar evaluación' : 'Guardar evaluación'}
+            <button type="submit" disabled={guardandoEvaluacion} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-4 py-2 text-xs font-semibold text-white hover:bg-[#12344e] disabled:bg-gray-400">
+              <i className="fas fa-save" aria-hidden="true"></i> {guardandoEvaluacion ? 'Guardando...' : formEvaluacion.id ? 'Actualizar evaluación' : 'Guardar evaluación'}
             </button>
           </div>
         </form>
       </div>
 
+      </ModalExpediente>
+
       <div>
-        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Evaluaciones registradas</h3>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 bg-slate-100 px-3 py-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-[#194567]"><i className="fas fa-list" aria-hidden="true"></i> Evaluaciones registradas</h3>
+          <button type="button" onClick={() => setModalAbierto(true)} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-plus" aria-hidden="true"></i> Agregar evaluación</button>
+        </div>
         {cargandoEvaluaciones ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando evaluaciones...</p>
         ) : (
@@ -2473,8 +2572,18 @@ function Documentos({
   eliminarDocumento,
   cancelarEdicionDocumento,
 }) {
+  const [modalAbierto, setModalAbierto] = useState(false)
+  useEffect(() => {
+    if (formDocumento.id) setModalAbierto(true)
+  }, [formDocumento.id])
+  const cerrarModal = () => {
+    setModalAbierto(false)
+    cancelarEdicionDocumento()
+  }
+
   return (
     <div className="space-y-6">
+      <ModalExpediente abierto={modalAbierto} titulo={formDocumento.id ? 'Editar registro' : 'Nuevo registro'} cerrar={cerrarModal}>
       <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
@@ -2488,7 +2597,7 @@ function Documentos({
           {formDocumento.id && (
             <button
               type="button"
-              onClick={cancelarEdicionDocumento}
+              onClick={cerrarModal}
               className="rounded-md border px-3 py-2 text-sm hover:bg-gray-100"
             >
               Cancelar edición
@@ -2497,7 +2606,7 @@ function Documentos({
         </div>
 
         <form onSubmit={guardarDocumento} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CampoSelect label="Tipo documento *" name="tipo_documento" value={formDocumento.tipo_documento} onChange={cambiarDocumento} options={[
               ['', 'Seleccione'],
               ['CEDULA', 'Cédula'],
@@ -2520,7 +2629,7 @@ function Documentos({
             ]} />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CampoInput label="Enlace del documento" name="archivo_url" value={formDocumento.archivo_url} onChange={cambiarDocumento} placeholder="https://drive.google.com/..." wrapperClass="md:col-span-2" required={false} />
             <label className="mt-6 inline-flex items-center gap-2 text-sm text-gray-700">
               <input type="checkbox" name="vence" checked={formDocumento.vence} onChange={cambiarDocumento} className="h-4 w-4" />
@@ -2535,19 +2644,24 @@ function Documentos({
 
           <div className="flex justify-end gap-2">
             {formDocumento.id && (
-              <button type="button" onClick={cancelarEdicionDocumento} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
+              <button type="button" onClick={cerrarModal} className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100">
                 Cancelar
               </button>
             )}
-            <button type="submit" disabled={guardandoDocumento} className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:bg-gray-400">
-              {guardandoDocumento ? 'Guardando...' : formDocumento.id ? 'Actualizar documento' : 'Guardar documento'}
+            <button type="submit" disabled={guardandoDocumento} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-4 py-2 text-xs font-semibold text-white hover:bg-[#12344e] disabled:bg-gray-400">
+              <i className="fas fa-save" aria-hidden="true"></i> {guardandoDocumento ? 'Guardando...' : formDocumento.id ? 'Actualizar documento' : 'Guardar documento'}
             </button>
           </div>
         </form>
       </div>
 
+      </ModalExpediente>
+
       <div>
-        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Documentos registrados</h3>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 bg-slate-100 px-3 py-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-[#194567]"><i className="fas fa-list" aria-hidden="true"></i> Documentos registrados</h3>
+          <button type="button" onClick={() => setModalAbierto(true)} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-plus" aria-hidden="true"></i> Agregar documento</button>
+        </div>
         {cargandoDocumentos ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando documentos...</p>
         ) : (
