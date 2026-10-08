@@ -2154,7 +2154,13 @@ export default function CierreCajaPage() {
             FLUJO PRINCIPAL
         ================================================== */}
 
-        {tipoCierre === 'TURNO' && arqueo && (
+        {tipoCierre === 'TURNO' && arqueo && Number(arqueo?.cantidad_recibos || 0) + Number(arqueo?.cantidad_egresos || 0) === 0 && (
+          <div className="mx-4 my-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-900 md:mx-6">
+            No hay movimientos de ingresos ni egresos registrados para el período consultado. No es necesario realizar un arqueo de turno.
+          </div>
+        )}
+
+        {tipoCierre === 'TURNO' && arqueo && Number(arqueo?.cantidad_recibos || 0) + Number(arqueo?.cantidad_egresos || 0) > 0 && (
           <div className="px-4 pb-2 pt-4 md:px-6">
             <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
