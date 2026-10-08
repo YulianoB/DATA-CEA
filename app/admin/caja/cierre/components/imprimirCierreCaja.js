@@ -2141,7 +2141,7 @@ footer{margin-top:8px;padding-top:4px}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
 <div class="pagina-cierre">
-<div class="cabecera-cierre"><h1>CIERRE DE CAJA</h1><div class="empresa">${escaparHtml(empresa.nombre || empresa.razon_social)}</div><div class="nit">NIT ${escaparHtml(empresa.nit)}</div></div>
+<div class="cabecera-cierre"><h1>CIERRE DIARIO</h1><div class="empresa">${escaparHtml(empresa.nombre || empresa.razon_social)}</div><div class="nit">NIT ${escaparHtml(empresa.nit)}</div></div>
 <div class="bloque datos-cierre"><div><span>Fecha de cierre</span><strong>${escaparHtml(formatearFecha(registro.fecha || cierre.fecha))}</strong></div><div><span>Consecutivo</span><strong>${escaparHtml(registro.consecutivo || '-')}</strong></div><div><span>Usuario que generó el cierre</span><strong>${escaparHtml(registro.usuario_cierre || '-')}</strong></div></div>
 <section class="bloque"><h2>RESUMEN FINANCIERO</h2><div class="totales">
 <div class="total ingreso"><span>TOTAL INGRESOS</span><strong>${escaparHtml(formatearMoneda(cierre.total_ingresos_sistema))}</strong></div>
