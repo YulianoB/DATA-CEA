@@ -2115,9 +2115,14 @@ tr{break-inside:avoid;page-break-inside:avoid}small{display:block;font-size:8px;
 .firma small{display:block;margin-top:5px}footer{justify-content:center;text-align:center}
 
 /* Presentación compacta de una página para cierres con volumen habitual. */
-@page{size:letter landscape;margin:8mm 10mm 9mm 10mm}
+/* Margen interno fijo: evita que la configuración del navegador pegue tablas al borde. */
+@page{size:letter landscape;margin:0}
+html,body{width:100%;margin:0;padding:0}
+.pagina-cierre{width:100%;max-width:none;margin:0;padding:12mm 14mm 11mm 14mm;box-sizing:border-box}
+.pagina-cierre table{max-width:100%}
+
 body{font-size:7.5px;line-height:1.18}
-.pagina-cierre{max-width:none;padding:0;margin:0}
+/* Se conserva el espacio interior del contenedor principal. */
 .cabecera-cierre{padding:1px 0 5px;margin-bottom:7px}
 .cabecera-cierre h1{font-size:13px}
 .cabecera-cierre .empresa{font-size:11px;margin-top:2px}
