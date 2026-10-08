@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { IdCard, Plus, Search, X, Users, Eraser, Save, Ban, ShieldCheck, ClipboardCheck, BookOpen, CarFront, CheckCircle2 } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import CampoCatalogo from '@/components/admin/CampoCatalogo'
 import { FranjaSuperiorModal, FranjaSecundariaModal, MarcoTabla, BotonAgregar, BotonLimpiar, BotonCancelar, BotonGuardar, ESTILO_CONTENEDORES, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { Toaster, toast } from 'sonner'
 
@@ -405,6 +406,16 @@ export default function PersonalAdminPage() {
   ] = useState(
     INITIAL_FORM
   )
+
+  const [departamentosCatalogo, setDepartamentosCatalogo] = useState([])
+  const departamentoId = departamentosCatalogo.find(
+    (item) => item.nombre === form.departamento_residencia
+  )?.id || null
+
+  const onChangeDepartamento = (event) => {
+    const nombre = event.target.value
+    setForm((prev) => ({ ...prev, departamento_residencia: nombre, ciudad_residencia: '' }))
+  }
 
   const [
     rolesSeleccionados,
@@ -1756,26 +1767,24 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                 wrapperClass="col-span-12 md:col-span-4" /></div>
-<div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
+<div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoCatalogo
+                  catalogo="departamentos"
                   label="Departamento residencia *"
                   name="departamento_residencia"
-                  value={
-                    form.departamento_residencia
-                  }
-                  onChange={
-                    onChange
-                  }
-                wrapperClass="col-span-12 md:col-span-3" />
-<CampoInput
+                  value={form.departamento_residencia}
+                  onChange={onChangeDepartamento}
+                  onOpcionesCargadas={setDepartamentosCatalogo}
+                  nit={empresaNit}
+                  wrapperClass="col-span-12 md:col-span-3" />
+<CampoCatalogo
+                  catalogo="municipios"
                   label="Ciudad residencia *"
                   name="ciudad_residencia"
-                  value={
-                    form.ciudad_residencia
-                  }
-                  onChange={
-                    onChange
-                  }
-                wrapperClass="col-span-12 md:col-span-3" />
+                  value={form.ciudad_residencia}
+                  onChange={onChange}
+                  departamentoId={departamentoId}
+                  nit={empresaNit}
+                  wrapperClass="col-span-12 md:col-span-3" />
 <CampoSelect
                   label="Escolaridad *"
                   name="escolaridad"
@@ -1851,60 +1860,30 @@ export default function PersonalAdminPage() {
                   }
                   inputMode="numeric"
                 wrapperClass="col-span-12 md:col-span-2" />
-<CampoSelect
+<CampoCatalogo
+                  catalogo="eps"
                   label="EPS *"
                   name="eps"
-                  value={
-                    form.eps
-                  }
-                  onChange={
-                    onChange
-                  }
-                  options={[
-                    [
-                      '',
-                      'Seleccione',
-                    ],
-
-                    ...EPS_COLOMBIA,
-                  ]}
-                wrapperClass="col-span-12 md:col-span-3" />
-<CampoSelect
+                  value={form.eps}
+                  onChange={onChange}
+                  nit={empresaNit}
+                  wrapperClass="col-span-12 md:col-span-3" />
+<CampoCatalogo
+                  catalogo="arl"
                   label="ARL *"
                   name="arl"
-                  value={
-                    form.arl
-                  }
-                  onChange={
-                    onChange
-                  }
-                  options={[
-                    [
-                      '',
-                      'Seleccione',
-                    ],
-
-                    ...ARL_COLOMBIA,
-                  ]}
-                wrapperClass="col-span-12 md:col-span-2" />
-<CampoSelect
+                  value={form.arl}
+                  onChange={onChange}
+                  nit={empresaNit}
+                  wrapperClass="col-span-12 md:col-span-2" />
+<CampoCatalogo
+                  catalogo="fondos_pensiones"
                   label="Fondo pensión *"
                   name="fondo_pension"
-                  value={
-                    form.fondo_pension
-                  }
-                  onChange={
-                    onChange
-                  }
-                  options={[
-                    [
-                      '',
-                      'Seleccione',
-                    ],
-
-                    ...FONDOS_PENSION,
-                  ]}
-                wrapperClass="col-span-12 md:col-span-3" /></div><div className="border-t border-slate-300 pt-3"><h3 className="mb-3 text-sm font-bold text-[#194567]">Contacto de emergencia</h3><div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
+                  value={form.fondo_pension}
+                  onChange={onChange}
+                  nit={empresaNit}
+                  wrapperClass="col-span-12 md:col-span-3" /></div><div className="border-t border-slate-300 pt-3"><h3 className="mb-3 text-sm font-bold text-[#194567]">Contacto de emergencia</h3><div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
                   label="Nombre completo contacto *"
                   name="contacto_emergencia_nombre"
                   value={
