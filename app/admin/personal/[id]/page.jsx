@@ -1674,9 +1674,6 @@ export default function HojaVidaPersonalPage() {
               <h1 className="text-base font-bold">Hoja de vida del personal</h1>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button type="button" onClick={imprimirHojaVida} disabled={generandoPdf} className="inline-flex items-center gap-2 rounded-md border border-white/60 bg-white px-3 py-1.5 text-xs font-semibold text-[#194567] hover:bg-slate-100 disabled:opacity-60">
-                <i className="fas fa-file-pdf" aria-hidden="true"></i>{generandoPdf ? 'Generando...' : 'Generar hoja de vida PDF'}
-              </button>
             <Link href="/admin/personal" className="inline-flex items-center gap-2 rounded-md border border-white/60 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10">
               <i className="fas fa-arrow-left" aria-hidden="true"></i>
               Volver a personal
