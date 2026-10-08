@@ -576,10 +576,11 @@ function MiniProgreso({
     <div
       className="
         h-[58px]
-        border
-        border-blue-200
+        border-2
+        border-[#3B617D]
         rounded-lg
-        bg-blue-50
+        bg-[#F0F6FA]
+        shadow-sm
         px-3
         py-2
       "
@@ -744,7 +745,6 @@ function MiniInstructor({
     <div
       className="
         h-[58px]
-        border
         border-2
         border-[#3B617D]
         rounded-lg
@@ -5453,7 +5453,7 @@ function abrirClase(
               grid
               grid-cols-1
               md:grid-cols-2
-              xl:grid-cols-[150px_minmax(170px,1.5fr)_135px_150px_minmax(170px,1.4fr)_150px_minmax(165px,1.2fr)_110px]
+              xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.25fr)_minmax(0,0.95fr)_minmax(0,1.1fr)_minmax(0,1.25fr)_minmax(0,1.1fr)_minmax(0,1.25fr)_minmax(0,0.7fr)]
               gap-x-1.5
               gap-y-2
               items-end
