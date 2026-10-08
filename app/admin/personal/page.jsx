@@ -1030,7 +1030,7 @@ export default function PersonalAdminPage() {
       const obligatorios = [
         [
           'tipo_personal',
-          'Selecciona el tipo de personal.',
+          'Selecciona la relación con el CEA.',
         ],
         [
           'tipo_documento',
@@ -1577,26 +1577,6 @@ export default function PersonalAdminPage() {
                 Información básica
               </FranjaSecundariaModal>
 <div className="p-3 space-y-3"><div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoSelect
-                  label="Tipo de personal *"
-                  name="tipo_personal"
-                  value={
-                    form.tipo_personal
-                  }
-                  onChange={
-                    onChange
-                  }
-                  options={[
-                    [
-                      'contratista',
-                      'Contratista',
-                    ],
-                    [
-                      'colaborador',
-                      'Colaborador',
-                    ],
-                  ]}
-                wrapperClass="col-span-12 md:col-span-3" />
-<CampoSelect
                   label="Tipo documento *"
                   name="tipo_documento"
                   value={
@@ -1926,7 +1906,27 @@ export default function PersonalAdminPage() {
                 Vinculación al CEA
               </FranjaSecundariaModal>
 <div className="p-3 space-y-3"><div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoSelect
-                  label="Grupo personal *"
+                  label="Relación con el CEA *"
+                  name="tipo_personal"
+                  value={
+                    form.tipo_personal
+                  }
+                  onChange={
+                    onChange
+                  }
+                  options={[
+                    [
+                      'contratista',
+                      'Contratista',
+                    ],
+                    [
+                      'colaborador',
+                      'Colaborador',
+                    ],
+                  ]}
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoSelect
+                  label="Grupo funcional *"
                   name="grupo_personal"
                   value={
                     form.grupo_personal
@@ -1965,7 +1965,7 @@ export default function PersonalAdminPage() {
                   placeholder="Ej: Instructor, auxiliar"
                 wrapperClass="col-span-12 md:col-span-5" />
 <CampoSelect
-                  label="Tipo contrato *"
+                  label="Modalidad de contrato *"
                   name="tipo_contrato"
                   value={
                     form.tipo_contrato
@@ -2001,7 +2001,7 @@ export default function PersonalAdminPage() {
                   ]}
                 wrapperClass="col-span-12 md:col-span-4" /></div>
 <div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoSelect
-                  label="Tipo permanencia *"
+                  label="Permanencia en el CEA *"
                   name="tipo_permanencia"
                   value={
                     form.tipo_permanencia
