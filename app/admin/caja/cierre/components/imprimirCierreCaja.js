@@ -2113,6 +2113,26 @@ tr{break-inside:avoid;page-break-inside:avoid}small{display:block;font-size:8px;
 .firmas{display:flex;justify-content:space-around;gap:35px;margin-top:35px}
 .firma{border:0;text-align:center;width:43%}.firma .linea{display:inline-block;border-top:1px solid #64748b;padding:7px 10px 0}
 .firma small{display:block;margin-top:5px}footer{justify-content:center;text-align:center}
+
+/* Presentación compacta de una página para cierres con volumen habitual. */
+@page{size:letter landscape;margin:8mm 10mm 9mm 10mm}
+body{font-size:7.5px;line-height:1.18}
+.pagina-cierre{max-width:none;padding:0;margin:0}
+.cabecera-cierre{padding:1px 0 5px;margin-bottom:7px}
+.cabecera-cierre h1{font-size:13px}
+.cabecera-cierre .empresa{font-size:11px;margin-top:2px}
+.cabecera-cierre .nit{font-size:8px;margin-top:2px}
+.bloque{margin:6px 0}
+.datos-cierre{padding:6px 9px;gap:7px}
+.datos-cierre strong{font-size:8px;margin-top:1px}
+h2{font-size:9px;margin:6px 0 4px}
+.totales{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:3px}
+.total{padding:5px 8px}
+.total strong{font-size:10px;margin-top:2px}
+.seccion{margin-top:7px}
+td,th{padding:3px 4px;font-size:7.2px;line-height:1.13}
+small{font-size:7px;margin-top:1px}
+footer{margin-top:8px;padding-top:4px}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
 <div class="pagina-cierre">
@@ -2123,10 +2143,8 @@ tr{break-inside:avoid;page-break-inside:avoid}small{display:block;font-size:8px;
 <div class="total egreso"><span>TOTAL EGRESOS</span><strong>${escaparHtml(formatearMoneda(cierre.total_egresos_sistema))}</strong></div>
 <div class="total neto"><span>RESULTADO DEL DÍA (INGRESOS − EGRESOS)</span><strong>${escaparHtml(formatearMoneda(cierre.movimiento_neto))}</strong></div></div></section>
 <section class="bloque"><h2>RESUMEN POR MEDIO DE PAGO</h2><table class="resumen"><thead><tr><th>Medio</th><th>Ingresos</th><th>Egresos</th><th>Resultado</th></tr></thead><tbody>${Object.entries(cierre.resumen_medios_pago || {}).map(([medio,dato]) => '<tr><td>'+escaparHtml(medio)+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.ingresos))+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.egresos))+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.neto))+'</td></tr>').join('')}</tbody></table></section>
-<section class="seccion"><h2>Ingresos del día (${ingresos.length})</h2><table><colgroup><col style="width:9%"><col style="width:14%"><col style="width:20%"><col style="width:22%"><col style="width:9%"><col style="width:16%"><col style="width:10%"></colgroup><thead><tr><th>Hora</th><th>Referencia</th><th>Cliente / Pagador</th><th>Concepto / Detalle</th><th>Medio</th><th>Responsable</th><th class="numero">Valor</th></tr></thead><tbody>${filas(ingresos, true)}</tbody><tfoot><tr><td colspan="6" style="text-align:right">TOTAL INGRESOS</td><td class="numero">${escaparHtml(formatearMoneda(totalIngresosDetalle))}</td></tr></tfoot></table></section>
-<section class="seccion"><h2>Egresos del día (${egresos.length})</h2><table><colgroup><col style="width:9%"><col style="width:14%"><col style="width:20%"><col style="width:22%"><col style="width:9%"><col style="width:16%"><col style="width:10%"></colgroup><thead><tr><th>Hora</th><th>Referencia</th><th>Beneficiario</th><th>Concepto / Detalle</th><th>Medio</th><th>Responsable</th><th class="numero">Valor</th></tr></thead><tbody>${filas(egresos, false)}</tbody><tfoot><tr><td colspan="6" style="text-align:right">TOTAL EGRESOS</td><td class="numero">${escaparHtml(formatearMoneda(totalEgresosDetalle))}</td></tr></tfoot></table></section>
-<section class="bloque"><h2>OBSERVACIONES</h2><div class="observaciones">${escaparHtml(registro.observaciones || 'Sin observaciones registradas.')}</div></section>
-<div class="firmas"><div class="firma"><div class="linea">RESPONSABLE DEL CIERRE</div><small>${escaparHtml(registro.usuario_cierre || '-')}</small></div><div class="firma"><div class="linea">REVISIÓN / ADMINISTRACIÓN</div><small>Nombre y firma</small></div></div>
+<section class="seccion"><h2>Ingresos del día (${ingresos.length})</h2><table><colgroup><col style="width:7%"><col style="width:13%"><col style="width:23%"><col style="width:22%"><col style="width:9%"><col style="width:17%"><col style="width:9%"></colgroup><thead><tr><th>Hora</th><th>Referencia</th><th>Cliente / Pagador</th><th>Concepto / Detalle</th><th>Medio</th><th>Responsable</th><th class="numero">Valor</th></tr></thead><tbody>${filas(ingresos, true)}</tbody><tfoot><tr><td colspan="6" style="text-align:right">TOTAL INGRESOS</td><td class="numero">${escaparHtml(formatearMoneda(totalIngresosDetalle))}</td></tr></tfoot></table></section>
+<section class="seccion"><h2>Egresos del día (${egresos.length})</h2><table><colgroup><col style="width:7%"><col style="width:13%"><col style="width:23%"><col style="width:22%"><col style="width:9%"><col style="width:17%"><col style="width:9%"></colgroup><thead><tr><th>Hora</th><th>Referencia</th><th>Beneficiario</th><th>Concepto / Detalle</th><th>Medio</th><th>Responsable</th><th class="numero">Valor</th></tr></thead><tbody>${filas(egresos, false)}</tbody><tfoot><tr><td colspan="6" style="text-align:right">TOTAL EGRESOS</td><td class="numero">${escaparHtml(formatearMoneda(totalEgresosDetalle))}</td></tr></tfoot></table></section>
 <footer>Documento generado desde el módulo de Caja · Cierre de Caja. · Fecha de impresión: ${escaparHtml(fechaImpresion)}</footer></div>
 <script>window.onload=function(){setTimeout(function(){window.print()},300)}</script>
 </body></html>`)
