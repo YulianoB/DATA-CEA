@@ -1550,7 +1550,7 @@ export default function PersonalAdminPage() {
               </FranjaSecundariaModal>
 <div className="p-3">
 
-              <div className="grid grid-cols-2 gap-x-3 gap-y-3 items-start [&>*]:min-w-0">
+              <div className="grid grid-cols-1 gap-x-3 gap-y-3 items-start sm:grid-cols-[minmax(0,1.25fr)_minmax(0,0.8fr)_minmax(0,1.2fr)_minmax(0,1.05fr)] [&>*]:min-w-0">
 
                 <CampoSelect
                   label="Tipo de personal *"
@@ -1571,7 +1571,8 @@ export default function PersonalAdminPage() {
                       'Colaborador',
                     ],
                   ]}
-                  wrapperClass="col-span-2"
+                
+                  wrapperClass="sm:col-span-1"
                 />
 
                 <CampoSelect
@@ -1596,6 +1597,8 @@ export default function PersonalAdminPage() {
                       'Pasaporte',
                     ],
                   ]}
+                
+                  wrapperClass="sm:col-span-1"
                 />
 
                 <CampoInput
@@ -1608,6 +1611,8 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   inputMode="numeric"
+                
+                  wrapperClass="sm:col-span-1"
                 />
 
                 <CampoInput
@@ -1620,7 +1625,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                  wrapperClass="col-span-2"
+                
+                  wrapperClass="sm:col-span-1"
                 />
 
                 <CampoInput
@@ -1633,7 +1639,8 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   className="uppercase"
-                  wrapperClass="col-span-2"
+                
+                  wrapperClass="sm:col-span-1"
                 />
 
                 <CampoInput
@@ -1646,7 +1653,8 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   className="uppercase"
-                  wrapperClass="col-span-2"
+                
+                  wrapperClass="sm:col-span-1"
                 />
 
                 <CampoSelect
@@ -1680,7 +1688,8 @@ export default function PersonalAdminPage() {
                       'No informa',
                     ],
                   ]}
-                  wrapperClass="col-span-2"
+                
+                  wrapperClass="sm:col-span-1"
                 />
 
                 <CampoSelect
@@ -1705,7 +1714,8 @@ export default function PersonalAdminPage() {
                       ]
                     ),
                   ]}
-                  wrapperClass="col-span-2"
+                
+                  wrapperClass="sm:col-span-1"
                 />
 
               </div>
