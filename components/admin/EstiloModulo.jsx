@@ -26,6 +26,14 @@ export const ESTILO_SECCIONES_SECUNDARIAS = {
   radioSuperior: '8px 8px 0 0',
 }
 
+// Franja superior de ventanas modales: tono oscuro institucional.
+export const ESTILO_FRANJA_SUPERIOR_MODAL = {
+  fondo: '#194567',
+  texto: '#FFFFFF',
+  borde: '#194567',
+  radioSuperior: '12px 12px 0 0',
+}
+
 // 2. TABLAS - ENCABEZADOS
 export const ESTILO_ENCABEZADO_TABLA = {
   fondo: '#CEFAFE',
@@ -264,4 +272,13 @@ export function MarcoTabla({ children, className = '' }) {
       {children}
     </div>
   )
+}
+
+// Franjas reutilizables de los modales y sus secciones internas.
+export function FranjaSuperiorModal({ children, className = '' }) {
+  return <div className={className} style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo, color: ESTILO_FRANJA_SUPERIOR_MODAL.texto, borderRadius: ESTILO_FRANJA_SUPERIOR_MODAL.radioSuperior }}>{children}</div>
+}
+
+export function FranjaSecundariaModal({ children, className = '' }) {
+  return <div className={className} style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo, color: ESTILO_SECCIONES_SECUNDARIAS.texto, borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior }}>{children}</div>
 }
