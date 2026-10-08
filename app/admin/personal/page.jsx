@@ -1567,7 +1567,7 @@ export default function PersonalAdminPage() {
                       'Colaborador',
                     ],
                   ]}
-                wrapperClass="col-span-12 md:col-span-4" />
+                wrapperClass="col-span-12 md:col-span-3" />
 <CampoSelect
                   label="Tipo documento *"
                   name="tipo_documento"
@@ -1601,7 +1601,7 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   inputMode="numeric"
-                wrapperClass="col-span-12 md:col-span-4" />
+                wrapperClass="col-span-12 md:col-span-3" />
 <CampoInput
                   label="Fecha nacimiento *"
                   type="date"
@@ -1612,8 +1612,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                wrapperClass="col-span-12 md:col-span-2" /></div>
-<div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
+                wrapperClass="col-span-12 md:col-span-2" />
+<CampoInput
                   label="Nacionalidad *"
                   name="nacionalidad"
                   value={
@@ -1622,7 +1622,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                wrapperClass="col-span-12 md:col-span-12" /></div>
+                wrapperClass="col-span-12 md:col-span-2" /></div>
+
 <div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
                   label="Nombres *"
                   name="nombres"
@@ -1821,7 +1822,7 @@ export default function PersonalAdminPage() {
                       'Viudo(a)',
                     ],
                   ]}
-                wrapperClass="col-span-12 md:col-span-3" />
+                wrapperClass="col-span-12 md:col-span-2" />
 <CampoInput
                   label="Número de hijos"
                   name="numero_hijos"
@@ -1832,7 +1833,7 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   inputMode="numeric"
-                wrapperClass="col-span-12 md:col-span-1" />
+                wrapperClass="col-span-12 md:col-span-2" />
 <CampoSelect
                   label="EPS *"
                   name="eps"
