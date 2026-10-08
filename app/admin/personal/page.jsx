@@ -1550,7 +1550,7 @@ export default function PersonalAdminPage() {
               </FranjaSecundariaModal>
 <div className="p-3">
 
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-3 items-start [&>*]:min-w-0">
 
                 <CampoSelect
                   label="Tipo de personal *"
@@ -1571,6 +1571,7 @@ export default function PersonalAdminPage() {
                       'Colaborador',
                     ],
                   ]}
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoSelect
@@ -1619,6 +1620,7 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoInput
@@ -1631,6 +1633,7 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   className="uppercase"
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoInput
@@ -1643,6 +1646,7 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   className="uppercase"
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoSelect
@@ -1676,6 +1680,7 @@ export default function PersonalAdminPage() {
                       'No informa',
                     ],
                   ]}
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoSelect
@@ -1700,6 +1705,7 @@ export default function PersonalAdminPage() {
                       ]
                     ),
                   ]}
+                  wrapperClass="col-span-2"
                 />
 
               </div>
@@ -1713,7 +1719,7 @@ export default function PersonalAdminPage() {
               </FranjaSecundariaModal>
 <div className="p-3">
 
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-3 items-start [&>*]:min-w-0">
 
                 <CampoInput
                   label="Teléfono *"
@@ -1737,6 +1743,7 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoInput
@@ -1748,7 +1755,7 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                  wrapperClass="md:col-span-2"
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoInput
@@ -1782,6 +1789,7 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoInput
@@ -1824,6 +1832,7 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoSelect
@@ -1930,7 +1939,7 @@ export default function PersonalAdminPage() {
               </FranjaSecundariaModal>
 <div className="p-3">
 
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-3 items-start [&>*]:min-w-0">
 
                 <CampoInput
                   label="Nombre contacto *"
@@ -1942,6 +1951,7 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoInput
@@ -1980,7 +1990,7 @@ export default function PersonalAdminPage() {
               </FranjaSecundariaModal>
 <div className="p-3">
 
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-3 items-start [&>*]:min-w-0">
 
                 <CampoSelect
                   label="Grupo personal *"
@@ -2021,6 +2031,7 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   placeholder="Ej: Instructor, auxiliar"
+                  wrapperClass="col-span-2"
                 />
 
                 <CampoSelect
@@ -2129,7 +2140,7 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                  wrapperClass="md:col-span-2"
+                  wrapperClass="col-span-2"
                   options={[
                     [
                       '',
@@ -2316,7 +2327,7 @@ export default function PersonalAdminPage() {
                               Certificado categoría {item.categoria}
                             </h4>
 
-                            <div className="grid grid-cols-1 gap-3">
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-3 items-start [&>*]:min-w-0">
 
                               <CampoInput
                                 label="Número de certificado *"
@@ -2828,7 +2839,7 @@ function CampoInput({
   ...props
 }) {
   return (
-    <div className={wrapperClass}>
+    <div className={`min-w-0 ${wrapperClass}`}>
 
       <label className="block text-xs font-semibold text-gray-600 mb-1">
         {label}
