@@ -215,6 +215,7 @@ export default function HojaVidaPersonalPage() {
   const [guardandoGeneral, setGuardandoGeneral] = useState(false)
   const [generandoPdf, setGenerandoPdf] = useState(false)
   const [vistaPreviaPdf, setVistaPreviaPdf] = useState(null)
+  const [datosVistaPrevia, setDatosVistaPrevia] = useState(null)
   const [nombreArchivoHojaVida, setNombreArchivoHojaVida] = useState('Hoja de vida.pdf')
   const [fotoTemporal, setFotoTemporal] = useState(null)
   const [procesandoFoto, setProcesandoFoto] = useState(false)
@@ -448,6 +449,15 @@ export default function HojaVidaPersonalPage() {
       const nombreCompleto = [data.personal?.nombres, data.personal?.apellidos].filter(Boolean).join(' ')
       const nombreSeguro = nombreCompleto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\\/:*?"<>|\x00-\x1F]/g, '').replace(/\s+/g, ' ').trim()
       setNombreArchivoHojaVida(`HV ${nombreSeguro || data.personal?.documento || data.personal?.id}.pdf`)
+      setDatosVistaPrevia({
+        datos: {
+          personal: data.personal,
+          ...datosPdf,
+          perfiles: data.perfiles || data.personal?.perfiles_usuario || [],
+        },
+        documento: configuracion.documento,
+        fotoDataUrl: fotoTemporal,
+      })
       const url = URL.createObjectURL(blob)
       setVistaPreviaPdf((anterior) => {
         if (anterior) URL.revokeObjectURL(anterior)
@@ -1620,7 +1630,7 @@ export default function HojaVidaPersonalPage() {
                 <button type="button" onClick={() => { URL.revokeObjectURL(vistaPreviaPdf); setVistaPreviaPdf(null) }} className="inline-flex items-center gap-2 rounded-md border border-white/50 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"><i className="fas fa-times" aria-hidden="true"></i> Cerrar</button>
               </div>
             </div>
-            <VistaPreviaPdfLimpia url={vistaPreviaPdf} />
+            <VistaPreviaPdfLimpia {...datosVistaPrevia} />
           </div>
         </div>
       )}
