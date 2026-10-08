@@ -1330,8 +1330,10 @@ export default function HojaVidaPersonalPage() {
           </div>
         </section>
 
-        <div className="overflow-hidden rounded-lg border border-slate-400 bg-white">
-          <div role="tablist" aria-label="Secciones de la hoja de vida" className="flex gap-2 overflow-x-auto border-b border-slate-300 bg-slate-100 p-3">
+        <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <nav aria-label="Secciones de la hoja de vida" className="rounded-lg border border-slate-300 bg-white p-2 lg:sticky lg:top-4">
+            <p className="hidden px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#194567] lg:block">Contenido del expediente</p>
+            <div role="tablist" aria-label="Secciones de la hoja de vida" className="flex gap-2 overflow-x-auto lg:flex-col">
             {tabsVisibles.map((item) => (
               <button
                 key={item.key}
@@ -1339,14 +1341,14 @@ export default function HojaVidaPersonalPage() {
                 role="tab"
                 aria-selected={tab === item.key}
                 onClick={() => setTab(item.key)}
-                className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition ${tab === item.key ? 'bg-[#194567] text-white' : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-200'}`}
+                className={`whitespace-nowrap rounded-md px-3 py-2 text-left text-xs font-semibold transition ${tab === item.key ? 'bg-[#194567] text-white' : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-200'}`}
               >
                 {item.label}
               </button>
             ))}
-          </div>
-
-          <div className="p-3 md:p-5">
+            </div>
+          </nav>
+          <section className="min-w-0 rounded-lg border border-slate-300 bg-white p-3 md:p-5" aria-label="Contenido de la sección seleccionada">
             {tab === 'general' && (
               <InformacionGeneral
                 personal={personal}
@@ -1448,7 +1450,7 @@ export default function HojaVidaPersonalPage() {
                 cargandoCuenta={cargandoCuenta}
               />
             )}
-          </div>
+          </section>
         </div>
       </div>
     </div>
@@ -1589,7 +1591,7 @@ function Resumen({ label, value }) {
 
 function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, setPerfilProfesional, guardarPerfilProfesional, guardandoPerfil }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Seccion titulo="Datos personales">
         <Dato label="Tipo documento" value={personal.tipo_documento} />
         <Dato label="Documento" value={personal.documento} />
@@ -1610,7 +1612,7 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
         <Dato label="Correo" value={personal.email} />
         <Dato label="Departamento" value={personal.departamento_residencia} />
         <Dato label="Ciudad" value={personal.ciudad_residencia} />
-        <Dato label="Dirección" value={personal.direccion} ancho="md:col-span-2" />
+        <Dato label="Dirección" value={personal.direccion} ancho="col-span-2" />
       </Seccion>
 
       <Seccion titulo="Vinculación">
@@ -1653,10 +1655,10 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
         </div>
       </Seccion>
 
-      <div>
+      <section className="rounded-md border border-slate-300 p-3">
         <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">Perfil profesional</h3>
+            <h3 className="text-sm font-bold text-[#194567]">Perfil profesional</h3>
             <p className="text-sm text-gray-500">Completa aquí el resumen de hoja de vida. Este texto no se convierte a mayúsculas.</p>
           </div>
           <button
@@ -1671,11 +1673,11 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
         <textarea
           value={perfilProfesional}
           onChange={(event) => setPerfilProfesional(event.target.value)}
-          rows={6}
+          rows={4}
           placeholder="Ejemplo: Instructor de conducción con experiencia en formación teórica y práctica, orientación al servicio y conocimiento en seguridad vial..."
           className="w-full rounded-lg border bg-white p-4 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
-      </div>
+      </section>
     </div>
   )
 }
@@ -2703,9 +2705,9 @@ function CampoTextarea({ label, ...props }) {
 
 function Seccion({ titulo, children }) {
   return (
-    <section>
-      <h3 className="mb-3 text-lg font-semibold text-gray-800">{titulo}</h3>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+    <section className="overflow-hidden rounded-md border border-slate-300">
+      <h3 className="border-b border-slate-300 bg-slate-100 px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#194567]">{titulo}</h3>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 p-3 sm:grid-cols-3 xl:grid-cols-4">
         {children}
       </div>
     </section>
@@ -2714,9 +2716,9 @@ function Seccion({ titulo, children }) {
 
 function Dato({ label, value, ancho = '' }) {
   return (
-    <div className={`rounded-lg border bg-gray-50 p-3 ${ancho}`}>
-      <p className="text-xs font-semibold text-gray-500">{label}</p>
-      <p className="mt-1 text-sm font-medium text-gray-800">{texto(value)}</p>
+    <div className={`min-w-0 border-b border-slate-200 px-1 py-2 ${ancho}`}>
+      <p className="text-[11px] font-medium text-slate-500">{label}</p>
+      <p className="mt-0.5 break-words text-xs font-semibold leading-5 text-slate-800">{texto(value)}</p>
     </div>
   )
 }
