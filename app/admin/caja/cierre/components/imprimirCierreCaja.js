@@ -2044,8 +2044,8 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
   const movimientos = [...(cierre.movimientos || [])].sort(
     (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)
   )
-  const filas = movimientos.map(item => {
-    const ingreso = item.tipo_movimiento === 'INGRESO'
+  const filas = (items, ingresoGrupo) => items.map(item => {
+    const ingreso = ingresoGrupo
     const concepto = texto(item?.concepto?.nombre || item.descripcion || '-')
     const categoria = ingreso && /curso|refuerzo/i.test(concepto) && item.categoria
       ? '<small>Categoría(s): ' + escaparHtml(item.categoria) + '</small>' : ''
@@ -2069,6 +2069,8 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
     ]
     return '<tr>' + columnas.map((v, i) => '<td' + (i === 6 ? ' class="numero"' : '') + '>' + v + '</td>').join('') + '</tr>'
   }).join('')
+  const ingresos = movimientos.filter(item => item.tipo_movimiento === 'INGRESO')
+  const egresos = movimientos.filter(item => item.tipo_movimiento === 'EGRESO')
   const medios = Object.entries(cierre.resumen_medios_pago || {})
     .map(([medio, dato]) => '<div class="total ingreso"><span>Ingresos · ' + escaparHtml(medio) +
       '</span><strong>' + escaparHtml(formatearMoneda(dato?.ingresos)) + '</strong></div>').join('')
@@ -2078,10 +2080,10 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
   ventana.document.write(`<!doctype html><html lang="es"><head><meta charset="UTF-8">
 <title>${escaparHtml(registro.consecutivo || 'Cierre diario')}</title>
 <style>
-@page{size:letter landscape;margin:12mm 12mm 14mm 12mm}
+@page{size:letter landscape;margin:12mm 13mm 14mm 13mm}
 *{box-sizing:border-box}body{font:9px Arial,sans-serif;color:#1e293b;margin:0}
 header{display:flex;justify-content:space-between;gap:18px;border-bottom:2px solid #24638c;padding-bottom:9px;margin-bottom:12px}
-h1{font-size:15px;margin:0 0 5px;color:#24638c}h2{font-size:11px;margin:14px 0 7px}
+h1{font-size:15px;margin:0 0 5px;color:#24638c}h2{font-size:11px;margin:14px 0 7px;color:#24638c;border-left:3px solid #24638c;padding-left:7px}
 .empresa{font-size:14px;font-weight:bold}.sub{font-size:8px;color:#475569;margin-top:4px}
 .meta{text-align:right;line-height:1.6}table{border-collapse:collapse;width:100%;table-layout:fixed}
 thead{display:table-header-group}th{background:#d9f1f6;color:#17354b;text-align:left}
@@ -2092,7 +2094,7 @@ tr{break-inside:avoid;page-break-inside:avoid}small{display:block;font-size:8px;
 .total{min-width:145px;text-align:right;padding:9px 12px;border:1px solid #cbd5e1;border-radius:5px}
 .total span{display:block;font-weight:bold;margin-bottom:6px}.total strong{font-size:13px}
 .ingreso{background:#ecfdf5;color:#065f46}.egreso{background:#fef2f2;color:#991b1b}.neto{background:#eff6ff;color:#1e40af}
-footer{display:flex;justify-content:space-between;margin-top:18px;padding-top:7px;border-top:1px solid #cbd5e1;color:#64748b;font-size:8px}
+.seccion{margin-top:13px}.finanzas{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:16px;break-inside:avoid}.firmas{display:grid;grid-template-columns:1fr 1fr;gap:38px;margin-top:35px;break-inside:avoid}.firma{border-top:1px solid #94a3b8;padding-top:7px;font-weight:bold}.firma small{font-weight:normal}.resumen td,.resumen th{padding:6px}.totales{margin-top:0}.total{min-width:135px}footer{display:flex;justify-content:space-between;margin-top:18px;padding-top:7px;border-top:1px solid #cbd5e1;color:#64748b;font-size:8px}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
 <header><div><div class="empresa">${escaparHtml(empresa.nombre || empresa.razon_social)}</div>
@@ -2101,17 +2103,8 @@ footer{display:flex;justify-content:space-between;margin-top:18px;padding-top:7p
 <div class="meta"><h1>CIERRE DIARIO DE CAJA</h1>
 <strong>${escaparHtml(registro.consecutivo || '')}</strong>
 <div>Fecha del cierre: ${escaparHtml(formatearFecha(registro.fecha || cierre.fecha))}</div>
-<div>Responsable: ${escaparHtml(registro.usuario_cierre || '-')}</div></div></header>
-<h2>Movimientos del día (${movimientos.length})</h2>
-<table><colgroup><col style="width:9%"><col style="width:7%"><col style="width:12%">
-<col style="width:16%"><col style="width:19%"><col style="width:9%">
-<col style="width:10%"><col style="width:7%"><col style="width:11%"></colgroup>
-<thead><tr><th>Fecha / Hora</th><th>Tipo</th><th>Referencia</th><th>Cliente / Beneficiario</th>
-<th>Concepto / Detalle</th><th>Medio</th><th>Valor</th><th>Estado</th><th>Responsable</th></tr></thead>
-<tbody>${filas}</tbody></table>
-<div class="totales">${medios}
-<div class="total egreso"><span>Total egresos</span><strong>${escaparHtml(formatearMoneda(cierre.total_egresos_sistema))}</strong></div>
-<div class="total neto"><span>Resultado del día</span><strong>${escaparHtml(formatearMoneda(cierre.movimiento_neto))}</strong></div></div>
+</div></header>
+<section class="seccion"><h2>Ingresos del día (${ingresos.length})</h2><table><colgroup><col style="width:9%"><col style="width:7%"><col style="width:12%"><col style="width:16%"><col style="width:19%"><col style="width:9%"><col style="width:10%"><col style="width:7%"><col style="width:11%"></colgroup><thead><tr><th>Fecha / Hora</th><th>Tipo</th><th>Referencia</th><th>Cliente / Beneficiario</th><th>Concepto / Detalle</th><th>Medio</th><th>Valor</th><th>Estado</th><th>Responsable</th></tr></thead><tbody>${filas(ingresos, true)}</tbody></table></section><section class="seccion"><h2>Egresos del día (${egresos.length})</h2><table><colgroup><col style="width:9%"><col style="width:7%"><col style="width:12%"><col style="width:16%"><col style="width:19%"><col style="width:9%"><col style="width:10%"><col style="width:7%"><col style="width:11%"></colgroup><thead><tr><th>Fecha / Hora</th><th>Tipo</th><th>Referencia</th><th>Cliente / Beneficiario</th><th>Concepto / Detalle</th><th>Medio</th><th>Valor</th><th>Estado</th><th>Responsable</th></tr></thead><tbody>${filas(egresos, false)}</tbody></table></section><div class="finanzas"><div><h2>Resumen por medio de pago</h2><table class="resumen"><thead><tr><th>Medio</th><th>Ingresos</th><th>Egresos</th><th>Neto</th></tr></thead><tbody>${Object.entries(cierre.resumen_medios_pago || {}).map(([medio,dato]) => '<tr><td>'+escaparHtml(medio)+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.ingresos))+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.egresos))+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.neto))+'</td></tr>').join('')}</tbody></table></div><div><h2>Resumen financiero</h2><div class="totales"><div class="total ingreso"><span>Total ingresos</span><strong>${escaparHtml(formatearMoneda(cierre.total_ingresos_sistema))}</strong></div><div class="total egreso"><span>Total egresos</span><strong>${escaparHtml(formatearMoneda(cierre.total_egresos_sistema))}</strong></div><div class="total neto"><span>Resultado del día</span><strong>${escaparHtml(formatearMoneda(cierre.movimiento_neto))}</strong></div></div></div></div><div class="firmas"><div class="firma">RESPONSABLE DEL CIERRE<small>${escaparHtml(registro.usuario_cierre || '-')}</small></div><div class="firma">REVISIÓN / ADMINISTRACIÓN<small>Nombre y firma</small></div></div>
 <footer><span>Documento generado desde el módulo de Caja · Cierre de Caja.</span>
 <span>Fecha de impresión: ${escaparHtml(fechaImpresion)}</span></footer>
 <script>window.onload=function(){setTimeout(function(){window.print()},300)}</script>
