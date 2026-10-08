@@ -2062,13 +2062,16 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
       escaparHtml(tercero),
       escaparHtml(concepto) + categoria,
       escaparHtml(item?.medio_pago?.nombre || '-'),
-      escaparHtml(formatearMoneda(item.valor)),
-      escaparHtml(responsable || '-')
+      escaparHtml(responsable || '-'),
+      escaparHtml(formatearMoneda(item.valor))
     ]
-    return '<tr>' + columnas.map((v, i) => '<td' + (i === 5 ? ' class="numero"' : '') + '>' + v + '</td>').join('') + '</tr>'
+    return '<tr>' + columnas.map((v, i) => '<td' + (i === 6 ? ' class="numero"' : '') + '>' + v + '</td>').join('') + '</tr>'
   }).join('')
   const ingresos = movimientos.filter(item => item.tipo_movimiento === 'INGRESO')
   const egresos = movimientos.filter(item => item.tipo_movimiento === 'EGRESO')
+  const totalActivo = items => items.reduce((s, item) => s + (mayusculas(item.estado) === 'ANULADO' ? 0 : Number(item.valor || 0)), 0)
+  const totalIngresosDetalle = totalActivo(ingresos)
+  const totalEgresosDetalle = totalActivo(egresos)
   const medios = Object.entries(cierre.resumen_medios_pago || {})
     .map(([medio, dato]) => '<div class="total ingreso"><span>Ingresos · ' + escaparHtml(medio) +
       '</span><strong>' + escaparHtml(formatearMoneda(dato?.ingresos)) + '</strong></div>').join('')
@@ -2093,18 +2096,38 @@ tr{break-inside:avoid;page-break-inside:avoid}small{display:block;font-size:8px;
 .total span{display:block;font-weight:bold;margin-bottom:6px}.total strong{font-size:13px}
 .ingreso{background:#ecfdf5;color:#065f46}.egreso{background:#fef2f2;color:#991b1b}.neto{background:#eff6ff;color:#1e40af}
 .seccion{margin-top:13px}.finanzas{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:16px;break-inside:avoid}.firmas{display:grid;grid-template-columns:1fr 1fr;gap:38px;margin-top:35px;break-inside:avoid}.firma{border-top:1px solid #94a3b8;padding-top:7px;font-weight:bold}.firma small{font-weight:normal}.resumen td,.resumen th{padding:6px}.totales{margin-top:0}.total{min-width:135px}footer{display:flex;justify-content:space-between;margin-top:18px;padding-top:7px;border-top:1px solid #cbd5e1;color:#64748b;font-size:8px}
+
+@page{size:letter landscape;margin:13mm 15mm 15mm 15mm}
+.pagina-cierre{width:100%;max-width:249mm;margin:0 auto;padding:2mm 1mm}
+.cabecera-cierre{text-align:center;border-bottom:2px solid #24638c;padding:5px 0 12px;margin-bottom:16px}
+.cabecera-cierre h1{font-size:16px;margin:0}.cabecera-cierre .empresa{font-size:14px;margin-top:5px}
+.cabecera-cierre .nit{font-weight:bold;margin-top:5px}
+.bloque{margin:14px 0;break-inside:avoid}
+.datos-cierre{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;padding:12px}
+.datos-cierre span{display:block;font-size:8px;color:#64748b;text-transform:uppercase}
+.datos-cierre strong{display:block;margin-top:4px;font-size:10px}
+.totales{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.total{min-width:0}.neto{grid-column:auto}
+.seccion{margin-top:17px}.seccion tfoot td{background:#eaf3f9;font-weight:bold;border-top:2px solid #24638c}
+.observaciones{border:1px solid #cbd5e1;border-radius:5px;padding:11px;min-height:42px;white-space:pre-wrap}
+.firmas{display:flex;justify-content:space-around;gap:35px;margin-top:35px}
+.firma{border:0;text-align:center;width:43%}.firma .linea{display:inline-block;border-top:1px solid #64748b;padding:7px 10px 0}
+.firma small{display:block;margin-top:5px}footer{justify-content:center;text-align:center}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
-<header><div><div class="empresa">${escaparHtml(empresa.nombre || empresa.razon_social)}</div>
-<div class="sub">NIT ${escaparHtml(empresa.nit)} · ${escaparHtml([empresa.direccion,empresa.ciudad].filter(Boolean).join(' · '))}</div>
-<div class="sub">${escaparHtml([empresa.telefono,empresa.email].filter(Boolean).join(' · '))}</div></div>
-<div class="meta"><h1>CIERRE DIARIO DE CAJA</h1>
-<strong>${escaparHtml(registro.consecutivo || '')}</strong>
-<div>Fecha del cierre: ${escaparHtml(formatearFecha(registro.fecha || cierre.fecha))}</div>
-</div></header>
-<section class="seccion"><h2>Ingresos del día (${ingresos.length})</h2><table><colgroup><col style="width:12%"><col style="width:15%"><col style="width:21%"><col style="width:22%"><col style="width:9%"><col style="width:10%"><col style="width:11%"></colgroup><thead><tr><th>Hora</th><th>Referencia</th><th>Cliente / Beneficiario</th><th>Concepto / Detalle</th><th>Medio</th><th>Valor</th><th>Responsable</th></tr></thead><tbody>${filas(ingresos, true)}</tbody></table></section><section class="seccion"><h2>Egresos del día (${egresos.length})</h2><table><colgroup><col style="width:12%"><col style="width:15%"><col style="width:21%"><col style="width:22%"><col style="width:9%"><col style="width:10%"><col style="width:11%"></colgroup><thead><tr><th>Hora</th><th>Referencia</th><th>Cliente / Beneficiario</th><th>Concepto / Detalle</th><th>Medio</th><th>Valor</th><th>Responsable</th></tr></thead><tbody>${filas(egresos, false)}</tbody></table></section><div class="finanzas"><div><h2>Resumen por medio de pago</h2><table class="resumen"><thead><tr><th>Medio</th><th>Ingresos</th><th>Egresos</th><th>Neto</th></tr></thead><tbody>${Object.entries(cierre.resumen_medios_pago || {}).map(([medio,dato]) => '<tr><td>'+escaparHtml(medio)+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.ingresos))+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.egresos))+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.neto))+'</td></tr>').join('')}</tbody></table></div><div><h2>Resumen financiero</h2><div class="totales"><div class="total ingreso"><span>Total ingresos</span><strong>${escaparHtml(formatearMoneda(cierre.total_ingresos_sistema))}</strong></div><div class="total egreso"><span>Total egresos</span><strong>${escaparHtml(formatearMoneda(cierre.total_egresos_sistema))}</strong></div><div class="total neto"><span>Resultado del día</span><strong>${escaparHtml(formatearMoneda(cierre.movimiento_neto))}</strong></div></div></div></div><div class="firmas"><div class="firma">RESPONSABLE DEL CIERRE<small>${escaparHtml(registro.usuario_cierre || '-')}</small></div><div class="firma">REVISIÓN / ADMINISTRACIÓN<small>Nombre y firma</small></div></div>
-<footer><span>Documento generado desde el módulo de Caja · Cierre de Caja.</span>
-<span>Fecha de impresión: ${escaparHtml(fechaImpresion)}</span></footer>
+<div class="pagina-cierre">
+<div class="cabecera-cierre"><h1>CIERRE DE CAJA</h1><div class="empresa">${escaparHtml(empresa.nombre || empresa.razon_social)}</div><div class="nit">NIT ${escaparHtml(empresa.nit)}</div></div>
+<div class="bloque datos-cierre"><div><span>Fecha de cierre</span><strong>${escaparHtml(formatearFecha(registro.fecha || cierre.fecha))}</strong></div><div><span>Consecutivo</span><strong>${escaparHtml(registro.consecutivo || '-')}</strong></div><div><span>Usuario que generó el cierre</span><strong>${escaparHtml(registro.usuario_cierre || '-')}</strong></div></div>
+<section class="bloque"><h2>RESUMEN FINANCIERO</h2><div class="totales">
+<div class="total ingreso"><span>TOTAL INGRESOS</span><strong>${escaparHtml(formatearMoneda(cierre.total_ingresos_sistema))}</strong></div>
+<div class="total egreso"><span>TOTAL EGRESOS</span><strong>${escaparHtml(formatearMoneda(cierre.total_egresos_sistema))}</strong></div>
+<div class="total neto"><span>RESULTADO DEL DÍA (INGRESOS − EGRESOS)</span><strong>${escaparHtml(formatearMoneda(cierre.movimiento_neto))}</strong></div></div></section>
+<section class="bloque"><h2>RESUMEN POR MEDIO DE PAGO</h2><table class="resumen"><thead><tr><th>Medio</th><th>Ingresos</th><th>Egresos</th><th>Resultado</th></tr></thead><tbody>${Object.entries(cierre.resumen_medios_pago || {}).map(([medio,dato]) => '<tr><td>'+escaparHtml(medio)+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.ingresos))+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.egresos))+'</td><td class="numero">'+escaparHtml(formatearMoneda(dato?.neto))+'</td></tr>').join('')}</tbody></table></section>
+<section class="seccion"><h2>Ingresos del día (${ingresos.length})</h2><table><colgroup><col style="width:9%"><col style="width:14%"><col style="width:20%"><col style="width:22%"><col style="width:9%"><col style="width:16%"><col style="width:10%"></colgroup><thead><tr><th>Hora</th><th>Referencia</th><th>Cliente / Pagador</th><th>Concepto / Detalle</th><th>Medio</th><th>Responsable</th><th class="numero">Valor</th></tr></thead><tbody>${filas(ingresos, true)}</tbody><tfoot><tr><td colspan="6" style="text-align:right">TOTAL INGRESOS</td><td class="numero">${escaparHtml(formatearMoneda(totalIngresosDetalle))}</td></tr></tfoot></table></section>
+<section class="seccion"><h2>Egresos del día (${egresos.length})</h2><table><colgroup><col style="width:9%"><col style="width:14%"><col style="width:20%"><col style="width:22%"><col style="width:9%"><col style="width:16%"><col style="width:10%"></colgroup><thead><tr><th>Hora</th><th>Referencia</th><th>Beneficiario</th><th>Concepto / Detalle</th><th>Medio</th><th>Responsable</th><th class="numero">Valor</th></tr></thead><tbody>${filas(egresos, false)}</tbody><tfoot><tr><td colspan="6" style="text-align:right">TOTAL EGRESOS</td><td class="numero">${escaparHtml(formatearMoneda(totalEgresosDetalle))}</td></tr></tfoot></table></section>
+<section class="bloque"><h2>OBSERVACIONES</h2><div class="observaciones">${escaparHtml(registro.observaciones || 'Sin observaciones registradas.')}</div></section>
+<div class="firmas"><div class="firma"><div class="linea">RESPONSABLE DEL CIERRE</div><small>${escaparHtml(registro.usuario_cierre || '-')}</small></div><div class="firma"><div class="linea">REVISIÓN / ADMINISTRACIÓN</div><small>Nombre y firma</small></div></div>
+<footer>Documento generado desde el módulo de Caja · Cierre de Caja. · Fecha de impresión: ${escaparHtml(fechaImpresion)}</footer></div>
 <script>window.onload=function(){setTimeout(function(){window.print()},300)}</script>
 </body></html>`)
   ventana.document.close()
