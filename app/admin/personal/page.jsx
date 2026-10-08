@@ -462,12 +462,17 @@ export default function PersonalAdminPage() {
   ] = useState('')
 
   const [cambiandoAccesoId, setCambiandoAccesoId] = useState(null)
+  const [confirmacionAcceso, setConfirmacionAcceso] = useState(null)
+
+  const solicitarCambioAcceso = (item) => {
+    if (!item.cuenta) return mostrarResultado('error', 'Esta persona no tiene cuenta de acceso.')
+    setConfirmacionAcceso(item)
+  }
 
   const cambiarEstadoAcceso = async (item) => {
     if (!item.cuenta) return toast.warning('Esta persona no tiene cuenta de acceso.')
     const nuevoEstado = item.cuenta.estado === 'activo' ? 'inactivo' : 'activo'
     const accion = nuevoEstado === 'inactivo' ? 'Inactivar' : 'Activar'
-    if (!window.confirm(`${accion} el acceso de ${item.nombres || ''} ${item.apellidos || ''}? Su estado laboral y su historial no cambiarán.`)) return
     setCambiandoAccesoId(item.id)
     try {
       const nit = empresaNit || obtenerNitSesion()
@@ -1571,6 +1576,21 @@ export default function PersonalAdminPage() {
         position="top-right"
       />
       <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
+      {confirmacionAcceso && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/50 p-4">
+          <div role="alertdialog" aria-modal="true" aria-labelledby="titulo-confirmar-acceso" className="w-full max-w-md overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl">
+            <div className="flex items-center gap-2 bg-[#194567] px-4 py-3 text-white"><i className="fas fa-user-shield" aria-hidden="true"></i><h2 id="titulo-confirmar-acceso" className="text-sm font-bold">Confirmar cambio de acceso</h2></div>
+            <div className="px-5 py-5 text-sm text-slate-700">
+              ¿Desea {confirmacionAcceso.cuenta?.estado === 'activo' ? 'inactivar' : 'activar'} el acceso de <strong>{confirmacionAcceso.nombres} {confirmacionAcceso.apellidos}</strong>?
+              <p className="mt-2 text-xs text-slate-500">El estado laboral y el historial de la persona no cambiarán.</p>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+              <button type="button" onClick={() => setConfirmacionAcceso(null)} className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200"><i className="fas fa-times" aria-hidden="true"></i> Cancelar</button>
+              <button type="button" onClick={() => { const item = confirmacionAcceso; setConfirmacionAcceso(null); cambiarEstadoAcceso(item) }} className="inline-flex items-center gap-2 rounded-md bg-[#194567] px-3 py-2 text-xs font-semibold text-white hover:bg-[#12344e]"><i className="fas fa-check" aria-hidden="true"></i> Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto space-y-6">
 
@@ -2755,7 +2775,7 @@ export default function PersonalAdminPage() {
                           Hoja de vida
                         </Link>
 {item.cuenta ? (
-<button type="button" onClick={() => cambiarEstadoAcceso(item)} disabled={cambiandoAccesoId === item.id} className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 ${item.cuenta.estado === 'activo' ? 'bg-red-700 hover:bg-red-800' : 'bg-[#194567] hover:bg-[#12344e]'}`} title="Cambiar acceso sin modificar el estado laboral"><i className={`fas ${item.cuenta.estado === 'activo' ? 'fa-user-lock' : 'fa-user-check'}`} aria-hidden="true"></i>{cambiandoAccesoId === item.id ? 'Procesando...' : item.cuenta.estado === 'activo' ? 'Inactivar acceso' : 'Activar acceso'}</button>
+<button type="button" onClick={() => solicitarCambioAcceso(item)} disabled={cambiandoAccesoId === item.id} className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 ${item.cuenta.estado === 'activo' ? 'bg-red-700 hover:bg-red-800' : 'bg-[#194567] hover:bg-[#12344e]'}`} title="Cambiar acceso sin modificar el estado laboral"><i className={`fas ${item.cuenta.estado === 'activo' ? 'fa-user-lock' : 'fa-user-check'}`} aria-hidden="true"></i>{cambiandoAccesoId === item.id ? 'Procesando...' : item.cuenta.estado === 'activo' ? 'Inactivar acceso' : 'Activar acceso'}</button>
 ) : <span className="text-xs text-slate-500">Sin cuenta</span>}
 </div>
 
