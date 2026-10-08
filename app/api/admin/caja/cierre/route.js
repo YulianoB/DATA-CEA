@@ -1585,6 +1585,11 @@ export async function GET(
           ),
         ])
 
+      const cierreDiario =
+        fechaInicio === fechaFin
+          ? await existeCierreDiario(supabase, fechaInicio)
+          : null
+
       const calculo =
         calcularMovimientos({
           ingresos,
@@ -1645,6 +1650,8 @@ export async function GET(
           ingresos,
           egresos,
           movimientos,
+          cierre_diario: cierreDiario,
+          cierre_confirmado: cierreDiario?.estado === 'CERRADO',
         },
         empresa:
           construirEmpresaRespuesta(
