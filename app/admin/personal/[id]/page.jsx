@@ -1575,8 +1575,8 @@ export default function HojaVidaPersonalPage() {
     <div className="min-h-screen bg-gray-100 p-6">
       <Toaster richColors position="top-right" />
       {vistaPreviaPdf && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-3">
-          <div role="dialog" aria-modal="true" aria-label="Vista previa de hoja de vida PDF" className="flex h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="fixed inset-0 z-[120] bg-slate-950/70">
+          <div role="dialog" aria-modal="true" aria-label="Vista previa de hoja de vida PDF" className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-white">
             <div className="flex items-center justify-between gap-3 bg-[#194567] px-4 py-3 text-white">
               <h2 className="flex items-center gap-2 text-sm font-bold"><i className="fas fa-file-pdf" aria-hidden="true"></i> Vista previa · Hoja de vida</h2>
               <button type="button" onClick={() => { URL.revokeObjectURL(vistaPreviaPdf); setVistaPreviaPdf(null) }} className="inline-flex items-center gap-2 rounded-md border border-white/50 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"><i className="fas fa-times" aria-hidden="true"></i> Cerrar</button>
