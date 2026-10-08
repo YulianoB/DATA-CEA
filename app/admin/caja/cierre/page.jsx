@@ -1261,6 +1261,7 @@ export default function CierreCajaPage() {
       [
         nit,
         fecha,
+        fechaConsulta,
         tipoCierre,
         saldoInicial,
         construirUrl,
@@ -1776,7 +1777,7 @@ export default function CierreCajaPage() {
           null
         )
 
-        await cargarHistorial()
+        await Promise.all([cargarHistorial(), cargarMovimientosDia()])
       }
     } catch (
       errorCierre
@@ -2322,8 +2323,10 @@ export default function CierreCajaPage() {
 
           <div className={`border-x border-b px-4 py-3 text-xs font-bold ${movimientosDia?.cierre_confirmado ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
             {movimientosDia?.cierre_confirmado
-              ? `Jornada CERRADA · ${movimientosDia?.cierre_diario?.consecutivo || 'Cierre registrado'}. Puede imprimir el soporte.`
-              : `Jornada pendiente de cierre (${fechaConsulta}). La impresión estará disponible después de registrar el cierre.`}
+              ? `Cierre de caja del día realizado · ${movimientosDia?.cierre_diario?.consecutivo || 'Cierre registrado'}. Puede imprimir el soporte.`
+              : movimientosDia?.movimientos?.length
+                ? `Cierre de caja del día pendiente (${fechaConsulta}). La impresión estará disponible después de registrar el cierre.`
+                : `No hay movimientos registrados para la fecha seleccionada (${fechaConsulta}).`}
           </div>
           <MarcoTabla className="!rounded-t-none !border-t-0">
             <div className="max-h-[390px] overflow-auto">
@@ -2345,7 +2348,7 @@ export default function CierreCajaPage() {
                   {!movimientosDia?.movimientos?.length ? (
                     <tr>
                       <td colSpan="9" className="p-8 text-center text-gray-500">
-                        No hay movimientos registrados para el rango seleccionado.
+                        No hay movimientos registrados para la fecha seleccionada.
                       </td>
                     </tr>
                   ) : (
@@ -2422,11 +2425,11 @@ export default function CierreCajaPage() {
         </div>
         )}
 
-        {tipoCierre === 'DIARIO' && !cierreDiarioRealizado && !movimientosDia?.cierre_confirmado && arqueo && (
+        {tipoCierre === 'DIARIO' && !cierreDiarioRealizado && !movimientosDia?.cierre_confirmado && Boolean(movimientosDia?.movimientos?.length) && arqueo && (
           <div className="px-4 pb-2 pt-4 md:px-6">
             <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <h2 className="text-sm font-black text-emerald-900">Cierre Diario</h2>
-              <p className="mt-1 text-xs text-emerald-700">Cierre correspondiente al ${fechaConsulta}. Revise los valores antes de confirmar el cierre.</p>
+              <p className="mt-1 text-xs text-emerald-700">Cierre correspondiente al {fechaConsulta}. Revise los valores antes de confirmar el cierre.</p>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <section className="overflow-hidden rounded-xl border-2 border-blue-300 bg-white shadow-sm">
@@ -2441,7 +2444,7 @@ export default function CierreCajaPage() {
                 </div>
               </section>
               <section className="overflow-hidden rounded-xl border-2 border-slate-400 bg-white shadow-sm">
-                <h3 className="bg-slate-700 px-4 py-3 text-sm font-black text-white">Registro del cierre de hoy</h3>
+                <h3 className="bg-slate-700 px-4 py-3 text-sm font-black text-white">Registro del cierre de la fecha seleccionada</h3>
                 <div className="space-y-4 p-4">
                   <CampoInput label="Efectivo contado" value={formatearValorInput(efectivoContado)} onChange={value => setEfectivoContado(limpiarValorInput(value))} inputMode="numeric" placeholder="0" moneda destacado />
                   <div>
