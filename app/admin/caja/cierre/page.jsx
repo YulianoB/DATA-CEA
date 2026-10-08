@@ -2373,6 +2373,11 @@ export default function CierreCajaPage() {
                           <td className="p-2">{tercero}</td>
                           <td className="p-2">
                             <div className="font-bold">{item?.concepto?.nombre || item.descripcion || '-'}</div>
+                            {ingreso && /curso|refuerzo/i.test(item?.concepto?.nombre || item.descripcion || '') && item.categoria && (
+                              <div className="mt-1 text-[9px] font-semibold text-[#24638C]">
+                                Categoría(s): {item.categoria}
+                              </div>
+                            )}
                             {item.observaciones && <div className="mt-1 max-w-[280px] truncate text-[8px] text-slate-500" title={item.observaciones}>{item.observaciones}</div>}
                           </td>
                           <td className="p-2 whitespace-nowrap">{item?.medio_pago?.nombre || '-'}</td>
