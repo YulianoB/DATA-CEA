@@ -1610,7 +1610,7 @@ export default function HojaVidaPersonalPage() {
     <div className="min-h-screen bg-gray-100 p-6">
       <Toaster richColors position="top-right" />
       {vistaPreviaPdf && (
-        <div className="fixed inset-0 z-[120] bg-slate-950/70">
+        <div className="fixed inset-0 z-[120] bg-white">
           <div role="dialog" aria-modal="true" aria-label="Vista previa de hoja de vida PDF" className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-white">
             <div className="flex items-center justify-between gap-3 bg-[#194567] px-4 py-3 text-white">
               <h2 className="flex items-center gap-2 text-sm font-bold"><i className="fas fa-file-pdf" aria-hidden="true"></i> Vista previa · Hoja de vida</h2>
@@ -1619,8 +1619,9 @@ export default function HojaVidaPersonalPage() {
                 <button type="button" onClick={() => { URL.revokeObjectURL(vistaPreviaPdf); setVistaPreviaPdf(null) }} className="inline-flex items-center gap-2 rounded-md border border-white/50 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"><i className="fas fa-times" aria-hidden="true"></i> Cerrar</button>
               </div>
             </div>
-            <p className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-600">Vista de diseño: el encabezado institucional y la fotografía permanente se integrarán en la siguiente etapa.</p>
-            <iframe title="Documento PDF de hoja de vida" src={vistaPreviaPdf} className="min-h-0 w-full flex-1 border-0" />
+            <div className="flex min-h-0 flex-1 justify-center overflow-hidden bg-white p-2 sm:p-4">
+              <iframe title="Documento PDF de hoja de vida" src={`${vistaPreviaPdf}#view=FitH&navpanes=0`} className="h-full w-full max-w-[1000px] border-0 bg-white" />
+            </div>
           </div>
         </div>
       )}
