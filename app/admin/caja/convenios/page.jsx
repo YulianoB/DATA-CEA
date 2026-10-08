@@ -14,7 +14,7 @@ import {
 
 import { Handshake, RefreshCw, Eraser, Eye, X } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonActualizar, BotonVerDetalle, BotonLimpiar, BotonCancelar, MarcoTabla, TituloSeccion, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_SECCIONES } from '@/components/admin/EstiloModulo'
+import { BotonActualizar, BotonVerDetalle, BotonLimpiar, BotonCancelar, MarcoTabla, TituloSeccion, FranjaSuperiorModal, FranjaSecundariaModal } from '@/components/admin/EstiloModulo'
 
 // =========================================================
 // CONSTANTES
@@ -541,19 +541,7 @@ function DetalleCarteraModal({
             HEADER
         =============================================== */}
 
-        <div
-          className="
-            shrink-0
-            bg-[#737B87]
-            text-white
-            px-4
-            py-3
-            flex
-            items-center
-            justify-between
-            gap-3
-          "
-        >
+        <FranjaSuperiorModal className="shrink-0 px-4 py-3 flex items-center justify-between gap-3">
           <div>
             <p
               className="
@@ -578,7 +566,7 @@ function DetalleCarteraModal({
           </div>
 
           <button type="button" onClick={onClose} aria-label="Cerrar detalle" className="rounded-md p-2 text-white hover:bg-white/20"><X size={18} /></button>
-        </div>
+        </FranjaSuperiorModal>
 
         {/* ===============================================
             CONTENIDO
@@ -643,15 +631,7 @@ function DetalleCarteraModal({
                     shadow-sm
                   "
                 >
-                  <div
-                    className="
-                      bg-[#737B87] text-white
-                      border-b
-                      border-slate-400
-                      px-3
-                      py-2
-                    "
-                  >
+                  <FranjaSecundariaModal className="border-b border-slate-400 px-3 py-2">
                     <h3
                       className="
                         text-[10px]
@@ -663,7 +643,7 @@ function DetalleCarteraModal({
 
                       Aprendiz
                     </h3>
-                  </div>
+                  </FranjaSecundariaModal>
 
                   <div
                     className="
@@ -761,15 +741,7 @@ function DetalleCarteraModal({
                     shadow-sm
                   "
                 >
-                  <div
-                    className="
-                      bg-[#737B87] text-white
-                      border-b
-                      border-slate-400
-                      px-3
-                      py-2
-                    "
-                  >
+                  <FranjaSecundariaModal className="border-b border-slate-400 px-3 py-2">
                     <h3
                       className="
                         text-[10px]
@@ -781,7 +753,7 @@ function DetalleCarteraModal({
 
                       Convenio
                     </h3>
-                  </div>
+                  </FranjaSecundariaModal>
 
                   <div
                     className="
@@ -926,13 +898,13 @@ function DetalleCarteraModal({
                   </div>
                 </div>
 
+                <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2 items-start">
                 {/* =========================================
                     OBLIGACIONES
                 ========================================= */}
 
                 <div
                   className="
-                    mt-3
                     border
                     border-slate-400
                     rounded-xl
@@ -940,15 +912,7 @@ function DetalleCarteraModal({
                     shadow-sm
                   "
                 >
-                  <div
-                    className="
-                      bg-[#737B87] text-white
-                      border-b
-                      border-slate-400
-                      px-3
-                      py-2
-                    "
-                  >
+                  <FranjaSecundariaModal className="border-b border-slate-400 px-3 py-2">
                     <h3
                       className="
                         text-[10px]
@@ -960,7 +924,7 @@ function DetalleCarteraModal({
 
                       Obligaciones
                     </h3>
-                  </div>
+                  </FranjaSecundariaModal>
 
                   <div
                     className="
@@ -1074,7 +1038,6 @@ function DetalleCarteraModal({
 
                 <div
                   className="
-                    mt-3
                     border
                     border-slate-400
                     rounded-xl
@@ -1082,19 +1045,7 @@ function DetalleCarteraModal({
                     shadow-sm
                   "
                 >
-                  <div
-                    className="
-                      bg-[#737B87] text-white
-                      border-b
-                      border-slate-400
-                      px-3
-                      py-2
-                      flex
-                      items-center
-                      justify-between
-                      gap-2
-                    "
-                  >
+                  <FranjaSecundariaModal className="border-b border-slate-400 px-3 py-2 flex items-center justify-between gap-2">
                     <h3
                       className="
                         text-[10px]
@@ -1117,7 +1068,7 @@ function DetalleCarteraModal({
                       {pagosActivos.length}{' '}
                       pago(s)
                     </span>
-                  </div>
+                  </FranjaSecundariaModal>
 
                   <div className="overflow-x-auto">
                     <table
@@ -1218,6 +1169,7 @@ function DetalleCarteraModal({
                       </tbody>
                     </table>
                   </div>
+                </div>
                 </div>
               </>
             )}
@@ -2150,7 +2102,7 @@ export default function ConveniosCajaPage() {
                   grid
                   grid-cols-1
                   md:grid-cols-2
-                  xl:grid-cols-12
+                  xl:grid-cols-14
                   gap-3
                 "
               >
@@ -2158,7 +2110,7 @@ export default function ConveniosCajaPage() {
 
                 <div
                   className="
-                    xl:col-span-3
+                    xl:col-span-4
                   "
                 >
                   <label
@@ -2234,7 +2186,7 @@ export default function ConveniosCajaPage() {
 
                 {/* CONVENIO */}
 
-                <div className="xl:col-span-3 min-w-0">
+                <div className="xl:col-span-2 min-w-0">
                   <label
                     className="
                       block
@@ -2357,7 +2309,7 @@ export default function ConveniosCajaPage() {
 
                 {/* FECHA INICIAL */}
 
-                <div>
+                <div className="xl:col-span-2 min-w-0">
                   <label
                     className="
                       block
@@ -2367,7 +2319,7 @@ export default function ConveniosCajaPage() {
                       mb-1
                     "
                   >
-                    Inscrito desde
+                    Fecha inicial
                   </label>
 
                   <input
@@ -2400,7 +2352,7 @@ export default function ConveniosCajaPage() {
 
                 {/* FECHA FINAL */}
 
-                <div>
+                <div className="xl:col-span-2 min-w-0">
                   <label
                     className="
                       block
@@ -2410,7 +2362,7 @@ export default function ConveniosCajaPage() {
                       mb-1
                     "
                   >
-                    Inscrito hasta
+                    Fecha final
                   </label>
 
                   <input
@@ -2440,7 +2392,7 @@ export default function ConveniosCajaPage() {
                     "
                   />
                 </div>
-                <div className="flex items-end xl:col-span-2">
+                <div className="flex items-end xl:col-span-2 min-w-0">
                   <BotonLimpiar type="button" onClick={limpiarFiltros} className="w-full h-[34px]"><Eraser size={14} />Limpiar filtros</BotonLimpiar>
                 </div>
               </div>
