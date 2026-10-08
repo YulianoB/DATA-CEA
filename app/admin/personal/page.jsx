@@ -2508,6 +2508,7 @@ export default function PersonalAdminPage() {
               </div>
 
               {crearAcceso && (
+                <>
 
                 <div className="grid grid-cols-2 gap-3 mt-4 sm:grid-cols-4">
                   {ROLES.map((rol) => {
@@ -2549,6 +2550,7 @@ export default function PersonalAdminPage() {
                   })}
                 </div>
 
+                </>
               )}
 
             </div>
