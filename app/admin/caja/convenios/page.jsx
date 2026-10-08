@@ -14,7 +14,7 @@ import {
 
 import { Handshake } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonActualizar, MarcoTabla, TituloSeccion } from '@/components/admin/EstiloModulo'
+import { BotonActualizar, BotonVerDetalle, MarcoTabla, TituloSeccion } from '@/components/admin/EstiloModulo'
 
 // =========================================================
 // CONSTANTES
@@ -476,10 +476,10 @@ function BadgeEstado({
 }
 
 // =========================================================
-// DRAWER DETALLE
+// MODAL DETALLE
 // =========================================================
 
-function DetalleCarteraDrawer({
+function DetalleCarteraModal({
   abierto,
   detalle,
   cargando,
@@ -2037,63 +2037,6 @@ export default function ConveniosCajaPage() {
           </div>
 
           {/* =============================================
-              EMPRESA
-          ============================================== */}
-
-          <div
-            className="
-              border
-              border-gray-200
-              rounded-lg
-              bg-gray-50
-              px-3
-              py-2
-              mb-3
-            "
-          >
-            <div
-              className="
-                flex
-                flex-col
-                sm:flex-row
-                sm:justify-between
-                gap-1
-                text-[10px]
-                text-gray-600
-              "
-            >
-              <span>
-                Usuario:{' '}
-
-                <strong className="text-gray-900">
-                  {usuarioOperacion ||
-                    '-'}
-                </strong>
-              </span>
-
-              <span>
-                CEA:{' '}
-
-                <strong className="text-gray-900">
-                  {empresaNombre ||
-                    '-'}
-                </strong>
-
-                {nit && (
-                  <>
-                    {' · '}
-                    NIT{' '}
-
-                    <strong className="text-gray-900">
-                      {nit}
-                    </strong>
-                  </>
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* =============================================
               ERROR
           ============================================== */}
 
@@ -2224,11 +2167,6 @@ export default function ConveniosCajaPage() {
               mb-4
             "
           >
-            <div className="flex justify-end px-3 pt-3">
-              <button type="button" onClick={limpiarFiltros} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:bg-slate-100">
-                <i className="fas fa-eraser mr-1"></i>Limpiar filtros
-              </button>
-            </div>
             <div
               className="
                 bg-gray-50
@@ -2240,7 +2178,7 @@ export default function ConveniosCajaPage() {
                   grid
                   grid-cols-1
                   md:grid-cols-2
-                  xl:grid-cols-5
+                  xl:grid-cols-6
                   gap-3
                 "
               >
@@ -2530,6 +2468,11 @@ export default function ConveniosCajaPage() {
                     "
                   />
                 </div>
+                <div className="flex items-end">
+                  <button type="button" onClick={limpiarFiltros} className="h-[34px] w-full rounded-lg border border-slate-300 bg-white px-3 text-[10px] font-bold text-slate-700 hover:bg-slate-100">
+                    <i className="fas fa-eraser mr-1"></i>Limpiar filtros
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -2538,14 +2481,7 @@ export default function ConveniosCajaPage() {
               TABLA
           ============================================== */}
 
-          <div
-            className="
-              border
-              border-gray-300
-              rounded-xl
-              overflow-hidden
-            "
-          >
+          <div className="overflow-hidden rounded-xl border border-slate-300">
             <div
               className="
                 bg-slate-800
@@ -2843,31 +2779,7 @@ export default function ConveniosCajaPage() {
                               text-center
                             "
                           >
-                            <button
-                              type="button"
-                              onClick={() =>
-                                verDetalle(
-                                  item
-                                )
-                              }
-                              className="
-                                inline-flex
-                                items-center
-                                gap-1
-                                bg-slate-700
-                                hover:bg-slate-900
-                                text-white
-                                px-2.5
-                                py-1.5
-                                rounded-lg
-                                text-[9px]
-                                font-bold
-                              "
-                            >
-                              <i className="fas fa-eye"></i>
-
-                              Ver
-                            </button>
+                            <BotonVerDetalle onClick={() => verDetalle(item)}>Detalle</BotonVerDetalle>
                           </td>
                         </tr>
                       )
@@ -2971,7 +2883,7 @@ export default function ConveniosCajaPage() {
           DRAWER DETALLE
       ================================================== */}
 
-      <DetalleCarteraDrawer
+      <DetalleCarteraModal
         abierto={
           drawerAbierto
         }
