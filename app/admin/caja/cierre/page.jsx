@@ -1110,9 +1110,8 @@ export default function CierreCajaPage() {
     )
 
   function imprimirMovimientosDia() {
-    if (
-      !movimientosDia
-    ) {
+    if (!movimientosDia?.cierre_confirmado) {
+      setError('No se puede imprimir: la jornada consultada no tiene cierre diario confirmado.')
       return
     }
 
@@ -1121,7 +1120,7 @@ export default function CierreCajaPage() {
       tipo_cierre:
         'DIARIO',
       consecutivo:
-        `MOVIMIENTOS-${fechaConsulta}`,
+        movimientosDia?.cierre_diario?.consecutivo || `CIERRE-${fechaConsulta}`,
       efectivo_contado:
         null,
       diferencia_efectivo:
@@ -1156,7 +1155,7 @@ export default function CierreCajaPage() {
           const fechaOperacion =
             tipoCierre ===
               'DIARIO'
-              ? hoyColombia()
+              ? fechaConsulta
               : fecha
 
           const extras = {
@@ -1231,7 +1230,7 @@ export default function CierreCajaPage() {
             setError('')
 
             setMensaje(
-              `La caja del ${tipoCierre === 'DIARIO' ? hoyColombia() : fecha} ya fue cerrada con el consecutivo ${
+              `La caja del ${tipoCierre === 'DIARIO' ? fechaConsulta : fecha} ya fue cerrada con el consecutivo ${
                 cierreExistente?.consecutivo ||
                 `#${cierreExistente?.id || ''}`
               }.`
@@ -1485,6 +1484,7 @@ export default function CierreCajaPage() {
       sesionLista,
       nit,
       fecha,
+      fechaConsulta,
       tipoCierre,
       saldoInicial,
     ]
@@ -1660,7 +1660,7 @@ export default function CierreCajaPage() {
                 fecha:
                   tipoCierre ===
                     'DIARIO'
-                    ? hoyColombia()
+                    ? fechaConsulta
                     : fecha,
 
                 tipo_cierre:
@@ -2320,6 +2320,11 @@ export default function CierreCajaPage() {
             </div>
           </div>
 
+          <div className={`border-x border-b px-4 py-3 text-xs font-bold ${movimientosDia?.cierre_confirmado ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+            {movimientosDia?.cierre_confirmado
+              ? `Jornada CERRADA · ${movimientosDia?.cierre_diario?.consecutivo || 'Cierre registrado'}. Puede imprimir el soporte.`
+              : `Jornada pendiente de cierre (${fechaConsulta}). La impresión estará disponible después de registrar el cierre.`}
+          </div>
           <MarcoTabla className="!rounded-t-none !border-t-0">
             <div className="max-h-[390px] overflow-auto">
               <table className="w-full min-w-[1050px] text-[10px]">
@@ -2410,18 +2415,18 @@ export default function CierreCajaPage() {
                 <div className="mt-1 text-base font-black text-blue-900">{formatearMoneda(movimientosDia?.movimiento_neto)}</div>
               </div>
             </div>
-            <button type="button" onClick={imprimirMovimientosDia} disabled={!movimientosDia?.movimientos?.length} className="mt-2 rounded-lg bg-[#24638C] px-5 py-3 text-[10px] font-black text-white hover:bg-[#1D526F] disabled:opacity-50">
+            <button type="button" onClick={imprimirMovimientosDia} disabled={!movimientosDia?.cierre_confirmado} className="mt-2 rounded-lg bg-[#24638C] px-5 py-3 text-[10px] font-black text-white hover:bg-[#1D526F] disabled:opacity-50">
               <i className="fas fa-file-pdf mr-2"></i>IMPRIMIR / GUARDAR PDF
             </button>
           </div>
         </div>
         )}
 
-        {tipoCierre === 'DIARIO' && !cierreDiarioRealizado && arqueo && (
+        {tipoCierre === 'DIARIO' && !cierreDiarioRealizado && !movimientosDia?.cierre_confirmado && arqueo && (
           <div className="px-4 pb-2 pt-4 md:px-6">
             <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <h2 className="text-sm font-black text-emerald-900">Cierre Diario</h2>
-              <p className="mt-1 text-xs text-emerald-700">Finaliza definitivamente la jornada. Revise los valores antes de confirmar el cierre.</p>
+              <p className="mt-1 text-xs text-emerald-700">Cierre correspondiente al ${fechaConsulta}. Revise los valores antes de confirmar el cierre.</p>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <section className="overflow-hidden rounded-xl border-2 border-blue-300 bg-white shadow-sm">
