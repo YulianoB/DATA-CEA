@@ -25,6 +25,8 @@ import {
   BotonGuardar,
   BotonCancelar,
   BotonLimpiar,
+  FranjaSuperiorModal,
+  ESTILO_CELDAS_TABLA,
 } from '@/components/admin/EstiloModulo'
 
 // ============================================================
@@ -6012,305 +6014,133 @@ const guardar =
         </div>
 
       </div>
-      {/* ====================================================
-          DRAWER NUEVO CONVENIO
-      ==================================================== */}
-
+      {/* Modal de creación rápida de convenio: conserva la matrícula diligenciada. */}
       {drawerConvenio && (
         <div
-          className="
-            fixed
-            inset-0
-            z-50
-          "
+          className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/40 p-3 sm:p-5"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !savingConvenio) {
+              setDrawerConvenio(false)
+            }
+          }}
         >
           <div
-            className="
-              absolute
-              inset-0
-              bg-black/40
-            "
-            onClick={() =>
-              !savingConvenio &&
-              setDrawerConvenio(
-                false
-              )
-            }
-          ></div>
-
-          <aside
-            className="
-              absolute
-              right-0
-              top-0
-              h-full
-              w-full
-              sm:w-[520px]
-              bg-white
-              shadow-2xl
-              overflow-y-auto
-            "
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-nuevo-convenio"
+            className="flex w-full max-w-[620px] max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+            style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }}
           >
-            <div
-              className="
-                sticky
-                top-0
-                z-20
-                bg-white
-                border-b
-                border-gray-300
-                p-4
-                flex
-                items-start
-                justify-between
-                gap-3
-              "
-            >
+            <FranjaSuperiorModal className="flex shrink-0 items-start justify-between gap-3 px-4 py-3">
               <div>
-                <p
-                  className="
-                    text-[10px]
-                    uppercase
-                    tracking-wide
-                    font-semibold
-                    text-gray-500
-                  "
-                >
-                  Matrícula
-                </p>
-
-                <h2
-                  className="
-                    text-lg
-                    font-bold
-                    text-[var(--primary)]
-                    mt-1
-                  "
-                >
-                  Nuevo Convenio
-                </h2>
-
-                <p className="text-xs text-gray-500 mt-1">
-                  Créelo sin perder la información diligenciada del aprendiz.
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-white/75">Matrícula</p>
+                <h2 id="titulo-nuevo-convenio" className="mt-1 text-base font-bold">Nuevo Convenio</h2>
+                <p className="mt-1 text-[11px] text-white/80">
+                  Regístrelo sin perder la información diligenciada del aprendiz.
                 </p>
               </div>
-
               <button
                 type="button"
-                disabled={
-                  savingConvenio
-                }
-                onClick={() =>
-                  setDrawerConvenio(
-                    false
-                  )
-                }
-                className="
-                  w-9
-                  h-9
-                  border
-                  border-gray-300
-                  rounded-lg
-                  hover:bg-gray-100
-                  disabled:opacity-50
-                "
+                aria-label="Cerrar nuevo convenio"
+                title="Cerrar"
+                disabled={savingConvenio}
+                onClick={() => setDrawerConvenio(false)}
+                className="shrink-0 rounded-md p-2 text-white transition-colors hover:bg-white/20 disabled:opacity-50"
               >
-                <i className="fas fa-times"></i>
+                <i className="fas fa-times" aria-hidden="true"></i>
               </button>
-            </div>
+            </FranjaSuperiorModal>
 
-            <div className="p-4 space-y-3">
-
+            <div className="space-y-3 overflow-y-auto p-4">
               <div>
-                <label className="block text-[11px] font-semibold mb-1">
-                  Nombre del convenio *
-                </label>
-
+                <label htmlFor="convenio-rapido-nombre" className="mb-1 block text-[11px] font-semibold">Nombre del convenio *</label>
                 <input
-                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
-                  value={
-                    formConvenio.nombre
-                  }
-                  onChange={
-                    event =>
-                      setFormConvenio(
-                        prev => ({
-                          ...prev,
-
-                          nombre:
-                            event
-                              .target
-                              .value
-                              .toUpperCase(),
-                        })
-                      )
-                  }
+                  id="convenio-rapido-nombre"
+                  autoFocus
+                  className="w-full rounded-md border px-3 py-2 text-xs"
+                  style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}
+                  value={formConvenio.nombre}
+                  onChange={(event) => setFormConvenio((prev) => ({
+                    ...prev, nombre: event.target.value.toUpperCase(),
+                  }))}
                   placeholder="Ej: EMPRESA XYZ"
                 />
               </div>
 
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="convenio-rapido-documento" className="mb-1 block text-[11px] font-semibold">Documento / NIT</label>
+                  <input
+                    id="convenio-rapido-documento"
+                    className="w-full rounded-md border px-3 py-2 text-xs"
+                    style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}
+                    value={formConvenio.documento}
+                    onChange={(event) => setFormConvenio((prev) => ({
+                      ...prev, documento: event.target.value,
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="convenio-rapido-celular" className="mb-1 block text-[11px] font-semibold">Celular</label>
+                  <input
+                    id="convenio-rapido-celular"
+                    inputMode="numeric"
+                    className="w-full rounded-md border px-3 py-2 text-xs"
+                    style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}
+                    value={formConvenio.celular}
+                    onChange={(event) => setFormConvenio((prev) => ({
+                      ...prev, celular: soloDigitos(event.target.value),
+                    }))}
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-[11px] font-semibold mb-1">
-                  Documento / NIT
-                </label>
-
+                <label htmlFor="convenio-rapido-direccion" className="mb-1 block text-[11px] font-semibold">Dirección</label>
                 <input
-                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
-                  value={
-                    formConvenio.documento
-                  }
-                  onChange={
-                    event =>
-                      setFormConvenio(
-                        prev => ({
-                          ...prev,
-
-                          documento:
-                            event
-                              .target
-                              .value,
-                        })
-                      )
-                  }
+                  id="convenio-rapido-direccion"
+                  className="w-full rounded-md border px-3 py-2 text-xs"
+                  style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}
+                  value={formConvenio.direccion}
+                  onChange={(event) => setFormConvenio((prev) => ({
+                    ...prev, direccion: event.target.value.toUpperCase(),
+                  }))}
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold mb-1">
-                  Celular
-                </label>
-
+                <label htmlFor="convenio-rapido-correo" className="mb-1 block text-[11px] font-semibold">Correo electrónico</label>
                 <input
-                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
-                  value={
-                    formConvenio.celular
-                  }
-                  onChange={
-                    event =>
-                      setFormConvenio(
-                        prev => ({
-                          ...prev,
-
-                          celular:
-                            soloDigitos(
-                              event
-                                .target
-                                .value
-                            ),
-                        })
-                      )
-                  }
-                  inputMode="numeric"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold mb-1">
-                  Dirección
-                </label>
-
-                <input
-                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
-                  value={
-                    formConvenio.direccion
-                  }
-                  onChange={
-                    event =>
-                      setFormConvenio(
-                        prev => ({
-                          ...prev,
-
-                          direccion:
-                            event
-                              .target
-                              .value
-                              .toUpperCase(),
-                        })
-                      )
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold mb-1">
-                  Correo
-                </label>
-
-                <input
+                  id="convenio-rapido-correo"
                   type="email"
-                  className="w-full border border-gray-700 rounded px-3 py-2 text-xs"
-                  value={
-                    formConvenio.correo
-                  }
-                  onChange={
-                    event =>
-                      setFormConvenio(
-                        prev => ({
-                          ...prev,
-
-                          correo:
-                            event
-                              .target
-                              .value
-                              .toLowerCase(),
-                        })
-                      )
-                  }
+                  className="w-full rounded-md border px-3 py-2 text-xs"
+                  style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}
+                  value={formConvenio.correo}
+                  onChange={(event) => setFormConvenio((prev) => ({
+                    ...prev, correo: event.target.value.toLowerCase(),
+                  }))}
                 />
               </div>
 
-              <div
-                className="
-                  bg-blue-50
-                  border
-                  border-blue-200
-                  rounded-lg
-                  p-3
-                  text-[11px]
-                  text-blue-800
-                "
-              >
+              <p className="text-[11px] text-slate-600">
                 Al guardar, el convenio se agregará a la lista y quedará seleccionado automáticamente.
-              </div>
-
-              <button
-                type="button"
-                onClick={
-                  crearConvenioRapido
-                }
-                disabled={
-                  savingConvenio
-                }
-                className="
-                  w-full
-                  bg-[var(--primary)]
-                  hover:bg-[var(--primary-dark)]
-                  text-white
-                  px-4
-                  py-3
-                  rounded-lg
-                  text-xs
-                  font-semibold
-                  disabled:opacity-50
-                "
-              >
-                {savingConvenio ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i>
-
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-save mr-2"></i>
-
-                    Guardar Convenio
-                  </>
-                )}
-              </button>
-
+              </p>
             </div>
-          </aside>
+
+            <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t px-4 py-3" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
+              <BotonCancelar type="button" disabled={savingConvenio} onClick={() => setDrawerConvenio(false)}>
+                <i className="fas fa-times" aria-hidden="true"></i> Cancelar
+              </BotonCancelar>
+              <BotonGuardar type="button" onClick={crearConvenioRapido} disabled={savingConvenio}>
+                {savingConvenio ? (
+                  <><i className="fas fa-spinner fa-spin" aria-hidden="true"></i> Guardando...</>
+                ) : (
+                  <><i className="fas fa-save" aria-hidden="true"></i> Guardar convenio</>
+                )}
+              </BotonGuardar>
+            </div>
+          </div>
         </div>
       )}
 
