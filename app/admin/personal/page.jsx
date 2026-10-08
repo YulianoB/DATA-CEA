@@ -1548,11 +1548,7 @@ export default function PersonalAdminPage() {
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Información básica
               </FranjaSecundariaModal>
-<div className="p-3">
-
-              <div className="grid grid-cols-1 gap-x-3 gap-y-3 items-start sm:grid-cols-6 [&>*]:min-w-0">
-
-                <CampoSelect
+<div className="p-3 space-y-3"><div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoSelect
                   label="Tipo de personal *"
                   name="tipo_personal"
                   value={
@@ -1571,11 +1567,8 @@ export default function PersonalAdminPage() {
                       'Colaborador',
                     ],
                   ]}
-                
-                  wrapperClass="sm:col-span-2"
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-4" />
+<CampoSelect
                   label="Tipo documento *"
                   name="tipo_documento"
                   value={
@@ -1597,11 +1590,8 @@ export default function PersonalAdminPage() {
                       'Pasaporte',
                     ],
                   ]}
-                
-                  wrapperClass="sm:col-span-1"
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-2" />
+<CampoInput
                   label="Documento *"
                   name="documento"
                   value={
@@ -1611,11 +1601,8 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   inputMode="numeric"
-                
-                  wrapperClass="sm:col-span-2"
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-4" />
+<CampoInput
                   label="Fecha nacimiento *"
                   type="date"
                   name="fecha_nacimiento"
@@ -1625,11 +1612,18 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                
-                  wrapperClass="sm:col-span-1"
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-2" /></div>
+<div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
+                  label="Nacionalidad *"
+                  name="nacionalidad"
+                  value={
+                    form.nacionalidad
+                  }
+                  onChange={
+                    onChange
+                  }
+                wrapperClass="col-span-12 md:col-span-12" /></div>
+<div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
                   label="Nombres *"
                   name="nombres"
                   value={
@@ -1639,11 +1633,8 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   className="uppercase"
-                
-                  wrapperClass="sm:col-span-2"
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-4" />
+<CampoInput
                   label="Apellidos *"
                   name="apellidos"
                   value={
@@ -1653,11 +1644,8 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   className="uppercase"
-                
-                  wrapperClass="sm:col-span-2"
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-4" />
+<CampoSelect
                   label="Género *"
                   name="genero"
                   value={
@@ -1688,11 +1676,8 @@ export default function PersonalAdminPage() {
                       'No informa',
                     ],
                   ]}
-                
-                  wrapperClass="sm:col-span-1"
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-2" />
+<CampoSelect
                   label="Tipo de sangre *"
                   name="tipo_sangre"
                   value={
@@ -1714,25 +1699,14 @@ export default function PersonalAdminPage() {
                       ]
                     ),
                   ]}
-                
-                  wrapperClass="sm:col-span-1"
-                />
-
-              </div>
-
-            </div>
-</section>
+                wrapperClass="col-span-12 md:col-span-2" /></div></div></section>
 
   <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Contacto y datos personales
               </FranjaSecundariaModal>
-<div className="p-3">
-
-              <div className="grid grid-cols-2 gap-x-3 gap-y-3 items-start [&>*]:min-w-0">
-
-                <CampoInput
+<div className="p-3 space-y-3"><div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
                   label="Teléfono *"
                   name="telefono"
                   value={
@@ -1742,9 +1716,18 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   inputMode="numeric"
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoInput
+                  label="Dirección *"
+                  name="direccion"
+                  value={
+                    form.direccion
+                  }
+                  onChange={
+                    onChange
+                  }
+                wrapperClass="col-span-12 md:col-span-5" />
+<CampoInput
                   label="Correo personal autorizado *"
                   type="email"
                   name="email"
@@ -1754,33 +1737,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                  wrapperClass="col-span-2"
-                />
-
-                <CampoInput
-                  label="Dirección *"
-                  name="direccion"
-                  value={
-                    form.direccion
-                  }
-                  onChange={
-                    onChange
-                  }
-                  wrapperClass="col-span-2"
-                />
-
-                <CampoInput
-                  label="Nacionalidad *"
-                  name="nacionalidad"
-                  value={
-                    form.nacionalidad
-                  }
-                  onChange={
-                    onChange
-                  }
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-4" /></div>
+<div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
                   label="Departamento residencia *"
                   name="departamento_residencia"
                   value={
@@ -1789,9 +1747,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoInput
                   label="Ciudad residencia *"
                   name="ciudad_residencia"
                   value={
@@ -1800,22 +1757,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                  wrapperClass="col-span-2"
-                />
-
-                <CampoInput
-                  label="Número de hijos"
-                  name="numero_hijos"
-                  value={
-                    form.numero_hijos
-                  }
-                  onChange={
-                    onChange
-                  }
-                  inputMode="numeric"
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoSelect
                   label="Escolaridad *"
                   name="escolaridad"
                   value={
@@ -1832,9 +1775,8 @@ export default function PersonalAdminPage() {
 
                     ...ESCOLARIDADES,
                   ]}
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-2" />
+<CampoInput
                   label="Profesión u oficio *"
                   name="profesion"
                   value={
@@ -1843,10 +1785,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                  wrapperClass="col-span-2"
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-4" /></div>
+<div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoSelect
                   label="Estado civil *"
                   name="estado_civil"
                   value={
@@ -1881,9 +1821,19 @@ export default function PersonalAdminPage() {
                       'Viudo(a)',
                     ],
                   ]}
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoInput
+                  label="Número de hijos"
+                  name="numero_hijos"
+                  value={
+                    form.numero_hijos
+                  }
+                  onChange={
+                    onChange
+                  }
+                  inputMode="numeric"
+                wrapperClass="col-span-12 md:col-span-1" />
+<CampoSelect
                   label="EPS *"
                   name="eps"
                   value={
@@ -1900,9 +1850,8 @@ export default function PersonalAdminPage() {
 
                     ...EPS_COLOMBIA,
                   ]}
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoSelect
                   label="ARL *"
                   name="arl"
                   value={
@@ -1919,9 +1868,8 @@ export default function PersonalAdminPage() {
 
                     ...ARL_COLOMBIA,
                   ]}
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-2" />
+<CampoSelect
                   label="Fondo pensión *"
                   name="fondo_pension"
                   value={
@@ -1938,24 +1886,8 @@ export default function PersonalAdminPage() {
 
                     ...FONDOS_PENSION,
                   ]}
-                />
-
-              </div>
-
-            </div>
-</section>
-
-  <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
-
-              <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
-                Contacto de emergencia
-              </FranjaSecundariaModal>
-<div className="p-3">
-
-              <div className="grid grid-cols-2 gap-x-3 gap-y-3 items-start [&>*]:min-w-0">
-
-                <CampoInput
-                  label="Nombre contacto *"
+                wrapperClass="col-span-12 md:col-span-3" /></div><div className="border-t border-slate-300 pt-3"><h3 className="mb-3 text-sm font-bold text-[#194567]">Contacto de emergencia</h3><div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
+                  label="Nombre completo contacto *"
                   name="contacto_emergencia_nombre"
                   value={
                     form
@@ -1964,10 +1896,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                  wrapperClass="col-span-2"
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-6" />
+<CampoInput
                   label="Parentesco *"
                   name="contacto_emergencia_parentesco"
                   value={
@@ -1977,9 +1907,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoInput
                   label="Teléfono contacto *"
                   name="contacto_emergencia_telefono"
                   value={
@@ -1990,23 +1919,16 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   inputMode="numeric"
-                />
+                wrapperClass="col-span-12 md:col-span-3" /></div></div></div></section>
 
-              </div>
-
-            </div>
-</section>
+  
 
   <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
               <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                 Vinculación al CEA
               </FranjaSecundariaModal>
-<div className="p-3">
-
-              <div className="grid grid-cols-2 gap-x-3 gap-y-3 items-start [&>*]:min-w-0">
-
-                <CampoSelect
+<div className="p-3 space-y-3"><div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoSelect
                   label="Grupo personal *"
                   name="grupo_personal"
                   value={
@@ -2033,9 +1955,8 @@ export default function PersonalAdminPage() {
                       'Servicios generales',
                     ],
                   ]}
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoInput
                   label="Cargo *"
                   name="cargo"
                   value={
@@ -2045,10 +1966,8 @@ export default function PersonalAdminPage() {
                     onChange
                   }
                   placeholder="Ej: Instructor, auxiliar"
-                  wrapperClass="col-span-2"
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-5" />
+<CampoSelect
                   label="Tipo contrato *"
                   name="tipo_contrato"
                   value={
@@ -2083,9 +2002,8 @@ export default function PersonalAdminPage() {
                       'Otro',
                     ],
                   ]}
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-4" /></div>
+<div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoSelect
                   label="Tipo permanencia *"
                   name="tipo_permanencia"
                   value={
@@ -2116,9 +2034,8 @@ export default function PersonalAdminPage() {
                       'Temporal',
                     ],
                   ]}
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoInput
                   label="Fecha vinculación *"
                   type="date"
                   name="fecha_vinculacion"
@@ -2128,9 +2045,8 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                />
-
-                <CampoInput
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoInput
                   label="Fecha retiro (opcional)"
                   type="date"
                   name="fecha_retiro"
@@ -2143,9 +2059,8 @@ export default function PersonalAdminPage() {
                   required={
                     false
                   }
-                />
-
-                <CampoSelect
+                wrapperClass="col-span-12 md:col-span-3" />
+<CampoSelect
                   label="Medio transporte al trabajo *"
                   name="medio_transporte_trabajo"
                   value={
@@ -2154,7 +2069,6 @@ export default function PersonalAdminPage() {
                   onChange={
                     onChange
                   }
-                  wrapperClass="col-span-2"
                   options={[
                     [
                       '',
@@ -2163,12 +2077,7 @@ export default function PersonalAdminPage() {
 
                     ...MEDIOS_TRANSPORTE,
                   ]}
-                />
-
-              </div>
-
-            </div>
-</section>
+                wrapperClass="col-span-12 md:col-span-3" /></div></div></section>
 
   <section className="min-w-0 overflow-hidden bg-white" style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}`, borderRadius: ESTILO_CONTENEDORES.radio, boxShadow: ESTILO_CONTENEDORES.sombra }}>
 
