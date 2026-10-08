@@ -33,7 +33,7 @@ export default function VistaPreviaPdfLimpia({ datos, documento, fotoDataUrl }) 
         <div className="grid min-h-[76.5%] grid-cols-[40.3%_59.7%]">
           <aside className="bg-[#d3d7dc] px-[14%] pb-6 pt-[39%] text-[clamp(9px,1.05vw,11px)] leading-[1.35]">
             {seccion('Contacto')}
-            <div className="mb-2 mt-3"><strong>♧ Celular</strong><div className="pl-3 break-words">{texto(personal.telefono)}</div></div>
+            <div className="mb-2"><strong><span className="relative top-[3px]">♧</span> Celular</strong><div className="pl-3 break-words">{texto(personal.telefono)}</div></div>
             <div className="mb-2"><strong>✉ Correo electrónico</strong><div className="pl-3 break-all">{texto(personal.email)}</div></div>
             <div className="mb-2"><strong>⌖ Dirección</strong><div className="pl-3 break-words">{[personal.direccion, personal.ciudad_residencia].filter(Boolean).join(', ')}</div></div>
             {seccion('Información')}
