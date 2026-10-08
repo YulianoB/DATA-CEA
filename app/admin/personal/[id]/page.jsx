@@ -739,7 +739,7 @@ export default function HojaVidaPersonalPage() {
 
           if (result?.requiere_recategorizacion) {
             toast.info(
-              'Se cargó el registro vigente. Revise los datos y presione Renovar / Recategorizar.'
+              'Se cargó el registro vigente. Revise los datos y presione Actualizar.'
             )
           }
         }
@@ -1986,7 +1986,7 @@ function Licencias({
       <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <h3 className="mb-1 text-sm font-bold text-[#194567]">
           {formLicencia.id
-            ? 'Renovar o recategorizar licencia / certificado'
+            ? 'Actualizar licencia o certificado'
             : 'Agregar licencia o certificado'}
         </h3>
 
@@ -2061,7 +2061,7 @@ function Licencias({
               {guardandoLicencia
                 ? 'Guardando...'
                 : formLicencia.id
-                ? 'Renovar / Recategorizar'
+                ? 'Actualizar'
                 : 'Guardar'}
             </button>
           </div>
@@ -2233,9 +2233,8 @@ function TablaLicencias({
                             : 'bg-gray-700 hover:bg-gray-900'
                         }`}
                       >
-                        {estado === 'VENCIDA'
-                          ? 'Renovar'
-                          : 'Renovar / Recategorizar'}
+                        <i className="fas fa-sync-alt mr-1" aria-hidden="true"></i>
+                        Actualizar
                       </button>
                     ) : (
                       <span className="text-xs text-gray-500">
