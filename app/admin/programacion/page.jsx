@@ -14,7 +14,7 @@ import {
 
 import { CalendarDays, RefreshCw } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonActualizar, ESTILO_FRANJA_SUPERIOR_MODAL } from '@/components/admin/EstiloModulo'
+import { BotonActualizar, ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_BOTONES } from '@/components/admin/EstiloModulo'
 
 // =========================================================
 // CONSTANTES
@@ -745,9 +745,11 @@ function MiniInstructor({
       className="
         h-[58px]
         border
-        border-slate-200
+        border-2
+        border-[#3B617D]
         rounded-lg
-        bg-slate-50
+        bg-[#F0F6FA]
+        shadow-sm
         px-3
         py-2
       "
@@ -5451,7 +5453,7 @@ function abrirClase(
               grid
               grid-cols-1
               md:grid-cols-2
-              xl:grid-cols-[150px_1.5fr_135px_150px_1.4fr_150px_minmax(165px,1.2fr)_110px]
+              xl:grid-cols-[150px_minmax(170px,1.5fr)_135px_150px_minmax(170px,1.4fr)_150px_minmax(165px,1.2fr)_110px]
               gap-x-1.5
               gap-y-2
               items-end
@@ -6022,49 +6024,19 @@ function abrirClase(
               </select>
             </div>
             
-            {/* LIMPIAR */}
-
-            <div>
-              <label
-                className="
-                  block
-                  mb-1
-                  text-[9px]
-                  font-bold
-                  text-gray-600
-                "
-              >
-                Acciones
-              </label>
-
+            {/* LIMPIAR: alineado sin etiqueta */}
+            <div className="flex items-end">
               <button
                 type="button"
-                onClick={
-                  limpiarFiltros
-                }
-                className="
-                  w-full
-                  h-[38px]
-                  rounded-lg
-                  border
-                  border-blue-600
-                  bg-blue-500
-                  hover:bg-blue-700
-                  text-white
-                  text-[9px]
-                  font-black
-                  flex
-                  items-center
-                  justify-center
-                  gap-1.5
-                  transition
-                "
+                onClick={limpiarFiltros}
+                className="w-full h-[38px] rounded-lg border text-[9px] font-black flex items-center justify-center gap-1.5 transition hover:brightness-90"
+                style={{ backgroundColor: ESTILO_BOTONES.limpiar.fondo, borderColor: ESTILO_BOTONES.limpiar.borde, color: ESTILO_BOTONES.limpiar.texto }}
               >
                 <i className="fas fa-filter-circle-xmark"></i>
-
                 Limpiar
               </button>
             </div>
+          </div>
           </div>
           <div
   className="
@@ -6143,7 +6115,7 @@ function abrirClase(
 <div
   className="
     mb-3
-    flex
+    inline-flex
     flex-wrap
     items-center
     gap-2
@@ -6163,12 +6135,13 @@ function abrirClase(
       border
       text-[9px]
       font-black
+      whitespace-nowrap
       transition
       ${
         vistaProgramacion ===
         'AGENDA'
-          ? 'bg-slate-800 border-slate-800 text-white'
-          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+          ? 'bg-[#194567] border-[#194567] text-white shadow-sm'
+          : 'bg-white border-[#94A3B8] text-[#29465D] hover:bg-[#F1F5F9]'
       }
     `}
   >
@@ -6195,12 +6168,13 @@ function abrirClase(
       border
       text-[9px]
       font-black
+      whitespace-nowrap
       transition
       ${
         vistaProgramacion ===
         'DISPONIBILIDAD'
-          ? 'bg-blue-600 border-blue-600 text-white'
-          : 'bg-white border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+          ? 'bg-[#194567] border-[#194567] text-white shadow-sm'
+          : 'bg-white border-[#94A3B8] text-[#29465D] hover:bg-[#F1F5F9]'
       }
     `}
   >
