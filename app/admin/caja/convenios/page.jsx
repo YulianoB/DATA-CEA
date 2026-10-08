@@ -12,9 +12,9 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+import { Handshake } from 'lucide-react'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonActualizar, MarcoTabla, TituloSeccion } from '@/components/admin/EstiloModulo'
 
 // =========================================================
 // CONSTANTES
@@ -505,6 +505,8 @@ function DetalleCarteraDrawer({
         fixed
         inset-0
         z-50
+        overflow-y-auto
+        px-2
       "
     >
       <div
@@ -520,13 +522,14 @@ function DetalleCarteraDrawer({
 
       <div
         className="
-          absolute
-          right-0
-          top-0
-          h-full
-          w-full
-          sm:max-w-xl
-          lg:max-w-2xl
+          relative
+          mx-auto
+          my-5
+          w-[calc(100%-2rem)]
+          max-w-5xl
+          max-h-[calc(100vh-2.5rem)]
+          rounded-xl
+          overflow-hidden
           bg-white
           shadow-2xl
           flex
@@ -2026,167 +2029,11 @@ export default function ConveniosCajaPage() {
             md:p-6
           "
         >
-          {/* =============================================
-              HEADER
-          ============================================== */}
-
-          <div
-            className="
-              border
-              border-gray-300
-              rounded-xl
-              px-4
-              py-3
-              mb-3
-              bg-white
-            "
-          >
-            <div
-              className="
-                flex
-                flex-col
-                lg:flex-row
-                lg:items-center
-                lg:justify-between
-                gap-3
-              "
-            >
-              <div>
-                <p
-                  className="
-                    text-[9px]
-                    uppercase
-                    tracking-wider
-                    font-bold
-                    text-gray-500
-                  "
-                >
-                  Administración Financiera
-                </p>
-
-                <h1
-                  className="
-                    mt-0.5
-                    text-xl
-                    md:text-2xl
-                    font-black
-                    text-[var(--primary)]
-                    flex
-                    items-center
-                    gap-2
-                  "
-                >
-                  <i className="fas fa-handshake"></i>
-
-                  Cartera de Convenios
-                </h1>
-
-                <p
-                  className="
-                    mt-0.5
-                    text-[10px]
-                    text-gray-500
-                  "
-                >
-                  Seguimiento de obligaciones, pagos y saldos de aprendices matriculados por convenio.
-                </p>
-              </div>
-
-              <div
-                className="
-                  flex
-                  flex-wrap
-                  gap-2
-                "
-              >
-                <button
-                  type="button"
-                  onClick={
-                    cargarCartera
-                  }
-                  disabled={
-                    cargando
-                  }
-                  className="
-                    border
-                    border-gray-300
-                    bg-white
-                    hover:bg-gray-100
-                    text-gray-700
-                    px-3
-                    py-2
-                    rounded-lg
-                    text-xs
-                    disabled:opacity-50
-                  "
-                >
-                  <i
-                    className={`
-                      fas
-                      fa-sync-alt
-                      mr-2
-                      ${
-                        cargando
-                          ? 'fa-spin'
-                          : ''
-                      }
-                    `}
-                  ></i>
-
-                  Actualizar
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(
-                      '/admin/caja'
-                    )
-                  }
-                  className="
-                    bg-gray-600
-                    hover:bg-gray-800
-                    text-white
-                    px-3
-                    py-2
-                    rounded-lg
-                    text-xs
-                    flex
-                    items-center
-                    gap-2
-                  "
-                >
-                  <i className="fas fa-arrow-left"></i>
-
-                  Volver a Caja
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    cerrarSesion(
-                      router
-                    )
-                  }
-                  className="
-                    bg-[var(--danger)]
-                    hover:bg-[var(--danger-dark)]
-                    text-white
-                    px-3
-                    py-2
-                    rounded-lg
-                    text-xs
-                    flex
-                    items-center
-                    gap-2
-                  "
-                >
-                  <i className="fas fa-sign-out-alt"></i>
-
-                  Cerrar Sesión
-                </button>
-              </div>
-            </div>
+          <EncabezadoModulo titulo="Convenios y Asesores" subtitulo="Consulta del estado de los aprendices vinculados a convenios, tramitadores y asesores." icono={Handshake} rutaRegreso="/admin/caja" textoRegreso="Volver a Caja" />
+          <div className="flex justify-end px-4 py-3">
+            <BotonActualizar onClick={cargarCartera} disabled={cargando}>
+              <i className={`fas fa-sync-alt mr-2 ${cargando ? 'fa-spin' : ''}`}></i>Actualizar
+            </BotonActualizar>
           </div>
 
           {/* =============================================
@@ -2390,26 +2237,9 @@ export default function ConveniosCajaPage() {
               "
             >
               <div>
-                <h2
-                  className="
-                    text-xs
-                    font-bold
-                  "
-                >
-                  <i className="fas fa-filter mr-2"></i>
+                
 
-                  Filtros de cartera
-                </h2>
-
-                <p
-                  className="
-                    mt-0.5
-                    text-[9px]
-                    text-slate-300
-                  "
-                >
-                  Por defecto se muestran aprendices pendientes que todavía no registran abonos.
-                </p>
+                
               </div>
 
               <button
