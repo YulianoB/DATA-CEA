@@ -1331,8 +1331,8 @@ export default function HojaVidaPersonalPage() {
         </section>
 
         <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-          <nav aria-label="Secciones de la hoja de vida" className="rounded-lg border border-slate-300 bg-white p-2 lg:sticky lg:top-4">
-            <p className="hidden px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#194567] lg:block">Contenido del expediente</p>
+          <nav aria-label="Secciones de la hoja de vida" className="overflow-hidden rounded-lg border border-[#194567] bg-[#194567] p-2 text-white shadow-sm lg:sticky lg:top-4">
+            <p className="hidden border-b border-white/25 px-3 py-3 text-xs font-bold uppercase tracking-wide text-white lg:mb-2 lg:block">Contenido del expediente</p>
             <div role="tablist" aria-label="Secciones de la hoja de vida" className="flex gap-2 overflow-x-auto lg:flex-col">
             {tabsVisibles.map((item) => (
               <button
@@ -1341,7 +1341,7 @@ export default function HojaVidaPersonalPage() {
                 role="tab"
                 aria-selected={tab === item.key}
                 onClick={() => setTab(item.key)}
-                className={`whitespace-nowrap rounded-md px-3 py-2 text-left text-xs font-semibold transition ${tab === item.key ? 'bg-[#194567] text-white' : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-200'}`}
+                className={`whitespace-nowrap rounded-md px-3 py-2 text-left text-xs font-semibold transition ${tab === item.key ? 'bg-white text-[#194567] shadow-sm' : 'border border-white/20 bg-white/10 text-white hover:bg-white/20'}`}
               >
                 {item.label}
               </button>
@@ -1480,9 +1480,9 @@ function CuentaUsuario({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-gray-50 p-4">
+      <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Cuenta de usuario</h3>
+          <h3 className="text-sm font-bold text-[#194567]">Cuenta de usuario</h3>
           <p className="text-sm text-gray-500">
             Administra el correo autorizado para recuperación de contraseña y el estado de acceso a la aplicación.
           </p>
@@ -1685,10 +1685,10 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
 function Estudios({ estudios, formEstudio, cambiarEstudio, guardarEstudio, guardandoEstudio, cargandoEstudios, editarEstudio, eliminarEstudio, cancelarEdicionEstudio }) {
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-gray-50 p-4">
+      <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-sm font-bold text-[#194567]">
               {formEstudio.id ? 'Editar estudio' : 'Agregar estudio'}
             </h3>
             <p className="text-sm text-gray-500">Registra o actualiza la formación académica de la persona.</p>
@@ -1731,7 +1731,7 @@ function Estudios({ estudios, formEstudio, cambiarEstudio, guardarEstudio, guard
       </div>
 
       <div>
-        <h3 className="mb-4 text-lg font-semibold text-gray-800">Estudios registrados</h3>
+        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Estudios registrados</h3>
         {cargandoEstudios ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando estudios...</p>
         ) : (
@@ -1752,27 +1752,27 @@ function TablaEstudios({ estudios, editarEstudio, eliminarEstudio }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border">
-        <thead className="bg-gray-100 text-gray-700">
+    <div className="overflow-x-auto rounded-md border border-slate-300">
+      <table className="min-w-full border-collapse text-xs">
+        <thead className="bg-[#194567] text-white">
           <tr>
-            <th className="p-2 text-left border">Nivel</th>
-            <th className="p-2 text-left border">Título obtenido</th>
-            <th className="p-2 text-left border">Institución</th>
-            <th className="p-2 text-left border">Fecha grado</th>
-            <th className="p-2 text-left border">Observaciones</th>
-            <th className="p-2 text-left border">Acciones</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Nivel</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Título obtenido</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Institución</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Fecha grado</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Observaciones</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {estudios.map((item) => (
-            <tr key={item.id} className="hover:bg-gray-50">
-              <td className="p-2 border">{texto(item.nivel_estudio)}</td>
-              <td className="p-2 border font-medium">{texto(item.titulo)}</td>
-              <td className="p-2 border">{texto(item.institucion)}</td>
-              <td className="p-2 border">{fecha(item.fecha_grado)}</td>
-              <td className="p-2 border">{texto(item.observaciones)}</td>
-              <td className="p-2 border">
+            <tr key={item.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.nivel_estudio)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs font-semibold text-slate-800">{texto(item.titulo)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.institucion)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{fecha(item.fecha_grado)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.observaciones)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => editarEstudio(item)} className="rounded-md bg-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-900">
                     Editar
@@ -1793,10 +1793,10 @@ function TablaEstudios({ estudios, editarEstudio, eliminarEstudio }) {
 function ExperienciaLaboral({ experiencia, formExperiencia, cambiarExperiencia, guardarExperiencia, guardandoExperiencia, cargandoExperiencia, editarExperiencia, eliminarExperiencia, cancelarEdicionExperiencia }) {
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-gray-50 p-4">
+      <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-sm font-bold text-[#194567]">
               {formExperiencia.id ? 'Editar experiencia laboral' : 'Agregar experiencia laboral'}
             </h3>
             <p className="text-sm text-gray-500">Registra o actualiza la experiencia laboral de la persona.</p>
@@ -1842,7 +1842,7 @@ function ExperienciaLaboral({ experiencia, formExperiencia, cambiarExperiencia, 
       </div>
 
       <div>
-        <h3 className="mb-4 text-lg font-semibold text-gray-800">Experiencia registrada</h3>
+        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Experiencia registrada</h3>
         {cargandoExperiencia ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando experiencia laboral...</p>
         ) : (
@@ -1860,9 +1860,9 @@ function ExperienciaLaboral({ experiencia, formExperiencia, cambiarExperiencia, 
 
 function TablaExperiencia({ experiencia, editarExperiencia, eliminarExperiencia }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border">
-        <thead className="bg-gray-100 text-gray-700">
+    <div className="overflow-x-auto rounded-md border border-slate-300">
+      <table className="min-w-full border-collapse text-xs">
+        <thead className="bg-[#194567] text-white">
           <tr>
             <th className="text-left p-2 border">Empresa</th>
             <th className="text-left p-2 border">Cargo</th>
@@ -1880,15 +1880,15 @@ function TablaExperiencia({ experiencia, editarExperiencia, eliminarExperiencia 
               <td colSpan={8} className="p-4 text-center text-gray-500">No hay experiencia laboral registrada.</td>
             </tr>
           ) : experiencia.map((item) => (
-            <tr key={item.id} className="hover:bg-gray-50">
-              <td className="p-2 border">{texto(item.empresa)}</td>
-              <td className="p-2 border">{texto(item.cargo)}</td>
-              <td className="p-2 border">{fecha(item.fecha_inicio)}</td>
-              <td className="p-2 border">{item.actualmente ? 'Actualmente' : fecha(item.fecha_fin)}</td>
-              <td className="p-2 border">{item.actualmente ? 'Sí' : 'No'}</td>
-              <td className="p-2 border">{texto(item.jefe_inmediato)}</td>
-              <td className="p-2 border">{texto(item.telefono_contacto)}</td>
-              <td className="p-2 border">
+            <tr key={item.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.empresa)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.cargo)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{fecha(item.fecha_inicio)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{item.actualmente ? 'Actualmente' : fecha(item.fecha_fin)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{item.actualmente ? 'Sí' : 'No'}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.jefe_inmediato)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.telefono_contacto)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => editarExperiencia(item)} className="rounded-md bg-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-900">
                     Editar
@@ -1919,8 +1919,8 @@ function Licencias({
 }) {
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-gray-50 p-4">
-        <h3 className="mb-1 text-lg font-semibold text-gray-800">
+      <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
+        <h3 className="mb-1 text-sm font-bold text-[#194567]">
           {formLicencia.id
             ? 'Renovar o recategorizar licencia / certificado'
             : 'Agregar licencia o certificado'}
@@ -2005,7 +2005,7 @@ function Licencias({
       </div>
 
       <div>
-        <h3 className="mb-1 text-lg font-semibold text-gray-800">
+        <h3 className="mb-1 text-sm font-bold text-[#194567]">
           Historial de licencias y certificados
         </h3>
 
@@ -2049,9 +2049,9 @@ function TablaLicencias({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border">
-        <thead className="bg-gray-100 text-gray-700">
+    <div className="overflow-x-auto rounded-md border border-slate-300">
+      <table className="min-w-full border-collapse text-xs">
+        <thead className="bg-[#194567] text-white">
           <tr>
             <th className="text-left p-2 border">Tipo</th>
             <th className="text-left p-2 border">Categoría</th>
@@ -2093,7 +2093,7 @@ function TablaLicencias({
                       : 'bg-gray-50/70 text-gray-600'
                   }
                 >
-                  <td className="p-2 border">
+                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                     {tipo === 'INSTRUCTOR'
                       ? 'Certificado instructor'
                       : tipo === 'CONDUCCION'
@@ -2101,7 +2101,7 @@ function TablaLicencias({
                       : texto(licencia.tipo_licencia)}
                   </td>
 
-                  <td className="p-2 border">
+                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                     {texto(
                       normalizarCategoriaLicenciaUI(
                         licencia.categoria
@@ -2109,15 +2109,15 @@ function TablaLicencias({
                     )}
                   </td>
 
-                  <td className="p-2 border">
+                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                     {texto(licencia.numero_certificado)}
                   </td>
 
-                  <td className="p-2 border">
+                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                     {fecha(licencia.vigencia)}
                   </td>
 
-                  <td className="p-2 border">
+                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                     <span
                       className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
                         estado === 'VIGENTE'
@@ -2133,15 +2133,15 @@ function TablaLicencias({
                     </span>
                   </td>
 
-                  <td className="p-2 border">
+                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                     {fecha(licencia.fecha_actualizacion)}
                   </td>
 
-                  <td className="p-2 border">
+                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                     {texto(licencia.nombre_quien_actualiza)}
                   </td>
 
-                  <td className="p-2 border">
+                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                         esActual
@@ -2153,7 +2153,7 @@ function TablaLicencias({
                     </span>
                   </td>
 
-                  <td className="p-2 border">
+                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                     {esActual ? (
                       <button
                         type="button"
@@ -2198,10 +2198,10 @@ function Referencias({
 }) {
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-gray-50 p-4">
+      <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-sm font-bold text-[#194567]">
               {formReferencia.id ? 'Editar referencia' : 'Agregar referencia'}
             </h3>
             <p className="text-sm text-gray-500">
@@ -2251,7 +2251,7 @@ function Referencias({
       </div>
 
       <div>
-        <h3 className="mb-4 text-lg font-semibold text-gray-800">Referencias registradas</h3>
+        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Referencias registradas</h3>
         {cargandoReferencias ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando referencias...</p>
         ) : (
@@ -2268,9 +2268,9 @@ function Referencias({
 
 function TablaReferencias({ referencias, editarReferencia, eliminarReferencia }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border">
-        <thead className="bg-gray-100 text-gray-700">
+    <div className="overflow-x-auto rounded-md border border-slate-300">
+      <table className="min-w-full border-collapse text-xs">
+        <thead className="bg-[#194567] text-white">
           <tr>
             <th className="text-left p-2 border">Tipo</th>
             <th className="text-left p-2 border">Nombre</th>
@@ -2288,15 +2288,15 @@ function TablaReferencias({ referencias, editarReferencia, eliminarReferencia })
               <td colSpan={8} className="p-4 text-center text-gray-500">No hay referencias registradas.</td>
             </tr>
           ) : referencias.map((referencia) => (
-            <tr key={referencia.id} className="hover:bg-gray-50">
+            <tr key={referencia.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
               <td className="p-2 border capitalize">{texto(referencia.tipo_referencia)}</td>
-              <td className="p-2 border">{texto(referencia.nombre)}</td>
-              <td className="p-2 border">{texto(referencia.ocupacion_cargo)}</td>
-              <td className="p-2 border">{texto(referencia.empresa)}</td>
-              <td className="p-2 border">{texto(referencia.telefono)}</td>
-              <td className="p-2 border">{texto(referencia.email)}</td>
-              <td className="p-2 border">{texto(referencia.relacion)}</td>
-              <td className="p-2 border">
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.nombre)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.ocupacion_cargo)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.empresa)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.telefono)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.email)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.relacion)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -2336,10 +2336,10 @@ function Evaluaciones({
 }) {
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-gray-50 p-4">
+      <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-sm font-bold text-[#194567]">
               {formEvaluacion.id ? 'Editar evaluación' : 'Agregar evaluación'}
             </h3>
             <p className="text-sm text-gray-500">
@@ -2394,7 +2394,7 @@ function Evaluaciones({
       </div>
 
       <div>
-        <h3 className="mb-4 text-lg font-semibold text-gray-800">Evaluaciones registradas</h3>
+        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Evaluaciones registradas</h3>
         {cargandoEvaluaciones ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando evaluaciones...</p>
         ) : (
@@ -2411,9 +2411,9 @@ function Evaluaciones({
 
 function TablaEvaluaciones({ evaluaciones, editarEvaluacion, eliminarEvaluacion }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border">
-        <thead className="bg-gray-100 text-gray-700">
+    <div className="overflow-x-auto rounded-md border border-slate-300">
+      <table className="min-w-full border-collapse text-xs">
+        <thead className="bg-[#194567] text-white">
           <tr>
             <th className="text-left p-2 border">Tipo</th>
             <th className="text-left p-2 border">Fecha</th>
@@ -2429,13 +2429,13 @@ function TablaEvaluaciones({ evaluaciones, editarEvaluacion, eliminarEvaluacion 
               <td colSpan={6} className="p-4 text-center text-gray-500">No hay evaluaciones registradas.</td>
             </tr>
           ) : evaluaciones.map((evaluacion) => (
-            <tr key={evaluacion.id} className="hover:bg-gray-50">
-              <td className="p-2 border">{texto(evaluacion.tipo_evaluacion)}</td>
-              <td className="p-2 border">{fecha(evaluacion.fecha_evaluacion)}</td>
-              <td className="p-2 border">{texto(evaluacion.resultado)}</td>
-              <td className="p-2 border">{texto(evaluacion.evaluador)}</td>
-              <td className="p-2 border">{texto(evaluacion.observaciones)}</td>
-              <td className="p-2 border">
+            <tr key={evaluacion.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.tipo_evaluacion)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{fecha(evaluacion.fecha_evaluacion)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.resultado)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.evaluador)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.observaciones)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -2475,10 +2475,10 @@ function Documentos({
 }) {
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-gray-50 p-4">
+      <div className="overflow-hidden rounded-lg border border-slate-300 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-sm font-bold text-[#194567]">
               {formDocumento.id ? 'Editar documento' : 'Agregar documento'}
             </h3>
             <p className="text-sm text-gray-500">
@@ -2547,7 +2547,7 @@ function Documentos({
       </div>
 
       <div>
-        <h3 className="mb-4 text-lg font-semibold text-gray-800">Documentos registrados</h3>
+        <h3 className="mb-3 border-b border-slate-300 bg-slate-100 px-3 py-2 text-sm font-bold text-[#194567]">Documentos registrados</h3>
         {cargandoDocumentos ? (
           <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando documentos...</p>
         ) : (
@@ -2564,9 +2564,9 @@ function Documentos({
 
 function TablaDocumentos({ documentos, editarDocumento, eliminarDocumento }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border">
-        <thead className="bg-gray-100 text-gray-700">
+    <div className="overflow-x-auto rounded-md border border-slate-300">
+      <table className="min-w-full border-collapse text-xs">
+        <thead className="bg-[#194567] text-white">
           <tr>
             <th className="text-left p-2 border">Tipo</th>
             <th className="text-left p-2 border">Nombre</th>
@@ -2583,20 +2583,20 @@ function TablaDocumentos({ documentos, editarDocumento, eliminarDocumento }) {
               <td colSpan={7} className="p-4 text-center text-gray-500">No hay documentos registrados.</td>
             </tr>
           ) : documentos.map((documento) => (
-            <tr key={documento.id} className="hover:bg-gray-50">
-              <td className="p-2 border">{texto(documento.tipo_documento)}</td>
-              <td className="p-2 border font-medium">{texto(documento.nombre_documento)}</td>
-              <td className="p-2 border">
+            <tr key={documento.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(documento.tipo_documento)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs font-semibold text-slate-800">{texto(documento.nombre_documento)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                 {documento.archivo_url ? (
                   <a href={documento.archivo_url} target="_blank" rel="noreferrer" className="text-blue-700 underline">
                     Abrir enlace
                   </a>
                 ) : '-'}
               </td>
-              <td className="p-2 border">{documento.vence ? 'Sí' : 'No'}</td>
-              <td className="p-2 border">{fecha(documento.fecha_vencimiento)}</td>
-              <td className="p-2 border">{texto(documento.estado)}</td>
-              <td className="p-2 border">
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{documento.vence ? 'Sí' : 'No'}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{fecha(documento.fecha_vencimiento)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(documento.estado)}</td>
+              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -2626,7 +2626,7 @@ function TablaPendiente({ titulo, datos, columnas }) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-gray-800">{titulo}</h3>
+        <h3 className="text-sm font-bold text-[#194567]">{titulo}</h3>
         <button type="button" className="rounded-md bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)]">
           Agregar próximamente
         </button>
@@ -2642,9 +2642,9 @@ function TablaPendiente({ titulo, datos, columnas }) {
 
 function TablaBase({ datos, columnas, vacio }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border">
-        <thead className="bg-gray-100 text-gray-700">
+    <div className="overflow-x-auto rounded-md border border-slate-300">
+      <table className="min-w-full border-collapse text-xs">
+        <thead className="bg-[#194567] text-white">
           <tr>
             {columnas.map(([key, label]) => (
               <th key={key} className="text-left p-2 border capitalize">{label}</th>
@@ -2657,9 +2657,9 @@ function TablaBase({ datos, columnas, vacio }) {
               <td colSpan={columnas.length} className="p-4 text-center text-gray-500">{vacio}</td>
             </tr>
           ) : datos.map((item) => (
-            <tr key={item.id} className="hover:bg-gray-50">
+            <tr key={item.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
               {columnas.map(([key]) => (
-                <td key={key} className="p-2 border">{key.includes('fecha') || key === 'vigencia' ? fecha(item[key]) : typeof item[key] === 'boolean' ? (item[key] ? 'Sí' : 'No') : texto(item[key])}</td>
+                <td key={key} className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{key.includes('fecha') || key === 'vigencia' ? fecha(item[key]) : typeof item[key] === 'boolean' ? (item[key] ? 'Sí' : 'No') : texto(item[key])}</td>
               ))}
             </tr>
           ))}
