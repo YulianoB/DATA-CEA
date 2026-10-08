@@ -1550,7 +1550,7 @@ export default function PersonalAdminPage() {
               </FranjaSecundariaModal>
 <div className="p-3">
 
-              <div className="grid grid-cols-1 gap-x-3 gap-y-3 items-start sm:grid-cols-[minmax(0,1.25fr)_minmax(0,0.8fr)_minmax(0,1.2fr)_minmax(0,1.05fr)] [&>*]:min-w-0">
+              <div className="grid grid-cols-1 gap-x-3 gap-y-3 items-start sm:grid-cols-6 [&>*]:min-w-0">
 
                 <CampoSelect
                   label="Tipo de personal *"
@@ -1572,7 +1572,7 @@ export default function PersonalAdminPage() {
                     ],
                   ]}
                 
-                  wrapperClass="sm:col-span-1"
+                  wrapperClass="sm:col-span-2"
                 />
 
                 <CampoSelect
@@ -1612,7 +1612,7 @@ export default function PersonalAdminPage() {
                   }
                   inputMode="numeric"
                 
-                  wrapperClass="sm:col-span-1"
+                  wrapperClass="sm:col-span-2"
                 />
 
                 <CampoInput
@@ -1640,7 +1640,7 @@ export default function PersonalAdminPage() {
                   }
                   className="uppercase"
                 
-                  wrapperClass="sm:col-span-1"
+                  wrapperClass="sm:col-span-2"
                 />
 
                 <CampoInput
@@ -1654,7 +1654,7 @@ export default function PersonalAdminPage() {
                   }
                   className="uppercase"
                 
-                  wrapperClass="sm:col-span-1"
+                  wrapperClass="sm:col-span-2"
                 />
 
                 <CampoSelect
