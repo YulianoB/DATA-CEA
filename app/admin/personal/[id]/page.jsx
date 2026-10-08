@@ -166,7 +166,7 @@ const CAMPOS_EDICION_GENERAL = [
   ]],
   ['Contacto', [
     ['telefono','Teléfono'],['departamento_residencia','Departamento','catalogo:departamentos'],
-    ['ciudad_residencia','Ciudad','catalogo:municipios'],['direccion','Dirección'],
+    ['ciudad_residencia','Ciudad'],['direccion','Dirección'],
   ]],
   ['Vinculación', [
     ['tipo_personal','Relación con el CEA','select:contratista|colaborador'],
