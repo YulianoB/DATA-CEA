@@ -10,6 +10,7 @@ import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import CampoCatalogo from '@/components/admin/CampoCatalogo'
 import { FranjaSuperiorModal, FranjaSecundariaModal, MarcoTabla, BotonAgregar, BotonLimpiar, BotonCancelar, BotonGuardar, ESTILO_CONTENEDORES, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { Toaster, toast } from 'sonner'
+import ModalResultado from '@/components/admin/ModalResultado'
 
 // ============================================================
 // ROLES
@@ -383,6 +384,9 @@ const MENSAJE_CATEGORIAS =
 // ============================================================
 
 export default function PersonalAdminPage() {
+  const [resultadoModal, setResultadoModal] = useState(null)
+  const mostrarResultado = (tipo, mensaje) => setResultadoModal({ tipo, mensaje: String(mensaje || '') })
+
   const router = useRouter()
 
   const [
@@ -476,9 +480,9 @@ export default function PersonalAdminPage() {
       })
       const result = await response.json()
       if (!response.ok || result.status !== 'success') throw new Error(result.message || 'No fue posible cambiar el acceso.')
-      toast.success(`Acceso ${nuevoEstado} correctamente.`)
+      mostrarResultado('exito', `Acceso ${nuevoEstado} correctamente.`)
       await cargarListado(nit)
-    } catch (error) { toast.error(error.message || 'No fue posible cambiar el acceso.') }
+    } catch (error) { mostrarResultado('error', error.message || 'No fue posible cambiar el acceso.') }
     finally { setCambiandoAccesoId(null) }
   }
 
@@ -523,7 +527,7 @@ export default function PersonalAdminPage() {
       ''
 
     if (!nitSesion) {
-      toast.error(
+      mostrarResultado('error', 
         'No se encontró el CEA de la sesión. Inicie sesión nuevamente.'
       )
 
@@ -633,7 +637,7 @@ export default function PersonalAdminPage() {
         obtenerNitSesion()
 
       if (!nit) {
-        toast.error(
+        mostrarResultado('error', 
           'No se recibió el NIT del CEA.'
         )
         return
@@ -655,7 +659,7 @@ export default function PersonalAdminPage() {
           result.status !==
             'success'
         ) {
-          toast.error(
+          mostrarResultado('error', 
             result.message ||
               'No fue posible cargar el CEA activo.'
           )
@@ -671,7 +675,7 @@ export default function PersonalAdminPage() {
           error
         )
 
-        toast.error(
+        mostrarResultado('error', 
           'No fue posible cargar el CEA activo.'
         )
       }
@@ -688,7 +692,7 @@ export default function PersonalAdminPage() {
         obtenerNitSesion()
 
       if (!nit) {
-        toast.error(
+        mostrarResultado('error', 
           'No se recibió el NIT del CEA.'
         )
         return
@@ -714,7 +718,7 @@ export default function PersonalAdminPage() {
           result.status !==
             'success'
         ) {
-          toast.error(
+          mostrarResultado('error', 
             result.message ||
               'No fue posible cargar el listado de personal.'
           )
@@ -731,7 +735,7 @@ export default function PersonalAdminPage() {
           error
         )
 
-        toast.error(
+        mostrarResultado('error', 
           'No fue posible cargar el listado de personal.'
         )
       } finally {
@@ -1485,7 +1489,7 @@ export default function PersonalAdminPage() {
           result =
             await response.json()
         } catch {
-          toast.error(
+          mostrarResultado('error', 
             'La respuesta del servidor no es válida.'
           )
           return
@@ -1496,14 +1500,14 @@ export default function PersonalAdminPage() {
           result.status !==
             'success'
         ) {
-          toast.error(
+          mostrarResultado('error', 
             result.message ||
               'No fue posible registrar el personal.'
           )
           return
         }
 
-        toast.success(
+        mostrarResultado('exito', 
           'Personal registrado correctamente.'
         )
 
@@ -1535,7 +1539,7 @@ export default function PersonalAdminPage() {
           error
         )
 
-        toast.error(
+        mostrarResultado('error', 
           'No fue posible comunicarse con el servidor.'
         )
       } finally {
@@ -1566,6 +1570,7 @@ export default function PersonalAdminPage() {
         richColors
         position="top-right"
       />
+      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
 
       <div className="max-w-7xl mx-auto space-y-6">
 
