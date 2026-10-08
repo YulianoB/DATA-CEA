@@ -26,6 +26,7 @@ import {
 
 import {
   imprimirCierreCaja,
+  imprimirTablaCierreDiario,
 } from './components/imprimirCierreCaja'
 
 // =========================================================
@@ -1111,25 +1112,24 @@ export default function CierreCajaPage() {
 
   function imprimirMovimientosDia() {
     if (!movimientosDia?.cierre_confirmado) {
-      setError('No se puede imprimir: la jornada consultada no tiene cierre diario confirmado.')
+      setError('No se puede imprimir: la fecha consultada no tiene cierre diario confirmado.')
       return
     }
-
-    imprimirCierreDesdePagina({
-      ...movimientosDia,
-      tipo_cierre:
-        'DIARIO',
-      consecutivo:
-        movimientosDia?.cierre_diario?.consecutivo || `CIERRE-${fechaConsulta}`,
-      efectivo_contado:
-        null,
-      diferencia_efectivo:
-        0,
-      usuario_cierre:
-        usuarioOperacion,
-      observaciones:
-        'Consulta de movimientos registrados durante la jornada. Este documento no constituye el cierre definitivo de caja.',
-    })
+    try {
+      imprimirTablaCierreDiario(movimientosDia, {
+        empresa: {
+          nombre: empresaDatos?.nombre || empresaNombre,
+          razon_social: empresaDatos?.razon_social || empresaNombre,
+          nit: empresaDatos?.nit || nit,
+          direccion: empresaDatos?.direccion || '',
+          ciudad: empresaDatos?.ciudad || '',
+          telefono: empresaDatos?.telefono || '',
+          email: empresaDatos?.email || '',
+        },
+      })
+    } catch (errorImpresion) {
+      setError(errorImpresion?.message || 'No fue posible imprimir el cierre diario.')
+    }
   }
 
   // =======================================================
