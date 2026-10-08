@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Toaster, toast } from 'sonner'
+import ModalResultado from '@/components/admin/ModalResultado'
 
 
 const EXPERIENCIA_INICIAL = {
@@ -157,6 +158,9 @@ function claveGrupoLicencia(licencia) {
 
 export default function HojaVidaPersonalPage() {
   const params = useParams()
+  const [resultadoModal, setResultadoModal] = useState(null)
+  const mostrarResultado = (tipo, mensaje) => setResultadoModal({ tipo, mensaje: String(mensaje || '') })
+
   const router = useRouter()
   const [user, setUser] = useState(null)
   const [tab, setTab] = useState('general')
@@ -295,7 +299,7 @@ export default function HojaVidaPersonalPage() {
       setLicencias(result.personal?.licencias_personal || result.licencias || [])
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible cargar la hoja de vida.')
+      mostrarResultado('error', error.message || 'No fue posible cargar la hoja de vida.')
     } finally {
       setLoading(false)
     }
@@ -324,10 +328,10 @@ export default function HojaVidaPersonalPage() {
         personal: result.personal,
       }))
 
-      toast.success('Perfil profesional actualizado correctamente.')
+      mostrarResultado('exito', 'Perfil profesional actualizado correctamente.')
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible guardar el perfil profesional.')
+      mostrarResultado('error', error.message || 'No fue posible guardar el perfil profesional.')
     } finally {
       setGuardandoPerfil(false)
     }
@@ -346,7 +350,7 @@ export default function HojaVidaPersonalPage() {
       setExperiencia(result.experiencia || [])
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible cargar la experiencia laboral.')
+      mostrarResultado('error', error.message || 'No fue posible cargar la experiencia laboral.')
     } finally {
       setCargandoExperiencia(false)
     }
@@ -401,12 +405,12 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar la experiencia laboral.')
       }
 
-      toast.success(formExperiencia.id ? 'Experiencia laboral actualizada correctamente.' : 'Experiencia laboral registrada correctamente.')
+      mostrarResultado('exito', formExperiencia.id ? 'Experiencia laboral actualizada correctamente.' : 'Experiencia laboral registrada correctamente.')
       setFormExperiencia(EXPERIENCIA_INICIAL)
       await cargarExperiencia()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible guardar la experiencia laboral.')
+      mostrarResultado('error', error.message || 'No fue posible guardar la experiencia laboral.')
     } finally {
       setGuardandoExperiencia(false)
     }
@@ -448,14 +452,14 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar la experiencia laboral.')
       }
 
-      toast.success('Experiencia laboral eliminada correctamente.')
+      mostrarResultado('exito', 'Experiencia laboral eliminada correctamente.')
       if (formExperiencia.id === experienciaId) {
         setFormExperiencia(EXPERIENCIA_INICIAL)
       }
       await cargarExperiencia()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible eliminar la experiencia laboral.')
+      mostrarResultado('error', error.message || 'No fue posible eliminar la experiencia laboral.')
     }
   }
 
@@ -472,7 +476,7 @@ export default function HojaVidaPersonalPage() {
       setEstudios(result.estudios || [])
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible cargar los estudios.')
+      mostrarResultado('error', error.message || 'No fue posible cargar los estudios.')
     } finally {
       setCargandoEstudios(false)
     }
@@ -518,12 +522,12 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar el estudio.')
       }
 
-      toast.success(editando ? 'Estudio actualizado correctamente.' : 'Estudio registrado correctamente.')
+      mostrarResultado('exito', editando ? 'Estudio actualizado correctamente.' : 'Estudio registrado correctamente.')
       setFormEstudio(ESTUDIO_INICIAL)
       await cargarEstudios()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible guardar el estudio.')
+      mostrarResultado('error', error.message || 'No fue posible guardar el estudio.')
     } finally {
       setGuardandoEstudio(false)
     }
@@ -560,14 +564,14 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar el estudio.')
       }
 
-      toast.success('Estudio eliminado correctamente.')
+      mostrarResultado('exito', 'Estudio eliminado correctamente.')
       if (formEstudio.id === estudioId) {
         setFormEstudio(ESTUDIO_INICIAL)
       }
       await cargarEstudios()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible eliminar el estudio.')
+      mostrarResultado('error', error.message || 'No fue posible eliminar el estudio.')
     }
   }
 
@@ -589,7 +593,7 @@ export default function HojaVidaPersonalPage() {
       setLicencias(result.licencias || [])
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible cargar las licencias.')
+      mostrarResultado('error', error.message || 'No fue posible cargar las licencias.')
     } finally {
       setCargandoLicencias(false)
     }
@@ -635,7 +639,7 @@ export default function HojaVidaPersonalPage() {
     event.preventDefault()
 
     if (!puedeGestionarLicencias) {
-      toast.error(
+      mostrarResultado('error', 
         'Las licencias solo pueden administrarse para personal marcado como instructor en el trabajo.'
       )
       return
@@ -695,7 +699,7 @@ export default function HojaVidaPersonalPage() {
       try {
         result = await response.json()
       } catch {
-        toast.error('La respuesta del servidor no es válida.')
+        mostrarResultado('error', 'La respuesta del servidor no es válida.')
         return
       }
 
@@ -751,14 +755,14 @@ export default function HojaVidaPersonalPage() {
         !response.ok ||
         result?.status !== 'success'
       ) {
-        toast.error(
+        mostrarResultado('error', 
           result?.message ||
             'No fue posible guardar la licencia.'
         )
         return
       }
 
-      toast.success(
+      mostrarResultado('exito', 
         formLicencia.id
           ? result?.operacion === 'recategorizacion'
             ? 'Recategorización registrada. El historial anterior se conserva.'
@@ -774,7 +778,7 @@ export default function HojaVidaPersonalPage() {
         error
       )
 
-      toast.error(
+      mostrarResultado('error', 
         'No fue posible comunicarse con el servidor. Verifique la conexión e intente nuevamente.'
       )
     } finally {
@@ -785,7 +789,7 @@ export default function HojaVidaPersonalPage() {
 
   async function eliminarLicencia(licenciaId) {
     if (!puedeGestionarLicencias) {
-      toast.error(
+      mostrarResultado('error', 
         'Las licencias solo pueden administrarse para personal marcado como instructor en el trabajo.'
       )
       return
@@ -805,14 +809,14 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar la licencia.')
       }
 
-      toast.success('Licencia eliminada correctamente.')
+      mostrarResultado('exito', 'Licencia eliminada correctamente.')
       if (formLicencia.id === licenciaId) {
         setFormLicencia(LICENCIA_INICIAL)
       }
       await cargarLicencias()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible eliminar la licencia.')
+      mostrarResultado('error', error.message || 'No fue posible eliminar la licencia.')
     }
   }
 
@@ -829,7 +833,7 @@ export default function HojaVidaPersonalPage() {
       setReferencias(result.referencias || [])
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible cargar las referencias.')
+      mostrarResultado('error', error.message || 'No fue posible cargar las referencias.')
     } finally {
       setCargandoReferencias(false)
     }
@@ -891,14 +895,14 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar la referencia.')
       }
 
-      toast.success('Referencia eliminada correctamente.')
+      mostrarResultado('exito', 'Referencia eliminada correctamente.')
       if (formReferencia.id === referenciaId) {
         setFormReferencia(REFERENCIA_INICIAL)
       }
       await cargarReferencias()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible eliminar la referencia.')
+      mostrarResultado('error', error.message || 'No fue posible eliminar la referencia.')
     }
   }
 
@@ -938,12 +942,12 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar la referencia.')
       }
 
-      toast.success(formReferencia.id ? 'Referencia actualizada correctamente.' : 'Referencia registrada correctamente.')
+      mostrarResultado('exito', formReferencia.id ? 'Referencia actualizada correctamente.' : 'Referencia registrada correctamente.')
       setFormReferencia(REFERENCIA_INICIAL)
       await cargarReferencias()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible guardar la referencia.')
+      mostrarResultado('error', error.message || 'No fue posible guardar la referencia.')
     } finally {
       setGuardandoReferencia(false)
     }
@@ -963,7 +967,7 @@ export default function HojaVidaPersonalPage() {
       setEvaluaciones(result.evaluaciones || [])
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible cargar las evaluaciones.')
+      mostrarResultado('error', error.message || 'No fue posible cargar las evaluaciones.')
     } finally {
       setCargandoEvaluaciones(false)
     }
@@ -1009,12 +1013,12 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar la evaluación.')
       }
 
-      toast.success(formEvaluacion.id ? 'Evaluación actualizada correctamente.' : 'Evaluación registrada correctamente.')
+      mostrarResultado('exito', formEvaluacion.id ? 'Evaluación actualizada correctamente.' : 'Evaluación registrada correctamente.')
       setFormEvaluacion(EVALUACION_INICIAL)
       await cargarEvaluaciones()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible guardar la evaluación.')
+      mostrarResultado('error', error.message || 'No fue posible guardar la evaluación.')
     } finally {
       setGuardandoEvaluacion(false)
     }
@@ -1051,14 +1055,14 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar la evaluación.')
       }
 
-      toast.success('Evaluación eliminada correctamente.')
+      mostrarResultado('exito', 'Evaluación eliminada correctamente.')
       if (formEvaluacion.id === evaluacionId) {
         setFormEvaluacion(EVALUACION_INICIAL)
       }
       await cargarEvaluaciones()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible eliminar la evaluación.')
+      mostrarResultado('error', error.message || 'No fue posible eliminar la evaluación.')
     }
   }
 
@@ -1076,7 +1080,7 @@ export default function HojaVidaPersonalPage() {
       setDocumentos(result.documentos || [])
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible cargar los documentos.')
+      mostrarResultado('error', error.message || 'No fue posible cargar los documentos.')
     } finally {
       setCargandoDocumentos(false)
     }
@@ -1128,12 +1132,12 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar el documento.')
       }
 
-      toast.success(formDocumento.id ? 'Documento actualizado correctamente.' : 'Documento registrado correctamente.')
+      mostrarResultado('exito', formDocumento.id ? 'Documento actualizado correctamente.' : 'Documento registrado correctamente.')
       setFormDocumento(DOCUMENTO_INICIAL)
       await cargarDocumentos()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible guardar el documento.')
+      mostrarResultado('error', error.message || 'No fue posible guardar el documento.')
     } finally {
       setGuardandoDocumento(false)
     }
@@ -1172,14 +1176,14 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar el documento.')
       }
 
-      toast.success('Documento eliminado correctamente.')
+      mostrarResultado('exito', 'Documento eliminado correctamente.')
       if (formDocumento.id === documentoId) {
         setFormDocumento(DOCUMENTO_INICIAL)
       }
       await cargarDocumentos()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible eliminar el documento.')
+      mostrarResultado('error', error.message || 'No fue posible eliminar el documento.')
     }
   }
 
@@ -1202,7 +1206,7 @@ export default function HojaVidaPersonalPage() {
       })
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible cargar la cuenta de usuario.')
+      mostrarResultado('error', error.message || 'No fue posible cargar la cuenta de usuario.')
     } finally {
       setCargandoCuenta(false)
     }
@@ -1255,7 +1259,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible actualizar la cuenta de usuario.')
       }
 
-      toast.success('Cuenta de usuario actualizada correctamente.')
+      mostrarResultado('exito', 'Cuenta de usuario actualizada correctamente.')
       setCuentaUsuario(result.cuenta || null)
       setData((prev) => ({
         ...prev,
@@ -1267,7 +1271,7 @@ export default function HojaVidaPersonalPage() {
       await cargarCuenta()
     } catch (error) {
       console.error(error)
-      toast.error(error.message || 'No fue posible actualizar la cuenta de usuario.')
+      mostrarResultado('error', error.message || 'No fue posible actualizar la cuenta de usuario.')
     } finally {
       setGuardandoCuenta(false)
     }
@@ -1279,6 +1283,7 @@ export default function HojaVidaPersonalPage() {
     return (
       <div className="min-h-screen bg-slate-50 p-3 md:p-5">
         <Toaster richColors position="top-right" />
+      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
         <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
           <p className="text-gray-600">Cargando hoja de vida...</p>
         </div>
@@ -1290,6 +1295,7 @@ export default function HojaVidaPersonalPage() {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
         <Toaster richColors position="top-right" />
+      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
         <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
           <p className="text-red-700">No se encontró el registro de personal.</p>
           <Link href="/admin/personal" className="mt-4 inline-block text-[var(--primary)] underline">
@@ -1305,6 +1311,7 @@ export default function HojaVidaPersonalPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <Toaster richColors position="top-right" />
+      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
 
       <div className="mx-auto max-w-7xl space-y-4">
         <section className="overflow-hidden rounded-lg border border-slate-400 bg-white">
