@@ -1318,11 +1318,11 @@ export default function HojaVidaPersonalPage() {
               Volver a personal
             </Link>
           </div>
-          <div className="border-b border-slate-300 bg-slate-100 px-5 py-3">
-            <p className="text-base font-bold text-[#194567]">{nombreCompleto}</p>
-            <p className="mt-1 text-xs text-slate-600">Documento: {texto(personal.documento)}</p>
-          </div>
-          <div className="grid grid-cols-1 gap-3 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 bg-slate-100 px-4 py-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.6fr)_repeat(4,minmax(0,1fr))] xl:items-stretch">
+            <div className="flex min-w-0 flex-col justify-center border-b border-slate-300 pb-2 md:col-span-2 xl:col-span-1 xl:border-b-0 xl:border-r xl:pb-0 xl:pr-3">
+              <p className="break-words text-base font-bold text-[#194567]">{nombreCompleto}</p>
+              <p className="mt-1 text-xs text-slate-600">Documento: {texto(personal.documento)}</p>
+            </div>
             <Resumen label="Cargo" value={personal.cargo} />
             <Resumen label="Grupo de trabajo" value={personal.grupo_personal} />
             <Resumen label="Relación con el CEA" value={personal.tipo_personal} />
@@ -1767,12 +1767,12 @@ function TablaEstudios({ estudios, editarEstudio, eliminarEstudio }) {
         <tbody>
           {estudios.map((item) => (
             <tr key={item.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.nivel_estudio)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs font-semibold text-slate-800">{texto(item.titulo)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.institucion)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{fecha(item.fecha_grado)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.observaciones)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.nivel_estudio)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs font-semibold text-slate-800">{texto(item.titulo)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.institucion)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{fecha(item.fecha_grado)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.observaciones)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => editarEstudio(item)} className="rounded-md bg-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-900">
                     Editar
@@ -1864,31 +1864,31 @@ function TablaExperiencia({ experiencia, editarExperiencia, eliminarExperiencia 
       <table className="min-w-full border-collapse text-xs">
         <thead className="bg-[#194567] text-white">
           <tr>
-            <th className="text-left p-2 border">Empresa</th>
-            <th className="text-left p-2 border">Cargo</th>
-            <th className="text-left p-2 border">Fecha inicio</th>
-            <th className="text-left p-2 border">Fecha fin</th>
-            <th className="text-left p-2 border">Actualmente</th>
-            <th className="text-left p-2 border">Jefe inmediato</th>
-            <th className="text-left p-2 border">Teléfono</th>
-            <th className="text-left p-2 border">Acciones</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Empresa</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Cargo</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Fecha inicio</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Fecha fin</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Actualmente</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Jefe inmediato</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Teléfono</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {experiencia.length === 0 ? (
             <tr>
-              <td colSpan={8} className="p-4 text-center text-gray-500">No hay experiencia laboral registrada.</td>
+              <td colSpan={8} className="border border-slate-300 p-4 text-center text-gray-500">No hay experiencia laboral registrada.</td>
             </tr>
           ) : experiencia.map((item) => (
             <tr key={item.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.empresa)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.cargo)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{fecha(item.fecha_inicio)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{item.actualmente ? 'Actualmente' : fecha(item.fecha_fin)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{item.actualmente ? 'Sí' : 'No'}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.jefe_inmediato)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(item.telefono_contacto)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.empresa)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.cargo)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{fecha(item.fecha_inicio)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{item.actualmente ? 'Actualmente' : fecha(item.fecha_fin)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{item.actualmente ? 'Sí' : 'No'}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.jefe_inmediato)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(item.telefono_contacto)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => editarExperiencia(item)} className="rounded-md bg-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-900">
                     Editar
@@ -2053,15 +2053,15 @@ function TablaLicencias({
       <table className="min-w-full border-collapse text-xs">
         <thead className="bg-[#194567] text-white">
           <tr>
-            <th className="text-left p-2 border">Tipo</th>
-            <th className="text-left p-2 border">Categoría</th>
-            <th className="text-left p-2 border">No. certificado</th>
-            <th className="text-left p-2 border">Vigencia</th>
-            <th className="text-left p-2 border">Estado</th>
-            <th className="text-left p-2 border">Fecha actualización</th>
-            <th className="text-left p-2 border">Actualizado por</th>
-            <th className="text-left p-2 border">Versión</th>
-            <th className="text-left p-2 border">Acción</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Tipo</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Categoría</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">No. certificado</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Vigencia</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Estado</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Fecha actualización</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Actualizado por</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Versión</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Acción</th>
           </tr>
         </thead>
 
@@ -2070,7 +2070,7 @@ function TablaLicencias({
             <tr>
               <td
                 colSpan={9}
-                className="p-4 text-center text-gray-500"
+                className="border border-slate-300 p-4 text-center text-gray-500"
               >
                 No hay licencias o certificados registrados.
               </td>
@@ -2093,7 +2093,7 @@ function TablaLicencias({
                       : 'bg-gray-50/70 text-gray-600'
                   }
                 >
-                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+                  <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                     {tipo === 'INSTRUCTOR'
                       ? 'Certificado instructor'
                       : tipo === 'CONDUCCION'
@@ -2101,7 +2101,7 @@ function TablaLicencias({
                       : texto(licencia.tipo_licencia)}
                   </td>
 
-                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+                  <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                     {texto(
                       normalizarCategoriaLicenciaUI(
                         licencia.categoria
@@ -2109,15 +2109,15 @@ function TablaLicencias({
                     )}
                   </td>
 
-                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+                  <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                     {texto(licencia.numero_certificado)}
                   </td>
 
-                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+                  <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                     {fecha(licencia.vigencia)}
                   </td>
 
-                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+                  <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                     <span
                       className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
                         estado === 'VIGENTE'
@@ -2133,15 +2133,15 @@ function TablaLicencias({
                     </span>
                   </td>
 
-                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+                  <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                     {fecha(licencia.fecha_actualizacion)}
                   </td>
 
-                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+                  <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                     {texto(licencia.nombre_quien_actualiza)}
                   </td>
 
-                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+                  <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                         esActual
@@ -2153,7 +2153,7 @@ function TablaLicencias({
                     </span>
                   </td>
 
-                  <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+                  <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                     {esActual ? (
                       <button
                         type="button"
@@ -2272,31 +2272,31 @@ function TablaReferencias({ referencias, editarReferencia, eliminarReferencia })
       <table className="min-w-full border-collapse text-xs">
         <thead className="bg-[#194567] text-white">
           <tr>
-            <th className="text-left p-2 border">Tipo</th>
-            <th className="text-left p-2 border">Nombre</th>
-            <th className="text-left p-2 border">Ocupación / cargo</th>
-            <th className="text-left p-2 border">Empresa</th>
-            <th className="text-left p-2 border">Teléfono</th>
-            <th className="text-left p-2 border">Correo</th>
-            <th className="text-left p-2 border">Relación</th>
-            <th className="text-left p-2 border">Acciones</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Tipo</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Nombre</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Ocupación / cargo</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Empresa</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Teléfono</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Correo</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Relación</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {referencias.length === 0 ? (
             <tr>
-              <td colSpan={8} className="p-4 text-center text-gray-500">No hay referencias registradas.</td>
+              <td colSpan={8} className="border border-slate-300 p-4 text-center text-gray-500">No hay referencias registradas.</td>
             </tr>
           ) : referencias.map((referencia) => (
             <tr key={referencia.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
-              <td className="p-2 border capitalize">{texto(referencia.tipo_referencia)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.nombre)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.ocupacion_cargo)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.empresa)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.telefono)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.email)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.relacion)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs capitalize text-slate-700">{texto(referencia.tipo_referencia)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.nombre)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.ocupacion_cargo)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.empresa)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.telefono)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.email)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(referencia.relacion)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -2415,27 +2415,27 @@ function TablaEvaluaciones({ evaluaciones, editarEvaluacion, eliminarEvaluacion 
       <table className="min-w-full border-collapse text-xs">
         <thead className="bg-[#194567] text-white">
           <tr>
-            <th className="text-left p-2 border">Tipo</th>
-            <th className="text-left p-2 border">Fecha</th>
-            <th className="text-left p-2 border">Resultado</th>
-            <th className="text-left p-2 border">Evaluador</th>
-            <th className="text-left p-2 border">Observaciones</th>
-            <th className="text-left p-2 border">Acciones</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Tipo</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Fecha</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Resultado</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Evaluador</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Observaciones</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {evaluaciones.length === 0 ? (
             <tr>
-              <td colSpan={6} className="p-4 text-center text-gray-500">No hay evaluaciones registradas.</td>
+              <td colSpan={6} className="border border-slate-300 p-4 text-center text-gray-500">No hay evaluaciones registradas.</td>
             </tr>
           ) : evaluaciones.map((evaluacion) => (
             <tr key={evaluacion.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.tipo_evaluacion)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{fecha(evaluacion.fecha_evaluacion)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.resultado)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.evaluador)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.observaciones)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.tipo_evaluacion)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{fecha(evaluacion.fecha_evaluacion)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.resultado)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.evaluador)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(evaluacion.observaciones)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -2568,35 +2568,35 @@ function TablaDocumentos({ documentos, editarDocumento, eliminarDocumento }) {
       <table className="min-w-full border-collapse text-xs">
         <thead className="bg-[#194567] text-white">
           <tr>
-            <th className="text-left p-2 border">Tipo</th>
-            <th className="text-left p-2 border">Nombre</th>
-            <th className="text-left p-2 border">Enlace al soporte</th>
-            <th className="text-left p-2 border">Vence</th>
-            <th className="text-left p-2 border">Vencimiento</th>
-            <th className="text-left p-2 border">Estado</th>
-            <th className="text-left p-2 border">Acciones</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Tipo</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Nombre</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Enlace al soporte</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Vence</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Vencimiento</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Estado</th>
+            <th className="whitespace-nowrap border border-[#44647c] px-3 py-2 text-left text-[11px] font-semibold">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {documentos.length === 0 ? (
             <tr>
-              <td colSpan={7} className="p-4 text-center text-gray-500">No hay documentos registrados.</td>
+              <td colSpan={7} className="border border-slate-300 p-4 text-center text-gray-500">No hay documentos registrados.</td>
             </tr>
           ) : documentos.map((documento) => (
             <tr key={documento.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(documento.tipo_documento)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs font-semibold text-slate-800">{texto(documento.nombre_documento)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(documento.tipo_documento)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs font-semibold text-slate-800">{texto(documento.nombre_documento)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                 {documento.archivo_url ? (
                   <a href={documento.archivo_url} target="_blank" rel="noreferrer" className="text-blue-700 underline">
                     Abrir enlace
                   </a>
                 ) : '-'}
               </td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{documento.vence ? 'Sí' : 'No'}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{fecha(documento.fecha_vencimiento)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{texto(documento.estado)}</td>
-              <td className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{documento.vence ? 'Sí' : 'No'}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{fecha(documento.fecha_vencimiento)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{texto(documento.estado)}</td>
+              <td className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -2654,12 +2654,12 @@ function TablaBase({ datos, columnas, vacio }) {
         <tbody>
           {datos.length === 0 ? (
             <tr>
-              <td colSpan={columnas.length} className="p-4 text-center text-gray-500">{vacio}</td>
+              <td colSpan={columnas.length} className="border border-slate-300 p-4 text-center text-gray-500">{vacio}</td>
             </tr>
           ) : datos.map((item) => (
             <tr key={item.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50">
               {columnas.map(([key]) => (
-                <td key={key} className="border-b border-slate-200 px-3 py-2 align-top text-xs text-slate-700">{key.includes('fecha') || key === 'vigencia' ? fecha(item[key]) : typeof item[key] === 'boolean' ? (item[key] ? 'Sí' : 'No') : texto(item[key])}</td>
+                <td key={key} className="border border-slate-300 px-3 py-2 align-top text-xs text-slate-700">{key.includes('fecha') || key === 'vigencia' ? fecha(item[key]) : typeof item[key] === 'boolean' ? (item[key] ? 'Sí' : 'No') : texto(item[key])}</td>
               ))}
             </tr>
           ))}
