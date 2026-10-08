@@ -2509,16 +2509,16 @@ export default function PersonalAdminPage() {
 
               {crearAcceso && (
 
-                <div className="grid grid-cols-1 gap-3 mt-4 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-3 mt-4 sm:grid-cols-4">
                   {ROLES.map((rol) => {
                     const IconoRol = ICONOS_ROLES[rol.value]
                     const seleccionado = rolesSeleccionados.includes(rol.value)
                     return (
                       <label
                         key={rol.value}
-                        className={`relative flex min-w-0 cursor-pointer gap-3 rounded-lg border p-4 transition-colors ${seleccionado
-                          ? 'border-[#194567] bg-[#EAF3F9] text-[#194567]'
-                          : 'border-slate-400 bg-white text-slate-700 hover:bg-slate-50'}`}
+                        className={`flex min-h-[82px] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border p-3 text-center transition-colors ${seleccionado
+                          ? 'border-[#194567] bg-[#194567] text-white'
+                          : 'border-slate-400 bg-white text-slate-700 hover:bg-slate-100'}`}
                       >
                         <input
                           type="checkbox"
@@ -2527,13 +2527,24 @@ export default function PersonalAdminPage() {
                           onChange={() => toggleRol(rol.value)}
                           aria-label={`Seleccionar perfil ${rol.label}`}
                         />
-                        <IconoRol size={22} className="mt-0.5 shrink-0" aria-hidden="true" />
-                        <span className="flex min-w-0 flex-1 flex-col gap-1">
-                          <span className="text-sm font-bold">{rol.label}</span>
-                          <span className="text-xs leading-relaxed">{DESCRIPCIONES_ROLES[rol.value]}</span>
-                        </span>
-                        {seleccionado && <CheckCircle2 size={19} className="shrink-0" aria-hidden="true" />}
+                        <IconoRol size={22} aria-hidden="true" />
+                        <span className="text-sm font-semibold">{rol.label}</span>
+                        {seleccionado && <CheckCircle2 size={16} aria-hidden="true" />}
                       </label>
+                    )
+                  })}
+                </div>
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {ROLES.map((rol) => {
+                    const IconoRol = ICONOS_ROLES[rol.value]
+                    return (
+                      <div key={rol.value} className="rounded-lg border border-slate-300 bg-slate-50 p-3">
+                        <div className="mb-1 flex items-center gap-2 text-sm font-bold text-[#194567]">
+                          <IconoRol size={17} aria-hidden="true" />
+                          <span>{rol.label}</span>
+                        </div>
+                        <p className="text-xs leading-relaxed text-slate-600">{DESCRIPCIONES_ROLES[rol.value]}</p>
+                      </div>
                     )
                   })}
                 </div>
