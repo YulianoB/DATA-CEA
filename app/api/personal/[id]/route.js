@@ -95,16 +95,39 @@ export async function PATCH(request, { params }) {
     const { supabase } =
       await obtenerSupabaseEmpresaDesdeRequest(request, body)
 
-    const perfilProfesional = String(
-      body.perfil_profesional || ''
-    ).trim()
+    const camposEditables = [
+      'nombres', 'apellidos', 'fecha_nacimiento', 'genero', 'tipo_sangre',
+      'estado_civil', 'escolaridad', 'profesion', 'nacionalidad', 'numero_hijos',
+      'telefono', 'departamento_residencia', 'ciudad_residencia', 'direccion',
+      'tipo_personal', 'cargo', 'grupo_personal', 'tipo_contrato',
+      'tipo_permanencia', 'fecha_vinculacion', 'fecha_retiro', 'estado',
+      'eps', 'arl', 'fondo_pension', 'medio_transporte_trabajo',
+      'contacto_emergencia_nombre', 'contacto_emergencia_parentesco',
+      'contacto_emergencia_telefono', 'observaciones',
+    ]
+    const actualizacion = {}
+    if (Object.prototype.hasOwnProperty.call(body, 'perfil_profesional')) {
+      actualizacion.perfil_profesional = String(body.perfil_profesional || '').trim() || null
+    }
+    for (const campo of camposEditables) {
+      if (!Object.prototype.hasOwnProperty.call(body, campo)) continue
+      const valor = body[campo]
+      if (typeof valor !== 'string' && typeof valor !== 'number' && valor !== null) {
+        return NextResponse.json({ status: 'failed', message: `Valor inválido para ${campo}.` }, { status: 400 })
+      }
+      actualizacion[campo] = valor === null || String(valor).trim() === '' ? null : String(valor).trim()
+    }
+    if (!Object.keys(actualizacion).length) {
+      return NextResponse.json({ status: 'failed', message: 'No se recibieron campos para actualizar.' }, { status: 400 })
+    }
+    if (actualizacion.fecha_retiro && actualizacion.fecha_vinculacion && actualizacion.fecha_retiro < actualizacion.fecha_vinculacion) {
+      return NextResponse.json({ status: 'failed', message: 'La fecha de retiro no puede ser anterior a la vinculación.' }, { status: 400 })
+    }
+    actualizacion.updated_at = new Date().toISOString()
 
     const { data, error } = await supabase
       .from('personal')
-      .update({
-        perfil_profesional: perfilProfesional || null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(actualizacion)
       .eq('id', id)
       .select()
       .single()
@@ -121,7 +144,7 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json({
       status: 'success',
-      message: 'Perfil profesional actualizado correctamente.',
+      message: 'Información actualizada correctamente.',
       personal: data,
     })
   } catch (error) {
