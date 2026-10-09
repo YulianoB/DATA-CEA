@@ -12,10 +12,7 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  Toaster,
-  toast,
-} from 'sonner'
+import ModalResultado from '@/components/admin/ModalResultado'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
@@ -462,6 +459,22 @@ export default function SiniestrosPage() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState('')
+  const [modalResultado, setModalResultado] = useState({ abierto: false, tipo: 'exito', titulo: '', mensaje: '' })
+
+  const mostrarResultado = (tipo, mensaje) => {
+    setModalResultado({
+      abierto: true,
+      tipo: tipo === 'success' ? 'exito' : 'error',
+      titulo: tipo === 'success' ? 'Operación realizada satisfactoriamente' : tipo === 'warning' ? 'Atención' : 'No fue posible completar la operación',
+      mensaje: String(mensaje || ''),
+    })
+  }
+
+  const avisos = {
+    success: mensaje => mostrarResultado('success', mensaje),
+    error: mensaje => mostrarResultado('error', mensaje),
+    warning: mensaje => mostrarResultado('warning', mensaje),
+  }
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [totalPagesApi, setTotalPagesApi] = useState(1)
@@ -582,7 +595,7 @@ export default function SiniestrosPage() {
         const nit = obtenerNitEmpresa(parsed)
 
         if (!nit) {
-          toast.error(
+          avisos.error(
             'No se encontró la empresa asociada a la sesión.'
           )
           return
@@ -694,7 +707,7 @@ export default function SiniestrosPage() {
         }`
       )
 
-      toast.error(
+      avisos.error(
         error?.message ||
         'Error al consultar siniestros.'
       )
@@ -785,7 +798,7 @@ export default function SiniestrosPage() {
       setParticipantesTexto(nombres)
     } catch (error) {
       console.error('Error consultando acta:', error)
-      toast.error(error?.message || 'No fue posible consultar el acta.')
+      avisos.error(error?.message || 'No fue posible consultar el acta.')
     } finally {
       setLoadingActa(false)
     }
@@ -952,7 +965,7 @@ export default function SiniestrosPage() {
       setPasoAnalisisGuardado(false)
       setPasoCostosGuardado(false)
 
-      toast.success(
+      avisos.success(
         'Siniestro marcado EN ANÁLISIS.'
       )
 
@@ -967,7 +980,7 @@ export default function SiniestrosPage() {
         error
       )
 
-      toast.error(
+      avisos.error(
         error?.message ||
         'No fue posible cambiar el estado.'
       )
@@ -1000,7 +1013,7 @@ export default function SiniestrosPage() {
         !Number.isFinite(numero) ||
         numero < 0
       ) {
-        toast.warning(
+        avisos.warning(
           `${nombre}: el valor debe ser mayor o igual a cero.`
         )
         return false
@@ -1038,7 +1051,7 @@ export default function SiniestrosPage() {
     if (!rowSel?.id || !nitActual || savingTreatment) return
 
     if (!normalizarTexto(resumenAnalisis)) {
-      toast.warning('Debe registrar el análisis o tratamiento realizado antes de continuar.')
+      avisos.warning('Debe registrar el análisis o tratamiento realizado antes de continuar.')
       return
     }
 
@@ -1055,9 +1068,9 @@ export default function SiniestrosPage() {
       const result = await leerRespuestaApi(response)
       if (result?.registro) setRowSel(result.registro)
       setPasoAnalisisGuardado(true)
-      toast.success('Análisis guardado. Continúe con los costos asociados.')
+      avisos.success('Análisis guardado. Continúe con los costos asociados.')
     } catch (error) {
-      toast.error(error?.message || 'No fue posible guardar el análisis.')
+      avisos.error(error?.message || 'No fue posible guardar el análisis.')
     } finally {
       setSavingTreatment(false)
     }
@@ -1080,9 +1093,9 @@ export default function SiniestrosPage() {
       const result = await leerRespuestaApi(response)
       if (result?.registro) setRowSel(result.registro)
       setPasoCostosGuardado(true)
-      toast.success('Costos guardados. Ya puede elaborar el acta de tratamiento.')
+      avisos.success('Costos guardados. Ya puede elaborar el acta de tratamiento.')
     } catch (error) {
-      toast.error(error?.message || 'No fue posible guardar los costos.')
+      avisos.error(error?.message || 'No fue posible guardar los costos.')
     } finally {
       setSavingTreatment(false)
     }
@@ -1090,7 +1103,7 @@ export default function SiniestrosPage() {
 
   const abrirPdfActa = () => {
     if (!rowSel?.id || !nitActual || acta?.estado !== 'FINALIZADA') {
-      toast.warning('El PDF estará disponible cuando el acta se encuentre FINALIZADA.')
+      avisos.warning('El PDF estará disponible cuando el acta se encuentre FINALIZADA.')
       return
     }
 
@@ -1145,7 +1158,7 @@ export default function SiniestrosPage() {
     if (!rowSel?.id || !nitActual || savingActa) return
 
     if (!esAnalisis) {
-      toast.warning('El siniestro debe estar EN ANÁLISIS para elaborar el acta.')
+      avisos.warning('El siniestro debe estar EN ANÁLISIS para elaborar el acta.')
       return
     }
 
@@ -1166,10 +1179,10 @@ export default function SiniestrosPage() {
       const result = await leerRespuestaApi(response)
       setActa(result?.acta || null)
       if (result?.registro) setRowSel(result.registro)
-      toast.success('Borrador del acta guardado correctamente.')
+      avisos.success('Borrador del acta guardado correctamente.')
     } catch (error) {
       console.error('Error guardando acta:', error)
-      toast.error(error?.message || 'No fue posible guardar el acta.')
+      avisos.error(error?.message || 'No fue posible guardar el acta.')
     } finally {
       setSavingActa(false)
     }
@@ -1179,32 +1192,32 @@ export default function SiniestrosPage() {
     if (!rowSel?.id || !nitActual || closing) return
 
     if (!esAnalisis) {
-      toast.warning('El siniestro debe estar EN ANÁLISIS antes de finalizar el acta.')
+      avisos.warning('El siniestro debe estar EN ANÁLISIS antes de finalizar el acta.')
       return
     }
 
     if (!fechaActa) {
-      toast.warning('Debe registrar la fecha del acta.')
+      avisos.warning('Debe registrar la fecha del acta.')
       return
     }
 
     if (!normalizarTexto(tratamientoRealizado)) {
-      toast.warning('Debe registrar el tratamiento realizado.')
+      avisos.warning('Debe registrar el tratamiento realizado.')
       return
     }
 
     if (!normalizarTexto(accionesPreventivas)) {
-      toast.warning('Debe registrar las acciones preventivas.')
+      avisos.warning('Debe registrar las acciones preventivas.')
       return
     }
 
     if (!normalizarTexto(acuerdosCompromisos)) {
-      toast.warning('Debe registrar los acuerdos y compromisos.')
+      avisos.warning('Debe registrar los acuerdos y compromisos.')
       return
     }
 
     if (participantesActa().length === 0) {
-      toast.warning('Debe registrar al menos un participante.')
+      avisos.warning('Debe registrar al menos un participante.')
       return
     }
 
@@ -1226,12 +1239,12 @@ export default function SiniestrosPage() {
       setActa(result?.acta || acta)
       if (result?.registro) setRowSel(result.registro)
 
-      toast.success('Acta finalizada y siniestro cerrado correctamente.')
+      avisos.success('Acta finalizada y siniestro cerrado correctamente.')
 
       await consultarEstado(estadoActual, page, false)
     } catch (error) {
       console.error('Error finalizando acta:', error)
-      toast.error(error?.message || 'No fue posible finalizar el acta.')
+      avisos.error(error?.message || 'No fue posible finalizar el acta.')
     } finally {
       setClosing(false)
     }
@@ -1256,7 +1269,7 @@ export default function SiniestrosPage() {
     }
 
     if (periodoExport.hasta > hoyBogota()) {
-      toast.warning(
+      avisos.warning(
         'El trimestre seleccionado todavía no ha finalizado. Seleccione un trimestre cerrado.'
       )
       return
@@ -1626,7 +1639,7 @@ export default function SiniestrosPage() {
       saveAs(blob, nombreArchivo)
 
       if (registros.length === 0) {
-        toast.success(
+        avisos.success(
           `Evidencia generada correctamente. No se reportaron siniestros en el ${periodoExport.nombre} de ${anioExport}.`,
           {
             duration: 5000,
@@ -1643,14 +1656,14 @@ export default function SiniestrosPage() {
       ).length
 
       if (incompletos > 0) {
-        toast.warning(
+        avisos.warning(
           `Excel generado. ${incompletos} siniestro(s) todavía tienen información administrativa pendiente.`,
           {
             duration: 5000,
           }
         )
       } else {
-        toast.success(
+        avisos.success(
           'Evidencia trimestral generada correctamente.'
         )
       }
@@ -1660,7 +1673,7 @@ export default function SiniestrosPage() {
         error
       )
 
-      toast.error(
+      avisos.error(
         error?.message ||
         'No fue posible generar la evidencia en Excel.'
       )
@@ -1695,9 +1708,12 @@ export default function SiniestrosPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-3 sm:p-5">
-      <Toaster
-        position="top-center"
-        richColors
+      <ModalResultado
+        abierto={modalResultado.abierto}
+        tipo={modalResultado.tipo}
+        titulo={modalResultado.titulo}
+        mensaje={modalResultado.mensaje}
+        onCerrar={() => setModalResultado(prev => ({ ...prev, abierto: false }))}
       />
 
       <div className="max-w-7xl mx-auto space-y-4">
