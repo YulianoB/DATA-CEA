@@ -495,7 +495,7 @@ function construirConsultaBase({
   // =====================================================
 
   if (estadoObservacion) {
-    consulta = consulta.eq('estado_observacion', estadoObservacion)
+    consulta = consulta.ilike('estado_observacion', estadoObservacion)
   } else if (
     conObservaciones
   ) {
@@ -767,7 +767,7 @@ async function obtenerResumen({
   }
 
   if (estadoObservacion) {
-    consulta = consulta.eq('estado_observacion', estadoObservacion)
+    consulta = consulta.ilike('estado_observacion', estadoObservacion)
   }
 
   const {
@@ -986,7 +986,12 @@ export async function GET(request) {
         ).toLowerCase()
       )
 
-    const estadoObservacion = normalizarMayusculas(searchParams.get('estado_observacion'))
+    // La bandeja de seguimiento inicia en PENDIENTE incluso si el cliente
+    // omite el parámetro. TODOS es la única opción sin filtro de estado.
+    const estadoSolicitado = normalizarMayusculas(searchParams.get('estado_observacion'))
+    const estadoObservacion = estadoSolicitado === 'TODOS'
+      ? ''
+      : (estadoSolicitado || (recurso === 'consulta' ? ESTADO_PENDIENTE : ''))
 
     const errorRango =
       validarRango(
