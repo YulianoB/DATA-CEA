@@ -1049,7 +1049,7 @@ export default function PreoperacionalesPage() {
       row
     ) => {
       const estado = normalizarMayusculas(row?.estado_observacion)
-      setPasoSeguimiento(estado === ESTADO_CERRADA ? 3 : (estado === ESTADO_ANALISIS || estado === 'EN ANALISIS' ? 3 : 2))
+      setPasoSeguimiento(estado === ESTADO_CERRADA ? 1 : (estado === ESTADO_ANALISIS || estado === 'EN ANALISIS' ? 3 : 2))
       setObsAnalisis(row?.observacion_analisis || '')
       setRowSel(
         row
@@ -1386,11 +1386,12 @@ export default function PreoperacionalesPage() {
             ?.registro
         )
 
-        toast.success(
-          resultado
-            ?.message ||
-          'Observación cerrada correctamente.'
-        )
+        setModalResultado({
+          abierto: true,
+          tipo: 'exito',
+          titulo: 'Operación realizada satisfactoriamente',
+          mensaje: resultado?.message || 'Solución guardada y expediente cerrado correctamente.',
+        })
 
         await handleConsultar(
           page
@@ -2607,7 +2608,7 @@ export default function PreoperacionalesPage() {
                                     >
                                       <i className="fas fa-search-plus mr-1"></i>
 
-                                      Seguimiento
+                                      {normalizarMayusculas(row?.estado_observacion) === ESTADO_CERRADA ? 'Ver reporte' : 'Seguimiento'}
                                     </button>
                                   )
                                   : (
@@ -2833,6 +2834,33 @@ export default function PreoperacionalesPage() {
                     </div>
                   </div>
                 </section>
+
+                {esCerrada && (
+                  <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
+                    <h3 className="font-bold text-[#194567]">Trazabilidad del seguimiento</h3>
+                    <div className="grid grid-cols-1 gap-3 text-xs">
+                      <div className="rounded-lg border-l-4 border-[#24638C] bg-slate-50 p-3">
+                        <p className="font-bold text-[#194567]">1. Inspección reportada</p>
+                        <p className="mt-1">Fecha: {rowSel?.fecha_registro || '-'} · Hora: {rowSel?.hora_registro || '-'}</p>
+                        <p>Responsable: {rowSel?.usuario_encargado || '-'}</p>
+                        <p className="mt-1 whitespace-pre-wrap">{rowSel?.observaciones || 'Sin observaciones registradas.'}</p>
+                      </div>
+                      <div className="rounded-lg border-l-4 border-[#24638C] bg-slate-50 p-3">
+                        <p className="font-bold text-[#194567]">2. Verificación y análisis</p>
+                        <p className="mt-1">Fecha: {rowSel?.fecha_verificacion_observacion || '-'}</p>
+                        <p>Responsable: {rowSel?.usuario_verificacion || '-'}</p>
+                        <p className="mt-1 whitespace-pre-wrap">{rowSel?.observacion_analisis || 'No consta una observación de análisis en este registro.'}</p>
+                      </div>
+                      <div className="rounded-lg border-l-4 border-[#24638C] bg-slate-50 p-3">
+                        <p className="font-bold text-[#194567]">3. Solución y cierre</p>
+                        <p className="mt-1">Fecha: {rowSel?.fecha_solucion_observacion || '-'}</p>
+                        <p>Responsable: {rowSel?.usuario_solucion || '-'}</p>
+                        <p className="mt-1 whitespace-pre-wrap">{rowSel?.observacion_solucion || 'Sin descripción de solución registrada.'}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500">Reporte cerrado. La información es de solo lectura.</p>
+                  </section>
+                )}
 
                 {pasoSeguimiento === 1 && (
                   <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
