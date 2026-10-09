@@ -19,7 +19,7 @@ import {
 
 import { cerrarSesion } from '@/lib/auth/logout'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonAccion, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
+import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { ClipboardCheck } from 'lucide-react'
 
 // =========================================================
@@ -2085,6 +2085,15 @@ export default function PreoperacionalesPage() {
     estadoUpper ===
       'EN ANÁLISIS'
 
+  // Resumen de los registros realmente consultados (no del total histórico).
+  const resumenFiltrado = {
+    no_conformes: data.filter(row => row?.tiene_no_conformidad).length,
+    con_observaciones: data.filter(row => row?.tiene_observacion || normalizarTexto(row?.observaciones)).length,
+    pendientes: data.filter(row => normalizarMayusculas(row?.estado_observacion) === ESTADO_PENDIENTE).length,
+    en_analisis: data.filter(row => ['EN ANÁLISIS', 'EN ANALISIS'].includes(normalizarMayusculas(row?.estado_observacion))).length,
+    cerradas: data.filter(row => normalizarMayusculas(row?.estado_observacion) === ESTADO_CERRADA).length,
+  }
+
   // =======================================================
   // RENDER
   // =======================================================
@@ -2107,16 +2116,155 @@ export default function PreoperacionalesPage() {
       <EncabezadoModulo titulo="Consulta de Preoperacionales" subtitulo="Seguimiento de inspecciones preoperacionales y observaciones" icono={ClipboardCheck} rutaRegreso="/admin/consultas" textoRegreso="Seguimiento Operativo y Consultas" />
 
         {/* =================================================
+            RESUMEN
+        ================================================= */}
+
+        {
+          true && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 mt-5">
+
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-slate-700">
+                  {
+                    Number(
+                      total ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-gray-500">
+                  Inspecciones
+                </div>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-red-700">
+                  {
+                    Number(
+                      resumenFiltrado.no_conformes ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-red-600">
+                  No conformes
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-amber-700">
+                  {
+                    Number(
+                      resumenFiltrado.pendientes ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-amber-600">
+                  Pendientes
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-blue-700">
+                  {
+                    Number(
+                      resumenFiltrado.en_analisis ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-blue-600">
+                  En análisis
+                </div>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-green-700">
+                  {
+                    Number(
+                      resumenFiltrado.cerradas ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-green-600">
+                  Cerradas
+                </div>
+              </div>
+
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-purple-700">
+                  {
+                    Number(
+                      resumenFiltrado.con_observaciones ||
+                      0
+                    ).toLocaleString(
+                      'es-CO'
+                    )
+                  }
+                </div>
+                <div className="text-[10px] uppercase text-purple-600">
+                  Con observación
+                </div>
+              </div>
+
+            </div>
+          )
+        }
+
+        <div className="flex justify-end gap-2 mb-4">
+          <button
+            onClick={
+              exportXLSX
+            }
+            disabled={
+              total === 0
+            }
+            className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2 disabled:opacity-40"
+          >
+            <i className="fas fa-file-excel"></i>
+
+            Excel
+          </button>
+
+          <button
+            onClick={
+              exportPDF
+            }
+            disabled={
+              total === 0
+            }
+            className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2 disabled:opacity-40"
+          >
+            <i className="fas fa-file-pdf"></i>
+
+            PDF
+          </button>
+
+        </div>
+
+        {/* =================================================
             FILTROS
         ================================================= */}
 
-        <div className="bg-[#24638C] text-white rounded-xl p-4 mb-4 shadow-sm">
+        <div className="bg-white border border-slate-300 rounded-xl p-4 mb-4 shadow-sm">
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 text-xs items-end">
 
             <div className="flex flex-col gap-1">
 
-              <label className="font-medium">
+              <label className="font-medium text-slate-700">
                 Fecha Inicio
               </label>
 
@@ -2139,7 +2287,7 @@ export default function PreoperacionalesPage() {
 
             <div className="flex flex-col gap-1">
 
-              <label className="font-medium">
+              <label className="font-medium text-slate-700">
                 Fecha Fin
               </label>
 
@@ -2162,7 +2310,7 @@ export default function PreoperacionalesPage() {
 
             <div className="flex flex-col gap-1">
 
-              <label className="font-medium">
+              <label className="font-medium text-slate-700">
                 Tipo Vehículo
               </label>
 
@@ -2206,7 +2354,7 @@ export default function PreoperacionalesPage() {
 
             <div className="flex flex-col gap-1">
 
-              <label className="font-medium">
+              <label className="font-medium text-slate-700">
                 Placa
               </label>
 
@@ -2249,7 +2397,7 @@ export default function PreoperacionalesPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="estado-preoperacional" className="font-medium">Filtrar por estado</label>
+              <label htmlFor="estado-preoperacional" className="font-medium text-slate-700">Filtrar por estado</label>
               <select id="estado-preoperacional" value={estadoFiltro} onChange={event => setEstadoFiltro(event.target.value)} className="p-2 rounded-lg border border-gray-300 text-gray-800 bg-white">
                 <option value="PENDIENTE">Pendientes</option>
                 <option value="EN ANÁLISIS">En análisis</option>
@@ -2258,204 +2406,14 @@ export default function PreoperacionalesPage() {
               </select>
             </div>
 
+            <div className="flex justify-end gap-2 lg:col-span-1">
+              <BotonAccion tipo="consultar" type="button" disabled={loading} onClick={() => handleConsultar(1)}>{loading ? 'Consultando...' : 'Consultar'}</BotonAccion>
+              <BotonAccion tipo="cancelar" type="button" onClick={handleLimpiar}>Limpiar</BotonAccion>
+            </div>
+
           </div>
 
         </div>
-
-        {/* =================================================
-            ACCIONES
-        ================================================= */}
-
-        <div className="flex flex-wrap justify-center gap-2 mb-4">
-
-          <button
-            onClick={() =>
-              handleConsultar(
-                1
-              )
-            }
-            disabled={
-              loading
-            }
-            className="
-              bg-[var(--primary)]
-              hover:bg-[var(--primary-dark)]
-              text-white
-              px-4
-              py-2
-              rounded-lg
-              text-xs
-              flex
-              items-center
-              gap-2
-              disabled:opacity-50
-              shadow-sm
-            "
-          >
-            <i className="fas fa-search"></i>
-
-            {
-              loading
-                ? 'Consultando...'
-                : 'Consultar'
-            }
-
-          </button>
-
-          <button
-            onClick={
-              handleLimpiar
-            }
-            className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2"
-          >
-            <i className="fas fa-eraser"></i>
-
-            Limpiar
-          </button>
-
-          <button
-            onClick={
-              exportXLSX
-            }
-            disabled={
-              total === 0
-            }
-            className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2 disabled:opacity-40"
-          >
-            <i className="fas fa-file-excel"></i>
-
-            Excel
-          </button>
-
-          <button
-            onClick={
-              exportPDF
-            }
-            disabled={
-              total === 0
-            }
-            className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2 disabled:opacity-40"
-          >
-            <i className="fas fa-file-pdf"></i>
-
-            PDF
-          </button>
-
-        </div>
-
-        {/* =================================================
-            RESUMEN
-        ================================================= */}
-
-        {
-          total > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
-                <div className="text-xl font-bold text-slate-700">
-                  {
-                    Number(
-                      resumen
-                        ?.total_inspecciones ||
-                      0
-                    ).toLocaleString(
-                      'es-CO'
-                    )
-                  }
-                </div>
-                <div className="text-[10px] uppercase text-gray-500">
-                  Inspecciones
-                </div>
-              </div>
-
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
-                <div className="text-xl font-bold text-red-700">
-                  {
-                    Number(
-                      resumen
-                        ?.no_conformes ||
-                      0
-                    ).toLocaleString(
-                      'es-CO'
-                    )
-                  }
-                </div>
-                <div className="text-[10px] uppercase text-red-600">
-                  No conformes
-                </div>
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
-                <div className="text-xl font-bold text-amber-700">
-                  {
-                    Number(
-                      resumen
-                        ?.pendientes ||
-                      0
-                    ).toLocaleString(
-                      'es-CO'
-                    )
-                  }
-                </div>
-                <div className="text-[10px] uppercase text-amber-600">
-                  Pendientes
-                </div>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                <div className="text-xl font-bold text-blue-700">
-                  {
-                    Number(
-                      resumen
-                        ?.en_analisis ||
-                      0
-                    ).toLocaleString(
-                      'es-CO'
-                    )
-                  }
-                </div>
-                <div className="text-[10px] uppercase text-blue-600">
-                  En análisis
-                </div>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-                <div className="text-xl font-bold text-green-700">
-                  {
-                    Number(
-                      resumen
-                        ?.cerradas ||
-                      0
-                    ).toLocaleString(
-                      'es-CO'
-                    )
-                  }
-                </div>
-                <div className="text-[10px] uppercase text-green-600">
-                  Cerradas
-                </div>
-              </div>
-
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
-                <div className="text-xl font-bold text-purple-700">
-                  {
-                    Number(
-                      resumen
-                        ?.con_observaciones ||
-                      0
-                    ).toLocaleString(
-                      'es-CO'
-                    )
-                  }
-                </div>
-                <div className="text-[10px] uppercase text-purple-600">
-                  Con observación
-                </div>
-              </div>
-
-            </div>
-          )
-        }
 
         {/* =================================================
             ESTADO
@@ -2490,9 +2448,13 @@ export default function PreoperacionalesPage() {
             TABLA
         ================================================= */}
 
-        <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+        <div className="mb-0 rounded-t-xl px-4 py-3 flex items-center gap-2 text-sm font-bold" style={ESTILO_SECCIONES.fondo}>
+          <i className="fas fa-clipboard-check" aria-hidden="true"></i>
+          Registros de inspecciones preoperacionales
+        </div>
+        <div className="overflow-x-auto border border-slate-300 rounded-b-xl shadow-sm">
 
-          <table className="w-full min-w-[1500px] text-[10px] border-collapse">
+          <table className="w-full min-w-[1500px] text-[10px] border-collapse [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300">
 
             <thead style={ESTILO_ENCABEZADO_TABLA}>
 
@@ -2734,7 +2696,7 @@ export default function PreoperacionalesPage() {
                                           row
                                         )
                                       }
-                                      className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-2 py-1 rounded-md whitespace-nowrap"
+                                      className="bg-[#24638C] hover:bg-[#194567] text-white px-2 py-1 rounded-md whitespace-nowrap"
                                     >
                                       <i className="fas fa-search-plus mr-1"></i>
 
