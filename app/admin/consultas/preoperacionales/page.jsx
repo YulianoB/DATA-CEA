@@ -257,6 +257,10 @@ export default function PreoperacionalesPage() {
     })
 
   const [estadoFiltro, setEstadoFiltro] = useState('PENDIENTE')
+  const [reporteAnio, setReporteAnio] = useState(String(new Date().getFullYear()))
+  const [reporteMes, setReporteMes] = useState(String(new Date().getMonth() + 1))
+  const mesesReporte = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+  const aniosReporte = Array.from({ length: new Date().getFullYear() - 2019 }, (_, i) => String(new Date().getFullYear() - i))
 
   // =======================================================
   // VEHÍCULOS
@@ -607,10 +611,11 @@ export default function PreoperacionalesPage() {
   )
 
   useEffect(() => {
-    if (user) handleConsultar(1)
-    // Consulta inicial al recuperar la sesión; los filtros posteriores se aplican con Consultar.
+    if (!user) return
+    const timeout = setTimeout(() => handleConsultar(1), 250)
+    return () => clearTimeout(timeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
+  }, [user, filters.startDate, filters.endDate, filters.tipoVehiculo, filters.placa, estadoFiltro])
 
   // =======================================================
   // FILTROS
@@ -1398,9 +1403,8 @@ export default function PreoperacionalesPage() {
 
   const obtenerDatosExportacion =
     async () => {
-      if (
-        !validarRango()
-      ) {
+      if (Number(reporteAnio) > new Date().getFullYear() || (Number(reporteAnio) === new Date().getFullYear() && Number(reporteMes) > new Date().getMonth() + 1)) {
+        toast.warning('No se pueden generar reportes de meses futuros.')
         return []
       }
 
@@ -1416,48 +1420,10 @@ export default function PreoperacionalesPage() {
 
           nit,
 
-          fecha_inicio:
-            filters
-              .startDate,
+          fecha_inicio: `${reporteAnio}-${String(reporteMes).padStart(2, '0')}-01`,
 
-          fecha_fin:
-            filters
-              .endDate,
+          fecha_fin: (() => { const anio = Number(reporteAnio); const mes = Number(reporteMes); const ultimoDia = new Date(anio, mes, 0).getDate(); const fin = `${reporteAnio}-${String(reporteMes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`; return fin > hoyBogota() ? hoyBogota() : fin })(),
         })
-
-      if (
-        filters
-          .tipoVehiculo
-      ) {
-        params.set(
-          'tipo_vehiculo',
-          filters
-            .tipoVehiculo
-        )
-      }
-
-      if (
-        filters.placa
-      ) {
-        params.set(
-          'placa',
-          filters.placa
-        )
-      }
-
-      if (
-        filters
-          .conObservaciones
-      ) {
-        params.set(
-          'con_observaciones',
-          'true'
-        )
-      }
-
-      if (estadoFiltro !== 'TODOS') {
-          params.set('estado_observacion', estadoFiltro)
-        }
 
         const response =
         await fetch(
@@ -2222,37 +2188,6 @@ export default function PreoperacionalesPage() {
           )
         }
 
-        <div className="flex justify-end gap-2 mb-4">
-          <button
-            onClick={
-              exportXLSX
-            }
-            disabled={
-              total === 0
-            }
-            className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2 disabled:opacity-40"
-          >
-            <i className="fas fa-file-excel"></i>
-
-            Excel
-          </button>
-
-          <button
-            onClick={
-              exportPDF
-            }
-            disabled={
-              total === 0
-            }
-            className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2 disabled:opacity-40"
-          >
-            <i className="fas fa-file-pdf"></i>
-
-            PDF
-          </button>
-
-        </div>
-
         {/* =================================================
             FILTROS
         ================================================= */}
@@ -2406,7 +2341,6 @@ export default function PreoperacionalesPage() {
             </div>
 
             <div className="flex justify-end gap-2 lg:col-span-1">
-              <BotonAccion tipo="consultar" type="button" disabled={loading} onClick={() => handleConsultar(1)}>{loading ? 'Consultando...' : 'Consultar'}</BotonAccion>
               <BotonAccion tipo="cancelar" type="button" onClick={handleLimpiar}>Limpiar</BotonAccion>
             </div>
 
@@ -2453,7 +2387,7 @@ export default function PreoperacionalesPage() {
         </div>
         <div className="overflow-x-auto border border-slate-300 rounded-b-xl shadow-sm">
 
-          <table className="w-full min-w-[1500px] text-[10px] border-collapse [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300">
+          <table className="w-full min-w-[1100px] text-[10px] border-collapse [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300">
 
             <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
@@ -2497,22 +2431,6 @@ export default function PreoperacionalesPage() {
 
                 <th className="p-2 border">
                   Estado
-                </th>
-
-                <th className="p-2 border">
-                  F. Verificación
-                </th>
-
-                <th className="p-2 border">
-                  U. Verifica
-                </th>
-
-                <th className="p-2 border">
-                  F. Solución
-                </th>
-
-                <th className="p-2 border">
-                  U. Soluciona
                 </th>
 
                 <th className="p-2 border">
@@ -2653,38 +2571,6 @@ export default function PreoperacionalesPage() {
                             </td>
 
                             <td className="p-2 border text-center">
-                              {
-                                row
-                                  ?.fecha_verificacion_observacion ||
-                                '-'
-                              }
-                            </td>
-
-                            <td className="p-2 border text-center">
-                              {
-                                row
-                                  ?.usuario_verificacion ||
-                                '-'
-                              }
-                            </td>
-
-                            <td className="p-2 border text-center">
-                              {
-                                row
-                                  ?.fecha_solucion_observacion ||
-                                '-'
-                              }
-                            </td>
-
-                            <td className="p-2 border text-center">
-                              {
-                                row
-                                  ?.usuario_solucion ||
-                                '-'
-                              }
-                            </td>
-
-                            <td className="p-2 border text-center">
 
                               {
                                 tieneSeguimiento
@@ -2718,9 +2604,7 @@ export default function PreoperacionalesPage() {
                   : (
                     <tr>
                       <td
-                        colSpan={
-                          15
-                        }
+                        colSpan={11}
                         className="text-center text-gray-500 p-6"
                       >
                         No hay resultados para los filtros seleccionados.
@@ -2819,6 +2703,30 @@ export default function PreoperacionalesPage() {
             </div>
           )
         }
+
+        <div className="mt-6 border border-slate-300 rounded-xl bg-white p-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="reporte-anio" className="text-xs font-medium text-slate-700">Año del reporte</label>
+                <select id="reporte-anio" value={reporteAnio} onChange={event => setReporteAnio(event.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm">
+                  {aniosReporte.map(anio => <option key={anio} value={anio}>{anio}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="reporte-mes" className="text-xs font-medium text-slate-700">Mes del reporte</label>
+                <select id="reporte-mes" value={reporteMes} onChange={event => setReporteMes(event.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm">
+                  {mesesReporte.map((mes, indice) => <option key={mes} value={String(indice + 1)}>{mes}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={exportXLSX} className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2"><i className="fas fa-file-excel"></i>Excel</button>
+              <button type="button" onClick={exportPDF} className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2"><i className="fas fa-file-pdf"></i>PDF</button>
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">Los reportes incluyen todos los estados y vehículos del mes seleccionado, independientemente de los filtros de la tabla.</p>
+        </div>
 
       </div>
 
