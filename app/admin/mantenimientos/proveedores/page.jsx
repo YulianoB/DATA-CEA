@@ -644,8 +644,10 @@ export default function ProveedoresMantenimientoPage() {
                     className="campo"
                   />
                 </Campo>
-                <Campo label="DV (Dígito de Verificación)">
+                <Campo label="DV">
                   <input
+                    placeholder="Dígito de verificación"
+                    title="Dígito de Verificación"
                     inputMode="numeric"
                     maxLength={1}
                     value={form.digito_verificacion}
@@ -739,16 +741,14 @@ export default function ProveedoresMantenimientoPage() {
             </div>
 
               <div className="mx-4 mt-4 overflow-hidden rounded-xl border border-slate-300 bg-white">
-                <div className="border-b border-slate-300 p-3 text-white" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo }}>
+                <div className="border-b border-slate-300 px-4 py-2.5 text-xs font-bold text-white" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo }}>
+                  Actividades de mantenimiento
+                </div>
+                <div className="space-y-3 bg-white p-3">
+                  <p className="text-[11px] font-medium text-slate-600">
+                    Seleccione el tipo de vehículo y marque las actividades que este proveedor o taller puede realizar. Las selecciones se conservan al cambiar de tipo de vehículo.
+                  </p>
                   <div className="flex flex-col gap-3">
-                    <div>
-                      <div className="font-extrabold text-white">
-                        Actividades de mantenimiento
-                      </div>
-                      <div className="mt-1 text-[10px] font-medium text-white/90">
-                        Seleccione el tipo de vehículo y marque las actividades que este proveedor o taller puede realizar. Las selecciones se conservan al cambiar de tipo de vehículo.
-                      </div>
-                    </div>
 
                     <div className="flex flex-wrap gap-2">
                       {[
@@ -783,7 +783,7 @@ export default function ProveedoresMantenimientoPage() {
                     </div>
 
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="text-[10px] font-semibold text-white/90">
+                      <div className="text-[10px] font-semibold text-slate-600">
                         Seleccionadas: {form.actividad_ids.length}
                       </div>
                       <input
