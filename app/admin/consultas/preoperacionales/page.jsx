@@ -257,6 +257,7 @@ export default function PreoperacionalesPage() {
     })
 
   const [estadoFiltro, setEstadoFiltro] = useState('PENDIENTE')
+  const [pasoSeguimiento, setPasoSeguimiento] = useState(1)
   const [reporteAnio, setReporteAnio] = useState(hoyBogota().slice(0, 4))
   const [reporteMes, setReporteMes] = useState(String(Number(hoyBogota().slice(5, 7))))
   const mesesReporte = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -2334,7 +2335,7 @@ export default function PreoperacionalesPage() {
                 <option value="PENDIENTE">Pendientes</option>
                 <option value="EN ANÁLISIS">En análisis</option>
                 <option value="CERRADA">Cerradas</option>
-                <option value="TODOS">Todas las inspecciones (incluye conformes)</option>
+                <option value="TODOS">Todas las inspecciones</option>
               </select>
             </div>
 
@@ -2735,7 +2736,7 @@ export default function PreoperacionalesPage() {
       {
         drawerOpen &&
         rowSel && (
-          <div className="fixed inset-0 z-50">
+          <div className="fixed inset-0 z-50 flex justify-end">
 
             <div
               className="absolute inset-0 bg-black/50"
@@ -2744,48 +2745,40 @@ export default function PreoperacionalesPage() {
               }
             ></div>
 
-            <div className="absolute right-0 top-0 h-full w-full sm:w-[560px] bg-white shadow-2xl overflow-y-auto">
+            <aside className="relative h-full w-full sm:w-[680px] lg:w-[740px] bg-slate-50 shadow-2xl overflow-y-auto">
 
-              {/* HEADER */}
-
-              <div className="sticky top-0 bg-white z-10 flex items-center justify-between border-b p-4">
-
-                <div>
-
-                  <h2 className="text-lg font-bold text-[var(--primary)] flex items-center gap-2">
-
-                    <i className="fas fa-tools"></i>
-
-                    Seguimiento de Inspección
-
-                  </h2>
-
-                  <p className="text-xs text-gray-500 mt-1">
-                    Consecutivo {
-                      rowSel
-                        ?.consecutivo ||
-                      '-'
-                    }
-                  </p>
-
+              <div className="sticky top-0 z-20 bg-white shadow-sm border-b border-slate-300">
+                <div className="bg-[#194567] text-white px-4 sm:px-5 py-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-white/80">Expediente preoperacional</p>
+                    <h2 className="text-lg font-black mt-1">{rowSel?.consecutivo || `#${rowSel?.id}`}</h2>
+                    <p className="text-xs mt-1 text-white/80">Vehículo {rowSel?.placa || '-'}</p>
+                    <div className="mt-2"><EstadoChip estado={rowSel?.estado_observacion} /></div>
+                  </div>
+                  <button type="button" aria-label="Cerrar expediente" onClick={cerrarDrawer} disabled={closing || updating}
+                    className="w-9 h-9 rounded-full border border-white/50 flex items-center justify-center hover:bg-white/15 disabled:opacity-40">
+                    <i className="fas fa-xmark" aria-hidden="true"></i>
+                  </button>
                 </div>
-
-                <button
-                  onClick={
-                    cerrarDrawer
-                  }
-                  disabled={
-                    closing ||
-                    updating
-                  }
-                  className="text-gray-500 hover:text-black disabled:opacity-40"
-                >
-                  <i className="fas fa-times text-xl"></i>
-                </button>
-
+                <nav aria-label="Etapas del seguimiento" className="flex items-center gap-2 px-3 sm:px-5 py-2">
+                  <button type="button" aria-label="Etapa anterior" disabled={pasoSeguimiento === 1} onClick={() => setPasoSeguimiento(p => Math.max(1, p - 1))} className="p-2 text-[#194567] disabled:text-slate-300"><i className="fas fa-chevron-left"></i></button>
+                  <div className="grid grid-cols-3 gap-2 flex-1 min-w-0">
+                    {[{n:1,t:'Inspección'},{n:2,t:'Resultados'},{n:3,t:'Seguimiento'}].map(etapa => (
+                      <button key={etapa.n} type="button" aria-current={pasoSeguimiento === etapa.n ? 'step' : undefined} onClick={() => setPasoSeguimiento(etapa.n)}
+                        className={`flex flex-col items-center gap-1 rounded-md py-1 text-[11px] font-semibold ${pasoSeguimiento === etapa.n ? 'text-[#194567]' : 'text-slate-600 hover:bg-slate-100'}`}>
+                        <span className={`w-6 h-6 rounded-full border flex items-center justify-center font-bold ${pasoSeguimiento === etapa.n ? 'bg-[#24638C] border-[#24638C] text-white' : 'bg-white border-slate-300'}`}>{etapa.n}</span>
+                        <span>{etapa.t}</span>
+                        <span className={`w-full h-1 rounded-full ${pasoSeguimiento >= etapa.n ? 'bg-[#24638C]' : 'bg-slate-200'}`}></span>
+                      </button>
+                    ))}
+                  </div>
+                  <button type="button" aria-label="Etapa siguiente" disabled={pasoSeguimiento === 3} onClick={() => setPasoSeguimiento(p => Math.min(3, p + 1))} className="p-2 text-[#194567] disabled:text-slate-300"><i className="fas fa-chevron-right"></i></button>
+                </nav>
               </div>
 
-              <div className="p-4 space-y-4">
+              <div className="p-4 sm:p-5 space-y-4">
+
+                <div className={pasoSeguimiento === 1 ? 'space-y-4' : 'hidden'}>
 
                 {/* ESTADO */}
 
@@ -2804,11 +2797,15 @@ export default function PreoperacionalesPage() {
 
                 </div>
 
+                <div className={pasoSeguimiento === 1 ? 'space-y-4' : 'hidden'}>
+
+                </div>
+
                 {/* DETALLE */}
 
                 <div className="border rounded-xl overflow-hidden">
 
-                  <div className="bg-slate-800 text-white px-4 py-2 text-sm font-semibold">
+                  <div className="bg-[#24638C] text-white px-4 py-2 text-sm font-semibold">
 
                     <i className="fas fa-clipboard-list mr-2"></i>
 
@@ -2929,11 +2926,15 @@ export default function PreoperacionalesPage() {
 
                 </div>
 
+                <div className={pasoSeguimiento === 2 ? 'space-y-4' : 'hidden'}>
+
+                </div>
+
                 {/* COMPONENTES */}
 
                 <div className="border rounded-xl overflow-hidden">
 
-                  <div className="bg-slate-800 text-white px-4 py-2 text-sm font-semibold">
+                  <div className="bg-[#24638C] text-white px-4 py-2 text-sm font-semibold">
                     Resultado de la inspección
                   </div>
 
@@ -3031,11 +3032,15 @@ export default function PreoperacionalesPage() {
 
                 </div>
 
+                <div className={pasoSeguimiento === 3 ? 'space-y-4' : 'hidden'}>
+
+                </div>
+
                 {/* SEGUIMIENTO */}
 
                 <div className="border rounded-xl overflow-hidden">
 
-                  <div className="bg-[var(--primary-dark)] text-white px-4 py-2 text-sm font-semibold">
+                  <div className="bg-[#24638C] text-white px-4 py-2 text-sm font-semibold">
 
                     <i className="fas fa-tasks mr-2"></i>
 
@@ -3226,6 +3231,8 @@ export default function PreoperacionalesPage() {
 
                 </div>
 
+                </div>
+
                 {/* CERRAR PANEL */}
 
                 <div className="flex justify-end">
@@ -3249,7 +3256,7 @@ export default function PreoperacionalesPage() {
 
               </div>
 
-            </div>
+            </aside>
 
           </div>
         )
