@@ -2200,7 +2200,7 @@ export default function SiniestrosPage() {
                     <span className="truncate max-w-full">{etapa.titulo}</span>
                   </button>
                 ))}
-              </nav></nav>
+              </nav>
             </div>
 
             <div className="p-4 sm:p-5 space-y-4">
