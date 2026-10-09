@@ -627,6 +627,14 @@ export default function PlanMantenimientoPage() {
           cerrar={cerrarModal}
         />
       )}
+      <ModalResultado
+        abierto={Boolean(error)}
+        tipo={error ? 'error' : 'exito'}
+        titulo={error ? 'No fue posible completar la operación' : 'Operación realizada satisfactoriamente'}
+        mensaje={error || ''}
+        onCerrar={() => { setError('');  }}
+      />
+
     </div>
   )
 }
@@ -1040,13 +1048,6 @@ function Dato({ titulo, valor }) {
       <div className="mt-0.5 text-xs font-extrabold text-slate-800">
         {valor}
       </div>
-      <ModalResultado
-        abierto={Boolean(error)}
-        tipo={error ? 'error' : 'exito'}
-        titulo={error ? 'No fue posible completar la operación' : 'Operación realizada satisfactoriamente'}
-        mensaje={error || ''}
-        onCerrar={() => { setError('');  }}
-      />
 
     </div>
   )
