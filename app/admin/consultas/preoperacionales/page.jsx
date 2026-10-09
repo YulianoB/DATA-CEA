@@ -835,9 +835,7 @@ export default function PreoperacionalesPage() {
           )
         }
 
-        if (estadoFiltro !== 'TODOS') {
-          params.set('estado_observacion', estadoFiltro)
-        }
+        params.set('estado_observacion', estadoFiltro)
 
         const response =
           await fetch(
@@ -2336,7 +2334,7 @@ export default function PreoperacionalesPage() {
                 <option value="PENDIENTE">Pendientes</option>
                 <option value="EN ANÁLISIS">En análisis</option>
                 <option value="CERRADA">Cerradas</option>
-                <option value="TODOS">Todos</option>
+                <option value="TODOS">Todas las inspecciones (incluye conformes)</option>
               </select>
             </div>
 
