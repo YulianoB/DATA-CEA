@@ -966,6 +966,7 @@ export default function SiniestrosPage() {
       setRowSel(result.registro)
       setPasoAnalisisGuardado(false)
       setPasoCostosGuardado(false)
+      setPasoExpediente(3)
 
       avisos.success(
         'Siniestro marcado EN ANÁLISIS.'
@@ -1070,6 +1071,7 @@ export default function SiniestrosPage() {
       const result = await leerRespuestaApi(response)
       if (result?.registro) setRowSel(result.registro)
       setPasoAnalisisGuardado(true)
+      setPasoExpediente(4)
       avisos.success('Análisis guardado. Continúe con los costos asociados.')
     } catch (error) {
       avisos.error(error?.message || 'No fue posible guardar el análisis.')
@@ -1095,6 +1097,7 @@ export default function SiniestrosPage() {
       const result = await leerRespuestaApi(response)
       if (result?.registro) setRowSel(result.registro)
       setPasoCostosGuardado(true)
+      setPasoExpediente(5)
       avisos.success('Costos guardados. Ya puede elaborar el acta de tratamiento.')
     } catch (error) {
       avisos.error(error?.message || 'No fue posible guardar los costos.')
@@ -2201,6 +2204,13 @@ export default function SiniestrosPage() {
             </div>
 
             <div className="p-4 sm:p-5 space-y-4">
+              {pasoExpediente < 3 && (
+                <div className="flex justify-end">
+                  <BotonAccion tipo="consultar" type="button" onClick={() => setPasoExpediente(prev => prev + 1)}>
+                    Siguiente paso <i className="fas fa-arrow-right ml-2" aria-hidden="true"></i>
+                  </BotonAccion>
+                </div>
+              )}
 
               {/* ============================================
                   1. REPORTE INICIAL
@@ -2314,7 +2324,7 @@ export default function SiniestrosPage() {
                   3. INICIO DE ANÁLISIS
               ============================================ */}
 
-              {esPendiente && (
+              {esPendiente && pasoExpediente === 3 && (
                 <section className="border border-amber-200 bg-amber-50 rounded-xl p-4">
                   <h3 className="font-bold text-amber-900 text-sm">
                     Iniciar seguimiento administrativo
@@ -2734,7 +2744,7 @@ export default function SiniestrosPage() {
                   6. FINALIZACIÓN / EXPEDIENTE CERRADO
               ============================================ */}
 
-              {esCerrado && (
+              {esCerrado && pasoExpediente === 5 && (
                 <section className="border border-green-200 bg-green-50 rounded-xl p-4">
                   <h3 className="text-sm font-black text-green-900">
                     Expediente cerrado
