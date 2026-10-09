@@ -6203,8 +6203,8 @@ function ResumenTipo({
           items-center
           gap-2
           border-b
-        border-[#194567]
-        bg-[#194567]
+        border-[#737B87]
+        bg-[#737B87]
         px-3
         py-2
         text-white
@@ -6432,8 +6432,8 @@ function ResumenPractica({
           items-center
           gap-2
           border-b
-        border-[#194567]
-        bg-[#194567]
+        border-[#737B87]
+        bg-[#737B87]
         px-3
         py-2
         text-white
