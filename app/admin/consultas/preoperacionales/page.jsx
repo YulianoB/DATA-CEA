@@ -510,8 +510,6 @@ export default function PreoperacionalesPage() {
             nit,
           })
 
-        if (estadoFiltro !== 'TODOS') params.set('estado_observacion', estadoFiltro)
-
         const response =
           await fetch(
             `/api/admin/consultas/preoperacionales?${params.toString()}`,
