@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonAccion, ESTILO_SECCIONES, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { cerrarSesion } from '@/lib/auth/logout'
 
 const MESES = [
@@ -467,7 +468,7 @@ export default function PlanMantenimientoPage() {
                   />
                 </div>
 
-                <button
+                <BotonAccion tipo="actualizar"
                   type="button"
                   onClick={() => cargar({ silencioso: true })}
                   disabled={actualizando}
@@ -478,9 +479,9 @@ export default function PlanMantenimientoPage() {
                     className={actualizando ? 'animate-spin' : ''}
                   />
                   Actualizar
-                </button>
+                </BotonAccion>
 
-                <button
+                <BotonAccion tipo="pdf"
                   type="button"
                   onClick={() =>
                     router.push(
@@ -492,16 +493,16 @@ export default function PlanMantenimientoPage() {
                 >
                   <FileDown size={13} />
                   Generar PDF
-                </button>
+                </BotonAccion>
               </div>
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
-              <div className="border-b border-slate-300 bg-slate-200 px-4 py-3 text-slate-900">
+              <div className="border-b border-slate-300 px-4 py-3 text-white" style={{ backgroundColor: ESTILO_SECCIONES.fondo }}>
                 <div className="text-sm font-extrabold">
                   Matriz de programación dinámica · {vigencia}
                 </div>
-                <div className="mt-1 text-[11px] font-medium text-slate-600">
+                <div className="mt-1 text-[11px] font-medium text-white/85">
                   Los meses futuros se calculan automáticamente con la configuración, los mantenimientos reales y el kilometraje de los preoperacionales.
                 </div>
               </div>
@@ -514,8 +515,8 @@ export default function PlanMantenimientoPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-[1650px] w-full border-collapse">
                     <thead>
-                      <tr className="bg-slate-400 text-[10px] font-extrabold uppercase tracking-wide text-slate-900">
-                        <th className="sticky left-0 z-20 min-w-[250px] border-b border-r border-slate-300 bg-slate-400 px-3 py-3 text-left">
+                      <tr className="text-[10px] font-extrabold uppercase tracking-wide" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
+                        <th className="sticky left-0 z-20 min-w-[250px] border-b border-r border-slate-300 px-3 py-3 text-left" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo }}>
                           Vehículo
                         </th>
                         {MESES.map((mes) => (
@@ -544,8 +545,8 @@ export default function PlanMantenimientoPage() {
             </div>
 
             <div className="mt-4 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
-              <div className="border-b border-slate-300 bg-slate-200 px-4 py-2.5">
-                <div className="text-xs font-extrabold uppercase tracking-wide text-slate-800">
+              <div className="border-b border-slate-300 px-4 py-2.5 text-white" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo }}>
+                <div className="text-xs font-extrabold uppercase tracking-wide">
                   Totalizado trimestral y acumulado anual · {vigencia}
                 </div>
               </div>
@@ -553,7 +554,7 @@ export default function PlanMantenimientoPage() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[650px] border-collapse text-[11px]">
                   <thead>
-                    <tr className="bg-slate-100 text-[10px] font-extrabold uppercase tracking-wide text-slate-600">
+                    <tr className="text-[10px] font-extrabold uppercase tracking-wide" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                       <th className="border-b border-r border-slate-300 px-3 py-2 text-left">
                         Período
                       </th>
@@ -776,7 +777,7 @@ function ModalPunto({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3">
       <div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-2xl">
-        <div className="border-b border-slate-300 bg-slate-100 p-3">
+        <div className="border-b border-slate-300 p-3" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo }}>
           <div className="flex items-stretch gap-2">
             <div className="flex flex-1 items-center rounded-lg border border-slate-300 bg-white px-3 py-2">
               <div>
@@ -1011,7 +1012,7 @@ function ModalPunto({
               />
 
               <div className="mt-3 flex justify-end">
-                <button
+                <BotonAccion tipo="guardar"
                   type="button"
                   onClick={guardarJustificacion}
                   disabled={guardando || !justificacion.trim()}
@@ -1019,7 +1020,7 @@ function ModalPunto({
                 >
                   {guardando && <Loader2 size={14} className="animate-spin" />}
                   Guardar justificación
-                </button>
+                </BotonAccion>
               </div>
             </div>
           )}
