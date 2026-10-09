@@ -201,6 +201,14 @@ export default function HojaVidaPersonalPage() {
   const params = useParams()
   const [resultadoModal, setResultadoModal] = useState(null)
   const mostrarResultado = (tipo, mensaje) => setResultadoModal({ tipo, mensaje: String(mensaje || '') })
+  const [confirmacion, setConfirmacion] = useState(null)
+  const confirmarAccion = (mensaje) => new Promise((resolver) => {
+    setConfirmacion({ mensaje, resolver })
+  })
+  const cerrarConfirmacion = (aceptada) => {
+    if (confirmacion) confirmacion.resolver(aceptada)
+    setConfirmacion(null)
+  }
 
   const router = useRouter()
   const [user, setUser] = useState(null)
@@ -381,7 +389,7 @@ export default function HojaVidaPersonalPage() {
 
   async function eliminarFotografia() {
     if (!fotoTemporal || eliminandoFoto || procesandoFoto) return
-    if (!window.confirm('¿Eliminar la fotografía permanente de este trabajador?')) return
+    if (!await confirmarAccion('¿Eliminar la fotografía permanente de este trabajador?')) return
     setEliminandoFoto(true)
     try {
       const respuesta = await fetch(`/api/personal/${id}/fotografia?nit=${encodeURIComponent(nitActual)}`, { method: 'DELETE' })
@@ -709,7 +717,7 @@ export default function HojaVidaPersonalPage() {
   }
 
   async function eliminarExperiencia(experienciaId) {
-    const confirmar = window.confirm('¿Deseas eliminar esta experiencia laboral? Esta acción no se puede deshacer.')
+    const confirmar = await confirmarAccion('¿Deseas eliminar esta experiencia laboral? Esta acción no se puede deshacer.')
     if (!confirmar) return
 
     try {
@@ -821,7 +829,7 @@ export default function HojaVidaPersonalPage() {
   }
 
   async function eliminarEstudio(estudioId) {
-    const confirmar = window.confirm('¿Deseas eliminar este estudio? Esta acción no se puede deshacer.')
+    const confirmar = await confirmarAccion('¿Deseas eliminar este estudio? Esta acción no se puede deshacer.')
     if (!confirmar) return
 
     try {
@@ -1066,7 +1074,7 @@ export default function HojaVidaPersonalPage() {
       return
     }
 
-    const confirmar = window.confirm('¿Deseas eliminar esta licencia o certificado? Esta acción no se puede deshacer.')
+    const confirmar = await confirmarAccion('¿Deseas eliminar esta licencia o certificado? Esta acción no se puede deshacer.')
     if (!confirmar) return
 
     try {
@@ -1152,7 +1160,7 @@ export default function HojaVidaPersonalPage() {
   }
 
   async function eliminarReferencia(referenciaId) {
-    const confirmar = window.confirm('¿Deseas eliminar esta referencia? Esta acción no se puede deshacer.')
+    const confirmar = await confirmarAccion('¿Deseas eliminar esta referencia? Esta acción no se puede deshacer.')
     if (!confirmar) return
 
     try {
@@ -1312,7 +1320,7 @@ export default function HojaVidaPersonalPage() {
   }
 
   async function eliminarEvaluacion(evaluacionId) {
-    const confirmar = window.confirm('¿Deseas eliminar esta evaluación? Esta acción no se puede deshacer.')
+    const confirmar = await confirmarAccion('¿Deseas eliminar esta evaluación? Esta acción no se puede deshacer.')
     if (!confirmar) return
 
     try {
@@ -1433,7 +1441,7 @@ export default function HojaVidaPersonalPage() {
   }
 
   async function eliminarDocumento(documentoId) {
-    const confirmar = window.confirm('¿Deseas eliminar este documento? Esta acción no se puede deshacer.')
+    const confirmar = await confirmarAccion('¿Deseas eliminar este documento? Esta acción no se puede deshacer.')
     if (!confirmar) return
 
     try {
@@ -1603,6 +1611,7 @@ export default function HojaVidaPersonalPage() {
         </div>
       )}
       <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
+      <ModalResultado abierto={Boolean(confirmacion)} tipo="confirmacion" mensaje={confirmacion?.mensaje} onCerrar={() => cerrarConfirmacion(false)} onConfirmar={() => cerrarConfirmacion(true)} />
         <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
           <p className="text-gray-600">Cargando hoja de vida...</p>
         </div>
