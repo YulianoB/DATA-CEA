@@ -17,6 +17,10 @@ import {
   toast,
 } from 'sonner'
 
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
+import { CarFront } from 'lucide-react'
+
 import {
   cerrarSesion,
 } from '@/lib/auth/logout'
@@ -426,15 +430,15 @@ function TarjetaEstado({
   disabled,
 }) {
   const clasesActiva = activa
-    ? 'border-[var(--primary)] bg-[var(--primary)] text-white shadow-md'
-    : 'border-gray-200 bg-white text-gray-800 hover:border-[var(--primary)] hover:bg-gray-50'
+    ? 'border-[#24638C] bg-[#24638C] text-white shadow-md'
+    : 'border-slate-300 bg-white text-slate-800 hover:border-[#24638C] hover:bg-slate-50'
 
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`w-full rounded-xl border p-4 text-left transition ${clasesActiva} ${
+      className={`w-full rounded-xl border p-3 text-left transition ${clasesActiva} ${
         disabled
           ? 'opacity-60 cursor-wait'
           : ''
@@ -461,7 +465,7 @@ function TarjetaEstado({
           className={`w-10 h-10 rounded-xl flex items-center justify-center ${
             activa
               ? 'bg-white/15'
-              : 'bg-gray-100 text-[var(--primary)]'
+              : 'bg-slate-100 text-[#24638C]'
           }`}
         >
           <i className={`fas ${icono}`}></i>
@@ -1767,60 +1771,17 @@ export default function SiniestrosPage() {
             ENCABEZADO
         ================================================== */}
 
-        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 sm:p-5">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-bold">
-                Consultas administrativas
-              </p>
-
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 mt-1 flex items-center gap-2">
-                <i className="fas fa-car-burst text-[var(--primary)]"></i>
-                Gestión de Siniestros Viales
-              </h1>
-
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                Gestión de pendientes, análisis, cierres y evidencia trimestral.
-              </p>
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() =>
-                  router.push('/admin/consultas')
-                }
-                className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-900 text-white text-xs font-semibold flex items-center gap-2"
-              >
-                <i className="fas fa-arrow-left"></i>
-                Regresar a Consultas
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="px-4 py-2 rounded-lg bg-[var(--danger)] hover:bg-red-800 text-white text-xs font-semibold flex items-center gap-2"
-              >
-                <i className="fas fa-sign-out-alt"></i>
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500">
-            Usuario:{' '}
-            <strong className="text-gray-700">
-              {user?.nombreCompleto || user?.usuario || '-'}
-            </strong>
-
-            {user?.nombreEmpresa && (
-              <>
-                {' · '}CEA:{' '}
-                <strong className="text-gray-700">
-                  {user.nombreEmpresa}
-                </strong>
-              </>
-            )}
+        <section className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+          <EncabezadoModulo
+            titulo="Gestión de Siniestros Viales"
+            subtitulo="Gestión de pendientes, análisis, cierres y evidencia trimestral"
+            icono={CarFront}
+            rutaRegreso="/admin/consultas"
+            textoRegreso="Seguimiento Operativo y Consultas"
+          />
+          <div className="border-t border-slate-200 px-4 py-2.5 text-xs text-slate-600">
+            Usuario: <strong className="text-slate-800">{user?.nombreCompleto || user?.usuario || '-'}</strong>
+            {user?.nombreEmpresa && <> {' · '}CEA: <strong className="text-slate-800">{user.nombreEmpresa}</strong></>}
           </div>
         </section>
 
@@ -1855,22 +1816,22 @@ export default function SiniestrosPage() {
             BANDEJA PRINCIPAL
         ================================================== */}
 
-        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-4 sm:px-5 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <section className="bg-white border border-slate-300 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 sm:px-5 py-3 border-b border-slate-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-t-xl" style={{ backgroundColor: ESTILO_SECCIONES.fondo }}>
             <div>
-              <h2 className="font-black text-gray-900 flex items-center gap-2">
+              <h2 className="font-bold text-white flex items-center gap-2">
                 <i className="fas fa-inbox text-[var(--primary)]"></i>
                 Bandeja de siniestros
               </h2>
 
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-white/85 mt-1">
                 {estadoActual === 'TODOS'
                   ? 'Mostrando todos los registros.'
                   : `Mostrando registros en estado ${estadoActual}.`}
               </p>
             </div>
 
-            <button
+            <BotonAccion tipo="actualizar"
               type="button"
               onClick={() =>
                 consultarEstado(
@@ -1879,7 +1840,7 @@ export default function SiniestrosPage() {
                 )
               }
               disabled={loading}
-              className="px-3 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700 flex items-center gap-2 self-start sm:self-auto"
+              className="text-xs self-start sm:self-auto"
             >
               <i
                 className={`fas fa-rotate-right ${
@@ -1889,7 +1850,7 @@ export default function SiniestrosPage() {
                 }`}
               ></i>
               Actualizar
-            </button>
+            </BotonAccion>
           </div>
 
           {status && (
@@ -1902,7 +1863,7 @@ export default function SiniestrosPage() {
 
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[900px] text-sm">
-              <thead className="bg-gray-50 text-gray-600">
+              <thead className="text-xs [&_th]:border [&_th]:border-slate-300" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                 <tr>
                   <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wide">
                     Siniestro
@@ -1922,7 +1883,7 @@ export default function SiniestrosPage() {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-300 [&_td]:border [&_td]:border-slate-300">
                 {loading && data.length === 0 ? (
                   <tr>
                     <td
@@ -2003,16 +1964,16 @@ export default function SiniestrosPage() {
                         </td>
 
                         <td className="px-4 py-3 text-right align-top">
-                          <button
+                          <BotonAccion tipo="consultar"
                             type="button"
                             onClick={() =>
                               abrirSeguimiento(row)
                             }
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white text-xs font-semibold"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg  text-xs font-semibold"
                           >
                             <i className="fas fa-folder-open"></i>
                             {textoAccion}
-                          </button>
+                          </BotonAccion>
                         </td>
                       </tr>
                     )
@@ -2079,16 +2040,16 @@ export default function SiniestrosPage() {
                       </p>
                     </div>
 
-                    <button
+                    <BotonAccion tipo="consultar"
                       type="button"
                       onClick={() =>
                         abrirSeguimiento(row)
                       }
-                      className="w-full mt-3 px-3 py-2 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold"
+                      className="w-full mt-3 px-3 py-2 rounded-lg  text-xs font-semibold"
                     >
                       <i className="fas fa-folder-open mr-2"></i>
                       {textoAccion}
-                    </button>
+                    </BotonAccion>
                   </article>
                 )
               })
