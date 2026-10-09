@@ -1356,6 +1356,12 @@ export default function SiniestrosPage() {
       headerRow.values = encabezados
       headerRow.font = {
         bold: true,
+        color: { argb: 'FFFFFFFF' },
+      }
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF24638C' },
       }
       headerRow.alignment = {
         horizontal: 'center',
@@ -1445,13 +1451,9 @@ export default function SiniestrosPage() {
         {
           state: 'frozen',
           ySplit: 5,
+          showGridLines: false,
         },
       ]
-
-      evidencia.autoFilter = {
-        from: 'A5',
-        to: 'I5',
-      }
 
       // ======================================================
       // HOJA 2: CONTROL ADMINISTRATIVO COMPLEMENTARIO
@@ -1478,6 +1480,12 @@ export default function SiniestrosPage() {
 
       control.getRow(1).font = {
         bold: true,
+        color: { argb: 'FFFFFFFF' },
+      }
+      control.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF24638C' },
       }
       control.getRow(1).alignment = {
         horizontal: 'center',
@@ -1595,13 +1603,9 @@ export default function SiniestrosPage() {
         {
           state: 'frozen',
           ySplit: 1,
+          showGridLines: false,
         },
       ]
-
-      control.autoFilter = {
-        from: 'A1',
-        to: 'L1',
-      }
 
       // ======================================================
       // GENERAR ARCHIVO
