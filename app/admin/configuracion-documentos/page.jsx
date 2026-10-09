@@ -7220,6 +7220,8 @@ export default function ConfiguracionDocumentosPage() {
                 }
               `}
             >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
               <h2
                 className="
                   text-sm
@@ -7245,6 +7247,15 @@ export default function ConfiguracionDocumentosPage() {
                 El diseño del encabezado es compartido. Aquí únicamente se modifican
                 los datos propios de este documento.
               </p>
+                </div>
+                {pestanaPrincipal === 'CONTRATO' && !modoEdicionDocumento && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={abrirHistorialVersiones} className="rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20"><i className="fas fa-clock-rotate-left mr-2" />Versiones anteriores{versionesDocumentoActivo.length > 0 ? ` (${versionesDocumentoActivo.length})` : ''}</button>
+                    <button type="button" onClick={abrirNuevaVersion} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800"><i className="fas fa-code-branch mr-2" />Crear nueva versión</button>
+                    <button type="button" onClick={editarVersionActual} className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100"><i className="fas fa-pen-to-square mr-2" />Editar versión actual</button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div
@@ -7493,7 +7504,23 @@ export default function ConfiguracionDocumentosPage() {
                 </div>
               </div>
 
-                            <div
+                            {pestanaPrincipal === 'CONTRATO' ? (
+                <div className="md:col-span-2 xl:col-span-4 space-y-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase text-slate-600">Observaciones</label>
+                    <div className="min-h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 whitespace-pre-wrap">
+                      {documentoActivo?.observaciones?.trim() || 'Sin observaciones registradas'}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 border-t border-slate-200 pt-3 text-xs font-semibold text-slate-600">
+                    <span>Estado del documento:</span>
+                    <span className={`rounded-full px-3 py-1 font-bold ${documentoActivo?.activo !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
+                      {documentoActivo?.activo !== false ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+              <div
                 className="
                   md:col-span-2
                   xl:col-span-4
@@ -7591,6 +7618,9 @@ export default function ConfiguracionDocumentosPage() {
                 </div>
               </div>
 
+
+              )}
+              {pestanaPrincipal !== 'CONTRATO' && (
                             <div
                 className="
                   md:col-span-2
@@ -7751,6 +7781,7 @@ export default function ConfiguracionDocumentosPage() {
                   )}
                 </div>
               </div>
+              )}
             </div>
           </div>
         )}
