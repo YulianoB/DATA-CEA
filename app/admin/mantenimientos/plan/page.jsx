@@ -8,6 +8,7 @@ import { AlertTriangle,
   Pencil, RefreshCw, Search, Settings2, X
 } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonAccion, ESTILO_SECCIONES, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 
 const TIPOS = ['AUTOMOVIL', 'CAMIONETA', 'MOTOCICLETA', 'CAMION']
 const NOMBRES_TIPO = {
@@ -469,19 +470,19 @@ export default function ConfiguracionPlanMantenimientoPage() {
                 placeholder="Buscar placa, marca, modelo, línea..."
                 className="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm" />
             </div>
-            <button onClick={cargarVehiculos} disabled={cargando}
+            <BotonAccion tipo="actualizar" onClick={cargarVehiculos} disabled={cargando}
               className="flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm">
               <RefreshCw size={16} className={cargando ? 'animate-spin' : ''} /> Actualizar
-            </button>
+            </BotonAccion>
           </div>
 
           {cargando ? <div className="py-14 text-center text-sm text-gray-500">Consultando vehículos activos...</div> :
             <div className="space-y-3">
               {TIPOS.map((tipo) => {
                 const lista = vehiculosPorTipo[tipo] ?? []
-                return <section key={tipo} className="overflow-hidden rounded-lg border border-gray-200">
+                return <section key={tipo} className="overflow-hidden rounded-lg border border-slate-300">
                   <button type="button" onClick={() => setAbiertos((x) => ({...x, [tipo]: !x[tipo]}))}
-                    className="flex w-full items-center justify-between bg-slate-600 px-3 py-2 text-white">
+                    className="flex w-full items-center justify-between px-3 py-2 text-white" style={{ backgroundColor: ESTILO_SECCIONES.fondo }}>
                     <span className="flex items-center gap-2 text-xs font-bold uppercase">
                       {abiertos[tipo] ? <ChevronDown size={17}/> : <ChevronRight size={17}/>}
                       <Car size={15}/>{NOMBRES_TIPO[tipo]}
@@ -490,7 +491,7 @@ export default function ConfiguracionPlanMantenimientoPage() {
                   </button>
                   {abiertos[tipo] && <div className="overflow-x-auto">
                     <table className="min-w-full text-xs">
-                      <thead className="bg-blue-100 text-[10px] font-bold uppercase text-slate-700 [&_th]:border [&_th]:border-slate-400">
+                      <thead className="text-[10px] font-bold uppercase [&_th]:border [&_th]:border-slate-300" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                         <tr>
                           <th className="px-2 py-1.5 text-left">Placa</th>
                           <th className="px-2 py-1.5 text-left">Vehículo</th>
@@ -503,7 +504,7 @@ export default function ConfiguracionPlanMantenimientoPage() {
                           <th className="px-2 py-1.5 text-center">Acción</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 [&_td]:border [&_td]:border-slate-300">
+                      <tbody className="divide-y divide-slate-300 [&_td]:border [&_td]:border-slate-300">
                         {lista.length === 0 ? <tr><td colSpan={9} className="px-3 py-6 text-center text-gray-500">No hay vehículos activos de este tipo.</td></tr> :
                         lista.map((v) => <tr key={v.id} className="hover:bg-gray-50">
                           <td className="px-2 py-1.5 font-bold">{v.placa}</td>
@@ -528,9 +529,9 @@ export default function ConfiguracionPlanMantenimientoPage() {
                               <span className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-bold text-blue-700">EN CONFIGURACIÓN · {v.actividades_configuradas}</span> :
                               <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-700">SIN CONFIGURAR</span>}
                           </td>
-                          <td className="px-2 py-1.5 text-center"><button onClick={() => abrirConfiguracion(v.id)}
+                          <td className="px-2 py-1.5 text-center"><BotonAccion tipo="consultar" onClick={() => abrirConfiguracion(v.id)}
                             className="inline-flex items-center gap-1 rounded-md bg-slate-800 px-2 py-1 text-[10px] font-semibold text-white">
-                            <Settings2 size={14}/>Configurar</button></td>
+                            <Settings2 size={14}/>Configurar</BotonAccion></td>
                         </tr>)}
                       </tbody>
                     </table>
@@ -542,8 +543,8 @@ export default function ConfiguracionPlanMantenimientoPage() {
       </div>
 
       {modalAbierto && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-2 md:p-4">
-        <div className="flex h-[94vh] max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
-          <div className="flex items-center justify-between bg-slate-700 px-3 py-2 text-white">
+        <div className="flex h-[94vh] max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-slate-300 bg-white shadow-2xl">
+          <div className="flex items-center justify-between px-3 py-2 text-white" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo }}>
             <div><div className="text-xs font-bold uppercase">Configuración Plan de Mantenimiento</div>
               <div className="text-[11px] text-slate-300">{vehiculoDetalle ? `${vehiculoDetalle.placa} · ${vehiculoDetalle.marca || ''} ${vehiculoDetalle.modelo || ''}` : 'Consultando...'}</div></div>
             <button type="button" onClick={cerrarModal} disabled={guardando} className="p-1"><X size={20}/></button>
@@ -639,13 +640,13 @@ export default function ConfiguracionPlanMantenimientoPage() {
                     <input value={busquedaActividad} onChange={(e) => setBusquedaActividad(e.target.value)}
                       placeholder="Buscar actividad..." className="w-full rounded-md border py-1.5 pl-8 pr-2 text-xs"/>
                   </div>
-                  <button disabled={estadoConfiguracion === 'FINALIZADO'} onClick={() => {setNuevaActividad({nombre:'',accion:'',descripcion:'',motivo_criterio:'',frecuencia_recomendada_km:''});setModalNuevaActividad(true)}}
-                    className="flex items-center gap-1 rounded-md border px-2 py-1.5 text-[10px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"><Plus size={12}/>Agregar actividad</button>
+                  <BotonAccion tipo="agregar" disabled={estadoConfiguracion === 'FINALIZADO'} onClick={() => {setNuevaActividad({nombre:'',accion:'',descripcion:'',motivo_criterio:'',frecuencia_recomendada_km:''});setModalNuevaActividad(true)}}
+                    className="flex items-center gap-1 rounded-md border px-2 py-1.5 text-[10px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"><Plus size={12}/>Agregar actividad</BotonAccion>
                 </div>
 
                 <div className="overflow-x-auto rounded-md border border-slate-300">
                   <table className="w-full table-fixed text-[11px]">
-                    <thead className="bg-blue-100 font-bold text-slate-700 [&_th]:border [&_th]:border-slate-400">
+                    <thead className="font-bold [&_th]:border [&_th]:border-slate-300" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                       <tr>
                         <th className="w-[9%] px-1.5 py-1.5 text-center">Aplicar</th>
                         <th className="w-[43%] px-2 py-1.5 text-left">Actividad</th>
@@ -653,7 +654,7 @@ export default function ConfiguracionPlanMantenimientoPage() {
                         <th className="w-[23%] px-2 py-1.5 text-center">Frecuencia configurada</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 [&_td]:border [&_td]:border-slate-300">
+                    <tbody className="divide-y divide-slate-300 [&_td]:border [&_td]:border-slate-300">
                       {filasActividades.map((fila) => {
                         if (fila.tipo === 'GRUPO') {
                           return (
@@ -724,18 +725,18 @@ export default function ConfiguracionPlanMantenimientoPage() {
                   <span className="ml-2">Estado: <strong>{estadoConfiguracion === 'FINALIZADO' ? 'FINALIZADO' : estadoConfiguracion === 'BORRADOR' ? 'EN CONFIGURACIÓN' : 'SIN CONFIGURAR'}</strong></span>
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={cerrarModal} disabled={guardando} className="rounded-md border px-3 py-1.5 text-xs">Cerrar</button>
+                  <BotonAccion tipo="cancelar" type="button" onClick={cerrarModal} disabled={guardando} className="rounded-md border px-3 py-1.5 text-xs">Cerrar</BotonAccion>
                   {estadoConfiguracion === 'FINALIZADO' ? (
-                    <button type="button" onClick={reabrirConfiguracion} disabled={guardando} className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
+                    <BotonAccion tipo="editar" type="button" onClick={reabrirConfiguracion} disabled={guardando} className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
                       {guardando ? 'Procesando...' : 'Reabrir configuración'}
-                    </button>
+                    </BotonAccion>
                   ) : (<>
-                    <button type="button" onClick={guardarConfiguracion} disabled={guardando} className="rounded-md border border-slate-400 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-60">
+                    <BotonAccion tipo="guardar" type="button" onClick={guardarConfiguracion} disabled={guardando} className="rounded-md border border-slate-400 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-60">
                       {guardando ? 'Guardando...' : 'Guardar borrador'}
-                    </button>
-                    <button type="button" onClick={finalizarConfiguracion} disabled={guardando} className="rounded-md bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
+                    </BotonAccion>
+                    <BotonAccion tipo="guardar" type="button" onClick={finalizarConfiguracion} disabled={guardando} className="rounded-md bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
                       {guardando ? 'Procesando...' : 'Finalizar plan'}
-                    </button>
+                    </BotonAccion>
                   </>)}
                 </div>
               </div>
@@ -746,7 +747,7 @@ export default function ConfiguracionPlanMantenimientoPage() {
 
       {modalNuevaActividad && vehiculoDetalle && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4">
         <div className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
-          <div className="flex items-center justify-between bg-slate-800 px-4 py-3 text-white">
+          <div className="flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo }}>
             <div><div className="text-sm font-bold uppercase">Agregar actividad</div><div className="text-[11px] text-slate-300">{SINGULAR_TIPO[vehiculoDetalle.tipo_vehiculo_normalizado]}</div></div>
             <button onClick={()=>setModalNuevaActividad(false)}><X size={19}/></button>
           </div>
@@ -762,8 +763,8 @@ export default function ConfiguracionPlanMantenimientoPage() {
             <div><label className="mb-1 block text-xs font-bold uppercase text-gray-600">Frecuencia sugerida (km)</label>
               <input type="number" min="1" step={frecuenciaBaseKm || 1} value={nuevaActividad.frecuencia_recomendada_km} onChange={(e)=>setNuevaActividad(x=>({...x,frecuencia_recomendada_km:e.target.value}))} className="w-full rounded-md border px-3 py-2 text-sm"/></div>
             <div className="flex justify-end gap-2 border-t pt-4">
-              <button type="button" onClick={()=>setModalNuevaActividad(false)} className="rounded-md border px-4 py-2 text-sm">Cancelar</button>
-              <button type="submit" disabled={guardandoNueva} className="rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{guardandoNueva?'Guardando...':'Guardar actividad'}</button>
+              <BotonAccion tipo="cancelar" type="button" onClick={()=>setModalNuevaActividad(false)} className="rounded-md border px-4 py-2 text-sm">Cancelar</BotonAccion>
+              <BotonAccion tipo="guardar" type="submit" disabled={guardandoNueva} className="rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{guardandoNueva?'Guardando...':'Guardar actividad'}</BotonAccion>
             </div>
           </form>
         </div>
