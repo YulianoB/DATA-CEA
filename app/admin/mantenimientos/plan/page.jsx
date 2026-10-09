@@ -8,6 +8,7 @@ import { AlertTriangle,
   Pencil, RefreshCw, Search, Settings2, X
 } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 
 const TIPOS = ['AUTOMOVIL', 'CAMIONETA', 'MOTOCICLETA', 'CAMION']
@@ -769,6 +770,14 @@ export default function ConfiguracionPlanMantenimientoPage() {
           </form>
         </div>
       </div>}
+      <ModalResultado
+        abierto={Boolean(error || mensaje)}
+        tipo={error ? 'error' : 'exito'}
+        titulo={error ? 'No fue posible completar la operación' : 'Operación realizada satisfactoriamente'}
+        mensaje={error || mensaje}
+        onCerrar={() => { setError(''); setMensaje(''); }}
+      />
+
     </div>
   )
 }
