@@ -720,6 +720,7 @@ async function obtenerResumen({
   fechaFin,
   tipoVehiculo = '',
   placa = '',
+  estadoObservacion = '',
 }) {
   let consulta =
     supabase
@@ -763,6 +764,10 @@ async function obtenerResumen({
         'placa',
         placa
       )
+  }
+
+  if (estadoObservacion) {
+    consulta = consulta.eq('estado_observacion', estadoObservacion)
   }
 
   const {
@@ -1060,6 +1065,7 @@ export async function GET(request) {
             fechaFin,
             tipoVehiculo,
             placa,
+            estadoObservacion,
           }),
         ])
 
