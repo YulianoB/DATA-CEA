@@ -461,8 +461,6 @@ export default function ConfiguracionPlanMantenimientoPage() {
         />
 
         <main className="p-4 md:p-5">
-          {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-          {mensaje && <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{mensaje}</div>}
 
           <div className="mb-4 flex gap-2">
             <div className="relative flex-1 max-w-md">
@@ -600,14 +598,6 @@ export default function ConfiguracionPlanMantenimientoPage() {
                   </div>
                 </div>
 
-                {(error || mensaje) && (
-                  <div className={`mb-2 rounded-md border px-3 py-2 text-xs ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-green-200 bg-green-50 text-green-700'}`}>
-                    <div className="flex items-start gap-2">
-                      {error ? <AlertTriangle size={14} className="mt-0.5 shrink-0"/> : <Check size={14} className="mt-0.5 shrink-0"/>}
-                      <span>{error || mensaje}</span>
-                    </div>
-                  </div>
-                )}
 
                 <div className="mb-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
