@@ -439,7 +439,7 @@ function TarjetaEstado({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={activa}
-      aria-label={`Filtrar siniestros: ${titulo}. ${fmt(cantidad)} registros${activa ? '. Filtro activo' : ''.'}`}
+      aria-label={`Filtrar siniestros: ${titulo}. ${fmt(cantidad)} registros${activa ? '. Filtro activo' : '.'}`}
       className={`w-full rounded-xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24638C] ${clasesActiva} ${
         disabled
           ? 'opacity-60 cursor-wait'
