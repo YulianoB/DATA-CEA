@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { cerrarSesion } from '@/lib/auth/logout'
 
@@ -1039,6 +1040,14 @@ function Dato({ titulo, valor }) {
       <div className="mt-0.5 text-xs font-extrabold text-slate-800">
         {valor}
       </div>
+      <ModalResultado
+        abierto={Boolean(error)}
+        tipo={error ? 'error' : 'exito'}
+        titulo={error ? 'No fue posible completar la operación' : 'Operación realizada satisfactoriamente'}
+        mensaje={error || ''}
+        onCerrar={() => { setError('');  }}
+      />
+
     </div>
   )
 }
