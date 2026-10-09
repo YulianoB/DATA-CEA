@@ -2214,9 +2214,22 @@ export default function SiniestrosPage() {
                   className="shrink-0 rounded-md p-1.5 text-[#194567] hover:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed">
                   <i className="fas fa-chevron-right" aria-hidden="true"></i>
                 </button>
-                <div role="progressbar" aria-label="Avance del expediente" aria-valuemin={1} aria-valuemax={5} aria-valuenow={pasoExpediente}
-                  className="absolute bottom-0 left-0 right-0 h-1 bg-slate-200">
-                  <div className="h-full bg-[#24638C] transition-all duration-200" style={{ width: `${pasoExpediente * 20}%` }} />
+                <div role="group" aria-label="Estado de avance del expediente"
+                  className="absolute bottom-0 left-0 right-0 flex h-1 overflow-hidden">
+                  {[
+                    true,
+                    true,
+                    pasoAnalisisGuardado || esCerrado,
+                    pasoCostosGuardado || esCerrado,
+                    acta?.estado === 'FINALIZADA' || esCerrado,
+                  ].map((completado, indice) => (
+                    <div
+                      key={indice}
+                      role="img"
+                      aria-label={`Paso ${indice + 1}: ${completado ? 'completado' : 'pendiente'}`}
+                      className={`h-full flex-1 transition-colors duration-200 ${completado ? 'bg-[#24638C]' : 'bg-orange-400'}`}
+                    />
+                  ))}
                 </div>
               </nav>
             </div>
