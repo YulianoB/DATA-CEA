@@ -19,7 +19,7 @@ import {
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
-import { CarFront } from 'lucide-react'
+import { CarFront, ClipboardList } from 'lucide-react'
 
 import {
   cerrarSesion,
@@ -1720,21 +1720,23 @@ export default function SiniestrosPage() {
             BANDEJAS POR ESTADO
         ================================================== */}
 
-        <section className="rounded-xl border border-slate-300 bg-white px-4 py-3 shadow-sm">
-          <label htmlFor="filtro-estado-siniestros" className="mb-1.5 block text-sm font-bold text-[#194567]">
-            Filtrar siniestros por estado
+        <section className="flex justify-end rounded-xl border border-slate-300 bg-white px-4 py-3 shadow-sm">
+          <div className="flex items-center justify-end gap-3">
+          <label htmlFor="filtro-estado-siniestros" className="whitespace-nowrap text-sm font-bold text-[#194567]">
+            Filtrar por estado
           </label>
           <select
             id="filtro-estado-siniestros"
             value={estadoActual}
             disabled={loading}
             onChange={event => consultarEstado(event.target.value, 1)}
-            className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#24638C] focus:ring-2 focus:ring-[#24638C]/20 disabled:opacity-60"
+            className="w-36 sm:w-40 rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#24638C] focus:ring-2 focus:ring-[#24638C]/20 disabled:opacity-60"
           >
             {ESTADOS_BANDEJA.map(item => (
               <option key={item.valor} value={item.valor}>{item.titulo}</option>
             ))}
           </select>
+          </div>
         </section>
 
         {/* ==================================================
@@ -1745,8 +1747,8 @@ export default function SiniestrosPage() {
           <div className="px-4 sm:px-5 py-3 border-b border-slate-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-t-xl" style={{ backgroundColor: ESTILO_SECCIONES.fondo }}>
             <div>
               <h2 className="font-bold text-white flex items-center gap-2">
-                <i className="fas fa-inbox text-[var(--primary)]"></i>
-                Bandeja de siniestros
+                <ClipboardList aria-hidden="true" size={20} strokeWidth={2.5} className="shrink-0 text-white" />
+                Registros de siniestros viales
               </h2>
 
               <p className="text-xs text-white/85 mt-1">
@@ -2027,61 +2029,10 @@ export default function SiniestrosPage() {
         </section>
 
         {/* ==================================================
-            RESUMEN GENERAL
-        ================================================== */}
-
-        <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-white border rounded-xl p-3">
-            <p className="text-[10px] uppercase text-gray-500 font-bold">
-              Personas implicadas
-            </p>
-            <p className="text-lg font-black mt-1">
-              {fmt(resumen?.personas_involucradas)}
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-xl p-3">
-            <p className="text-[10px] uppercase text-gray-500 font-bold">
-              Heridos leves
-            </p>
-            <p className="text-lg font-black mt-1">
-              {fmt(resumen?.heridos_leves)}
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-xl p-3">
-            <p className="text-[10px] uppercase text-gray-500 font-bold">
-              Heridos graves
-            </p>
-            <p className="text-lg font-black mt-1">
-              {fmt(resumen?.heridos_graves)}
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-xl p-3">
-            <p className="text-[10px] uppercase text-gray-500 font-bold">
-              Fatalidades
-            </p>
-            <p className="text-lg font-black mt-1 text-red-700">
-              {fmt(resumen?.fatalidades)}
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-xl p-3 col-span-2 md:col-span-1">
-            <p className="text-[10px] uppercase text-gray-500 font-bold">
-              Costo acumulado
-            </p>
-            <p className="text-lg font-black mt-1">
-              {fmtCOP(resumen?.costos?.total_general)}
-            </p>
-          </div>
-        </section>
-
-        {/* ==================================================
             EVIDENCIA TRIMESTRAL
         ================================================== */}
 
-        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 sm:p-5">
+        <section className="bg-white border border-slate-400 rounded-2xl shadow-sm p-4 sm:p-5">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
             <div className="max-w-2xl">
               <h2 className="font-black text-gray-900 flex items-center gap-2">
@@ -2107,7 +2058,7 @@ export default function SiniestrosPage() {
                       Number(event.target.value)
                     )
                   }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                  className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm bg-white"
                 >
                   {aniosDisponibles.map(anio => (
                     <option
@@ -2132,7 +2083,7 @@ export default function SiniestrosPage() {
                       Number(event.target.value)
                     )
                   }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                  className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm bg-white"
                 >
                   <option value={1}>I trimestre</option>
                   <option value={2}>II trimestre</option>
@@ -2382,7 +2333,7 @@ export default function SiniestrosPage() {
                           setNumIpat(event.target.value)
                         }
                         disabled={!puedeEditar}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                        className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                         placeholder="Consecutivo IPAT en RNAT del RUNT"
                       />
                     </div>
@@ -2399,7 +2350,7 @@ export default function SiniestrosPage() {
                           setAutoridad(event.target.value)
                         }
                         disabled={!puedeEditar}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                        className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                         placeholder="Autoridad que elaboró el IPAT"
                       />
                     </div>
@@ -2417,7 +2368,7 @@ export default function SiniestrosPage() {
                         setResumenAnalisis(event.target.value)
                       }
                       disabled={!puedeEditar}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                      className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                       placeholder="Registre el análisis administrativo, conclusiones y decisiones adoptadas."
                     />
                   </div>
@@ -2613,7 +2564,7 @@ export default function SiniestrosPage() {
                             max={hoyBogota()}
                             onChange={event => setFechaActa(event.target.value)}
                             disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                            className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                           />
                         </div>
 
@@ -2623,7 +2574,7 @@ export default function SiniestrosPage() {
                             type="text"
                             value={acta?.numero_acta || 'Se asignará automáticamente'}
                             disabled
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-100"
+                            className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm bg-gray-100"
                           />
                         </div>
                       </div>
@@ -2642,7 +2593,7 @@ export default function SiniestrosPage() {
                             value={value}
                             onChange={event => setter(event.target.value)}
                             disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                            className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                             placeholder={placeholder}
                           />
                         </div>
@@ -2656,7 +2607,7 @@ export default function SiniestrosPage() {
                             value={responsablesCompromisos}
                             onChange={event => setResponsablesCompromisos(event.target.value)}
                             disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                            className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                             placeholder="Nombre o responsables"
                           />
                         </div>
@@ -2669,7 +2620,7 @@ export default function SiniestrosPage() {
                             min={fechaActa || rowSel?.fecha_siniestro || undefined}
                             onChange={event => setFechaSeguimiento(event.target.value)}
                             disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                            className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                           />
                         </div>
                       </div>
@@ -2683,7 +2634,7 @@ export default function SiniestrosPage() {
                           value={participantesTexto}
                           onChange={event => setParticipantesTexto(event.target.value)}
                           disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                          className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                           placeholder={'Un participante por línea. Puede usar: Nombre - Cargo'}
                         />
                         <p className="text-[10px] text-gray-500 mt-1">
@@ -2698,7 +2649,7 @@ export default function SiniestrosPage() {
                           value={observacionesActa}
                           onChange={event => setObservacionesActa(event.target.value)}
                           disabled={!puedeEditar || acta?.estado === 'FINALIZADA'}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                          className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                           placeholder="Observaciones adicionales, si aplica."
                         />
                       </div>
