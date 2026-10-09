@@ -7029,11 +7029,11 @@ export default function ConfiguracionDocumentosPage() {
         </div>
       )}
 
-        {pestanaPrincipal === 'CONTRATO' && modoEdicionDocumento && documentoActivo && (
+        {['CONTRATO', 'CODIGO_CONDUCTA', 'AUTORIZACION_DATOS_CEA'].includes(pestanaPrincipal) && modoEdicionDocumento && documentoActivo && (
           <div className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/60 p-3 sm:p-6">
-            <div role="dialog" aria-modal="true" aria-label="Editar versión actual del contrato" className="my-auto flex max-h-[calc(100vh-24px)] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[calc(100vh-48px)]">
+            <div role="dialog" aria-modal="true" aria-label="Editar versión actual del documento" className="my-auto flex max-h-[calc(100vh-24px)] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[calc(100vh-48px)]">
               <FranjaSuperiorModal className="px-5 py-4">
-                <h2 className="text-base font-bold">Editar versión actual del contrato</h2>
+                <h2 className="text-base font-bold">Editar versión actual: {pestanaPrincipal === 'CONTRATO' ? 'Contrato' : pestanaPrincipal === 'CODIGO_CONDUCTA' ? 'Código de Conducta' : 'Autorización de Datos'}</h2>
                 <p className="mt-1 text-xs text-blue-100">Actualice los datos de control documental sin crear otra versión.</p>
               </FranjaSuperiorModal>
               <div className="grid gap-4 overflow-y-auto p-5 sm:grid-cols-2">
@@ -7199,7 +7199,7 @@ export default function ConfiguracionDocumentosPage() {
               overflow-hidden
               rounded-xl
               border
-              border-gray-300
+              border-slate-400
               bg-white
               shadow-sm
             "
@@ -7248,7 +7248,7 @@ export default function ConfiguracionDocumentosPage() {
                 los datos propios de este documento.
               </p>
                 </div>
-                {pestanaPrincipal === 'CONTRATO' && !modoEdicionDocumento && (
+                {!modoEdicionDocumento && (
                   <div className="flex flex-wrap items-center gap-2">
                     <button type="button" onClick={abrirHistorialVersiones} className="rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20"><i className="fas fa-clock-rotate-left mr-2" />Versiones anteriores{versionesDocumentoActivo.length > 0 ? ` (${versionesDocumentoActivo.length})` : ''}</button>
                     <button type="button" onClick={abrirNuevaVersion} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800"><i className="fas fa-code-branch mr-2" />Crear nueva versión</button>
@@ -7288,7 +7288,7 @@ export default function ConfiguracionDocumentosPage() {
                 <input
                   type="text"
                   disabled={
-                    !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
+                    true
                   }
                   value={
                     documentoActivo
@@ -7309,7 +7309,7 @@ export default function ConfiguracionDocumentosPage() {
                     w-full
                     rounded-lg
                     border
-                    border-slate-300
+                    border-slate-400
                     px-3
                     text-sm
                     outline-none
@@ -7335,7 +7335,7 @@ export default function ConfiguracionDocumentosPage() {
                 <input
                   type="text"
                   disabled={
-                    !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
+                    true
                   }
                   value={
                     documentoActivo
@@ -7356,7 +7356,7 @@ export default function ConfiguracionDocumentosPage() {
                     w-full
                     rounded-lg
                     border
-                    border-slate-300
+                    border-slate-400
                     px-3
                     text-sm
                     outline-none
@@ -7382,7 +7382,7 @@ export default function ConfiguracionDocumentosPage() {
                 <input
                   type="date"
                   disabled={
-                    !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
+                    true
                   }
                   value={
                     documentoActivo
@@ -7403,7 +7403,7 @@ export default function ConfiguracionDocumentosPage() {
                     w-full
                     rounded-lg
                     border
-                    border-slate-300
+                    border-slate-400
                     px-3
                     text-sm
                     outline-none
@@ -7447,7 +7447,7 @@ export default function ConfiguracionDocumentosPage() {
                       cursor-not-allowed
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       bg-slate-100
                       px-3
                       text-sm
@@ -7473,7 +7473,7 @@ export default function ConfiguracionDocumentosPage() {
                   <input
                     type="date"
                     disabled={
-                    !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
+                    true
                   }
                     value={
                       documentoActivo
@@ -7494,7 +7494,7 @@ export default function ConfiguracionDocumentosPage() {
                       w-full
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       text-sm
                       outline-none
@@ -7504,15 +7504,15 @@ export default function ConfiguracionDocumentosPage() {
                 </div>
               </div>
 
-                            {pestanaPrincipal === 'CONTRATO' ? (
+                            {true ? (
                 <div className="md:col-span-2 xl:col-span-4 space-y-3">
                   <div>
                     <label className="mb-1 block text-[11px] font-bold uppercase text-slate-600">Observaciones</label>
-                    <div className="min-h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 whitespace-pre-wrap">
+                    <div className="min-h-10 w-full rounded-lg border border-slate-400 bg-slate-50 px-3 py-2 text-sm text-slate-700 whitespace-pre-wrap">
                       {documentoActivo?.observaciones?.trim() || 'Sin observaciones registradas'}
                     </div>
                   </div>
-                  <div className="flex items-center justify-end gap-2 border-t border-slate-200 pt-3 text-xs font-semibold text-slate-600">
+                  <div className="flex items-center justify-end gap-2 border-t border-slate-300 pt-3 text-xs font-semibold text-slate-600">
                     <span>Estado del documento:</span>
                     <span className={`rounded-full px-3 py-1 font-bold ${documentoActivo?.activo !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
                       {documentoActivo?.activo !== false ? 'Activo' : 'Inactivo'}
@@ -7538,7 +7538,7 @@ export default function ConfiguracionDocumentosPage() {
                     gap-2
                     rounded-lg
                     border
-                    border-slate-300
+                    border-slate-400
                     bg-slate-50
                     px-3
                     text-xs
@@ -7549,7 +7549,7 @@ export default function ConfiguracionDocumentosPage() {
                   <input
                     type="checkbox"
                     disabled={
-                      !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
+                      true
                     }
                     checked={
                       documentoActivo
@@ -7585,7 +7585,7 @@ export default function ConfiguracionDocumentosPage() {
                   <input
                     type="text"
                     disabled={
-                      !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
+                      true
                     }
                     value={
                       documentoActivo
@@ -7605,7 +7605,7 @@ export default function ConfiguracionDocumentosPage() {
                       w-full
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       text-sm
                       outline-none
@@ -7619,168 +7619,6 @@ export default function ConfiguracionDocumentosPage() {
               </div>
 
 
-              )}
-              {pestanaPrincipal !== 'CONTRATO' && (
-                            <div
-                className="
-                  md:col-span-2
-                  xl:col-span-5
-                "
-              >
-                <div
-                  className="
-                    flex
-                    flex-wrap
-                    justify-end
-                    gap-2
-                  "
-                >
-                  {!modoEdicionDocumento && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={
-                          abrirHistorialVersiones
-                        }
-                        className="
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-4
-                          py-2
-                          text-xs
-                          font-bold
-                          text-slate-700
-                          hover:bg-slate-100
-                        "
-                      >
-                        <i className="fas fa-clock-rotate-left mr-2" />
-
-                        Versiones anteriores
-                        {versionesDocumentoActivo.length >
-                        0
-                          ? ` (${versionesDocumentoActivo.length})`
-                          : ''}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={
-                          abrirNuevaVersion
-                        }
-                        className="
-                          rounded-lg
-                          bg-emerald-700
-                          px-4
-                          py-2
-                          text-xs
-                          font-bold
-                          text-white
-                          hover:bg-emerald-800
-                        "
-                      >
-                        <i className="fas fa-code-branch mr-2" />
-
-                        Crear nueva versión
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={
-                          editarVersionActual
-                        }
-                        className={`
-                          rounded-lg
-                          px-4
-                          py-2
-                          text-xs
-                          font-bold
-                          text-white
-                          ${
-                            pestanaPrincipal ===
-                            'CODIGO_CONDUCTA'
-                              ? 'bg-amber-700 hover:bg-amber-800'
-                              : pestanaPrincipal ===
-                                  'AUTORIZACION_DATOS_CEA'
-                                ? 'bg-teal-700 hover:bg-teal-800'
-                                : 'bg-sky-800 hover:bg-sky-900'
-                          }
-                        `}
-                      >
-                        <i className="fas fa-pen-to-square mr-2" />
-
-                        Editar versión actual
-                      </button>
-                    </>
-                  )}
-
-                  {modoEdicionDocumento && pestanaPrincipal !== 'CONTRATO' && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={
-                          cancelarEdicionVersionActual
-                        }
-                        disabled={
-                          guardandoDocumento
-                        }
-                        className="
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-4
-                          py-2
-                          text-xs
-                          font-bold
-                          text-slate-700
-                          hover:bg-slate-100
-                          disabled:opacity-50
-                        "
-                      >
-                        Cancelar edición
-                      </button>
-
-                      <button
-                        type="button"
-                        disabled={
-                          guardandoDocumento
-                        }
-                        onClick={
-                          guardarDocumento
-                        }
-                        className={`
-                          rounded-lg
-                          px-4
-                          py-2
-                          text-xs
-                          font-bold
-                          text-white
-                          transition
-                          disabled:cursor-not-allowed
-                          disabled:opacity-50
-                          ${
-                            pestanaPrincipal ===
-                            'CODIGO_CONDUCTA'
-                              ? 'bg-amber-700 hover:bg-amber-800'
-                              : pestanaPrincipal ===
-                                  'AUTORIZACION_DATOS_CEA'
-                                ? 'bg-teal-700 hover:bg-teal-800'
-                                : 'bg-sky-800 hover:bg-sky-900'
-                          }
-                        `}
-                      >
-                        <i className="fas fa-floppy-disk mr-2" />
-
-                        {guardandoDocumento
-                          ? 'Guardando...'
-                          : 'Guardar versión actual'}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
               )}
             </div>
           </div>
