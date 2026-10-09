@@ -9,6 +9,8 @@ const grupos = [
     id: 'gestion-academica',
     titulo: 'Gestión académica',
     columnas: 2,
+    compacta: true,
+    compactaAlta: true,
     opciones: [
       {
         id: 'horarios',
@@ -35,11 +37,13 @@ export default function ConfiguracionAcademicaPage() {
       subtitulo="Organización de planes de formación y horarios académicos del CEA."
       iconoTitulo={GraduationCap}
       grupos={grupos}
+      anchoContenido="720px"
       mostrarRegresar
       rutaRegreso="/admin"
       textoRegreso="Menú Administrativo"
       mostrarCerrarSesion
       contenedorTarjetas
+      mostrarPie
     />
   )
 }
