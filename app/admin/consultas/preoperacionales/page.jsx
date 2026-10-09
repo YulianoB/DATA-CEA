@@ -832,6 +832,10 @@ export default function PreoperacionalesPage() {
           )
         }
 
+        if (estadoFiltro !== 'TODOS') {
+          params.set('estado_observacion', estadoFiltro)
+        }
+
         const response =
           await fetch(
             `/api/admin/consultas/preoperacionales?${params.toString()}`,
@@ -968,10 +972,10 @@ export default function PreoperacionalesPage() {
     () => {
       setFilters({
         startDate:
-          '',
+          '1900-01-01',
 
         endDate:
-          '',
+          hoyBogota(),
 
         tipoVehiculo:
           '',
@@ -982,6 +986,8 @@ export default function PreoperacionalesPage() {
         conObservaciones:
           false,
       })
+
+      setEstadoFiltro('PENDIENTE')
 
       setData(
         []
@@ -1451,7 +1457,11 @@ export default function PreoperacionalesPage() {
         )
       }
 
-      const response =
+      if (estadoFiltro !== 'TODOS') {
+          params.set('estado_observacion', estadoFiltro)
+        }
+
+        const response =
         await fetch(
           `/api/admin/consultas/preoperacionales?${params.toString()}`,
           {
