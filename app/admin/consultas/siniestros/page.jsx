@@ -438,7 +438,9 @@ function TarjetaEstado({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`w-full rounded-xl border p-3 text-left transition ${clasesActiva} ${
+      aria-pressed={activa}
+      aria-label={`Filtrar siniestros: ${titulo}. ${fmt(cantidad)} registros${activa ? '. Filtro activo' : ''.'}`}
+      className={`w-full rounded-xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24638C] ${clasesActiva} ${
         disabled
           ? 'opacity-60 cursor-wait'
           : ''
@@ -479,9 +481,7 @@ function TarjetaEstado({
             : 'text-gray-400'
         }`}
       >
-        {valor === 'TODOS'
-          ? 'Ver todos los registros'
-          : `Ver registros ${titulo.toLowerCase()}`}
+        {activa ? '✓ Filtro activo' : 'Seleccionar para filtrar'}
       </p>
     </button>
   )
@@ -1789,7 +1789,12 @@ export default function SiniestrosPage() {
             BANDEJAS POR ESTADO
         ================================================== */}
 
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <section aria-label="Filtros de siniestros por estado" className="space-y-2">
+          <div>
+            <h2 className="text-sm font-bold text-[#194567]">Filtrar siniestros por estado</h2>
+            <p className="text-xs text-slate-600">Seleccione una tarjeta para consultar los siniestros de ese estado. Los números indican la cantidad de registros.</p>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {ESTADOS_BANDEJA.map(item => (
             <TarjetaEstado
               key={item.valor}
@@ -1810,6 +1815,7 @@ export default function SiniestrosPage() {
               }
             />
           ))}
+          </div>
         </section>
 
         {/* ==================================================
@@ -1825,9 +1831,7 @@ export default function SiniestrosPage() {
               </h2>
 
               <p className="text-xs text-white/85 mt-1">
-                {estadoActual === 'TODOS'
-                  ? 'Mostrando todos los registros.'
-                  : `Mostrando registros en estado ${estadoActual}.`}
+                Filtro aplicado: <strong>{estadoActual === 'TODOS' ? 'Todos los siniestros' : ESTADOS_BANDEJA.find(item => item.valor === estadoActual)?.titulo || estadoActual}</strong>
               </p>
             </div>
 
@@ -1865,19 +1869,19 @@ export default function SiniestrosPage() {
             <table className="w-full min-w-[900px] text-sm">
               <thead className="text-xs [&_th]:border [&_th]:border-slate-300" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                 <tr>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wide">
+                  <th className="text-center px-4 py-3 text-[10px] uppercase tracking-wide">
                     Siniestro
                   </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wide">
+                  <th className="text-center px-4 py-3 text-[10px] uppercase tracking-wide">
                     Vehículo / Conductor
                   </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wide">
+                  <th className="text-center px-4 py-3 text-[10px] uppercase tracking-wide">
                     Afectación
                   </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wide">
+                  <th className="text-center px-4 py-3 text-[10px] uppercase tracking-wide">
                     Estado
                   </th>
-                  <th className="text-right px-4 py-3 text-[10px] uppercase tracking-wide">
+                  <th className="text-center px-4 py-3 text-[10px] uppercase tracking-wide">
                     Acción
                   </th>
                 </tr>
@@ -1925,7 +1929,7 @@ export default function SiniestrosPage() {
                             : 'hover:bg-gray-50'
                         }
                       >
-                        <td className="px-4 py-3 align-top">
+                        <td className="px-4 py-3 align-middle text-center">
                           <p className="font-bold text-gray-900">
                             {row?.consecutivo || `#${row.id}`}
                           </p>
@@ -1936,7 +1940,7 @@ export default function SiniestrosPage() {
                           </p>
                         </td>
 
-                        <td className="px-4 py-3 align-top">
+                        <td className="px-4 py-3 align-middle text-center">
                           <p className="font-bold text-gray-800">
                             {row?.placa || '-'}
                           </p>
@@ -1948,7 +1952,7 @@ export default function SiniestrosPage() {
                           </p>
                         </td>
 
-                        <td className="px-4 py-3 align-top">
+                        <td className="px-4 py-3 align-middle text-center">
                           <p className="text-xs font-semibold text-gray-700">
                             {obtenerTextoAfectacion(row)}
                           </p>
@@ -1957,13 +1961,13 @@ export default function SiniestrosPage() {
                           </p>
                         </td>
 
-                        <td className="px-4 py-3 align-top">
+                        <td className="px-4 py-3 align-middle text-center">
                           <EstadoChip
                             estado={row?.estado_analisis}
                           />
                         </td>
 
-                        <td className="px-4 py-3 text-right align-top">
+                        <td className="px-4 py-3 align-middle text-center">
                           <BotonAccion tipo="consultar"
                             type="button"
                             onClick={() =>
