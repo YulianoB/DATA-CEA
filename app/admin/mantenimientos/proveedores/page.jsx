@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
 import { BotonAccion, ESTILO_ENCABEZADO_TABLA, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_FRANJA_SUPERIOR_MODAL } from '@/components/admin/EstiloModulo'
 import { cerrarSesion } from '@/lib/auth/logout'
 
@@ -1032,6 +1033,14 @@ export default function ProveedoresMantenimientoPage() {
           box-shadow: 0 0 0 1px rgb(100 116 139);
         }
       `}</style>
+      <ModalResultado
+        abierto={Boolean(error || mensaje)}
+        tipo={error ? 'error' : 'exito'}
+        titulo={error ? 'No fue posible completar la operación' : 'Operación realizada satisfactoriamente'}
+        mensaje={error || mensaje}
+        onCerrar={() => { setError(''); setMensaje(''); }}
+      />
+
     </div>
   )
 }
