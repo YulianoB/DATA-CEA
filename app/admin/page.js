@@ -42,7 +42,7 @@ const GRUPOS_MENU = [
       { id: 'siet', titulo: 'Control SIET', icono: FileSpreadsheet, ruta: '/admin/siet' },
       { id: 'personal', titulo: 'Personal CEA', icono: Users, ruta: '/admin/personal' },
       { id: 'vehiculos', titulo: 'Vehículos CEA', icono: Car, ruta: '/admin/vehiculos' },
-      { id: 'consultas', titulo: 'Consultas y Seguimiento Operativo', icono: ChartNoAxesCombined, ruta: '/admin/consultas' },
+      { id: 'consultas', titulo: 'Seguimiento Operativo y Consultas', icono: ChartNoAxesCombined, ruta: '/admin/consultas' },
       { id: 'configuracion-academica', titulo: 'Configuración Académica', icono: BookOpen, ruta: '/admin/configuracion-academica' },
       { id: 'reuniones', titulo: 'Reuniones CEA', icono: UserRoundCog, ruta: '/admin/reuniones' },
       { id: 'documentos', titulo: 'Configuración de Documentos', icono: FileText, ruta: '/admin/configuracion-documentos' },
