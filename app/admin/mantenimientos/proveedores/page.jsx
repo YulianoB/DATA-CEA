@@ -603,7 +603,7 @@ export default function ProveedoresMantenimientoPage() {
             </div>
 
             <div className="mx-4 mt-4 rounded-xl border border-slate-300 bg-white shadow-sm">
-              <div className="border-b border-slate-300 px-4 py-2.5 text-xs font-bold text-white" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo }}>Datos del proveedor / taller</div>
+              <div className="rounded-t-xl border-b border-slate-300 px-4 py-2.5 text-xs font-bold text-white" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo }}>Datos del proveedor / taller</div>
             <div className="grid gap-x-3 gap-y-3 p-4 md:grid-cols-12">
               <div className="md:col-span-3"><Campo label="Tipo de persona">
                 <select
@@ -633,7 +633,7 @@ export default function ProveedoresMantenimientoPage() {
                 />
               </Campo></div>
 
-              <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_72px] gap-2 md:col-span-4">
+              <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_160px] gap-2 md:col-span-4">
                 <Campo label="NIT / documento">
                   <input
                     inputMode="numeric"
