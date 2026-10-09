@@ -589,7 +589,7 @@ export default function ProveedoresMantenimientoPage() {
           >
             <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo }}>
               <div>
-                <div className="font-extrabold">
+                <div className="font-extrabold text-[#194567]">
                   {form.id ? 'Editar proveedor / taller' : 'Nuevo proveedor / taller'}
                 </div>
                 <div className="text-[10px] text-slate-300">
@@ -605,8 +605,8 @@ export default function ProveedoresMantenimientoPage() {
               Registre la información general del proveedor o taller y seleccione su ubicación. Las actividades pueden configurarse ahora o posteriormente; un proveedor sin actividades podrá utilizarse en mantenimientos correctivos, pero no en preventivos hasta completar su configuración. Los campos obligatorios deben completarse antes de guardar.
             </div>
 
-            <div className="grid gap-4 p-4 md:grid-cols-2">
-              <Campo label="Tipo de persona">
+            <div className="grid gap-x-3 gap-y-3 p-4 md:grid-cols-12">
+              <div className="md:col-span-3"><Campo label="Tipo de persona">
                 <select
                   value={form.tipo_persona}
                   onChange={(e) => setForm({ ...form, tipo_persona: e.target.value })}
@@ -615,26 +615,26 @@ export default function ProveedoresMantenimientoPage() {
                   <option value="JURIDICA">JURÍDICA</option>
                   <option value="NATURAL">NATURAL</option>
                 </select>
-              </Campo>
+              </Campo></div>
 
-              <Campo label="Razón social / nombre *">
+              <div className="md:col-span-9"><Campo label="Razón social / nombre *">
                 <input
                   required
                   value={form.razon_social}
                   onChange={(e) => setForm({ ...form, razon_social: aMayusculas(e.target.value) })}
                   className="campo"
                 />
-              </Campo>
+              </Campo></div>
 
-              <Campo label="Nombre comercial">
+              <div className="md:col-span-6"><Campo label="Nombre comercial">
                 <input
                   value={form.nombre_comercial}
                   onChange={(e) => setForm({ ...form, nombre_comercial: aMayusculas(e.target.value) })}
                   className="campo"
                 />
-              </Campo>
+              </Campo></div>
 
-              <div className="grid grid-cols-[1fr_90px] gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-2 md:col-span-6">
                 <Campo label="NIT / documento">
                   <input
                     inputMode="numeric"
@@ -658,13 +658,10 @@ export default function ProveedoresMantenimientoPage() {
                     }
                     className="campo"
                   />
-                  <p className="mt-1 text-[10px] leading-tight text-slate-500">
-                    DV significa Dígito de Verificación del NIT: es el número que aparece después del guion.
-                  </p>
                 </Campo>
               </div>
 
-              <Campo label="Departamento *">
+              <div className="md:col-span-6"><Campo label="Departamento *">
                 <select
                   value={form.departamento_id}
                   onChange={(e) =>
@@ -683,9 +680,9 @@ export default function ProveedoresMantenimientoPage() {
                     </option>
                   ))}
                 </select>
-              </Campo>
+              </Campo></div>
 
-              <Campo label="Municipio *">
+              <div className="md:col-span-6"><Campo label="Municipio *">
                 <select
                   value={form.municipio_id}
                   disabled={!form.departamento_id}
@@ -699,17 +696,17 @@ export default function ProveedoresMantenimientoPage() {
                     </option>
                   ))}
                 </select>
-              </Campo>
+              </Campo></div>
 
-              <Campo label="Dirección *">
+              <div className="md:col-span-6"><Campo label="Dirección *">
                 <input
                   value={form.direccion}
                   onChange={(e) => setForm({ ...form, direccion: aMayusculas(e.target.value) })}
                   className="campo"
                 />
-              </Campo>
+              </Campo></div>
 
-              <Campo label="Teléfono *">
+              <div className="md:col-span-3"><Campo label="Teléfono *">
                 <input
                   value={form.telefono}
                   inputMode="tel"
@@ -718,18 +715,18 @@ export default function ProveedoresMantenimientoPage() {
                   className="campo"
                   placeholder="Ej. 3001234567"
                 />
-              </Campo>
+              </Campo></div>
 
-              <Campo label="Correo">
+              <div className="md:col-span-6"><Campo label="Correo">
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className="campo"
                 />
-              </Campo>
+              </Campo></div>
 
-              <Campo label="Estado">
+              <div className="md:col-span-3"><Campo label="Estado">
                 <select
                   value={form.activo ? '1' : '0'}
                   onChange={(e) => setForm({ ...form, activo: e.target.value === '1' })}
@@ -738,9 +735,9 @@ export default function ProveedoresMantenimientoPage() {
                   <option value="1">ACTIVO</option>
                   <option value="0">INACTIVO</option>
                 </select>
-              </Campo>
+              </Campo></div>
 
-              <div className="md:col-span-2">
+              <div className="md:col-span-12">
                 <Campo label="Observaciones">
                   <textarea
                     rows={2}
@@ -751,14 +748,14 @@ export default function ProveedoresMantenimientoPage() {
                 </Campo>
               </div>
 
-              <div className="md:col-span-2 rounded-xl border border-slate-300">
-                <div className="border-b border-slate-300 p-3 text-white" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo }}>
+              <div className="md:col-span-12 overflow-hidden rounded-xl border border-slate-300 bg-white">
+                <div className="border-b border-slate-300 bg-slate-50 p-3">
                   <div className="flex flex-col gap-3">
                     <div>
                       <div className="font-extrabold text-slate-800">
                         Actividades de mantenimiento
                       </div>
-                      <div className="mt-1 text-[10px] font-medium text-white/90">
+                      <div className="mt-1 text-[10px] font-medium text-slate-600">
                         Seleccione el tipo de vehículo y marque las actividades que este proveedor o taller puede realizar. Las selecciones se conservan al cambiar de tipo de vehículo.
                       </div>
                     </div>
@@ -785,7 +782,7 @@ export default function ProveedoresMantenimientoPage() {
                             onClick={() => setTipoVehiculoActividad(valor)}
                             className={`rounded-lg border px-3 py-2 text-[10px] font-extrabold transition ${
                               activo
-                                ? 'border-slate-700 bg-slate-700 text-white'
+                                ? 'border-[#194567] bg-[#194567] text-white'
                                 : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                             }`}
                           >
