@@ -3269,7 +3269,7 @@ async function restaurarLogoAnterior() {
 
         <div
           className="
-            border-b border-slate-300 bg-transparent px-1 pt-1
+            border-b-2 border-[#194567] bg-transparent px-1 pt-1
           "
         >
           <div
@@ -3285,15 +3285,15 @@ async function restaurarLogoAnterior() {
                 )
               }
               className={`
-                inline-flex items-center justify-center gap-2 rounded-t-lg border border-b-0 px-4 py-2 text-xs font-semibold transition-colors
+                inline-flex items-center justify-center gap-2 rounded-t-lg border border-b-0 px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BEFB3] focus-visible:ring-offset-2
                 ${
                   vistaActual ===
                   'PLAN'
                     ? `
-                      border-slate-300 bg-white text-[#194567] shadow-[inset_0_3px_0_#194567]
+                      border-[#194567] bg-[#194567] text-white shadow-[inset_0_3px_0_#7BEFB3] hover:bg-[#123B63]
                     `
                     : `
-                      border-transparent bg-slate-200/70 text-slate-600 hover:bg-slate-100 hover:text-[#194567]
+                      border-[#A6C2DB] bg-[#DCEAF5] text-[#194567] hover:border-[#194567] hover:bg-[#A6C2DB] hover:text-[#082745]
                     `
                 }
               `}
@@ -3316,15 +3316,15 @@ async function restaurarLogoAnterior() {
                 )
               }
               className={`
-                inline-flex items-center justify-center gap-2 rounded-t-lg border border-b-0 px-4 py-2 text-xs font-semibold transition-colors
+                inline-flex items-center justify-center gap-2 rounded-t-lg border border-b-0 px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BEFB3] focus-visible:ring-offset-2
                 ${
                   vistaActual ===
                   'GRUPOS'
                     ? `
-                      border-slate-300 bg-white text-[#194567] shadow-[inset_0_3px_0_#194567]
+                      border-[#194567] bg-[#194567] text-white shadow-[inset_0_3px_0_#7BEFB3] hover:bg-[#123B63]
                     `
                     : `
-                      border-transparent bg-slate-200/70 text-slate-600 hover:bg-slate-100 hover:text-[#194567]
+                      border-[#A6C2DB] bg-[#DCEAF5] text-[#194567] hover:border-[#194567] hover:bg-[#A6C2DB] hover:text-[#082745]
                     `
                 }
               `}
@@ -3351,8 +3351,8 @@ async function restaurarLogoAnterior() {
                       vistaActual ===
                       'GRUPOS'
                         ? `
-                          bg-white
-                          text-slate-800
+                          bg-[#DCEAF5]
+                          text-[#194567]
                         `
                         : `
                           bg-slate-700
