@@ -12,9 +12,8 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { CalendarDays } from 'lucide-react'
 
 // =========================================================
 // CONSTANTES
@@ -3976,123 +3975,13 @@ const colorEncabezadoDia =
             ENCABEZADO
         =============================================== */}
 
-        <div
-          className="
-            bg-white
-            border
-            border-gray-500
-            rounded-lg
-            shadow-sm
-            p-4
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-4
-            "
-          >
-            <div>
-              <p
-                className="
-                  text-xs
-                  uppercase
-                  tracking-wide
-                  font-semibold
-                  text-gray-500
-                  mb-1
-                "
-              >
-                Configuración Académica
-              </p>
-
-              <h1
-                className="
-                  text-2xl
-                  font-bold
-                  text-[var(--primary)]
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-calendar-alt"></i>
-
-                Horario Teórico
-              </h1>
-
-              <p
-                className="
-                  text-sm
-                  text-gray-600
-                  mt-1
-                "
-              >
-                Configure y programe el horario semanal de clases teóricas del CEA.
-              </p>
-            </div>
-
-            <div
-              className="
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-              <button
-                type="button"
-                onClick={
-                  regresar
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-arrow-left"></i>
-
-                Regresar
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  hover:bg-[var(--danger-dark)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-sign-out-alt"></i>
-
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
+        <EncabezadoModulo
+          titulo="Horario Teórico"
+          subtitulo="Configure y programe el horario semanal de clases teóricas del CEA."
+          icono={CalendarDays}
+          rutaRegreso="/admin/configuracion-academica"
+          textoRegreso="Regresar"
+        />
         {/* ===============================================
             MENSAJES
         =============================================== */}
