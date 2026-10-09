@@ -12,9 +12,8 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { Files } from 'lucide-react'
 
 
 // =======================================================
@@ -6554,9 +6553,7 @@ export default function ConfiguracionDocumentosPage() {
     <div
       className="
         min-h-screen
-        bg-gradient-to-br
-        from-gray-100
-        to-gray-200
+        bg-slate-100
         p-4
         md:p-6
       "
@@ -6568,129 +6565,16 @@ export default function ConfiguracionDocumentosPage() {
           space-y-4
         "
       >
-        {/* ===============================================
-            ENCABEZADO
-        =============================================== */}
-
-        <div
-          className="
-            rounded-lg
-            border
-            border-gray-500
-            bg-white
-            p-4
-            shadow-sm
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              gap-4
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-            "
-          >
-            <div>
-              <p
-                className="
-                  mb-1
-                  text-xs
-                  font-semibold
-                  uppercase
-                  tracking-wide
-                  text-gray-500
-                "
-              >
-                Administración
-              </p>
-
-              <h1
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  text-2xl
-                  font-bold
-                  text-[var(--primary)]
-                "
-              >
-                <i className="fas fa-table-cells-large" />
-
-                Configuración de Documentos
-              </h1>
-
-              <p
-                className="
-                  mt-1
-                  text-sm
-                  text-gray-600
-                "
-              >
-                Configure el encabezado institucional compartido, los datos
-                de control documental y el contenido de los documentos especiales.
-              </p>
-            </div>
-
-            <div
-              className="
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-              <button
-                type="button"
-                onClick={
-                  regresar
-                }
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  rounded-lg
-                  bg-gray-600
-                  px-3
-                  py-2
-                  text-xs
-                  text-white
-                  hover:bg-gray-800
-                "
-              >
-                <i className="fas fa-arrow-left" />
-
-                Regresar
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  rounded-lg
-                  bg-[var(--danger)]
-                  px-3
-                  py-2
-                  text-xs
-                  text-white
-                  hover:bg-[var(--danger-dark)]
-                "
-              >
-                <i className="fas fa-sign-out-alt" />
-
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
+        {/* Encabezado institucional compartido */}
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <EncabezadoModulo
+            titulo="Configuración de Documentos"
+            subtitulo="Encabezado institucional, control documental y documentos especiales."
+            icono={Files}
+            rutaRegreso="/admin"
+            textoRegreso="Regresar"
+          />
         </div>
-
 
         {/* ===============================================
             MENSAJES
@@ -6746,7 +6630,7 @@ export default function ConfiguracionDocumentosPage() {
             overflow-hidden
             rounded-xl
             border
-            border-slate-300
+            border-slate-200
             bg-white
             shadow-sm
           "
@@ -6761,11 +6645,12 @@ export default function ConfiguracionDocumentosPage() {
                 flex
                 min-w-max
                 items-end
-                gap-1
+                gap-1.5
                 border-b
                 border-slate-200
-                px-2
-                pt-2
+                bg-slate-50
+                px-3
+                pt-3
               "
             >
               {PESTANAS_PRINCIPALES.map(
@@ -6792,15 +6677,21 @@ export default function ConfiguracionDocumentosPage() {
                         gap-2
                         whitespace-nowrap
                         rounded-t-lg
+                        border
+                        border-b-0
                         px-4
-                        py-2.5
+                        py-3
                         text-xs
                         font-bold
-                        transition
+                        transition-colors
+                        focus-visible:outline
+                        focus-visible:outline-2
+                        focus-visible:outline-offset-2
+                        focus-visible:outline-blue-700
                         ${
                           activa
-                            ? 'bg-slate-50 text-[var(--primary)]'
-                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                            ? 'border-slate-200 bg-white text-[#194567] shadow-sm'
+                            : 'border-transparent bg-transparent text-slate-600 hover:bg-white hover:text-[#194567]'
                         }
                       `}
                     >
@@ -6819,7 +6710,7 @@ export default function ConfiguracionDocumentosPage() {
                             right-2
                             h-0.5
                             rounded-full
-                            bg-[var(--primary)]
+                            bg-[#194567]
                           "
                         />
                       )}
