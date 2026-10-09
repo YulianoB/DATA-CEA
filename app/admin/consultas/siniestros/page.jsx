@@ -420,73 +420,6 @@ function EstadoChip({ estado }) {
 // app/admin/consultas/siniestros/page.jsx
 // ============================================================
 
-function TarjetaEstado({
-  titulo,
-  valor,
-  cantidad,
-  icono,
-  activa,
-  onClick,
-  disabled,
-}) {
-  const clasesActiva = activa
-    ? 'border-[#24638C] bg-[#24638C] text-white shadow-md'
-    : 'border-slate-300 bg-white text-slate-800 hover:border-[#24638C] hover:bg-slate-50'
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={activa}
-      aria-label={`Filtrar siniestros: ${titulo}. ${fmt(cantidad)} registros${activa ? '. Filtro activo' : '.'}`}
-      className={`w-full rounded-xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24638C] ${clasesActiva} ${
-        disabled
-          ? 'opacity-60 cursor-wait'
-          : ''
-      }`}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p
-            className={`text-[10px] uppercase tracking-wide font-semibold ${
-              activa
-                ? 'text-white/80'
-                : 'text-gray-500'
-            }`}
-          >
-            {titulo}
-          </p>
-
-          <p className="text-2xl font-black mt-1">
-            {fmt(cantidad)}
-          </p>
-        </div>
-
-        <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            activa
-              ? 'bg-white/15'
-              : 'bg-slate-100 text-[#24638C]'
-          }`}
-        >
-          <i className={`fas ${icono}`}></i>
-        </div>
-      </div>
-
-      <p
-        className={`text-[10px] mt-2 ${
-          activa
-            ? 'text-white/80'
-            : 'text-gray-400'
-        }`}
-      >
-        {activa ? '✓ Filtro activo' : 'Seleccionar para filtrar'}
-      </p>
-    </button>
-  )
-}
-
 // ============================================================
 // DATO DE EXPEDIENTE
 // app/admin/consultas/siniestros/page.jsx
@@ -742,9 +675,7 @@ export default function SiniestrosPage() {
 
       if (mostrarMensaje) {
         setStatus(
-          `${Number(
-            paginacion?.total || 0
-          ).toLocaleString('es-CO')} registro(s) en la bandeja seleccionada.`
+          `${Number(paginacion?.total || 0).toLocaleString('es-CO')} ${Number(paginacion?.total || 0) === 1 ? 'registro' : 'registros'} ${estado === 'TODOS' ? 'en total' : `en estado ${({ PENDIENTE: 'pendientes', 'EN ANÁLISIS': 'en análisis', CERRADO: 'cerrados' })[estado] || estado.toLowerCase()}`}.`
         )
       }
     } catch (error) {
@@ -1789,33 +1720,21 @@ export default function SiniestrosPage() {
             BANDEJAS POR ESTADO
         ================================================== */}
 
-        <section aria-label="Filtros de siniestros por estado" className="space-y-2">
-          <div>
-            <h2 className="text-sm font-bold text-[#194567]">Filtrar siniestros por estado</h2>
-            <p className="text-xs text-slate-600">Seleccione una tarjeta para consultar los siniestros de ese estado. Los números indican la cantidad de registros.</p>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {ESTADOS_BANDEJA.map(item => (
-            <TarjetaEstado
-              key={item.valor}
-              {...item}
-              cantidad={obtenerConteoEstado(
-                resumen,
-                item.valor
-              )}
-              activa={
-                estadoActual === item.valor
-              }
-              disabled={loading}
-              onClick={() =>
-                consultarEstado(
-                  item.valor,
-                  1
-                )
-              }
-            />
-          ))}
-          </div>
+        <section className="rounded-xl border border-slate-300 bg-white px-4 py-3 shadow-sm">
+          <label htmlFor="filtro-estado-siniestros" className="mb-1.5 block text-sm font-bold text-[#194567]">
+            Filtrar siniestros por estado
+          </label>
+          <select
+            id="filtro-estado-siniestros"
+            value={estadoActual}
+            disabled={loading}
+            onChange={event => consultarEstado(event.target.value, 1)}
+            className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-[#24638C] focus:ring-2 focus:ring-[#24638C]/20 disabled:opacity-60"
+          >
+            {ESTADOS_BANDEJA.map(item => (
+              <option key={item.valor} value={item.valor}>{item.titulo}</option>
+            ))}
+          </select>
         </section>
 
         {/* ==================================================
