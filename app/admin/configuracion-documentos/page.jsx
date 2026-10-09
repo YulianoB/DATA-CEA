@@ -9818,7 +9818,7 @@ export default function ConfiguracionDocumentosPage() {
                 overflow-hidden
                 rounded-xl
                 border
-                border-violet-200
+                border-violet-400
                 bg-white
                 shadow-sm
               "
@@ -9896,7 +9896,7 @@ export default function ConfiguracionDocumentosPage() {
                       resize-y
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       py-2
                       text-xs
@@ -9942,7 +9942,7 @@ export default function ConfiguracionDocumentosPage() {
                       resize-y
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       py-2
                       text-xs
@@ -10006,7 +10006,7 @@ export default function ConfiguracionDocumentosPage() {
                 overflow-hidden
                 rounded-xl
                 border
-                border-violet-200
+                border-violet-400
                 bg-white
                 shadow-sm
               "
@@ -10111,7 +10111,7 @@ export default function ConfiguracionDocumentosPage() {
                           overflow-hidden
                           rounded-xl
                           border
-                          border-slate-300
+                          border-slate-400
                           bg-white
                           shadow-sm
                         "
@@ -10122,7 +10122,7 @@ export default function ConfiguracionDocumentosPage() {
                             flex-col
                             gap-3
                             border-b
-                            border-slate-200
+                            border-slate-300
                             bg-violet-50
                             px-4
                             py-3
@@ -10186,7 +10186,7 @@ export default function ConfiguracionDocumentosPage() {
                                 justify-center
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 bg-white
                                 text-slate-700
                                 hover:bg-slate-100
@@ -10218,7 +10218,7 @@ export default function ConfiguracionDocumentosPage() {
                                 justify-center
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 bg-white
                                 text-slate-700
                                 hover:bg-slate-100
@@ -10310,7 +10310,7 @@ export default function ConfiguracionDocumentosPage() {
                                 w-full
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 px-3
                                 text-xs
                                 font-bold
@@ -10329,7 +10329,7 @@ export default function ConfiguracionDocumentosPage() {
                                 gap-2
                                 rounded-lg
                                 border
-                                border-slate-200
+                                border-slate-300
                                 bg-slate-50
                                 px-3
                                 py-2
@@ -10397,7 +10397,7 @@ export default function ConfiguracionDocumentosPage() {
                                 resize-y
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 px-3
                                 py-2
                                 text-xs
@@ -10472,7 +10472,7 @@ export default function ConfiguracionDocumentosPage() {
               overflow-hidden
               rounded-xl
               border
-              border-amber-200
+              border-amber-400
               bg-white
               shadow-sm
             "
@@ -10579,7 +10579,7 @@ export default function ConfiguracionDocumentosPage() {
                         overflow-hidden
                         rounded-xl
                         border
-                        border-slate-300
+                        border-slate-400
                         bg-white
                         shadow-sm
                       "
@@ -10590,7 +10590,7 @@ export default function ConfiguracionDocumentosPage() {
                           flex-col
                           gap-3
                           border-b
-                          border-slate-200
+                          border-slate-300
                           bg-amber-50
                           px-4
                           py-3
@@ -10654,7 +10654,7 @@ export default function ConfiguracionDocumentosPage() {
                               justify-center
                               rounded-lg
                               border
-                              border-slate-300
+                              border-slate-400
                               bg-white
                               text-slate-700
                               hover:bg-slate-100
@@ -10686,7 +10686,7 @@ export default function ConfiguracionDocumentosPage() {
                               justify-center
                               rounded-lg
                               border
-                              border-slate-300
+                              border-slate-400
                               bg-white
                               text-slate-700
                               hover:bg-slate-100
@@ -10778,7 +10778,7 @@ export default function ConfiguracionDocumentosPage() {
                               w-full
                               rounded-lg
                               border
-                              border-slate-300
+                              border-slate-400
                               px-3
                               text-xs
                               font-bold
@@ -10797,7 +10797,7 @@ export default function ConfiguracionDocumentosPage() {
                               gap-2
                               rounded-lg
                               border
-                              border-slate-200
+                              border-slate-300
                               bg-slate-50
                               px-3
                               py-2
@@ -10865,7 +10865,7 @@ export default function ConfiguracionDocumentosPage() {
                               resize-y
                               rounded-lg
                               border
-                              border-slate-300
+                              border-slate-400
                               px-3
                               py-2
                               text-xs
@@ -10952,7 +10952,7 @@ export default function ConfiguracionDocumentosPage() {
                 overflow-hidden
                 rounded-xl
                 border
-                border-teal-200
+                border-teal-400
                 bg-white
                 shadow-sm
               "
@@ -11028,7 +11028,7 @@ export default function ConfiguracionDocumentosPage() {
                       w-full
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       text-xs
                       outline-none
@@ -11069,7 +11069,7 @@ export default function ConfiguracionDocumentosPage() {
                       w-full
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       text-xs
                       outline-none
@@ -11110,7 +11110,7 @@ export default function ConfiguracionDocumentosPage() {
                       w-full
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       text-xs
                       outline-none
@@ -11152,7 +11152,7 @@ export default function ConfiguracionDocumentosPage() {
                       w-full
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       text-xs
                       outline-none
@@ -11197,7 +11197,7 @@ export default function ConfiguracionDocumentosPage() {
                       resize-y
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       py-2
                       text-xs
@@ -11244,7 +11244,7 @@ export default function ConfiguracionDocumentosPage() {
                       resize-y
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       py-2
                       text-xs
@@ -11291,7 +11291,7 @@ export default function ConfiguracionDocumentosPage() {
                       resize-y
                       rounded-lg
                       border
-                      border-slate-300
+                      border-slate-400
                       px-3
                       py-2
                       text-xs
@@ -11321,7 +11321,7 @@ export default function ConfiguracionDocumentosPage() {
                       gap-2
                       rounded-lg
                       border
-                      border-slate-200
+                      border-slate-300
                       bg-slate-50
                       px-3
                       py-2
@@ -11390,7 +11390,7 @@ export default function ConfiguracionDocumentosPage() {
                 overflow-hidden
                 rounded-xl
                 border
-                border-teal-200
+                border-teal-400
                 bg-white
                 shadow-sm
               "
@@ -11493,7 +11493,7 @@ export default function ConfiguracionDocumentosPage() {
                           overflow-hidden
                           rounded-xl
                           border
-                          border-slate-300
+                          border-slate-400
                           bg-white
                           shadow-sm
                         "
@@ -11504,7 +11504,7 @@ export default function ConfiguracionDocumentosPage() {
                             flex-col
                             gap-3
                             border-b
-                            border-slate-200
+                            border-slate-300
                             bg-teal-50
                             px-4
                             py-3
@@ -11566,7 +11566,7 @@ export default function ConfiguracionDocumentosPage() {
                                 justify-center
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 bg-white
                                 text-slate-700
                                 disabled:opacity-30
@@ -11596,7 +11596,7 @@ export default function ConfiguracionDocumentosPage() {
                                 justify-center
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 bg-white
                                 text-slate-700
                                 disabled:opacity-30
@@ -11681,7 +11681,7 @@ export default function ConfiguracionDocumentosPage() {
                                 w-full
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 px-3
                                 text-xs
                                 font-bold
@@ -11700,7 +11700,7 @@ export default function ConfiguracionDocumentosPage() {
                                 gap-2
                                 rounded-lg
                                 border
-                                border-slate-200
+                                border-slate-300
                                 bg-slate-50
                                 px-3
                                 py-2
@@ -11762,7 +11762,7 @@ export default function ConfiguracionDocumentosPage() {
                                 resize-y
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 px-3
                                 py-2
                                 text-xs
@@ -11829,7 +11829,7 @@ export default function ConfiguracionDocumentosPage() {
                 overflow-hidden
                 rounded-xl
                 border
-                border-teal-200
+                border-teal-400
                 bg-white
                 shadow-sm
               "
@@ -11931,7 +11931,7 @@ export default function ConfiguracionDocumentosPage() {
                         className="
                           rounded-xl
                           border
-                          border-slate-300
+                          border-slate-400
                           bg-white
                           p-4
                           shadow-sm
@@ -11985,7 +11985,7 @@ export default function ConfiguracionDocumentosPage() {
                                 justify-center
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 bg-white
                                 text-slate-700
                                 disabled:opacity-30
@@ -12015,7 +12015,7 @@ export default function ConfiguracionDocumentosPage() {
                                 justify-center
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 bg-white
                                 text-slate-700
                                 disabled:opacity-30
@@ -12099,7 +12099,7 @@ export default function ConfiguracionDocumentosPage() {
                                 w-full
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 px-3
                                 text-xs
                                 font-bold
@@ -12142,7 +12142,7 @@ export default function ConfiguracionDocumentosPage() {
                                 resize-y
                                 rounded-lg
                                 border
-                                border-slate-300
+                                border-slate-400
                                 px-3
                                 py-2
                                 text-xs
@@ -12180,7 +12180,7 @@ export default function ConfiguracionDocumentosPage() {
                                 gap-2
                                 rounded-lg
                                 border
-                                border-slate-200
+                                border-slate-300
                                 bg-slate-50
                                 px-3
                                 py-2
@@ -12216,7 +12216,7 @@ export default function ConfiguracionDocumentosPage() {
                                 gap-2
                                 rounded-lg
                                 border
-                                border-slate-200
+                                border-slate-300
                                 bg-slate-50
                                 px-3
                                 py-2
