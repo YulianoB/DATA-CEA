@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonAccion, ESTILO_ENCABEZADO_TABLA, ESTILO_FRANJA_SUPERIOR_MODAL } from '@/components/admin/EstiloModulo'
 import { cerrarSesion } from '@/lib/auth/logout'
 
 const PROVEEDOR_VACIO = {
@@ -419,8 +420,9 @@ export default function ProveedoresMantenimientoPage() {
           titulo="Proveedores y Talleres"
           subtitulo="Administración de proveedores, actividades autorizadas y técnicos"
           icono={Wrench}
-          onVolver={() => router.push('/admin/mantenimientos')}
-          onCerrarSesion={cerrarSesion}
+          rutaRegreso="/admin/mantenimientos"
+          textoRegreso="Mantenimiento Vehicular"
+          
         />
 
         <main className="p-4 md:p-6">
@@ -445,23 +447,23 @@ export default function ProveedoresMantenimientoPage() {
                 />
               </div>
 
-              <button
+              <BotonAccion tipo="actualizar"
                 type="button"
                 onClick={() => cargar()}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
               >
                 <RefreshCw className="h-4 w-4" />
                 Actualizar
-              </button>
+              </BotonAccion>
 
-              <button
+              <BotonAccion tipo="agregar"
                 type="button"
                 onClick={abrirNuevo}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-bold text-white hover:bg-slate-700"
               >
                 <Plus className="h-4 w-4" />
                 Nuevo proveedor
-              </button>
+              </BotonAccion>
             </div>
           </div>
 
@@ -488,9 +490,9 @@ export default function ProveedoresMantenimientoPage() {
               <p className="font-bold text-slate-700">No se encontraron proveedores.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-slate-300">
               <table className="min-w-full border-collapse text-left text-xs">
-                <thead className="bg-slate-600 text-white">
+                <thead className="text-slate-800" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                   <tr>
                     <th className="border border-slate-300 px-3 py-3">Proveedor / taller</th>
                     <th className="border border-slate-300 px-3 py-3">NIT</th>
@@ -544,21 +546,21 @@ export default function ProveedoresMantenimientoPage() {
                       </td>
                       <td className="border border-slate-300 px-3 py-3">
                         <div className="flex justify-center gap-1">
-                          <button
+                          <BotonAccion tipo="editar"
                             onClick={() => editarProveedor(p)}
                             className="rounded-md border border-slate-300 p-2 hover:bg-slate-100"
                             title="Editar proveedor"
                           >
                             <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
+                          </BotonAccion>
+                          <BotonAccion tipo="consultar"
                             onClick={() => abrirTecnicos(p)}
                             className="rounded-md border border-slate-300 p-2 hover:bg-slate-100"
                             title="Administrar técnicos"
                           >
                             <Users className="h-4 w-4" />
-                          </button>
-                          <button
+                          </BotonAccion>
+                          <BotonAccion tipo={p.activo ? "eliminar" : "agregar"}
                             onClick={() => cambiarEstadoProveedor(p)}
                             className={`rounded-md px-2 py-1 text-[10px] font-extrabold text-white ${
                               p.activo
@@ -567,7 +569,7 @@ export default function ProveedoresMantenimientoPage() {
                             }`}
                           >
                             {p.activo ? 'Inactivar' : 'Activar'}
-                          </button>
+                          </BotonAccion>
                         </div>
                       </td>
                     </tr>
@@ -585,7 +587,7 @@ export default function ProveedoresMantenimientoPage() {
             onSubmit={guardarProveedor}
             className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-xl bg-white shadow-2xl"
           >
-            <div className="sticky top-0 z-10 flex items-center justify-between bg-slate-800 px-4 py-3 text-white">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo }}>
               <div>
                 <div className="font-extrabold">
                   {form.id ? 'Editar proveedor / taller' : 'Nuevo proveedor / taller'}
@@ -862,20 +864,20 @@ export default function ProveedoresMantenimientoPage() {
             </div>
 
             <div className="sticky bottom-0 flex justify-end gap-2 border-t bg-white p-4">
-              <button
+              <BotonAccion tipo="cancelar"
                 type="button"
                 onClick={() => setModalProveedor(false)}
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold"
               >
                 Cancelar
-              </button>
-              <button
+              </BotonAccion>
+              <BotonAccion tipo="guardar"
                 disabled={guardando}
                 className="inline-flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
               >
                 {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Guardar
-              </button>
+              </BotonAccion>
             </div>
           </form>
         </div>
@@ -884,7 +886,7 @@ export default function ProveedoresMantenimientoPage() {
       {modalTecnicos && proveedorTecnicos && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3">
           <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-xl bg-white shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between bg-slate-800 px-4 py-3 text-white">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo }}>
               <div>
                 <div className="font-extrabold">Técnicos</div>
                 <div className="text-[10px] text-slate-300">
@@ -956,7 +958,7 @@ export default function ProveedoresMantenimientoPage() {
 
                   <div className="flex gap-2">
                     {formTecnico.id && (
-                      <button
+                      <BotonAccion tipo="agregar"
                         type="button"
                         onClick={() =>
                           setFormTecnico({
@@ -967,14 +969,14 @@ export default function ProveedoresMantenimientoPage() {
                         className="flex-1 rounded-lg border border-slate-300 py-2 text-xs font-bold"
                       >
                         Nuevo
-                      </button>
+                      </BotonAccion>
                     )}
-                    <button
+                    <BotonAccion tipo="guardar"
                       disabled={guardando}
                       className="flex-1 rounded-lg bg-slate-800 py-2 text-xs font-bold text-white disabled:opacity-60"
                     >
                       Guardar técnico
-                    </button>
+                    </BotonAccion>
                   </div>
                 </div>
               </form>
@@ -1005,18 +1007,18 @@ export default function ProveedoresMantenimientoPage() {
                           }`}>
                             {t.activo ? 'ACTIVO' : 'INACTIVO'}
                           </span>
-                          <button
+                          <BotonAccion tipo="editar"
                             onClick={() => editarTecnico(t)}
                             className="rounded border border-slate-300 p-2"
                           >
                             <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
+                          </BotonAccion>
+                          <BotonAccion tipo={t.activo ? "eliminar" : "agregar"}
                             onClick={() => cambiarEstadoTecnico(t)}
                             className="rounded border border-slate-300 px-2 py-1 text-[9px] font-bold"
                           >
                             {t.activo ? 'Inactivar' : 'Activar'}
-                          </button>
+                          </BotonAccion>
                         </div>
                       </div>
                     ))}
