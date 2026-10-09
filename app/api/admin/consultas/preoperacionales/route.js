@@ -50,6 +50,7 @@ const SELECT_PREOPERACIONAL = `
   fecha_solucion_observacion,
   usuario_solucion,
   observacion_solucion,
+  observacion_analisis,
   revision_exterior,
   motor,
   interior_funcionamiento,
@@ -1340,6 +1341,11 @@ export async function PATCH(request) {
       accion ===
       'marcar_en_analisis'
     ) {
+      const observacionAnalisis = normalizarTexto(body?.observacion_analisis)
+      if (!observacionAnalisis) {
+        return NextResponse.json({ status: 'failed', message: 'Describa la verificación realizada y la intervención prevista antes de guardar el análisis.' }, { status: 400 })
+      }
+
       if (
         estadoActual ===
         ESTADO_CERRADA
@@ -1421,6 +1427,7 @@ export async function PATCH(request) {
 
             usuario_verificacion:
               responsable,
+            observacion_analisis: observacionAnalisis,
           })
           .eq(
             'id',
