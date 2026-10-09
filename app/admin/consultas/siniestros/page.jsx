@@ -1710,10 +1710,6 @@ export default function SiniestrosPage() {
             rutaRegreso="/admin/consultas"
             textoRegreso="Seguimiento Operativo y Consultas"
           />
-          <div className="border-t border-slate-200 px-4 py-2.5 text-xs text-slate-600">
-            Usuario: <strong className="text-slate-800">{user?.nombreCompleto || user?.usuario || '-'}</strong>
-            {user?.nombreEmpresa && <> {' · '}CEA: <strong className="text-slate-800">{user.nombreEmpresa}</strong></>}
-          </div>
         </section>
 
         {/* ==================================================
