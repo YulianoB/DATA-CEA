@@ -2778,7 +2778,7 @@ export default function PreoperacionalesPage() {
                         className={`flex flex-col items-center gap-1 rounded-md py-1 text-[11px] font-semibold ${pasoSeguimiento === etapa.n ? 'text-[#194567]' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <span className={`w-6 h-6 rounded-full border flex items-center justify-center font-bold ${pasoSeguimiento === etapa.n ? 'bg-[#24638C] border-[#24638C] text-white' : 'bg-white border-slate-300'}`}>{etapa.n}</span>
                         <span>{etapa.t}</span>
-                        <span className={`w-full h-1 rounded-full ${pasoSeguimiento >= etapa.n ? 'bg-[#24638C]' : 'bg-slate-200'}`}></span>
+                        <span className={`w-full h-1 rounded-full ${(etapa.n === 1 || (etapa.n === 2 && (esAnalisis || esCerrada)) || (etapa.n === 3 && esCerrada)) ? 'bg-[#24638C]' : 'bg-orange-400'}`}></span>
                       </button>
                     ))}
                   </div>
@@ -2799,23 +2799,25 @@ export default function PreoperacionalesPage() {
                       <div key={etiqueta}><p className="text-slate-500">{etiqueta}</p><p className="font-semibold break-words">{valor ?? '-'}</p></div>
                     ))}
                   </div>
-                  <div className="border-t border-slate-200 pt-3 text-xs">
-                    <p className="font-semibold text-[#194567]">Observaciones del instructor</p>
-                    <p className="whitespace-pre-wrap mt-1 text-slate-700">{rowSel?.observaciones || 'Sin observaciones.'}</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {[
-                      ['Revisión exterior', rowSel?.revision_exterior],
-                      ['Motor', rowSel?.motor],
-                      ['Interior y funcionamiento', rowSel?.interior_funcionamiento],
-                      ['Equipos de prevención', rowSel?.equipos_prevencion],
-                      ['Documentos', rowSel?.documentos],
-                    ].filter(([, valor]) => normalizarMayusculas(valor) === 'NO CONFORME').map(([etiqueta]) => (
-                      <div key={etiqueta} className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 flex items-center justify-between gap-2 text-xs">
-                        <span className="font-semibold text-red-900">{etiqueta}</span>
-                        <span className="font-bold text-red-700 whitespace-nowrap">NO CONFORME</span>
-                      </div>
-                    ))}
+                  <div className="border-t border-slate-200 pt-3 grid grid-cols-1 sm:grid-cols-[minmax(155px,1fr)_minmax(0,2fr)] gap-3 items-start">
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        ['Revisión exterior', rowSel?.revision_exterior],
+                        ['Motor', rowSel?.motor],
+                        ['Interior y funcionamiento', rowSel?.interior_funcionamiento],
+                        ['Equipos de prevención', rowSel?.equipos_prevencion],
+                        ['Documentos', rowSel?.documentos],
+                      ].filter(([, valor]) => normalizarMayusculas(valor) === 'NO CONFORME').map(([etiqueta]) => (
+                        <div key={etiqueta} className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs">
+                          <p className="font-semibold text-red-900">{etiqueta}</p>
+                          <p className="font-bold text-red-700 mt-1">NO CONFORME</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs h-full">
+                      <p className="font-semibold text-amber-900">Observaciones del instructor</p>
+                      <p className="whitespace-pre-wrap mt-2 text-slate-700">{rowSel?.observaciones || 'Sin observaciones.'}</p>
+                    </div>
                   </div>
                 </section>
 
