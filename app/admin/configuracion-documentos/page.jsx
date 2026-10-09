@@ -12309,7 +12309,7 @@ export default function ConfiguracionDocumentosPage() {
                 overflow-hidden
                 rounded-xl
                 border
-                border-slate-300
+                border-slate-400
                 bg-white
                 shadow-sm
               "
@@ -12346,7 +12346,7 @@ export default function ConfiguracionDocumentosPage() {
               <div
                 className="
                   border-b
-                  border-slate-200
+                  border-slate-300
                   bg-slate-50
                   px-4
                   py-3
@@ -12371,6 +12371,9 @@ export default function ConfiguracionDocumentosPage() {
                     w-full
                     min-w-[760px]
                     border-collapse
+                    border border-slate-400
+                    [&_th]:border [&_th]:border-slate-400
+                    [&_td]:border [&_td]:border-slate-300
                     text-left
                   "
                 >
@@ -12378,12 +12381,12 @@ export default function ConfiguracionDocumentosPage() {
                     <tr
                       className="
                         border-b
-                        border-slate-300
-                        bg-slate-100
+                        border-slate-400
+                        bg-[#CEFAFE]
                         text-[10px]
                         font-black
                         uppercase
-                        text-slate-600
+                        text-[#194567]
                       "
                     >
                       <th className="px-3 py-2">
