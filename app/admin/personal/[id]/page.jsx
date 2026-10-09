@@ -5,7 +5,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Toaster, toast } from 'sonner'
 import ModalResultado from '@/components/admin/ModalResultado'
 import CampoCatalogo from '@/components/admin/CampoCatalogo'
 import { generarHojaVidaPdf } from '@/lib/hojaVidaPdf'
@@ -658,12 +657,12 @@ export default function HojaVidaPersonalPage() {
     event.preventDefault()
 
     if (!formExperiencia.empresa || !formExperiencia.cargo || !formExperiencia.fecha_inicio) {
-      toast.warning('Empresa, cargo y fecha de inicio son obligatorios.')
+      mostrarResultado('error', 'Empresa, cargo y fecha de inicio son obligatorios.')
       return
     }
 
     if (!formExperiencia.actualmente && !formExperiencia.fecha_fin) {
-      toast.warning('Indica fecha de fin o marca que labora actualmente.')
+      mostrarResultado('error', 'Indica fecha de fin o marca que labora actualmente.')
       return
     }
 
@@ -709,7 +708,7 @@ export default function HojaVidaPersonalPage() {
       telefono_contacto: item.telefono_contacto || '',
       observaciones: item.observaciones || '',
     })
-    toast.info('Editando experiencia laboral seleccionada.')
+    mostrarResultado('error', 'Editando experiencia laboral seleccionada.')
   }
 
   function cancelarEdicionExperiencia() {
@@ -779,7 +778,7 @@ export default function HojaVidaPersonalPage() {
     event.preventDefault()
 
     if (!formEstudio.nivel_estudio || !formEstudio.titulo || !formEstudio.institucion) {
-      toast.warning('Nivel de estudio, título e institución son obligatorios.')
+      mostrarResultado('error', 'Nivel de estudio, título e institución son obligatorios.')
       return
     }
 
@@ -821,7 +820,7 @@ export default function HojaVidaPersonalPage() {
       fecha_grado: item.fecha_grado || '',
       observaciones: item.observaciones || '',
     })
-    toast.info('Editando estudio seleccionado.')
+    mostrarResultado('error', 'Editando estudio seleccionado.')
   }
 
   function cancelarEdicionEstudio() {
@@ -907,7 +906,7 @@ export default function HojaVidaPersonalPage() {
         ? String(licencia.vigencia).slice(0, 10)
         : '',
     })
-    toast.info('Editando licencia seleccionada.')
+    mostrarResultado('error', 'Editando licencia seleccionada.')
   }
 
   function cancelarEdicionLicencia() {
@@ -929,7 +928,7 @@ export default function HojaVidaPersonalPage() {
       !formLicencia.categoria ||
       !formLicencia.vigencia
     ) {
-      toast.warning('Tipo, categoría y vigencia son obligatorios.')
+      mostrarResultado('error', 'Tipo, categoría y vigencia son obligatorios.')
       return
     }
 
@@ -937,7 +936,7 @@ export default function HojaVidaPersonalPage() {
       formLicencia.tipo_licencia === 'INSTRUCTOR' &&
       !formLicencia.numero_certificado
     ) {
-      toast.warning(
+      mostrarResultado('error', 
         'Para certificado de instructor debe indicar número de certificado.'
       )
       return
@@ -988,7 +987,7 @@ export default function HojaVidaPersonalPage() {
         response.status === 409 ||
         result?.status === 'warning'
       ) {
-        toast.warning(
+        mostrarResultado('error', 
           result?.message ||
             'No es posible registrar esta licencia o certificado.'
         )
@@ -1021,7 +1020,7 @@ export default function HojaVidaPersonalPage() {
           })
 
           if (result?.requiere_recategorizacion) {
-            toast.info(
+            mostrarResultado('error', 
               'Se cargó el registro vigente. Revise los datos y presione Actualizar.'
             )
           }
@@ -1152,7 +1151,7 @@ export default function HojaVidaPersonalPage() {
       relacion: referencia.relacion || '',
       observaciones: referencia.observaciones || '',
     })
-    toast.info('Editando referencia seleccionada.')
+    mostrarResultado('error', 'Editando referencia seleccionada.')
   }
 
   function cancelarEdicionReferencia() {
@@ -1189,17 +1188,17 @@ export default function HojaVidaPersonalPage() {
     event.preventDefault()
 
     if (!formReferencia.tipo_referencia || !formReferencia.nombre || !formReferencia.telefono) {
-      toast.warning('Tipo de referencia, nombre y teléfono son obligatorios.')
+      mostrarResultado('error', 'Tipo de referencia, nombre y teléfono son obligatorios.')
       return
     }
 
     if (formReferencia.telefono.length < 7) {
-      toast.warning('El teléfono de la referencia debe tener mínimo 7 dígitos.')
+      mostrarResultado('error', 'El teléfono de la referencia debe tener mínimo 7 dígitos.')
       return
     }
 
     if (formReferencia.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formReferencia.email)) {
-      toast.warning('El correo de la referencia no tiene un formato válido.')
+      mostrarResultado('error', 'El correo de la referencia no tiene un formato válido.')
       return
     }
 
@@ -1270,7 +1269,7 @@ export default function HojaVidaPersonalPage() {
     event.preventDefault()
 
     if (!formEvaluacion.tipo_evaluacion || !formEvaluacion.fecha_evaluacion || !formEvaluacion.resultado) {
-      toast.warning('Tipo de evaluación, fecha y resultado son obligatorios.')
+      mostrarResultado('error', 'Tipo de evaluación, fecha y resultado son obligatorios.')
       return
     }
 
@@ -1312,7 +1311,7 @@ export default function HojaVidaPersonalPage() {
       evaluador: evaluacion.evaluador || '',
       observaciones: evaluacion.observaciones || '',
     })
-    toast.info('Editando evaluación seleccionada.')
+    mostrarResultado('error', 'Editando evaluación seleccionada.')
   }
 
   function cancelarEdicionEvaluacion() {
@@ -1383,12 +1382,12 @@ export default function HojaVidaPersonalPage() {
     event.preventDefault()
 
     if (!formDocumento.tipo_documento || !formDocumento.nombre_documento) {
-      toast.warning('Tipo de documento y nombre del documento son obligatorios.')
+      mostrarResultado('error', 'Tipo de documento y nombre del documento son obligatorios.')
       return
     }
 
     if (formDocumento.vence && !formDocumento.fecha_vencimiento) {
-      toast.warning('Si el documento vence, debe indicar la fecha de vencimiento.')
+      mostrarResultado('error', 'Si el documento vence, debe indicar la fecha de vencimiento.')
       return
     }
 
@@ -1433,7 +1432,7 @@ export default function HojaVidaPersonalPage() {
       estado: documento.estado || 'vigente',
       observaciones: documento.observaciones || '',
     })
-    toast.info('Editando documento seleccionado.')
+    mostrarResultado('error', 'Editando documento seleccionado.')
   }
 
   function cancelarEdicionDocumento() {
@@ -1563,7 +1562,6 @@ export default function HojaVidaPersonalPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 p-3 md:p-5">
-        <Toaster richColors position="top-right" />
       {editarGeneralAbierto && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-3">
           <div role="dialog" aria-modal="true" aria-label="Editar información general" className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-300 bg-white shadow-2xl">
@@ -1622,7 +1620,6 @@ export default function HojaVidaPersonalPage() {
   if (!data?.personal) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
-        <Toaster richColors position="top-right" />
       {editarGeneralAbierto && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-3">
           <div role="dialog" aria-modal="true" aria-label="Editar información general" className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-300 bg-white shadow-2xl">
@@ -1670,6 +1667,7 @@ export default function HojaVidaPersonalPage() {
         </div>
       )}
       <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
+      <ModalResultado abierto={Boolean(confirmacion)} tipo="confirmacion" mensaje={confirmacion?.mensaje} onCerrar={() => cerrarConfirmacion(false)} onConfirmar={() => cerrarConfirmacion(true)} />
         <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
           <p className="text-red-700">No se encontró el registro de personal.</p>
           <Link href="/admin/personal" className="mt-4 inline-block text-[var(--primary)] underline">
@@ -1684,7 +1682,6 @@ export default function HojaVidaPersonalPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <Toaster richColors position="top-right" />
       {vistaPreviaPdf && (
         <div className="fixed inset-0 z-[120] bg-white">
           <div role="dialog" aria-modal="true" aria-label="Vista previa de hoja de vida PDF" className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-white">
@@ -1747,6 +1744,7 @@ export default function HojaVidaPersonalPage() {
         </div>
       )}
       <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
+      <ModalResultado abierto={Boolean(confirmacion)} tipo="confirmacion" mensaje={confirmacion?.mensaje} onCerrar={() => cerrarConfirmacion(false)} onConfirmar={() => cerrarConfirmacion(true)} />
 
       <div className="mx-auto max-w-7xl space-y-4">
         <section className="overflow-hidden rounded-lg border border-slate-400 bg-white">
