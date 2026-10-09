@@ -3434,15 +3434,15 @@ async function restaurarLogoAnterior() {
                 shadow-sm
               "
             >
-              <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-slate-200 bg-slate-100 px-4 py-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-700">
+              <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-[#194567] bg-[#194567] px-4 py-2.5">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-white">
                   <i className="fas fa-list" aria-hidden="true" />
                   Seleccione la categoría del Plan de Formación
                 </div>
                 {planSeleccionado && (
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-700">
-                    <span className="font-bold uppercase text-[#194567]">{planSeleccionado.nombre}</span>
-                    <span>Versión <strong>{planSeleccionado.version}</strong> · Estado: <strong className="text-emerald-700">{planSeleccionado.estado}</strong></span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#E8F2FA]">
+                    <span className="font-bold uppercase text-white">{planSeleccionado.nombre}</span>
+                    <span>Versión <strong>{planSeleccionado.version}</strong> · Estado: <strong className="text-[#9EF0C6]">{planSeleccionado.estado}</strong></span>
                     {planesCategoria.length > 1 && (
                       <select
                         value={planSeleccionadoId || ''}
@@ -3632,7 +3632,7 @@ async function restaurarLogoAnterior() {
                   className="
                     grid
                     grid-cols-1
-                    gap-4
+                    gap-3
                     md:grid-cols-3
                   "
                 >
@@ -6190,9 +6190,9 @@ function ResumenTipo({
     <div
       className="
         overflow-hidden
-        rounded-xl
+        rounded-lg
         border
-        border-slate-700
+        border-slate-300
         bg-white
         shadow-sm
       "
@@ -6203,11 +6203,11 @@ function ResumenTipo({
           items-center
           gap-2
           border-b
-        border-blue-100
-        bg-blue-50
-        px-4
-        py-3
-        text-[var(--primary)]
+        border-[#194567]
+        bg-[#194567]
+        px-3
+        py-2
+        text-white
                 "
       >
         <i
@@ -6219,7 +6219,7 @@ function ResumenTipo({
 
         <div
           className="
-            text-sm
+            text-xs
             font-extrabold
             tracking-wide
           "
@@ -6230,12 +6230,12 @@ function ResumenTipo({
 
       <div
         className="
-          p-4
+          p-3
         "
       >
         <div
           className="
-            text-sm
+            text-xs
             font-semibold
             text-slate-600
           "
@@ -6246,8 +6246,8 @@ function ResumenTipo({
 
         <div
           className="
-            mt-2
-            text-2xl
+            mt-1
+            text-lg
             font-extrabold
             text-slate-900
           "
@@ -6267,7 +6267,7 @@ function ResumenTipo({
           <span
             className="
               ml-2
-              text-sm
+              text-xs
               font-semibold
               text-slate-500
             "
@@ -6279,11 +6279,11 @@ function ResumenTipo({
         {completo && (
           <div
             className="
-              mt-3
+              mt-2
               rounded-lg
               bg-emerald-50
-              px-3
-              py-2
+              px-2.5
+              py-1.5
               text-xs
               font-bold
               text-emerald-700
@@ -6306,11 +6306,11 @@ function ResumenTipo({
           tieneRequisito && (
             <div
               className="
-                mt-3
+                mt-2
                 rounded-lg
                 bg-amber-50
-                px-3
-                py-2
+                px-2.5
+                py-1.5
                 text-xs
                 font-semibold
                 text-amber-700
@@ -6344,11 +6344,11 @@ function ResumenTipo({
         {excedido && (
           <div
             className="
-              mt-3
+              mt-2
               rounded-lg
               bg-red-50
-              px-3
-              py-2
+              px-2.5
+              py-1.5
               text-xs
               font-semibold
               text-red-700
@@ -6419,11 +6419,11 @@ function ResumenPractica({
     <div
       className="
         overflow-hidden
-        rounded-xl
+        rounded-lg
         border
-        border-slate-700
+        border-slate-300
         bg-white
-        shadow-md
+        shadow-sm
       "
     >
       <div
@@ -6432,11 +6432,11 @@ function ResumenPractica({
           items-center
           gap-2
           border-b
-        border-slate-200
-        bg-slate-100
-        px-4
-        py-3
-        text-[var(--primary)]
+        border-[#194567]
+        bg-[#194567]
+        px-3
+        py-2
+        text-white
         "
       >
         <i
@@ -6448,7 +6448,7 @@ function ResumenPractica({
 
         <div
           className="
-            text-sm
+            text-xs
             font-extrabold
             tracking-wide
           "
@@ -6459,12 +6459,12 @@ function ResumenPractica({
 
       <div
         className="
-          p-4
+          p-3
         "
       >
         <div
           className="
-            text-sm
+            text-xs
             font-semibold
             text-slate-600
           "
@@ -6474,8 +6474,8 @@ function ResumenPractica({
 
         <div
           className="
-            mt-2
-            text-2xl
+            mt-1
+            text-lg
             font-extrabold
             text-slate-900
           "
@@ -6491,7 +6491,7 @@ function ResumenPractica({
           <span
             className="
               ml-2
-              text-sm
+              text-xs
               font-semibold
               text-slate-500
             "
@@ -6503,11 +6503,11 @@ function ResumenPractica({
         {completo && (
           <div
             className="
-              mt-3
+              mt-2
               rounded-lg
               bg-emerald-50
-              px-3
-              py-2
+              px-2.5
+              py-1.5
               text-xs
               font-bold
               text-emerald-700
@@ -6530,11 +6530,11 @@ function ResumenPractica({
           tieneRequisito && (
             <div
               className="
-                mt-3
+                mt-2
                 rounded-lg
                 bg-amber-50
-                px-3
-                py-2
+                px-2.5
+                py-1.5
                 text-xs
                 font-semibold
                 text-amber-700
@@ -6564,11 +6564,11 @@ function ResumenPractica({
         {excedido && (
           <div
             className="
-              mt-3
+              mt-2
               rounded-lg
               bg-red-50
-              px-3
-              py-2
+              px-2.5
+              py-1.5
               text-xs
               font-semibold
               text-red-700
