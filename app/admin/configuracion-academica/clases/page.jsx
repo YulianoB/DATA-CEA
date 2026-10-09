@@ -3817,7 +3817,8 @@ async function restaurarLogoAnterior() {
                           <div
                             className="
                               divide-y
-                              divide-gray-200
+                              divide-solid
+                              divide-slate-300
                             "
                           >
                             {clasesModulo.map(
@@ -4422,7 +4423,8 @@ async function restaurarLogoAnterior() {
                           <div
                             className="
                               mt-4
-                              space-y-2
+                              divide-y
+                              divide-slate-200
                             "
                           >
                             {grupo.clases.map(
@@ -4434,12 +4436,9 @@ async function restaurarLogoAnterior() {
                                     clase.id
                                   }
                                   className="
-                                    rounded-lg
-                                    border
-                                    border-slate-200
                                     bg-slate-50
                                     px-3
-                                    py-2
+                                    py-2.5
                                     text-xs
                                     text-slate-700
                                   "
