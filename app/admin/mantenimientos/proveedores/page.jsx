@@ -468,18 +468,6 @@ export default function ProveedoresMantenimientoPage() {
             </div>
           </div>
 
-          {error && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-              {error}
-            </div>
-          )}
-
-          {mensaje && (
-            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-              {mensaje}
-            </div>
-          )}
-
           {cargando ? (
             <div className="flex min-h-64 items-center justify-center gap-2 text-slate-600">
               <Loader2 className="h-5 w-5 animate-spin" />
