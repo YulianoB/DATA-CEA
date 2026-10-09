@@ -13,6 +13,7 @@ import {
 } from 'next/navigation'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BookOpen } from 'lucide-react'
+import { BotonAccion } from '@/components/admin/EstiloModulo'
 
 
 // ============================================================
@@ -2952,7 +2953,7 @@ async function restaurarLogoAnterior() {
                     flex
                     items-center
                     gap-2
-                    text-sm
+                    text-xs
                     font-bold
                     uppercase
                     tracking-wide
@@ -3009,7 +3010,7 @@ async function restaurarLogoAnterior() {
                     <div
                       className="
                         text-center
-                        text-sm
+                        text-xs
                         text-slate-500
                       "
                     >
@@ -3066,7 +3067,7 @@ async function restaurarLogoAnterior() {
                       className="
                         mb-1
                         block
-                        text-sm
+                        text-xs
                         font-semibold
                         text-slate-700
                       "
@@ -3093,7 +3094,7 @@ async function restaurarLogoAnterior() {
                         bg-white
                         px-3
                         py-2
-                        text-sm
+                        text-xs
                         text-slate-700
                         transition
                         hover:border-blue-500
@@ -3161,7 +3162,7 @@ async function restaurarLogoAnterior() {
                           rounded-lg
                           px-4
                           py-2
-                          text-sm
+                          text-xs
                           font-bold
                           transition
                           hover:border-blue-500
@@ -3200,7 +3201,7 @@ async function restaurarLogoAnterior() {
 
 
                     {logoAnteriorUrl && (
-                      <button
+                      <BotonAccion tipo="actualizar"
                         type="button"
                         disabled={
                           guardandoLogo
@@ -3208,23 +3209,7 @@ async function restaurarLogoAnterior() {
                         onClick={
                           restaurarLogoAnterior
                         }
-                        className="
-                          flex
-                          items-center
-                          gap-2
-                          rounded-lg
-                          border
-                          border-slate-400
-                          bg-white
-                          px-4
-                          py-2
-                          text-sm
-                          font-bold
-                          text-slate-700
-                          transition
-                          hover:bg-slate-100
-                          disabled:opacity-50
-                        "
+                        
                       >
                         <i
                           className="
@@ -3234,7 +3219,7 @@ async function restaurarLogoAnterior() {
                         ></i>
 
                         Restaurar logo anterior
-                      </button>
+                      </BotonAccion>
                     )}
                   </div>
 
@@ -3315,7 +3300,7 @@ async function restaurarLogoAnterior() {
                 rounded-lg
                 px-4
                 py-3
-                text-sm
+                text-xs
                 font-bold
                 uppercase
                 transition
@@ -3360,7 +3345,7 @@ async function restaurarLogoAnterior() {
                 rounded-lg
                 px-4
                 py-3
-                text-sm
+                text-xs
                 font-bold
                 uppercase
                 transition
@@ -3435,7 +3420,7 @@ async function restaurarLogoAnterior() {
               bg-red-50
               px-4
               py-3
-              text-sm
+              text-xs
               font-medium
               text-red-700
             "
@@ -3453,7 +3438,7 @@ async function restaurarLogoAnterior() {
               bg-emerald-50
               px-4
               py-3
-              text-sm
+              text-xs
               font-medium
               text-emerald-700
             "
@@ -3498,7 +3483,7 @@ async function restaurarLogoAnterior() {
                     flex
                     items-center
                     gap-2
-                    text-sm
+                    text-xs
                     font-bold
                     uppercase
                     tracking-wide
@@ -3561,7 +3546,7 @@ async function restaurarLogoAnterior() {
                             border-2
                             px-5
                             py-3
-                            text-sm
+                            text-xs
                             font-extrabold
                             transition
                             ${
@@ -3660,7 +3645,7 @@ async function restaurarLogoAnterior() {
                     <div
                       className="
                         mt-1
-                        text-sm
+                        text-xs
                         text-amber-800
                       "
                     >
@@ -3743,11 +3728,11 @@ async function restaurarLogoAnterior() {
                       <div>
                         <div
                           className="
-                            text-lg
+                            text-base
                             font-extrabold
                             uppercase
                             text-slate-900
-                            md:text-xl
+                            md:text-lg
                           "
                         >
                           {
@@ -3759,7 +3744,7 @@ async function restaurarLogoAnterior() {
                         <div
                           className="
                             mt-1
-                            text-sm
+                            text-xs
                             text-slate-600
                           "
                         >
@@ -3813,7 +3798,7 @@ async function restaurarLogoAnterior() {
                           bg-white
                           px-3
                           py-2
-                          text-sm
+                          text-xs
                           font-semibold
                         "
                       >
@@ -4000,7 +3985,7 @@ async function restaurarLogoAnterior() {
                                 <div
                                   className="
                                     mt-1
-                                    text-sm
+                                    text-xs
                                     font-semibold
                                   "
                                 >
@@ -4010,7 +3995,7 @@ async function restaurarLogoAnterior() {
                                 </div>
                               </div>
 
-                              <button
+                              <BotonAccion tipo="agregar"
                                 type="button"
                                 disabled={
                                   modulo.activo ===
@@ -4021,22 +4006,7 @@ async function restaurarLogoAnterior() {
                                     modulo
                                   )
                                 }
-                                className="
-                                  flex
-                                  items-center
-                                  justify-center
-                                  gap-2
-                                  rounded-lg
-                                  bg-white
-                                  px-3
-                                  py-2
-                                  text-xs
-                                  font-bold
-                                  text-slate-800
-                                  transition
-                                  hover:bg-slate-100
-                                  disabled:opacity-50
-                                "
+                                
                               >
                                 <i
                                   className="
@@ -4046,7 +4016,7 @@ async function restaurarLogoAnterior() {
                                 ></i>
 
                                 Nueva clase
-                              </button>
+                              </BotonAccion>
                             </div>
                           </div>
 
@@ -4290,24 +4260,14 @@ async function restaurarLogoAnterior() {
                                         gap-2
                                       "
                                     >
-                                      <button
+                                      <BotonAccion tipo="editar"
                                         type="button"
                                         onClick={() =>
                                           abrirEdicion(
                                             clase
                                           )
                                         }
-                                        className="
-                                          rounded-lg
-                                          border
-                                          border-slate-300
-                                          px-3
-                                          py-2
-                                          text-xs
-                                          font-bold
-                                          text-slate-700
-                                          hover:bg-slate-100
-                                        "
+                                        
                                       >
                                         <i
                                           className="
@@ -4318,26 +4278,16 @@ async function restaurarLogoAnterior() {
                                         ></i>
 
                                         Editar
-                                      </button>
+                                      </BotonAccion>
 
-                                      <button
+                                      <BotonAccion tipo="eliminar"
                                         type="button"
                                         onClick={() =>
                                           solicitarEliminar(
                                             clase
                                           )
                                         }
-                                        className="
-                                          rounded-lg
-                                          border
-                                          border-red-300
-                                          px-3
-                                          py-2
-                                          text-xs
-                                          font-bold
-                                          text-red-700
-                                          hover:bg-red-50
-                                        "
+                                        
                                       >
                                         <i
                                           className="
@@ -4348,7 +4298,7 @@ async function restaurarLogoAnterior() {
                                         ></i>
 
                                         Eliminar
-                                      </button>
+                                      </BotonAccion>
                                     </div>
                                   </div>
                                 )
@@ -4365,7 +4315,7 @@ async function restaurarLogoAnterior() {
                               >
                                 <div
                                   className="
-                                    text-sm
+                                    text-xs
                                     text-slate-500
                                   "
                                 >
@@ -4374,24 +4324,14 @@ async function restaurarLogoAnterior() {
                                   configuradas.
                                 </div>
 
-                                <button
+                                <BotonAccion tipo="agregar"
                                   type="button"
                                   onClick={() =>
                                     abrirNuevaClase(
                                       modulo
                                     )
                                   }
-                                  className="
-                                    mt-3
-                                    rounded-lg
-                                    bg-slate-800
-                                    px-4
-                                    py-2
-                                    text-xs
-                                    font-bold
-                                    text-white
-                                    hover:bg-slate-700
-                                  "
+                                  
                                 >
                                   <i
                                     className="
@@ -4403,7 +4343,7 @@ async function restaurarLogoAnterior() {
 
                                   Crear primera
                                   clase
-                                </button>
+                                </BotonAccion>
                               </div>
                             )}
                           </div>
@@ -4493,27 +4433,12 @@ async function restaurarLogoAnterior() {
                 </div>
 
 
-                <button
+                <BotonAccion tipo="agregar"
                   type="button"
                   onClick={
                     abrirNuevoGrupo
                   }
-                  className="
-                    flex
-                    items-center
-                    justify-center
-                    gap-2
-                    rounded-lg
-                    bg-white
-                    px-4
-                    py-2
-                    text-sm
-                    font-bold
-                    text-slate-800
-                    shadow-sm
-                    transition
-                    hover:bg-slate-100
-                  "
+                  
                 >
                   <i
                     className="
@@ -4523,7 +4448,7 @@ async function restaurarLogoAnterior() {
                   ></i>
 
                   Nuevo grupo transversal
-                </button>
+                </BotonAccion>
               </div>
             </div>
 
@@ -4576,7 +4501,7 @@ async function restaurarLogoAnterior() {
                         >
                           <span
                             className="
-                              text-sm
+                              text-xs
                               font-extrabold
                               uppercase
                               text-slate-900
@@ -4775,25 +4700,14 @@ async function restaurarLogoAnterior() {
                             pt-4
                           "
                         >
-                          <button
+                          <BotonAccion tipo="editar"
                             type="button"
                             onClick={() =>
                               abrirEditarGrupo(
                                 grupo
                               )
                             }
-                            className="
-                              rounded-lg
-                              border
-                              border-slate-400
-                              px-3
-                              py-2
-                              text-xs
-                              font-bold
-                              text-slate-700
-                              transition
-                              hover:bg-slate-100
-                            "
+                            
                           >
                             <i
                               className="
@@ -4804,27 +4718,16 @@ async function restaurarLogoAnterior() {
                             ></i>
 
                             Editar
-                          </button>
+                          </BotonAccion>
 
-                          <button
+                          <BotonAccion tipo="eliminar"
                             type="button"
                             onClick={() =>
                               solicitarEliminarGrupo(
                                 grupo
                               )
                             }
-                            className="
-                              rounded-lg
-                              border
-                              border-red-300
-                              px-3
-                              py-2
-                              text-xs
-                              font-bold
-                              text-red-700
-                              transition
-                              hover:bg-red-50
-                            "
+                            
                           >
                             <i
                               className="
@@ -4835,7 +4738,7 @@ async function restaurarLogoAnterior() {
                             ></i>
 
                             Eliminar
-                          </button>
+                          </BotonAccion>
                         </div>
                       </div>
                     </div>
@@ -4860,7 +4763,7 @@ async function restaurarLogoAnterior() {
                     justify-center
                     rounded-full
                     bg-slate-200
-                    text-xl
+                    text-lg
                     text-slate-600
                   "
                 >
@@ -4875,7 +4778,7 @@ async function restaurarLogoAnterior() {
                 <div
                   className="
                     mt-3
-                    text-sm
+                    text-xs
                     font-bold
                     text-slate-700
                   "
@@ -4944,7 +4847,7 @@ async function restaurarLogoAnterior() {
             >
               <div
                 className="
-                  text-lg
+                  text-base
                   font-bold
                 "
               >
@@ -4997,7 +4900,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -5034,7 +4937,7 @@ async function restaurarLogoAnterior() {
                           rounded-lg
                           px-4
                           py-2
-                          text-sm
+                          text-xs
                           font-bold
                           ${
                             grupoEditando
@@ -5065,7 +4968,7 @@ async function restaurarLogoAnterior() {
                 <div
                   className="
                     mb-2
-                    text-sm
+                    text-xs
                     font-semibold
                     text-slate-700
                   "
@@ -5135,7 +5038,7 @@ async function restaurarLogoAnterior() {
                             <div
                               className="
                                 mb-2
-                                text-sm
+                                text-xs
                                 font-extrabold
                                 text-[var(--primary)]
                               "
@@ -5229,7 +5132,7 @@ async function restaurarLogoAnterior() {
                                       >
                                         <div
                                           className="
-                                            text-sm
+                                            text-xs
                                             font-semibold
                                             text-slate-800
                                           "
@@ -5312,7 +5215,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -5367,7 +5270,7 @@ async function restaurarLogoAnterior() {
                 <div>
                   <div
                     className="
-                      text-sm
+                      text-xs
                       font-semibold
                       text-slate-800
                     "
@@ -5401,7 +5304,7 @@ async function restaurarLogoAnterior() {
                 py-4
               "
             >
-              <button
+              <BotonAccion tipo="cancelar"
                 type="button"
                 disabled={
                   guardando
@@ -5409,22 +5312,13 @@ async function restaurarLogoAnterior() {
                 onClick={
                   cerrarGrupo
                 }
-                className="
-                  rounded-lg
-                  border
-                  border-gray-300
-                  px-4
-                  py-2
-                  text-sm
-                  font-bold
-                  text-slate-700
-                  disabled:opacity-50
-                "
+                
               >
+                <i className="fas fa-xmark" aria-hidden="true" />
                 Cancelar
-              </button>
+              </BotonAccion>
 
-              <button
+              <BotonAccion tipo="guardar"
                 type="button"
                 disabled={
                   guardando
@@ -5432,24 +5326,15 @@ async function restaurarLogoAnterior() {
                 onClick={
                   guardarGrupoTransversal
                 }
-                className="
-                  rounded-lg
-                  bg-slate-800
-                  px-4
-                  py-2
-                  text-sm
-                  font-bold
-                  text-white
-                  hover:bg-slate-700
-                  disabled:opacity-50
-                "
+                
               >
+                <i className="fas fa-floppy-disk" aria-hidden="true" />
                 {guardando
                   ? 'Guardando...'
                   : grupoEditando.esNuevo
                     ? 'Crear grupo'
                     : 'Guardar cambios'}
-              </button>
+              </BotonAccion>
             </div>
           </div>
         </div>
@@ -5496,7 +5381,7 @@ async function restaurarLogoAnterior() {
             >
               <div
                 className="
-                  text-lg
+                  text-base
                   font-bold
                 "
               >
@@ -5558,7 +5443,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -5599,13 +5484,13 @@ async function restaurarLogoAnterior() {
                         border-gray-300
                         px-3
                         py-2
-                        text-sm
+                        text-xs
                       "
                     />
 
                     <span
                       className="
-                        text-sm
+                        text-xs
                         text-slate-600
                       "
                     >
@@ -5641,7 +5526,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -5672,7 +5557,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -5703,7 +5588,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -5765,7 +5650,7 @@ async function restaurarLogoAnterior() {
 
                 <div
                   className="
-                    text-sm
+                    text-xs
                     font-semibold
                     text-slate-800
                   "
@@ -5787,7 +5672,7 @@ async function restaurarLogoAnterior() {
                 py-4
               "
             >
-              <button
+              <BotonAccion tipo="cancelar"
                 type="button"
                 disabled={
                   guardando
@@ -5795,21 +5680,13 @@ async function restaurarLogoAnterior() {
                 onClick={
                   cerrarEdicion
                 }
-                className="
-                  rounded-lg
-                  border
-                  border-gray-300
-                  px-4
-                  py-2
-                  text-sm
-                  font-bold
-                  text-slate-700
-                "
+                
               >
+                <i className="fas fa-xmark" aria-hidden="true" />
                 Cancelar
-              </button>
+              </BotonAccion>
 
-              <button
+              <BotonAccion tipo="guardar"
                 type="button"
                 disabled={
                   guardando
@@ -5817,22 +5694,13 @@ async function restaurarLogoAnterior() {
                 onClick={
                   guardarClase
                 }
-                className="
-                  rounded-lg
-                  bg-slate-800
-                  px-4
-                  py-2
-                  text-sm
-                  font-bold
-                  text-white
-                  hover:bg-slate-700
-                  disabled:opacity-50
-                "
+                
               >
+                <i className="fas fa-floppy-disk" aria-hidden="true" />
                 {guardando
                   ? 'Guardando...'
                   : 'Guardar cambios'}
-              </button>
+              </BotonAccion>
             </div>
           </div>
         </div>
@@ -5879,7 +5747,7 @@ async function restaurarLogoAnterior() {
             >
               <div
                 className="
-                  text-lg
+                  text-base
                   font-bold
                 "
               >
@@ -5951,7 +5819,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -5992,13 +5860,13 @@ async function restaurarLogoAnterior() {
                         border-gray-300
                         px-3
                         py-2
-                        text-sm
+                        text-xs
                       "
                     />
 
                     <span
                       className="
-                        text-sm
+                        text-xs
                         text-slate-600
                       "
                     >
@@ -6033,7 +5901,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -6064,7 +5932,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -6095,7 +5963,7 @@ async function restaurarLogoAnterior() {
                     border-gray-300
                     px-3
                     py-2
-                    text-sm
+                    text-xs
                   "
                 />
               </Campo>
@@ -6157,7 +6025,7 @@ async function restaurarLogoAnterior() {
 
                 <div
                   className="
-                    text-sm
+                    text-xs
                     font-semibold
                     text-slate-800
                   "
@@ -6179,7 +6047,7 @@ async function restaurarLogoAnterior() {
                 py-4
               "
             >
-              <button
+              <BotonAccion tipo="cancelar"
                 type="button"
                 disabled={
                   guardando
@@ -6187,21 +6055,13 @@ async function restaurarLogoAnterior() {
                 onClick={
                   cerrarNuevaClase
                 }
-                className="
-                  rounded-lg
-                  border
-                  border-gray-300
-                  px-4
-                  py-2
-                  text-sm
-                  font-bold
-                  text-slate-700
-                "
+                
               >
+                <i className="fas fa-xmark" aria-hidden="true" />
                 Cancelar
-              </button>
+              </BotonAccion>
 
-              <button
+              <BotonAccion tipo="guardar"
                 type="button"
                 disabled={
                   guardando
@@ -6209,22 +6069,13 @@ async function restaurarLogoAnterior() {
                 onClick={
                   guardarNuevaClase
                 }
-                className="
-                  rounded-lg
-                  bg-slate-800
-                  px-4
-                  py-2
-                  text-sm
-                  font-bold
-                  text-white
-                  hover:bg-slate-700
-                  disabled:opacity-50
-                "
+                
               >
+                <i className="fas fa-plus" aria-hidden="true" />
                 {guardando
                   ? 'Creando...'
                   : 'Crear clase'}
-              </button>
+              </BotonAccion>
             </div>
           </div>
         </div>
@@ -6438,21 +6289,16 @@ function SelectorColorHorario({
               Color seleccionado
             </span>
 
-            <button
+            <BotonAccion tipo="limpiar"
               type="button"
               onClick={() =>
                 onChange('')
               }
-              className="
-                ml-auto
-                text-xs
-                font-bold
-                text-red-600
-                hover:text-red-700
-              "
+              className="ml-auto"
             >
+                <i className="fas fa-eraser" aria-hidden="true" />
               Quitar color
-            </button>
+            </BotonAccion>
           </>
         ) : (
           <span
@@ -7056,7 +6902,7 @@ function ConfirmacionEliminar({
             py-4
           "
         >
-          <button
+          <BotonAccion tipo="regresar"
             type="button"
             disabled={
               eliminando
@@ -7064,22 +6910,13 @@ function ConfirmacionEliminar({
             onClick={
               onCancelar
             }
-            className="
-              rounded-lg
-              border
-              border-gray-300
-              px-4
-              py-2
-              text-sm
-              font-bold
-              text-slate-700
-              disabled:opacity-50
-            "
+            
           >
+                <i className="fas fa-arrow-left" aria-hidden="true" />
             Regresar
-          </button>
+          </BotonAccion>
 
-          <button
+          <BotonAccion tipo="eliminar"
             type="button"
             disabled={
               eliminando
@@ -7087,22 +6924,13 @@ function ConfirmacionEliminar({
             onClick={
               onConfirmar
             }
-            className="
-              rounded-lg
-              bg-red-600
-              px-4
-              py-2
-              text-sm
-              font-bold
-              text-white
-              hover:bg-red-700
-              disabled:opacity-50
-            "
+            
           >
+                <i className="fas fa-trash" aria-hidden="true" />
             {eliminando
               ? 'Eliminando...'
               : 'Eliminar'}
-          </button>
+          </BotonAccion>
         </div>
       </div>
     </div>
