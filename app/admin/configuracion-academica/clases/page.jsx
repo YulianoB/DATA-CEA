@@ -2942,7 +2942,7 @@ async function restaurarLogoAnterior() {
             >
               <div
                 className="
-                  bg-slate-800
+                  bg-[#194567]
                   px-4
                   py-3
                   text-white
@@ -3740,7 +3740,7 @@ async function restaurarLogoAnterior() {
                         >
                           <div
                             className="
-                              bg-slate-800
+                              bg-[#194567]
                               px-4
                               py-3
                               text-white
@@ -4169,7 +4169,7 @@ async function restaurarLogoAnterior() {
           >
             <div
               className="
-                bg-slate-800
+                bg-[#194567]
                 p-4
                 text-white
               "
