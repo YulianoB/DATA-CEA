@@ -15,7 +15,7 @@ import {
 import MenuNavegacion from '@/components/admin/MenuNavegacion'
 
 // ============================================================
-// SUBMENÚ SEGUIMIENTO OPERATIVO Y CONSULTAS
+// SUBMENU CONSULTAS ADMINISTRATIVAS
 // ============================================================
 
 const GRUPOS_CONSULTAS = [
@@ -75,7 +75,7 @@ const GRUPOS_CONSULTAS = [
 export default function ConsultasHomePage() {
   return (
     <MenuNavegacion
-      titulo="Seguimiento Operativo y Consultas"
+      titulo="Consultas Administrativas"
       subtitulo="Seleccione la información que desea consultar"
       iconoTitulo={Database}
       grupos={GRUPOS_CONSULTAS}
