@@ -1043,6 +1043,7 @@ export default function PreoperacionalesPage() {
     (
       row
     ) => {
+      setPasoSeguimiento(1)
       setRowSel(
         row
       )
