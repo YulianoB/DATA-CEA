@@ -589,11 +589,8 @@ export default function ProveedoresMantenimientoPage() {
           >
             <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo }}>
               <div>
-                <div className="font-extrabold text-[#194567]">
+                <div className="text-base font-bold text-white">
                   {form.id ? 'Editar proveedor / taller' : 'Nuevo proveedor / taller'}
-                </div>
-                <div className="text-[10px] text-slate-300">
-                  Información general, ubicación DIVIPOLA y actividades
                 </div>
               </div>
               <button type="button" onClick={() => setModalProveedor(false)}>
@@ -605,6 +602,8 @@ export default function ProveedoresMantenimientoPage() {
               Registre la información general del proveedor o taller y seleccione su ubicación. Las actividades pueden configurarse ahora o posteriormente; un proveedor sin actividades podrá utilizarse en mantenimientos correctivos, pero no en preventivos hasta completar su configuración. Los campos obligatorios deben completarse antes de guardar.
             </div>
 
+            <div className="mx-4 mt-4 rounded-xl border border-slate-300 bg-white shadow-sm">
+              <div className="border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-[#194567]">Datos del proveedor / taller</div>
             <div className="grid gap-x-3 gap-y-3 p-4 md:grid-cols-12">
               <div className="md:col-span-3"><Campo label="Tipo de persona">
                 <select
@@ -748,7 +747,9 @@ export default function ProveedoresMantenimientoPage() {
                 </Campo>
               </div>
 
-              <div className="md:col-span-12 overflow-hidden rounded-xl border border-slate-300 bg-white">
+            </div>
+
+              <div className="mx-4 mt-4 overflow-hidden rounded-xl border border-slate-300 bg-white">
                 <div className="border-b border-slate-300 bg-slate-50 p-3">
                   <div className="flex flex-col gap-3">
                     <div>
@@ -860,11 +861,11 @@ export default function ProveedoresMantenimientoPage() {
               </div>
             </div>
 
-            <div className="sticky bottom-0 flex justify-end gap-2 border-t bg-white p-4">
+            <div className="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-300 bg-white p-4">
               <BotonAccion tipo="cancelar"
                 type="button"
                 onClick={() => setModalProveedor(false)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold"
+                className="px-4 py-2 text-sm"
               >
                 Cancelar
               </BotonAccion>
