@@ -18,6 +18,9 @@ import {
 } from 'sonner'
 
 import { cerrarSesion } from '@/lib/auth/logout'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonAccion, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
+import { ClipboardCheck } from 'lucide-react'
 
 // =========================================================
 // CONSTANTES
@@ -239,11 +242,9 @@ export default function PreoperacionalesPage() {
     setFilters,
   ] =
     useState({
-      startDate:
-        '',
+      startDate: '1900-01-01',
 
-      endDate:
-        '',
+      endDate: hoyBogota(),
 
       tipoVehiculo:
         '',
@@ -254,6 +255,8 @@ export default function PreoperacionalesPage() {
       conObservaciones:
         false,
     })
+
+  const [estadoFiltro, setEstadoFiltro] = useState('PENDIENTE')
 
   // =======================================================
   // VEHÍCULOS
@@ -507,6 +510,8 @@ export default function PreoperacionalesPage() {
             nit,
           })
 
+        if (estadoFiltro !== 'TODOS') params.set('estado_observacion', estadoFiltro)
+
         const response =
           await fetch(
             `/api/admin/consultas/preoperacionales?${params.toString()}`,
@@ -602,6 +607,12 @@ export default function PreoperacionalesPage() {
       router,
     ]
   )
+
+  useEffect(() => {
+    if (user) handleConsultar(1)
+    // Consulta inicial al recuperar la sesión; los filtros posteriores se aplican con Consultar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   // =======================================================
   // FILTROS
@@ -2093,75 +2104,13 @@ export default function PreoperacionalesPage() {
               ENCABEZADO
             ================================================== */}
 
-      <div className="bg-white border rounded-xl shadow-lg p-5 mb-4">
-
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-          <div>
-
-            <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
-              Consultas Administrativas
-            </p>
-
-            <h1 className="text-2xl font-bold text-[var(--primary)] flex items-center gap-2 mt-1">
-
-              <i className="fas fa-clipboard-check"></i>
-
-              Consulta de Preoperacionales
-
-            </h1>
-
-            <p className="text-sm text-gray-600 mt-2">
-              Consulte y analice los registros preoperacionales realizados a los vehículos.
-            </p>
-
-          </div>
-
-          <div className="flex gap-2 flex-wrap">
-
-            <button
-              onClick={() =>
-                router.push('/admin/consultas')
-              }
-              className="bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm"
-            >
-              <i className="fas fa-arrow-left mr-2"></i>
-
-              Regresar a Consultas
-            </button>
-
-            <button
-              onClick={() =>
-                cerrarSesion(router)
-              }
-              className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-4 py-2 rounded-lg text-sm"
-            >
-              <i className="fas fa-sign-out-alt mr-2"></i>
-
-              Cerrar Sesión
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
+      <EncabezadoModulo titulo="Consulta de Preoperacionales" subtitulo="Seguimiento de inspecciones preoperacionales y observaciones" icono={ClipboardCheck} rutaRegreso="/admin/consultas" textoRegreso="Seguimiento Operativo y Consultas" />
 
         {/* =================================================
             FILTROS
         ================================================= */}
 
-        <div className="bg-[var(--primary-dark)] text-white rounded-xl p-4 mb-4 shadow-sm">
-
-          <div className="flex items-center gap-2 mb-3">
-
-            <i className="fas fa-filter"></i>
-
-            <h2 className="text-sm font-semibold">
-              Filtros de búsqueda
-            </h2>
-
-          </div>
+        <div className="bg-[#24638C] text-white rounded-xl p-4 mb-4 shadow-sm">
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
 
@@ -2299,26 +2248,15 @@ export default function PreoperacionalesPage() {
 
             </div>
 
-            <label className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 cursor-pointer self-end">
-
-              <input
-                type="checkbox"
-                name="conObservaciones"
-                checked={
-                  filters
-                    .conObservaciones
-                }
-                onChange={
-                  handleChange
-                }
-                className="w-4 h-4"
-              />
-
-              <span>
-                Pendientes / En análisis
-              </span>
-
-            </label>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="estado-preoperacional" className="font-medium">Filtrar por estado</label>
+              <select id="estado-preoperacional" value={estadoFiltro} onChange={event => setEstadoFiltro(event.target.value)} className="p-2 rounded-lg border border-gray-300 text-gray-800 bg-white">
+                <option value="PENDIENTE">Pendientes</option>
+                <option value="EN ANÁLISIS">En análisis</option>
+                <option value="CERRADA">Cerradas</option>
+                <option value="TODOS">Todos</option>
+              </select>
+            </div>
 
           </div>
 
@@ -2556,7 +2494,7 @@ export default function PreoperacionalesPage() {
 
           <table className="w-full min-w-[1500px] text-[10px] border-collapse">
 
-            <thead className="bg-slate-800 text-white">
+            <thead style={ESTILO_ENCABEZADO_TABLA}>
 
               <tr>
 
