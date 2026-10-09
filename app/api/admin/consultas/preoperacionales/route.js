@@ -426,6 +426,7 @@ function construirConsultaBase({
   tipoVehiculo = '',
   placa = '',
   conObservaciones = false,
+  estadoObservacion = '',
   conConteo = true,
 }) {
   let consulta =
@@ -493,7 +494,9 @@ function construirConsultaBase({
   // SOLO SEGUIMIENTOS ABIERTOS
   // =====================================================
 
-  if (
+  if (estadoObservacion) {
+    consulta = consulta.eq('estado_observacion', estadoObservacion)
+  } else if (
     conObservaciones
   ) {
     consulta =
@@ -520,6 +523,7 @@ async function consultarRegistros({
   tipoVehiculo = '',
   placa = '',
   conObservaciones = false,
+  estadoObservacion = '',
   pagina = 1,
   pageSize = PAGE_SIZE_DEFAULT,
 }) {
@@ -531,6 +535,7 @@ async function consultarRegistros({
       tipoVehiculo,
       placa,
       conObservaciones,
+      estadoObservacion,
       conConteo:
         true,
     })
@@ -612,6 +617,7 @@ async function consultarRegistrosExportacion({
   tipoVehiculo = '',
   placa = '',
   conObservaciones = false,
+  estadoObservacion = '',
 }) {
   let consulta =
     construirConsultaBase({
@@ -621,6 +627,7 @@ async function consultarRegistrosExportacion({
       tipoVehiculo,
       placa,
       conObservaciones,
+      estadoObservacion,
       conConteo:
         false,
     })
@@ -974,6 +981,8 @@ export async function GET(request) {
         ).toLowerCase()
       )
 
+    const estadoObservacion = normalizarMayusculas(searchParams.get('estado_observacion'))
+
     const errorRango =
       validarRango(
         fechaInicio,
@@ -1040,6 +1049,7 @@ export async function GET(request) {
             tipoVehiculo,
             placa,
             conObservaciones,
+            estadoObservacion,
             pagina,
             pageSize,
           }),
@@ -1132,6 +1142,7 @@ export async function GET(request) {
           tipoVehiculo,
           placa,
           conObservaciones,
+          estadoObservacion,
         })
 
       return NextResponse.json({
