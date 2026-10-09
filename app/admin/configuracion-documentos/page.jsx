@@ -7029,6 +7029,39 @@ export default function ConfiguracionDocumentosPage() {
         </div>
       )}
 
+        {pestanaPrincipal === 'CONTRATO' && modoEdicionDocumento && documentoActivo && (
+          <div className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/60 p-3 sm:p-6">
+            <div role="dialog" aria-modal="true" aria-label="Editar versión actual del contrato" className="my-auto flex max-h-[calc(100vh-24px)] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[calc(100vh-48px)]">
+              <FranjaSuperiorModal className="px-5 py-4">
+                <h2 className="text-base font-bold">Editar versión actual del contrato</h2>
+                <p className="mt-1 text-xs text-blue-100">Actualice los datos de control documental sin crear otra versión.</p>
+              </FranjaSuperiorModal>
+              <div className="grid gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+                {[
+                  ['nombre_documento', 'Nombre del documento', 'text'],
+                  ['codigo', 'Código', 'text'],
+                  ['fecha_edicion', 'Fecha de elaboración', 'date'],
+                  ['vigencia', 'Fecha de vigencia', 'date'],
+                  ['observaciones', 'Observaciones', 'text'],
+                ].map(([campo, etiqueta, tipo]) => (
+                  <label key={campo} className={campo === 'nombre_documento' || campo === 'observaciones' ? 'sm:col-span-2' : ''}>
+                    <span className="mb-1 block text-xs font-bold uppercase text-slate-600">{etiqueta}</span>
+                    <input type={tipo} value={documentoActivo[campo] || ''} onChange={(event) => actualizarDocumentoEstado(campo, event.target.value)} className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:border-blue-500 focus:outline-none" />
+                  </label>
+                ))}
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input type="checkbox" checked={documentoActivo.activo !== false} onChange={(event) => actualizarDocumentoEstado('activo', event.target.checked)} />
+                  Documento activo
+                </label>
+                <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
+                  <button type="button" disabled={guardandoDocumento} onClick={cancelarEdicionVersionActual} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
+                  <button type="button" disabled={guardandoDocumento} onClick={guardarDocumento} className="rounded-lg bg-sky-800 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{guardandoDocumento ? 'Guardando...' : 'Guardar versión actual'}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ModalResultado
           abierto={Boolean(modalAviso)}
           tipo={modalAviso?.tipo}
@@ -7244,7 +7277,7 @@ export default function ConfiguracionDocumentosPage() {
                 <input
                   type="text"
                   disabled={
-                    !modoEdicionDocumento
+                    !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
                   }
                   value={
                     documentoActivo
@@ -7291,7 +7324,7 @@ export default function ConfiguracionDocumentosPage() {
                 <input
                   type="text"
                   disabled={
-                    !modoEdicionDocumento
+                    !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
                   }
                   value={
                     documentoActivo
@@ -7338,7 +7371,7 @@ export default function ConfiguracionDocumentosPage() {
                 <input
                   type="date"
                   disabled={
-                    !modoEdicionDocumento
+                    !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
                   }
                   value={
                     documentoActivo
@@ -7429,7 +7462,7 @@ export default function ConfiguracionDocumentosPage() {
                   <input
                     type="date"
                     disabled={
-                    !modoEdicionDocumento
+                    !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
                   }
                     value={
                       documentoActivo
@@ -7489,7 +7522,7 @@ export default function ConfiguracionDocumentosPage() {
                   <input
                     type="checkbox"
                     disabled={
-                      !modoEdicionDocumento
+                      !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
                     }
                     checked={
                       documentoActivo
@@ -7525,7 +7558,7 @@ export default function ConfiguracionDocumentosPage() {
                   <input
                     type="text"
                     disabled={
-                      !modoEdicionDocumento
+                      !modoEdicionDocumento || pestanaPrincipal === 'CONTRATO'
                     }
                     value={
                       documentoActivo
@@ -7652,7 +7685,7 @@ export default function ConfiguracionDocumentosPage() {
                     </>
                   )}
 
-                  {modoEdicionDocumento && (
+                  {modoEdicionDocumento && pestanaPrincipal !== 'CONTRATO' && (
                     <>
                       <button
                         type="button"
@@ -7735,24 +7768,10 @@ export default function ConfiguracionDocumentosPage() {
         ) &&
           documentoActivo &&
           mostrandoNuevaVersion && (
-          <div
-            className="
-              overflow-hidden
-              rounded-xl
-              border
-              border-emerald-300
-              bg-white
-              shadow-sm
-            "
-          >
-            <div
-              className="
-                bg-emerald-800
-                px-4
-                py-3
-                text-white
-              "
-            >
+          <div className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/60 p-3 sm:p-6">
+            <div role="dialog" aria-modal="true" aria-label="Crear nueva versión" className="my-auto max-h-[calc(100vh-24px)] w-full max-w-5xl overflow-y-auto rounded-xl bg-white shadow-2xl sm:max-h-[calc(100vh-48px)]">
+          <div className="overflow-hidden">
+            <FranjaSuperiorModal className="px-5 py-4">
               <h2
                 className="
                   text-sm
@@ -7772,7 +7791,7 @@ export default function ConfiguracionDocumentosPage() {
                 La versión vigente será archivada completa y su contenido
                 se conservará como punto de partida de la nueva versión.
               </p>
-            </div>
+            </FranjaSuperiorModal>
 
             <div
               className="
@@ -8142,6 +8161,8 @@ export default function ConfiguracionDocumentosPage() {
                     : 'Crear nueva versión'}
                 </button>
               </div>
+            </div>
+          </div>
             </div>
           </div>
         )}
