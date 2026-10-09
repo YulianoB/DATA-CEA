@@ -3269,20 +3269,12 @@ async function restaurarLogoAnterior() {
 
         <div
           className="
-            rounded-xl
-            border
-            border-slate-700
-            bg-white
-            p-2
-            shadow-md
+            border-b border-slate-300 bg-transparent px-1 pt-1
           "
         >
           <div
             className="
-              grid
-              grid-cols-1
-              gap-2
-              sm:grid-cols-2
+              flex flex-wrap items-end justify-start gap-1
             "
           >
             <button
@@ -3293,29 +3285,15 @@ async function restaurarLogoAnterior() {
                 )
               }
               className={`
-                flex
-                items-center
-                justify-center
-                gap-3
-                rounded-lg
-                px-4
-                py-3
-                text-xs
-                font-bold
-                uppercase
-                transition
+                inline-flex items-center justify-center gap-2 rounded-t-lg border border-b-0 px-4 py-2 text-xs font-semibold transition-colors
                 ${
                   vistaActual ===
                   'PLAN'
                     ? `
-                      bg-slate-800
-                      text-white
-                      shadow-md
+                      border-slate-300 bg-white text-[#194567] shadow-[inset_0_3px_0_#194567]
                     `
                     : `
-                      bg-slate-100
-                      text-slate-700
-                      hover:bg-slate-200
+                      border-transparent bg-slate-200/70 text-slate-600 hover:bg-slate-100 hover:text-[#194567]
                     `
                 }
               `}
@@ -3338,29 +3316,15 @@ async function restaurarLogoAnterior() {
                 )
               }
               className={`
-                flex
-                items-center
-                justify-center
-                gap-3
-                rounded-lg
-                px-4
-                py-3
-                text-xs
-                font-bold
-                uppercase
-                transition
+                inline-flex items-center justify-center gap-2 rounded-t-lg border border-b-0 px-4 py-2 text-xs font-semibold transition-colors
                 ${
                   vistaActual ===
                   'GRUPOS'
                     ? `
-                      bg-slate-800
-                      text-white
-                      shadow-md
+                      border-slate-300 bg-white text-[#194567] shadow-[inset_0_3px_0_#194567]
                     `
                     : `
-                      bg-slate-100
-                      text-slate-700
-                      hover:bg-slate-200
+                      border-transparent bg-slate-200/70 text-slate-600 hover:bg-slate-100 hover:text-[#194567]
                     `
                 }
               `}
@@ -3728,11 +3692,11 @@ async function restaurarLogoAnterior() {
                       <div>
                         <div
                           className="
-                            text-base
+                            text-sm
                             font-extrabold
                             uppercase
                             text-slate-900
-                            md:text-lg
+                            md:text-sm
                           "
                         >
                           {
@@ -4397,7 +4361,7 @@ async function restaurarLogoAnterior() {
                       flex
                       items-center
                       gap-2
-                      text-base
+                      text-sm
                       font-extrabold
                       uppercase
                     "
@@ -4763,7 +4727,7 @@ async function restaurarLogoAnterior() {
                     justify-center
                     rounded-full
                     bg-slate-200
-                    text-lg
+                    text-sm
                     text-slate-600
                   "
                 >
@@ -4847,7 +4811,7 @@ async function restaurarLogoAnterior() {
             >
               <div
                 className="
-                  text-base
+                  text-sm
                   font-bold
                 "
               >
@@ -5381,7 +5345,7 @@ async function restaurarLogoAnterior() {
             >
               <div
                 className="
-                  text-base
+                  text-sm
                   font-bold
                 "
               >
@@ -5747,7 +5711,7 @@ async function restaurarLogoAnterior() {
             >
               <div
                 className="
-                  text-base
+                  text-sm
                   font-bold
                 "
               >
