@@ -5,6 +5,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -19,6 +20,7 @@ import {
 
 import { cerrarSesion } from '@/lib/auth/logout'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { ClipboardCheck } from 'lucide-react'
 
@@ -259,6 +261,8 @@ export default function PreoperacionalesPage() {
   const [estadoFiltro, setEstadoFiltro] = useState('PENDIENTE')
   const [pasoSeguimiento, setPasoSeguimiento] = useState(1)
   const [obsAnalisis, setObsAnalisis] = useState('')
+  const campoAnalisisRef = useRef(null)
+  const [modalResultado, setModalResultado] = useState({ abierto: false, tipo: 'exito', titulo: '', mensaje: '' })
   const [reporteAnio, setReporteAnio] = useState(hoyBogota().slice(0, 4))
   const [reporteMes, setReporteMes] = useState(String(Number(hoyBogota().slice(5, 7))))
   const mesesReporte = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -1044,7 +1048,8 @@ export default function PreoperacionalesPage() {
     (
       row
     ) => {
-      setPasoSeguimiento(1)
+      const estado = normalizarMayusculas(row?.estado_observacion)
+      setPasoSeguimiento(estado === ESTADO_CERRADA ? 3 : (estado === ESTADO_ANALISIS || estado === 'EN ANALISIS' ? 3 : 2))
       setObsAnalisis(row?.observacion_analisis || '')
       setRowSel(
         row
@@ -1242,11 +1247,12 @@ export default function PreoperacionalesPage() {
             ?.registro
         )
 
-        toast.success(
-          resultado
-            ?.message ||
-          'Observación marcada EN ANÁLISIS.'
-        )
+        setModalResultado({
+          abierto: true,
+          tipo: 'exito',
+          titulo: 'Operación realizada satisfactoriamente',
+          mensaje: resultado?.message || 'Análisis guardado correctamente. El seguimiento pasó a EN ANÁLISIS.',
+        })
 
         await handleConsultar(
           page
@@ -2080,6 +2086,13 @@ export default function PreoperacionalesPage() {
         richColors
       />
 
+      <ModalResultado
+        abierto={modalResultado.abierto}
+        tipo={modalResultado.tipo}
+        titulo={modalResultado.titulo}
+        mensaje={modalResultado.mensaje}
+        onCerrar={() => setModalResultado(prev => ({ ...prev, abierto: false }))}
+      />
       <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6">
 
         
@@ -2832,18 +2845,28 @@ export default function PreoperacionalesPage() {
                 {pasoSeguimiento === 2 && (
                   <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
                     <h3 className="font-bold text-[#194567]">Paso 2 · Análisis y actuación prevista</h3>
-                    <p className="text-xs text-slate-600">Describa qué se verificó en el vehículo, la causa o condición encontrada y qué intervención se realizará. No registre aquí una reparación que aún no se haya ejecutado.</p>
-                    <label htmlFor="observacion-analisis-preoperacional" className="block text-xs font-semibold text-slate-700">Verificación y acciones previstas <span className="text-red-600">*</span></label>
-                    <textarea id="observacion-analisis-preoperacional" rows={4} value={obsAnalisis} onChange={event => setObsAnalisis(event.target.value)}
-                      disabled={!esPendiente || updating || closing}
-                      placeholder="Ejemplo: Se verifica desgaste en la llanta delantera. Se programa el reemplazo y la revisión de presión antes de habilitar el vehículo."
-                      className="w-full rounded-lg border border-slate-300 p-3 text-sm disabled:bg-slate-100" />
-                    {rowSel?.fecha_verificacion_observacion && <p className="text-xs text-slate-600">Registrado el {rowSel.fecha_verificacion_observacion} por {rowSel?.usuario_verificacion || '-'}</p>}
-                    {esPendiente && <button type="button" disabled={!normalizarTexto(obsAnalisis) || updating || closing} onClick={marcarEnAnalisis}
-                      className="rounded-lg bg-[#24638C] hover:bg-[#194567] text-white px-4 py-2 text-xs font-bold disabled:opacity-40">
-                      {updating ? 'Guardando...' : 'Guardar análisis y pasar a EN ANÁLISIS'}
-                    </button>}
-                    {!esPendiente && <p className="text-xs text-slate-600">El análisis guardado es de solo lectura.</p>}
+                    {esPendiente ? (
+                      <>
+                        <label htmlFor="observacion-analisis-preoperacional" className="block text-xs font-semibold text-slate-700">Verificación y acciones previstas <span className="text-red-600">*</span></label>
+                        <textarea ref={campoAnalisisRef} autoFocus id="observacion-analisis-preoperacional" rows={4}
+                          value={obsAnalisis} onChange={event => setObsAnalisis(event.target.value)}
+                          disabled={updating || closing}
+                          placeholder="Ejemplo: Se verifica desgaste en la llanta delantera. Se programa el reemplazo y la revisión de presión antes de habilitar el vehículo."
+                          className="w-full rounded-lg border-2 border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-200 outline-none p-3 text-sm disabled:bg-slate-100" />
+                        <p className="text-xs text-slate-600">Describa qué se verificó en el vehículo, la causa o condición encontrada y qué intervención se realizará. No registre aquí una reparación que aún no se haya ejecutado.</p>
+                        <button type="button" disabled={!normalizarTexto(obsAnalisis) || updating || closing} onClick={marcarEnAnalisis}
+                          className="rounded-lg bg-[#24638C] hover:bg-[#194567] text-white px-4 py-2 text-xs font-bold disabled:opacity-40">
+                          {updating ? 'Guardando...' : 'Guardar análisis'}
+                        </button>
+                      </>
+                    ) : (
+                      <div className="space-y-2 text-sm">
+                        <p className="font-semibold text-[#194567]">Verificación y acciones previstas:</p>
+                        <p className="whitespace-pre-wrap text-slate-800">{rowSel?.observacion_analisis || 'No hay observación de análisis registrada.'}</p>
+                        <p className="text-xs text-slate-600">Registrado el {rowSel?.fecha_verificacion_observacion || '-'} por {rowSel?.usuario_verificacion || '-'}</p>
+                        <p className="text-xs text-slate-500">El análisis guardado es de solo lectura.</p>
+                      </div>
+                    )}
                   </section>
                 )}
 
