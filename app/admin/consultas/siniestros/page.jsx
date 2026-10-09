@@ -2151,15 +2151,15 @@ export default function SiniestrosPage() {
             onClick={cerrarDrawer}
           ></button>
 
-          <aside className="relative w-full sm:w-[620px] h-full bg-white shadow-2xl overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-5 py-4">
-              <div className="flex items-start justify-between gap-3">
+          <aside className="relative w-full sm:w-[680px] lg:w-[740px] h-full bg-slate-50 shadow-2xl overflow-y-auto">
+            <div className="sticky top-0 z-10 bg-white border-b border-slate-300 shadow-sm">
+              <div className="flex items-start justify-between gap-3 bg-[#194567] px-4 sm:px-5 py-3 text-white">
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-gray-500 font-bold">
+                  <p className="text-[10px] uppercase tracking-wide text-white/80 font-bold">
                     Expediente del siniestro
                   </p>
 
-                  <h2 className="text-lg font-black text-gray-900 mt-1">
+                  <h2 className="text-lg font-black text-white mt-1">
                     {rowSel?.consecutivo || `#${rowSel?.id}`}
                   </h2>
 
@@ -2174,21 +2174,28 @@ export default function SiniestrosPage() {
                   type="button"
                   onClick={cerrarDrawer}
                   disabled={closing || changingState || savingActa}
-                  className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                  className="w-9 h-9 rounded-full border border-white/50 flex items-center justify-center text-white hover:bg-white/15 disabled:opacity-50"
                 >
                   <i className="fas fa-xmark"></i>
                 </button>
               </div>
+              <nav aria-label="Secciones del expediente" className="flex flex-wrap gap-1.5 px-4 sm:px-5 py-2 bg-white">
+                <a href="#siniestro-reporte" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Reporte</a>
+                <a href="#siniestro-trazabilidad" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Trazabilidad</a>
+                {(esAnalisis || esCerrado) && <a href="#siniestro-analisis" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Análisis</a>}
+                {(pasoAnalisisGuardado || esCerrado) && <a href="#siniestro-costos" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Costos</a>}
+                {(pasoCostosGuardado || esCerrado) && <a href="#siniestro-acta" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Acta</a>}
+              </nav>
             </div>
 
-            <div className="p-4 sm:p-5 space-y-5">
+            <div className="p-4 sm:p-5 space-y-4">
 
               {/* ============================================
                   1. REPORTE INICIAL
               ============================================ */}
 
-              <section className="border border-gray-200 rounded-xl overflow-hidden">
-                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
+              <section id="siniestro-reporte" className="scroll-mt-40 "border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   1. Reporte inicial
                 </div>
 
@@ -2251,8 +2258,8 @@ export default function SiniestrosPage() {
                   2. TRAZABILIDAD
               ============================================ */}
 
-              <section className="border border-gray-200 rounded-xl overflow-hidden">
-                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
+              <section id="siniestro-trazabilidad" className="scroll-mt-40 "border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   2. Trazabilidad
                 </div>
 
@@ -2330,8 +2337,8 @@ export default function SiniestrosPage() {
               ============================================ */}
 
               {(esAnalisis || esCerrado) && (
-              <section className="border border-gray-200 rounded-xl overflow-hidden">
-                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
+              <section id="siniestro-analisis" className="scroll-mt-40 "border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   3. Análisis administrativo
                 </div>
 
@@ -2410,8 +2417,8 @@ export default function SiniestrosPage() {
               ============================================ */}
 
               {(pasoAnalisisGuardado || esCerrado) && (
-              <section className="border border-gray-200 rounded-xl overflow-hidden">
-                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold">
+              <section id="siniestro-costos" className="scroll-mt-40 "border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   4. Costos asociados
                 </div>
 
