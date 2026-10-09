@@ -258,6 +258,7 @@ export default function PreoperacionalesPage() {
 
   const [estadoFiltro, setEstadoFiltro] = useState('PENDIENTE')
   const [pasoSeguimiento, setPasoSeguimiento] = useState(1)
+  const [obsAnalisis, setObsAnalisis] = useState('')
   const [reporteAnio, setReporteAnio] = useState(hoyBogota().slice(0, 4))
   const [reporteMes, setReporteMes] = useState(String(Number(hoyBogota().slice(5, 7))))
   const mesesReporte = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -1044,6 +1045,7 @@ export default function PreoperacionalesPage() {
       row
     ) => {
       setPasoSeguimiento(1)
+      setObsAnalisis(row?.observacion_analisis || '')
       setRowSel(
         row
       )
@@ -1087,6 +1089,7 @@ export default function PreoperacionalesPage() {
       setObsCierre(
         ''
       )
+      setObsAnalisis('')
     }
 
   // =======================================================
@@ -1183,6 +1186,11 @@ export default function PreoperacionalesPage() {
         return
       }
 
+      if (!normalizarTexto(obsAnalisis)) {
+        toast.warning('Describa la verificación y la intervención prevista antes de guardar.')
+        return
+      }
+
       setUpdating(
         true
       )
@@ -1214,6 +1222,7 @@ export default function PreoperacionalesPage() {
 
                   accion:
                     'marcar_en_analisis',
+                  observacion_analisis: normalizarTexto(obsAnalisis),
 
                   id:
                     rowSel.id,
@@ -2764,7 +2773,7 @@ export default function PreoperacionalesPage() {
                 <nav aria-label="Etapas del seguimiento" className="flex items-center gap-2 px-3 sm:px-5 py-2">
                   <button type="button" aria-label="Etapa anterior" disabled={pasoSeguimiento === 1} onClick={() => setPasoSeguimiento(p => Math.max(1, p - 1))} className="p-2 text-[#194567] disabled:text-slate-300"><i className="fas fa-chevron-left"></i></button>
                   <div className="grid grid-cols-3 gap-2 flex-1 min-w-0">
-                    {[{n:1,t:'Inspección'},{n:2,t:'Resultados'},{n:3,t:'Seguimiento'}].map(etapa => (
+                    {[{n:1,t:'Inspección'},{n:2,t:'Análisis'},{n:3,t:'Cierre'}].map(etapa => (
                       <button key={etapa.n} type="button" aria-current={pasoSeguimiento === etapa.n ? 'step' : undefined} onClick={() => setPasoSeguimiento(etapa.n)}
                         className={`flex flex-col items-center gap-1 rounded-md py-1 text-[11px] font-semibold ${pasoSeguimiento === etapa.n ? 'text-[#194567]' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <span className={`w-6 h-6 rounded-full border flex items-center justify-center font-bold ${pasoSeguimiento === etapa.n ? 'bg-[#24638C] border-[#24638C] text-white' : 'bg-white border-slate-300'}`}>{etapa.n}</span>
@@ -2778,485 +2787,86 @@ export default function PreoperacionalesPage() {
               </div>
 
               <div className="p-4 sm:p-5 space-y-4">
-
-                <div className={pasoSeguimiento === 1 ? 'space-y-4' : 'hidden'}>
-
-                {/* ESTADO */}
-
-                <div className="flex items-center justify-between bg-gray-50 border rounded-lg p-3 text-sm">
-
-                  <span className="font-semibold">
-                    Estado actual
-                  </span>
-
-                  <EstadoChip
-                    estado={
-                      rowSel
-                        ?.estado_observacion
-                    }
-                  />
-
-                </div>
-
-                <div className={pasoSeguimiento === 1 ? 'space-y-4' : 'hidden'}>
-
-                </div>
-
-                {/* DETALLE */}
-
-                <div className="border rounded-xl overflow-hidden">
-
-                  <div className="bg-[#24638C] text-white px-4 py-2 text-sm font-semibold">
-
-                    <i className="fas fa-clipboard-list mr-2"></i>
-
-                    Información de la inspección
-
+                <section className="bg-white border border-slate-300 rounded-xl p-4 shadow-sm space-y-3">
+                  <h3 className="text-sm font-bold text-[#194567]">Información de la inspección</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    {[['Fecha', rowSel?.fecha_registro], ['Hora', rowSel?.hora_registro], ['Placa', rowSel?.placa], ['Tipo', rowSel?.tipo_vehiculo]].map(([etiqueta, valor]) => (
+                      <div key={etiqueta}><p className="text-slate-500">{etiqueta}</p><p className="font-semibold break-words">{valor || '-'}</p></div>
+                    ))}
                   </div>
-
-                  <div className="p-4 grid grid-cols-2 gap-3 text-xs">
-
-                    <div>
-                      <span className="text-gray-500">
-                        Fecha
-                      </span>
-                      <div className="font-semibold">
-                        {
-                          rowSel
-                            ?.fecha_registro ||
-                          '-'
-                        }
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-500">
-                        Hora
-                      </span>
-                      <div className="font-semibold">
-                        {
-                          rowSel
-                            ?.hora_registro ||
-                          '-'
-                        }
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-500">
-                        Placa
-                      </span>
-                      <div className="font-semibold">
-                        {
-                          rowSel
-                            ?.placa ||
-                          '-'
-                        }
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-500">
-                        Tipo
-                      </span>
-                      <div className="font-semibold">
-                        {
-                          rowSel
-                            ?.tipo_vehiculo ||
-                          '-'
-                        }
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-500">
-                        Marca
-                      </span>
-                      <div className="font-semibold">
-                        {
-                          rowSel
-                            ?.marca ||
-                          '-'
-                        }
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-500">
-                        Kilometraje
-                      </span>
-                      <div className="font-semibold">
-                        {
-                          rowSel
-                            ?.km_registro ??
-                          '-'
-                        }
-                      </div>
-                    </div>
-
-                    <div className="col-span-2">
-                      <span className="text-gray-500">
-                        Encargado
-                      </span>
-                      <div className="font-semibold">
-                        {
-                          rowSel
-                            ?.usuario_encargado ||
-                          '-'
-                        }
-                      </div>
-                    </div>
-
-                    <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
-
-                      <span className="font-semibold text-amber-800">
-                        Observaciones
-                      </span>
-
-                      <div className="mt-1 whitespace-pre-wrap text-gray-700">
-                        {
-                          rowSel
-                            ?.observaciones ||
-                          'Sin observaciones.'
-                        }
-                      </div>
-
-                    </div>
-
+                  <div className="border-t border-slate-200 pt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                    {[['Marca', rowSel?.marca], ['Kilometraje', rowSel?.km_registro], ['Encargado', rowSel?.usuario_encargado]].map(([etiqueta, valor]) => (
+                      <div key={etiqueta}><p className="text-slate-500">{etiqueta}</p><p className="font-semibold break-words">{valor ?? '-'}</p></div>
+                    ))}
                   </div>
-
-                </div>
-
-                <div className={pasoSeguimiento === 2 ? 'space-y-4' : 'hidden'}>
-
-                </div>
-
-                {/* COMPONENTES */}
-
-                <div className="border rounded-xl overflow-hidden">
-
-                  <div className="bg-[#24638C] text-white px-4 py-2 text-sm font-semibold">
-                    Resultado de la inspección
+                  <div className="border-t border-slate-200 pt-3 text-xs">
+                    <p className="font-semibold text-[#194567]">Observaciones del instructor</p>
+                    <p className="whitespace-pre-wrap mt-1 text-slate-700">{rowSel?.observaciones || 'Sin observaciones.'}</p>
                   </div>
-
-                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-
-                    {
-                      [
-                        [
-                          'Exterior',
-                          rowSel
-                            ?.revision_exterior,
-                        ],
-
-                        [
-                          'Motor',
-                          rowSel
-                            ?.motor,
-                        ],
-
-                        [
-                          'Interior / Funcionamiento',
-                          rowSel
-                            ?.interior_funcionamiento,
-                        ],
-
-                        [
-                          'Equipos de Prevención',
-                          rowSel
-                            ?.equipos_prevencion,
-                        ],
-
-                        [
-                          'Documentos',
-                          rowSel
-                            ?.documentos,
-                        ],
-                      ].map(
-                        (
-                          [
-                            label,
-                            value,
-                          ]
-                        ) => {
-                          const noConforme =
-                            normalizarMayusculas(
-                              value
-                            ) ===
-                            'NO CONFORME'
-
-                          return (
-                            <div
-                              key={
-                                label
-                              }
-                              className={`
-                                border
-                                rounded-lg
-                                p-3
-                                ${
-                                  noConforme
-                                    ? 'bg-red-50 border-red-300'
-                                    : 'bg-gray-50 border-gray-200'
-                                }
-                              `}
-                            >
-                              <div className="text-gray-500">
-                                {
-                                  label
-                                }
-                              </div>
-
-                              <div
-                                className={`
-                                  font-semibold
-                                  mt-1
-                                  ${
-                                    noConforme
-                                      ? 'text-red-700'
-                                      : 'text-gray-800'
-                                  }
-                                `}
-                              >
-                                {
-                                  value ||
-                                  '-'
-                                }
-                              </div>
-                            </div>
-                          )
-                        }
-                      )
-                    }
-
-                  </div>
-
-                </div>
-
-                <div className={pasoSeguimiento === 3 ? 'space-y-4' : 'hidden'}>
-
-                </div>
-
-                {/* SEGUIMIENTO */}
-
-                <div className="border rounded-xl overflow-hidden">
-
-                  <div className="bg-[#24638C] text-white px-4 py-2 text-sm font-semibold">
-
-                    <i className="fas fa-tasks mr-2"></i>
-
-                    Seguimiento
-
-                  </div>
-
-                  <div className="p-4 space-y-4">
-
-                    {/* ANÁLISIS */}
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-
-                        <button
-                          onClick={
-                            marcarEnAnalisis
-                          }
-                          disabled={
-                            esCerrada ||
-                            esAnalisis ||
-                            updating ||
-                            closing
-                          }
-                          className="bg-blue-600 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-40"
-                        >
-                          <i className="fas fa-search mr-1"></i>
-
-                          {
-                            updating
-                              ? 'Guardando...'
-                              : 'Marcar EN ANÁLISIS'
-                          }
-                        </button>
-
-                        <div className="text-[11px] text-gray-600">
-
-                          <div>
-                            <strong>
-                              Fecha:
-                            </strong>{' '}
-
-                            {
-                              rowSel
-                                ?.fecha_verificacion_observacion ||
-                              '-'
-                            }
-                          </div>
-
-                          <div>
-                            <strong>
-                              Responsable:
-                            </strong>{' '}
-
-                            {
-                              rowSel
-                                ?.usuario_verificacion ||
-                              '-'
-                            }
-                          </div>
-
-                        </div>
-
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {[
+                      ['Revisión exterior', rowSel?.revision_exterior],
+                      ['Motor', rowSel?.motor],
+                      ['Interior y funcionamiento', rowSel?.interior_funcionamiento],
+                      ['Equipos de prevención', rowSel?.equipos_prevencion],
+                      ['Documentos', rowSel?.documentos],
+                    ].filter(([, valor]) => normalizarMayusculas(valor) === 'NO CONFORME').map(([etiqueta]) => (
+                      <div key={etiqueta} className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 flex items-center justify-between gap-2 text-xs">
+                        <span className="font-semibold text-red-900">{etiqueta}</span>
+                        <span className="font-bold text-red-700 whitespace-nowrap">NO CONFORME</span>
                       </div>
-
-                    </div>
-
-                    {/* CIERRE */}
-
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-
-                      <label className="block font-semibold text-xs mb-2">
-                        Observación de solución
-                      </label>
-
-                      <textarea
-                        rows={
-                          4
-                        }
-                        value={
-                          obsCierre
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          setObsCierre(
-                            event
-                              .target
-                              .value
-                          )
-                        }
-                        disabled={
-                          esPendiente ||
-                          esCerrada ||
-                          closing
-                        }
-                        placeholder={
-                          esPendiente
-                            ? 'Primero debe marcar la observación EN ANÁLISIS.'
-                            : 'Describa la solución aplicada...'
-                        }
-                        className="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white disabled:bg-gray-100"
-                      />
-
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
-
-                        <button
-                          onClick={
-                            cerrarObservacion
-                          }
-                          disabled={
-                            esPendiente ||
-                            esCerrada ||
-                            !esAnalisis ||
-                            !normalizarTexto(
-                              obsCierre
-                            ) ||
-                            closing ||
-                            updating
-                          }
-                          className="bg-green-600 hover:bg-green-800 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-40"
-                        >
-                          <i className="fas fa-check-circle mr-1"></i>
-
-                          {
-                            closing
-                              ? 'Guardando...'
-                              : 'Cerrar Observación'
-                          }
-                        </button>
-
-                        <div className="text-[11px] text-gray-600">
-
-                          <div>
-                            <strong>
-                              Fecha solución:
-                            </strong>{' '}
-
-                            {
-                              rowSel
-                                ?.fecha_solucion_observacion ||
-                              '-'
-                            }
-                          </div>
-
-                          <div>
-                            <strong>
-                              Responsable:
-                            </strong>{' '}
-
-                            {
-                              rowSel
-                                ?.usuario_solucion ||
-                              '-'
-                            }
-                          </div>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                    {/* SOLUCIÓN HISTÓRICA */}
-
-                    {
-                      rowSel
-                        ?.observacion_solucion && (
-                        <div className="border rounded-lg p-3 bg-gray-50 text-xs">
-
-                          <div className="font-semibold mb-1">
-                            Solución registrada
-                          </div>
-
-                          <div className="whitespace-pre-wrap text-gray-700">
-                            {
-                              rowSel
-                                .observacion_solucion
-                            }
-                          </div>
-
-                        </div>
-                      )
-                    }
-
+                    ))}
                   </div>
+                </section>
 
-                </div>
+                {pasoSeguimiento === 1 && (
+                  <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
+                    <h3 className="font-bold text-[#194567]">Paso 1 · Inspección registrada</h3>
+                    <p className="text-xs text-slate-600">Revise las novedades reportadas por el instructor. La información original es de solo lectura.</p>
+                    {esPendiente && <button type="button" onClick={() => setPasoSeguimiento(2)} className="rounded-lg bg-[#24638C] hover:bg-[#194567] text-white px-4 py-2 text-xs font-bold">Continuar al análisis</button>}
+                  </section>
+                )}
 
-                </div>
+                {pasoSeguimiento === 2 && (
+                  <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
+                    <h3 className="font-bold text-[#194567]">Paso 2 · Análisis y actuación prevista</h3>
+                    <p className="text-xs text-slate-600">Describa qué se verificó en el vehículo, la causa o condición encontrada y qué intervención se realizará. No registre aquí una reparación que aún no se haya ejecutado.</p>
+                    <label htmlFor="observacion-analisis-preoperacional" className="block text-xs font-semibold text-slate-700">Verificación y acciones previstas <span className="text-red-600">*</span></label>
+                    <textarea id="observacion-analisis-preoperacional" rows={4} value={obsAnalisis} onChange={event => setObsAnalisis(event.target.value)}
+                      disabled={!esPendiente || updating || closing}
+                      placeholder="Ejemplo: Se verifica desgaste en la llanta delantera. Se programa el reemplazo y la revisión de presión antes de habilitar el vehículo."
+                      className="w-full rounded-lg border border-slate-300 p-3 text-sm disabled:bg-slate-100" />
+                    {rowSel?.fecha_verificacion_observacion && <p className="text-xs text-slate-600">Registrado el {rowSel.fecha_verificacion_observacion} por {rowSel?.usuario_verificacion || '-'}</p>}
+                    {esPendiente && <button type="button" disabled={!normalizarTexto(obsAnalisis) || updating || closing} onClick={marcarEnAnalisis}
+                      className="rounded-lg bg-[#24638C] hover:bg-[#194567] text-white px-4 py-2 text-xs font-bold disabled:opacity-40">
+                      {updating ? 'Guardando...' : 'Guardar análisis y pasar a EN ANÁLISIS'}
+                    </button>}
+                    {!esPendiente && <p className="text-xs text-slate-600">El análisis guardado es de solo lectura.</p>}
+                  </section>
+                )}
 
-                {/* CERRAR PANEL */}
-
-                <div className="flex justify-end">
-
-                  <button
-                    onClick={
-                      cerrarDrawer
-                    }
-                    disabled={
-                      closing ||
-                      updating
-                    }
-                    className="bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
-                  >
-                    <i className="fas fa-times mr-1"></i>
-
-                    Cerrar panel
-                  </button>
-
-                </div>
-
+                {pasoSeguimiento === 3 && (
+                  <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
+                    <h3 className="font-bold text-[#194567]">Paso 3 · Solución y cierre</h3>
+                    <p className="text-xs text-slate-600">Describa las reparaciones o acciones correctivas efectivamente realizadas, indicando cómo se atendió cada novedad y cómo se verificó su solución.</p>
+                    {rowSel?.observacion_analisis && <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs"><p className="font-semibold text-[#194567]">Análisis registrado</p><p className="whitespace-pre-wrap mt-1">{rowSel.observacion_analisis}</p></div>}
+                    <label htmlFor="observacion-cierre-preoperacional" className="block text-xs font-semibold text-slate-700">Descripción de la solución <span className="text-red-600">*</span></label>
+                    <textarea id="observacion-cierre-preoperacional" rows={4} value={obsCierre} onChange={event => setObsCierre(event.target.value)}
+                      disabled={!esAnalisis || closing || updating}
+                      placeholder="Ejemplo: Se reemplazó la llanta delantera, se ajustó la presión y se comprobó su estado antes de poner el vehículo en servicio."
+                      className="w-full rounded-lg border border-slate-300 p-3 text-sm disabled:bg-slate-100" />
+                    {rowSel?.fecha_solucion_observacion && <p className="text-xs text-slate-600">Cerrado el {rowSel.fecha_solucion_observacion} por {rowSel?.usuario_solucion || '-'}</p>}
+                    {esAnalisis && <button type="button" disabled={!normalizarTexto(obsCierre) || closing || updating} onClick={cerrarObservacion}
+                      className="rounded-lg bg-green-700 hover:bg-green-800 text-white px-4 py-2 text-xs font-bold disabled:opacity-40">
+                      {closing ? 'Guardando...' : 'Guardar solución y cerrar'}
+                    </button>}
+                    {esPendiente && <p className="text-xs text-amber-700">Primero debe guardar la observación del análisis.</p>}
+                    {esCerrada && <p className="text-xs text-green-800 font-semibold">Expediente cerrado. La solución es de solo lectura.</p>}
+                  </section>
+                )}
+                <div className="flex justify-end"><button type="button" onClick={cerrarDrawer} disabled={closing || updating}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40">Cerrar panel</button></div>
               </div>
-
             </aside>
 
           </div>
