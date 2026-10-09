@@ -2085,15 +2085,6 @@ export default function PreoperacionalesPage() {
     estadoUpper ===
       'EN ANÁLISIS'
 
-  // Resumen de los registros realmente consultados (no del total histórico).
-  const resumenFiltrado = {
-    no_conformes: data.filter(row => row?.tiene_no_conformidad).length,
-    con_observaciones: data.filter(row => row?.tiene_observacion || normalizarTexto(row?.observaciones)).length,
-    pendientes: data.filter(row => normalizarMayusculas(row?.estado_observacion) === ESTADO_PENDIENTE).length,
-    en_analisis: data.filter(row => ['EN ANÁLISIS', 'EN ANALISIS'].includes(normalizarMayusculas(row?.estado_observacion))).length,
-    cerradas: data.filter(row => normalizarMayusculas(row?.estado_observacion) === ESTADO_CERRADA).length,
-  }
-
   // =======================================================
   // RENDER
   // =======================================================
@@ -2120,7 +2111,7 @@ export default function PreoperacionalesPage() {
         ================================================= */}
 
         {
-          true && (
+          (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 mt-5">
 
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
@@ -2143,7 +2134,7 @@ export default function PreoperacionalesPage() {
                 <div className="text-xl font-bold text-red-700">
                   {
                     Number(
-                      resumenFiltrado.no_conformes ||
+                      resumen?.no_conformes ||
                       0
                     ).toLocaleString(
                       'es-CO'
@@ -2159,7 +2150,7 @@ export default function PreoperacionalesPage() {
                 <div className="text-xl font-bold text-amber-700">
                   {
                     Number(
-                      resumenFiltrado.pendientes ||
+                      resumen?.pendientes ||
                       0
                     ).toLocaleString(
                       'es-CO'
@@ -2175,7 +2166,7 @@ export default function PreoperacionalesPage() {
                 <div className="text-xl font-bold text-blue-700">
                   {
                     Number(
-                      resumenFiltrado.en_analisis ||
+                      resumen?.en_analisis ||
                       0
                     ).toLocaleString(
                       'es-CO'
@@ -2191,7 +2182,7 @@ export default function PreoperacionalesPage() {
                 <div className="text-xl font-bold text-green-700">
                   {
                     Number(
-                      resumenFiltrado.cerradas ||
+                      resumen?.cerradas ||
                       0
                     ).toLocaleString(
                       'es-CO'
@@ -2207,7 +2198,7 @@ export default function PreoperacionalesPage() {
                 <div className="text-xl font-bold text-purple-700">
                   {
                     Number(
-                      resumenFiltrado.con_observaciones ||
+                      resumen?.con_observaciones ||
                       0
                     ).toLocaleString(
                       'es-CO'
@@ -2448,7 +2439,7 @@ export default function PreoperacionalesPage() {
             TABLA
         ================================================= */}
 
-        <div className="mb-0 rounded-t-xl px-4 py-3 flex items-center gap-2 text-sm font-bold" style={ESTILO_SECCIONES.fondo}>
+        <div className="mb-0 rounded-t-xl px-4 py-3 flex items-center gap-2 text-sm font-bold" style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto }}>
           <i className="fas fa-clipboard-check" aria-hidden="true"></i>
           Registros de inspecciones preoperacionales
         </div>
@@ -2456,7 +2447,7 @@ export default function PreoperacionalesPage() {
 
           <table className="w-full min-w-[1500px] text-[10px] border-collapse [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300">
 
-            <thead style={ESTILO_ENCABEZADO_TABLA}>
+            <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
               <tr>
 
