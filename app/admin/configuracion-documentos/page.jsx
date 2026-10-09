@@ -6552,6 +6552,7 @@ export default function ConfiguracionDocumentosPage() {
   return (
     <div
       className="
+        configuracion-documentos
         min-h-screen
         bg-slate-100
         p-4
@@ -14227,6 +14228,59 @@ export default function ConfiguracionDocumentosPage() {
           </div>
         )}
       </div>
+      {/* Reglas exclusivamente visuales de los controles del módulo.
+          No modifican el diseñador, sus medidas ni las operaciones de los campos. */}
+      <style jsx global>{`
+        .configuracion-documentos input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+        .configuracion-documentos select,
+        .configuracion-documentos textarea {
+          transition: border-color 150ms ease, box-shadow 150ms ease;
+        }
+        .configuracion-documentos input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus-visible,
+        .configuracion-documentos select:focus-visible,
+        .configuracion-documentos textarea:focus-visible {
+          border-color: #24638c;
+          outline: 2px solid transparent;
+          box-shadow: 0 0 0 3px rgba(36, 99, 140, 0.17);
+        }
+        .configuracion-documentos input:disabled,
+        .configuracion-documentos select:disabled,
+        .configuracion-documentos textarea:disabled {
+          cursor: not-allowed;
+          opacity: 0.75;
+        }
+        .configuracion-documentos button:focus-visible {
+          outline: 2px solid #24638c;
+          outline-offset: 2px;
+        }
+        .configuracion-documentos button:disabled {
+          cursor: not-allowed;
+          opacity: 0.65;
+        }
+        .configuracion-documentos table {
+          border-collapse: separate;
+          border-spacing: 0;
+        }
+        .configuracion-documentos table thead th {
+          background-color: #e6f5f8;
+          color: #194567;
+          font-weight: 800;
+          border-bottom: 1px solid #cbd5e1;
+        }
+        .configuracion-documentos table tbody tr {
+          transition: background-color 150ms ease;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .configuracion-documentos input,
+          .configuracion-documentos select,
+          .configuracion-documentos textarea,
+          .configuracion-documentos button,
+          .configuracion-documentos table tbody tr {
+            transition: none;
+          }
+        }
+      `}</style>
+
     </div>
   )
 }
