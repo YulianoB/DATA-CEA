@@ -81,13 +81,13 @@ function BotonMenuSuperior({ tipo, children, ...props }) {
   )
 }
 
-export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, deshabilitada = false, compacta = false, compactaAlta = false }) {
+export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, deshabilitada = false, compacta = false, compactaAlta = false, compactaMini = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={deshabilitada}
-      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compacta ? (descripcion ? (compactaAlta ? 'min-h-[78px] gap-0.5 px-3 py-1.5' : 'min-h-[90px] gap-1 px-3 py-2') : 'h-[78px] gap-1 px-2 py-2') : 'min-h-[112px] gap-2 p-3'}`}
+      className={`group relative flex w-full flex-col items-center justify-center border text-center disabled:cursor-not-allowed disabled:opacity-50 ${compactaMini ? 'min-h-[62px] gap-0.5 px-2 py-1' : compacta ? (descripcion ? (compactaAlta ? 'min-h-[78px] gap-0.5 px-3 py-1.5' : 'min-h-[90px] gap-1 px-3 py-2') : 'h-[78px] gap-1 px-2 py-2') : 'min-h-[112px] gap-2 p-3'}`}
       style={{
         backgroundColor: ESTILO_TARJETA_MENU.fondo,
         borderColor: ESTILO_TARJETA_MENU.borde,
@@ -149,7 +149,7 @@ export function TarjetaNavegacion({ titulo, descripcion, icono: Icono, onClick, 
   )
 }
 
-export function GrupoNavegacion({ titulo, opciones = [], columnas = 5, compacta = false, compactaAlta = false }) {
+export function GrupoNavegacion({ titulo, opciones = [], columnas = 5, compacta = false, compactaAlta = false, compactaMini = false }) {
   const columnasClase = {
     2: 'lg:grid-cols-2',
     3: 'lg:grid-cols-3',
@@ -165,7 +165,7 @@ export function GrupoNavegacion({ titulo, opciones = [], columnas = 5, compacta 
         </div>
       )}
       <div className={`grid grid-cols-1 sm:grid-cols-2 ${compactaAlta ? 'gap-2' : 'gap-3'} ${columnasClase}`}>
-        {opciones.map((opcion) => <TarjetaNavegacion key={opcion.id || opcion.titulo} {...opcion} compacta={compacta} compactaAlta={compactaAlta} />)}
+        {opciones.map((opcion) => <TarjetaNavegacion key={opcion.id || opcion.titulo} {...opcion} compacta={compacta} compactaAlta={compactaAlta} compactaMini={compactaMini} />)}
       </div>
     </section>
   )
