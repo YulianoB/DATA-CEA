@@ -12629,7 +12629,8 @@ export default function ConfiguracionDocumentosPage() {
                                       celda.id
                                     )
                                   }
-                                  className={seleccionada ? 'ring-2 ring-blue-400 ring-offset-1' : ''}
+                                  className={seleccionada ? 'ring-2 ring-[#194567]/40 ring-offset-1' : ''}
+                                  style={{ backgroundColor: '#3B617D', borderColor: '#3B617D', color: '#FFFFFF' }}
                                 >
                                   <i className="fas fa-pen-to-square mr-1.5" />
 
