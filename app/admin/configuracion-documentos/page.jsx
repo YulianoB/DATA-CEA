@@ -15,7 +15,7 @@ import {
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { Files } from 'lucide-react'
 import ModalResultado from '@/components/admin/ModalResultado'
-import { ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, FranjaSuperiorModal } from '@/components/admin/EstiloModulo'
+import { ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, FranjaSuperiorModal, BotonEditar, BotonAgregar, BotonEliminar, BotonGuardar } from '@/components/admin/EstiloModulo'
 
 
 // =======================================================
@@ -12371,10 +12371,12 @@ export default function ConfiguracionDocumentosPage() {
                     w-full
                     min-w-[760px]
                     border-collapse
+                    [&_th]:text-center
+                    [&_td]:text-center
                     border border-slate-400
                     [&_th]:border [&_th]:border-slate-400
                     [&_td]:border [&_td]:border-slate-300
-                    text-left
+                    text-center
                   "
                 >
                   <thead>
@@ -12405,7 +12407,7 @@ export default function ConfiguracionDocumentosPage() {
                         className="
                           px-3
                           py-2
-                          text-right
+                          text-center
                         "
                       >
                         Acción
@@ -12478,7 +12480,7 @@ export default function ConfiguracionDocumentosPage() {
                                 className="
                                   px-3
                                   py-3
-                                  align-top
+                                  align-middle
                                 "
                               >
                                 <div
@@ -12506,7 +12508,7 @@ export default function ConfiguracionDocumentosPage() {
                                 className="
                                   px-3
                                   py-3
-                                  align-top
+                                  align-middle
                                   text-slate-600
                                 "
                               >
@@ -12540,7 +12542,7 @@ export default function ConfiguracionDocumentosPage() {
                                 className="
                                   px-3
                                   py-3
-                                  align-top
+                                  align-middle
                                 "
                               >
                                 {elementosUtiles.length >
@@ -12549,6 +12551,7 @@ export default function ConfiguracionDocumentosPage() {
                                     className="
                                       flex
                                       flex-wrap
+                                      justify-center
                                       gap-1.5
                                     "
                                   >
@@ -12615,37 +12618,25 @@ export default function ConfiguracionDocumentosPage() {
                                 className="
                                   px-3
                                   py-3
-                                  text-right
-                                  align-top
+                                  text-center
+                                  align-middle
                                 "
                               >
-                                <button
+                                <BotonEditar
                                   type="button"
                                   onClick={() =>
                                     setCeldaSeleccionadaId(
                                       celda.id
                                     )
                                   }
-                                  className={`
-                                    rounded-lg
-                                    px-3
-                                    py-2
-                                    text-[10px]
-                                    font-bold
-                                    transition
-                                    ${
-                                      seleccionada
-                                        ? 'bg-blue-700 text-white'
-                                        : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                                    }
-                                  `}
+                                  className={seleccionada ? 'ring-2 ring-blue-400 ring-offset-1' : ''}
                                 >
                                   <i className="fas fa-pen-to-square mr-1.5" />
 
                                   {seleccionada
                                     ? 'Seleccionada'
                                     : 'Configurar'}
-                                </button>
+                                </BotonEditar>
                               </td>
                             </tr>
                           )
@@ -12775,25 +12766,17 @@ export default function ConfiguracionDocumentosPage() {
                           )}
                         </select>
 
-                        <button
+                        <BotonAgregar
                           type="button"
                           onClick={
                             agregarElemento
                           }
-                          className="
-                            rounded-lg
-                            bg-emerald-600
-                            px-3
-                            text-xs
-                            font-bold
-                            text-white
-                            hover:bg-emerald-700
-                          "
+                          className="shrink-0"
                         >
                           <i className="fas fa-plus mr-1" />
 
                           Agregar
-                        </button>
+                        </BotonAgregar>
                       </div>
 
                       <div
@@ -12861,24 +12844,18 @@ export default function ConfiguracionDocumentosPage() {
                                     </div>
                                   </div>
 
-                                  <button
+                                  <BotonEliminar
                                     type="button"
                                     onClick={() =>
                                       eliminarElemento(
                                         index
                                       )
                                     }
-                                    className="
-                                      rounded
-                                      px-2
-                                      py-1
-                                      text-red-600
-                                      hover:bg-red-50
-                                    "
+                                    className="px-2 py-1"
                                     title="Eliminar dato"
                                   >
                                     <i className="fas fa-trash" />
-                                  </button>
+                                  </BotonEliminar>
                                 </div>
 
                                 {elemento.tipo ===
@@ -13091,7 +13068,7 @@ export default function ConfiguracionDocumentosPage() {
                           pt-4
                         "
                       >
-                        <button
+                        <BotonGuardar
                           type="button"
                           disabled={
                             guardandoEncabezado
@@ -13099,26 +13076,14 @@ export default function ConfiguracionDocumentosPage() {
                           onClick={
                             guardarEncabezado
                           }
-                          className="
-                            w-full
-                            rounded-lg
-                            bg-blue-900
-                            px-4
-                            py-2.5
-                            text-xs
-                            font-bold
-                            text-white
-                            hover:bg-blue-950
-                            disabled:cursor-not-allowed
-                            disabled:opacity-50
-                          "
+                          className="w-full"
                         >
                           <i className="fas fa-floppy-disk mr-2" />
 
                           {guardandoEncabezado
                             ? 'Guardando...'
                             : 'Guardar datos del encabezado'}
-                        </button>
+                        </BotonGuardar>
                       </div>
                     </div>
                   )
