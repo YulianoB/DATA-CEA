@@ -15,7 +15,7 @@ import {
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { Files } from 'lucide-react'
 import ModalResultado from '@/components/admin/ModalResultado'
-import { ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
+import { ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, FranjaSuperiorModal } from '@/components/admin/EstiloModulo'
 
 
 // =======================================================
@@ -6599,6 +6599,436 @@ export default function ConfiguracionDocumentosPage() {
           />
         </div>
 
+      {mostrandoFormularioDocumento && pestanaPrincipal === 'OTROS_DOCUMENTOS' && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-slate-950/60 p-3 sm:p-6"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !guardandoOtroDocumento) cancelarEdicionDocumento()
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-modal-documento"
+            className="my-auto flex max-h-[calc(100vh-24px)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-48px)]"
+          >
+            <FranjaSuperiorModal className="flex shrink-0 items-center justify-between gap-4 px-5 py-4">
+              <div>
+                <h2 id="titulo-modal-documento" className="text-base font-bold">
+                  {documentoEditandoId ? 'Editar documento' : 'Agregar documento'}
+                </h2>
+                <p className="mt-1 text-xs text-blue-100">
+                  Configure los datos de control documental del CEA.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={cancelarEdicionDocumento}
+                disabled={guardandoOtroDocumento}
+                aria-label="Cerrar formulario"
+                className="rounded-lg border border-white/30 px-3 py-2 text-white hover:bg-white/10 disabled:opacity-50"
+              >
+                <i className="fas fa-xmark" />
+              </button>
+            </FranjaSuperiorModal>
+            <div className="overflow-y-auto bg-slate-50 p-4 sm:p-5">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+
+                  <div
+                    className="
+                      mb-3
+                      flex
+                      items-center
+                      justify-between
+                      gap-3
+                    "
+                  >
+                    <div>
+                      <h3
+                        className="
+                          text-xs
+                          font-black
+                          uppercase
+                          text-emerald-900
+                        "
+                      >
+                        {documentoEditandoId
+                          ? 'Editar documento'
+                          : 'Nuevo documento'}
+                      </h3>
+
+                      <p
+                        className="
+                          mt-0.5
+                          text-[10px]
+                          text-emerald-800
+                        "
+                      >
+                        El identificador técnico se conserva internamente y no cambia al editar el nombre.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={
+                        cancelarEdicionDocumento
+                      }
+                      className="
+                        flex
+                        h-8
+                        w-8
+                        items-center
+                        justify-center
+                        rounded-lg
+                        border
+                        border-emerald-300
+                        bg-white
+                        text-emerald-800
+                        hover:bg-emerald-100
+                      "
+                      title="Cancelar"
+                    >
+                      <i className="fas fa-xmark" />
+                    </button>
+                  </div>
+
+                  <div
+                    className="
+                      grid
+                      gap-3
+                      md:grid-cols-2
+                      xl:grid-cols-6
+                    "
+                  >
+                    <div
+                      className="
+                        xl:col-span-2
+                      "
+                    >
+                      <label
+                        className="
+                          mb-1
+                          block
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          text-slate-600
+                        "
+                      >
+                        Nombre del documento
+                      </label>
+
+                      <input
+                        type="text"
+                        value={
+                          formularioDocumento
+                            .nombre_documento
+                        }
+                        onChange={
+                          event =>
+                            actualizarFormularioDocumento(
+                              'nombre_documento',
+                              event.target.value
+                            )
+                        }
+                        className="
+                          h-9
+                          w-full
+                          rounded-lg
+                          border
+                          border-slate-300
+                          bg-white
+                          px-3
+                          text-xs
+                          outline-none
+                          focus:border-emerald-500
+                        "
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        className="
+                          mb-1
+                          block
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          text-slate-600
+                        "
+                      >
+                        Código
+                      </label>
+
+                      <input
+                        type="text"
+                        value={
+                          formularioDocumento
+                            .codigo
+                        }
+                        onChange={
+                          event =>
+                            actualizarFormularioDocumento(
+                              'codigo',
+                              event.target.value
+                            )
+                        }
+                        className="
+                          h-9
+                          w-full
+                          rounded-lg
+                          border
+                          border-slate-300
+                          bg-white
+                          px-3
+                          text-xs
+                          outline-none
+                          focus:border-emerald-500
+                        "
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        className="
+                          mb-1
+                          block
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          text-slate-600
+                        "
+                      >
+                        Fecha de elaboración
+                      </label>
+
+                      <input
+                        type="date"
+                        value={
+                          formularioDocumento
+                            .fecha_edicion
+                        }
+                        onChange={
+                          event =>
+                            actualizarFormularioDocumento(
+                              'fecha_edicion',
+                              event.target.value
+                            )
+                        }
+                        className="
+                          h-9
+                          w-full
+                          rounded-lg
+                          border
+                          border-slate-300
+                          bg-white
+                          px-3
+                          text-xs
+                          outline-none
+                          focus:border-emerald-500
+                        "
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        className="
+                          mb-1
+                          block
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          text-slate-600
+                        "
+                      >
+                        Versión
+                      </label>
+
+                      <input
+                        type="text"
+                        value={
+                          formularioDocumento
+                            .version
+                        }
+                        onChange={
+                          event =>
+                            actualizarFormularioDocumento(
+                              'version',
+                              event.target.value
+                            )
+                        }
+                        className="
+                          h-9
+                          w-full
+                          rounded-lg
+                          border
+                          border-slate-300
+                          bg-white
+                          px-3
+                          text-xs
+                          outline-none
+                          focus:border-emerald-500
+                        "
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        className="
+                          mb-1
+                          block
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          text-slate-600
+                        "
+                      >
+                        Fecha de vigencia
+                      </label>
+
+                      <input
+                        type="date"
+                        value={
+                          formularioDocumento
+                            .vigencia
+                        }
+                        onChange={
+                          event =>
+                            actualizarFormularioDocumento(
+                              'vigencia',
+                              event.target.value
+                            )
+                        }
+                        className="
+                          h-9
+                          w-full
+                          rounded-lg
+                          border
+                          border-slate-300
+                          bg-white
+                          px-3
+                          text-xs
+                          outline-none
+                          focus:border-emerald-500
+                        "
+                      />
+                    </div>
+
+                    <div
+                      className="
+                        md:col-span-2
+                        xl:col-span-6
+                        flex
+                        flex-col
+                        gap-3
+                        sm:flex-row
+                        sm:items-center
+                        sm:justify-between
+                      "
+                    >
+                      <label
+                        className="
+                          flex
+                          cursor-pointer
+                          items-center
+                          gap-2
+                          rounded-lg
+                          border
+                          border-slate-300
+                          bg-white
+                          px-3
+                          py-2
+                          text-xs
+                          font-semibold
+                          text-slate-700
+                        "
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            formularioDocumento
+                              .activo !==
+                            false
+                          }
+                          onChange={
+                            event =>
+                              actualizarFormularioDocumento(
+                                'activo',
+                                event.target.checked
+                              )
+                          }
+                        />
+
+                        Documento activo
+                      </label>
+
+                      <div
+                        className="
+                          flex
+                          gap-2
+                        "
+                      >
+                        <button
+                          type="button"
+                          onClick={
+                            cancelarEdicionDocumento
+                          }
+                          className="
+                            rounded-lg
+                            border
+                            border-slate-300
+                            bg-white
+                            px-4
+                            py-2
+                            text-xs
+                            font-bold
+                            text-slate-700
+                            hover:bg-slate-100
+                          "
+                        >
+                          Cancelar
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={
+                            guardarOtroDocumento
+                          }
+                          disabled={
+                            guardandoOtroDocumento
+                          }
+                          className="
+                            rounded-lg
+                            bg-emerald-700
+                            px-4
+                            py-2
+                            text-xs
+                            font-bold
+                            text-white
+                            hover:bg-emerald-800
+                            disabled:cursor-not-allowed
+                            disabled:opacity-50
+                          "
+                        >
+                          <i className="fas fa-floppy-disk mr-2" />
+
+                          {guardandoOtroDocumento
+                            ? 'Guardando...'
+                            : documentoEditandoId
+                              ? 'Guardar cambios'
+                              : 'Agregar documento'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
         <ModalResultado
           abierto={Boolean(modalAviso)}
           tipo={modalAviso?.tipo}
@@ -9160,405 +9590,6 @@ export default function ConfiguracionDocumentosPage() {
                   Agregar documento
                 </button>
               </div>
-
-              {mostrandoFormularioDocumento && (
-                <div
-                  className="
-                    border-b
-                    border-emerald-200
-                    bg-emerald-50
-                    p-4
-                  "
-                >
-                  <div
-                    className="
-                      mb-3
-                      flex
-                      items-center
-                      justify-between
-                      gap-3
-                    "
-                  >
-                    <div>
-                      <h3
-                        className="
-                          text-xs
-                          font-black
-                          uppercase
-                          text-emerald-900
-                        "
-                      >
-                        {documentoEditandoId
-                          ? 'Editar documento'
-                          : 'Nuevo documento'}
-                      </h3>
-
-                      <p
-                        className="
-                          mt-0.5
-                          text-[10px]
-                          text-emerald-800
-                        "
-                      >
-                        El identificador técnico se conserva internamente y no cambia al editar el nombre.
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={
-                        cancelarEdicionDocumento
-                      }
-                      className="
-                        flex
-                        h-8
-                        w-8
-                        items-center
-                        justify-center
-                        rounded-lg
-                        border
-                        border-emerald-300
-                        bg-white
-                        text-emerald-800
-                        hover:bg-emerald-100
-                      "
-                      title="Cancelar"
-                    >
-                      <i className="fas fa-xmark" />
-                    </button>
-                  </div>
-
-                  <div
-                    className="
-                      grid
-                      gap-3
-                      md:grid-cols-2
-                      xl:grid-cols-6
-                    "
-                  >
-                    <div
-                      className="
-                        xl:col-span-2
-                      "
-                    >
-                      <label
-                        className="
-                          mb-1
-                          block
-                          text-[10px]
-                          font-bold
-                          uppercase
-                          text-slate-600
-                        "
-                      >
-                        Nombre del documento
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          formularioDocumento
-                            .nombre_documento
-                        }
-                        onChange={
-                          event =>
-                            actualizarFormularioDocumento(
-                              'nombre_documento',
-                              event.target.value
-                            )
-                        }
-                        className="
-                          h-9
-                          w-full
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-3
-                          text-xs
-                          outline-none
-                          focus:border-emerald-500
-                        "
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        className="
-                          mb-1
-                          block
-                          text-[10px]
-                          font-bold
-                          uppercase
-                          text-slate-600
-                        "
-                      >
-                        Código
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          formularioDocumento
-                            .codigo
-                        }
-                        onChange={
-                          event =>
-                            actualizarFormularioDocumento(
-                              'codigo',
-                              event.target.value
-                            )
-                        }
-                        className="
-                          h-9
-                          w-full
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-3
-                          text-xs
-                          outline-none
-                          focus:border-emerald-500
-                        "
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        className="
-                          mb-1
-                          block
-                          text-[10px]
-                          font-bold
-                          uppercase
-                          text-slate-600
-                        "
-                      >
-                        Fecha de elaboración
-                      </label>
-
-                      <input
-                        type="date"
-                        value={
-                          formularioDocumento
-                            .fecha_edicion
-                        }
-                        onChange={
-                          event =>
-                            actualizarFormularioDocumento(
-                              'fecha_edicion',
-                              event.target.value
-                            )
-                        }
-                        className="
-                          h-9
-                          w-full
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-3
-                          text-xs
-                          outline-none
-                          focus:border-emerald-500
-                        "
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        className="
-                          mb-1
-                          block
-                          text-[10px]
-                          font-bold
-                          uppercase
-                          text-slate-600
-                        "
-                      >
-                        Versión
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          formularioDocumento
-                            .version
-                        }
-                        onChange={
-                          event =>
-                            actualizarFormularioDocumento(
-                              'version',
-                              event.target.value
-                            )
-                        }
-                        className="
-                          h-9
-                          w-full
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-3
-                          text-xs
-                          outline-none
-                          focus:border-emerald-500
-                        "
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        className="
-                          mb-1
-                          block
-                          text-[10px]
-                          font-bold
-                          uppercase
-                          text-slate-600
-                        "
-                      >
-                        Fecha de vigencia
-                      </label>
-
-                      <input
-                        type="date"
-                        value={
-                          formularioDocumento
-                            .vigencia
-                        }
-                        onChange={
-                          event =>
-                            actualizarFormularioDocumento(
-                              'vigencia',
-                              event.target.value
-                            )
-                        }
-                        className="
-                          h-9
-                          w-full
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-3
-                          text-xs
-                          outline-none
-                          focus:border-emerald-500
-                        "
-                      />
-                    </div>
-
-                    <div
-                      className="
-                        md:col-span-2
-                        xl:col-span-6
-                        flex
-                        flex-col
-                        gap-3
-                        sm:flex-row
-                        sm:items-center
-                        sm:justify-between
-                      "
-                    >
-                      <label
-                        className="
-                          flex
-                          cursor-pointer
-                          items-center
-                          gap-2
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-3
-                          py-2
-                          text-xs
-                          font-semibold
-                          text-slate-700
-                        "
-                      >
-                        <input
-                          type="checkbox"
-                          checked={
-                            formularioDocumento
-                              .activo !==
-                            false
-                          }
-                          onChange={
-                            event =>
-                              actualizarFormularioDocumento(
-                                'activo',
-                                event.target.checked
-                              )
-                          }
-                        />
-
-                        Documento activo
-                      </label>
-
-                      <div
-                        className="
-                          flex
-                          gap-2
-                        "
-                      >
-                        <button
-                          type="button"
-                          onClick={
-                            cancelarEdicionDocumento
-                          }
-                          className="
-                            rounded-lg
-                            border
-                            border-slate-300
-                            bg-white
-                            px-4
-                            py-2
-                            text-xs
-                            font-bold
-                            text-slate-700
-                            hover:bg-slate-100
-                          "
-                        >
-                          Cancelar
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={
-                            guardarOtroDocumento
-                          }
-                          disabled={
-                            guardandoOtroDocumento
-                          }
-                          className="
-                            rounded-lg
-                            bg-emerald-700
-                            px-4
-                            py-2
-                            text-xs
-                            font-bold
-                            text-white
-                            hover:bg-emerald-800
-                            disabled:cursor-not-allowed
-                            disabled:opacity-50
-                          "
-                        >
-                          <i className="fas fa-floppy-disk mr-2" />
-
-                          {guardandoOtroDocumento
-                            ? 'Guardando...'
-                            : documentoEditandoId
-                              ? 'Guardar cambios'
-                              : 'Agregar documento'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {otrosDocumentos.length ===
               0 ? (
