@@ -2194,7 +2194,7 @@ export default function SiniestrosPage() {
                   1. REPORTE INICIAL
               ============================================ */}
 
-              <section id="siniestro-reporte" className="scroll-mt-40 "border border-gray-200 rounded-xl overflow-hidden">
+              <section id="siniestro-reporte" className="scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden">
                 <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   1. Reporte inicial
                 </div>
@@ -2258,7 +2258,7 @@ export default function SiniestrosPage() {
                   2. TRAZABILIDAD
               ============================================ */}
 
-              <section id="siniestro-trazabilidad" className="scroll-mt-40 "border border-gray-200 rounded-xl overflow-hidden">
+              <section id="siniestro-trazabilidad" className="scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden">
                 <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   2. Trazabilidad
                 </div>
@@ -2337,7 +2337,7 @@ export default function SiniestrosPage() {
               ============================================ */}
 
               {(esAnalisis || esCerrado) && (
-              <section id="siniestro-analisis" className="scroll-mt-40 "border border-gray-200 rounded-xl overflow-hidden">
+              <section id="siniestro-analisis" className="scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden">
                 <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   3. Análisis administrativo
                 </div>
@@ -2417,7 +2417,7 @@ export default function SiniestrosPage() {
               ============================================ */}
 
               {(pasoAnalisisGuardado || esCerrado) && (
-              <section id="siniestro-costos" className="scroll-mt-40 "border border-gray-200 rounded-xl overflow-hidden">
+              <section id="siniestro-costos" className="scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden">
                 <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   4. Costos asociados
                 </div>
@@ -2559,8 +2559,8 @@ export default function SiniestrosPage() {
               ============================================ */}
 
               {(pasoCostosGuardado || Boolean(acta) || esCerrado) && (
-              <section className="border border-gray-200 rounded-xl overflow-hidden">
-                <div className="bg-slate-800 text-white px-4 py-2 text-xs font-bold flex items-center justify-between gap-3">
+              <section id="siniestro-acta" className="scroll-mt-40 border border-slate-300 rounded-xl overflow-hidden">
+                <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold flex items-center justify-between gap-3">
                   <span>5. Acta de tratamiento del siniestro</span>
                   {acta?.estado && (
                     <span className="text-[10px] bg-white/15 px-2 py-1 rounded-full">
