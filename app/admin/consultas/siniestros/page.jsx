@@ -2184,34 +2184,44 @@ export default function SiniestrosPage() {
                   <i className="fas fa-xmark"></i>
                 </button>
               </div>
-              <nav aria-label="Avance del expediente" className="grid grid-cols-5 gap-1 sm:gap-2 px-3 sm:px-5 py-3 bg-white border-b border-slate-200">
-                {[
-                  { numero: 1, titulo: 'Reporte', disponible: true },
-                  { numero: 2, titulo: 'Trazabilidad', disponible: true },
-                  { numero: 3, titulo: 'Análisis', disponible: true },
-                  { numero: 4, titulo: 'Costos', disponible: pasoAnalisisGuardado || esCerrado },
-                  { numero: 5, titulo: 'Acta', disponible: pasoCostosGuardado || esCerrado },
-                ].map(etapa => (
-                  <button key={etapa.numero} type="button" disabled={!etapa.disponible}
-                    aria-current={pasoExpediente === etapa.numero ? 'step' : undefined}
-                    onClick={() => setPasoExpediente(etapa.numero)}
-                    className={`flex min-w-0 flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-[10px] sm:text-xs font-semibold ${pasoExpediente === etapa.numero ? 'bg-[#E7F3FA] text-[#194567]' : etapa.disponible ? 'text-slate-600 hover:bg-slate-100' : 'text-slate-400 cursor-not-allowed'}`}>
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-bold ${pasoExpediente === etapa.numero ? 'border-[#24638C] bg-[#24638C] text-white' : etapa.disponible && etapa.numero < pasoExpediente ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>{etapa.numero}</span>
-                    <span className="truncate max-w-full">{etapa.titulo}</span>
-                  </button>
-                ))}
+              <nav aria-label="Avance del expediente" className="relative flex items-center gap-2 bg-white px-3 sm:px-5 pt-2 pb-2 border-b border-slate-200">
+                <button type="button" aria-label="Paso anterior" title="Paso anterior"
+                  disabled={pasoExpediente === 1}
+                  onClick={() => setPasoExpediente(prev => Math.max(1, prev - 1))}
+                  className="shrink-0 rounded-md p-1.5 text-[#194567] hover:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed">
+                  <i className="fas fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <div className="grid min-w-0 flex-1 grid-cols-5 gap-1">
+                  {[
+                    { numero: 1, titulo: 'Reporte', disponible: true },
+                    { numero: 2, titulo: 'Trazabilidad', disponible: true },
+                    { numero: 3, titulo: 'Análisis', disponible: true },
+                    { numero: 4, titulo: 'Costos', disponible: pasoAnalisisGuardado || esCerrado },
+                    { numero: 5, titulo: 'Acta', disponible: pasoCostosGuardado || esCerrado },
+                  ].map(etapa => (
+                    <button key={etapa.numero} type="button" disabled={!etapa.disponible}
+                      aria-current={pasoExpediente === etapa.numero ? 'step' : undefined}
+                      onClick={() => setPasoExpediente(etapa.numero)}
+                      className={`flex min-w-0 flex-col items-center gap-0.5 rounded-md py-0.5 text-[10px] sm:text-xs font-semibold ${pasoExpediente === etapa.numero ? 'text-[#194567]' : etapa.disponible ? 'text-slate-600 hover:bg-slate-100' : 'text-slate-400 cursor-not-allowed'}`}>
+                      <span className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold ${pasoExpediente === etapa.numero ? 'border-[#24638C] bg-[#24638C] text-white' : 'border-slate-300 bg-white'}`}>{etapa.numero}</span>
+                      <span className="truncate max-w-full">{etapa.titulo}</span>
+                    </button>
+                  ))}
+                </div>
+                <button type="button" aria-label="Paso siguiente" title="Paso siguiente"
+                  disabled={pasoExpediente === 5 || (pasoExpediente === 3 && !pasoAnalisisGuardado && !esCerrado) || (pasoExpediente === 4 && !pasoCostosGuardado && !esCerrado)}
+                  onClick={() => setPasoExpediente(prev => Math.min(5, prev + 1))}
+                  className="shrink-0 rounded-md p-1.5 text-[#194567] hover:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed">
+                  <i className="fas fa-chevron-right" aria-hidden="true"></i>
+                </button>
+                <div role="progressbar" aria-label="Avance del expediente" aria-valuemin={1} aria-valuemax={5} aria-valuenow={pasoExpediente}
+                  className="absolute bottom-0 left-0 right-0 h-1 bg-slate-200">
+                  <div className="h-full bg-[#24638C] transition-all duration-200" style={{ width: `${pasoExpediente * 20}%` }} />
+                </div>
               </nav>
             </div>
 
             <div className="p-4 sm:p-5 space-y-4">
-              {pasoExpediente < 3 && (
-                <div className="flex justify-end">
-                  <BotonAccion tipo="consultar" type="button" onClick={() => setPasoExpediente(prev => prev + 1)}>
-                    Siguiente paso <i className="fas fa-arrow-right ml-2" aria-hidden="true"></i>
-                  </BotonAccion>
-                </div>
-              )}
-
               {/* ============================================
                   1. REPORTE INICIAL
               ============================================ */}
