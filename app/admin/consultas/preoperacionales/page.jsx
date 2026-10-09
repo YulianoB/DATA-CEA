@@ -257,10 +257,10 @@ export default function PreoperacionalesPage() {
     })
 
   const [estadoFiltro, setEstadoFiltro] = useState('PENDIENTE')
-  const [reporteAnio, setReporteAnio] = useState(String(new Date().getFullYear()))
-  const [reporteMes, setReporteMes] = useState(String(new Date().getMonth() + 1))
+  const [reporteAnio, setReporteAnio] = useState(hoyBogota().slice(0, 4))
+  const [reporteMes, setReporteMes] = useState(String(Number(hoyBogota().slice(5, 7))))
   const mesesReporte = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-  const aniosReporte = Array.from({ length: new Date().getFullYear() - 2019 }, (_, i) => String(new Date().getFullYear() - i))
+  const aniosReporte = Array.from({ length: Number(hoyBogota().slice(0, 4)) - 2019 }, (_, i) => String(Number(hoyBogota().slice(0, 4)) - i))
 
   // =======================================================
   // VEHÍCULOS
@@ -1403,7 +1403,7 @@ export default function PreoperacionalesPage() {
 
   const obtenerDatosExportacion =
     async () => {
-      if (Number(reporteAnio) > new Date().getFullYear() || (Number(reporteAnio) === new Date().getFullYear() && Number(reporteMes) > new Date().getMonth() + 1)) {
+      if (Number(reporteAnio) > Number(hoyBogota().slice(0, 4)) || (Number(reporteAnio) === Number(hoyBogota().slice(0, 4)) && Number(reporteMes) > Number(hoyBogota().slice(5, 7)))) {
         toast.warning('No se pueden generar reportes de meses futuros.')
         return []
       }
@@ -1729,7 +1729,7 @@ export default function PreoperacionalesPage() {
 
         saveAs(
           blob,
-          `preoperacionales_${filters.startDate}_${filters.endDate}.xlsx`
+          `preoperacionales_${reporteAnio}_${String(reporteMes).padStart(2, '0')}.xlsx`
         )
       } catch (error) {
         console.error(
