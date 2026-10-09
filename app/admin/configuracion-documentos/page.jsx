@@ -14,6 +14,8 @@ import {
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { Files } from 'lucide-react'
+import ModalResultado from '@/components/admin/ModalResultado'
+import { ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 
 
 // =======================================================
@@ -446,6 +448,27 @@ export default function ConfiguracionDocumentosPage() {
     useState(
       ''
     )
+
+  const [confirmacionPendiente, setConfirmacionPendiente] = useState(null)
+  const [modalAviso, setModalAviso] = useState(null)
+
+  // La confirmación conserva el flujo asíncrono original: cancelar no ejecuta la operación.
+  const solicitarConfirmacion = (mensaje) => new Promise((resolver) => {
+    setConfirmacionPendiente({ mensaje, resolver })
+  })
+
+  const responderConfirmacion = (aceptar) => {
+    confirmacionPendiente?.resolver(aceptar)
+    setConfirmacionPendiente(null)
+  }
+
+  useEffect(() => {
+    if (error) setModalAviso({ tipo: 'error', mensaje: error })
+  }, [error])
+
+  useEffect(() => {
+    if (mensaje) setModalAviso({ tipo: 'exito', mensaje })
+  }, [mensaje])
 
   const [
     logoUrl,
@@ -3204,7 +3227,7 @@ export default function ConfiguracionDocumentosPage() {
     }
 
     const confirmar =
-      window.confirm(
+      await solicitarConfirmacion(
         `Se archivará la versión ${
           texto(
             documentoActivo
@@ -3693,7 +3716,7 @@ export default function ConfiguracionDocumentosPage() {
     documento
   ) {
     const confirmar =
-      window.confirm(
+      await solicitarConfirmacion(
         `¿Desea eliminar el documento "${texto(
           documento
             ?.nombre_documento
@@ -4307,7 +4330,7 @@ export default function ConfiguracionDocumentosPage() {
     clausula
   ) {
     const confirmar =
-      window.confirm(
+      await solicitarConfirmacion(
         `¿Desea eliminar ${tituloVisualClausula(
           clausula,
           Number(
@@ -4819,7 +4842,7 @@ export default function ConfiguracionDocumentosPage() {
     seccion
   ) {
     const confirmar =
-      window.confirm(
+      await solicitarConfirmacion(
         `¿Desea eliminar la sección "${texto(
           seccion?.titulo
         ) || 'Sin título'}"?`
@@ -5548,7 +5571,7 @@ export default function ConfiguracionDocumentosPage() {
     seccion
   ) {
     const confirmar =
-      window.confirm(
+      await solicitarConfirmacion(
         `¿Desea eliminar la sección "${texto(
           seccion?.titulo
         ) || 'Sin título'}"?`
@@ -6045,7 +6068,7 @@ export default function ConfiguracionDocumentosPage() {
     finalidad
   ) {
     const confirmar =
-      window.confirm(
+      await solicitarConfirmacion(
         `¿Desea eliminar la finalidad "${texto(
           finalidad?.descripcion
         ) || 'Sin descripción'}"?`
@@ -6576,50 +6599,23 @@ export default function ConfiguracionDocumentosPage() {
           />
         </div>
 
-        {/* ===============================================
-            MENSAJES
-        =============================================== */}
-
-        {mensaje && (
-          <div
-            className="
-              rounded-lg
-              border
-              border-emerald-300
-              bg-emerald-50
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-emerald-800
-            "
-          >
-            <i className="fas fa-circle-check mr-2" />
-
-            {mensaje}
-          </div>
-        )}
-
-        {error && (
-          <div
-            className="
-              rounded-lg
-              border
-              border-red-300
-              bg-red-50
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-red-800
-            "
-          >
-            <i className="fas fa-triangle-exclamation mr-2" />
-
-            {error}
-          </div>
-        )}
-
+        <ModalResultado
+          abierto={Boolean(modalAviso)}
+          tipo={modalAviso?.tipo}
+          mensaje={modalAviso?.mensaje}
+          onCerrar={() => {
+            setModalAviso(null)
+            setMensaje('')
+            setError('')
+          }}
+        />
+        <ModalResultado
+          abierto={Boolean(confirmacionPendiente)}
+          tipo="confirmacion"
+          mensaje={confirmacionPendiente?.mensaje}
+          onCerrar={() => responderConfirmacion(false)}
+          onConfirmar={() => responderConfirmacion(true)}
+        />
 
         {/* ===============================================
             NAVEGACIÓN DE CONFIGURACIÓN DOCUMENTAL
@@ -6794,7 +6790,7 @@ export default function ConfiguracionDocumentosPage() {
                 gap-3
                 p-4
                 md:grid-cols-2
-                xl:grid-cols-5
+                xl:grid-cols-7
               "
             >
               <div
@@ -6986,7 +6982,7 @@ export default function ConfiguracionDocumentosPage() {
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0 xl:col-span-2">
                   <label
                     className="
                       mb-1
@@ -9593,15 +9589,15 @@ export default function ConfiguracionDocumentosPage() {
                     "
                   >
                     <thead>
-                      <tr
+                      <tr style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}
                         className="
                           border-b
                           border-slate-300
-                          bg-slate-100
+                          
                           text-[10px]
                           font-black
                           uppercase
-                          text-slate-600
+                          
                         "
                       >
                         <th className="px-3 py-2">
@@ -9662,13 +9658,13 @@ export default function ConfiguracionDocumentosPage() {
                         )
                         .map(
                           documento => (
-                            <tr
+                            <tr style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}
                               key={
                                 documento.id
                               }
                               className="
                                 border-b
-                                border-slate-200
+                                
                                 bg-white
                                 text-xs
                                 hover:bg-slate-50
