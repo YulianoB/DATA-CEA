@@ -989,7 +989,7 @@ export async function GET(request) {
     // La bandeja de seguimiento inicia en PENDIENTE incluso si el cliente
     // omite el parámetro. TODOS es la única opción sin filtro de estado.
     const estadoSolicitado = normalizarMayusculas(searchParams.get('estado_observacion'))
-    const estadoObservacion = estadoSolicitado === 'TODOS'
+    const estadoObservacion = ['TODOS', 'TODAS_INSPECCIONES'].includes(estadoSolicitado)
       ? ''
       : (estadoSolicitado || (recurso === 'consulta' ? ESTADO_PENDIENTE : ''))
 
