@@ -15,7 +15,7 @@ import {
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { Files } from 'lucide-react'
 import ModalResultado from '@/components/admin/ModalResultado'
-import { ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, FranjaSuperiorModal, BotonEditar, BotonAgregar, BotonEliminar, BotonGuardar } from '@/components/admin/EstiloModulo'
+import { ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, FranjaSuperiorModal, BotonAccion, BotonEditar, BotonAgregar, BotonEliminar, BotonGuardar } from '@/components/admin/EstiloModulo'
 
 
 // =======================================================
@@ -12622,14 +12622,15 @@ export default function ConfiguracionDocumentosPage() {
                                   align-middle
                                 "
                               >
-                                <button
+                                <BotonAccion
+                                  tipo={seleccionada ? 'agregar' : 'consultar'}
                                   type="button"
                                   onClick={() => setCeldaSeleccionadaId(celda.id)}
-                                  className={`inline-flex w-36 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold text-white shadow-sm ${seleccionada ? 'border-[#198754] bg-[#198754]' : 'border-[#3B617D] bg-[#3B617D]'}`}
+                                  className="w-36"
                                 >
                                   <i className={`fas ${seleccionada ? 'fa-check' : 'fa-pen-to-square'}`} />
                                   {seleccionada ? 'Seleccionada' : 'Configurar'}
-                                </button>
+                                </BotonAccion>
                               </td>
                             </tr>
                           )
