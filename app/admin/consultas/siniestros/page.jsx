@@ -485,6 +485,7 @@ export default function SiniestrosPage() {
   // ==========================================================
 
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [pasoExpediente, setPasoExpediente] = useState(1)
   const [rowSel, setRowSel] = useState(null)
   const [changingState, setChangingState] = useState(false)
   const [closing, setClosing] = useState(false)
@@ -805,6 +806,7 @@ export default function SiniestrosPage() {
   }
 
   const abrirSeguimiento = row => {
+    setPasoExpediente(1)
     setRowSel(row)
     setNumIpat(row?.numero_ipat || '')
     setAutoridad(row?.autoridad || '')
@@ -2179,13 +2181,23 @@ export default function SiniestrosPage() {
                   <i className="fas fa-xmark"></i>
                 </button>
               </div>
-              <nav aria-label="Secciones del expediente" className="flex flex-wrap gap-1.5 px-4 sm:px-5 py-2 bg-white">
-                <a href="#siniestro-reporte" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Reporte</a>
-                <a href="#siniestro-trazabilidad" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Trazabilidad</a>
-                {(esAnalisis || esCerrado) && <a href="#siniestro-analisis" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Análisis</a>}
-                {(pasoAnalisisGuardado || esCerrado) && <a href="#siniestro-costos" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Costos</a>}
-                {(pasoCostosGuardado || esCerrado) && <a href="#siniestro-acta" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-[#194567] hover:bg-slate-100">Acta</a>}
-              </nav>
+              <nav aria-label="Avance del expediente" className="grid grid-cols-5 gap-1 sm:gap-2 px-3 sm:px-5 py-3 bg-white border-b border-slate-200">
+                {[
+                  { numero: 1, titulo: 'Reporte', disponible: true },
+                  { numero: 2, titulo: 'Trazabilidad', disponible: true },
+                  { numero: 3, titulo: 'Análisis', disponible: true },
+                  { numero: 4, titulo: 'Costos', disponible: pasoAnalisisGuardado || esCerrado },
+                  { numero: 5, titulo: 'Acta', disponible: pasoCostosGuardado || esCerrado },
+                ].map(etapa => (
+                  <button key={etapa.numero} type="button" disabled={!etapa.disponible}
+                    aria-current={pasoExpediente === etapa.numero ? 'step' : undefined}
+                    onClick={() => setPasoExpediente(etapa.numero)}
+                    className={`flex min-w-0 flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-[10px] sm:text-xs font-semibold ${pasoExpediente === etapa.numero ? 'bg-[#E7F3FA] text-[#194567]' : etapa.disponible ? 'text-slate-600 hover:bg-slate-100' : 'text-slate-400 cursor-not-allowed'}`}>
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-bold ${pasoExpediente === etapa.numero ? 'border-[#24638C] bg-[#24638C] text-white' : etapa.disponible && etapa.numero < pasoExpediente ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>{etapa.numero}</span>
+                    <span className="truncate max-w-full">{etapa.titulo}</span>
+                  </button>
+                ))}
+              </nav></nav>
             </div>
 
             <div className="p-4 sm:p-5 space-y-4">
@@ -2194,7 +2206,7 @@ export default function SiniestrosPage() {
                   1. REPORTE INICIAL
               ============================================ */}
 
-              <section id="siniestro-reporte" className="scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden">
+              <section id="siniestro-reporte" className={`${pasoExpediente === 1 ? '' : 'hidden'} scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden`}>
                 <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   1. Reporte inicial
                 </div>
@@ -2258,7 +2270,7 @@ export default function SiniestrosPage() {
                   2. TRAZABILIDAD
               ============================================ */}
 
-              <section id="siniestro-trazabilidad" className="scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden">
+              <section id="siniestro-trazabilidad" className={`${pasoExpediente === 2 ? '' : 'hidden'} scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden`}>
                 <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   2. Trazabilidad
                 </div>
@@ -2337,7 +2349,7 @@ export default function SiniestrosPage() {
               ============================================ */}
 
               {(esAnalisis || esCerrado) && (
-              <section id="siniestro-analisis" className="scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden">
+              <section id="siniestro-analisis" className={`${pasoExpediente === 3 ? '' : 'hidden'} scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden`}>
                 <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   3. Análisis administrativo
                 </div>
@@ -2417,7 +2429,7 @@ export default function SiniestrosPage() {
               ============================================ */}
 
               {(pasoAnalisisGuardado || esCerrado) && (
-              <section id="siniestro-costos" className="scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden">
+              <section id="siniestro-costos" className={`${pasoExpediente === 4 ? '' : 'hidden'} scroll-mt-40 border border-gray-200 rounded-xl overflow-hidden`}>
                 <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold">
                   4. Costos asociados
                 </div>
@@ -2559,7 +2571,7 @@ export default function SiniestrosPage() {
               ============================================ */}
 
               {(pasoCostosGuardado || Boolean(acta) || esCerrado) && (
-              <section id="siniestro-acta" className="scroll-mt-40 border border-slate-300 rounded-xl overflow-hidden">
+              <section id="siniestro-acta" className={`${pasoExpediente === 5 ? '' : 'hidden'} scroll-mt-40 border border-slate-300 rounded-xl overflow-hidden`}>
                 <div className="bg-[#24638C] text-white px-4 py-2.5 text-sm font-bold flex items-center justify-between gap-3">
                   <span>5. Acta de tratamiento del siniestro</span>
                   {acta?.estado && (
