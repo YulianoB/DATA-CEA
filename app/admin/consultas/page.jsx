@@ -75,7 +75,7 @@ const GRUPOS_CONSULTAS = [
 export default function ConsultasHomePage() {
   return (
     <MenuNavegacion
-      titulo="Consultas Administrativas"
+      titulo="Seguimiento Operativo y Consultas"
       subtitulo="Seleccione la información que desea consultar"
       iconoTitulo={Database}
       grupos={GRUPOS_CONSULTAS}
