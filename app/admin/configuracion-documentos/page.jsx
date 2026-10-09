@@ -6790,12 +6790,12 @@ export default function ConfiguracionDocumentosPage() {
                 gap-3
                 p-4
                 md:grid-cols-2
-                xl:grid-cols-7
+                xl:grid-cols-[minmax(330px,2fr)_minmax(130px,0.7fr)_minmax(205px,1fr)_minmax(320px,1.45fr)]
               "
             >
               <div
                 className="
-                  xl:col-span-2
+                  min-w-0
                 "
               >
                 <label
@@ -6982,7 +6982,7 @@ export default function ConfiguracionDocumentosPage() {
                   />
                 </div>
 
-                <div className="min-w-0 xl:col-span-2">
+                <div className="min-w-0">
                   <label
                     className="
                       mb-1
@@ -7033,7 +7033,7 @@ export default function ConfiguracionDocumentosPage() {
                             <div
                 className="
                   md:col-span-2
-                  xl:col-span-5
+                  xl:col-span-4
                   grid
                   gap-3
                   md:grid-cols-[220px_1fr]
@@ -9585,6 +9585,9 @@ export default function ConfiguracionDocumentosPage() {
                       w-full
                       min-w-[1050px]
                       border-collapse
+                      border border-slate-300
+                      [&_th]:border [&_th]:border-slate-300
+                      [&_td]:border [&_td]:border-slate-300
                       text-left
                     "
                   >
