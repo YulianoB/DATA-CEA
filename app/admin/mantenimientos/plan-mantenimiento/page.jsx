@@ -219,6 +219,7 @@ export default function PlanMantenimientoPage() {
   const [cargando, setCargando] = useState(true)
   const [actualizando, setActualizando] = useState(false)
   const [error, setError] = useState('')
+  const [mensaje, setMensaje] = useState('')
   const [data, setData] = useState(null)
   const [vigencia, setVigencia] = useState(new Date().getFullYear())
   const [modal, setModal] = useState(null)
@@ -373,6 +374,7 @@ export default function PlanMantenimientoPage() {
       setModal(null)
       setJustificacion('')
       await cargar({ silencioso: true })
+      setMensaje('Justificación guardada correctamente.')
     } catch (e) {
       console.error(e)
       setError(e?.message || 'Error guardando la justificación.')
@@ -628,11 +630,11 @@ export default function PlanMantenimientoPage() {
         />
       )}
       <ModalResultado
-        abierto={Boolean(error)}
+        abierto={Boolean(error || mensaje)}
         tipo={error ? 'error' : 'exito'}
         titulo={error ? 'No fue posible completar la operación' : 'Operación realizada satisfactoriamente'}
-        mensaje={error || ''}
-        onCerrar={() => { setError('');  }}
+        mensaje={error || mensaje}
+        onCerrar={() => { setError(''); setMensaje('') }}
       />
 
     </div>
