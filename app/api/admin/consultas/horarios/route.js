@@ -1128,6 +1128,52 @@ export async function GET(request) {
     }
 
     // =====================================================
+    // CONSULTA GENERAL DE JORNADAS (SOLO LECTURA)
+    // =====================================================
+    if (recurso === 'consulta_general') {
+      const rol = normalizarRol(searchParams.get('rol'))
+      const nombreCompleto = normalizarTexto(searchParams.get('nombre_completo'))
+      const estado = normalizarTexto(searchParams.get('estado'))
+      const estadosValidos = [ESTADO_ABIERTO, ESTADO_CERRADO, ESTADO_NO_CERRADO]
+      if (estado && !estadosValidos.includes(estado)) {
+        return NextResponse.json({ status: 'failed', message: 'Estado no válido.' }, { status: 400 })
+      }
+      const jornadas = await consultarJornadas({
+        supabase, fechaInicio, fechaFin, rol, nombreCompleto,
+      })
+      const filtradas = estado
+        ? jornadas.filter(item => normalizarTexto(item.estado_registro) === estado)
+        : jornadas
+      const resumen = {
+        total: filtradas.length,
+        abiertas: filtradas.filter(item => item.estado_registro === ESTADO_ABIERTO).length,
+        cerradas: filtradas.filter(item => item.estado_registro === ESTADO_CERRADO).length,
+        no_cerradas: filtradas.filter(item => item.estado_registro === ESTADO_NO_CERRADO).length,
+      }
+      const mapa = new Map()
+      for (const item of filtradas) {
+        const nombre = normalizarTexto(item.nombre_completo) || 'SIN NOMBRE'
+        const rolItem = normalizarRol(item.rol) || 'SIN ROL'
+        const clave = rolItem + '|' + nombre.toUpperCase()
+        if (!mapa.has(clave)) {
+          mapa.set(clave, { nombre_completo: nombre, rol: rolItem, total: 0, abiertas: 0, cerradas: 0, no_cerradas: 0 })
+        }
+        const grupo = mapa.get(clave)
+        grupo.total++
+        if (item.estado_registro === ESTADO_ABIERTO) grupo.abiertas++
+        if (item.estado_registro === ESTADO_CERRADO) grupo.cerradas++
+        if (item.estado_registro === ESTADO_NO_CERRADO) grupo.no_cerradas++
+      }
+      const funcionarios = Array.from(mapa.values())
+        .map(item => ({ ...item, porcentaje_cierre: item.total ? Math.round(item.cerradas * 10000 / item.total) / 100 : 0 }))
+        .sort((a, b) => b.no_cerradas - a.no_cerradas || a.nombre_completo.localeCompare(b.nombre_completo, 'es'))
+      return NextResponse.json({
+        status: 'success', periodo: { desde: fechaInicio, hasta: fechaFin },
+        resumen, funcionarios, jornadas: filtradas,
+      })
+    }
+
+    // =====================================================
     // SEGUIMIENTO INDIVIDUAL
     // =====================================================
 
