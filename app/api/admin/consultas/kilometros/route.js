@@ -883,6 +883,7 @@ function procesarHorarios(
   let kilometrosEstimados = 0
   let jornadasEstimadas = 0
   let jornadasPendientes = 0
+  const intervalosEstimados = new Set()
 
   let cerradas =
     0
@@ -959,7 +960,11 @@ function procesarHorarios(
         lectura.instante - inicio <= VENTANA_ESTIMACION_MS &&
         !(lectura.fuente === 'HORARIOS' && lectura.id === registro.id)
       )
-      if (siguiente && siguiente.km >= kmInicial) {
+      const claveIntervalo = siguiente
+        ? `${inicio}|${kmInicial}|${siguiente.instante}|${siguiente.km}`
+        : null
+      if (siguiente && siguiente.km >= kmInicial && !intervalosEstimados.has(claveIntervalo)) {
+        intervalosEstimados.add(claveIntervalo)
         const estimado = siguiente.km - kmInicial
         kilometros += estimado
         kilometrosEstimados += estimado
