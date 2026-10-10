@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
-import { EncabezadoPractica, TarjetaInspeccion, GUIAS_NO_CONFORMIDAD } from '@/components/instructor/practica/EstilosModuloPractica'
+import { EncabezadoPractica, TarjetaInspeccion, AccionesModuloPractica, GUIAS_NO_CONFORMIDAD } from '@/components/instructor/practica/EstilosModuloPractica'
 import {
   validarInspeccionDuplicada,
   validarKilometraje,
@@ -1835,69 +1835,13 @@ const puedeGuardar =
             BOTONES
         ==================================================== */}
 
-        <div className="mt-8 space-y-4">
-
-          <div className="flex justify-center">
-
-            <button
-              onClick={
-                handleGuardar
-              }
-              disabled={
-                !puedeGuardar ||
-                guardando
-              }
-              className={`py-2 px-6 rounded-lg shadow-md flex items-center gap-2 text-sm ${
-                puedeGuardar &&
-                !guardando
-                  ? 'bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white'
-                  : 'bg-gray-400 text-gray-700 cursor-not-allowed'
-              }`}
-            >
-
-              <i className="fas fa-save"></i>
-
-              {guardando
-                ? 'Guardando...'
-                : 'Guardar'}
-
-            </button>
-
-          </div>
-
-          <div className="flex justify-center gap-3 flex-wrap">
-
-            <button
-              onClick={() =>
-                router.push(
-                  '/instructor/practica'
-                )
-              }
-              className="bg-gray-600 hover:bg-gray-800 text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
-            >
-
-              <i className="fas fa-arrow-left"></i>
-
-              Regresar
-
-            </button>
-
-            <button
-              onClick={
-                handleLogout
-              }
-              className="bg-[var(--danger)] hover:bg-red-800 text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
-            >
-
-              <i className="fas fa-sign-out-alt"></i>
-
-              Cerrar Sesión
-
-            </button>
-
-          </div>
-
-        </div>
+        <AccionesModuloPractica
+          onGuardar={handleGuardar}
+          puedeGuardar={puedeGuardar}
+          guardando={guardando}
+          onRegresar={() => router.push('/instructor/practica')}
+          onCerrarSesion={handleLogout}
+        />
 
         </main>
       </div>
