@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
+import { EncabezadoPractica, TarjetaInspeccion, GUIAS_NO_CONFORMIDAD } from '@/components/instructor/practica/EstilosModuloPractica'
 import {
   validarInspeccionDuplicada,
   validarKilometraje,
@@ -1561,57 +1562,17 @@ const puedeGuardar =
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
 
       <Toaster
         position="top-center"
         richColors
       />
 
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg p-6">
+      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-lg">
 
-        {/* ====================================================
-            TÍTULO
-        ==================================================== */}
-
-        <h2 className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2 border-b pb-2 text-[var(--primary)]">
-
-          <i className="fas fa-clipboard-check text-[var(--primary)]"></i>
-
-          Inspección Preoperacional
-
-        </h2>
-
-        {/* ====================================================
-            USUARIO
-        ==================================================== */}
-
-        <div className="bg-gray-50 p-2 rounded mb-4 text-xs border text-center">
-
-          <span>
-            Usuario:{' '}
-            <strong>
-              {user.nombreCompleto}
-            </strong>
-          </span>
-
-          {user.rol && (
-            <span>
-              {' '}
-              ({user.rol})
-            </span>
-          )}
-
-          {user.nombreEmpresa && (
-            <span className="block mt-1">
-              CEA:{' '}
-              <strong>
-                {user.nombreEmpresa}
-              </strong>
-            </span>
-          )}
-
-        </div>
+        <EncabezadoPractica titulo="Inspección Preoperacional" usuario={user.nombreCompleto} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={handleLogout} />
+        <main className="px-3 py-4 sm:px-6 sm:py-6">
 
         {/* ====================================================
             PLACA Y KILOMETRAJE
@@ -1762,7 +1723,7 @@ const puedeGuardar =
             SECCIONES
         ==================================================== */}
 
-        {[
+        {[[
           {
             id:
               'revisionExterior',
@@ -1803,121 +1764,32 @@ const puedeGuardar =
             desc:
               'SOAT, RTM, licencia, tarjeta de servicio, certificado instructor, cédula.',
           },
-        ].map(
-          (section) => (
-
-            <div
-              key={section.id}
-              className="bg-gray-50 border border-gray-300 rounded-lg mb-4 shadow-sm"
-            >
-
-              <div className="bg-black text-white text-sm font-semibold px-3 py-2 rounded-t-lg">
-
-                {section.title}
-
-              </div>
-
-              <div className="p-3">
-
-                <p className="text-xs text-gray-700 mb-2">
-                  {section.desc}
-                </p>
-
-                <div className="flex gap-6 text-sm">
-
-                  <label>
-
-                    <input
-                    type="radio"
-                    name={
-                      section.id
-                    }
-                    value="CONFORME"
-                    checked={
-                      secciones[
-                        section.id
-                      ] ===
-                      'CONFORME'
-                    }
-                    onChange={() =>
-                      handleSeccionChange(
-                        section.id,
-                        'CONFORME'
-                      )
-                    }
-                    disabled={
-                      !placaSeleccionada ||
-                      validandoDocumentos ||
-                      !documentacionVehiculoValida
-                    }
-                    className="
-                      mr-1
-                      disabled:cursor-not-allowed
-                      disabled:opacity-50
-                    "
-                  />
-
-                    CONFORME
-
-                  </label>
-
-                  <label>
-
-                    <input
-                    type="radio"
-                    name={
-                      section.id
-                    }
-                    value="NO CONFORME"
-                    checked={
-                      secciones[
-                        section.id
-                      ] ===
-                      'NO CONFORME'
-                    }
-                    onChange={() =>
-                      handleSeccionChange(
-                        section.id,
-                        'NO CONFORME'
-                      )
-                    }
-                    disabled={
-                      !placaSeleccionada ||
-                      validandoDocumentos ||
-                      !documentacionVehiculoValida
-                    }
-                    className="
-                      mr-1
-                      disabled:cursor-not-allowed
-                      disabled:opacity-50
-                    "
-                  />
-
-                    NO CONFORME
-
-                  </label>
-
-                </div>
-
-              </div>
-
-            </div>
-          )
-        )}
+        ]].map((section) => (
+          <TarjetaInspeccion key={section.id} titulo={section.title} descripcion={section.desc} estado={secciones[section.id]} disabled={!placaSeleccionada || validandoDocumentos || !documentacionVehiculoValida} onChange={(valor) => handleSeccionChange(section.id, valor)} />
+        ))}
 
         {/* ====================================================
             OBSERVACIONES
         ==================================================== */}
 
-        <div className="mt-4">
+        <div className={`mt-4 rounded-xl border p-3 ${algunaNoConforme ? "border-amber-500 bg-amber-50" : "border-slate-300 bg-slate-50"}`}>
 
           <label className="block mb-1 font-semibold text-sm">
             Observaciones
           </label>
 
+          {algunaNoConforme && (
+            <div className="mb-3 space-y-2" role="status">
+              {Object.entries(GUIAS_NO_CONFORMIDAD).filter(([id]) => secciones[id] === "NO CONFORME").map(([id, guia]) => (
+                <p key={id} className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs leading-relaxed text-amber-900">{guia}</p>
+              ))}
+            </div>
+          )}
+
           <textarea
             rows="3"
-            className={`w-full border p-2 rounded text-sm ${
+            placeholder={algunaNoConforme ? "Describa la falla o el incumplimiento actual y la sección afectada." : ""}
+            className={`w-full min-h-28 border border-slate-400 p-3 rounded-lg text-base ${
               !algunaNoConforme
                 ? 'bg-gray-100 cursor-not-allowed'
                 : ''
@@ -2027,6 +1899,7 @@ const puedeGuardar =
 
         </div>
 
+        </main>
       </div>
 
       {/* ======================================================
