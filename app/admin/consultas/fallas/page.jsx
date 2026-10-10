@@ -15,7 +15,7 @@ import {
 import ModalResultado from '@/components/admin/ModalResultado'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
-import { TriangleAlert, Eraser, Eye, ClipboardList } from 'lucide-react'
+import { TriangleAlert, Eraser, Eye, ClipboardList, X, ChevronLeft, ChevronRight, CheckCircle2, Save } from 'lucide-react'
 
 import {
   Toaster,
@@ -409,6 +409,7 @@ export default function FallasPage() {
   ] =
     useState(null)
 
+  const [pasoSeguimiento, setPasoSeguimiento] = useState(1)
   const [obsAnalisis, setObsAnalisis] = useState('')
   const [modalResultado, setModalResultado] = useState({ abierto: false, tipo: 'exito', titulo: '', mensaje: '' })
   const avisar = (tipo, titulo, mensaje) => setModalResultado({ abierto: true, tipo, titulo, mensaje })
@@ -954,6 +955,8 @@ export default function FallasPage() {
         row
       )
 
+      const estado = normEstado(row?.estado)
+      setPasoSeguimiento(estado === 'EN ANALISIS' ? 3 : 1)
       setObsAnalisis(row?.observacion_analisis || '')
       setObsCierre(
         row
@@ -983,6 +986,7 @@ export default function FallasPage() {
       setRowSel(
         null
       )
+      setPasoSeguimiento(1)
 
       setObsCierre(
         ''
@@ -2474,421 +2478,117 @@ export default function FallasPage() {
 
       </div>
 
-      {/* ====================================================
-          DRAWER
-      ==================================================== */}
-
+      {/* DRAWER DE SEGUIMIENTO - flujo institucional de tres etapas */}
       <ModalResultado abierto={modalResultado.abierto} tipo={modalResultado.tipo} titulo={modalResultado.titulo} mensaje={modalResultado.mensaje} onCerrar={() => setModalResultado(prev => ({ ...prev, abierto: false }))} />
-
-      {drawerOpen &&
-        rowSel && (
-
-          <div className="fixed inset-0 z-50">
-
-            {/* OVERLAY */}
-
-            <div
-              className="absolute inset-0 bg-black/40"
-              onClick={
-                cerrarDrawer
-              }
-            ></div>
-
-            {/* PANEL */}
-
-            <div className="absolute right-0 top-0 h-full w-full sm:w-[680px] lg:w-[740px] bg-white shadow-2xl p-4 overflow-y-auto">
-
-              {/* CABECERA */}
-
-              <div className="flex items-center justify-between border-b pb-2 mb-3">
-
+      {drawerOpen && rowSel && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/50" onClick={cerrarDrawer} />
+          <aside className="relative h-full w-full sm:w-[680px] lg:w-[740px] bg-slate-50 shadow-2xl overflow-y-auto">
+            <div className="sticky top-0 z-20 bg-white shadow-sm border-b border-slate-300">
+              <div className="bg-[#194567] text-white px-4 sm:px-5 py-3 flex items-start justify-between gap-3">
                 <div>
-
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
-                    Seguimiento
-                  </p>
-
-                  <h3 className="text-lg font-bold text-[var(--primary)] flex items-center gap-2">
-
-                    <i className="fas fa-triangle-exclamation"></i>
-
-                    Falla{' '}
-
-                    {rowSel
-                      ?.consecutivo ||
-                      ''}
-
-                  </h3>
-
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-white/80">Expediente de falla</p>
+                  <h2 className="text-lg font-black mt-1">{rowSel?.consecutivo || `#${rowSel?.id}`}</h2>
+                  <p className="text-xs mt-1 text-white/80">Vehículo {rowSel?.placa || '-'}</p>
+                  <div className="mt-2"><EstadoChip estado={rowSel?.estado} /></div>
                 </div>
-
-                <button
-                  className="text-gray-600 hover:text-black"
-                  onClick={
-                    cerrarDrawer
-                  }
-                >
-                  <i className="fas fa-times text-xl"></i>
-                </button>
-
+                <button type="button" aria-label="Cerrar expediente" onClick={cerrarDrawer} disabled={closing || changingState} className="w-9 h-9 rounded-full border border-white/50 flex items-center justify-center hover:bg-white/15 disabled:opacity-40"><X size={18} /></button>
               </div>
-
-              {/* ESTADO */}
-
-              <div className="mb-4 flex items-center gap-2 text-sm">
-
-                <span>
-                  Estado actual:
-                </span>
-
-                <EstadoChip
-                  estado={
-                    rowSel?.estado
-                  }
-                />
-
-              </div>
-
-              {/* =================================================
-                  DETALLE
-              ================================================= */}
-
-              <div className="border rounded-xl overflow-hidden mb-4">
-
-                <div className="bg-slate-800 text-white px-3 py-2 text-sm font-semibold">
-                  Detalle de la Falla
+              <nav aria-label="Etapas del seguimiento" className="flex items-center gap-2 px-3 sm:px-5 py-2">
+                <button type="button" aria-label="Etapa anterior" disabled={esCerrada || pasoSeguimiento === 1} onClick={() => setPasoSeguimiento(p => Math.max(1, p - 1))} className="p-2 text-[#194567] disabled:text-slate-300"><ChevronLeft size={17} /></button>
+                <div className="grid grid-cols-3 gap-2 flex-1 min-w-0">
+                  {[{n:1,t:'Reporte'},{n:2,t:'Análisis'},{n:3,t:'Cierre'}].map(etapa => (
+                    <button key={etapa.n} type="button" disabled={esCerrada} aria-current={!esCerrada && pasoSeguimiento === etapa.n ? 'step' : undefined} onClick={() => setPasoSeguimiento(etapa.n)}
+                      className={`flex flex-col items-center gap-1 rounded-md py-1 text-[11px] font-semibold ${esCerrada ? 'text-[#194567] cursor-default' : pasoSeguimiento === etapa.n ? 'text-[#194567]' : 'text-slate-600 hover:bg-slate-100'}`}>
+                      <span className={`w-6 h-6 rounded-full border flex items-center justify-center font-bold ${(esCerrada || pasoSeguimiento === etapa.n) ? 'bg-[#24638C] border-[#24638C] text-white' : 'bg-white border-slate-300'}`}>{etapa.n}</span>
+                      <span>{etapa.t}</span>
+                      <span className={`w-full h-1 rounded-full ${(etapa.n === 1 || (etapa.n === 2 && (esAnalisis || esCerrada)) || (etapa.n === 3 && esCerrada)) ? 'bg-[#24638C]' : 'bg-orange-400'}`} />
+                    </button>
+                  ))}
                 </div>
-
-                <div className="p-3 text-xs grid grid-cols-2 gap-3">
-
-                  <div>
-                    <span className="text-gray-500">
-                      Consecutivo
-                    </span>
-
-                    <p className="font-semibold">
-                      {rowSel
-                        ?.consecutivo ||
-                        '-'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500">
-                      Fecha
-                    </span>
-
-                    <p className="font-semibold">
-                      {rowSel
-                        ?.fecha ||
-                        '-'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500">
-                      Hora
-                    </span>
-
-                    <p className="font-semibold">
-                      {rowSel
-                        ?.hora ||
-                        '-'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500">
-                      Placa
-                    </span>
-
-                    <p className="font-semibold">
-                      {rowSel
-                        ?.placa ||
-                        '-'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500">
-                      Tipo
-                    </span>
-
-                    <p className="font-semibold">
-                      {rowSel
-                        ?.tipo_vehiculo ||
-                        '-'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500">
-                      Marca
-                    </span>
-
-                    <p className="font-semibold">
-                      {rowSel
-                        ?.marca ||
-                        '-'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500">
-                      Kilometraje
-                    </span>
-
-                    <p className="font-semibold">
-                      {fmtNumero(
-                        rowSel
-                          ?.kilometraje
-                      )}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500">
-                      Encargado
-                    </span>
-
-                    <p className="font-semibold">
-                      {rowSel
-                        ?.nombre_encargado ||
-                        '-'}
-                    </p>
-                  </div>
-
-                  <div className="col-span-2">
-
-                    <span className="text-gray-500">
-                      Descripción de la falla
-                    </span>
-
-                    <p className="mt-1 whitespace-pre-wrap">
-                      {rowSel
-                        ?.descripcion_falla ||
-                        '-'}
-                    </p>
-
-                  </div>
-
-                  <div className="col-span-2">
-
-                    <span className="text-gray-500">
-                      Acciones tomadas inicialmente
-                    </span>
-
-                    <p className="mt-1 whitespace-pre-wrap">
-                      {rowSel
-                        ?.acciones_tomadas ||
-                        '-'}
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-              {/* =================================================
-                  TRAZABILIDAD
-              ================================================= */}
-
-              <div className="border rounded-xl overflow-hidden mb-4">
-
-                <div className="bg-slate-800 text-white px-3 py-2 text-sm font-semibold">
-                  Trazabilidad del Seguimiento
-                </div>
-
-                <div className="p-3 text-xs space-y-2">
-
-                  <div>
-                    <strong>
-                      Fecha verificación:
-                    </strong>{' '}
-
-                    {rowSel
-                      ?.fecha_verificacion ||
-                      '-'}
-                  </div>
-
-                  <div>
-                    <strong>
-                      Fecha solución:
-                    </strong>{' '}
-
-                    {rowSel
-                      ?.fecha_solucion ||
-                      '-'}
-                  </div>
-
-                  <div>
-                    <strong>
-                      Usuario que solucionó:
-                    </strong>{' '}
-
-                    {rowSel
-                      ?.usuario_soluciona ||
-                      '-'}
-                  </div>
-
-                </div>
-
-              </div>
-
-              {/* =================================================
-                  MARCAR EN ANÁLISIS
-              ================================================= */}
-
-              {!esCerrada && (
-
-                <div className="border rounded-xl overflow-hidden mb-4">
-
-                  <div className="bg-blue-700 text-white px-3 py-2 text-sm font-semibold">
-                    Estado de Seguimiento
-                  </div>
-
-                  <div className="p-3 space-y-3">
-
-                    {esAnalisis ? (
-                      <div className="text-xs">
-                        <strong>Verificación y acciones previstas:</strong>
-                        <p className="whitespace-pre-wrap mt-2">{rowSel.observacion_analisis || 'Sin análisis histórico registrado'}</p>
-                        <p className="text-gray-500 mt-2">Registrado el {rowSel.fecha_verificacion || '-'} por {rowSel.usuario_verificacion || 'No registrado'}. El análisis guardado es de solo lectura.</p>
-                      </div>
-                    ) : (
-                      <>
-                        <textarea autoFocus rows={5} value={obsAnalisis} onChange={e => setObsAnalisis(e.target.value)} className="w-full border-2 border-red-500 rounded-lg p-3 text-xs" placeholder="Describa qué verificó y qué intervención se realizará." />
-                        <p className="text-xs text-gray-600">Describa la verificación realizada, la condición encontrada y las acciones previstas. No registre reparaciones que aún no se han ejecutado.</p>
-                      </>
-                    )}
-
-                    {!esAnalisis && <button
-                      onClick={
-                        marcarEnAnalisis
-                      }
-                      disabled={
-                        esAnalisis ||
-                        changingState
-                      }
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-800 text-white rounded-lg text-xs disabled:opacity-40"
-                    >
-                      {changingState
-                        ? 'Guardando...'
-                        : esAnalisis
-                          ? 'Actualmente EN ANÁLISIS'
-                          : 'Guardar análisis'}
-                    </button>}
-
-                  </div>
-
-                </div>
-
-              )}
-
-              {/* =================================================
-                  OBSERVACIÓN / CIERRE
-              ================================================= */}
-
-              <div className="border rounded-xl overflow-hidden">
-
-                <div className="bg-slate-800 text-white px-3 py-2 text-sm font-semibold">
-                  Solución de la Falla
-                </div>
-
-                <div className="p-3 space-y-3">
-
-                  <div>
-
-                    <label className="block text-xs font-semibold mb-1">
-                      Observación de cierre
-                    </label>
-
-                    <textarea
-                      rows={4}
-                      value={
-                        obsCierre
-                      }
-                      onChange={(e) =>
-                        setObsCierre(
-                          e.target.value
-                        )
-                      }
-                      disabled={
-                        !puedeEditar
-                      }
-                      className="w-full border rounded-lg p-2 text-xs disabled:bg-gray-100"
-                      placeholder={
-                        esPendiente
-                          ? 'Primero marque la falla EN ANÁLISIS'
-                          : 'Describa la solución aplicada'
-                      }
-                    />
-
-                  </div>
-
-                  {!esCerrada && (
-
-                    <div className="flex justify-end">
-
-                      <button
-                        onClick={
-                          cerrarFalla
-                        }
-                        disabled={
-                          !puedeEditar ||
-                          !obsCierre.trim() ||
-                          closing
-                        }
-                        className="px-4 py-2 bg-green-600 hover:bg-green-800 text-white rounded-lg text-xs disabled:opacity-40"
-                      >
-                        {closing
-                          ? 'Guardando...'
-                          : 'Cerrar Falla'}
-                      </button>
-
-                    </div>
-
-                  )}
-
-                  {esCerrada && (
-
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs text-green-800">
-
-                      <i className="fas fa-circle-check mr-2"></i>
-
-                      Esta falla se encuentra cerrada.
-
-                    </div>
-
-                  )}
-
-                </div>
-
-              </div>
-
-              {/* =================================================
-                  CERRAR PANEL
-              ================================================= */}
-
-              <div className="flex justify-end mt-4">
-
-                <button
-                  onClick={
-                    cerrarDrawer
-                  }
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-800 text-white rounded-lg text-xs"
-                >
-                  Cerrar panel
-                </button>
-
-              </div>
-
+                <button type="button" aria-label="Etapa siguiente" disabled={esCerrada || pasoSeguimiento === 3} onClick={() => setPasoSeguimiento(p => Math.min(3, p + 1))} className="p-2 text-[#194567] disabled:text-slate-300"><ChevronRight size={17} /></button>
+              </nav>
             </div>
-
-          </div>
-
-        )}
+            <div className="p-4 sm:p-5 space-y-4">
+              <section className="bg-white border border-slate-300 rounded-xl p-4 shadow-sm space-y-3">
+                <h3 className="text-sm font-bold text-[#194567]">Información del reporte de falla</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  {[['Fecha',rowSel?.fecha],['Hora',rowSel?.hora],['Placa',rowSel?.placa],['Tipo',rowSel?.tipo_vehiculo]].map(([etiqueta,valor]) => (
+                    <div key={etiqueta}><p className="text-slate-500">{etiqueta}</p><p className="font-semibold break-words">{valor || '-'}</p></div>
+                  ))}
+                </div>
+                <div className="border-t border-slate-200 pt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                  {[['Marca',rowSel?.marca],['Kilometraje',fmtNumero(rowSel?.kilometraje)],['Encargado',rowSel?.nombre_encargado]].map(([etiqueta,valor]) => (
+                    <div key={etiqueta}><p className="text-slate-500">{etiqueta}</p><p className="font-semibold break-words">{valor ?? '-'}</p></div>
+                  ))}
+                </div>
+                {!esCerrada && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-200 pt-3 text-xs">
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3"><p className="font-semibold text-amber-900">Descripción de la falla</p><p className="whitespace-pre-wrap mt-2 text-slate-700">{rowSel?.descripcion_falla || 'Sin descripción.'}</p></div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="font-semibold text-[#194567]">Acciones tomadas inicialmente</p><p className="whitespace-pre-wrap mt-2 text-slate-700">{rowSel?.acciones_tomadas || 'Sin acciones registradas.'}</p></div>
+                  </div>
+                )}
+              </section>
+              {esCerrada && (
+                <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
+                  <h3 className="font-bold text-[#194567]">Trazabilidad del seguimiento</h3>
+                  {[
+                    ['1. Falla reportada',`Fecha: ${rowSel?.fecha || '-'} · Hora: ${rowSel?.hora || '-'}`,rowSel?.nombre_encargado,rowSel?.descripcion_falla, rowSel?.acciones_tomadas],
+                    ['2. Verificación y análisis',`Fecha: ${rowSel?.fecha_verificacion || '-'}`,rowSel?.usuario_verificacion,rowSel?.observacion_analisis],
+                    ['3. Solución y cierre',`Fecha: ${rowSel?.fecha_solucion || '-'}`,rowSel?.usuario_soluciona,rowSel?.observaciones_seguimiento]
+                  ].map(([titulo,fecha,responsable,observacion,acciones]) => (
+                    <div key={titulo} className="rounded-lg border-l-4 border-[#24638C] bg-slate-50 p-3 text-xs">
+                      <p className="font-bold text-[#194567]">{titulo}</p><p className="mt-1">{fecha}</p><p>Responsable: {responsable || '-'}</p>
+                      <p className="mt-1 whitespace-pre-wrap">{observacion || 'Sin descripción registrada.'}</p>
+                      {acciones && <p className="mt-2 whitespace-pre-wrap">Acciones iniciales: {acciones}</p>}
+                    </div>
+                  ))}
+                  <p className="text-xs text-slate-500">Reporte cerrado. La información es de solo lectura.</p>
+                </section>
+              )}
+              {!esCerrada && pasoSeguimiento === 1 && (
+                <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
+                  <h3 className="font-bold text-[#194567]">Paso 1 · Falla reportada</h3>
+                  <p className="text-xs text-slate-600">Revise la falla y las acciones iniciales registradas por el instructor. El reporte original es de solo lectura.</p>
+                  {esPendiente && <BotonAccion tipo="consultar" type="button" onClick={() => setPasoSeguimiento(2)}><ChevronRight size={15} /> Continuar al análisis</BotonAccion>}
+                </section>
+              )}
+              {!esCerrada && pasoSeguimiento === 2 && (
+                <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
+                  <h3 className="font-bold text-[#194567]">Paso 2 · Análisis y actuación prevista</h3>
+                  {esPendiente ? (
+                    <>
+                      <label htmlFor="analisis-falla" className="block text-xs font-semibold text-slate-700">Verificación y acciones previstas <span className="text-red-600">*</span></label>
+                      <textarea autoFocus id="analisis-falla" rows={4} value={obsAnalisis} onChange={e => setObsAnalisis(e.target.value)} disabled={changingState || closing} placeholder="Describa la verificación realizada, la condición encontrada y la intervención prevista." className="w-full rounded-lg border-2 border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-200 outline-none p-3 text-sm disabled:bg-slate-100" />
+                      <p className="text-xs text-slate-600">Describa qué se verificó y qué intervención se realizará. No registre aquí reparaciones que todavía no se hayan ejecutado.</p>
+                      <BotonAccion tipo="guardar" type="button" disabled={!obsAnalisis.trim() || changingState || closing} onClick={marcarEnAnalisis}><Save size={15} /> {changingState ? 'Guardando...' : 'Guardar análisis'}</BotonAccion>
+                    </>
+                  ) : (
+                    <div className="space-y-2 text-sm">
+                      <p className="font-semibold text-[#194567]">Verificación y acciones previstas:</p>
+                      <p className="whitespace-pre-wrap">{rowSel?.observacion_analisis || 'No hay análisis registrado.'}</p>
+                      <p className="text-xs text-slate-600">Registrado el {rowSel?.fecha_verificacion || '-'} por {rowSel?.usuario_verificacion || '-'}</p>
+                      <p className="text-xs text-slate-500">El análisis guardado es de solo lectura.</p>
+                    </div>
+                  )}
+                </section>
+              )}
+              {!esCerrada && pasoSeguimiento === 3 && (
+                <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
+                  <h3 className="font-bold text-[#194567]">Paso 3 · Solución y cierre</h3>
+                  <p className="text-xs text-slate-600">Describa las reparaciones o acciones correctivas efectivamente realizadas y cómo se verificó su solución.</p>
+                  {rowSel?.observacion_analisis && <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs"><p className="font-semibold text-[#194567]">Análisis registrado</p><p className="whitespace-pre-wrap mt-1">{rowSel.observacion_analisis}</p></div>}
+                  <label htmlFor="cierre-falla" className="block text-xs font-semibold text-slate-700">Descripción de la solución <span className="text-red-600">*</span></label>
+                  <textarea id="cierre-falla" rows={4} value={obsCierre} onChange={e => setObsCierre(e.target.value)} disabled={!esAnalisis || closing || changingState} placeholder="Describa la solución aplicada y las comprobaciones realizadas." className="w-full rounded-lg border border-slate-300 p-3 text-sm disabled:bg-slate-100" />
+                  {esAnalisis && <BotonAccion tipo="guardar" type="button" disabled={!obsCierre.trim() || closing || changingState} onClick={cerrarFalla}><CheckCircle2 size={15} /> {closing ? 'Guardando...' : 'Guardar solución y cerrar'}</BotonAccion>}
+                  {esPendiente && <p className="text-xs text-amber-700">Primero debe guardar el análisis.</p>}
+                </section>
+              )}
+              <div className="flex justify-end"><BotonAccion tipo="cancelar" type="button" onClick={cerrarDrawer} disabled={closing || changingState}><X size={15} /> Cerrar panel</BotonAccion></div>
+            </div>
+          </aside>
+        </div>
+      )}
 
     </div>
   )
