@@ -170,21 +170,8 @@ function validarRango(
   fechaFin
 ) {
   if (
-    !fechaInicio ||
-    !fechaFin
-  ) {
-    return (
-      'Debe seleccionar fecha inicial y fecha final.'
-    )
-  }
-
-  if (
-    !fechaValida(
-      fechaInicio
-    ) ||
-    !fechaValida(
-      fechaFin
-    )
+    (fechaInicio && !fechaValida(fechaInicio)) ||
+    (fechaFin && !fechaValida(fechaFin))
   ) {
     return (
       'El rango de fechas no es válido.'
@@ -192,8 +179,8 @@ function validarRango(
   }
 
   if (
-    fechaFin <
-    fechaInicio
+    fechaInicio && fechaFin &&
+    fechaFin < fechaInicio
   ) {
     return (
       'La fecha final no puede ser anterior a la fecha inicial.'
@@ -432,14 +419,10 @@ function construirConsultaBase({
             }
           : undefined
       )
-      .gte(
-        'fecha',
-        fechaInicio
-      )
-      .lte(
-        'fecha',
-        fechaFin
-      )
+
+
+  if (fechaInicio) consulta = consulta.gte('fecha', fechaInicio)
+  if (fechaFin) consulta = consulta.lte('fecha', fechaFin)
 
   if (
     placa
@@ -1210,7 +1193,6 @@ export async function PATCH(
       }
 
       if (
-        estadoActual &&
         estadoActual !==
           ESTADO_PENDIENTE
       ) {
@@ -1256,9 +1238,9 @@ export async function PATCH(
             'id',
             id
           )
-          .neq(
+          .eq(
             'estado',
-            ESTADO_CERRADA
+            ESTADO_PENDIENTE
           )
           .select(
             SELECT_FALLA
@@ -1286,7 +1268,7 @@ export async function PATCH(
           'success',
 
         message:
-          'Falla marcada EN ANÁLISIS correctamente.',
+          'Análisis registrado correctamente.',
 
         registro:
           data,
@@ -1388,10 +1370,6 @@ export async function PATCH(
 
       const fecha =
         hoyBogota()
-
-      if (!responsable) {
-        return NextResponse.json({ status: 'failed', message: 'No fue posible identificar al responsable del cierre.' }, { status: 400 })
-      }
 
       const payload = {
         estado:
