@@ -11,6 +11,9 @@ import {
 import {
   useRouter,
 } from 'next/navigation'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
+import { Wrench, Eraser, Eye, X, FileSpreadsheet, FileText } from 'lucide-react'
 
 import {
   Toaster,
@@ -323,7 +326,10 @@ export default function MantenimientosPage() {
 
       tipoMantenimiento:
         '',
+      tipoVehiculo: '',
     })
+
+  const [detalle, setDetalle] = useState(null)
 
   // =======================================================
   // VEHÍCULOS
@@ -641,66 +647,27 @@ export default function MantenimientosPage() {
   // VALIDACIÓN
   // =======================================================
 
-  const validarRango =
-    () => {
-      const {
-        startDate,
-        endDate,
-      } =
-        filters
-
-      if (
-        !startDate ||
-        !endDate
-      ) {
-        toast.warning(
-          'Debe seleccionar ambas fechas.'
-        )
-
-        setStatus(
-          '⚠️ Debe seleccionar ambas fechas.'
-        )
-
-        return false
-      }
-
-      if (
-        endDate <
-        startDate
-      ) {
-        toast.warning(
-          'La fecha fin no puede ser menor que la fecha inicio.'
-        )
-
-        setStatus(
-          '⚠️ Rango de fechas inválido.'
-        )
-
-        return false
-      }
-
-      const today =
-        hoyBogota()
-
-      if (
-        startDate >
-          today ||
-        endDate >
-          today
-      ) {
-        toast.warning(
-          'No se permiten fechas futuras.'
-        )
-
-        setStatus(
-          '⚠️ No se permiten fechas futuras.'
-        )
-
-        return false
-      }
-
-      return true
+  const validarRango = () => {
+    const { startDate, endDate } = filters
+    if (startDate && endDate && endDate < startDate) {
+      setStatus('⚠️ Rango de fechas inválido.')
+      return false
     }
+    if ((startDate && startDate > hoyBogota()) || (endDate && endDate > hoyBogota())) {
+      setStatus('⚠️ No se permiten fechas futuras.')
+      return false
+    }
+    return true
+  }
+
+  const tiposVehiculo = useMemo(() => [...new Set(vehiculos.map(v => v.tipo_vehiculo).filter(Boolean))].sort((a,b) => a.localeCompare(b,'es')), [vehiculos])
+  const placasFiltradas = useMemo(() => placas.filter(v => !filters.tipoVehiculo || v.tipo_vehiculo === filters.tipoVehiculo), [placas, filters.tipoVehiculo])
+
+  useEffect(() => {
+    if (!nitActual) return
+    const timer = setTimeout(() => handleConsultar(1), 300)
+    return () => clearTimeout(timer)
+  }, [nitActual, filters.startDate, filters.endDate, filters.placa, filters.tipoMantenimiento, filters.tipoVehiculo])
 
   // =======================================================
   // CONSULTAR
@@ -761,6 +728,8 @@ export default function MantenimientosPage() {
                 PAGE_SIZE
               ),
           })
+
+        if (filters.tipoVehiculo) params.set('tipo_vehiculo', filters.tipoVehiculo)
 
         if (
           filters.placa
@@ -932,6 +901,7 @@ export default function MantenimientosPage() {
 
         tipoMantenimiento:
           '',
+        tipoVehiculo: '',
       })
 
       setData(
@@ -1980,290 +1950,18 @@ export default function MantenimientosPage() {
 
       <div className="max-w-7xl mx-auto space-y-4">
 
-        {/* ==================================================
-            ENCABEZADO
-        ================================================== */}
-
-        <div className="bg-white border rounded-xl shadow-lg p-5">
-
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-            <div>
-
-              <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
-                Consultas Administrativas
-              </p>
-
-              <h1 className="text-2xl font-bold text-[var(--primary)] flex items-center gap-2 mt-1">
-
-                <i className="fas fa-tools"></i>
-
-                Mantenimientos Registrados
-
-              </h1>
-
-              <p className="text-sm text-gray-600 mt-2">
-                Consulte los mantenimientos preventivos y correctivos realizados a los vehículos y sus costos asociados.
-              </p>
-
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-
-              <button
-                onClick={() =>
-                  router.push(
-                    '/admin/consultas'
-                  )
-                }
-                className="bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm"
-              >
-                <i className="fas fa-arrow-left mr-2"></i>
-
-                Regresar a Consultas
-              </button>
-
-              <button
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-4 py-2 rounded-lg text-sm"
-              >
-                <i className="fas fa-sign-out-alt mr-2"></i>
-
-                Cerrar Sesión
-              </button>
-
-            </div>
-
+        <EncabezadoModulo titulo="Consulta de Mantenimientos" subtitulo="Historial de mantenimientos preventivos y correctivos de vehículos y flota" icono={Wrench} rutaRegreso="/admin/consultas" textoRegreso="Seguimiento Operativo y Consultas" />
+        <section className="rounded-xl border border-slate-300 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 text-sm font-bold" style={{backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto}}><Wrench size={16} /> Filtros de búsqueda</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 p-4 text-xs items-end">
+            <label className="block">Fecha inicio<input type="date" name="startDate" value={filters.startDate} max={hoyBogota()} onChange={handleChange} className="mt-1 w-full px-2 py-2 rounded-lg border border-slate-300 bg-white" /></label>
+            <label className="block">Fecha fin<input type="date" name="endDate" value={filters.endDate} max={hoyBogota()} onChange={handleChange} className="mt-1 w-full px-2 py-2 rounded-lg border border-slate-300 bg-white" /></label>
+            <label className="block">Tipo de vehículo<select value={filters.tipoVehiculo} onChange={e => setFilters(p => ({...p,tipoVehiculo:e.target.value,placa:''}))} className="mt-1 w-full px-2 py-2 rounded-lg border border-slate-300 bg-white"><option value="">Todos</option>{tiposVehiculo.map(t => <option key={t} value={t}>{t}</option>)}</select></label>
+            <label className="block">Placa<select name="placa" value={filters.placa} onChange={handleChange} disabled={cargandoVehiculos} className="mt-1 w-full px-2 py-2 rounded-lg border border-slate-300 bg-white"><option value="">Toda la flota</option>{placasFiltradas.map(v => <option key={v.id || v.placa} value={v.placa}>{v.placa}</option>)}</select></label>
+            <label className="block">Mantenimiento<select name="tipoMantenimiento" value={filters.tipoMantenimiento} onChange={handleChange} className="mt-1 w-full px-2 py-2 rounded-lg border border-slate-300 bg-white"><option value="">Todos</option><option value="PREVENTIVO">PREVENTIVO</option><option value="CORRECTIVO">CORRECTIVO</option></select></label>
+            <div className="flex lg:justify-end"><BotonAccion tipo="limpiar" type="button" onClick={handleLimpiar}><Eraser size={15} /> Limpiar</BotonAccion></div>
           </div>
-
-        </div>
-
-        {/* ==================================================
-            FILTROS
-        ================================================== */}
-
-        <div className="bg-[var(--primary-dark)] text-white rounded-xl p-4 shadow-sm">
-
-          <div className="flex items-center gap-2 mb-3">
-
-            <i className="fas fa-filter"></i>
-
-            <h2 className="text-sm font-semibold">
-              Filtros de búsqueda
-            </h2>
-
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-
-            <div>
-
-              <label className="block mb-1">
-                Fecha Inicio
-              </label>
-
-              <input
-                type="date"
-                name="startDate"
-                value={
-                  filters.startDate
-                }
-                max={
-                  hoyBogota()
-                }
-                onChange={
-                  handleChange
-                }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
-              />
-
-            </div>
-
-            <div>
-
-              <label className="block mb-1">
-                Fecha Fin
-              </label>
-
-              <input
-                type="date"
-                name="endDate"
-                value={
-                  filters.endDate
-                }
-                max={
-                  hoyBogota()
-                }
-                onChange={
-                  handleChange
-                }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
-              />
-
-            </div>
-
-            <div>
-
-              <label className="block mb-1">
-                Placa
-              </label>
-
-              <select
-                name="placa"
-                value={
-                  filters.placa
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  cargandoVehiculos
-                }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white disabled:bg-gray-100"
-              >
-
-                <option value="">
-                  Toda la flota
-                </option>
-
-                {placas.map(
-                  (
-                    vehiculo
-                  ) => (
-
-                    <option
-                      key={
-                        vehiculo.id ||
-                        vehiculo.placa
-                      }
-                      value={
-                        vehiculo.placa
-                      }
-                    >
-                      {vehiculo.placa}
-
-                      {vehiculo.marca
-                        ? ` · ${vehiculo.marca}`
-                        : ''}
-                    </option>
-
-                  )
-                )}
-
-              </select>
-
-            </div>
-
-            <div>
-
-              <label className="block mb-1">
-                Tipo de Mantenimiento
-              </label>
-
-              <select
-                name="tipoMantenimiento"
-                value={
-                  filters
-                    .tipoMantenimiento
-                }
-                onChange={
-                  handleChange
-                }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
-              >
-
-                <option value="">
-                  Todos
-                </option>
-
-                <option value="PREVENTIVO">
-                  PREVENTIVO
-                </option>
-
-                <option value="CORRECTIVO">
-                  CORRECTIVO
-                </option>
-
-              </select>
-
-            </div>
-
-          </div>
-
-          {/* =================================================
-              BOTONES CENTRADOS
-          ================================================= */}
-
-          <div className="flex flex-wrap justify-center gap-2 mt-4">
-
-            <button
-              onClick={() =>
-                handleConsultar(
-                  1
-                )
-              }
-              disabled={
-                loading
-              }
-              className="bg-[var(--primary)] hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-50"
-            >
-              <i className="fas fa-search mr-2"></i>
-
-              {loading
-                ? 'Consultando...'
-                : 'Consultar'}
-            </button>
-
-            <button
-              onClick={
-                handleLimpiar
-              }
-              className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-xs"
-            >
-              <i className="fas fa-eraser mr-2"></i>
-
-              Limpiar
-            </button>
-
-            <button
-              onClick={
-                exportXLSX
-              }
-              disabled={
-                total ===
-                  0 ||
-                exporting
-              }
-              className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
-            >
-              <i className="fas fa-file-excel mr-2"></i>
-
-              Excel
-            </button>
-
-            <button
-              onClick={
-                exportPDF
-              }
-              disabled={
-                total ===
-                  0 ||
-                exporting
-              }
-              className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
-            >
-              <i className="fas fa-file-pdf mr-2"></i>
-
-              PDF
-            </button>
-
-          </div>
-
-        </div>
+        </section>
 
         {/* ==================================================
             MENSAJE
@@ -2289,432 +1987,32 @@ export default function MantenimientosPage() {
 
         )}
 
-        {/* ==================================================
-            RESUMEN
-        ================================================== */}
-
-        {total > 0 && (
-
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-
-            <Kpi
-              titulo="Mantenimientos"
-              valor={
-                resumen
-                  ?.total_mantenimientos ||
-                0
-              }
-              icono="fa-tools"
-            />
-
-            <Kpi
-              titulo="Preventivos"
-              valor={
-                resumen
-                  ?.preventivos ||
-                0
-              }
-              icono="fa-shield-halved"
-              tipo="success"
-            />
-
-            <Kpi
-              titulo="Correctivos"
-              valor={
-                resumen
-                  ?.correctivos ||
-                0
-              }
-              icono="fa-screwdriver-wrench"
-              tipo={
-                Number(
-                  resumen
-                    ?.correctivos ||
-                  0
-                ) >
-                0
-                  ? 'warning'
-                  : 'success'
-              }
-            />
-
-            <Kpi
-              titulo="Costo Total"
-              valor={
-                fmtCOP(
-                  resumen
-                    ?.costo_total
-                )
-              }
-              icono="fa-dollar-sign"
-              tipo="warning"
-            />
-
-            <Kpi
-              titulo="Tiempo Parada"
-              valor={
-                minutosALabel(
-                  resumen
-                    ?.tiempo_parada_minutos
-                )
-              }
-              icono="fa-clock"
-            />
-
-          </div>
-
-        )}
-
-        {/* ==================================================
-            COSTOS
-        ================================================== */}
-
-        {total > 0 && (
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-
-            <Kpi
-              titulo="Valor Repuestos"
-              valor={
-                fmtCOP(
-                  resumen
-                    ?.valor_repuestos
-                )
-              }
-              icono="fa-gears"
-            />
-
-            <Kpi
-              titulo="Valor Mano de Obra"
-              valor={
-                fmtCOP(
-                  resumen
-                    ?.valor_mano_obra
-                )
-              }
-              icono="fa-user-gear"
-            />
-
-            <Kpi
-              titulo="Vehículos Intervenidos"
-              valor={
-                resumen
-                  ?.total_vehiculos ||
-                0
-              }
-              icono="fa-car"
-            />
-
-          </div>
-
-        )}
-
-        {/* ==================================================
-            TABLA
-        ================================================== */}
-
-        <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-
+        <section className="rounded-xl border border-slate-300 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 text-sm font-bold" style={{backgroundColor: ESTILO_SECCIONES.fondo,color: ESTILO_SECCIONES.texto}}><Wrench size={16} /> Mantenimientos registrados</div>
           <div className="overflow-x-auto">
-
-            <table className="w-full min-w-[1700px] text-[10px] border-collapse">
-
-              <thead className="bg-slate-800 text-white">
-
-                <tr>
-
-                  <th className="p-2 border">
-                    Fecha
-                  </th>
-
-                  <th className="p-2 border">
-                    Placa
-                  </th>
-
-                  <th className="p-2 border">
-                    KM
-                  </th>
-
-                  <th className="p-2 border">
-                    Tipo
-                  </th>
-
-                  <th className="p-2 border">
-                    Actividad
-                  </th>
-
-                  <th className="p-2 border">
-                    Repuestos
-                  </th>
-
-                  <th className="p-2 border">
-                    Empresa
-                  </th>
-
-                  <th className="p-2 border">
-                    Parada
-                  </th>
-
-                  <th className="p-2 border">
-                    Factura
-                  </th>
-
-                  <th className="p-2 border">
-                    V. Repuestos
-                  </th>
-
-                  <th className="p-2 border">
-                    V. Mano Obra
-                  </th>
-
-                  <th className="p-2 border">
-                    Costo Total
-                  </th>
-
-                  <th className="p-2 border">
-                    Responsable
-                  </th>
-
-                  <th className="p-2 border">
-                    Observaciones
-                  </th>
-
-                </tr>
-
-              </thead>
-
+            <table className="w-full table-auto text-[11px] border-collapse [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300">
+              <thead style={{backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}}><tr>{['Fecha','Placa','KM','Tipo','Actividad realizada','Costo total','Acción'].map(t => <th key={t} className="p-2">{t}</th>)}</tr></thead>
               <tbody>
-
-                {data.length >
-                0 ? (
-
-                  data.map(
-                    (
-                      r
-                    ) => {
-                      const tipo =
-                        String(
-                          r
-                            ?.tipo_mantenimiento ||
-                          ''
-                        )
-                          .trim()
-                          .toUpperCase()
-
-                      const filaClase =
-                        tipo ===
-                        'CORRECTIVO'
-                          ? 'bg-amber-50 hover:bg-amber-100'
-                          : 'odd:bg-white even:bg-gray-50 hover:bg-blue-50'
-
-                      return (
-                        <tr
-                          key={
-                            r.id
-                          }
-                          className={`transition ${filaClase}`}
-                        >
-
-                          <td className="p-2 border text-center whitespace-nowrap">
-                            {r
-                              ?.fecha_registro ||
-                              '-'}
-                          </td>
-
-                          <td className="p-2 border text-center font-semibold">
-                            {r?.placa ||
-                              '-'}
-                          </td>
-
-                          <td className="p-2 border text-center">
-                            {Number(
-                              r
-                                ?.kilometraje ||
-                              0
-                            ).toLocaleString(
-                              'es-CO'
-                            )}
-                          </td>
-
-                          <td className="p-2 border text-center">
-
-                            {tipo ===
-                            'CORRECTIVO' ? (
-
-                              <span className="inline-flex px-2 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-300 font-semibold">
-                                CORRECTIVO
-                              </span>
-
-                            ) : tipo ===
-                              'PREVENTIVO' ? (
-
-                              <span className="inline-flex px-2 py-1 rounded-full bg-green-100 text-green-700 border border-green-300 font-semibold">
-                                PREVENTIVO
-                              </span>
-
-                            ) : (
-                              r
-                                ?.tipo_mantenimiento ||
-                              '-'
-                            )}
-
-                          </td>
-
-                          <td className="p-2 border text-left whitespace-normal break-words max-w-[420px]">
-                            {r
-                              ?.actividad_realizada ||
-                              '-'}
-                          </td>
-
-                          <td className="p-2 border text-left whitespace-normal break-words max-w-[380px]">
-                            {r
-                              ?.repuestos_utilizados ||
-                              '-'}
-                          </td>
-
-                          <td className="p-2 border text-center">
-                            {r
-                              ?.empresa ||
-                              '-'}
-                          </td>
-
-                          <td className="p-2 border text-center whitespace-nowrap">
-                            {minutosALabel(
-                              r
-                                ?.tiempoparada
-                            )}
-                          </td>
-
-                          <td className="p-2 border text-center">
-                            {r
-                              ?.factura ||
-                              '-'}
-                          </td>
-
-                          <td className="p-2 border text-center whitespace-nowrap min-w-[110px]">
-                            {fmtCOP(
-                              r
-                                ?.valor_repuestos
-                            )}
-                          </td>
-
-                          <td className="p-2 border text-center whitespace-nowrap min-w-[110px]">
-                            {fmtCOP(
-                              r
-                                ?.valor_mano_obra
-                            )}
-                          </td>
-
-                          <td className="p-2 border text-center whitespace-nowrap min-w-[120px] font-bold text-[var(--primary-dark)]">
-                            {fmtCOP(
-                              r
-                                ?.costo_total
-                            )}
-                          </td>
-
-                          <td className="p-2 border text-center">
-                            {r
-                              ?.responsable ||
-                              '-'}
-                          </td>
-
-                          <td className="p-2 border text-left whitespace-normal break-words max-w-[420px]">
-                            {r
-                              ?.observaciones ||
-                              '-'}
-                          </td>
-
-                        </tr>
-                      )
-                    }
-                  )
-
-                ) : (
-
-                  <tr>
-
-                    <td
-                      colSpan={
-                        14
-                      }
-                      className="text-center text-gray-500 p-6"
-                    >
-                      No hay resultados para los filtros seleccionados.
-                    </td>
-
+                {data.length ? data.map(r => (
+                  <tr key={r.id} className={String(r.tipo_mantenimiento).toUpperCase()==='CORRECTIVO'?'bg-amber-50 hover:bg-amber-100':'odd:bg-white even:bg-slate-50 hover:bg-blue-50'}>
+                    <td className="p-2 text-center whitespace-nowrap">{r.fecha_registro || '-'}</td>
+                    <td className="p-2 text-center font-semibold">{r.placa || '-'}</td>
+                    <td className="p-2 text-center">{Number(r.kilometraje || 0).toLocaleString('es-CO')}</td>
+                    <td className="p-2 text-center">{r.tipo_mantenimiento || '-'}</td>
+                    <td className="p-2 text-left max-w-[340px]"><p className="line-clamp-2 break-words" title={r.actividad_realizada || ''}>{r.actividad_realizada || '-'}</p></td>
+                    <td className="p-2 text-center whitespace-nowrap font-semibold">{fmtCOP(r.costo_total)}</td>
+                    <td className="p-2 text-center"><BotonAccion tipo="verDetalle" type="button" onClick={() => setDetalle(r)} className="whitespace-nowrap py-1.5"><Eye size={14} /> Ver detalle</BotonAccion></td>
                   </tr>
-
-                )}
-
+                )) : <tr><td colSpan={7} className="p-6 text-center text-slate-500">No hay resultados para los filtros seleccionados.</td></tr>}
               </tbody>
-
-              {/* =================================================
-                  TOTALES DE TODA LA CONSULTA
-              ================================================= */}
-
-              {total > 0 && (
-
-                <tfoot>
-
-                  <tr className="bg-gray-100 font-semibold">
-
-                    <td
-                      className="p-2 border text-right"
-                      colSpan={
-                        7
-                      }
-                    >
-                      Totales de la consulta:
-                    </td>
-
-                    <td className="p-2 border text-center whitespace-nowrap">
-                      {minutosALabel(
-                        resumen
-                          ?.tiempo_parada_minutos
-                      )}
-                    </td>
-
-                    <td className="p-2 border"></td>
-
-                    <td className="p-2 border text-center whitespace-nowrap">
-                      {fmtCOP(
-                        resumen
-                          ?.valor_repuestos
-                      )}
-                    </td>
-
-                    <td className="p-2 border text-center whitespace-nowrap">
-                      {fmtCOP(
-                        resumen
-                          ?.valor_mano_obra
-                      )}
-                    </td>
-
-                    <td className="p-2 border text-center whitespace-nowrap font-bold text-[var(--primary-dark)]">
-                      {fmtCOP(
-                        resumen
-                          ?.costo_total
-                      )}
-                    </td>
-
-                    <td
-                      className="p-2 border"
-                      colSpan={
-                        2
-                      }
-                    ></td>
-
-                  </tr>
-
-                </tfoot>
-
-              )}
-
+              {total > 0 && <tfoot><tr className="bg-slate-100 font-semibold"><td colSpan={5} className="p-2 text-right">Costo total de la consulta:</td><td className="p-2 text-center whitespace-nowrap">{fmtCOP(resumen?.costo_total)}</td><td className="p-2" /></tr></tfoot>}
             </table>
-
           </div>
-
-        </div>
+        </section>
+        <section className="rounded-xl border border-slate-300 bg-white shadow-sm overflow-hidden">
+          <div className="px-4 py-3 text-sm font-bold flex items-center gap-2" style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto}}><FileText size={16} /> Reportes de mantenimientos</div>
+          <div className="p-4 flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-600">Exportar el historial según los filtros de consulta seleccionados.</p><div className="flex gap-2"><BotonAccion tipo="excel" type="button" onClick={exportXLSX} disabled={!total || exporting}><FileSpreadsheet size={15} /> Excel</BotonAccion><BotonAccion tipo="pdf" type="button" onClick={exportPDF} disabled={!total || exporting}><FileText size={15} /> PDF</BotonAccion></div></div>
+        </section>
 
         {/* ==================================================
             PAGINACIÓN
@@ -2796,6 +2094,23 @@ export default function MantenimientosPage() {
 
         )}
 
+      {detalle && <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="absolute inset-0 bg-black/50" onClick={() => setDetalle(null)} />
+        <aside className="relative h-full w-full sm:w-[680px] lg:w-[740px] bg-slate-50 shadow-2xl overflow-y-auto">
+          <div className="sticky top-0 z-20 bg-[#194567] text-white px-5 py-4 flex justify-between gap-3">
+            <div><p className="text-[10px] uppercase font-bold text-white/80">Detalle del mantenimiento · Solo lectura</p><h2 className="text-lg font-black mt-1">{detalle.placa || '-'}</h2><p className="text-xs mt-1 text-white/80">{detalle.fecha_registro || '-'} · {detalle.tipo_mantenimiento || '-'}</p></div>
+            <button type="button" aria-label="Cerrar detalle" onClick={() => setDetalle(null)} className="w-9 h-9 rounded-full border border-white/50 flex items-center justify-center hover:bg-white/15"><X size={18} /></button>
+          </div>
+          <div className="p-4 sm:p-5 space-y-4">
+            <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm"><h3 className="text-sm font-bold text-[#194567] mb-3">Información del mantenimiento</h3><div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+              { [['Fecha',detalle.fecha_registro],['Placa',detalle.placa],['Kilometraje',Number(detalle.kilometraje || 0).toLocaleString('es-CO')],['Tipo',detalle.tipo_mantenimiento],['Empresa / taller',detalle.empresa],['Tiempo de parada',minutosALabel(detalle.tiempoparada)],['Factura',detalle.factura],['Responsable',detalle.responsable]].map(([k,v]) => <div key={k}><p className="text-slate-500">{k}</p><p className="font-semibold break-words">{v || '-'}</p></div>)}
+            </div></section>
+            <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm space-y-3"><h3 className="text-sm font-bold text-[#194567]">Trabajos realizados</h3>{[['Actividad realizada',detalle.actividad_realizada],['Repuestos utilizados',detalle.repuestos_utilizados],['Observaciones',detalle.observaciones]].map(([k,v]) => <div key={k} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs"><p className="font-semibold text-[#194567]">{k}</p><p className="mt-2 whitespace-pre-wrap break-words">{v || 'Sin información registrada.'}</p></div>)}</section>
+            <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm space-y-3"><h3 className="text-sm font-bold text-[#194567]">Costos registrados</h3><div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">{[['Repuestos',detalle.valor_repuestos],['Mano de obra',detalle.valor_mano_obra],['Costo total',detalle.costo_total]].map(([k,v]) => <div key={k}><p className="text-slate-500">{k}</p><p className="font-bold">{fmtCOP(v)}</p></div>)}</div></section>
+            <div className="flex justify-end"><BotonAccion tipo="cancelar" type="button" onClick={() => setDetalle(null)}><X size={15} /> Cerrar panel</BotonAccion></div>
+          </div>
+        </aside>
+      </div>}
       </div>
 
     </div>
