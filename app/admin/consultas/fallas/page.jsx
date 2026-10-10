@@ -2032,7 +2032,7 @@ export default function FallasPage() {
 
         <div className="bg-white border border-slate-300 rounded-xl p-4 shadow-sm">
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 text-xs items-end">
 
             <div>
 
@@ -2188,6 +2188,7 @@ export default function FallasPage() {
               <BotonAccion tipo="limpiar" type="button" onClick={handleLimpiar}><Eraser size={15} aria-hidden="true" /> Limpiar</BotonAccion>
             </div>
           </div>
+        </div>
 
         {/* ==================================================
             MENSAJE
