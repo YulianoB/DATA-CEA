@@ -15,7 +15,7 @@ import {
 import ModalResultado from '@/components/admin/ModalResultado'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
-import { TriangleAlert, Eraser } from 'lucide-react'
+import { TriangleAlert, Eraser, Eye, ClipboardList } from 'lucide-react'
 
 import {
   Toaster,
@@ -2263,19 +2263,7 @@ export default function FallasPage() {
                   </th>
 
                   <th className="p-2 border">
-                    Descripción
-                  </th>
-
-                  <th className="p-2 border">
                     Estado
-                  </th>
-
-                  <th className="p-2 border">
-                    F. Verificación
-                  </th>
-
-                  <th className="p-2 border">
-                    F. Solución
                   </th>
 
                   <th className="p-2 border">
@@ -2367,19 +2355,6 @@ export default function FallasPage() {
                               '-'}
                           </td>
 
-                          <td
-                            className="p-2 border text-left max-w-[380px] whitespace-normal break-words"
-                            title={
-                              row
-                                ?.descripcion_falla ||
-                              ''
-                            }
-                          >
-                            {row
-                              ?.descripcion_falla ||
-                              '-'}
-                          </td>
-
                           <td className="p-2 border text-center">
                             <EstadoChip
                               estado={
@@ -2388,42 +2363,18 @@ export default function FallasPage() {
                             />
                           </td>
 
-                          <td className="p-2 border text-center whitespace-nowrap">
-                            {row
-                              ?.fecha_verificacion ||
-                              '-'}
-                          </td>
-
-                          <td className="p-2 border text-center whitespace-nowrap">
-                            {row
-                              ?.fecha_solucion ||
-                              '-'}
-                          </td>
-
                           <td className="p-2 border text-center">
 
-                            <button
-                              onClick={() =>
-                                abrirSeguimiento(
-                                  row
-                                )
-                              }
-                              className={`
-                                px-3
-                                py-1
-                                rounded
-                                text-white
-                                ${
-                                  cerrada
-                                    ? 'bg-gray-600 hover:bg-gray-700'
-                                    : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
-                                }
-                              `}
+                            <BotonAccion
+                              tipo="verDetalle"
+                              type="button"
+                              onClick={() => abrirSeguimiento(row)}
+                              className="whitespace-nowrap py-1.5"
+                              aria-label={cerrada ? 'Ver reporte de falla' : 'Realizar seguimiento de falla'}
                             >
-                              {cerrada
-                                ? 'Ver reporte'
-                                : 'Seguimiento'}
-                            </button>
+                              {cerrada ? <Eye size={14} aria-hidden="true" /> : <ClipboardList size={14} aria-hidden="true" />}
+                              {cerrada ? 'Ver reporte' : 'Seguimiento'}
+                            </BotonAccion>
 
                           </td>
 
@@ -2437,7 +2388,7 @@ export default function FallasPage() {
                   <tr>
 
                     <td
-                      colSpan={13}
+                      colSpan={10}
                       className="text-center text-gray-500 p-6"
                     >
                       No hay resultados para los filtros seleccionados.
