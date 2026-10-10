@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast, Toaster } from 'sonner'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonAccion, TituloSeccion, MarcoTabla, ContenedorModulo } from '@/components/admin/EstiloModulo'
-import { CalendarClock, Eraser, Eye, X, Printer, List, Users, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
+import { BotonAccion, TituloSeccion, MarcoTabla, ESTILO_CONTENEDORES } from '@/components/admin/EstiloModulo'
+import { CalendarClock, Eraser, Eye, X, Printer, List, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const ROLES = ['INSTRUCTOR PRÁCTICA', 'INSTRUCTOR TEORÍA', 'AUXILIAR ADMINISTRATIVO']
 const ESTADOS = ['No Cerrado', 'Abierto', 'Cerrado']
@@ -50,7 +50,6 @@ export default function ConsultaHorariosPage() {
   const [cargandoFuncionarios, setCargandoFuncionarios] = useState(false)
   const [vista, setVista] = useState('jornadas')
   const [periodo, setPeriodo] = useState('30')
-  const [filtrosAvanzados, setFiltrosAvanzados] = useState(false)
 
   useEffect(() => {
     try {
@@ -123,7 +122,6 @@ export default function ConsultaHorariosPage() {
     setFiltros({ inicio: haceDias(hoy, 30), fin: hoy, rol: '', funcionario: '', estado: 'No Cerrado' })
     setVista('jornadas')
     setPeriodo('30')
-    setFiltrosAvanzados(false)
   }
   const filas = datos?.jornadas || []
   const resumen = datos?.resumen || {}
@@ -139,9 +137,9 @@ export default function ConsultaHorariosPage() {
           <EncabezadoModulo titulo="Consulta de Horarios" subtitulo="Jornadas pendientes y seguimiento por funcionario, rol y período" icono={CalendarClock} rutaRegreso="/admin/consultas" textoRegreso="Seguimiento Operativo y Consultas" />
         </div>
 
-        <ContenedorModulo className="p-4 print:hidden">
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="min-w-[190px] flex-1 text-xs font-medium">Período de consulta
+        <section className="rounded-xl border bg-white p-4 shadow-sm print:hidden" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
+          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-6">
+            <label className="text-xs font-medium">Período
               <select className={control} value={periodo} onChange={e => {
                 const v = e.target.value
                 setPeriodo(v)
@@ -153,23 +151,9 @@ export default function ConsultaHorariosPage() {
                 <option value="7">Últimos 7 días</option>
                 <option value="30">Últimos 30 días</option>
                 <option value="90">Últimos 90 días</option>
-                <option value="personalizado">Elegir fechas...</option>
+                <option value="personalizado">Personalizar fechas</option>
               </select>
             </label>
-            <label className="min-w-[190px] flex-1 text-xs font-medium">Estado de la jornada
-              <select className={control} value={filtros.estado} onChange={e => actualizar('estado', e.target.value)}>
-                <option value="No Cerrado">No Cerrado (pendientes)</option>
-                <option value="Abierto">Abierto (en curso)</option>
-                <option value="Cerrado">Cerrado (finalizadas)</option>
-                <option value="">Todos los estados</option>
-              </select>
-            </label>
-            <BotonAccion tipo="secundario" onClick={() => setFiltrosAvanzados(p => !p)}>
-              <Filter size={15} /> {filtrosAvanzados ? 'Ocultar filtros' : 'Más filtros'}
-            </BotonAccion>
-            <BotonAccion tipo="limpiar" onClick={limpiar}><Eraser size={15} /> Limpiar</BotonAccion>
-          </div>
-          {(periodo === 'personalizado' || filtrosAvanzados) && <div className="mt-3 grid grid-cols-1 gap-3 border-t border-slate-200 pt-3 sm:grid-cols-2 lg:grid-cols-4">
             {periodo === 'personalizado' && <>
               <label className="text-xs font-medium">Fecha inicial
                 <input className={control} type="date" max={hoyBogota()} value={filtros.inicio} onChange={e => actualizar('inicio', e.target.value)} />
@@ -178,35 +162,42 @@ export default function ConsultaHorariosPage() {
                 <input className={control} type="date" max={hoyBogota()} value={filtros.fin} onChange={e => actualizar('fin', e.target.value)} />
               </label>
             </>}
-            {filtrosAvanzados && <>
-              <label className="text-xs font-medium">Rol
-                <select className={control} value={filtros.rol} onChange={e => actualizar('rol', e.target.value)}>
-                  <option value="">Todos los roles</option>
-                  {ROLES.map(rol => <option key={rol} value={rol}>{rol}</option>)}
-                </select>
-              </label>
-              <label className="text-xs font-medium">Funcionario
-                <select className={control} disabled={!filtros.rol || cargandoFuncionarios} value={filtros.funcionario} onChange={e => actualizar('funcionario', e.target.value)}>
-                  <option value="">{cargandoFuncionarios ? 'Cargando...' : filtros.rol ? 'Todos los funcionarios' : 'Seleccione un rol primero'}</option>
-                  {funcionarios.map((item, i) => <option key={item.personal_id || i} value={item.nombre_completo}>{item.nombre_completo}</option>)}
-                </select>
-              </label>
-            </>}
-          </div>}
-        </ContenedorModulo>
-
-        <ContenedorModulo className="overflow-hidden">
-          <div className="print:hidden">
-            <TituloSeccion titulo={vista === 'jornadas' ? 'Registro de jornadas' : 'Seguimiento por funcionario'}
-              subtitulo={vista === 'jornadas' ? 'Detalle de entradas, salidas y estado de cada jornada' : 'Totales y porcentaje de cierre agrupados por funcionario'}
-              icono={vista === 'jornadas' ? <List size={17} /> : <Users size={17} />}
-              acciones={<>
-                <BotonAccion tipo={vista === 'jornadas' ? 'consultar' : 'secundario'} onClick={() => setVista('jornadas')}><List size={15} /> Ver jornadas</BotonAccion>
-                <BotonAccion tipo={vista === 'funcionarios' ? 'consultar' : 'secundario'} onClick={() => setVista('funcionarios')}><Users size={15} /> Por funcionario</BotonAccion>
-                <BotonAccion tipo="imprimir" onClick={imprimir} disabled={!datos || cargando}><Printer size={15} /> Imprimir</BotonAccion>
-              </>} />
+            <label className="text-xs font-medium">Rol
+              <select className={control} value={filtros.rol} onChange={e => actualizar('rol', e.target.value)}>
+                <option value="">Todos los roles</option>
+                {ROLES.map(rol => <option key={rol} value={rol}>{rol}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-medium">Funcionario
+              <select className={control} disabled={!filtros.rol || cargandoFuncionarios} value={filtros.funcionario} onChange={e => actualizar('funcionario', e.target.value)}>
+                <option value="">{cargandoFuncionarios ? 'Cargando...' : 'Todos los funcionarios'}</option>
+                {funcionarios.map((item, i) => <option key={item.personal_id || i} value={item.nombre_completo}>{item.nombre_completo}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-medium">Estado
+              <select className={control} value={filtros.estado} onChange={e => actualizar('estado', e.target.value)}>
+                <option value="">Todos los estados</option>
+                {ESTADOS.map(estado => <option key={estado} value={estado}>{estado}</option>)}
+              </select>
+            </label>
+            <BotonAccion tipo="limpiar" onClick={limpiar} className="h-9"><Eraser size={15} /> Limpiar</BotonAccion>
           </div>
-          <div className="px-4 py-2 text-xs text-slate-600">{fechaBonita(filtros.inicio)} al {fechaBonita(filtros.fin)} · <strong>{filas.length} jornadas</strong>{cargando ? ' · Consultando...' : ''}</div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl border bg-white shadow-sm" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
+          <div className="print:hidden">
+            <TituloSeccion
+              titulo="Registro de jornadas"
+              subtitulo={`${fechaBonita(filtros.inicio)} al ${fechaBonita(filtros.fin)} · ${filas.length} registros${cargando ? ' · Consultando...' : ''}`}
+              icono={<CalendarClock size={17} />}
+              acciones={<>
+                <BotonAccion tipo={vista === 'jornadas' ? 'consultar' : 'secundario'} onClick={() => setVista('jornadas')}><List size={15} /> Jornadas</BotonAccion>
+                <BotonAccion tipo={vista === 'funcionarios' ? 'consultar' : 'secundario'} onClick={() => setVista('funcionarios')}><Users size={15} /> Resumen por funcionario</BotonAccion>
+                <BotonAccion tipo="imprimir" onClick={imprimir} disabled={!datos || cargando}><Printer size={15} /> Imprimir</BotonAccion>
+              </>}
+            />
+          </div>
+          <p className="hidden px-4 py-2 text-xs print:block">{fechaBonita(filtros.inicio)} al {fechaBonita(filtros.fin)} · {filas.length} registros</p>
           {error && <p role="alert" className="m-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
           {!error && !cargando && !filas.length && <p className="p-8 text-center text-sm text-slate-500">No se encontraron jornadas para los filtros seleccionados.</p>}
           {vista === 'jornadas' ? (
@@ -232,7 +223,7 @@ export default function ConsultaHorariosPage() {
           ) : (
             <MarcoTabla className="overflow-x-auto rounded-none border-0">
               <table className="w-full min-w-[700px] text-left text-xs">
-                <thead><tr>{['Funcionario', 'Rol', 'Total', 'No Cerrado', 'Abierto', 'Cerrado', '% cierre'].map(t => <th key={t} className="border-b px-3 py-3">{t}</th>)}</tr></thead>
+                <thead ><tr>{['Funcionario', 'Rol', 'Total', 'No Cerrado', 'Abierto', 'Cerrado', '% cierre'].map(t => <th key={t} className="border-b px-3 py-3" >{t}</th>)}</tr></thead>
                 <tbody>{(datos?.funcionarios || []).map((f, i) => <tr key={i} className="border-b border-slate-200 odd:bg-white even:bg-slate-50/70 hover:bg-blue-50">
                   <td className="px-3 py-2 font-medium">{f.nombre_completo}</td><td className="px-3 py-2">{f.rol}</td>
                   <td className="px-3 py-2">{f.total}</td><td className="px-3 py-2">{f.no_cerradas}</td>
@@ -249,7 +240,7 @@ export default function ConsultaHorariosPage() {
               <BotonAccion tipo="secundario" disabled={pagina === totalPaginas} onClick={() => setPagina(p => p + 1)}>Siguiente <ChevronRight size={14} /></BotonAccion>
             </div>
           </div>}
-        </ContenedorModulo>
+        </section>
         {detalle && <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40 print:hidden" onClick={() => setDetalle(null)}>
           <aside role="dialog" aria-modal="true" aria-label="Detalle de jornada" className="h-full w-full max-w-lg overflow-y-auto bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-bold">Detalle de jornada</h2><button aria-label="Cerrar detalle" onClick={() => setDetalle(null)}><X size={22} /></button></div>
