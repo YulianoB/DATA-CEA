@@ -1000,6 +1000,8 @@ export default function MantenimientosPage() {
               .endDate,
         })
 
+      if (filters.tipoVehiculo) params.set('tipo_vehiculo', filters.tipoVehiculo)
+
       if (
         filters.placa
       ) {
