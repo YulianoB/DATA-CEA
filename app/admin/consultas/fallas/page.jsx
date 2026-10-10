@@ -2259,10 +2259,6 @@ export default function FallasPage() {
                   </th>
 
                   <th className="p-2 border">
-                    Encargado
-                  </th>
-
-                  <th className="p-2 border">
                     Estado
                   </th>
 
@@ -2349,12 +2345,6 @@ export default function FallasPage() {
                             )}
                           </td>
 
-                          <td className="p-2 border text-center min-w-[180px]">
-                            {row
-                              ?.nombre_encargado ||
-                              '-'}
-                          </td>
-
                           <td className="p-2 border text-center">
                             <EstadoChip
                               estado={
@@ -2388,7 +2378,7 @@ export default function FallasPage() {
                   <tr>
 
                     <td
-                      colSpan={10}
+                      colSpan={9}
                       className="text-center text-gray-500 p-6"
                     >
                       No hay resultados para los filtros seleccionados.
