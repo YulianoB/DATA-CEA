@@ -19,7 +19,7 @@ import {
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BotonAccion, TituloSeccion, MarcoTabla, ContenedorModulo, TarjetaModulo, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
-import { Route, Search, Eraser, FileSpreadsheet, FileText, ShieldCheck, CarFront, ClipboardList, AlertTriangle } from 'lucide-react'
+import { Route, Search, Eraser, FileSpreadsheet, FileText, ShieldCheck, CarFront, AlertTriangle } from 'lucide-react'
 
 // ============================================================
 // CONSTANTES
@@ -2877,14 +2877,10 @@ export default function KilometrosPage() {
 
               {/* CALIDAD GENERAL */}
 
-              <div className="bg-white border rounded-xl shadow-sm p-4">
-
-                <h2 className="font-bold text-gray-800 text-sm mb-3">
-                  <i className="fas fa-shield-halved mr-2 text-[var(--primary)]"></i>
-                  Calidad general de los registros
-                </h2>
-
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              <ContenedorModulo className="overflow-hidden">
+                <TituloSeccion titulo="Calidad general de los registros" icono={<ShieldCheck size={17} />} className="!rounded-b-none" />
+                <div className="p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
 
                   <Kpi
                     titulo="Cerradas"
@@ -2994,7 +2990,7 @@ export default function KilometrosPage() {
                       key={
                         grupo.tipo_vehiculo
                       }
-                      className="bg-white border rounded-xl shadow-sm overflow-hidden"
+                      className="overflow-hidden rounded-xl border bg-white shadow-sm"
                     >
 
                       {/* TIPO */}
