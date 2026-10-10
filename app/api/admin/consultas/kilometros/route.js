@@ -48,6 +48,7 @@ const SELECT_HORARIO = `
   id,
   placa,
   fecha_entrada,
+  hora_entrada,
   fecha_salida,
   km_inicial,
   km_final,
@@ -839,15 +840,49 @@ function agruparPorPlaca(
   return mapa
 }
 
+// Estimación de jornadas sin lectura final. Se utiliza exclusivamente
+// la primera lectura posterior (no se salta una lectura regresiva).
+// Las horas se interpretan como hora local de Colombia (UTC-5).
+const VENTANA_ESTIMACION_MS = 48 * 60 * 60 * 1000
+function instanteLectura(fecha, hora = '00:00:00') {
+  if (!fecha) return NaN
+  const horaNormalizada = String(hora || '00:00:00').slice(0, 8)
+  const instante = Date.parse(`${fecha}T${horaNormalizada.padEnd(8, '0')}-05:00`)
+  return Number.isFinite(instante) ? instante : NaN
+}
+function lecturasPosteriores(horarios, preoperacionales) {
+  const lecturas = []
+  for (const registro of horarios || []) {
+    const km = numeroSeguro(registro?.km_inicial)
+    const instante = instanteLectura(registro?.fecha_entrada, registro?.hora_entrada)
+    if (km !== null && Number.isFinite(instante)) {
+      lecturas.push({ fuente: 'HORARIOS', id: registro.id, instante, km })
+    }
+  }
+  for (const registro of preoperacionales || []) {
+    const km = numeroSeguro(registro?.km_registro)
+    const instante = instanteLectura(registro?.fecha_registro, registro?.hora_registro)
+    if (km !== null && Number.isFinite(instante)) {
+      lecturas.push({ fuente: 'PREOPERACIONALES', id: registro.id, instante, km })
+    }
+  }
+  return lecturas.sort((a, b) => a.instante - b.instante || (a.fuente === 'HORARIOS' ? -1 : 1))
+}
+
 // =========================================================
 // PROCESAR HORARIOS
 // =========================================================
 
 function procesarHorarios(
-  registros
+  registros,
+  referencias = []
 ) {
   let kilometros =
     0
+
+  let kilometrosEstimados = 0
+  let jornadasEstimadas = 0
+  let jornadasPendientes = 0
 
   let cerradas =
     0
@@ -913,6 +948,37 @@ function procesarHorarios(
       noCerradas +=
         1
     }
+
+    // Para jornadas sin km_final, la lectura posterior más próxima
+    // permite una estimación; no se modifica la jornada original.
+    if (kmInicial !== null && kmFinal === null) {
+      const inicio = instanteLectura(registro.fecha_entrada, registro.hora_entrada)
+      const siguiente = referencias.find((lectura) =>
+        Number.isFinite(inicio) &&
+        lectura.instante > inicio &&
+        lectura.instante - inicio <= VENTANA_ESTIMACION_MS &&
+        !(lectura.fuente === 'HORARIOS' && lectura.id === registro.id)
+      )
+      if (siguiente && siguiente.km >= kmInicial) {
+        const estimado = siguiente.km - kmInicial
+        kilometros += estimado
+        kilometrosEstimados += estimado
+        jornadasEstimadas += 1
+        detalleCalidad.push({
+          tipo: 'HORARIO_KM_ESTIMADO',
+          id: registro.id,
+          fecha: registro.fecha_entrada || '',
+          estado,
+          km_inicial: kmInicial,
+          km_final: null,
+          km_estimados: estimado,
+          fuente_referencia: siguiente.fuente,
+          id_referencia: siguiente.id,
+        })
+        continue
+      }
+    }
+    if (kmFinal === null) jornadasPendientes += 1
 
     // =====================================================
     // NO CERRADAS / ABIERTAS
@@ -1031,8 +1097,12 @@ function procesarHorarios(
 
   return {
     kilometros,
+    kilometros_estimados: kilometrosEstimados,
+    kilometros_confirmados: kilometros - kilometrosEstimados,
 
     jornadas: {
+      estimadas: jornadasEstimadas,
+      pendientes_estimacion: jornadasPendientes,
       total:
         (
           registros ||
@@ -1401,10 +1471,12 @@ function construirResultadoVehiculo({
   horarios,
   preoperacionales,
   lecturaAnterior,
+  referenciasEstimacion = [],
 }) {
   const resultadoHorarios =
     procesarHorarios(
-      horarios
+      horarios,
+      referenciasEstimacion
     )
 
   const resultadoPreop =
@@ -1618,6 +1690,8 @@ function construirResultadoVehiculo({
 
       horarios:
         kmHorarios,
+      horarios_confirmados: resultadoHorarios.kilometros_confirmados,
+      horarios_estimados: resultadoHorarios.kilometros_estimados,
 
       diferencia,
     },
@@ -2026,6 +2100,18 @@ async function generarConsulta({
       }),
     ])
 
+  // Se buscan referencias hasta 48 h después del final del período.
+  // No se incorporan esas jornadas adicionales a los totales del reporte.
+  const fechaLimite = new Date(`${fechaFin}T00:00:00Z`)
+  fechaLimite.setUTCDate(fechaLimite.getUTCDate() + 3)
+  const finReferencias = fechaLimite.toISOString().slice(0, 10)
+  const [horariosReferencia, preopReferencia] = await Promise.all([
+    consultarHorarios({ supabase, fechaInicio, fechaFin: finReferencias, placa: placaFiltro }),
+    consultarPreoperacionales({ supabase, fechaInicio, fechaFin: finReferencias, placa: placaFiltro }),
+  ])
+  const horariosReferenciaPorPlaca = agruparPorPlaca(horariosReferencia)
+  const preopReferenciaPorPlaca = agruparPorPlaca(preopReferencia)
+
   const mapaVehiculos =
     new Map(
       vehiculos.map(
@@ -2181,6 +2267,10 @@ async function generarConsulta({
           lecturasAnteriores.get(
             placa
           ) || null,
+        referenciasEstimacion: lecturasPosteriores(
+          horariosReferenciaPorPlaca.get(placa) || [],
+          preopReferenciaPorPlaca.get(placa) || []
+        ),
       })
 
     resultados.push(
