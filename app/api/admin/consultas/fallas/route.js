@@ -402,6 +402,7 @@ function construirConsultaBase({
   fechaInicio,
   fechaFin,
   placa = '',
+  tipoVehiculo = '',
   estado = '',
   conConteo = true,
 }) {
@@ -423,6 +424,8 @@ function construirConsultaBase({
 
   if (fechaInicio) consulta = consulta.gte('fecha', fechaInicio)
   if (fechaFin) consulta = consulta.lte('fecha', fechaFin)
+
+  if (tipoVehiculo) consulta = consulta.eq('tipo_vehiculo', tipoVehiculo)
 
   if (
     placa
@@ -456,6 +459,7 @@ async function consultarFallas({
   fechaInicio,
   fechaFin,
   placa = '',
+  tipoVehiculo = '',
   estado = '',
   pagina = 1,
   pageSize = PAGE_SIZE_DEFAULT,
@@ -466,6 +470,7 @@ async function consultarFallas({
       fechaInicio,
       fechaFin,
       placa,
+      tipoVehiculo,
       estado,
       conConteo:
         true,
@@ -541,6 +546,7 @@ async function consultarFallasCompletas({
   fechaInicio,
   fechaFin,
   placa = '',
+  tipoVehiculo = '',
   estado = '',
 }) {
   try {
@@ -552,6 +558,7 @@ async function consultarFallasCompletas({
             fechaInicio,
             fechaFin,
             placa,
+            tipoVehiculo,
             estado,
             conConteo:
               false,
@@ -806,6 +813,8 @@ export async function GET(
         )
       )
 
+    const tipoVehiculo = normalizarTexto(searchParams.get('tipo_vehiculo'))
+
     const estado =
       normalizarEstado(
         searchParams.get(
@@ -877,6 +886,7 @@ export async function GET(
             fechaInicio,
             fechaFin,
             placa,
+            tipoVehiculo,
             estado,
             pagina,
             pageSize,
@@ -887,6 +897,7 @@ export async function GET(
             fechaInicio,
             fechaFin,
             placa,
+            tipoVehiculo,
             estado,
           }),
         ])
@@ -969,6 +980,7 @@ export async function GET(
           fechaInicio,
           fechaFin,
           placa,
+          tipoVehiculo,
           estado,
         })
 
