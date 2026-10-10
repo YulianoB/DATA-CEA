@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
-import { EncabezadoPractica, TarjetaInspeccion, AccionesModuloPractica, GUIAS_NO_CONFORMIDAD } from '@/components/instructor/practica/EstilosModuloPractica'
+import { EncabezadoPractica, TarjetaInspeccionCompacta, ModalEvaluacionPractica, AccionesModuloPractica, GUIAS_NO_CONFORMIDAD } from '@/components/instructor/practica/EstilosModuloPractica'
 import {
   validarInspeccionDuplicada,
   validarKilometraje,
@@ -67,6 +67,14 @@ const obtenerFechaHoraBogota = () => {
 // ============================================================
 // Página
 // ============================================================
+
+const SECCIONES_INSPECCION = [
+  { id: 'revisionExterior', numero: 1, titulo: 'Revisión exterior', descripcion: 'Verifique carrocería, faros, llantas, espejos y limpiaparabrisas.' },
+  { id: 'motor', numero: 2, titulo: 'Motor', descripcion: 'Verifique niveles de fluidos, fugas, batería, correas y cadena (en motos).' },
+  { id: 'interiorFuncionamiento', numero: 3, titulo: 'Interior y funcionamiento', descripcion: 'Verifique cinturones, asientos, luces y tablero.' },
+  { id: 'equiposPrevencion', numero: 4, titulo: 'Equipos de prevención y seguridad', descripcion: 'Verifique kit de carretera, casco, señalización y banderín.' },
+  { id: 'documentos', numero: 5, titulo: 'Documentos', descripcion: 'Verifique SOAT, RTM, licencia, tarjeta de servicio, certificado de instructor y cédula.' },
+]
 
 export default function InspeccionPage() {
   const router = useRouter()
@@ -170,6 +178,43 @@ export default function InspeccionPage() {
     observaciones,
     setObservaciones,
   ] = useState('')
+
+  const [observacionesPorSeccion, setObservacionesPorSeccion] = useState({})
+  const [seccionActiva, setSeccionActiva] = useState(null)
+  const [observacionBorrador, setObservacionBorrador] = useState('')
+  const observacionesUnificadas = SECCIONES_INSPECCION
+    .filter((item) => secciones[item.id] === 'NO CONFORME')
+    .map((item) => `Sección ${item.numero} - ${item.titulo}: ${(observacionesPorSeccion[item.id] || '').trim()}`)
+    .join('\n')
+  const observacionesCompletas = SECCIONES_INSPECCION.every((item) =>
+    secciones[item.id] !== 'NO CONFORME' || Boolean((observacionesPorSeccion[item.id] || '').trim())
+  )
+  const abrirSeccion = (id) => {
+    setSeccionActiva(id)
+    setObservacionBorrador(observacionesPorSeccion[id] || '')
+  }
+  const evaluarSeccion = (valor) => {
+    if (!seccionActiva) return
+    if (valor === 'NO CONFORME') {
+      setSecciones((prev) => ({ ...prev, [seccionActiva]: 'NO CONFORME' }))
+      return
+    }
+    if (valor === 'CONFIRMAR_NO_CONFORME' && !observacionBorrador.trim()) return
+    if (valor === 'CONFIRMAR_NO_CONFORME') {
+      setObservacionesPorSeccion((prev) => ({ ...prev, [seccionActiva]: observacionBorrador.trim() }))
+    } else if (valor === 'CONFORME') {
+      setSecciones((prev) => ({ ...prev, [seccionActiva]: 'CONFORME' }))
+      setObservacionesPorSeccion((prev) => {
+        const siguiente = { ...prev }
+        delete siguiente[seccionActiva]
+        return siguiente
+      })
+    }
+    const indice = SECCIONES_INSPECCION.findIndex((item) => item.id === seccionActiva)
+    const siguiente = SECCIONES_INSPECCION[indice + 1]
+    setSeccionActiva(siguiente ? siguiente.id : null)
+    setObservacionBorrador(siguiente ? (observacionesPorSeccion[siguiente.id] || '') : '')
+  }
 
   // ============================================================
   // Modal kilometraje
@@ -438,6 +483,9 @@ export default function InspeccionPage() {
       })
 
       setObservaciones('')
+      setObservacionesPorSeccion({})
+      setSeccionActiva(null)
+      setObservacionBorrador('')
 
       setMostrarModalKm(false)
       setDatosKm(null)
@@ -1105,7 +1153,7 @@ const puedeGuardar =
     todoConforme ||
     (
       algunaNoConforme &&
-      observaciones.trim() !== ''
+      observacionesCompletas
     )
   )
   // ============================================================
@@ -1271,7 +1319,7 @@ const puedeGuardar =
 
           observaciones:
             hayObs
-              ? observaciones.trim()
+              ? observacionesUnificadas.trim()
               : '',
 
           estado_observacion:
@@ -1398,7 +1446,7 @@ const puedeGuardar =
               <li>
                 <b>Observaciones:</b>
                 ${
-                  observaciones.trim() ||
+                  observacionesUnificadas.trim() ||
                   'Sin observaciones'
                 }
               </li>
@@ -1487,7 +1535,7 @@ const puedeGuardar =
                   Observaciones:
                 </strong>
                 <br>
-                ${observaciones.trim()}
+                ${observacionesUnificadas.trim()}
               </p>
 
               <p>
@@ -1723,101 +1771,51 @@ const puedeGuardar =
             SECCIONES
         ==================================================== */}
 
-        {[
-          {
-            id:
-              'revisionExterior',
-            title:
-              'SECCIÓN 1: REVISIÓN EXTERIOR',
-            desc:
-              'Verifique carrocería, faros, llantas, espejos, limpiaparabrisas, etc.',
-          },
-          {
-            id:
-              'motor',
-            title:
-              'SECCIÓN 2: MOTOR',
-            desc:
-              'Verifique niveles de fluidos, fugas, batería, correas, cadena (en motos).',
-          },
-          {
-            id:
-              'interiorFuncionamiento',
-            title:
-              'SECCIÓN 3: INTERIOR Y FUNCIONAMIENTO',
-            desc:
-              'Verifique cinturones, asientos, luces, tablero.',
-          },
-          {
-            id:
-              'equiposPrevencion',
-            title:
-              'SECCIÓN 4: EQUIPOS DE PREVENCIÓN Y SEGURIDAD',
-            desc:
-              'Kit carretera, casco, señalización, banderín.',
-          },
-          {
-            id:
-              'documentos',
-            title:
-              'SECCIÓN 5: DOCUMENTOS',
-            desc:
-              'SOAT, RTM, licencia, tarjeta de servicio, certificado instructor, cédula.',
-          },
-        ].map((section) => (
-          <TarjetaInspeccion key={section.id} titulo={section.title} descripcion={section.desc} estado={secciones[section.id]} disabled={!placaSeleccionada || validandoDocumentos || !documentacionVehiculoValida} onChange={(valor) => handleSeccionChange(section.id, valor)} />
-        ))}
-
-        {/* ====================================================
-            OBSERVACIONES
-        ==================================================== */}
-
-        <div className={`mt-4 rounded-xl border p-3 ${algunaNoConforme ? "border-amber-500 bg-amber-50" : "border-slate-300 bg-slate-50"}`}>
-
-          <label className="block mb-1 font-semibold text-sm">
-            Observaciones
-          </label>
-
-          {algunaNoConforme && (
-            <div className="mb-3 space-y-2" role="status">
-              {Object.entries(GUIAS_NO_CONFORMIDAD).filter(([id]) => secciones[id] === "NO CONFORME").map(([id, guia]) => (
-                <p key={id} className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs leading-relaxed text-amber-900">{guia}</p>
+        <div className="mt-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-[#194567]">Evaluación de la inspección</h2>
+            <span className="text-xs font-semibold text-slate-600">{Object.values(secciones).filter(Boolean).length} de 5 secciones</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {SECCIONES_INSPECCION.map((section) => (
+              <div key={section.id} className={section.numero === 5 ? 'col-span-2' : ''}>
+                <TarjetaInspeccionCompacta
+                  numero={section.numero}
+                  titulo={section.titulo}
+                  descripcion={section.descripcion}
+                  estado={secciones[section.id]}
+                  observacion={observacionesPorSeccion[section.id]}
+                  disabled={!placaSeleccionada || validandoDocumentos || !documentacionVehiculoValida}
+                  onClick={() => abrirSeccion(section.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className={`mt-4 rounded-xl border p-3 ${algunaNoConforme ? 'border-amber-500 bg-amber-50' : 'border-slate-400 bg-slate-50'}`}>
+          <h2 className="text-sm font-bold text-slate-900">Resumen de observaciones</h2>
+          {algunaNoConforme ? (
+            <div className="mt-2 space-y-2">
+              {SECCIONES_INSPECCION.filter((item) => secciones[item.id] === 'NO CONFORME').map((item) => (
+                <div key={item.id} className="rounded-lg border border-amber-300 bg-white p-3">
+                  <p className="text-xs font-bold text-red-800">Sección {item.numero}: {item.titulo}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{observacionesPorSeccion[item.id] || 'Pendiente: registre la observación dentro de la tarjeta.'}</p>
+                  <button type="button" onClick={() => abrirSeccion(item.id)} className="mt-2 text-xs font-semibold text-[#194567] underline">Editar observación</button>
+                </div>
               ))}
             </div>
-          )}
-
-          <textarea
-            rows="3"
-            placeholder={algunaNoConforme ? "Describa la falla o el incumplimiento actual y la sección afectada." : ""}
-            className={`w-full min-h-28 border border-slate-400 p-3 rounded-lg text-base ${
-              !algunaNoConforme
-                ? 'bg-gray-100 cursor-not-allowed'
-                : ''
-            }`}
-            value={
-              observaciones
-            }
-            onChange={(e) =>
-              setObservaciones(
-                e.target.value
-              )
-            }
-            disabled={
-              !algunaNoConforme
-            }
-          />
-
-          {algunaNoConforme &&
-            observaciones
-              .trim() === '' && (
-
-              <p className="text-xs text-red-600 mt-1">
-                Debes ingresar observaciones para las secciones NO CONFORME.
-              </p>
-
-            )}
-
+          ) : <p className="mt-1 text-xs text-slate-600">Sin no conformidades registradas.</p>}
+          {algunaNoConforme && !observacionesCompletas && <p className="mt-2 text-xs font-semibold text-red-700">Debe registrar una observación para cada sección No conforme.</p>}
         </div>
+        <ModalEvaluacionPractica
+          seccion={SECCIONES_INSPECCION.find((item) => item.id === seccionActiva)}
+          estado={secciones[seccionActiva]}
+          observacion={observacionBorrador}
+          onObservacionChange={setObservacionBorrador}
+          onEvaluar={evaluarSeccion}
+          onCerrar={() => setSeccionActiva(null)}
+          guia={GUIAS_NO_CONFORMIDAD[seccionActiva]}
+        />
 
         {/* ====================================================
             MENSAJE GUARDADO
