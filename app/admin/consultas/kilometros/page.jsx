@@ -2798,7 +2798,7 @@ export default function KilometrosPage() {
                 )}
                 {/* CALIDAD */}
 
-                <div className="mt-4 border border-slate-400 rounded-xl overflow-hidden>
+                <div className="mt-4 border border-slate-400 rounded-xl overflow-hidden">
 
                   <div className="bg-slate-800 text-white px-4 py-2 font-semibold text-sm">
                     <i className="fas fa-shield-halved mr-2"></i>
