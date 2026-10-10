@@ -49,11 +49,11 @@ export function TarjetaInspeccion({ titulo, descripcion, estado, disabled, onCha
 
 const ICONOS_INSPECCION = [CarFront, Wrench, Gauge, ShieldCheck, FileText]
 const COLORES_INSPECCION = [
-  'bg-sky-100 text-sky-800 border-sky-300',
-  'bg-amber-100 text-amber-800 border-amber-300',
-  'bg-indigo-100 text-indigo-800 border-indigo-300',
-  'bg-teal-100 text-teal-800 border-teal-300',
-  'bg-violet-100 text-violet-800 border-violet-300',
+  'bg-sky-200 text-sky-900 border-sky-400',
+  'bg-amber-200 text-amber-900 border-amber-400',
+  'bg-indigo-200 text-indigo-900 border-indigo-400',
+  'bg-teal-200 text-teal-900 border-teal-400',
+  'bg-violet-200 text-violet-900 border-violet-400',
 ]
 
 export function TarjetaInspeccionCompacta({ numero, titulo, descripcion, estado, disabled, onClick, observacion }) {
@@ -61,11 +61,13 @@ export function TarjetaInspeccionCompacta({ numero, titulo, descripcion, estado,
   const noConforme = estado === 'NO CONFORME'
   const Icono = ICONOS_INSPECCION[numero - 1] || FileText
   const color = COLORES_INSPECCION[numero - 1] || COLORES_INSPECCION[0]
+  const fondos = ['bg-sky-100 border-sky-400', 'bg-amber-100 border-amber-400', 'bg-indigo-100 border-indigo-400', 'bg-teal-100 border-teal-400', 'bg-violet-100 border-violet-400']
+  const fondo = fondos[numero - 1] || fondos[0]
   return (
     <button type="button" disabled={disabled} onClick={onClick}
-      className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 p-3 text-left shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${conforme ? 'border-emerald-500 bg-emerald-50' : noConforme ? 'border-red-500 bg-red-50' : 'border-slate-400 bg-slate-50'} ${disabled ? 'cursor-not-allowed opacity-55' : 'hover:border-blue-600 active:scale-[0.99]'}`}>
+      className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 p-3 text-left shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${conforme ? 'border-emerald-500 bg-emerald-50' : noConforme ? 'border-red-500 bg-red-100' : fondo} ${disabled ? 'cursor-not-allowed opacity-55' : 'hover:border-blue-600 active:scale-[0.99]'}`}>
       <div className="mb-2 flex w-full items-center justify-between gap-2">
-        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${color}`}><Icono size={20} aria-hidden="true" /></span>
+        <span className={`inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 shadow-sm ${color}`}><Icono size={29} strokeWidth={2.3} aria-hidden="true" /></span>
         {disabled ? <LockKeyhole size={18} className="text-slate-500" /> : conforme ? <CircleCheck size={20} className="text-emerald-700" /> : noConforme ? <TriangleAlert size={20} className="text-red-700" /> : <ChevronRight size={20} className="text-slate-600" />}
       </div>
       <span className="text-[10px] font-bold tracking-wide text-[#194567]">SECCIÓN {numero}</span>
@@ -87,7 +89,7 @@ export function ModalEvaluacionPractica({ seccion, estado, observacion, onObserv
           <div><p className="text-xs font-bold text-[#194567]">SECCIÓN {seccion.numero} DE 5</p><h2 id="titulo-evaluacion-practica" className="mt-1 text-lg font-bold text-slate-900">{seccion.titulo}</h2></div>
           <button type="button" onClick={onCerrar} aria-label="Cerrar evaluación" className="rounded-lg border border-slate-300 p-2 text-slate-700"><X size={20}/></button>
         </div>
-        <p className="mt-3 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700">{seccion.descripcion}</p>
+        <p className="mt-3 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700">{seccion.compromiso || 'Confirmo que he realizado la inspección y que el resultado refleja el estado actual del vehículo.'}</p>
         <p className="mt-4 text-sm font-semibold text-slate-900">Resultado de la verificación</p>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <button type="button" onClick={() => onEvaluar('CONFORME')} className={`flex min-h-14 items-center justify-center gap-2 rounded-xl border px-2 text-sm font-bold ${estado === 'CONFORME' ? 'border-emerald-600 bg-emerald-100 text-emerald-900' : 'border-slate-400 bg-white text-emerald-800'}`}><CircleCheck size={19}/> Conforme</button>
