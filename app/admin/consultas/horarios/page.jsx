@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast, Toaster } from 'sonner'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonAccion, TituloSeccion, MarcoTabla, ESTILO_CONTENEDORES, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
+import { BotonAccion, TituloSeccion, MarcoTabla, ESTILO_CONTENEDORES, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_SECCIONES_SECUNDARIAS } from '@/components/admin/EstiloModulo'
 import { CalendarClock, Eraser, Eye, X, Printer, List, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const ROLES = ['INSTRUCTOR PRÁCTICA', 'INSTRUCTOR TEORÍA', 'AUXILIAR ADMINISTRATIVO']
@@ -100,7 +100,7 @@ export default function ConsultaHorariosPage() {
         const params = new URLSearchParams({
           recurso: 'consulta_general', nit, fecha_inicio: filtros.inicio,
           fecha_fin: filtros.fin, rol: filtros.rol,
-          nombre_completo: filtros.funcionario, estado: filtros.estado,
+          nombre_completo: filtros.funcionario, estado: vista === 'funcionarios' ? '' : filtros.estado,
         })
         const res = await fetch('/api/admin/consultas/horarios?' + params, {
           cache: 'no-store', signal: controller.signal,
@@ -114,7 +114,7 @@ export default function ConsultaHorariosPage() {
     }
     consultar()
     return () => { activo = false; controller.abort() }
-  }, [listo, nit, filtros.inicio, filtros.fin, filtros.rol, filtros.funcionario, filtros.estado])
+  }, [listo, nit, filtros.inicio, filtros.fin, filtros.rol, filtros.funcionario, filtros.estado, vista])
 
   const actualizar = (campo, valor) => setFiltros(p => ({
     ...p, [campo]: valor, ...(campo === 'rol' ? { funcionario: '' } : {}),
@@ -185,7 +185,7 @@ export default function ConsultaHorariosPage() {
               </select>
             </label>
             <label className="min-w-0 text-xs font-medium">Estado
-              <select className={control} value={filtros.estado} onChange={e => actualizar('estado', e.target.value)}>
+              <select className={control} disabled={vista === 'funcionarios'} value={vista === 'funcionarios' ? '' : filtros.estado} onChange={e => actualizar('estado', e.target.value)}>
                 <option value="">Todos los estados</option>
                 {ESTADOS.map(estado => <option key={estado} value={estado}>{estado}</option>)}
               </select>
@@ -215,7 +215,7 @@ export default function ConsultaHorariosPage() {
               <span><strong>Período:</strong> {fechaBonita(filtros.inicio)} al {fechaBonita(filtros.fin)}</span>
               <span><strong>Rol:</strong> {filtros.rol || 'Todos'}</span>
               <span><strong>Funcionario:</strong> {filtros.funcionario || 'Todos'}</span>
-              <span><strong>Estado:</strong> {filtros.estado || 'Todos'}</span>
+              <span><strong>Estado:</strong> {vista === 'funcionarios' ? 'Todos' : (filtros.estado || 'Todos')}</span>
             </div>
             <div className="print-report-resumen">
               <span><strong>{filas.length}</strong> jornadas</span>
@@ -285,20 +285,43 @@ export default function ConsultaHorariosPage() {
             <p className="print-report-footer">DATA CEA · Reporte de consulta · Información obtenida de los registros de horarios.</p>
           </div>
         </section>
-        {detalle && <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40 print:hidden" onClick={() => setDetalle(null)}>
-          <aside role="dialog" aria-modal="true" aria-label="Detalle de jornada" className="h-full w-full max-w-lg overflow-y-auto bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-bold">Detalle de jornada</h2><button aria-label="Cerrar detalle" onClick={() => setDetalle(null)}><X size={22} /></button></div>
-            <div className="space-y-3 text-sm">
-              {[
-                ['Funcionario', detalle.nombre_completo], ['Rol', detalle.rol], ['Usuario', detalle.usuario],
-                ['Fecha entrada', fechaBonita(detalle.fecha_entrada)], ['Hora entrada', hora(detalle.hora_entrada)],
-                ['Fecha salida', fechaBonita(detalle.fecha_salida)], ['Hora salida', hora(detalle.hora_salida)],
-                ['Estado', detalle.estado_registro], ['Placa', detalle.placa],
-                ['Clases programadas', detalle.clases_programadas], ['Clases dictadas', detalle.clases_dictadas],
-                ['Aprendices', detalle.num_aprendices],
-              ].map(([etiqueta, valor]) => <div key={etiqueta} className="flex justify-between gap-3 border-b pb-2"><span className="text-slate-500">{etiqueta}</span><span className="text-right font-medium">{valor ?? '—'}</span></div>)}
+        {detalle && <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 print:hidden" onClick={() => setDetalle(null)}>
+          <aside role="dialog" aria-modal="true" aria-label="Detalle de jornada" className="flex h-full w-full max-w-xl flex-col overflow-hidden bg-slate-50 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-5" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo, color: ESTILO_FRANJA_SUPERIOR_MODAL.texto }}>
+              <div className="flex items-center gap-3">
+                <CalendarClock size={23} />
+                <div><h2 className="text-lg font-bold">Detalle de jornada</h2><p className="text-xs opacity-85">Información registrada · Solo lectura</p></div>
+              </div>
+              <button type="button" aria-label="Cerrar detalle" onClick={() => setDetalle(null)} className="rounded-lg p-2 transition hover:bg-white/15"><X size={22} /></button>
             </div>
-            <p className="mt-6 rounded-lg bg-slate-100 p-3 text-xs text-slate-600">Consulta de solo lectura. Los estados se muestran tal como están registrados en la base de datos.</p>
+            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+              <div className="rounded-xl border bg-white p-4 shadow-sm" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0"><p className="text-xs text-slate-500">Funcionario</p><p className="mt-1 font-bold text-slate-900">{detalle.nombre_completo || '—'}</p><p className="mt-1 text-xs text-slate-600">{detalle.rol || '—'}</p></div>
+                  <span className={`rounded-full border px-3 py-1.5 text-xs font-bold ${claseEstado(detalle.estado_registro)}`}>{detalle.estado_registro || '—'}</span>
+                </div>
+              </div>
+              {[
+                { titulo: 'Registro de jornada', icono: <CalendarClock size={16} />, campos: [
+                  ['Fecha entrada', fechaBonita(detalle.fecha_entrada)], ['Hora entrada', hora(detalle.hora_entrada)],
+                  ['Fecha salida', fechaBonita(detalle.fecha_salida)], ['Hora salida', hora(detalle.hora_salida)],
+                ] },
+                { titulo: 'Información del registro', icono: <Users size={16} />, campos: [
+                  ['Usuario', detalle.usuario], ['Placa', detalle.placa],
+                  ['Clases programadas', detalle.clases_programadas], ['Clases dictadas', detalle.clases_dictadas],
+                  ['Aprendices', detalle.num_aprendices],
+                ] },
+              ].map(grupo => <section key={grupo.titulo} className="overflow-hidden rounded-xl border bg-white shadow-sm" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
+                <div className="flex items-center gap-2 px-4 py-3 text-sm font-bold" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo, color: ESTILO_SECCIONES_SECUNDARIAS.texto }}>{grupo.icono}{grupo.titulo}</div>
+                <div className="divide-y divide-slate-200 px-4">
+                  {grupo.campos.map(([etiqueta, valor]) => <div key={etiqueta} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-start gap-3 py-3 text-sm">
+                    <span className="text-slate-500">{etiqueta}</span><span className="break-words text-right font-semibold text-slate-800">{valor ?? '—'}</span>
+                  </div>)}
+                </div>
+              </section>)}
+              <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600">Los datos y estados se muestran tal como están registrados en la base de datos.</p>
+            </div>
+            <div className="flex shrink-0 justify-end border-t border-slate-200 bg-white px-6 py-4"><BotonAccion tipo="cancelar" onClick={() => setDetalle(null)}><X size={15} /> Cerrar</BotonAccion></div>
           </aside>
         </div>}
       </div>
