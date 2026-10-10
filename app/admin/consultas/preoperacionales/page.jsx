@@ -22,7 +22,7 @@ import { cerrarSesion } from '@/lib/auth/logout'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import ModalResultado from '@/components/admin/ModalResultado'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
-import { ClipboardCheck } from 'lucide-react'
+import { ClipboardCheck, Eraser, FileSpreadsheet, FileText } from 'lucide-react'
 
 // =========================================================
 // CONSTANTES
@@ -244,7 +244,7 @@ export default function PreoperacionalesPage() {
     setFilters,
   ] =
     useState({
-      startDate: '1900-01-01',
+      startDate: hoyBogota(),
 
       endDate: hoyBogota(),
 
@@ -979,7 +979,7 @@ export default function PreoperacionalesPage() {
     () => {
       setFilters({
         startDate:
-          '1900-01-01',
+          hoyBogota(),
 
         endDate:
           hoyBogota(),
@@ -2364,7 +2364,7 @@ export default function PreoperacionalesPage() {
             </div>
 
             <div className="flex justify-end gap-2 lg:col-span-1">
-              <BotonAccion tipo="cancelar" type="button" onClick={handleLimpiar}>Limpiar</BotonAccion>
+              <BotonAccion tipo="limpiar" type="button" onClick={handleLimpiar}><Eraser size={15} aria-hidden="true" /> Limpiar</BotonAccion>
             </div>
 
           </div>
@@ -2728,27 +2728,28 @@ export default function PreoperacionalesPage() {
         }
 
         <div className="mt-6 border border-slate-300 rounded-xl bg-white p-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            <div className="min-w-0 xl:max-w-md">
+              <h3 className="text-sm font-bold text-[#194567]">Reportes de inspecciones preoperacionales</h3>
+              <p className="mt-1 text-xs text-slate-600">Descargue el consolidado mensual en Excel o PDF. Incluye todos los vehículos y estados del período seleccionado, independientemente de los filtros de la tabla.</p>
+            </div>
+            <div className="flex flex-wrap items-end gap-2 sm:gap-3 xl:justify-end">
               <div className="flex flex-col gap-1">
-                <label htmlFor="reporte-anio" className="text-xs font-medium text-slate-700">Año del reporte</label>
-                <select id="reporte-anio" value={reporteAnio} onChange={event => setReporteAnio(event.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm">
+                <label htmlFor="reporte-anio" className="text-xs font-semibold text-slate-700">Año del reporte</label>
+                <select id="reporte-anio" value={reporteAnio} onChange={event => setReporteAnio(event.target.value)} className="h-9 border border-slate-300 rounded-md px-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#24638C]">
                   {aniosReporte.map(anio => <option key={anio} value={anio}>{anio}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
-                <label htmlFor="reporte-mes" className="text-xs font-medium text-slate-700">Mes del reporte</label>
-                <select id="reporte-mes" value={reporteMes} onChange={event => setReporteMes(event.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm">
+                <label htmlFor="reporte-mes" className="text-xs font-semibold text-slate-700">Mes del reporte</label>
+                <select id="reporte-mes" value={reporteMes} onChange={event => setReporteMes(event.target.value)} className="h-9 border border-slate-300 rounded-md px-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#24638C]">
                   {mesesReporte.map((mes, indice) => <option key={mes} value={String(indice + 1)}>{mes}</option>)}
                 </select>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={exportXLSX} className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2"><i className="fas fa-file-excel"></i>Excel</button>
-              <button type="button" onClick={exportPDF} className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2"><i className="fas fa-file-pdf"></i>PDF</button>
+              <BotonAccion tipo="excel" type="button" onClick={exportXLSX} className="h-9"><FileSpreadsheet size={15} aria-hidden="true" /> Excel</BotonAccion>
+              <BotonAccion tipo="pdf" type="button" onClick={exportPDF} className="h-9"><FileText size={15} aria-hidden="true" /> PDF</BotonAccion>
             </div>
           </div>
-          <p className="mt-2 text-xs text-slate-500">Los reportes incluyen todos los estados y vehículos del mes seleccionado, independientemente de los filtros de la tabla.</p>
         </div>
 
       </div>
