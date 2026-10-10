@@ -18,7 +18,7 @@ import {
 } from 'sonner'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonAccion, TituloSeccion, MarcoTabla, ContenedorModulo, ESTILO_SECCIONES, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
+import { BotonAccion, TituloSeccion, MarcoTabla, ContenedorModulo, TarjetaModulo, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { Route, Search, Eraser, FileSpreadsheet, FileText, ShieldCheck, CarFront, ClipboardList, AlertTriangle } from 'lucide-react'
 
 // ============================================================
@@ -306,9 +306,6 @@ function Kpi({
   tipo = 'normal',
   descripcion = '',
 }) {
-  let contenedor =
-    'bg-blue-50 border-blue-200'
-
   let texto =
     'text-[var(--primary-dark)]'
 
@@ -318,9 +315,6 @@ function Kpi({
   if (
     tipo === 'success'
   ) {
-    contenedor =
-      'bg-green-50 border-green-200'
-
     texto =
       'text-green-800'
 
@@ -331,9 +325,6 @@ function Kpi({
   if (
     tipo === 'warning'
   ) {
-    contenedor =
-      'bg-amber-50 border-amber-300'
-
     texto =
       'text-amber-800'
 
@@ -344,9 +335,6 @@ function Kpi({
   if (
     tipo === 'danger'
   ) {
-    contenedor =
-      'bg-red-50 border-red-300'
-
     texto =
       'text-red-800'
 
@@ -355,9 +343,7 @@ function Kpi({
   }
 
   return (
-    <div
-      className={`border rounded-xl p-4 ${contenedor}`}
-    >
+    <TarjetaModulo className="p-4" interactiva={false}>
       <div className="flex items-center gap-3">
 
         <div
@@ -389,7 +375,7 @@ function Kpi({
         </div>
 
       </div>
-    </div>
+    </TarjetaModulo>
   )
 }
 
@@ -2543,19 +2529,15 @@ export default function KilometrosPage() {
           !esTodaFlota &&
           resultadoIndividual && (
 
-            <div className="bg-white border rounded-xl shadow-lg overflow-hidden">
+            <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
 
               {/* IDENTIFICACIÓN */}
-
+              <TituloSeccion titulo="Kilometraje del vehículo" subtitulo="Detalle y calidad de los registros del período" icono={<CarFront size={17} />} className="!rounded-b-none" />
               <div className="border-b p-5" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
                   <div>
-
-                    <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
-                      Kilometraje del Vehículo
-                    </p>
 
                     <h2 className="text-3xl font-black text-[var(--primary)] mt-1">
                       {resultadoIndividual.placa}
