@@ -198,7 +198,7 @@ export default function ConsultaHorariosPage() {
                 <thead className="bg-slate-100 text-slate-700"><tr>
                   {['Fecha', 'Funcionario', 'Rol', 'Entrada', 'Salida', 'Placa', 'Estado', 'Detalle'].map(t => <th key={t} className="whitespace-nowrap border-b border-slate-200 px-3 py-2 font-semibold">{t}</th>)}
                 </tr></thead>
-                <tbody>{(typeof window !== 'undefined' && window.matchMedia?.('print').matches ? filas : visibles).map(j => (
+                <tbody>{visibles.map(j => (
                   <tr key={j.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="whitespace-nowrap px-3 py-2">{fechaBonita(j.fecha_entrada)}</td>
                     <td className="px-3 py-2 font-medium">{j.nombre_completo || '—'}</td>
