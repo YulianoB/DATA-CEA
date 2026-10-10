@@ -1560,7 +1560,7 @@ export default function PreoperacionalesPage() {
 
               fgColor: {
                 argb:
-                  'FF1F2937',
+                  'FF194567',
               },
             }
 
@@ -1719,6 +1719,39 @@ export default function PreoperacionalesPage() {
             )
         }
 
+        // Diseño institucional y configuración de impresión horizontal.
+        headerRow.height = 32
+        ws.autoFilter = { from: 'A1', to: 'O1' }
+        ws.pageSetup = {
+          paperSize: 9,
+          orientation: 'landscape',
+          fitToPage: true,
+          fitToWidth: 1,
+          fitToHeight: 0,
+          repeatRows: '1:1',
+          margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.15, footer: 0.15 },
+        }
+        ws.headerFooter.oddFooter = 'DATA CEA · Inspecciones preoperacionales | Página &P de &N'
+        ws.eachRow((fila, numero) => {
+          if (numero === 1) return
+          fila.eachCell({ includeEmpty: true }, (celda, columna) => {
+            celda.alignment = {
+              vertical: 'middle',
+              horizontal: [8, 9, 12, 14, 15].includes(columna) ? 'left' : 'center',
+              wrapText: true,
+            }
+            celda.border = { bottom: { style: 'hair', color: { argb: 'FFE2E8F0' } } }
+            celda.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: numero % 2 === 0 ? 'FFF1F6FA' : 'FFFFFFFF' },
+            }
+          })
+          const estado = String(fila.getCell(10).value || '').toUpperCase()
+          const color = estado === 'CERRADA' ? 'FF166534' : estado.includes('ANÁLISIS') || estado.includes('ANALISIS') ? 'FF1D4ED8' : estado === 'PENDIENTE' ? 'FFB45309' : 'FF475569'
+          fila.getCell(10).font = { bold: true, color: { argb: color } }
+        })
+
         ws.views = [
           {
             state:
@@ -1856,7 +1889,7 @@ export default function PreoperacionalesPage() {
                   <td>${escaparHtml(row?.km_registro)}</td>
                   <td>${escaparHtml(row?.usuario_encargado)}</td>
                   <td class="left">${escaparHtml(row?.observaciones)}</td>
-                  <td>${escaparHtml(row?.estado_observacion)}</td>
+                  <td class="estado ${String(row?.estado_observacion || '').toUpperCase() === 'CERRADA' ? 'cerrada' : String(row?.estado_observacion || '').toUpperCase().includes('ANÁLISIS') ? 'analisis' : 'pendiente'}">${escaparHtml(row?.estado_observacion)}</td>
                   <td>${escaparHtml(row?.fecha_verificacion_observacion)}</td>
                   <td>${escaparHtml(row?.usuario_verificacion)}</td>
                   <td>${escaparHtml(row?.fecha_solucion_observacion)}</td>
@@ -1881,9 +1914,11 @@ export default function PreoperacionalesPage() {
 
               <style>
                 @page {
-                  size: A4 landscape;
-                  margin: 10mm;
+                  size: A3 landscape;
+                  margin: 11mm 9mm 13mm;
                 }
+                @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+                html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
                 * {
                   box-sizing: border-box;
@@ -1897,30 +1932,37 @@ export default function PreoperacionalesPage() {
                 }
 
                 .header {
-                  text-align: center;
-                  margin-bottom: 10px;
+                  background: #194567;
+                  color: #ffffff;
+                  border-bottom: 4px solid #38bdf8;
+                  padding: 12px 16px;
+                  margin-bottom: 12px;
+                  text-align: left;
                 }
 
                 .header h1 {
                   margin: 0 0 3px;
-                  font-size: 15px;
+                  font-size: 18px;
+                  letter-spacing: .5px;
                 }
 
                 .header h2 {
                   margin: 0 0 3px;
-                  font-size: 11px;
-                  font-weight: normal;
+                  font-size: 12px;
+                  font-weight: bold;
                 }
 
                 .header p {
                   margin: 0;
                   font-size: 9px;
+                  color: #dce6ed;
                 }
 
                 table {
                   width: 100%;
                   border-collapse: collapse;
                   table-layout: fixed;
+                  border: 1px solid #cbd5e1;
                 }
 
                 thead {
@@ -1928,32 +1970,53 @@ export default function PreoperacionalesPage() {
                 }
 
                 tr {
+                  break-inside: avoid;
                   page-break-inside: avoid;
                 }
 
                 th,
                 td {
-                  border: 1px solid #9ca3af;
-                  padding: 3px;
+                  border: 1px solid #d8e2eb;
+                  padding: 5px 4px;
                   vertical-align: middle;
                   text-align: center;
-                  word-wrap: break-word;
+                  overflow-wrap: anywhere;
+                  word-break: normal;
                 }
 
                 th {
-                  background: #1f2937;
+                  background: #24638c;
                   color: white;
                   font-weight: bold;
-                  font-size: 7px;
+                  font-size: 8px;
+                  padding: 7px 4px;
                 }
 
                 td {
-                  font-size: 7px;
+                  font-size: 7.5px;
                 }
 
-                .left {
-                  text-align: left;
-                }
+                tbody tr:nth-child(even) { background: #f1f6fa; }
+                .left { text-align: left; }
+                .estado { font-weight: bold; }
+                .cerrada { color: #166534; }
+                .pendiente { color: #b45309; }
+                .analisis { color: #1d4ed8; }
+                col.c-id { width: 7%; }
+                col.c-fecha { width: 6%; }
+                col.c-hora { width: 5%; }
+                col.c-placa { width: 5%; }
+                col.c-tipo { width: 6%; }
+                col.c-marca { width: 8%; }
+                col.c-km { width: 4%; }
+                col.c-encargado { width: 10%; }
+                col.c-obs { width: 12%; }
+                col.c-estado { width: 6%; }
+                col.c-fver { width: 6%; }
+                col.c-uver { width: 7%; }
+                col.c-fsol { width: 6%; }
+                col.c-usol { width: 7%; }
+                col.c-sol { width: 5%; }
 
                 .footer {
                   margin-top: 8px;
@@ -1976,13 +2039,12 @@ export default function PreoperacionalesPage() {
 
                 <p>
                   Periodo:
-                  ${escaparHtml(filters.startDate)}
-                  a
-                  ${escaparHtml(filters.endDate)}
+                  ${escaparHtml(reporteAnio)}-${escaparHtml(String(reporteMes).padStart(2, '0'))}
                 </p>
               </div>
 
               <table>
+                <colgroup>${['id','fecha','hora','placa','tipo','marca','km','encargado','obs','estado','fver','uver','fsol','usol','sol'].map(k=>`<col class="c-${k}" />`).join('')}</colgroup>
                 <thead>
                   <tr>
                     <th>Consecutivo</th>
@@ -2009,8 +2071,7 @@ export default function PreoperacionalesPage() {
               </table>
 
               <div class="footer">
-                Total registros:
-                ${registros.length}
+                DATA CEA · Total registros: ${registros.length}
               </div>
 
               <script>
