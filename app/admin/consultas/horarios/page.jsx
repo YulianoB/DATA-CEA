@@ -164,30 +164,16 @@ export default function ConsultaHorariosPage() {
           </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 print:grid-cols-4">
-          {[
-            ['Total jornadas', resumen.total ?? '—', 'text-slate-800'],
-            ['No Cerrado', resumen.no_cerradas ?? '—', 'text-rose-700'],
-            ['Abierto', resumen.abiertas ?? '—', 'text-amber-700'],
-            ['Cerrado', resumen.cerradas ?? '—', 'text-emerald-700'],
-          ].map(([titulo, valor, color]) => (
-            <div key={titulo} className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <p className="text-xs text-slate-500">{titulo}</p>
-              <p className={`mt-1 text-2xl font-bold ${color}`}>{valor}</p>
-            </div>
-          ))}
-        </section>
-
         <section className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3 print:border-0">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 print:border-0">
             <div>
-              <h2 className="text-sm font-bold">Registro de jornadas</h2>
-              <p className="text-xs text-slate-500">{fechaBonita(filtros.inicio)} al {fechaBonita(filtros.fin)} · {filas.length} registros{cargando ? ' · Consultando...' : ''}</p>
+              <h2 className="text-sm font-bold text-slate-900">Registro de jornadas</h2>
+              <p className="mt-1 text-xs text-slate-500">{fechaBonita(filtros.inicio)} al {fechaBonita(filtros.fin)} · <span className="font-semibold text-slate-700">{filas.length} registros</span>{cargando ? ' · Consultando...' : ''}</p>
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
-              <button type="button" onClick={() => setVista('jornadas')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${vista === 'jornadas' ? 'bg-blue-800 text-white' : 'bg-slate-100 text-slate-700'}`}>Jornadas</button>
+              <button type="button" onClick={() => setVista('jornadas')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${vista === 'jornadas' ? 'bg-[#12385c] text-white shadow-sm' : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`}>Jornadas</button>
               <button type="button" onClick={() => setVista('funcionarios')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${vista === 'funcionarios' ? 'bg-blue-800 text-white' : 'bg-slate-100 text-slate-700'}`}>Resumen por funcionario</button>
-              <button type="button" onClick={imprimir} disabled={!datos || cargando} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold disabled:opacity-50"><Printer size={14} /> Imprimir</button>
+              <button type="button" onClick={imprimir} disabled={!datos || cargando} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 disabled:opacity-50"><Printer size={14} /> Imprimir</button>
             </div>
           </div>
           {error && <p role="alert" className="m-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
@@ -195,11 +181,11 @@ export default function ConsultaHorariosPage() {
           {vista === 'jornadas' ? (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[850px] border-collapse text-left text-xs">
-                <thead className="bg-slate-100 text-slate-700"><tr>
-                  {['Fecha', 'Funcionario', 'Rol', 'Entrada', 'Salida', 'Placa', 'Estado', 'Detalle'].map(t => <th key={t} className="whitespace-nowrap border-b border-slate-200 px-3 py-2 font-semibold">{t}</th>)}
+                <thead className="bg-[#12385c] text-white"><tr>
+                  {['Fecha', 'Funcionario', 'Rol', 'Entrada', 'Salida', 'Placa', 'Estado', 'Detalle'].map(t => <th key={t} className="whitespace-nowrap border-b border-[#315b7c] px-3 py-3 font-semibold">{t}</th>)}
                 </tr></thead>
                 <tbody>{visibles.map(j => (
-                  <tr key={j.id} className="border-b border-slate-100 hover:bg-slate-50">
+                  <tr key={j.id} className="border-b border-slate-200 odd:bg-white even:bg-slate-50/70 transition-colors hover:bg-blue-50">
                     <td className="whitespace-nowrap px-3 py-2">{fechaBonita(j.fecha_entrada)}</td>
                     <td className="px-3 py-2 font-medium">{j.nombre_completo || '—'}</td>
                     <td className="px-3 py-2">{j.rol || '—'}</td>
@@ -207,7 +193,7 @@ export default function ConsultaHorariosPage() {
                     <td className="px-3 py-2">{hora(j.hora_salida)}</td>
                     <td className="px-3 py-2">{j.placa || '—'}</td>
                     <td className="px-3 py-2"><span className={`whitespace-nowrap rounded-full border px-2 py-1 font-semibold ${claseEstado(j.estado_registro)}`}>{j.estado_registro || '—'}</span></td>
-                    <td className="px-3 py-2 print:hidden"><button type="button" aria-label="Ver detalle" onClick={() => setDetalle(j)} className="rounded-md p-1.5 text-blue-700 hover:bg-blue-50"><Eye size={16} /></button></td>
+                    <td className="px-3 py-2 print:hidden"><button type="button" aria-label="Ver detalle" onClick={() => setDetalle(j)} className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 font-semibold text-blue-800 transition hover:bg-blue-100"><Eye size={15} /> <span>Ver</span></button></td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -215,8 +201,8 @@ export default function ConsultaHorariosPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px] text-left text-xs">
-                <thead className="bg-slate-100"><tr>{['Funcionario', 'Rol', 'Total', 'No Cerrado', 'Abierto', 'Cerrado', '% cierre'].map(t => <th key={t} className="border-b px-3 py-2">{t}</th>)}</tr></thead>
-                <tbody>{(datos?.funcionarios || []).map((f, i) => <tr key={i} className="border-b border-slate-100">
+                <thead className="bg-[#12385c] text-white"><tr>{['Funcionario', 'Rol', 'Total', 'No Cerrado', 'Abierto', 'Cerrado', '% cierre'].map(t => <th key={t} className="border-b border-[#315b7c] px-3 py-3">{t}</th>)}</tr></thead>
+                <tbody>{(datos?.funcionarios || []).map((f, i) => <tr key={i} className="border-b border-slate-200 odd:bg-white even:bg-slate-50/70 hover:bg-blue-50">
                   <td className="px-3 py-2 font-medium">{f.nombre_completo}</td><td className="px-3 py-2">{f.rol}</td>
                   <td className="px-3 py-2">{f.total}</td><td className="px-3 py-2">{f.no_cerradas}</td>
                   <td className="px-3 py-2">{f.abiertas}</td><td className="px-3 py-2">{f.cerradas}</td>
@@ -228,7 +214,7 @@ export default function ConsultaHorariosPage() {
           {vista === 'jornadas' && filas.length > PAGE_SIZE && <div className="flex items-center justify-between border-t px-4 py-3 text-xs print:hidden">
             <span>Página {pagina} de {totalPaginas}</span>
             <div className="flex gap-2">
-              <button disabled={pagina === 1} onClick={() => setPagina(p => p - 1)} className="rounded-lg border px-3 py-1.5 disabled:opacity-40">Anterior</button>
+              <button disabled={pagina === 1} onClick={() => setPagina(p => p - 1)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40">Anterior</button>
               <button disabled={pagina === totalPaginas} onClick={() => setPagina(p => p + 1)} className="rounded-lg border px-3 py-1.5 disabled:opacity-40">Siguiente</button>
             </div>
           </div>}
