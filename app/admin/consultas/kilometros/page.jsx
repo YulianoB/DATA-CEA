@@ -343,7 +343,7 @@ function Kpi({
   }
 
   return (
-    <TarjetaModulo className="p-4" interactiva={false}>
+    <TarjetaModulo className="p-4 !border-slate-400" interactiva={false}>
       <div className="flex items-center gap-3">
 
         <div
@@ -2519,7 +2519,7 @@ export default function KilometrosPage() {
 
               {/* CALIDAD GENERAL */}
 
-              <ContenedorModulo className="overflow-hidden !border-slate-300">
+              <ContenedorModulo className="overflow-hidden !border-slate-400">
                 <TituloSeccion titulo="Calidad de los registros de jornadas y preoperacionales" icono={<ShieldCheck size={17} />} className="!rounded-b-none" />
                 <div className="p-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -2576,7 +2576,7 @@ export default function KilometrosPage() {
                     }
                   />
 
-                  <div className="rounded-xl border border-slate-300 bg-white p-3">
+                  <div className="rounded-xl border border-slate-400 bg-white p-3">
                     <div className="text-xs font-semibold text-slate-600">Jornadas cerradas del período</div>
                     <div className="mt-2 text-xl font-bold text-slate-800">
                       {porcentajeCierre(resumen?.jornadas_cerradas, resumen?.jornadas_no_cerradas, resumen?.jornadas_abiertas) === null ? 'Sin registros' : `${porcentajeCierre(resumen?.jornadas_cerradas, resumen?.jornadas_no_cerradas, resumen?.jornadas_abiertas)}%`}
@@ -2587,7 +2587,7 @@ export default function KilometrosPage() {
                     </div>
                   </div>
                 </div>
-                  <p className="mt-3 text-xs text-slate-600">El porcentaje excluye las jornadas abiertas, que aún pueden estar en curso. No certifica la exactitud del kilometraje.</p>
+                  
                 </div>
               </ContenedorModulo>
 
@@ -2601,15 +2601,15 @@ export default function KilometrosPage() {
           <div className="flex flex-wrap items-end justify-end gap-2">
             <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha inicial
               <input type="date" name="startDate" value={filters.startDate} max={hoyBogota()}
-                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
+                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-3 text-sm text-slate-800" />
             </label>
             <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha final
               <input type="date" name="endDate" value={filters.endDate} max={hoyBogota()}
-                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
+                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-3 text-sm text-slate-800" />
             </label>
             <label className="w-[215px] text-xs font-semibold text-slate-700">Vehículo
               <select name="placa" value={filters.placa} onChange={onFilterChange} disabled={cargandoCatalogo}
-                className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 disabled:bg-slate-100">
+                className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-3 text-sm text-slate-800 disabled:bg-slate-100">
                 <option value="">Toda la flota</option>
                 {vehiculosOrdenados.map(vehiculo => <option key={vehiculo.id || vehiculo.placa} value={vehiculo.placa}>
                   {nombreTipoVehiculo(vehiculo.tipo_vehiculo)} · {vehiculo.placa}{vehiculo.marca ? ` · ${vehiculo.marca}` : ''}
@@ -2658,21 +2658,21 @@ export default function KilometrosPage() {
           !esTodaFlota &&
           resultadoIndividual && (
 
-            <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-slate-400 bg-white shadow-sm">
 
               {/* IDENTIFICACIÓN */}
               <TituloSeccion titulo="Kilometraje del vehículo" subtitulo="Detalle y calidad de los registros del período" icono={<CarFront size={17} />} className="!rounded-b-none" />
-              <div className="border-b p-5" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
+              <div className="border-b px-4 py-3" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
                   <div>
 
-                    <h2 className="text-3xl font-black text-[var(--primary)] mt-1">
+                    <h2 className="text-xl font-black text-[var(--primary)]">
                       {resultadoIndividual.placa}
                     </h2>
 
-                    <p className="text-sm font-semibold text-gray-700 mt-1">
+                    <p className="text-xs font-semibold text-gray-700 mt-0.5">
 
                       {resultadoIndividual
                         ?.vehiculo
@@ -2687,7 +2687,7 @@ export default function KilometrosPage() {
 
                     </p>
 
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-500 mt-1">
                       Período: {formatearFecha(
                         resultado
                           ?.periodo
@@ -2713,7 +2713,7 @@ export default function KilometrosPage() {
                         'MOTOCICLETA'
                           ? 'fa-motorcycle'
                           : 'fa-car'
-                      } text-3xl text-[var(--primary)]`}
+                      } text-xl text-[var(--primary)]`}
                     ></i>
 
                   </div>
@@ -2724,7 +2724,7 @@ export default function KilometrosPage() {
 
               {/* KPIS */}
 
-              <div className="p-5">
+              <div className="p-3">
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 
@@ -2780,14 +2780,14 @@ export default function KilometrosPage() {
 
                 </div>
 
-                <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                <div className="mt-3 rounded-lg border border-slate-400 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                   <span className="font-semibold">KM Horarios:</span>{' '}
                   Confirmados: <strong>{fmtKm(resultadoIndividual?.kilometros?.horarios_confirmados)}</strong>
                   {' · '}Estimados (48 h): <strong>{fmtKm(resultadoIndividual?.kilometros?.horarios_estimados)}</strong>
                   <p className="mt-1 text-xs text-slate-500">Los kilómetros estimados se calculan con la lectura posterior más cercana del mismo vehículo y no equivalen a una medición de cierre.</p>
                 </div>
                 {(resultadoIndividual?.horarios?.detalle_calidad || []).filter(item => item.tipo === 'HORARIO_KM_ESTIMADO').length > 0 && (
-                  <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200">
+                  <div className="mt-3 overflow-x-auto rounded-lg border border-slate-400">
                     <table className="w-full min-w-[680px] border-collapse text-xs">
                       <thead><tr className="bg-cyan-100 text-slate-900">{['Fecha jornada', 'ID jornada', 'KM inicial', 'KM estimados', 'Fuente posterior', 'ID referencia', 'Horas'].map(t => <th key={t} className="border border-slate-300 p-2 text-left">{t}</th>)}</tr></thead>
                       <tbody>{(resultadoIndividual?.horarios?.detalle_calidad || []).filter(item => item.tipo === 'HORARIO_KM_ESTIMADO').map(item => (
@@ -2798,14 +2798,14 @@ export default function KilometrosPage() {
                 )}
                 {/* CALIDAD */}
 
-                <div className="mt-5 border rounded-xl overflow-hidden">
+                <div className="mt-4 border border-slate-400 rounded-xl overflow-hidden>
 
                   <div className="bg-slate-800 text-white px-4 py-2 font-semibold text-sm">
                     <i className="fas fa-shield-halved mr-2"></i>
                     Calidad de los registros
                   </div>
 
-                  <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="p-3 grid grid-cols-2 md:grid-cols-3 gap-3">
 
                     <Kpi
                       titulo="Jornadas Cerradas"
@@ -2841,27 +2841,7 @@ export default function KilometrosPage() {
                       }
                     />
 
-                    <Kpi
-                      titulo="Abiertas"
-                      valor={
-                        resultadoIndividual
-                          ?.horarios
-                          ?.abiertas ||
-                        0
-                      }
-                      icono="fa-clock"
-                      tipo={
-                        Number(
-                          resultadoIndividual
-                            ?.horarios
-                            ?.abiertas ||
-                          0
-                        ) >
-                        0
-                          ? 'warning'
-                          : 'success'
-                      }
-                    />
+
 
                     <Kpi
                       titulo="Inconsistencias KM"
@@ -2973,7 +2953,7 @@ export default function KilometrosPage() {
                       key={
                         grupo.tipo_vehiculo
                       }
-                      className="overflow-hidden rounded-xl border bg-white shadow-sm"
+                      className="overflow-hidden rounded-xl border border-slate-400 bg-white shadow-sm"
                     >
 
                       {/* TIPO */}
@@ -2986,10 +2966,10 @@ export default function KilometrosPage() {
                       />
 
                       <MarcoTabla className="overflow-x-auto !rounded-none !border-0">
-                        <table className="w-full min-w-[920px] border-collapse text-left text-xs">
+                        <table className="w-full min-w-[920px] border-collapse text-center text-xs">
                           <thead>
                             <tr>{['Placa', 'Marca / Línea', 'KM Preoperacionales', 'KM Horarios', 'Diferencia', 'Cerradas', 'No Cerradas', 'Abiertas', '% de jornadas cerradas'].map(titulo =>
-                              <th key={titulo} className="border px-3 py-3 font-semibold" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{titulo}</th>
+                              <th key={titulo} className="border px-3 py-3 text-center font-semibold" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{titulo}</th>
                             )}</tr>
                           </thead>
                           <tbody>
@@ -3002,7 +2982,7 @@ export default function KilometrosPage() {
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.cerradas || 0}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.no_cerradas || 0}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.abiertas || 0}</td>
-                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
+                              <td className="border px-3 py-2 text-left" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
                                 <BarraCierre cerradas={item.horarios?.cerradas} noCerradas={item.horarios?.no_cerradas} abiertas={item.horarios?.abiertas} />
                               </td>
                             </tr>)}
