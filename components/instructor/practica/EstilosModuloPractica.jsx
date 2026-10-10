@@ -48,33 +48,23 @@ export function TarjetaInspeccion({ titulo, descripcion, estado, disabled, onCha
 }
 
 const ICONOS_INSPECCION = [CarFront, Wrench, Gauge, ShieldCheck, FileText]
-const COLORES_INSPECCION = [
-  'bg-sky-200 text-sky-900 border-sky-400',
-  'bg-amber-200 text-amber-900 border-amber-400',
-  'bg-indigo-200 text-indigo-900 border-indigo-400',
-  'bg-teal-200 text-teal-900 border-teal-400',
-  'bg-violet-200 text-violet-900 border-violet-400',
-]
-
 export function TarjetaInspeccionCompacta({ numero, titulo, descripcion, estado, disabled, onClick, observacion }) {
   const conforme = estado === 'CONFORME'
   const noConforme = estado === 'NO CONFORME'
   const Icono = ICONOS_INSPECCION[numero - 1] || FileText
-  const color = COLORES_INSPECCION[numero - 1] || COLORES_INSPECCION[0]
-  const fondos = ['bg-sky-100 border-sky-400', 'bg-amber-100 border-amber-400', 'bg-indigo-100 border-indigo-400', 'bg-teal-100 border-teal-400', 'bg-violet-100 border-violet-400']
-  const fondo = fondos[numero - 1] || fondos[0]
+  const fondo = disabled ? 'bg-slate-200 text-slate-500 border-slate-400' : 'bg-[#194567] text-white border-slate-500'
   return (
     <button type="button" disabled={disabled} onClick={onClick}
-      className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 p-3 text-left shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${conforme ? 'border-emerald-500 bg-emerald-50' : noConforme ? 'border-red-500 bg-red-100' : fondo} ${disabled ? 'cursor-not-allowed opacity-55' : 'hover:border-blue-600 active:scale-[0.99]'}`}>
+      className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 p-3 text-left shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${fondo} ${disabled ? 'cursor-not-allowed' : 'hover:bg-[#123653] active:scale-[0.99]'}`}>
       <div className="mb-2 flex w-full items-center justify-between gap-2">
-        <span className={`inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 shadow-sm ${color}`}><Icono size={29} strokeWidth={2.3} aria-hidden="true" /></span>
-        {disabled ? <LockKeyhole size={18} className="text-slate-500" /> : conforme ? <CircleCheck size={20} className="text-emerald-700" /> : noConforme ? <TriangleAlert size={20} className="text-red-700" /> : <ChevronRight size={20} className="text-slate-600" />}
+        <span className={`inline-flex h-12 w-12 items-center justify-center rounded-xl border border-current/25 ${disabled ? 'bg-slate-300 text-slate-500' : 'bg-white/15 text-white'}`}><Icono size={29} strokeWidth={2.3} aria-hidden="true" /></span>
+        {disabled ? <LockKeyhole size={19} className="text-slate-500" /> : conforme ? <CircleCheck size={22} className="text-emerald-200" /> : noConforme ? <TriangleAlert size={22} className="text-amber-200" /> : <ChevronRight size={22} className="text-white" />}
       </div>
-      <span className="text-[10px] font-bold tracking-wide text-[#194567]">SECCIÓN {numero}</span>
-      <span className="mt-1 text-sm font-bold leading-snug text-slate-900">{titulo}</span>
-      <span className="mt-1 text-xs leading-relaxed text-slate-600">{descripcion}</span>
-      <span className={`mt-auto pt-3 text-xs font-semibold ${conforme ? 'text-emerald-700' : noConforme ? 'text-red-700' : 'text-slate-600'}`}>{disabled ? 'Bloqueada' : conforme ? 'Conforme' : noConforme ? 'No conforme' : 'Tocar para evaluar'}</span>
-      {noConforme && observacion && <span className="mt-1 line-clamp-2 text-xs text-red-800">{observacion}</span>}
+      <span className={`text-[10px] font-bold tracking-wide ${disabled ? 'text-slate-500' : 'text-sky-100'}`}>SECCIÓN {numero}</span>
+      <span className="mt-1 text-sm font-bold leading-snug">{titulo}</span>
+      <span className={`mt-1 text-xs leading-relaxed ${disabled ? 'text-slate-500' : 'text-slate-100'}`}>{descripcion}</span>
+      <span className={`mt-auto pt-3 text-xs font-semibold ${disabled ? 'text-slate-500' : conforme ? 'text-emerald-200' : noConforme ? 'text-amber-200' : 'text-white'}`}>{disabled ? 'Bloqueada' : conforme ? 'Conforme' : noConforme ? 'No conforme' : 'Tocar para evaluar'}</span>
+      {noConforme && observacion && <span className="mt-1 line-clamp-2 text-xs text-slate-100">{observacion}</span>}
     </button>
   )
 }
