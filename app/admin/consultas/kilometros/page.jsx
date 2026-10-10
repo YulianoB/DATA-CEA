@@ -17,9 +17,9 @@ import {
   toast,
 } from 'sonner'
 
-import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonAccion, TituloSeccion, MarcoTabla, ContenedorModulo, ESTILO_SECCIONES, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
+import { Route, Search, Eraser, FileSpreadsheet, FileText, ShieldCheck, CarFront, ClipboardList, AlertTriangle } from 'lucide-react'
 
 // ============================================================
 // CONSTANTES
@@ -2471,262 +2471,45 @@ export default function KilometrosPage() {
             ENCABEZADO
         ================================================== */}
 
-        <div className="bg-white border rounded-xl shadow-lg p-5">
-
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-            <div>
-
-              <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
-                Consultas Administrativas
-              </p>
-
-              <h1 className="text-2xl font-bold text-[var(--primary)] flex items-center gap-2 mt-1">
-
-                <i className="fas fa-road"></i>
-
-                Kilómetros Recorridos
-
-              </h1>
-
-              <p className="text-sm text-gray-600 mt-2">
-                Compare el kilometraje registrado en Preoperacionales frente al kilometraje reportado en las jornadas de práctica.
-              </p>
-
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-
-              <button
-                onClick={() =>
-                  router.push(
-                    '/admin/consultas'
-                  )
-                }
-                className="bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm"
-              >
-                <i className="fas fa-arrow-left mr-2"></i>
-
-                Regresar a Consultas
-              </button>
-
-              <button
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-4 py-2 rounded-lg text-sm"
-              >
-                <i className="fas fa-sign-out-alt mr-2"></i>
-
-                Cerrar Sesión
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
+        <EncabezadoModulo
+          titulo="Kilómetros Recorridos"
+          subtitulo="Comparación del kilometraje registrado en Preoperacionales y Jornadas de práctica"
+          icono={Route}
+          rutaRegreso="/admin/consultas"
+          textoRegreso="Seguimiento Operativo y Consultas"
+        />
 
         {/* ==================================================
             FILTROS
         ================================================== */}
 
-        <div className="bg-[var(--primary-dark)] text-white rounded-xl shadow-sm p-4">
-
-          <div className="flex items-center gap-2 mb-3">
-
-            <i className="fas fa-filter"></i>
-
-            <h2 className="text-sm font-semibold">
-              Filtros de búsqueda
-            </h2>
-
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-
-            <div>
-
-              <label className="block mb-1">
-                Fecha Inicio
-              </label>
-
-              <input
-                type="date"
-                name="startDate"
-                value={
-                  filters.startDate
-                }
-                max={
-                  hoyBogota()
-                }
-                onChange={
-                  onFilterChange
-                }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
-              />
-
-            </div>
-
-            <div>
-
-              <label className="block mb-1">
-                Fecha Fin
-              </label>
-
-              <input
-                type="date"
-                name="endDate"
-                value={
-                  filters.endDate
-                }
-                max={
-                  hoyBogota()
-                }
-                onChange={
-                  onFilterChange
-                }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
-              />
-
-            </div>
-
-            <div>
-
-              <label className="block mb-1">
-                Vehículo
-              </label>
-
-              <select
-                name="placa"
-                value={
-                  filters.placa
-                }
-                onChange={
-                  onFilterChange
-                }
-                disabled={
-                  cargandoCatalogo
-                }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white disabled:bg-gray-100"
-              >
-
-                <option value="">
-                  Toda la flota
-                </option>
-
-                {vehiculosOrdenados.map(
-                  (
-                    vehiculo
-                  ) => (
-
-                    <option
-                      key={
-                        vehiculo.id ||
-                        vehiculo.placa
-                      }
-                      value={
-                        vehiculo.placa
-                      }
-                    >
-                      {nombreTipoVehiculo(
-                        vehiculo.tipo_vehiculo
-                      )}
-                      {' · '}
-                      {vehiculo.placa}
-
-                      {vehiculo.marca
-                        ? ` · ${vehiculo.marca}`
-                        : ''}
-                    </option>
-
-                  )
-                )}
-
+        <ContenedorModulo className="p-4">
+          <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto]">
+            <label className="min-w-0 text-xs font-semibold text-slate-700">Fecha inicial
+              <input type="date" name="startDate" value={filters.startDate} max={hoyBogota()}
+                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
+            </label>
+            <label className="min-w-0 text-xs font-semibold text-slate-700">Fecha final
+              <input type="date" name="endDate" value={filters.endDate} max={hoyBogota()}
+                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
+            </label>
+            <label className="min-w-0 text-xs font-semibold text-slate-700">Vehículo
+              <select name="placa" value={filters.placa} onChange={onFilterChange} disabled={cargandoCatalogo}
+                className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 disabled:bg-slate-100">
+                <option value="">Toda la flota</option>
+                {vehiculosOrdenados.map(vehiculo => <option key={vehiculo.id || vehiculo.placa} value={vehiculo.placa}>
+                  {nombreTipoVehiculo(vehiculo.tipo_vehiculo)} · {vehiculo.placa}{vehiculo.marca ? ` · ${vehiculo.marca}` : ''}
+                </option>)}
               </select>
-
+            </label>
+            <div className="flex items-center gap-2">
+              <BotonAccion tipo="consultar" onClick={consultar} disabled={loading} className="h-10">
+                <Search size={15} /> {loading ? 'Consultando...' : 'Consultar'}
+              </BotonAccion>
+              <BotonAccion tipo="limpiar" onClick={limpiar} className="h-10"><Eraser size={15} /> Limpiar</BotonAccion>
             </div>
-
           </div>
-
-          {/* ACCIONES */}
-
-          <div className="flex flex-wrap justify-center gap-2 mt-4">
-
-            <button
-              onClick={
-                consultar
-              }
-              disabled={
-                loading
-              }
-              className="bg-[var(--primary)] hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-50"
-            >
-              <i className="fas fa-search mr-2"></i>
-
-              {loading
-                ? 'Consultando...'
-                : 'Consultar'}
-            </button>
-
-            <button
-              onClick={
-                limpiar
-              }
-              className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-xs"
-            >
-              <i className="fas fa-eraser mr-2"></i>
-
-              Limpiar
-            </button>
-
-            <button
-              onClick={
-                exportXLSX
-              }
-              disabled={
-                !resultado ||
-                !esTodaFlota ||
-                exporting
-              }
-              title={
-                esTodaFlota
-                  ? 'Exportar toda la flota'
-                  : 'Disponible únicamente para Toda la flota'
-              }
-              className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
-            >
-              <i className="fas fa-file-excel mr-2"></i>
-
-              Excel
-            </button>
-
-            <button
-              onClick={
-                exportPDF
-              }
-              disabled={
-                !resultado ||
-                !esTodaFlota ||
-                exporting
-              }
-              title={
-                esTodaFlota
-                  ? 'Exportar toda la flota'
-                  : 'Disponible únicamente para Toda la flota'
-              }
-              className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
-            >
-              <i className="fas fa-file-pdf mr-2"></i>
-
-              PDF
-            </button>
-
-          </div>
-
-        </div>
+        </ContenedorModulo>
 
         {/* ==================================================
             MENSAJE
@@ -2764,7 +2547,7 @@ export default function KilometrosPage() {
 
               {/* IDENTIFICACIÓN */}
 
-              <div className="bg-gradient-to-r from-blue-50 to-white p-5 border-b">
+              <div className="border-b p-5" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
@@ -3049,6 +2832,15 @@ export default function KilometrosPage() {
           esTodaFlota && (
 
             <>
+
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <BotonAccion tipo="excel" onClick={exportXLSX} disabled={!resultado || exporting} title="Exportar reporte de toda la flota">
+                  <FileSpreadsheet size={15} /> Excel
+                </BotonAccion>
+                <BotonAccion tipo="pdf" onClick={exportPDF} disabled={!resultado || exporting} title="Exportar reporte de toda la flota">
+                  <FileText size={15} /> PDF
+                </BotonAccion>
+              </div>
 
               {/* RESUMEN GENERAL */}
 
