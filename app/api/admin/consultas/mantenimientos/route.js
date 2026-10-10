@@ -377,6 +377,7 @@ function construirConsultaBase({
   fechaFin,
   placa = '',
   tipoMantenimiento = '',
+  placasTipo = null,
   conConteo = true,
 }) {
   let consulta =
@@ -395,6 +396,7 @@ function construirConsultaBase({
       )
 
 
+  if (placasTipo !== null) consulta = consulta.in('placa', placasTipo.length ? placasTipo : ['__SIN_PLACAS__'])
   if (fechaInicio) consulta = consulta.gte('fecha_registro', fechaInicio)
   if (fechaFin) consulta = consulta.lte('fecha_registro', fechaFin)
 
@@ -431,6 +433,7 @@ async function consultarMantenimientos({
   fechaFin,
   placa = '',
   tipoMantenimiento = '',
+  placasTipo = null,
   pagina = 1,
   pageSize = PAGE_SIZE_DEFAULT,
 }) {
@@ -441,6 +444,7 @@ async function consultarMantenimientos({
       fechaFin,
       placa,
       tipoMantenimiento,
+      placasTipo,
       conConteo:
         true,
     })
@@ -517,6 +521,7 @@ async function consultarMantenimientosCompletos({
   fechaFin,
   placa = '',
   tipoMantenimiento = '',
+  placasTipo = null,
 }) {
   try {
     return await consultarTodo(
@@ -528,6 +533,7 @@ async function consultarMantenimientosCompletos({
             fechaFin,
             placa,
             tipoMantenimiento,
+            placasTipo,
             conConteo:
               false,
           })
@@ -906,6 +912,11 @@ export async function GET(request) {
         )
       )
 
+    const tipoVehiculo = normalizarTexto(searchParams.get('tipo_vehiculo'))
+    const placasTipo = tipoVehiculo
+      ? (await obtenerVehiculos(supabase)).filter(v => v.tipo_vehiculo === tipoVehiculo).map(v => v.placa)
+      : null
+
     const errorRango =
       validarRango(
         fechaInicio,
@@ -971,6 +982,7 @@ export async function GET(request) {
             fechaFin,
             placa,
             tipoMantenimiento,
+            placasTipo,
             pagina,
             pageSize,
           }),
@@ -981,6 +993,7 @@ export async function GET(request) {
             fechaFin,
             placa,
             tipoMantenimiento,
+            placasTipo,
           }),
         ])
 
@@ -1072,6 +1085,7 @@ export async function GET(request) {
           fechaFin,
           placa,
           tipoMantenimiento,
+          placasTipo,
         })
 
       const resumen =
