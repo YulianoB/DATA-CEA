@@ -2420,6 +2420,36 @@ export default function KilometrosPage() {
           }
         )
 
+        // Anexo de trazabilidad de kilómetros estimados.
+        const filasEstimadas = (result.vehiculos || []).flatMap(vehiculo =>
+          (vehiculo?.horarios?.detalle_calidad || [])
+            .filter(item => item.tipo === 'HORARIO_KM_ESTIMADO')
+            .map(item => [
+              vehiculo.placa, String(item.id), String(item.fecha || ''),
+              fmt(item.km_inicial), fmt(item.km_estimados),
+              item.fuente_referencia || '', String(item.id_referencia || ''),
+              String(item.horas_transcurridas ?? '—'),
+            ])
+        )
+        if (filasEstimadas.length > 0) {
+          doc.addPage()
+          doc.setFontSize(11)
+          doc.setFont(undefined, 'bold')
+          doc.text('ANEXO - KILOMETROS ESTIMADOS (48 HORAS)', 40, 42)
+          doc.setFont(undefined, 'normal')
+          doc.setFontSize(9)
+          doc.text(`Confirmados: ${fmt(result?.resumen?.km_horarios_confirmados)} km  |  Estimados: ${fmt(result?.resumen?.km_horarios_estimados)} km`, 40, 59)
+          autoTable(doc, {
+            startY: 73,
+            head: [['Placa', 'ID', 'Fecha', 'KM inicial', 'KM estimados', 'Fuente', 'ID ref.', 'Horas']],
+            body: filasEstimadas,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 3 },
+            headStyles: { fillColor: [36, 94, 128], textColor: 255 },
+            margin: { top: 40, bottom: 40, left: 40, right: 40 },
+          })
+        }
+
         doc.save(
           `kilometraje_flota_${filters.startDate}_${filters.endDate}.pdf`
         )
