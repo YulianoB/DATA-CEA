@@ -2623,7 +2623,7 @@ export default function KilometrosPage() {
                       )
                     }
                     icono="fa-clock"
-                    descripcion="Kilómetros de jornadas cerradas con datos válidos."
+                    descripcion="Incluye kilómetros confirmados y estimados mediante lecturas posteriores."
                   />
 
                   <Kpi
@@ -2651,6 +2651,22 @@ export default function KilometrosPage() {
 
                 </div>
 
+                <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  <span className="font-semibold">KM Horarios:</span>{' '}
+                  Confirmados: <strong>{fmtKm(resultadoIndividual?.kilometros?.horarios_confirmados)}</strong>
+                  {' · '}Estimados (48 h): <strong>{fmtKm(resultadoIndividual?.kilometros?.horarios_estimados)}</strong>
+                  <p className="mt-1 text-xs text-slate-500">Los kilómetros estimados se calculan con la lectura posterior más cercana del mismo vehículo y no equivalen a una medición de cierre.</p>
+                </div>
+                {(resultadoIndividual?.calidad?.detalle_calidad || resultadoIndividual?.detalle_calidad || []).filter(item => item.tipo === 'HORARIO_KM_ESTIMADO').length > 0 && (
+                  <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200">
+                    <table className="w-full min-w-[680px] border-collapse text-xs">
+                      <thead><tr className="bg-cyan-100 text-slate-900">{['Fecha jornada', 'ID jornada', 'KM inicial', 'KM estimados', 'Fuente posterior', 'ID referencia', 'Horas'].map(t => <th key={t} className="border border-slate-300 p-2 text-left">{t}</th>)}</tr></thead>
+                      <tbody>{(resultadoIndividual?.calidad?.detalle_calidad || resultadoIndividual?.detalle_calidad || []).filter(item => item.tipo === 'HORARIO_KM_ESTIMADO').map(item => (
+                        <tr key={item.id}><td className="border border-slate-300 p-2">{item.fecha}</td><td className="border border-slate-300 p-2">{item.id}</td><td className="border border-slate-300 p-2">{item.km_inicial}</td><td className="border border-slate-300 p-2">{fmtKm(item.km_estimados)}</td><td className="border border-slate-300 p-2">{item.fuente_referencia}</td><td className="border border-slate-300 p-2">{item.id_referencia}</td><td className="border border-slate-300 p-2">{item.horas_transcurridas ?? '—'}</td></tr>
+                      ))}</tbody>
+                    </table>
+                  </div>
+                )}
                 {/* CALIDAD */}
 
                 <div className="mt-5 border rounded-xl overflow-hidden">
@@ -2875,6 +2891,13 @@ export default function KilometrosPage() {
 
               </div>
 
+              <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                <span className="font-semibold">Desglose de KM Horarios:</span>{' '}
+                Confirmados: <strong>{fmtKm(resumen?.km_horarios_confirmados)}</strong>
+                {' · '}Estimados (48 h): <strong>{fmtKm(resumen?.km_horarios_estimados)}</strong>
+                {' · '}Jornadas estimadas: <strong>{resumen?.jornadas_estimadas || 0}</strong>
+                <p className="mt-1 text-xs text-slate-500">Los valores estimados se basan en lecturas posteriores de Horarios o Preoperacionales.</p>
+              </div>
               {/* CALIDAD GENERAL */}
 
               <ContenedorModulo className="overflow-hidden">
@@ -3014,7 +3037,7 @@ export default function KilometrosPage() {
                               <td className="border px-3 py-2 font-bold" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.placa}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{[item.vehiculo?.marca, item.vehiculo?.linea].filter(Boolean).join(' ') || '—'}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{fmtKm(item.kilometros?.preoperacionales)}</td>
-                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{fmtKm(item.kilometros?.horarios)}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}><div>{fmtKm(item.kilometros?.horarios)}</div>{Number(item.kilometros?.horarios_estimados || 0) > 0 && <div className="mt-1 text-[11px] text-amber-700">Estimados: {fmtKm(item.kilometros?.horarios_estimados)}</div>}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{fmtKm(item.kilometros?.diferencia)}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.cerradas || 0}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.no_cerradas || 0}</td>
