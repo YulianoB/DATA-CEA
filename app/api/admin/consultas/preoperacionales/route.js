@@ -462,6 +462,9 @@ function construirConsultaBase({
   //
   // =====================================================
 
+  if (fechaInicio) consulta = consulta.gte('fecha_registro', fechaInicio)
+  if (fechaFin) consulta = consulta.lte('fecha_registro', fechaFin)
+
   if (
     tipoVehiculo
   ) {
@@ -735,6 +738,9 @@ async function obtenerResumen({
       `)
 
 
+  if (fechaInicio) consulta = consulta.gte('fecha_registro', fechaInicio)
+  if (fechaFin) consulta = consulta.lte('fecha_registro', fechaFin)
+
   if (
     tipoVehiculo
   ) {
@@ -900,19 +906,7 @@ export async function GET(request) {
         request.url
       )
 
-    const recurso =
-      normalizarTexto(
-        searchParams.get(
-          'recurso'
-        )
-      )
-
-  if (fechaInicio) consulta = consulta.gte('fecha_registro', fechaInicio)
-  if (fechaFin) consulta = consulta.lte('fecha_registro', fechaFin)
-
-  if (fechaInicio) consulta = consulta.gte('fecha_registro', fechaInicio)
-  if (fechaFin) consulta = consulta.lte('fecha_registro', fechaFin) ||
-      'vehiculos'
+    const recurso = normalizarTexto(searchParams.get('recurso')) || 'vehiculos'
 
     // =====================================================
     // CATÁLOGO DE VEHÍCULOS
