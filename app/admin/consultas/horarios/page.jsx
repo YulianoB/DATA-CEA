@@ -307,7 +307,7 @@ export default function ConsultaHorariosPage() {
                   ['Fecha salida', fechaBonita(detalle.fecha_salida)], ['Hora salida', hora(detalle.hora_salida)],
                 ] },
                 { titulo: 'Información del registro', icono: <Users size={16} />, campos: [
-                  ['Usuario', detalle.usuario], ['Placa', detalle.placa],
+                  ['Placa', detalle.placa],
                   ['Clases programadas', detalle.clases_programadas], ['Clases dictadas', detalle.clases_dictadas],
                   ['Aprendices', detalle.num_aprendices],
                 ] },
