@@ -187,7 +187,7 @@ export default function ConsultaHorariosPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-xl border bg-white shadow-sm" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
+        <section className="overflow-hidden rounded-xl border bg-white shadow-sm print:overflow-visible print:border-0 print:shadow-none" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
           <div className="print:hidden horario-franja">
             <TituloSeccion
               titulo="Registro de jornadas"
@@ -297,11 +297,11 @@ export default function ConsultaHorariosPage() {
       </div>
       <style jsx global>{`
         .horario-franja > div { border-radius: ${ESTILO_SECCIONES.radio}px ${ESTILO_SECCIONES.radio}px 0 0 !important; }
-        .horario-franja + .print-report-header + .print-report-table { border-radius: 0; }
-        .horario-franja + .print-report-header + .print-report-table table thead th { border-radius: 0 !important; }
         @media print {
           @page { size: A4 landscape; margin: 13mm 12mm 14mm; }
-          html, body { background: #fff !important; }
+          html, body { background: #fff !important; height: auto !important; overflow: visible !important; }
+          .print-report-table, .print-report-table table { overflow: visible !important; }
+          section { break-inside: auto !important; page-break-inside: auto !important; }
           body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
           .print-report-header { padding: 0 0 11px; margin-bottom: 10px; border-bottom: 2px solid ${ESTILO_SECCIONES.fondo}; }
           .print-report-brand { font-size: 12px; font-weight: 800; color: ${ESTILO_SECCIONES.fondo}; letter-spacing: .4px; }
