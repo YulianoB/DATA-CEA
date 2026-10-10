@@ -1775,6 +1775,21 @@ export default function KilometrosPage() {
         ).width =
           12
 
+        // Trazabilidad de estimaciones sin alterar las hojas existentes.
+        const estimaciones = wb.addWorksheet('KM estimados')
+        estimaciones.addRow(['Placa', 'ID jornada', 'Fecha jornada', 'Estado', 'KM inicial', 'KM estimados', 'Fuente posterior', 'ID referencia', 'Horas transcurridas'])
+        for (const vehiculo of result.vehiculos || []) {
+          for (const detalle of vehiculo?.horarios?.detalle_calidad || []) {
+            if (detalle.tipo !== 'HORARIO_KM_ESTIMADO') continue
+            estimaciones.addRow([vehiculo.placa, detalle.id, detalle.fecha, detalle.estado, detalle.km_inicial, detalle.km_estimados, detalle.fuente_referencia, detalle.id_referencia, detalle.horas_transcurridas])
+          }
+        }
+        estimaciones.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+        estimaciones.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF245E80' } }
+        estimaciones.columns.forEach((col) => { col.width = 21 })
+        estimaciones.getColumn(5).numFmt = '#,##0'
+        estimaciones.getColumn(6).numFmt = '#,##0'
+
         // ===================================================
         // HOJA CALIDAD
         // ===================================================
@@ -2657,11 +2672,11 @@ export default function KilometrosPage() {
                   {' · '}Estimados (48 h): <strong>{fmtKm(resultadoIndividual?.kilometros?.horarios_estimados)}</strong>
                   <p className="mt-1 text-xs text-slate-500">Los kilómetros estimados se calculan con la lectura posterior más cercana del mismo vehículo y no equivalen a una medición de cierre.</p>
                 </div>
-                {(resultadoIndividual?.calidad?.detalle_calidad || resultadoIndividual?.detalle_calidad || []).filter(item => item.tipo === 'HORARIO_KM_ESTIMADO').length > 0 && (
+                {(resultadoIndividual?.horarios?.detalle_calidad || []).filter(item => item.tipo === 'HORARIO_KM_ESTIMADO').length > 0 && (
                   <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200">
                     <table className="w-full min-w-[680px] border-collapse text-xs">
                       <thead><tr className="bg-cyan-100 text-slate-900">{['Fecha jornada', 'ID jornada', 'KM inicial', 'KM estimados', 'Fuente posterior', 'ID referencia', 'Horas'].map(t => <th key={t} className="border border-slate-300 p-2 text-left">{t}</th>)}</tr></thead>
-                      <tbody>{(resultadoIndividual?.calidad?.detalle_calidad || resultadoIndividual?.detalle_calidad || []).filter(item => item.tipo === 'HORARIO_KM_ESTIMADO').map(item => (
+                      <tbody>{(resultadoIndividual?.horarios?.detalle_calidad || []).filter(item => item.tipo === 'HORARIO_KM_ESTIMADO').map(item => (
                         <tr key={item.id}><td className="border border-slate-300 p-2">{item.fecha}</td><td className="border border-slate-300 p-2">{item.id}</td><td className="border border-slate-300 p-2">{item.km_inicial}</td><td className="border border-slate-300 p-2">{fmtKm(item.km_estimados)}</td><td className="border border-slate-300 p-2">{item.fuente_referencia}</td><td className="border border-slate-300 p-2">{item.id_referencia}</td><td className="border border-slate-300 p-2">{item.horas_transcurridas ?? '—'}</td></tr>
                       ))}</tbody>
                     </table>
