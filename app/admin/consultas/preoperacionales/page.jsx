@@ -263,6 +263,15 @@ export default function PreoperacionalesPage() {
   const [obsAnalisis, setObsAnalisis] = useState('')
   const campoAnalisisRef = useRef(null)
   const [modalResultado, setModalResultado] = useState({ abierto: false, tipo: 'exito', titulo: '', mensaje: '' })
+  const mostrarAviso = (tipo, mensaje) => {
+    setModalResultado({
+      abierto: true,
+      tipo: 'error',
+      titulo: tipo === 'error' ? 'No fue posible completar la operación' : tipo === 'warning' ? 'Verifique la información' : 'Información',
+      mensaje: String(mensaje || ''),
+    })
+  }
+
   const [reporteAnio, setReporteAnio] = useState(hoyBogota().slice(0, 4))
   const [reporteMes, setReporteMes] = useState(String(Number(hoyBogota().slice(5, 7))))
   const mesesReporte = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -555,7 +564,7 @@ export default function PreoperacionalesPage() {
           []
         )
 
-        toast.error(
+        mostrarAviso('error', 
           error?.message ||
           'No se pudieron cargar los vehículos.'
         )
@@ -692,7 +701,7 @@ export default function PreoperacionalesPage() {
         !startDate ||
         !endDate
       ) {
-        toast.warning(
+        mostrarAviso('warning', 
           'Debe seleccionar Fecha Inicio y Fecha Fin.'
         )
 
@@ -707,7 +716,7 @@ export default function PreoperacionalesPage() {
         endDate <
         startDate
       ) {
-        toast.warning(
+        mostrarAviso('warning', 
           'La fecha final no puede ser anterior a la fecha inicial.'
         )
 
@@ -729,7 +738,7 @@ export default function PreoperacionalesPage() {
         endDate >
           hoy
       ) {
-        toast.warning(
+        mostrarAviso('warning', 
           'No puede seleccionar fechas futuras.'
         )
 
@@ -960,7 +969,7 @@ export default function PreoperacionalesPage() {
           }`
         )
 
-        toast.error(
+        mostrarAviso('error', 
           error?.message ||
           'Error al consultar inspecciones.'
         )
@@ -1171,7 +1180,7 @@ export default function PreoperacionalesPage() {
         estado ===
         ESTADO_CERRADA
       ) {
-        toast.info(
+        mostrarAviso('info', 
           'La observación ya está cerrada.'
         )
 
@@ -1184,7 +1193,7 @@ export default function PreoperacionalesPage() {
         estado ===
           'EN ANÁLISIS'
       ) {
-        toast.info(
+        mostrarAviso('info', 
           'La observación ya está EN ANÁLISIS.'
         )
 
@@ -1192,7 +1201,7 @@ export default function PreoperacionalesPage() {
       }
 
       if (!normalizarTexto(obsAnalisis)) {
-        toast.warning('Describa la verificación y la intervención prevista antes de guardar.')
+        mostrarAviso('warning', 'Describa la verificación y la intervención prevista antes de guardar.')
         return
       }
 
@@ -1263,7 +1272,7 @@ export default function PreoperacionalesPage() {
           error
         )
 
-        toast.error(
+        mostrarAviso('error', 
           error?.message ||
           'No se pudo marcar EN ANÁLISIS.'
         )
@@ -1296,7 +1305,7 @@ export default function PreoperacionalesPage() {
       if (
         !observacion
       ) {
-        toast.warning(
+        mostrarAviso('warning', 
           'Debe ingresar la observación de cierre.'
         )
 
@@ -1313,7 +1322,7 @@ export default function PreoperacionalesPage() {
         estado ===
         ESTADO_CERRADA
       ) {
-        toast.info(
+        mostrarAviso('info', 
           'La observación ya está cerrada.'
         )
 
@@ -1326,7 +1335,7 @@ export default function PreoperacionalesPage() {
         estado !==
           'EN ANÁLISIS'
       ) {
-        toast.warning(
+        mostrarAviso('warning', 
           'Primero debe marcar la observación EN ANÁLISIS.'
         )
 
@@ -1402,7 +1411,7 @@ export default function PreoperacionalesPage() {
           error
         )
 
-        toast.error(
+        mostrarAviso('error', 
           error?.message ||
           'No se pudo cerrar la observación.'
         )
@@ -1420,8 +1429,7 @@ export default function PreoperacionalesPage() {
   const obtenerDatosExportacion =
     async () => {
       if (Number(reporteAnio) > Number(hoyBogota().slice(0, 4)) || (Number(reporteAnio) === Number(hoyBogota().slice(0, 4)) && Number(reporteMes) > Number(hoyBogota().slice(5, 7)))) {
-        toast.warning('No se pueden generar reportes de meses futuros.')
-        return []
+        throw new Error('No se pueden generar reportes de meses futuros.')
       }
 
       const nit =
@@ -1480,7 +1488,7 @@ export default function PreoperacionalesPage() {
           registros.length ===
           0
         ) {
-          toast.info(
+          mostrarAviso('info', 
             'No hay datos para exportar.'
           )
 
@@ -1731,7 +1739,7 @@ export default function PreoperacionalesPage() {
           error
         )
 
-        toast.error(
+        mostrarAviso('error', 
           error?.message ||
           'No fue posible generar el archivo Excel.'
         )
@@ -1786,7 +1794,7 @@ export default function PreoperacionalesPage() {
           registros.length ===
           0
         ) {
-          toast.info(
+          mostrarAviso('info', 
             'No hay datos para exportar.'
           )
 
@@ -1802,7 +1810,7 @@ export default function PreoperacionalesPage() {
         if (
           !win
         ) {
-          toast.warning(
+          mostrarAviso('warning', 
             'Debe permitir las ventanas emergentes para generar el reporte.'
           )
 
@@ -2032,7 +2040,7 @@ export default function PreoperacionalesPage() {
           error
         )
 
-        toast.error(
+        mostrarAviso('error', 
           error?.message ||
           'No fue posible generar el reporte.'
         )
