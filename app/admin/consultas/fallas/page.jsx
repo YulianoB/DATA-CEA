@@ -2224,7 +2224,7 @@ export default function FallasPage() {
           </div>
           <div className="overflow-x-auto border border-slate-300 bg-white">
 
-            <table className="w-full min-w-[1550px] text-[10px] border-collapse [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300">
+            <table className="w-full table-auto text-[11px] border-collapse [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300">
 
               <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
