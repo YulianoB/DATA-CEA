@@ -259,6 +259,7 @@ export default function PreoperacionalesPage() {
     })
 
   const [estadoFiltro, setEstadoFiltro] = useState('PENDIENTE')
+  const [filtrarPorFechas, setFiltrarPorFechas] = useState(false)
   const [pasoSeguimiento, setPasoSeguimiento] = useState(1)
   const [obsAnalisis, setObsAnalisis] = useState('')
   const campoAnalisisRef = useRef(null)
@@ -630,7 +631,7 @@ export default function PreoperacionalesPage() {
     const timeout = setTimeout(() => handleConsultar(1), 250)
     return () => clearTimeout(timeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, filters.startDate, filters.endDate, filters.tipoVehiculo, filters.placa, estadoFiltro])
+  }, [user, filtrarPorFechas, filters.startDate, filters.endDate, filters.tipoVehiculo, filters.placa, estadoFiltro])
 
   // =======================================================
   // FILTROS
@@ -767,7 +768,7 @@ export default function PreoperacionalesPage() {
       }
 
       if (
-        !validarRango()
+        filtrarPorFechas && !validarRango()
       ) {
         return
       }
@@ -801,13 +802,7 @@ export default function PreoperacionalesPage() {
 
             nit,
 
-            fecha_inicio:
-              filters
-                .startDate,
-
-            fecha_fin:
-              filters
-                .endDate,
+            ...(filtrarPorFechas ? { fecha_inicio: filters.startDate, fecha_fin: filters.endDate } : {}),
 
             pagina:
               String(
@@ -1004,6 +999,7 @@ export default function PreoperacionalesPage() {
       })
 
       setEstadoFiltro('PENDIENTE')
+      setFiltrarPorFechas(false)
 
       setData(
         []
@@ -2227,6 +2223,11 @@ export default function PreoperacionalesPage() {
 
         <div className="bg-white border border-slate-300 rounded-xl p-4 mb-4 shadow-sm">
 
+          <label className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-700">
+            <input type="checkbox" checked={filtrarPorFechas} onChange={event => setFiltrarPorFechas(event.target.checked)} className="accent-[#24638C]" />
+            Filtrar por rango de fechas
+            <span className="font-normal text-slate-500">(desactivado: consulta todos los registros según los demás filtros)</span>
+          </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 text-xs items-end">
 
             <div className="flex flex-col gap-1">
@@ -2238,6 +2239,7 @@ export default function PreoperacionalesPage() {
               <input
                 type="date"
                 name="startDate"
+                disabled={!filtrarPorFechas}
                 value={
                   filters.startDate
                 }
@@ -2261,6 +2263,7 @@ export default function PreoperacionalesPage() {
               <input
                 type="date"
                 name="endDate"
+                disabled={!filtrarPorFechas}
                 value={
                   filters.endDate
                 }
