@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { ClipboardCheck, ArrowLeft, LogOut, CircleCheck, TriangleAlert, Save } from 'lucide-react'
+import { ClipboardCheck, ArrowLeft, LogOut, CircleCheck, TriangleAlert, Save, ChevronRight, X, FileText } from 'lucide-react'
 
 export function EncabezadoPractica({ titulo, usuario, cea, onRegresar, onCerrarSesion }) {
   return (
@@ -44,6 +44,54 @@ export function TarjetaInspeccion({ titulo, descripcion, estado, disabled, onCha
         </div>
       </div>
     </section>
+  )
+}
+
+export function TarjetaInspeccionCompacta({ numero, titulo, descripcion, estado, disabled, onClick, observacion }) {
+  const conforme = estado === 'CONFORME'
+  const noConforme = estado === 'NO CONFORME'
+  return (
+    <button type="button" disabled={disabled} onClick={onClick}
+      className={`flex min-h-36 w-full flex-col rounded-xl border p-3 text-left shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${conforme ? 'border-emerald-500 bg-emerald-50/40' : noConforme ? 'border-red-500 bg-red-50/50' : 'border-slate-400 bg-white'} ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:border-blue-600'}`}>
+      <div className="mb-2 flex w-full items-center justify-between gap-2">
+        <span className="text-xs font-bold text-[#194567]">SECCIÓN {numero}</span>
+        {conforme ? <CircleCheck size={20} className="text-emerald-700" /> : noConforme ? <TriangleAlert size={20} className="text-red-700" /> : <ChevronRight size={20} className="text-slate-500" />}
+      </div>
+      <span className="text-sm font-bold leading-snug text-slate-900">{titulo}</span>
+      <span className="mt-1 text-xs leading-relaxed text-slate-600">{descripcion}</span>
+      <span className={`mt-auto pt-3 text-xs font-semibold ${conforme ? 'text-emerald-700' : noConforme ? 'text-red-700' : 'text-slate-600'}`}>{conforme ? 'Conforme' : noConforme ? 'No conforme' : 'Pendiente de evaluar'}</span>
+      {noConforme && observacion && <span className="mt-1 line-clamp-2 text-xs text-red-800">{observacion}</span>}
+    </button>
+  )
+}
+
+export function ModalEvaluacionPractica({ seccion, estado, observacion, onObservacionChange, onEvaluar, onCerrar, guia }) {
+  if (!seccion) return null
+  const requiereObservacion = estado === 'NO CONFORME'
+  return (
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/65 p-2 sm:items-center sm:p-4" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="titulo-evaluacion-practica" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-400 bg-white p-4 shadow-2xl sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div><p className="text-xs font-bold text-[#194567]">SECCIÓN {seccion.numero} DE 5</p><h2 id="titulo-evaluacion-practica" className="mt-1 text-lg font-bold text-slate-900">{seccion.titulo}</h2></div>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar evaluación" className="rounded-lg border border-slate-300 p-2 text-slate-700"><X size={20}/></button>
+        </div>
+        <p className="mt-3 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700">{seccion.descripcion}</p>
+        <p className="mt-4 text-sm font-semibold text-slate-900">Resultado de la verificación</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => onEvaluar('CONFORME')} className={`flex min-h-14 items-center justify-center gap-2 rounded-xl border px-2 text-sm font-bold ${estado === 'CONFORME' ? 'border-emerald-600 bg-emerald-100 text-emerald-900' : 'border-slate-400 bg-white text-emerald-800'}`}><CircleCheck size={19}/> Conforme</button>
+          <button type="button" onClick={() => onEvaluar('NO CONFORME')} className={`flex min-h-14 items-center justify-center gap-2 rounded-xl border px-2 text-sm font-bold ${requiereObservacion ? 'border-red-600 bg-red-100 text-red-900' : 'border-slate-400 bg-white text-red-800'}`}><TriangleAlert size={19}/> No conforme</button>
+        </div>
+        {requiereObservacion && (
+          <div className="mt-4 rounded-xl border border-amber-500 bg-amber-50 p-3">
+            <p className="text-xs leading-relaxed text-amber-950">{guia}</p>
+            <label htmlFor="observacion-seccion-practica" className="mt-3 block text-sm font-semibold text-slate-900">Observación obligatoria de esta sección</label>
+            <textarea id="observacion-seccion-practica" rows={3} value={observacion} onChange={(e) => onObservacionChange(e.target.value)} placeholder="Describa la falla o incumplimiento que existe actualmente." className="mt-1 w-full rounded-lg border border-slate-400 bg-white p-3 text-base text-slate-900" />
+            <button type="button" disabled={!observacion.trim()} onClick={() => onEvaluar('CONFIRMAR_NO_CONFORME')} className="mt-3 min-h-11 w-full rounded-lg bg-[#194567] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400">Confirmar y continuar</button>
+          </div>
+        )}
+        <p className="mt-3 text-center text-xs text-slate-500">Puede regresar a cualquier sección para corregirla antes de guardar.</p>
+      </div>
+    </div>
   )
 }
 
