@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast, Toaster } from 'sonner'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonAccion, TituloSeccion, MarcoTabla, ContenedorModulo, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
-import { CalendarClock, Eraser, Eye, X, Printer, List, Users, ChevronLeft, ChevronRight, Filter, CalendarDays } from 'lucide-react'
+import { BotonAccion, TituloSeccion, MarcoTabla, ContenedorModulo } from '@/components/admin/EstiloModulo'
+import { CalendarClock, Eraser, Eye, X, Printer, List, Users, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
 
 const ROLES = ['INSTRUCTOR PRÁCTICA', 'INSTRUCTOR TEORÍA', 'AUXILIAR ADMINISTRATIVO']
 const ESTADOS = ['No Cerrado', 'Abierto', 'Cerrado']
@@ -230,9 +230,9 @@ export default function ConsultaHorariosPage() {
               </table>
             </MarcoTabla>
           ) : (
-            <div className="overflow-x-auto">
+            <MarcoTabla className="overflow-x-auto rounded-none border-0">
               <table className="w-full min-w-[700px] text-left text-xs">
-                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}><tr>{['Funcionario', 'Rol', 'Total', 'No Cerrado', 'Abierto', 'Cerrado', '% cierre'].map(t => <th key={t} className="border-b px-3 py-3" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{t}</th>)}</tr></thead>
+                <thead><tr>{['Funcionario', 'Rol', 'Total', 'No Cerrado', 'Abierto', 'Cerrado', '% cierre'].map(t => <th key={t} className="border-b px-3 py-3">{t}</th>)}</tr></thead>
                 <tbody>{(datos?.funcionarios || []).map((f, i) => <tr key={i} className="border-b border-slate-200 odd:bg-white even:bg-slate-50/70 hover:bg-blue-50">
                   <td className="px-3 py-2 font-medium">{f.nombre_completo}</td><td className="px-3 py-2">{f.rol}</td>
                   <td className="px-3 py-2">{f.total}</td><td className="px-3 py-2">{f.no_cerradas}</td>
@@ -240,7 +240,7 @@ export default function ConsultaHorariosPage() {
                   <td className="px-3 py-2">{f.porcentaje_cierre}%</td>
                 </tr>)}</tbody>
               </table>
-            </div>
+            </MarcoTabla>
           )}
           {vista === 'jornadas' && filas.length > PAGE_SIZE && <div className="flex items-center justify-between border-t px-4 py-3 text-xs print:hidden">
             <span>Página {pagina} de {totalPaginas}</span>
