@@ -1520,31 +1520,27 @@ export default function PreoperacionalesPage() {
             'Preoperacionales'
           )
 
-        const headers = [
-          'Consecutivo',
-          'Fecha',
-          'Hora',
-          'Placa',
-          'Tipo Vehículo',
-          'Marca',
-          'KM',
-          'Encargado',
-          'Observaciones',
-          'Estado',
-          'F. Verificación',
-          'U. Verifica',
-          'F. Solución',
-          'U. Soluciona',
-          'Obs. Solución',
-        ]
-
-        ws.addRow(
-          headers
-        )
+        const nombreCEA = user?.nombreEmpresa || user?.nombre_empresa || 'CEA'
+        ws.mergeCells('A1:M1')
+        ws.getCell('A1').value = 'INSPECCIONES PREOPERACIONALES'
+        ws.mergeCells('A2:M2')
+        ws.getCell('A2').value = String(nombreCEA)
+        ws.mergeCells('A3:M3')
+        ws.getCell('A3').value = `Período del reporte: ${reporteAnio}-${String(reporteMes).padStart(2, '0')}`
+        for (const fila of [1, 2, 3]) {
+          const celda = ws.getCell(`A${fila}`)
+          celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF194567' } }
+          celda.font = { bold: fila !== 3, size: fila === 1 ? 16 : fila === 2 ? 12 : 10, color: { argb: 'FFFFFFFF' } }
+          celda.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
+          ws.getRow(fila).height = fila === 1 ? 32 : 24
+        }
+        ws.addRow([])
+        const headers = ["Consecutivo","Fecha","Hora","Placa","Tipo Vehículo","Marca","KM","Encargado","Revisión exterior","Motor","Interior y funcionamiento","Equipos de prevención","Documentos"]
+        ws.addRow(headers)
 
         const headerRow =
           ws.getRow(
-            1
+            5
           )
 
         headerRow.eachCell(
@@ -1592,73 +1588,19 @@ export default function PreoperacionalesPage() {
             row
           ) => {
             ws.addRow([
-              row
-                ?.consecutivo ||
-              '',
-
-              row
-                ?.fecha_registro ||
-              '',
-
-              row
-                ?.hora_registro ||
-              '',
-
-              row
-                ?.placa ||
-              '',
-
-              row
-                ?.tipo_vehiculo ||
-              '',
-
-              row
-                ?.marca ||
-              '',
-
-              row
-                ?.km_registro ??
-              '',
-
-              row
-                ?.usuario_encargado ||
-              '',
-
-              normalizarTexto(
-                row
-                  ?.observaciones
-              ).replace(
-                /\r?\n/g,
-                ' '
-              ),
-
-              row
-                ?.estado_observacion ||
-              '',
-
-              row
-                ?.fecha_verificacion_observacion ||
-              '',
-
-              row
-                ?.usuario_verificacion ||
-              '',
-
-              row
-                ?.fecha_solucion_observacion ||
-              '',
-
-              row
-                ?.usuario_solucion ||
-              '',
-
-              normalizarTexto(
-                row
-                  ?.observacion_solucion
-              ).replace(
-                /\r?\n/g,
-                ' '
-              ),
+              row?.consecutivo || '',
+              row?.fecha_registro || '',
+              row?.hora_registro || '',
+              row?.placa || '',
+              row?.tipo_vehiculo || '',
+              row?.marca || '',
+              row?.km_registro ?? '',
+              row?.usuario_encargado || '',
+              row?.revision_exterior || '',
+              row?.motor || '',
+              row?.interior_funcionamiento || '',
+              row?.equipos_prevencion || '',
+              row?.documentos || ''
             ])
           }
         )
@@ -1721,23 +1663,23 @@ export default function PreoperacionalesPage() {
 
         // Diseño institucional y configuración de impresión horizontal.
         headerRow.height = 32
-        ws.autoFilter = { from: 'A1', to: 'O1' }
+        ws.autoFilter = { from: 'A5', to: 'M5' }
         ws.pageSetup = {
           paperSize: 9,
           orientation: 'landscape',
           fitToPage: true,
           fitToWidth: 1,
           fitToHeight: 0,
-          repeatRows: '1:1',
+          repeatRows: '1:5',
           margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.15, footer: 0.15 },
         }
         ws.headerFooter.oddFooter = 'DATA CEA · Inspecciones preoperacionales | Página &P de &N'
         ws.eachRow((fila, numero) => {
-          if (numero === 1) return
+          if (numero <= 5) return
           fila.eachCell({ includeEmpty: true }, (celda, columna) => {
             celda.alignment = {
               vertical: 'middle',
-              horizontal: [8, 9, 12, 14, 15].includes(columna) ? 'left' : 'center',
+              horizontal: [8].includes(columna) ? 'left' : 'center',
               wrapText: true,
             }
             celda.border = { bottom: { style: 'hair', color: { argb: 'FFE2E8F0' } } }
@@ -1747,9 +1689,12 @@ export default function PreoperacionalesPage() {
               fgColor: { argb: numero % 2 === 0 ? 'FFF1F6FA' : 'FFFFFFFF' },
             }
           })
-          const estado = String(fila.getCell(10).value || '').toUpperCase()
-          const color = estado === 'CERRADA' ? 'FF166534' : estado.includes('ANÁLISIS') || estado.includes('ANALISIS') ? 'FF1D4ED8' : estado === 'PENDIENTE' ? 'FFB45309' : 'FF475569'
-          fila.getCell(10).font = { bold: true, color: { argb: color } }
+          for (let columna = 9; columna <= 13; columna++) {
+            const celda = fila.getCell(columna)
+            const valor = String(celda.value || '').toUpperCase().trim()
+            if (valor === 'NO CONFORME') celda.font = { bold: true, color: { argb: 'FFB91C1C' } }
+            else if (valor === 'CONFORME') celda.font = { color: { argb: 'FF166534' } }
+          }
         })
 
         ws.views = [
@@ -1758,7 +1703,7 @@ export default function PreoperacionalesPage() {
               'frozen',
 
             ySplit:
-              1,
+              5,
           },
         ]
 
@@ -1888,13 +1833,11 @@ export default function PreoperacionalesPage() {
                   <td>${escaparHtml(row?.marca)}</td>
                   <td>${escaparHtml(row?.km_registro)}</td>
                   <td>${escaparHtml(row?.usuario_encargado)}</td>
-                  <td class="left">${escaparHtml(row?.observaciones)}</td>
-                  <td class="estado ${String(row?.estado_observacion || '').toUpperCase() === 'CERRADA' ? 'cerrada' : String(row?.estado_observacion || '').toUpperCase().includes('ANÁLISIS') ? 'analisis' : 'pendiente'}">${escaparHtml(row?.estado_observacion)}</td>
-                  <td>${escaparHtml(row?.fecha_verificacion_observacion)}</td>
-                  <td>${escaparHtml(row?.usuario_verificacion)}</td>
-                  <td>${escaparHtml(row?.fecha_solucion_observacion)}</td>
-                  <td>${escaparHtml(row?.usuario_solucion)}</td>
-                  <td class="left">${escaparHtml(row?.observacion_solucion)}</td>
+                  <td class="${String(row?.revision_exterior || '').toUpperCase().trim() === 'NO CONFORME' ? 'no-conforme' : 'conforme'}">${escaparHtml(row?.revision_exterior)}</td>
+                  <td class="${String(row?.motor || '').toUpperCase().trim() === 'NO CONFORME' ? 'no-conforme' : 'conforme'}">${escaparHtml(row?.motor)}</td>
+                  <td class="${String(row?.interior_funcionamiento || '').toUpperCase().trim() === 'NO CONFORME' ? 'no-conforme' : 'conforme'}">${escaparHtml(row?.interior_funcionamiento)}</td>
+                  <td class="${String(row?.equipos_prevencion || '').toUpperCase().trim() === 'NO CONFORME' ? 'no-conforme' : 'conforme'}">${escaparHtml(row?.equipos_prevencion)}</td>
+                  <td class="${String(row?.documentos || '').toUpperCase().trim() === 'NO CONFORME' ? 'no-conforme' : 'conforme'}">${escaparHtml(row?.documentos)}</td>
                 </tr>
               `
             )
@@ -1914,8 +1857,8 @@ export default function PreoperacionalesPage() {
 
               <style>
                 @page {
-                  size: A3 landscape;
-                  margin: 11mm 9mm 13mm;
+                  size: 13in 8.5in;
+                  margin: 14mm 12mm 15mm;
                 }
                 @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
                 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -2010,13 +1953,13 @@ export default function PreoperacionalesPage() {
                 col.c-marca { width: 8%; }
                 col.c-km { width: 4%; }
                 col.c-encargado { width: 10%; }
-                col.c-obs { width: 12%; }
-                col.c-estado { width: 6%; }
-                col.c-fver { width: 6%; }
-                col.c-uver { width: 7%; }
-                col.c-fsol { width: 6%; }
-                col.c-usol { width: 7%; }
-                col.c-sol { width: 5%; }
+                col.c-rev { width: 10%; }
+                col.c-motor { width: 7%; }
+                col.c-interior { width: 11%; }
+                col.c-equipos { width: 10%; }
+                col.c-docs { width: 8%; }
+                .no-conforme { color: #b91c1c; font-weight: bold; background: #fff1f2; }
+                .conforme { color: #166534; }
 
                 .footer {
                   margin-top: 8px;
@@ -2044,7 +1987,7 @@ export default function PreoperacionalesPage() {
               </div>
 
               <table>
-                <colgroup>${['id','fecha','hora','placa','tipo','marca','km','encargado','obs','estado','fver','uver','fsol','usol','sol'].map(k=>`<col class="c-${k}" />`).join('')}</colgroup>
+                <colgroup>${['id','fecha','hora','placa','tipo','marca','km','encargado','rev','motor','interior','equipos','docs'].map(k=>`<col class="c-${k}" />`).join('')}</colgroup>
                 <thead>
                   <tr>
                     <th>Consecutivo</th>
@@ -2055,13 +1998,11 @@ export default function PreoperacionalesPage() {
                     <th>Marca</th>
                     <th>KM</th>
                     <th>Encargado</th>
-                    <th>Observaciones</th>
-                    <th>Estado</th>
-                    <th>F. Verif.</th>
-                    <th>U. Verifica</th>
-                    <th>F. Solución</th>
-                    <th>U. Soluciona</th>
-                    <th>Obs. Solución</th>
+                    <th>Revisión exterior</th>
+                    <th>Motor</th>
+                    <th>Interior y funcionamiento</th>
+                    <th>Equipos de prevención</th>
+                    <th>Documentos</th>
                   </tr>
                 </thead>
 
