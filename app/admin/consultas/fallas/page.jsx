@@ -12,6 +12,8 @@ import {
   useRouter,
 } from 'next/navigation'
 
+import ModalResultado from '@/components/admin/ModalResultado'
+
 import {
   Toaster,
   toast,
@@ -402,6 +404,10 @@ export default function FallasPage() {
     setRowSel,
   ] =
     useState(null)
+
+  const [obsAnalisis, setObsAnalisis] = useState('')
+  const [modalResultado, setModalResultado] = useState({ abierto: false, tipo: 'exito', titulo: '', mensaje: '' })
+  const avisar = (tipo, titulo, mensaje) => setModalResultado({ abierto: true, tipo, titulo, mensaje })
 
   const [
     obsCierre,
@@ -945,6 +951,7 @@ export default function FallasPage() {
         row
       )
 
+      setObsAnalisis(row?.observacion_analisis || '')
       setObsCierre(
         row
           ?.observaciones_seguimiento ||
@@ -1060,9 +1067,11 @@ export default function FallasPage() {
         return
       }
 
-      setChangingState(
-        true
-      )
+      if (!obsAnalisis.trim()) {
+        avisar('error', 'Análisis obligatorio', 'Describa la verificación y las acciones previstas.')
+        return
+      }
+      setChangingState(true)
 
       try {
         const response =
@@ -1087,6 +1096,8 @@ export default function FallasPage() {
 
                   id:
                     rowSel.id,
+                  observacion_analisis: obsAnalisis.trim(),
+                  responsable: user?.nombreCompleto || user?.nombre_completo || user?.usuario || '',
                 }),
             }
           )
@@ -1100,10 +1111,7 @@ export default function FallasPage() {
           result.registro
         )
 
-        toast.success(
-          result?.message ||
-          'Falla marcada EN ANÁLISIS.'
-        )
+        avisar('exito', 'Análisis registrado', result?.message || 'Falla en análisis.')
 
         // Reconsultar para mantener resumen correcto
         await handleConsultar(
@@ -1115,10 +1123,7 @@ export default function FallasPage() {
           error
         )
 
-        toast.error(
-          error?.message ||
-          'No fue posible marcar EN ANÁLISIS.'
-        )
+        avisar('error', 'Error al guardar análisis', error?.message || 'Intente nuevamente.')
       } finally {
         setChangingState(
           false
@@ -1217,10 +1222,7 @@ export default function FallasPage() {
           result.registro
         )
 
-        toast.success(
-          result?.message ||
-          'Falla cerrada correctamente.'
-        )
+        avisar('exito', 'Falla cerrada', result?.message || 'Solución registrada.')
 
         await handleConsultar(
           page
@@ -1231,10 +1233,7 @@ export default function FallasPage() {
           error
         )
 
-        toast.error(
-          error?.message ||
-          'No fue posible cerrar la falla.'
-        )
+        avisar('error', 'Error al cerrar falla', error?.message || 'Intente nuevamente.')
       } finally {
         setClosing(
           false
@@ -2728,6 +2727,8 @@ export default function FallasPage() {
           DRAWER
       ==================================================== */}
 
+      <ModalResultado abierto={modalResultado.abierto} tipo={modalResultado.tipo} titulo={modalResultado.titulo} mensaje={modalResultado.mensaje} onCerrar={() => setModalResultado(prev => ({ ...prev, abierto: false }))} />
+
       {drawerOpen &&
         rowSel && (
 
@@ -2744,7 +2745,7 @@ export default function FallasPage() {
 
             {/* PANEL */}
 
-            <div className="absolute right-0 top-0 h-full w-full sm:w-[580px] bg-white shadow-2xl p-4 overflow-y-auto">
+            <div className="absolute right-0 top-0 h-full w-full sm:w-[680px] lg:w-[740px] bg-white shadow-2xl p-4 overflow-y-auto">
 
               {/* CABECERA */}
 
