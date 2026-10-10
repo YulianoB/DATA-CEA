@@ -349,7 +349,6 @@ export default function MantenimientosPage() {
       tipoVehiculo: '',
     })
 
-  const [periodoInicial] = useState(() => ultimoTrimestreCerrado())
   const [anioExport, setAnioExport] = useState(() => ultimoTrimestreCerrado().anio)
   const [trimestreExport, setTrimestreExport] = useState(() => ultimoTrimestreCerrado().trimestre)
   const periodoExport = useMemo(() => rangoTrimestre(anioExport, trimestreExport), [anioExport, trimestreExport])
@@ -1893,7 +1892,7 @@ const params =
         )
 
         doc.save(
-          `mantenimientos_${filters.startDate}_${filters.endDate}.pdf`
+          `Registro_Mantenimientos_Preventivos_${anioExport}_T${trimestreExport}.pdf`
         )
       } catch (error) {
         console.error(
