@@ -13,6 +13,9 @@ import {
 } from 'next/navigation'
 
 import ModalResultado from '@/components/admin/ModalResultado'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
+import { TriangleAlert, Eraser, Search } from 'lucide-react'
 
 import {
   Toaster,
@@ -2021,85 +2024,19 @@ export default function FallasPage() {
             ENCABEZADO
         ================================================== */}
 
-        <div className="bg-white border rounded-xl shadow-lg p-5">
-
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-            <div>
-
-              <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
-                Consultas Administrativas
-              </p>
-
-              <h1 className="text-2xl font-bold text-[var(--primary)] flex items-center gap-2 mt-1">
-
-                <i className="fas fa-triangle-exclamation"></i>
-
-                Reportes de Fallas
-
-              </h1>
-
-              <p className="text-sm text-gray-600 mt-2">
-                Consulte las fallas reportadas durante la operación y realice seguimiento hasta su solución.
-              </p>
-
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-
-              <button
-                onClick={() =>
-                  router.push(
-                    '/admin/consultas'
-                  )
-                }
-                className="bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm"
-              >
-                <i className="fas fa-arrow-left mr-2"></i>
-
-                Regresar a Consultas
-              </button>
-
-              <button
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-4 py-2 rounded-lg text-sm"
-              >
-                <i className="fas fa-sign-out-alt mr-2"></i>
-
-                Cerrar Sesión
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
+        <EncabezadoModulo titulo="Consulta de Fallas" subtitulo="Seguimiento de fallas reportadas durante la operación hasta su solución" icono={TriangleAlert} rutaRegreso="/admin/consultas" textoRegreso="Seguimiento Operativo y Consultas" />
 
         {/* ==================================================
             FILTROS
         ================================================== */}
 
-        <div className="bg-[var(--primary-dark)] text-white rounded-xl p-4 shadow-sm">
+        <div className="bg-white border border-slate-300 rounded-xl p-4 shadow-sm">
 
-          <div className="flex items-center gap-2 mb-3">
-
-            <i className="fas fa-filter"></i>
-
-            <h2 className="text-sm font-semibold">
-              Filtros de búsqueda
-            </h2>
-
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs items-end">
 
             <div>
 
-              <label className="block mb-1">
+              <label className="block mb-1 font-medium text-slate-700">
                 Fecha Inicio
               </label>
 
@@ -2115,14 +2052,14 @@ export default function FallasPage() {
                 onChange={
                   handleChange
                 }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-800 bg-white"
               />
 
             </div>
 
             <div>
 
-              <label className="block mb-1">
+              <label className="block mb-1 font-medium text-slate-700">
                 Fecha Fin
               </label>
 
@@ -2138,14 +2075,14 @@ export default function FallasPage() {
                 onChange={
                   handleChange
                 }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-800 bg-white"
               />
 
             </div>
 
             <div>
 
-              <label className="block mb-1">
+              <label className="block mb-1 font-medium text-slate-700">
                 Placa
               </label>
 
@@ -2160,7 +2097,7 @@ export default function FallasPage() {
                 disabled={
                   cargandoVehiculos
                 }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white disabled:bg-gray-100"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-800 bg-white disabled:bg-gray-100"
               >
 
                 <option value="">
@@ -2197,7 +2134,7 @@ export default function FallasPage() {
 
             <div>
 
-              <label className="block mb-1">
+              <label className="block mb-1 font-medium text-slate-700">
                 Estado
               </label>
 
@@ -2209,7 +2146,7 @@ export default function FallasPage() {
                 onChange={
                   handleChange
                 }
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 bg-white"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-800 bg-white"
               >
 
                 <option value="">
@@ -2245,67 +2182,13 @@ export default function FallasPage() {
               BOTONES
           ================================================= */}
 
-          <div className="flex flex-wrap justify-center gap-2 mt-4">
-
-            <button
-              onClick={() =>
-                handleConsultar(
-                  1
-                )
-              }
-              disabled={
-                loading
-              }
-              className="bg-[var(--primary)] hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-50"
-            >
-              <i className="fas fa-search mr-2"></i>
-
-              {loading
-                ? 'Consultando...'
-                : 'Consultar'}
-            </button>
-
-            <button
-              onClick={
-                handleLimpiar
-              }
-              className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-xs"
-            >
-              <i className="fas fa-eraser mr-2"></i>
-
-              Limpiar
-            </button>
-
-            <button
-              onClick={
-                exportXLSX
-              }
-              disabled={
-                total === 0 ||
-                exporting
-              }
-              className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
-            >
-              <i className="fas fa-file-excel mr-2"></i>
-
-              Excel
-            </button>
-
-            <button
-              onClick={
-                exportPDF
-              }
-              disabled={
-                total === 0 ||
-                exporting
-              }
-              className="bg-red-600 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-40"
-            >
-              <i className="fas fa-file-pdf mr-2"></i>
-
-              PDF
-            </button>
-
+          <div className="flex flex-wrap justify-end gap-2 mt-4">
+            <BotonAccion tipo="limpiar" type="button" onClick={handleLimpiar}>
+              <Eraser size={15} aria-hidden="true" /> Limpiar
+            </BotonAccion>
+            <BotonAccion tipo="consultar" type="button" onClick={() => handleConsultar(1)} disabled={loading}>
+              <Search size={15} aria-hidden="true" /> {loading ? 'Consultando...' : 'Consultar'}
+            </BotonAccion>
           </div>
 
         </div>
@@ -2335,88 +2218,18 @@ export default function FallasPage() {
         )}
 
         {/* ==================================================
-            RESUMEN
-        ================================================== */}
-
-        {total > 0 && (
-
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-
-            <Kpi
-              titulo="Fallas Reportadas"
-              valor={
-                resumen
-                  ?.total_fallas ||
-                0
-              }
-              icono="fa-triangle-exclamation"
-            />
-
-            <Kpi
-              titulo="Pendientes"
-              valor={
-                resumen
-                  ?.pendientes ||
-                0
-              }
-              icono="fa-clock"
-              tipo={
-                Number(
-                  resumen
-                    ?.pendientes ||
-                  0
-                ) > 0
-                  ? 'warning'
-                  : 'success'
-              }
-            />
-
-            <Kpi
-              titulo="En Análisis"
-              valor={
-                resumen
-                  ?.en_analisis ||
-                0
-              }
-              icono="fa-magnifying-glass"
-            />
-
-            <Kpi
-              titulo="Cerradas"
-              valor={
-                resumen
-                  ?.cerradas ||
-                0
-              }
-              icono="fa-circle-check"
-              tipo="success"
-            />
-
-            <Kpi
-              titulo="Vehículos Afectados"
-              valor={
-                resumen
-                  ?.vehiculos_afectados ||
-                0
-              }
-              icono="fa-car"
-            />
-
-          </div>
-
-        )}
-
-        {/* ==================================================
             TABLA
         ================================================== */}
 
-        <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+        <div className="rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-3 flex items-center gap-2 text-sm font-bold" style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto }}>
+            <TriangleAlert size={16} aria-hidden="true" /> Registros de reportes de fallas
+          </div>
+          <div className="overflow-x-auto border border-slate-300 bg-white">
 
-          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1550px] text-[10px] border-collapse [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300">
 
-            <table className="w-full min-w-[1550px] text-[10px] border-collapse">
-
-              <thead className="bg-slate-800 text-white">
+              <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
 
                 <tr>
 
@@ -2611,7 +2424,7 @@ export default function FallasPage() {
                               `}
                             >
                               {cerrada
-                                ? 'Ver detalle'
+                                ? 'Ver reporte'
                                 : 'Seguimiento'}
                             </button>
 
