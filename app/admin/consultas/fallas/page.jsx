@@ -5,6 +5,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -410,6 +411,13 @@ export default function FallasPage() {
     useState(null)
 
   const [pasoSeguimiento, setPasoSeguimiento] = useState(1)
+  const campoCierreRef = useRef(null)
+
+  useEffect(() => {
+    if (drawerOpen && pasoSeguimiento === 3 && normEstado(rowSel?.estado) === 'EN ANALISIS') {
+      campoCierreRef.current?.focus()
+    }
+  }, [drawerOpen, pasoSeguimiento, rowSel?.estado])
   const [obsAnalisis, setObsAnalisis] = useState('')
   const [modalResultado, setModalResultado] = useState({ abierto: false, tipo: 'exito', titulo: '', mensaje: '' })
   const avisar = (tipo, titulo, mensaje) => setModalResultado({ abierto: true, tipo, titulo, mensaje })
@@ -2575,11 +2583,11 @@ export default function FallasPage() {
               )}
               {!esCerrada && pasoSeguimiento === 3 && (
                 <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
+                  {rowSel?.observacion_analisis && <div className="rounded-lg border-l-4 border-[#24638C] bg-slate-50 p-3 text-xs"><p className="font-bold text-[#194567]">Paso 2 · Análisis registrado</p><p className="whitespace-pre-wrap mt-2 text-slate-700">{rowSel.observacion_analisis}</p><p className="mt-2 text-slate-500">Registrado el {rowSel?.fecha_verificacion || '-'} por {rowSel?.usuario_verificacion || '-'}</p></div>}
                   <h3 className="font-bold text-[#194567]">Paso 3 · Solución y cierre</h3>
-                  <p className="text-xs text-slate-600">Describa las reparaciones o acciones correctivas efectivamente realizadas y cómo se verificó su solución.</p>
-                  {rowSel?.observacion_analisis && <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs"><p className="font-semibold text-[#194567]">Análisis registrado</p><p className="whitespace-pre-wrap mt-1">{rowSel.observacion_analisis}</p></div>}
                   <label htmlFor="cierre-falla" className="block text-xs font-semibold text-slate-700">Descripción de la solución <span className="text-red-600">*</span></label>
-                  <textarea id="cierre-falla" rows={4} value={obsCierre} onChange={e => setObsCierre(e.target.value)} disabled={!esAnalisis || closing || changingState} placeholder="Describa la solución aplicada y las comprobaciones realizadas." className="w-full rounded-lg border border-slate-300 p-3 text-sm disabled:bg-slate-100" />
+                  <textarea ref={campoCierreRef} id="cierre-falla" rows={4} value={obsCierre} onChange={e => setObsCierre(e.target.value)} disabled={!esAnalisis || closing || changingState} placeholder="Ejemplo: Se reemplazó la pieza defectuosa, se verificó el funcionamiento del vehículo y se confirmó que la falla quedó solucionada." className="w-full rounded-lg border-2 border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-200 outline-none p-3 text-sm disabled:bg-slate-100" />
+                  <p className="text-xs text-slate-600">Describa las reparaciones o acciones correctivas efectivamente realizadas, indicando cómo se atendió la falla y cómo se comprobó su solución. No registre aquí acciones que todavía no se hayan ejecutado.</p>
                   {esAnalisis && <BotonAccion tipo="guardar" type="button" disabled={!obsCierre.trim() || closing || changingState} onClick={cerrarFalla}><CheckCircle2 size={15} /> {closing ? 'Guardando...' : 'Guardar solución y cerrar'}</BotonAccion>}
                   {esPendiente && <p className="text-xs text-amber-700">Primero debe guardar el análisis.</p>}
                 </section>
