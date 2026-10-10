@@ -19,7 +19,7 @@ import {
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BotonAccion, TituloSeccion, MarcoTabla, ContenedorModulo, TarjetaModulo, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
-import { Route, Search, Eraser, FileSpreadsheet, FileText, ShieldCheck, CarFront, AlertTriangle } from 'lucide-react'
+import { Route, Eraser, FileSpreadsheet, FileText, ShieldCheck, CarFront, AlertTriangle } from 'lucide-react'
 
 // ============================================================
 // CONSTANTES
@@ -1111,125 +1111,61 @@ export default function KilometrosPage() {
   // CONSULTAR
   // =========================================================
 
-  const consultar =
-    async () => {
-      if (
-        !validarFechas()
-      ) {
-        return
-      }
-
-      if (
-        !nitActual
-      ) {
-        toast.error(
-          'No fue posible identificar la empresa.'
-        )
-
-        return
-      }
-
-      setLoading(
-        true
-      )
-
-      setResultado(
-        null
-      )
-
-      setStatus(
-        'Consultando kilómetros...'
-      )
-
-      try {
-        const params =
-          new URLSearchParams({
-            nit:
-              nitActual,
-
-            recurso:
-              'consulta',
-
-            fecha_inicio:
-              filters.startDate,
-
-            fecha_fin:
-              filters.endDate,
-          })
-
-        if (
-          filters.placa
-        ) {
-          params.set(
-            'placa',
-            filters.placa
-          )
-        }
-
-        const response =
-          await fetch(
-            `/api/admin/consultas/kilometros?${params.toString()}`,
-            {
-              cache:
-                'no-store',
-            }
-          )
-
-        const result =
-          await leerRespuestaApi(
-            response
-          )
-
-        setResultado(
-          result
-        )
-
-        const cantidadVehiculos =
-          Number(
-            result
-              ?.resumen
-              ?.total_vehiculos ||
-            0
-          )
-
-        if (
-          filters.placa
-        ) {
-          setStatus(
-            `Consulta completada para la placa ${filters.placa}.`
-          )
-        } else {
-          setStatus(
-            `Consulta completada. ${cantidadVehiculos} vehículo(s) analizados.`
-          )
-        }
-      } catch (error) {
-        console.error(
-          'Error consultando kilómetros:',
-          error
-        )
-
-        setResultado(
-          null
-        )
-
-        setStatus(
-          `❌ ${
-            error?.message ||
-            'Error al consultar kilómetros.'
-          }`
-        )
-
-        toast.error(
-          error?.message ||
-          'Error al consultar kilómetros.'
-        )
-      } finally {
-        setLoading(
-          false
-        )
-      }
+  // Consulta automática: cancelar solicitudes anteriores para evitar resultados obsoletos.
+  useEffect(() => {
+    const { startDate, endDate, placa } = filters
+    if (!nitActual || !startDate || !endDate) {
+      setLoading(false)
+      setResultado(null)
+      setStatus('')
+      return
     }
+    if (endDate < startDate || startDate > hoyBogota() || endDate > hoyBogota()) {
+      setLoading(false)
+      setResultado(null)
+      setStatus('⚠️ Verifique el rango de fechas seleccionado.')
+      return
+    }
+
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      setLoading(true)
+      setResultado(null)
+      setStatus('Consultando kilómetros...')
+      try {
+        const params = new URLSearchParams({
+          nit: nitActual,
+          recurso: 'consulta',
+          fecha_inicio: startDate,
+          fecha_fin: endDate,
+        })
+        if (placa) params.set('placa', placa)
+        const response = await fetch(
+          `/api/admin/consultas/kilometros?${params.toString()}`,
+          { cache: 'no-store', signal: controller.signal }
+        )
+        const result = await leerRespuestaApi(response)
+        if (controller.signal.aborted) return
+        setResultado(result)
+        setStatus(placa
+          ? `Consulta completada para la placa ${placa}.`
+          : `Consulta completada. ${Number(result?.resumen?.total_vehiculos || 0)} vehículo(s) analizados.`)
+      } catch (error) {
+        if (controller.signal.aborted) return
+        console.error('Error consultando kilómetros:', error)
+        setResultado(null)
+        setStatus(`❌ ${error?.message || 'Error al consultar kilómetros.'}`)
+        toast.error(error?.message || 'Error al consultar kilómetros.')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }, 300)
+
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [nitActual, filters.startDate, filters.endDate, filters.placa])
 
   // =========================================================
   // LIMPIAR
@@ -2534,9 +2470,6 @@ export default function KilometrosPage() {
               </select>
             </label>
             <div className="flex items-center gap-2">
-              <BotonAccion tipo="consultar" onClick={consultar} disabled={loading} className="h-10">
-                <Search size={15} /> {loading ? 'Consultando...' : 'Consultar'}
-              </BotonAccion>
               <BotonAccion tipo="limpiar" onClick={limpiar} className="h-10"><Eraser size={15} /> Limpiar</BotonAccion>
             </div>
           </div>
@@ -2936,13 +2869,6 @@ export default function KilometrosPage() {
 
               </div>
 
-              <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-                <span className="font-semibold">Desglose de KM Horarios:</span>{' '}
-                Confirmados: <strong>{fmtKm(resumen?.km_horarios_confirmados)}</strong>
-                {' · '}Estimados (48 h): <strong>{fmtKm(resumen?.km_horarios_estimados)}</strong>
-                {' · '}Jornadas estimadas: <strong>{resumen?.jornadas_estimadas || 0}</strong>
-                <p className="mt-1 text-xs text-slate-500">Los valores estimados se basan en lecturas posteriores de Horarios o Preoperacionales.</p>
-              </div>
               {/* CALIDAD GENERAL */}
 
               <ContenedorModulo className="overflow-hidden">
@@ -3082,7 +3008,7 @@ export default function KilometrosPage() {
                               <td className="border px-3 py-2 font-bold" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.placa}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{[item.vehiculo?.marca, item.vehiculo?.linea].filter(Boolean).join(' ') || '—'}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{fmtKm(item.kilometros?.preoperacionales)}</td>
-                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}><div>{fmtKm(item.kilometros?.horarios)}</div>{Number(item.kilometros?.horarios_estimados || 0) > 0 && <div className="mt-1 text-[11px] text-amber-700">Estimados: {fmtKm(item.kilometros?.horarios_estimados)}</div>}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{fmtKm(item.kilometros?.horarios)}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{fmtKm(item.kilometros?.diferencia)}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.cerradas || 0}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.no_cerradas || 0}</td>
