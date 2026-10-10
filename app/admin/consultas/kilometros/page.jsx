@@ -791,6 +791,33 @@ export default function KilometrosPage() {
         '',
     })
 
+  const [periodo, setPeriodo] = useState('personalizado')
+  const [anioPeriodo, setAnioPeriodo] = useState(Number(hoyBogota().slice(0, 4)))
+  const [fechasPersonalizadas, setFechasPersonalizadas] = useState({ startDate: '', endDate: '' })
+  const mesesPeriodo = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+  const aplicarPeriodo = (mes, anio) => {
+    setPeriodo(mes)
+    if (mes === 'personalizado') return
+    const numeroMes = Number(mes)
+    const inicio = `${anio}-${String(numeroMes).padStart(2, '0')}-01`
+    const finMes = new Date(Date.UTC(anio, numeroMes, 0)).getUTCDate()
+    const fin = `${anio}-${String(numeroMes).padStart(2, '0')}-${finMes}`
+    const hoy = hoyBogota()
+    setFilters(prev => ({ ...prev, startDate: inicio, endDate: fin > hoy ? hoy : fin }))
+    setResultado(null)
+    setStatus('')
+  }
+  const aplicarFechasPersonalizadas = () => {
+    const { startDate, endDate } = fechasPersonalizadas
+    if (!startDate || !endDate || endDate < startDate || endDate > hoyBogota()) {
+      toast.warning('Seleccione un rango de fechas válido, sin fechas futuras.')
+      return
+    }
+    setFilters(prev => ({ ...prev, startDate, endDate }))
+    setResultado(null)
+    setStatus('')
+  }
+
   // =========================================================
   // CATÁLOGO
   // =========================================================
@@ -1192,6 +1219,8 @@ export default function KilometrosPage() {
 
   const limpiar =
     () => {
+      setPeriodo('personalizado')
+      setFechasPersonalizadas({ startDate: '', endDate: '' })
       setFilters({
         startDate:
           '',
@@ -2599,14 +2628,26 @@ export default function KilometrosPage() {
 
         <div className="flex justify-end">
           <div className="flex flex-wrap items-end justify-end gap-2">
-            <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha inicial
-              <input type="date" name="startDate" value={filters.startDate} max={hoyBogota()}
-                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-3 text-sm text-slate-800" />
+            <label className="w-[155px] text-xs font-semibold text-slate-700">Período
+              <select value={periodo} onChange={event => aplicarPeriodo(event.target.value, anioPeriodo)} className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-2 text-sm text-slate-800">
+                <option value="personalizado">Fecha personalizada</option>
+                {mesesPeriodo.map((mes, indice) => <option key={mes} value={String(indice + 1)}>{mes}</option>)}
+              </select>
             </label>
-            <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha final
-              <input type="date" name="endDate" value={filters.endDate} max={hoyBogota()}
-                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-3 text-sm text-slate-800" />
-            </label>
+            {periodo !== 'personalizado' && <label className="w-[95px] text-xs font-semibold text-slate-700">Año
+              <select value={anioPeriodo} onChange={event => { const anio = Number(event.target.value); setAnioPeriodo(anio); aplicarPeriodo(periodo, anio) }} className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-2 text-sm text-slate-800">
+                {Array.from({ length: 10 }, (_, indice) => Number(hoyBogota().slice(0, 4)) - indice).map(anio => <option key={anio} value={anio}>{anio}</option>)}
+              </select>
+            </label>}
+            {periodo === 'personalizado' && <>
+              <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha inicial
+                <input type="date" value={fechasPersonalizadas.startDate} max={hoyBogota()} onChange={event => setFechasPersonalizadas(prev => ({ ...prev, startDate: event.target.value }))} className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-2 text-sm text-slate-800" />
+              </label>
+              <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha final
+                <input type="date" value={fechasPersonalizadas.endDate} max={hoyBogota()} onChange={event => setFechasPersonalizadas(prev => ({ ...prev, endDate: event.target.value }))} className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-2 text-sm text-slate-800" />
+              </label>
+              <button type="button" onClick={aplicarFechasPersonalizadas} className="h-10 rounded-lg border border-slate-400 bg-slate-700 px-3 text-xs font-semibold text-white hover:bg-slate-800">Aplicar fechas</button>
+            </>}
             <label className="w-[215px] text-xs font-semibold text-slate-700">Vehículo
               <select name="placa" value={filters.placa} onChange={onFilterChange} disabled={cargandoCatalogo}
                 className="mt-1 block h-10 w-full rounded-lg border border-slate-400 bg-white px-3 text-sm text-slate-800 disabled:bg-slate-100">
