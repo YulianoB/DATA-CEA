@@ -917,6 +917,33 @@ export async function GET(request) {
       ? (await obtenerVehiculos(supabase)).filter(v => v.tipo_vehiculo === tipoVehiculo).map(v => v.placa)
       : null
 
+    const vistaUltimoPreventivo = searchParams.get('vista') === 'ultimo_preventivo_activos'
+    const obtenerUltimosPreventivosActivos = async () => {
+      const activos = (await obtenerVehiculos(supabase))
+        .filter(v => normalizarMayusculas(v.estado) === 'ACTIVO')
+      const placasActivas = new Set(activos.map(v => v.placa))
+      if (!placasActivas.size) return []
+      const preventivos = await consultarMantenimientosCompletos({
+        supabase,
+        fechaInicio: '',
+        fechaFin: '',
+        tipoMantenimiento: TIPO_PREVENTIVO,
+      })
+      const ultimos = new Map()
+      for (const registro of preventivos) {
+        const placaRegistro = normalizarMayusculas(registro.placa)
+        if (!placasActivas.has(placaRegistro)) continue
+        const anterior = ultimos.get(placaRegistro)
+        if (!anterior || String(registro.fecha_registro || '') > String(anterior.fecha_registro || '') ||
+            (String(registro.fecha_registro || '') === String(anterior.fecha_registro || '') && Number(registro.id || 0) > Number(anterior.id || 0))) {
+          ultimos.set(placaRegistro, registro)
+        }
+      }
+      return [...ultimos.values()].sort((a,b) =>
+        String(b.fecha_registro || '').localeCompare(String(a.fecha_registro || '')) ||
+        String(a.placa || '').localeCompare(String(b.placa || ''), 'es'))
+    }
+
     const errorRango =
       validarRango(
         fechaInicio,
@@ -970,6 +997,19 @@ export async function GET(request) {
           pageSizeSolicitado,
           PAGE_SIZE_MAX
         )
+
+      if (vistaUltimoPreventivo) {
+        const registros = await obtenerUltimosPreventivosActivos()
+        const total = registros.length
+        const resumen = construirResumen(registros)
+        return NextResponse.json({
+          status: 'success',
+          registros: registros.slice((pagina - 1) * pageSize, pagina * pageSize),
+          paginacion: { pagina, page_size: pageSize, total, total_paginas: Math.max(1, Math.ceil(total / pageSize)) },
+          resumen,
+          resumen_por_vehiculo: construirResumenPorVehiculo(registros),
+        })
+      }
 
       const [
         consulta,
@@ -1078,6 +1118,20 @@ export async function GET(request) {
       recurso ===
       'exportar'
     ) {
+      if (vistaUltimoPreventivo) {
+        const registros = await obtenerUltimosPreventivosActivos()
+        return NextResponse.json({
+          status: 'success',
+          registros,
+          total: registros.length,
+          resumen: construirResumen(registros),
+          resumen_por_vehiculo: construirResumenPorVehiculo(registros),
+          periodo: { desde: '', hasta: '' },
+          filtros: { placa: '', tipo_mantenimiento: TIPO_PREVENTIVO },
+          empresa: { nit: empresa?.nit || '', nombre: empresa?.nombre || empresa?.nombre_empresa || empresa?.razon_social || '' },
+        })
+      }
+
       const registros =
         await consultarMantenimientosCompletos({
           supabase,
