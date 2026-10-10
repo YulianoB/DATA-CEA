@@ -2091,7 +2091,7 @@ export default function PreoperacionalesPage() {
 
         {
           (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 mt-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4 mt-5">
 
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
                 <div className="text-xl font-bold text-slate-700">
@@ -2109,6 +2109,7 @@ export default function PreoperacionalesPage() {
                 </div>
               </div>
 
+              {(estadoFiltro === 'TODOS') && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
                 <div className="text-xl font-bold text-red-700">
                   {
@@ -2124,7 +2125,9 @@ export default function PreoperacionalesPage() {
                   No conformes
                 </div>
               </div>
+              )}
 
+              {(estadoFiltro === 'TODOS' || estadoFiltro === 'PENDIENTE') && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
                 <div className="text-xl font-bold text-amber-700">
                   {
@@ -2140,7 +2143,9 @@ export default function PreoperacionalesPage() {
                   Pendientes
                 </div>
               </div>
+              )}
 
+              {(estadoFiltro === 'TODOS' || estadoFiltro === 'EN ANÁLISIS') && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
                 <div className="text-xl font-bold text-blue-700">
                   {
@@ -2156,7 +2161,9 @@ export default function PreoperacionalesPage() {
                   En análisis
                 </div>
               </div>
+              )}
 
+              {(estadoFiltro === 'TODOS' || estadoFiltro === 'CERRADA') && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
                 <div className="text-xl font-bold text-green-700">
                   {
@@ -2172,7 +2179,9 @@ export default function PreoperacionalesPage() {
                   Cerradas
                 </div>
               </div>
+              )}
 
+              {(estadoFiltro === 'TODOS') && (
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
                 <div className="text-xl font-bold text-purple-700">
                   {
@@ -2188,6 +2197,7 @@ export default function PreoperacionalesPage() {
                   Con observación
                 </div>
               </div>
+              )}
 
             </div>
           )
