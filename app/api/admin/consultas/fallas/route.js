@@ -37,6 +37,8 @@ const SELECT_FALLA = `
   acciones_tomadas,
   estado,
   observaciones_seguimiento,
+  observacion_analisis,
+  usuario_verificacion,
   fecha_verificacion,
   fecha_solucion,
   usuario_soluciona
@@ -1227,8 +1229,14 @@ export async function PATCH(
         )
       }
 
-      const fecha =
-        hoyBogota()
+      const observacionAnalisis = normalizarTexto(body?.observacion_analisis)
+      if (!observacionAnalisis) {
+        return NextResponse.json({ status: 'failed', message: 'Describa la verificación y las acciones previstas antes de guardar el análisis.' }, { status: 400 })
+      }
+      if (!responsable) {
+        return NextResponse.json({ status: 'failed', message: 'No fue posible identificar al responsable del análisis.' }, { status: 400 })
+      }
+      const fecha = hoyBogota()
 
       const {
         data,
@@ -1239,11 +1247,10 @@ export async function PATCH(
             'reporte_fallas'
           )
           .update({
-            estado:
-              ESTADO_ANALISIS,
-
-            fecha_verificacion:
-              fecha,
+            estado: ESTADO_ANALISIS,
+            fecha_verificacion: fecha,
+            usuario_verificacion: responsable,
+            observacion_analisis: observacionAnalisis,
           })
           .eq(
             'id',
@@ -1381,6 +1388,10 @@ export async function PATCH(
 
       const fecha =
         hoyBogota()
+
+      if (!responsable) {
+        return NextResponse.json({ status: 'failed', message: 'No fue posible identificar al responsable del cierre.' }, { status: 400 })
+      }
 
       const payload = {
         estado:
