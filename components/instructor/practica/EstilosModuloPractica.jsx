@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { ClipboardCheck, ArrowLeft, LogOut, CircleCheck, TriangleAlert, Save, ChevronRight, X, FileText } from 'lucide-react'
+import { ClipboardCheck, ArrowLeft, LogOut, CircleCheck, TriangleAlert, Save, ChevronRight, X, FileText, CarFront, Wrench, Gauge, ShieldCheck, LockKeyhole } from 'lucide-react'
 
 export function EncabezadoPractica({ titulo, usuario, cea, onRegresar, onCerrarSesion }) {
   return (
@@ -47,19 +47,31 @@ export function TarjetaInspeccion({ titulo, descripcion, estado, disabled, onCha
   )
 }
 
+const ICONOS_INSPECCION = [CarFront, Wrench, Gauge, ShieldCheck, FileText]
+const COLORES_INSPECCION = [
+  'bg-sky-100 text-sky-800 border-sky-300',
+  'bg-amber-100 text-amber-800 border-amber-300',
+  'bg-indigo-100 text-indigo-800 border-indigo-300',
+  'bg-teal-100 text-teal-800 border-teal-300',
+  'bg-violet-100 text-violet-800 border-violet-300',
+]
+
 export function TarjetaInspeccionCompacta({ numero, titulo, descripcion, estado, disabled, onClick, observacion }) {
   const conforme = estado === 'CONFORME'
   const noConforme = estado === 'NO CONFORME'
+  const Icono = ICONOS_INSPECCION[numero - 1] || FileText
+  const color = COLORES_INSPECCION[numero - 1] || COLORES_INSPECCION[0]
   return (
     <button type="button" disabled={disabled} onClick={onClick}
-      className={`flex min-h-36 w-full flex-col rounded-xl border p-3 text-left shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${conforme ? 'border-emerald-500 bg-emerald-50/40' : noConforme ? 'border-red-500 bg-red-50/50' : 'border-slate-400 bg-white'} ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:border-blue-600'}`}>
+      className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 p-3 text-left shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${conforme ? 'border-emerald-500 bg-emerald-50' : noConforme ? 'border-red-500 bg-red-50' : 'border-slate-400 bg-slate-50'} ${disabled ? 'cursor-not-allowed opacity-55' : 'hover:border-blue-600 active:scale-[0.99]'}`}>
       <div className="mb-2 flex w-full items-center justify-between gap-2">
-        <span className="text-xs font-bold text-[#194567]">SECCIÓN {numero}</span>
-        {conforme ? <CircleCheck size={20} className="text-emerald-700" /> : noConforme ? <TriangleAlert size={20} className="text-red-700" /> : <ChevronRight size={20} className="text-slate-500" />}
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${color}`}><Icono size={20} aria-hidden="true" /></span>
+        {disabled ? <LockKeyhole size={18} className="text-slate-500" /> : conforme ? <CircleCheck size={20} className="text-emerald-700" /> : noConforme ? <TriangleAlert size={20} className="text-red-700" /> : <ChevronRight size={20} className="text-slate-600" />}
       </div>
-      <span className="text-sm font-bold leading-snug text-slate-900">{titulo}</span>
+      <span className="text-[10px] font-bold tracking-wide text-[#194567]">SECCIÓN {numero}</span>
+      <span className="mt-1 text-sm font-bold leading-snug text-slate-900">{titulo}</span>
       <span className="mt-1 text-xs leading-relaxed text-slate-600">{descripcion}</span>
-      <span className={`mt-auto pt-3 text-xs font-semibold ${conforme ? 'text-emerald-700' : noConforme ? 'text-red-700' : 'text-slate-600'}`}>{conforme ? 'Conforme' : noConforme ? 'No conforme' : 'Pendiente de evaluar'}</span>
+      <span className={`mt-auto pt-3 text-xs font-semibold ${conforme ? 'text-emerald-700' : noConforme ? 'text-red-700' : 'text-slate-600'}`}>{disabled ? 'Bloqueada' : conforme ? 'Conforme' : noConforme ? 'No conforme' : 'Tocar para evaluar'}</span>
       {noConforme && observacion && <span className="mt-1 line-clamp-2 text-xs text-red-800">{observacion}</span>}
     </button>
   )
@@ -69,7 +81,7 @@ export function ModalEvaluacionPractica({ seccion, estado, observacion, onObserv
   if (!seccion) return null
   const requiereObservacion = estado === 'NO CONFORME'
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/65 p-2 sm:items-center sm:p-4" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
       <div role="dialog" aria-modal="true" aria-labelledby="titulo-evaluacion-practica" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-400 bg-white p-4 shadow-2xl sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div><p className="text-xs font-bold text-[#194567]">SECCIÓN {seccion.numero} DE 5</p><h2 id="titulo-evaluacion-practica" className="mt-1 text-lg font-bold text-slate-900">{seccion.titulo}</h2></div>
@@ -86,7 +98,7 @@ export function ModalEvaluacionPractica({ seccion, estado, observacion, onObserv
             <p className="text-xs leading-relaxed text-amber-950">{guia}</p>
             <label htmlFor="observacion-seccion-practica" className="mt-3 block text-sm font-semibold text-slate-900">Observación obligatoria de esta sección</label>
             <textarea id="observacion-seccion-practica" rows={3} value={observacion} onChange={(e) => onObservacionChange(e.target.value)} placeholder="Describa la falla o incumplimiento que existe actualmente." className="mt-1 w-full rounded-lg border border-slate-400 bg-white p-3 text-base text-slate-900" />
-            <button type="button" disabled={!observacion.trim()} onClick={() => onEvaluar('CONFIRMAR_NO_CONFORME')} className="mt-3 min-h-11 w-full rounded-lg bg-[#194567] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400">Confirmar y continuar</button>
+            <button type="button" disabled={!observacion.trim()} onClick={() => onEvaluar('CONFIRMAR_NO_CONFORME')} className="mt-3 min-h-11 w-full rounded-lg bg-[#194567] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400">Confirmar y cerrar</button>
           </div>
         )}
         <p className="mt-3 text-center text-xs text-slate-500">Puede regresar a cualquier sección para corregirla antes de guardar.</p>
