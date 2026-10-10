@@ -282,6 +282,26 @@ function Kpi({
   )
 }
 
+function rangoTrimestre(anio, trimestre) {
+  const year = Number(anio)
+  const quarter = Number(trimestre)
+  const inicio = (quarter - 1) * 3 + 1
+  const fin = quarter * 3
+  const ultimoDia = new Date(Date.UTC(year, fin, 0)).getUTCDate()
+  return {
+    desde: `${year}-${String(inicio).padStart(2, '0')}-01`,
+    hasta: `${year}-${String(fin).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`,
+    nombre: ['I', 'II', 'III', 'IV'][quarter - 1] + ' trimestre',
+  }
+}
+
+function ultimoTrimestreCerrado() {
+  const hoy = hoyBogota()
+  const anio = Number(hoy.slice(0, 4))
+  const trimestre = Math.ceil(Number(hoy.slice(5, 7)) / 3)
+  return trimestre === 1 ? { anio: anio - 1, trimestre: 4 } : { anio, trimestre: trimestre - 1 }
+}
+
 // =========================================================
 // PÁGINA
 // =========================================================
@@ -328,6 +348,15 @@ export default function MantenimientosPage() {
         '',
       tipoVehiculo: '',
     })
+
+  const [periodoInicial] = useState(() => ultimoTrimestreCerrado())
+  const [anioExport, setAnioExport] = useState(() => ultimoTrimestreCerrado().anio)
+  const [trimestreExport, setTrimestreExport] = useState(() => ultimoTrimestreCerrado().trimestre)
+  const periodoExport = useMemo(() => rangoTrimestre(anioExport, trimestreExport), [anioExport, trimestreExport])
+  const aniosDisponibles = useMemo(() => {
+    const actual = Number(hoyBogota().slice(0, 4))
+    return Array.from({length: Math.max(1, actual - 2024 + 1)}, (_, i) => actual - i)
+  }, [])
 
   const [detalle, setDetalle] = useState(null)
 
@@ -979,13 +1008,7 @@ export default function MantenimientosPage() {
 
   const obtenerDatosExportacion =
     async () => {
-      if (
-        !validarRango()
-      ) {
-        return null
-      }
-
-      const params =
+const params =
         new URLSearchParams({
           nit:
             nitActual,
@@ -994,35 +1017,12 @@ export default function MantenimientosPage() {
             'exportar',
 
           fecha_inicio:
-            filters
-              .startDate,
+            periodoExport.desde,
 
           fecha_fin:
-            filters
-              .endDate,
+            periodoExport.hasta,
+          tipo_mantenimiento: 'PREVENTIVO',
         })
-
-      if (filters.tipoVehiculo) params.set('tipo_vehiculo', filters.tipoVehiculo)
-
-      if (
-        filters.placa
-      ) {
-        params.set(
-          'placa',
-          filters.placa
-        )
-      }
-
-      if (
-        filters
-          .tipoMantenimiento
-      ) {
-        params.set(
-          'tipo_mantenimiento',
-          filters
-            .tipoMantenimiento
-        )
-      }
 
       const response =
         await fetch(
@@ -1044,13 +1044,6 @@ export default function MantenimientosPage() {
 
   const exportXLSX =
     async () => {
-      if (
-        total ===
-        0
-      ) {
-        return
-      }
-
       setExporting(
         true
       )
@@ -1122,7 +1115,7 @@ export default function MantenimientosPage() {
         // =================================================
 
         ws.addRow([
-          'REPORTE DE MANTENIMIENTOS',
+          'EVIDENCIA TRIMESTRAL · REGISTRO DE MANTENIMIENTOS PREVENTIVOS',
         ])
 
         ws.mergeCells(
@@ -1175,7 +1168,7 @@ export default function MantenimientosPage() {
         )
 
         ws.addRow([
-          `Período: ${filters.startDate} a ${filters.endDate}`,
+          `Período: ${periodoExport.desde} a ${periodoExport.hasta}`,
         ])
 
         ws.mergeCells(
@@ -1461,7 +1454,7 @@ export default function MantenimientosPage() {
 
         saveAs(
           blob,
-          `mantenimientos_${filters.startDate}_${filters.endDate}.xlsx`
+          `Registro_Mantenimientos_Preventivos_${anioExport}_T${trimestreExport}.xlsx`
         )
       } catch (error) {
         console.error(
@@ -1486,13 +1479,6 @@ export default function MantenimientosPage() {
 
   const exportPDF =
     async () => {
-      if (
-        total ===
-        0
-      ) {
-        return
-      }
-
       setExporting(
         true
       )
@@ -1870,7 +1856,7 @@ export default function MantenimientosPage() {
                 )
 
                 doc.text(
-                  'REPORTE DE MANTENIMIENTOS',
+                  'EVIDENCIA TRIMESTRAL · REGISTRO DE MANTENIMIENTOS PREVENTIVOS',
                   margin,
                   28
                 )
@@ -1898,7 +1884,7 @@ export default function MantenimientosPage() {
                 )
 
                 doc.text(
-                  `Período: ${filters.startDate} a ${filters.endDate}`,
+                  `Período: ${periodoExport.desde} a ${periodoExport.hasta}`,
                   margin,
                   56
                 )
@@ -1991,7 +1977,6 @@ export default function MantenimientosPage() {
         )}
 
         <section className="rounded-xl border border-slate-300 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 text-sm font-bold" style={{backgroundColor: ESTILO_SECCIONES.fondo,color: ESTILO_SECCIONES.texto}}><Wrench size={16} /> Mantenimientos registrados</div>
           <div className="overflow-x-auto">
             <table className="w-full table-auto text-[11px] border-collapse [&_th]:border [&_th]:border-slate-300 [&_td]:border [&_td]:border-slate-300">
               <thead style={{backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}}><tr>{['Fecha','Placa','KM','Tipo','Actividad realizada','Costo total','Acción'].map(t => <th key={t} className="p-2">{t}</th>)}</tr></thead>
@@ -2012,11 +1997,6 @@ export default function MantenimientosPage() {
             </table>
           </div>
         </section>
-        <section className="rounded-xl border border-slate-300 bg-white shadow-sm overflow-hidden">
-          <div className="px-4 py-3 text-sm font-bold flex items-center gap-2" style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto}}><FileText size={16} /> Reportes de mantenimientos</div>
-          <div className="p-4 flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-600">Exportar el historial según los filtros de consulta seleccionados.</p><div className="flex gap-2"><BotonAccion tipo="excel" type="button" onClick={exportXLSX} disabled={!total || exporting}><FileSpreadsheet size={15} /> Excel</BotonAccion><BotonAccion tipo="pdf" type="button" onClick={exportPDF} disabled={!total || exporting}><FileText size={15} /> PDF</BotonAccion></div></div>
-        </section>
-
         {/* ==================================================
             PAGINACIÓN
         ================================================== */}
@@ -2097,6 +2077,20 @@ export default function MantenimientosPage() {
 
         )}
 
+        <section className="bg-white border border-slate-400 rounded-2xl shadow-sm p-4 sm:p-5">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+            <div className="max-w-2xl">
+              <h2 className="font-black text-gray-900 flex items-center gap-2"><FileSpreadsheet size={18} className="text-green-700" /> Evidencia trimestral · Registro de Mantenimientos preventivos</h2>
+              <p className="text-xs text-gray-500 mt-1 leading-relaxed">Descargue los mantenimientos preventivos registrados durante el año y trimestre seleccionados. Este período es independiente de los filtros de la tabla.</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-[120px_170px_auto] gap-2 w-full lg:w-auto">
+              <label className="block"><span className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Año</span><select value={anioExport} onChange={e => setAnioExport(Number(e.target.value))} className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm bg-white">{aniosDisponibles.map(a => <option key={a} value={a}>{a}</option>)}</select></label>
+              <label className="block"><span className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Trimestre</span><select value={trimestreExport} onChange={e => setTrimestreExport(Number(e.target.value))} className="w-full border border-slate-400 rounded-lg px-3 py-2 text-sm bg-white">{[1,2,3,4].map(t => <option key={t} value={t}>{['I','II','III','IV'][t-1]} trimestre</option>)}</select></label>
+              <div className="col-span-2 sm:col-span-1 flex items-end gap-2"><BotonAccion tipo="excel" type="button" onClick={exportXLSX} disabled={exporting}><FileSpreadsheet size={15} /> Excel</BotonAccion><BotonAccion tipo="pdf" type="button" onClick={exportPDF} disabled={exporting}><FileText size={15} /> PDF</BotonAccion></div>
+            </div>
+          </div>
+          <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-600"><strong>Período:</strong> {periodoExport.desde} al {periodoExport.hasta}. Los archivos corresponden únicamente a los mantenimientos preventivos registrados en este trimestre.</div>
+        </section>
       {detalle && <div className="fixed inset-0 z-50 flex justify-end">
         <div className="absolute inset-0 bg-black/50" onClick={() => setDetalle(null)} />
         <aside className="relative h-full w-full sm:w-[680px] lg:w-[740px] bg-slate-50 shadow-2xl overflow-y-auto">
