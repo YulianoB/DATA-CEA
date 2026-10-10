@@ -979,6 +979,8 @@ function procesarHorarios(
           km_estimados: estimado,
           fuente_referencia: siguiente.fuente,
           id_referencia: siguiente.id,
+          fecha_hora_referencia: new Date(siguiente.instante).toISOString(),
+          horas_transcurridas: Math.round((siguiente.instante - inicio) / 36000) / 100,
         })
         continue
       }
@@ -1862,6 +1864,8 @@ function agruparResultadosPorTipo(
 
             km_horarios:
               totalHorarios,
+            km_horarios_confirmados: vehiculos.reduce((sum, item) => sum + Number(item?.kilometros?.horarios_confirmados || 0), 0),
+            km_horarios_estimados: vehiculos.reduce((sum, item) => sum + Number(item?.kilometros?.horarios_estimados || 0), 0),
 
             diferencia:
               totalPreop -
@@ -2039,6 +2043,9 @@ function construirResumenGeneral(
 
     km_horarios:
       kmHorarios,
+    km_horarios_confirmados: resultados.reduce((sum, item) => sum + Number(item?.kilometros?.horarios_confirmados || 0), 0),
+    km_horarios_estimados: resultados.reduce((sum, item) => sum + Number(item?.kilometros?.horarios_estimados || 0), 0),
+    jornadas_estimadas: resultados.reduce((sum, item) => sum + Number(item?.horarios?.estimadas || 0), 0),
 
     diferencia:
       kmPreoperacionales -
