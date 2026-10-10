@@ -729,7 +729,9 @@ export default function MantenimientosPage() {
               ),
           })
 
-        if (filters.tipoVehiculo) params.set('tipo_vehiculo', filters.tipoVehiculo)
+        if (!filters.startDate && !filters.endDate && !filters.placa && !filters.tipoMantenimiento && !filters.tipoVehiculo) params.set('vista', 'ultimo_preventivo_activos')
+        if (!filters.startDate && !filters.endDate && !filters.placa && !filters.tipoMantenimiento && !filters.tipoVehiculo) params.set('vista', 'ultimo_preventivo_activos')
+      if (filters.tipoVehiculo) params.set('tipo_vehiculo', filters.tipoVehiculo)
 
         if (
           filters.placa
@@ -1952,9 +1954,8 @@ export default function MantenimientosPage() {
 
       <div className="max-w-7xl mx-auto space-y-4">
 
-        <EncabezadoModulo titulo="Consulta de Mantenimientos" subtitulo="Historial de mantenimientos preventivos y correctivos de vehículos y flota" icono={Wrench} rutaRegreso="/admin/consultas" textoRegreso="Seguimiento Operativo y Consultas" />
+        <EncabezadoModulo titulo="Consulta de Mantenimientos" subtitulo="Último mantenimiento preventivo de vehículos activos y consulta histórica de toda la flota" icono={Wrench} rutaRegreso="/admin/consultas" textoRegreso="Seguimiento Operativo y Consultas" />
         <section className="rounded-xl border border-slate-300 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 text-sm font-bold" style={{backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto}}><Wrench size={16} /> Filtros de búsqueda</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 p-4 text-xs items-end">
             <label className="block">Fecha inicio<input type="date" name="startDate" value={filters.startDate} max={hoyBogota()} onChange={handleChange} className="mt-1 w-full px-2 py-2 rounded-lg border border-slate-300 bg-white" /></label>
             <label className="block">Fecha fin<input type="date" name="endDate" value={filters.endDate} max={hoyBogota()} onChange={handleChange} className="mt-1 w-full px-2 py-2 rounded-lg border border-slate-300 bg-white" /></label>
