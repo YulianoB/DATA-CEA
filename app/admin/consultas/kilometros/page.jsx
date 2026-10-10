@@ -733,6 +733,25 @@ function TarjetaVehiculo({
 // PÁGINA
 // ============================================================
 
+function porcentajeCierre(cerradas, noCerradas, abiertas) {
+  const total = Number(cerradas || 0) + Number(noCerradas || 0) + Number(abiertas || 0)
+  if (total === 0) return null
+  return Math.round((Number(cerradas || 0) / total) * 100)
+}
+
+function BarraCierre({ cerradas, noCerradas, abiertas }) {
+  const porcentaje = porcentajeCierre(cerradas, noCerradas, abiertas)
+  if (porcentaje === null) return <span className="text-slate-500">Sin registros</span>
+  return (
+    <div className="min-w-[120px]" title={`${cerradas || 0} jornadas cerradas de ${Number(cerradas || 0) + Number(noCerradas || 0) + Number(abiertas || 0)} registradas`}>
+      <div className="mb-1 text-xs font-semibold text-slate-800">{porcentaje}% cerradas</div>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+        <div className="h-full rounded-full bg-emerald-600" style={{ width: `${porcentaje}%` }} />
+      </div>
+    </div>
+  )
+}
+
 export default function KilometrosPage() {
   const router =
     useRouter()
@@ -2576,34 +2595,22 @@ export default function KilometrosPage() {
                     }
                   />
 
-                  <Kpi
-                    titulo="Vehículos con registros por revisar"
-                    valor={
-                      resumen
-                        ?.vehiculos_con_alertas ||
-                      0
-                    }
-                    icono="fa-car-burst"
-                    tipo={
-                      Number(
-                        resumen
-                          ?.vehiculos_con_alertas ||
-                        0
-                      ) >
-                      0
-                        ? 'warning'
-                        : 'success'
-                    }
-                  />
-
+                  <div className="rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="text-xs font-semibold text-slate-600">Jornadas cerradas del período</div>
+                    <div className="mt-2 text-xl font-bold text-slate-800">
+                      {porcentajeCierre(resumen?.jornadas_cerradas, resumen?.jornadas_no_cerradas, resumen?.jornadas_abiertas) === null ? 'Sin registros' : `${porcentajeCierre(resumen?.jornadas_cerradas, resumen?.jornadas_no_cerradas, resumen?.jornadas_abiertas)}%`}
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">Cerradas / total de jornadas</p>
+                  </div>
                 </div>
-                  <p className="mt-3 text-xs text-slate-600">Revisión por jornadas abiertas o no cerradas, kilometrajes faltantes o inconsistentes, o lecturas preoperacionales sin referencia anterior.</p>
+                  <p className="mt-3 text-xs text-slate-600">El porcentaje indica la proporción de jornadas cerradas; no certifica la exactitud del kilometraje.</p>
                 </div>
               </ContenedorModulo>
 
         </>}
 
         {(!resultado || !esTodaFlota) && (
+        <>
         {/* ==================================================
             FILTROS
         ================================================== */}
@@ -2636,7 +2643,7 @@ export default function KilometrosPage() {
             </div>
           </div>
         </div>
-
+        </>
         )}
         {/* ==================================================
             MENSAJE
@@ -3033,7 +3040,7 @@ export default function KilometrosPage() {
                       <MarcoTabla className="overflow-x-auto !rounded-none !border-0">
                         <table className="w-full min-w-[920px] border-collapse text-left text-xs">
                           <thead>
-                            <tr>{['Placa', 'Marca / Línea', 'KM Preoperacionales', 'KM Horarios', 'Diferencia', 'Cerradas', 'No Cerradas', 'Abiertas', 'Revisión de registros'].map(titulo =>
+                            <tr>{['Placa', 'Marca / Línea', 'KM Preoperacionales', 'KM Horarios', 'Diferencia', 'Cerradas', 'No Cerradas', 'Abiertas', '% de jornadas cerradas'].map(titulo =>
                               <th key={titulo} className="border px-3 py-3 font-semibold" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{titulo}</th>
                             )}</tr>
                           </thead>
@@ -3048,7 +3055,7 @@ export default function KilometrosPage() {
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.no_cerradas || 0}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.abiertas || 0}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
-                                {item.tiene_alertas ? <div className="space-y-1"><span className="inline-flex items-center gap-1 font-semibold text-amber-700"><AlertTriangle size={14} /> Revisar</span><ul className="list-disc pl-4 text-[11px] text-slate-600">{(item.alertas || []).map((alerta, index) => <li key={alerta.tipo || index}>{alerta.mensaje}</li>)}</ul></div> : 'Sin novedades'}
+                                <BarraCierre cerradas={item.horarios?.cerradas} noCerradas={item.horarios?.no_cerradas} abiertas={item.horarios?.abiertas} />
                               </td>
                             </tr>)}
                           </tbody>
