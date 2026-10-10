@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast, Toaster } from 'sonner'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonAccion, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, ESTILO_CONTENEDORES } from '@/components/admin/EstiloModulo'
 import { CalendarClock, Eraser, Eye, X, Printer } from 'lucide-react'
 
 const ROLES = ['INSTRUCTOR PRÁCTICA', 'INSTRUCTOR TEORÍA', 'AUXILIAR ADMINISTRATIVO']
@@ -134,7 +135,7 @@ export default function ConsultaHorariosPage() {
           <EncabezadoModulo titulo="Consulta de Horarios" subtitulo="Jornadas pendientes y seguimiento por funcionario, rol y período" icono={CalendarClock} rutaRegreso="/admin/consultas" textoRegreso="Seguimiento Operativo y Consultas" />
         </div>
 
-        <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm print:hidden">
+        <section className="rounded-xl border bg-white p-4 shadow-sm print:hidden" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
           <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-6">
             <label className="text-xs font-medium">Fecha inicial
               <input className={control} type="date" max={hoyBogota()} value={filtros.inicio} onChange={e => actualizar('inicio', e.target.value)} />
@@ -160,20 +161,20 @@ export default function ConsultaHorariosPage() {
                 {ESTADOS.map(estado => <option key={estado} value={estado}>{estado}</option>)}
               </select>
             </label>
-            <button type="button" onClick={limpiar} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold hover:bg-slate-100"><Eraser size={15} /> Limpiar</button>
+            <BotonAccion tipo="limpiar" onClick={limpiar} className="h-9"><Eraser size={15} /> Limpiar</BotonAccion>
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-xl border bg-white shadow-sm" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 print:border-0">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Registro de jornadas</h2>
               <p className="mt-1 text-xs text-slate-500">{fechaBonita(filtros.inicio)} al {fechaBonita(filtros.fin)} · <span className="font-semibold text-slate-700">{filas.length} registros</span>{cargando ? ' · Consultando...' : ''}</p>
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
-              <button type="button" onClick={() => setVista('jornadas')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${vista === 'jornadas' ? 'bg-[#12385c] text-white shadow-sm' : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`}>Jornadas</button>
+              <BotonAccion tipo={vista === 'jornadas' ? 'consultar' : 'secundario'} onClick={() => setVista('jornadas')}>Jornadas</BotonAccion>
               <button type="button" onClick={() => setVista('funcionarios')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${vista === 'funcionarios' ? 'bg-blue-800 text-white' : 'bg-slate-100 text-slate-700'}`}>Resumen por funcionario</button>
-              <button type="button" onClick={imprimir} disabled={!datos || cargando} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 disabled:opacity-50"><Printer size={14} /> Imprimir</button>
+              <BotonAccion tipo="imprimir" onClick={imprimir} disabled={!datos || cargando}><Printer size={14} /> Imprimir</BotonAccion>
             </div>
           </div>
           {error && <p role="alert" className="m-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
@@ -181,8 +182,8 @@ export default function ConsultaHorariosPage() {
           {vista === 'jornadas' ? (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[850px] border-collapse text-left text-xs">
-                <thead className="bg-[#12385c] text-white"><tr>
-                  {['Fecha', 'Funcionario', 'Rol', 'Entrada', 'Salida', 'Placa', 'Estado', 'Detalle'].map(t => <th key={t} className="whitespace-nowrap border-b border-[#315b7c] px-3 py-3 font-semibold">{t}</th>)}
+                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}><tr>
+                  {['Fecha', 'Funcionario', 'Rol', 'Entrada', 'Salida', 'Placa', 'Estado', 'Detalle'].map(t => <th key={t} className="whitespace-nowrap border-b px-3 py-3 font-semibold" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{t}</th>)}
                 </tr></thead>
                 <tbody>{visibles.map(j => (
                   <tr key={j.id} className="border-b border-slate-200 odd:bg-white even:bg-slate-50/70 transition-colors hover:bg-blue-50">
@@ -193,7 +194,7 @@ export default function ConsultaHorariosPage() {
                     <td className="px-3 py-2">{hora(j.hora_salida)}</td>
                     <td className="px-3 py-2">{j.placa || '—'}</td>
                     <td className="px-3 py-2"><span className={`whitespace-nowrap rounded-full border px-2 py-1 font-semibold ${claseEstado(j.estado_registro)}`}>{j.estado_registro || '—'}</span></td>
-                    <td className="px-3 py-2 print:hidden"><button type="button" aria-label="Ver detalle" onClick={() => setDetalle(j)} className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 font-semibold text-blue-800 transition hover:bg-blue-100"><Eye size={15} /> <span>Ver</span></button></td>
+                    <td className="px-3 py-2 print:hidden"><BotonAccion tipo="verDetalle" aria-label="Ver detalle" onClick={() => setDetalle(j)}><Eye size={15} /> Ver</BotonAccion></td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -201,7 +202,7 @@ export default function ConsultaHorariosPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px] text-left text-xs">
-                <thead className="bg-[#12385c] text-white"><tr>{['Funcionario', 'Rol', 'Total', 'No Cerrado', 'Abierto', 'Cerrado', '% cierre'].map(t => <th key={t} className="border-b border-[#315b7c] px-3 py-3">{t}</th>)}</tr></thead>
+                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}><tr>{['Funcionario', 'Rol', 'Total', 'No Cerrado', 'Abierto', 'Cerrado', '% cierre'].map(t => <th key={t} className="border-b px-3 py-3" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{t}</th>)}</tr></thead>
                 <tbody>{(datos?.funcionarios || []).map((f, i) => <tr key={i} className="border-b border-slate-200 odd:bg-white even:bg-slate-50/70 hover:bg-blue-50">
                   <td className="px-3 py-2 font-medium">{f.nombre_completo}</td><td className="px-3 py-2">{f.rol}</td>
                   <td className="px-3 py-2">{f.total}</td><td className="px-3 py-2">{f.no_cerradas}</td>
@@ -214,7 +215,7 @@ export default function ConsultaHorariosPage() {
           {vista === 'jornadas' && filas.length > PAGE_SIZE && <div className="flex items-center justify-between border-t px-4 py-3 text-xs print:hidden">
             <span>Página {pagina} de {totalPaginas}</span>
             <div className="flex gap-2">
-              <button disabled={pagina === 1} onClick={() => setPagina(p => p - 1)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40">Anterior</button>
+              <BotonAccion tipo="secundario" disabled={pagina === 1} onClick={() => setPagina(p => p - 1)}>Anterior</BotonAccion>
               <button disabled={pagina === totalPaginas} onClick={() => setPagina(p => p + 1)} className="rounded-lg border px-3 py-1.5 disabled:opacity-40">Siguiente</button>
             </div>
           </div>}
