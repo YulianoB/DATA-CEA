@@ -2997,9 +2997,22 @@ export default function FallasPage() {
                     Estado de Seguimiento
                   </div>
 
-                  <div className="p-3">
+                  <div className="p-3 space-y-3">
 
-                    <button
+                    {esAnalisis ? (
+                      <div className="text-xs">
+                        <strong>Verificación y acciones previstas:</strong>
+                        <p className="whitespace-pre-wrap mt-2">{rowSel.observacion_analisis || 'Sin análisis histórico registrado'}</p>
+                        <p className="text-gray-500 mt-2">Registrado el {rowSel.fecha_verificacion || '-'} por {rowSel.usuario_verificacion || 'No registrado'}. El análisis guardado es de solo lectura.</p>
+                      </div>
+                    ) : (
+                      <>
+                        <textarea autoFocus rows={5} value={obsAnalisis} onChange={e => setObsAnalisis(e.target.value)} className="w-full border-2 border-red-500 rounded-lg p-3 text-xs" placeholder="Describa qué verificó y qué intervención se realizará." />
+                        <p className="text-xs text-gray-600">Describa la verificación realizada, la condición encontrada y las acciones previstas. No registre reparaciones que aún no se han ejecutado.</p>
+                      </>
+                    )}
+
+                    {!esAnalisis && <button
                       onClick={
                         marcarEnAnalisis
                       }
@@ -3013,8 +3026,8 @@ export default function FallasPage() {
                         ? 'Guardando...'
                         : esAnalisis
                           ? 'Actualmente EN ANÁLISIS'
-                          : 'Marcar EN ANÁLISIS'}
-                    </button>
+                          : 'Guardar análisis'}
+                    </button>}
 
                   </div>
 
