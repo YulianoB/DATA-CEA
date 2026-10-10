@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast, Toaster } from 'sonner'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
-import { BotonAccion, TituloSeccion, MarcoTabla, ESTILO_CONTENEDORES } from '@/components/admin/EstiloModulo'
+import { BotonAccion, TituloSeccion, MarcoTabla, ESTILO_CONTENEDORES, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { CalendarClock, Eraser, Eye, X, Printer, List, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const ROLES = ['INSTRUCTOR PRÁCTICA', 'INSTRUCTOR TEORÍA', 'AUXILIAR ADMINISTRATIVO']
@@ -50,10 +50,12 @@ export default function ConsultaHorariosPage() {
   const [cargandoFuncionarios, setCargandoFuncionarios] = useState(false)
   const [vista, setVista] = useState('jornadas')
   const [periodo, setPeriodo] = useState('30')
+  const [empresaNombre, setEmpresaNombre] = useState('')
 
   useEffect(() => {
     try {
       const user = JSON.parse(localStorage.getItem('currentUser') || '{}')
+      setEmpresaNombre(String(user.empresa?.nombre || user.empresa?.razon_social || user.nombreEmpresa || user.nombre_empresa || ''))
       setNit(String(user.nitEmpresa || user.nit_empresa || user.empresa?.nit || user.nit || localStorage.getItem('currentEmpresaNit') || ''))
     } catch { setNit(localStorage.getItem('currentEmpresaNit') || '') }
     setListo(true)
@@ -128,6 +130,7 @@ export default function ConsultaHorariosPage() {
   const totalPaginas = Math.max(1, Math.ceil(filas.length / PAGE_SIZE))
   const visibles = useMemo(() => filas.slice((pagina - 1) * PAGE_SIZE, pagina * PAGE_SIZE), [filas, pagina])
   const imprimir = () => window.print()
+  const resumenEstados = { cerradas: filas.filter(j => j.estado_registro === 'Cerrado').length, noCerradas: filas.filter(j => j.estado_registro === 'No Cerrado').length, abiertas: filas.filter(j => j.estado_registro === 'Abierto').length }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -138,8 +141,8 @@ export default function ConsultaHorariosPage() {
         </div>
 
         <section className="rounded-xl border bg-white p-4 shadow-sm print:hidden" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
-          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-6">
-            <label className="text-xs font-medium">Período
+          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.08fr)_minmax(0,1.1fr)_minmax(0,0.95fr)_auto]">
+            <label className="min-w-0 text-xs font-medium">Período
               <select className={control} value={periodo} onChange={e => {
                 const v = e.target.value
                 setPeriodo(v)
@@ -155,37 +158,37 @@ export default function ConsultaHorariosPage() {
               </select>
             </label>
             {periodo === 'personalizado' && <>
-              <label className="text-xs font-medium">Fecha inicial
+              <label className="min-w-0 text-xs font-medium">Fecha inicial
                 <input className={control} type="date" max={hoyBogota()} value={filtros.inicio} onChange={e => actualizar('inicio', e.target.value)} />
               </label>
-              <label className="text-xs font-medium">Fecha final
+              <label className="min-w-0 text-xs font-medium">Fecha final
                 <input className={control} type="date" max={hoyBogota()} value={filtros.fin} onChange={e => actualizar('fin', e.target.value)} />
               </label>
             </>}
-            <label className="text-xs font-medium">Rol
+            <label className="min-w-0 text-xs font-medium">Rol
               <select className={control} value={filtros.rol} onChange={e => actualizar('rol', e.target.value)}>
                 <option value="">Todos los roles</option>
                 {ROLES.map(rol => <option key={rol} value={rol}>{rol}</option>)}
               </select>
             </label>
-            <label className="text-xs font-medium">Funcionario
+            <label className="min-w-0 text-xs font-medium">Funcionario
               <select className={control} disabled={!filtros.rol || cargandoFuncionarios} value={filtros.funcionario} onChange={e => actualizar('funcionario', e.target.value)}>
                 <option value="">{cargandoFuncionarios ? 'Cargando...' : 'Todos los funcionarios'}</option>
                 {funcionarios.map((item, i) => <option key={item.personal_id || i} value={item.nombre_completo}>{item.nombre_completo}</option>)}
               </select>
             </label>
-            <label className="text-xs font-medium">Estado
+            <label className="min-w-0 text-xs font-medium">Estado
               <select className={control} value={filtros.estado} onChange={e => actualizar('estado', e.target.value)}>
                 <option value="">Todos los estados</option>
                 {ESTADOS.map(estado => <option key={estado} value={estado}>{estado}</option>)}
               </select>
             </label>
-            <BotonAccion tipo="limpiar" onClick={limpiar} className="h-9"><Eraser size={15} /> Limpiar</BotonAccion>
+            <BotonAccion tipo="limpiar" onClick={limpiar} className="h-9 whitespace-nowrap"><Eraser size={15} /> Limpiar</BotonAccion>
           </div>
         </section>
 
         <section className="overflow-hidden rounded-xl border bg-white shadow-sm" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
-          <div className="print:hidden">
+          <div className="print:hidden horario-franja">
             <TituloSeccion
               titulo="Registro de jornadas"
               subtitulo={`${fechaBonita(filtros.inicio)} al ${fechaBonita(filtros.fin)} · ${filas.length} registros${cargando ? ' · Consultando...' : ''}`}
@@ -197,10 +200,26 @@ export default function ConsultaHorariosPage() {
               </>}
             />
           </div>
-          <p className="hidden px-4 py-2 text-xs print:block">{fechaBonita(filtros.inicio)} al {fechaBonita(filtros.fin)} · {filas.length} registros</p>
+          <header className="hidden print:block print-report-header">
+            <div className="print-report-brand">DATA CEA <span>· Consulta administrativa</span></div>
+            <h1>{vista === 'jornadas' ? 'REPORTE DE JORNADAS' : 'RESUMEN DE JORNADAS POR FUNCIONARIO'}</h1>
+            {empresaNombre && <p className="print-report-empresa">{empresaNombre}</p>}
+            <div className="print-report-meta">
+              <span><strong>Período:</strong> {fechaBonita(filtros.inicio)} al {fechaBonita(filtros.fin)}</span>
+              <span><strong>Rol:</strong> {filtros.rol || 'Todos'}</span>
+              <span><strong>Funcionario:</strong> {filtros.funcionario || 'Todos'}</span>
+              <span><strong>Estado:</strong> {filtros.estado || 'Todos'}</span>
+            </div>
+            <div className="print-report-resumen">
+              <span><strong>{filas.length}</strong> jornadas</span>
+              <span><strong>{resumenEstados.noCerradas}</strong> no cerradas</span>
+              <span><strong>{resumenEstados.abiertas}</strong> abiertas</span>
+              <span><strong>{resumenEstados.cerradas}</strong> cerradas</span>
+            </div>
+          </header>
           {error && <p role="alert" className="m-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
           {!error && !cargando && !filas.length && <p className="p-8 text-center text-sm text-slate-500">No se encontraron jornadas para los filtros seleccionados.</p>}
-          {vista === 'jornadas' ? (
+          <div className="print:hidden">{vista === 'jornadas' ? (
             <MarcoTabla className="overflow-x-auto rounded-none border-0">
               <table className="w-full min-w-[850px] border-collapse text-left text-xs">
                 <thead ><tr>
@@ -232,7 +251,7 @@ export default function ConsultaHorariosPage() {
                 </tr>)}</tbody>
               </table>
             </MarcoTabla>
-          )}
+          )}</div>
           {vista === 'jornadas' && filas.length > PAGE_SIZE && <div className="flex items-center justify-between border-t px-4 py-3 text-xs print:hidden">
             <span>Página {pagina} de {totalPaginas}</span>
             <div className="flex gap-2">
@@ -240,6 +259,24 @@ export default function ConsultaHorariosPage() {
               <BotonAccion tipo="secundario" disabled={pagina === totalPaginas} onClick={() => setPagina(p => p + 1)}>Siguiente <ChevronRight size={14} /></BotonAccion>
             </div>
           </div>}
+          <div className="hidden print:block print-report-table">
+            <table>
+              {vista === 'jornadas' ? <>
+                <thead><tr>{['Fecha', 'Funcionario', 'Rol', 'Entrada', 'Salida', 'Placa', 'Estado'].map(h => <th key={h}>{h}</th>)}</tr></thead>
+                <tbody>{filas.map(j => <tr key={j.id}>
+                  <td>{fechaBonita(j.fecha_entrada)}</td><td>{j.nombre_completo || '—'}</td><td>{j.rol || '—'}</td>
+                  <td>{hora(j.hora_entrada)}</td><td>{hora(j.hora_salida)}</td><td>{j.placa || '—'}</td><td>{j.estado_registro || '—'}</td>
+                </tr>)}</tbody>
+              </> : <>
+                <thead><tr>{['Funcionario', 'Rol', 'Total', 'No Cerrado', 'Abierto', 'Cerrado', '% cierre'].map(h => <th key={h}>{h}</th>)}</tr></thead>
+                <tbody>{(datos?.funcionarios || []).map((j,i) => <tr key={i}>
+                  <td>{j.nombre_completo}</td><td>{j.rol}</td><td>{j.total}</td><td>{j.no_cerradas}</td>
+                  <td>{j.abiertas}</td><td>{j.cerradas}</td><td>{j.porcentaje_cierre}%</td>
+                </tr>)}</tbody>
+              </>}
+            </table>
+            <p className="print-report-footer">DATA CEA · Reporte de consulta · Información obtenida de los registros de horarios.</p>
+          </div>
         </section>
         {detalle && <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40 print:hidden" onClick={() => setDetalle(null)}>
           <aside role="dialog" aria-modal="true" aria-label="Detalle de jornada" className="h-full w-full max-w-lg overflow-y-auto bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
@@ -258,7 +295,32 @@ export default function ConsultaHorariosPage() {
           </aside>
         </div>}
       </div>
-      <style jsx global>{`@media print { @page { size: landscape; margin: 12mm; } body { background: white !important; } }`}</style>
+      <style jsx global>{`
+        .horario-franja > div { border-radius: ${ESTILO_SECCIONES.radio}px ${ESTILO_SECCIONES.radio}px 0 0 !important; }
+        .horario-franja + .print-report-header + .print-report-table { border-radius: 0; }
+        .horario-franja + .print-report-header + .print-report-table table thead th { border-radius: 0 !important; }
+        @media print {
+          @page { size: A4 landscape; margin: 13mm 12mm 14mm; }
+          html, body { background: #fff !important; }
+          body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          .print-report-header { padding: 0 0 11px; margin-bottom: 10px; border-bottom: 2px solid ${ESTILO_SECCIONES.fondo}; }
+          .print-report-brand { font-size: 12px; font-weight: 800; color: ${ESTILO_SECCIONES.fondo}; letter-spacing: .4px; }
+          .print-report-brand span { font-weight: 400; color: #64748b; letter-spacing: 0; }
+          .print-report-header h1 { font-size: 17px; font-weight: 800; color: #263746; margin: 5px 0; }
+          .print-report-empresa { font-size: 10px; font-weight: 600; margin-bottom: 6px; }
+          .print-report-meta { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 3px 14px; font-size: 9px; color: #334155; }
+          .print-report-resumen { display: flex; gap: 8px; margin-top: 9px; }
+          .print-report-resumen span { border: 1px solid ${ESTILO_CELDAS_TABLA.borde}; padding: 4px 9px; font-size: 9px; }
+          .print-report-table { overflow: visible !important; }
+          .print-report-table table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 8px; }
+          .print-report-table thead { display: table-header-group; }
+          .print-report-table thead th { background: ${ESTILO_ENCABEZADO_TABLA.fondo} !important; color: ${ESTILO_ENCABEZADO_TABLA.texto} !important; border: 1px solid ${ESTILO_CELDAS_TABLA.borde}; border-radius: 0 !important; padding: 6px; text-align: left; }
+          .print-report-table td { border: 1px solid ${ESTILO_CELDAS_TABLA.borde}; padding: 5px 6px; vertical-align: top; overflow-wrap: anywhere; }
+          .print-report-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+          .print-report-table tbody tr:nth-child(even) { background: #f8fafc !important; }
+          .print-report-footer { margin-top: 10px; font-size: 8px; color: #64748b; }
+        }
+      `}</style>
     </div>
   )
 }
