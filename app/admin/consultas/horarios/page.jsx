@@ -194,8 +194,8 @@ export default function ConsultaHorariosPage() {
               subtitulo={`${fechaBonita(filtros.inicio)} al ${fechaBonita(filtros.fin)} · ${filas.length} registros${cargando ? ' · Consultando...' : ''}`}
               icono={<CalendarClock size={17} />}
               acciones={<>
-                <BotonAccion tipo={vista === 'jornadas' ? 'consultar' : 'secundario'} onClick={() => setVista('jornadas')}><List size={15} /> Jornadas</BotonAccion>
-                <BotonAccion tipo={vista === 'funcionarios' ? 'consultar' : 'secundario'} onClick={() => setVista('funcionarios')}><Users size={15} /> Resumen por funcionario</BotonAccion>
+                <BotonAccion tipo={vista === 'jornadas' ? 'secundario' : 'consultar'} onClick={() => setVista('jornadas')}><List size={15} /> Jornadas</BotonAccion>
+                <BotonAccion tipo={vista === 'funcionarios' ? 'secundario' : 'consultar'} onClick={() => setVista('funcionarios')}><Users size={15} /> Resumen por funcionario</BotonAccion>
                 <BotonAccion tipo="imprimir" onClick={imprimir} disabled={!datos || cargando}><Printer size={15} /> Imprimir</BotonAccion>
               </>}
             />
@@ -298,27 +298,27 @@ export default function ConsultaHorariosPage() {
       <style jsx global>{`
         .horario-franja > div { border-radius: ${ESTILO_SECCIONES.radio}px ${ESTILO_SECCIONES.radio}px 0 0 !important; }
         @media print {
-          @page { size: A4 landscape; margin: 13mm 12mm 14mm; }
+          @page { size: letter ${vista === 'funcionarios' ? 'portrait' : 'landscape'}; margin: 17mm 16mm 18mm; }
           html, body { background: #fff !important; height: auto !important; overflow: visible !important; }
           .print-report-table, .print-report-table table { overflow: visible !important; }
           section { break-inside: auto !important; page-break-inside: auto !important; }
           body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-          .print-report-header { padding: 0 0 11px; margin-bottom: 10px; border-bottom: 2px solid ${ESTILO_SECCIONES.fondo}; }
+          .print-report-header { padding: 0 0 14px; margin-bottom: 14px; border-bottom: 2px solid ${ESTILO_SECCIONES.fondo}; }
           .print-report-brand { font-size: 12px; font-weight: 800; color: ${ESTILO_SECCIONES.fondo}; letter-spacing: .4px; }
           .print-report-brand span { font-weight: 400; color: #64748b; letter-spacing: 0; }
-          .print-report-header h1 { font-size: 17px; font-weight: 800; color: #263746; margin: 5px 0; }
+          .print-report-header h1 { font-size: 19px; font-weight: 800; color: #263746; margin: 5px 0; }
           .print-report-empresa { font-size: 10px; font-weight: 600; margin-bottom: 6px; }
-          .print-report-meta { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 3px 14px; font-size: 9px; color: #334155; }
-          .print-report-resumen { display: flex; gap: 8px; margin-top: 9px; }
-          .print-report-resumen span { border: 1px solid ${ESTILO_CELDAS_TABLA.borde}; padding: 4px 9px; font-size: 9px; }
+          .print-report-meta { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px 14px; font-size: 10px; color: #334155; }
+          .print-report-resumen { display: flex; gap: 8px; margin-top: 12px; margin-bottom: 4px; }
+          .print-report-resumen span { border: 1px solid ${ESTILO_CELDAS_TABLA.borde}; padding: 7px 10px; font-size: 10px; flex: 1; text-align: center; }
           .print-report-table { overflow: visible !important; }
-          .print-report-table table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 8px; }
+          .print-report-table table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: ${vista === 'funcionarios' ? '10px' : '9px'}; }
           .print-report-table thead { display: table-header-group; }
-          .print-report-table thead th { background: ${ESTILO_ENCABEZADO_TABLA.fondo} !important; color: ${ESTILO_ENCABEZADO_TABLA.texto} !important; border: 1px solid ${ESTILO_CELDAS_TABLA.borde}; border-radius: 0 !important; padding: 6px; text-align: left; }
-          .print-report-table td { border: 1px solid ${ESTILO_CELDAS_TABLA.borde}; padding: 5px 6px; vertical-align: top; overflow-wrap: anywhere; }
+          .print-report-table thead th { background: ${ESTILO_ENCABEZADO_TABLA.fondo} !important; color: ${ESTILO_ENCABEZADO_TABLA.texto} !important; border: 1px solid ${ESTILO_CELDAS_TABLA.borde}; border-radius: 0 !important; padding: 9px 7px; text-align: left; }
+          .print-report-table td { border: 1px solid ${ESTILO_CELDAS_TABLA.borde}; padding: 9px 7px; vertical-align: top; overflow-wrap: anywhere; }
           .print-report-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
           .print-report-table tbody tr:nth-child(even) { background: #f8fafc !important; }
-          .print-report-footer { margin-top: 10px; font-size: 8px; color: #64748b; }
+          .print-report-footer { margin-top: 16px; font-size: 9px; color: #64748b; }
         }
       `}</style>
     </div>
