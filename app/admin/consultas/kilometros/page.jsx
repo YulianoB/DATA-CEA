@@ -734,7 +734,7 @@ function TarjetaVehiculo({
 // ============================================================
 
 function porcentajeCierre(cerradas, noCerradas, abiertas) {
-  const total = Number(cerradas || 0) + Number(noCerradas || 0) + Number(abiertas || 0)
+  const total = Number(cerradas || 0) + Number(noCerradas || 0)
   if (total === 0) return null
   return Math.round((Number(cerradas || 0) / total) * 100)
 }
@@ -743,7 +743,7 @@ function BarraCierre({ cerradas, noCerradas, abiertas }) {
   const porcentaje = porcentajeCierre(cerradas, noCerradas, abiertas)
   if (porcentaje === null) return <span className="text-slate-500">Sin registros</span>
   return (
-    <div className="min-w-[120px]" title={`${cerradas || 0} jornadas cerradas de ${Number(cerradas || 0) + Number(noCerradas || 0) + Number(abiertas || 0)} registradas`}>
+    <div className="min-w-[120px]" title={`${cerradas || 0} jornadas cerradas de ${Number(cerradas || 0) + Number(noCerradas || 0)} jornadas evaluables`}>
       <div className="mb-1 text-xs font-semibold text-slate-800">{porcentaje}% cerradas</div>
       <div className="h-2 overflow-hidden rounded-full bg-slate-200">
         <div className="h-full rounded-full bg-emerald-600" style={{ width: `${porcentaje}%` }} />
@@ -2519,10 +2519,10 @@ export default function KilometrosPage() {
 
               {/* CALIDAD GENERAL */}
 
-              <ContenedorModulo className="overflow-hidden">
+              <ContenedorModulo className="overflow-hidden !border-slate-300">
                 <TituloSeccion titulo="Calidad de los registros de jornadas y preoperacionales" icono={<ShieldCheck size={17} />} className="!rounded-b-none" />
                 <div className="p-4">
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
 
                   <Kpi
                     titulo="Cerradas"
@@ -2555,25 +2555,6 @@ export default function KilometrosPage() {
                     }
                   />
 
-                  <Kpi
-                    titulo="Abiertas"
-                    valor={
-                      resumen
-                        ?.jornadas_abiertas ||
-                      0
-                    }
-                    icono="fa-clock"
-                    tipo={
-                      Number(
-                        resumen
-                          ?.jornadas_abiertas ||
-                        0
-                      ) >
-                      0
-                        ? 'warning'
-                        : 'success'
-                    }
-                  />
 
                   <Kpi
                     titulo="KM inválidos"
@@ -2595,22 +2576,23 @@ export default function KilometrosPage() {
                     }
                   />
 
-                  <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="rounded-xl border border-slate-300 bg-white p-3">
                     <div className="text-xs font-semibold text-slate-600">Jornadas cerradas del período</div>
                     <div className="mt-2 text-xl font-bold text-slate-800">
                       {porcentajeCierre(resumen?.jornadas_cerradas, resumen?.jornadas_no_cerradas, resumen?.jornadas_abiertas) === null ? 'Sin registros' : `${porcentajeCierre(resumen?.jornadas_cerradas, resumen?.jornadas_no_cerradas, resumen?.jornadas_abiertas)}%`}
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">Cerradas / total de jornadas</p>
+                    <p className="mt-1 text-xs text-slate-500">Cerradas / (cerradas + no cerradas)</p>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full rounded-full bg-emerald-600" style={{ width: `${porcentajeCierre(resumen?.jornadas_cerradas, resumen?.jornadas_no_cerradas) ?? 0}%` }} />
+                    </div>
                   </div>
                 </div>
-                  <p className="mt-3 text-xs text-slate-600">El porcentaje indica la proporción de jornadas cerradas; no certifica la exactitud del kilometraje.</p>
+                  <p className="mt-3 text-xs text-slate-600">El porcentaje excluye las jornadas abiertas, que aún pueden estar en curso. No certifica la exactitud del kilometraje.</p>
                 </div>
               </ContenedorModulo>
 
         </>}
 
-        {(!resultado || !esTodaFlota) && (
-        <>
         {/* ==================================================
             FILTROS
         ================================================== */}
@@ -2635,16 +2617,15 @@ export default function KilometrosPage() {
               </select>
             </label>
             <div className="flex items-center gap-2">
+              <BotonAccion tipo="limpiar" onClick={limpiar} className="h-10"><Eraser size={15} /> Limpiar</BotonAccion>
               {resultado && esTodaFlota && <>
                 <BotonAccion tipo="excel" onClick={exportXLSX} disabled={exporting} className="h-10"><FileSpreadsheet size={15} /> Excel</BotonAccion>
                 <BotonAccion tipo="pdf" onClick={exportPDF} disabled={exporting} className="h-10"><FileText size={15} /> PDF</BotonAccion>
               </>}
-              <BotonAccion tipo="limpiar" onClick={limpiar} className="h-10"><Eraser size={15} /> Limpiar</BotonAccion>
             </div>
           </div>
         </div>
-        </>
-        )}
+
         {/* ==================================================
             MENSAJE
         ================================================== */}
@@ -2677,7 +2658,7 @@ export default function KilometrosPage() {
           !esTodaFlota &&
           resultadoIndividual && (
 
-            <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
 
               {/* IDENTIFICACIÓN */}
               <TituloSeccion titulo="Kilometraje del vehículo" subtitulo="Detalle y calidad de los registros del período" icono={<CarFront size={17} />} className="!rounded-b-none" />
@@ -2978,39 +2959,6 @@ export default function KilometrosPage() {
           esTodaFlota && (
 
             <>
-
-        {/* ==================================================
-            FILTROS
-        ================================================== */}
-
-        <div className="flex justify-end">
-          <div className="flex flex-wrap items-end justify-end gap-2">
-            <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha inicial
-              <input type="date" name="startDate" value={filters.startDate} max={hoyBogota()}
-                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
-            </label>
-            <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha final
-              <input type="date" name="endDate" value={filters.endDate} max={hoyBogota()}
-                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
-            </label>
-            <label className="w-[215px] text-xs font-semibold text-slate-700">Vehículo
-              <select name="placa" value={filters.placa} onChange={onFilterChange} disabled={cargandoCatalogo}
-                className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 disabled:bg-slate-100">
-                <option value="">Toda la flota</option>
-                {vehiculosOrdenados.map(vehiculo => <option key={vehiculo.id || vehiculo.placa} value={vehiculo.placa}>
-                  {nombreTipoVehiculo(vehiculo.tipo_vehiculo)} · {vehiculo.placa}{vehiculo.marca ? ` · ${vehiculo.marca}` : ''}
-                </option>)}
-              </select>
-            </label>
-            <div className="flex items-center gap-2">
-              {resultado && esTodaFlota && <>
-                <BotonAccion tipo="excel" onClick={exportXLSX} disabled={exporting} className="h-10"><FileSpreadsheet size={15} /> Excel</BotonAccion>
-                <BotonAccion tipo="pdf" onClick={exportPDF} disabled={exporting} className="h-10"><FileText size={15} /> PDF</BotonAccion>
-              </>}
-              <BotonAccion tipo="limpiar" onClick={limpiar} className="h-10"><Eraser size={15} /> Limpiar</BotonAccion>
-            </div>
-          </div>
-        </div>
 
               {/* VEHÍCULOS POR TIPO */}
 
