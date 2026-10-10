@@ -162,32 +162,13 @@ function validarRango(
   fechaInicio,
   fechaFin
 ) {
-  if (
-    !fechaInicio ||
-    !fechaFin
-  ) {
-    return (
-      'Debe seleccionar fecha inicial y fecha final.'
-    )
-  }
-
-  if (
-    !fechaValida(
-      fechaInicio
-    ) ||
-    !fechaValida(
-      fechaFin
-    )
-  ) {
+  if ((fechaInicio && !fechaValida(fechaInicio)) || (fechaFin && !fechaValida(fechaFin))) {
     return (
       'El rango de fechas no es válido.'
     )
   }
 
-  if (
-    fechaFin <
-    fechaInicio
-  ) {
+  if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
     return (
       'La fecha final no puede ser anterior a la fecha inicial.'
     )
@@ -412,14 +393,10 @@ function construirConsultaBase({
             }
           : undefined
       )
-      .gte(
-        'fecha_registro',
-        fechaInicio
-      )
-      .lte(
-        'fecha_registro',
-        fechaFin
-      )
+
+
+  if (fechaInicio) consulta = consulta.gte('fecha_registro', fechaInicio)
+  if (fechaFin) consulta = consulta.lte('fecha_registro', fechaFin)
 
   if (
     placa
