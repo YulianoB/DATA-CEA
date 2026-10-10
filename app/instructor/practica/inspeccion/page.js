@@ -1253,8 +1253,7 @@ const puedeGuardar =
         // ======================================================
 
         const hayObs =
-          observaciones
-            .trim() !== ''
+          observacionesUnificadas.trim() !== ''
 
         const estadoObs =
           hayObs
