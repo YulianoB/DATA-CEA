@@ -210,10 +210,8 @@ export default function InspeccionPage() {
         return siguiente
       })
     }
-    const indice = SECCIONES_INSPECCION.findIndex((item) => item.id === seccionActiva)
-    const siguiente = SECCIONES_INSPECCION[indice + 1]
-    setSeccionActiva(siguiente ? siguiente.id : null)
-    setObservacionBorrador(siguiente ? (observacionesPorSeccion[siguiente.id] || '') : '')
+    setSeccionActiva(null)
+    setObservacionBorrador('')
   }
 
   // ============================================================
@@ -1138,6 +1136,16 @@ const kilometrajeNumeroValido =
   Number.isFinite(kmNumero) &&
   kmNumero >= 0
 
+const tarjetasHabilitadas =
+  Boolean(nitActual) &&
+  Boolean(placaSeleccionada) &&
+  documentacionVehiculoValida &&
+  !validandoDocumentos &&
+  duplicadoValido &&
+  kilometrajeValido &&
+  kilometrajeNumeroValido &&
+  kilometraje.trim() !== ''
+
 const puedeGuardar =
   Boolean(nitActual) &&
   Boolean(
@@ -1775,16 +1783,19 @@ const puedeGuardar =
             <h2 className="text-sm font-bold text-[#194567]">Evaluación de la inspección</h2>
             <span className="text-xs font-semibold text-slate-600">{Object.values(secciones).filter(Boolean).length} de 5 secciones</span>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          {!tarjetasHabilitadas && (
+            <p className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-medium text-amber-900">Seleccione un vehículo, registre y valide su kilometraje para habilitar las cinco secciones de inspección.</p>
+          )}
+          <div className="grid grid-cols-2 items-stretch gap-3">
             {SECCIONES_INSPECCION.map((section) => (
-              <div key={section.id} className={section.numero === 5 ? 'col-span-2' : ''}>
+              <div key={section.id} className={section.numero === 5 ? 'col-span-2 h-full' : 'h-full'}>
                 <TarjetaInspeccionCompacta
                   numero={section.numero}
                   titulo={section.titulo}
                   descripcion={section.descripcion}
                   estado={secciones[section.id]}
                   observacion={observacionesPorSeccion[section.id]}
-                  disabled={!placaSeleccionada || validandoDocumentos || !documentacionVehiculoValida}
+                  disabled={!tarjetasHabilitadas}
                   onClick={() => abrirSeccion(section.id)}
                 />
               </div>
@@ -1799,7 +1810,7 @@ const puedeGuardar =
                 <div key={item.id} className="rounded-lg border border-amber-300 bg-white p-3">
                   <p className="text-xs font-bold text-red-800">Sección {item.numero}: {item.titulo}</p>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{observacionesPorSeccion[item.id] || 'Pendiente: registre la observación dentro de la tarjeta.'}</p>
-                  <button type="button" onClick={() => abrirSeccion(item.id)} className="mt-2 text-xs font-semibold text-[#194567] underline">Editar observación</button>
+                  <button type="button" onClick={() => abrirSeccion(item.id)} disabled={!tarjetasHabilitadas} className="mt-2 text-xs font-semibold text-[#194567] underline">Editar observación</button>
                 </div>
               ))}
             </div>
