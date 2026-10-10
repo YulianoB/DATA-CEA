@@ -15,7 +15,7 @@ import {
 import ModalResultado from '@/components/admin/ModalResultado'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
-import { TriangleAlert, Eraser, Search } from 'lucide-react'
+import { TriangleAlert, Eraser } from 'lucide-react'
 
 import {
   Toaster,
@@ -312,7 +312,8 @@ export default function FallasPage() {
       startDate: '',
       endDate: '',
       placa: '',
-      estado: '',
+      estado: 'PENDIENTE',
+      tipoVehiculo: '',
     })
 
   // =======================================================
@@ -639,6 +640,17 @@ export default function FallasPage() {
       )
     }
 
+  const tiposVehiculo = useMemo(() => [...new Set(vehiculos.map(v => String(v.tipo_vehiculo || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')), [vehiculos])
+  const placasFiltradas = useMemo(() => vehiculosOrdenados.filter(v => !filters.tipoVehiculo || String(v.tipo_vehiculo || '').trim() === filters.tipoVehiculo), [vehiculosOrdenados, filters.tipoVehiculo])
+  const handleTipoVehiculo = event => setFilters(prev => ({ ...prev, tipoVehiculo: event.target.value, placa: '' }))
+
+  useEffect(() => {
+    if (!nitActual) return
+    const timeout = setTimeout(() => handleConsultar(1), 250)
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nitActual, filters.startDate, filters.endDate, filters.tipoVehiculo, filters.placa, filters.estado])
+
   // =======================================================
   // VALIDACIÓN
   // =======================================================
@@ -652,22 +664,7 @@ export default function FallasPage() {
         filters
 
       if (
-        !startDate ||
-        !endDate
-      ) {
-        toast.warning(
-          'Debe seleccionar ambas fechas.'
-        )
-
-        setStatus(
-          '⚠️ Debe seleccionar ambas fechas.'
-        )
-
-        return false
-      }
-
-      if (
-        endDate <
+        startDate && endDate && endDate <
         startDate
       ) {
         toast.warning(
@@ -761,6 +758,8 @@ export default function FallasPage() {
                 PAGE_SIZE
               ),
           })
+
+        if (filters.tipoVehiculo) params.set('tipo_vehiculo', filters.tipoVehiculo)
 
         if (
           filters.placa
@@ -892,7 +891,8 @@ export default function FallasPage() {
         startDate: '',
         endDate: '',
         placa: '',
-        estado: '',
+        estado: 'PENDIENTE',
+        tipoVehiculo: '',
       })
 
       setData(
@@ -2081,6 +2081,14 @@ export default function FallasPage() {
             </div>
 
             <div>
+              <label className="block mb-1 font-medium text-slate-700">Tipo Vehículo</label>
+              <select value={filters.tipoVehiculo} onChange={handleTipoVehiculo} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-800 bg-white">
+                <option value="">Todos los tipos</option>
+                {tiposVehiculo.map(tipo => <option key={tipo} value={tipo}>{tipo}</option>)}
+              </select>
+            </div>
+
+            <div>
 
               <label className="block mb-1 font-medium text-slate-700">
                 Placa
@@ -2104,7 +2112,7 @@ export default function FallasPage() {
                   Toda la flota
                 </option>
 
-                {vehiculosOrdenados.map(
+                {placasFiltradas.map(
                   (
                     vehiculo
                   ) => (
@@ -2176,22 +2184,10 @@ export default function FallasPage() {
 
             </div>
 
+            <div className="flex justify-end gap-2 lg:col-span-1">
+              <BotonAccion tipo="limpiar" type="button" onClick={handleLimpiar}><Eraser size={15} aria-hidden="true" /> Limpiar</BotonAccion>
+            </div>
           </div>
-
-          {/* =================================================
-              BOTONES
-          ================================================= */}
-
-          <div className="flex flex-wrap justify-end gap-2 mt-4">
-            <BotonAccion tipo="limpiar" type="button" onClick={handleLimpiar}>
-              <Eraser size={15} aria-hidden="true" /> Limpiar
-            </BotonAccion>
-            <BotonAccion tipo="consultar" type="button" onClick={() => handleConsultar(1)} disabled={loading}>
-              <Search size={15} aria-hidden="true" /> {loading ? 'Consultando...' : 'Consultar'}
-            </BotonAccion>
-          </div>
-
-        </div>
 
         {/* ==================================================
             MENSAJE
