@@ -2996,8 +2996,8 @@ export default function KilometrosPage() {
                   />
 
                 </div>
-
-              </div>
+                </div>
+              </ContenedorModulo>
 
               {/* VEHÍCULOS POR TIPO */}
 
@@ -3017,98 +3017,37 @@ export default function KilometrosPage() {
 
                       {/* TIPO */}
 
-                      <div className="bg-slate-800 text-white px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <TituloSeccion
+                        titulo={grupo.nombre}
+                        icono={grupo.tipo_vehiculo === 'MOTOCICLETA' ? <Route size={17} /> : <CarFront size={17} />}
+                        subtitulo={`${grupo?.resumen?.total_vehiculos || 0} vehículos · Preop: ${fmtKm(grupo?.resumen?.km_preoperacionales)} · Horarios: ${fmtKm(grupo?.resumen?.km_horarios)} · Diferencia: ${fmtKm(grupo?.resumen?.diferencia)}`}
+                        className="!rounded-b-none"
+                      />
 
-                        <div className="flex items-center gap-2">
-
-                          <i
-                            className={`fas ${
-                              grupo
-                                .tipo_vehiculo ===
-                              'MOTOCICLETA'
-                                ? 'fa-motorcycle'
-                                : 'fa-car'
-                            }`}
-                          ></i>
-
-                          <h2 className="font-bold uppercase">
-                            {grupo.nombre}
-                          </h2>
-
-                        </div>
-
-                        <div className="text-xs flex flex-wrap gap-3">
-
-                          <span>
-                            <strong>
-                              {grupo
-                                ?.resumen
-                                ?.total_vehiculos ||
-                                0}
-                            </strong>{' '}
-                            vehículo(s)
-                          </span>
-
-                          <span>
-                            Preop:{' '}
-                            <strong>
-                              {fmtKm(
-                                grupo
-                                  ?.resumen
-                                  ?.km_preoperacionales
-                              )}
-                            </strong>
-                          </span>
-
-                          <span>
-                            Horarios:{' '}
-                            <strong>
-                              {fmtKm(
-                                grupo
-                                  ?.resumen
-                                  ?.km_horarios
-                              )}
-                            </strong>
-                          </span>
-
-                          <span>
-                            Diferencia:{' '}
-                            <strong>
-                              {fmtKm(
-                                grupo
-                                  ?.resumen
-                                  ?.diferencia
-                              )}
-                            </strong>
-                          </span>
-
-                        </div>
-
-                      </div>
-
-                      {/* TARJETAS */}
-
-                      <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-                        {(grupo.vehiculos ||
-                          []).map(
-                          (
-                            item
-                          ) => (
-
-                            <TarjetaVehiculo
-                              key={
-                                item.placa
-                              }
-                              item={
-                                item
-                              }
-                            />
-
-                          )
-                        )}
-
-                      </div>
+                      <MarcoTabla className="overflow-x-auto !rounded-none !border-0">
+                        <table className="w-full min-w-[920px] border-collapse text-left text-xs">
+                          <thead>
+                            <tr>{['Placa', 'Marca / Línea', 'KM Preoperacionales', 'KM Horarios', 'Diferencia', 'Cerradas', 'No Cerradas', 'Abiertas', 'Alertas'].map(titulo =>
+                              <th key={titulo} className="border px-3 py-3 font-semibold" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{titulo}</th>
+                            )}</tr>
+                          </thead>
+                          <tbody>
+                            {(grupo.vehiculos || []).map(item => <tr key={item.placa} className="hover:bg-slate-50">
+                              <td className="border px-3 py-2 font-bold" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.placa}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{[item.vehiculo?.marca, item.vehiculo?.linea].filter(Boolean).join(' ') || '—'}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{fmtKm(item.kilometros?.preoperacionales)}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{fmtKm(item.kilometros?.horarios)}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{fmtKm(item.kilometros?.diferencia)}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.cerradas || 0}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.no_cerradas || 0}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.abiertas || 0}</td>
+                              <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
+                                {item.tiene_alertas ? <span className="inline-flex items-center gap-1 font-semibold text-amber-700"><AlertTriangle size={14} /> Revisar</span> : 'Sin alertas'}
+                              </td>
+                            </tr>)}
+                          </tbody>
+                        </table>
+                      </MarcoTabla>
 
                     </div>
 
