@@ -129,7 +129,14 @@ export default function ConsultaHorariosPage() {
   const resumen = datos?.resumen || {}
   const totalPaginas = Math.max(1, Math.ceil(filas.length / PAGE_SIZE))
   const visibles = useMemo(() => filas.slice((pagina - 1) * PAGE_SIZE, pagina * PAGE_SIZE), [filas, pagina])
-  const imprimir = () => window.print()
+  const imprimir = () => {
+    const estilo = document.createElement('style')
+    estilo.id = 'horarios-margenes-impresion'
+    estilo.textContent = '@page { size: letter portrait; margin: 18mm 15mm 18mm 15mm; } @media print { body { margin: 0 !important; } }'
+    document.getElementById(estilo.id)?.remove()
+    document.head.appendChild(estilo)
+    window.print()
+  }
   const resumenEstados = { cerradas: filas.filter(j => j.estado_registro === 'Cerrado').length, noCerradas: filas.filter(j => j.estado_registro === 'No Cerrado').length, abiertas: filas.filter(j => j.estado_registro === 'Abierto').length }
 
   return (
