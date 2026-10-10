@@ -2785,18 +2785,18 @@ export default function PreoperacionalesPage() {
                   </button>
                 </div>
                 <nav aria-label="Etapas del seguimiento" className="flex items-center gap-2 px-3 sm:px-5 py-2">
-                  <button type="button" aria-label="Etapa anterior" disabled={pasoSeguimiento === 1} onClick={() => setPasoSeguimiento(p => Math.max(1, p - 1))} className="p-2 text-[#194567] disabled:text-slate-300"><i className="fas fa-chevron-left"></i></button>
+                  <button type="button" aria-label="Etapa anterior" disabled={esCerrada || pasoSeguimiento === 1} onClick={() => setPasoSeguimiento(p => Math.max(1, p - 1))} className="p-2 text-[#194567] disabled:text-slate-300"><i className="fas fa-chevron-left"></i></button>
                   <div className="grid grid-cols-3 gap-2 flex-1 min-w-0">
                     {[{n:1,t:'Inspección'},{n:2,t:'Análisis'},{n:3,t:'Cierre'}].map(etapa => (
-                      <button key={etapa.n} type="button" aria-current={pasoSeguimiento === etapa.n ? 'step' : undefined} onClick={() => setPasoSeguimiento(etapa.n)}
-                        className={`flex flex-col items-center gap-1 rounded-md py-1 text-[11px] font-semibold ${pasoSeguimiento === etapa.n ? 'text-[#194567]' : 'text-slate-600 hover:bg-slate-100'}`}>
-                        <span className={`w-6 h-6 rounded-full border flex items-center justify-center font-bold ${pasoSeguimiento === etapa.n ? 'bg-[#24638C] border-[#24638C] text-white' : 'bg-white border-slate-300'}`}>{etapa.n}</span>
+                      <button key={etapa.n} type="button" aria-current={!esCerrada && pasoSeguimiento === etapa.n ? 'step' : undefined} disabled={esCerrada} onClick={() => setPasoSeguimiento(etapa.n)}
+                        className={`flex flex-col items-center gap-1 rounded-md py-1 text-[11px] font-semibold ${esCerrada ? 'text-[#194567] cursor-default' : pasoSeguimiento === etapa.n ? 'text-[#194567]' : 'text-slate-600 hover:bg-slate-100'}`}>
+                        <span className={`w-6 h-6 rounded-full border flex items-center justify-center font-bold ${(esCerrada || pasoSeguimiento === etapa.n) ? 'bg-[#24638C] border-[#24638C] text-white' : 'bg-white border-slate-300'}`}>{etapa.n}</span>
                         <span>{etapa.t}</span>
                         <span className={`w-full h-1 rounded-full ${(etapa.n === 1 || (etapa.n === 2 && (esAnalisis || esCerrada)) || (etapa.n === 3 && esCerrada)) ? 'bg-[#24638C]' : 'bg-orange-400'}`}></span>
                       </button>
                     ))}
                   </div>
-                  <button type="button" aria-label="Etapa siguiente" disabled={pasoSeguimiento === 3} onClick={() => setPasoSeguimiento(p => Math.min(3, p + 1))} className="p-2 text-[#194567] disabled:text-slate-300"><i className="fas fa-chevron-right"></i></button>
+                  <button type="button" aria-label="Etapa siguiente" disabled={esCerrada || pasoSeguimiento === 3} onClick={() => setPasoSeguimiento(p => Math.min(3, p + 1))} className="p-2 text-[#194567] disabled:text-slate-300"><i className="fas fa-chevron-right"></i></button>
                 </nav>
               </div>
 
@@ -2813,6 +2813,7 @@ export default function PreoperacionalesPage() {
                       <div key={etiqueta}><p className="text-slate-500">{etiqueta}</p><p className="font-semibold break-words">{valor ?? '-'}</p></div>
                     ))}
                   </div>
+                  {!esCerrada && (
                   <div className="border-t border-slate-200 pt-3 grid grid-cols-1 sm:grid-cols-[minmax(155px,1fr)_minmax(0,2fr)] gap-3 items-start">
                     <div className="grid grid-cols-1 gap-2">
                       {[
@@ -2833,6 +2834,7 @@ export default function PreoperacionalesPage() {
                       <p className="whitespace-pre-wrap mt-2 text-slate-700">{rowSel?.observaciones || 'Sin observaciones.'}</p>
                     </div>
                   </div>
+                  )}
                 </section>
 
                 {esCerrada && (
@@ -2862,7 +2864,7 @@ export default function PreoperacionalesPage() {
                   </section>
                 )}
 
-                {pasoSeguimiento === 1 && (
+                {!esCerrada && pasoSeguimiento === 1 && (
                   <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
                     <h3 className="font-bold text-[#194567]">Paso 1 · Inspección registrada</h3>
                     <p className="text-xs text-slate-600">Revise las novedades reportadas por el instructor. La información original es de solo lectura.</p>
@@ -2870,7 +2872,7 @@ export default function PreoperacionalesPage() {
                   </section>
                 )}
 
-                {pasoSeguimiento === 2 && (
+                {!esCerrada && pasoSeguimiento === 2 && (
                   <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
                     <h3 className="font-bold text-[#194567]">Paso 2 · Análisis y actuación prevista</h3>
                     {esPendiente ? (
@@ -2898,7 +2900,7 @@ export default function PreoperacionalesPage() {
                   </section>
                 )}
 
-                {pasoSeguimiento === 3 && (
+                {!esCerrada && pasoSeguimiento === 3 && (
                   <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
                     <h3 className="font-bold text-[#194567]">Paso 3 · Solución y cierre</h3>
                     <p className="text-xs text-slate-600">Describa las reparaciones o acciones correctivas efectivamente realizadas, indicando cómo se atendió cada novedad y cómo se verificó su solución.</p>
