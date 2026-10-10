@@ -153,6 +153,8 @@ function validarRango(
   fechaInicio,
   fechaFin
 ) {
+  if (!fechaInicio && !fechaFin) return ''
+
   if (
     !fechaInicio ||
     !fechaFin
@@ -444,14 +446,7 @@ function construirConsultaBase({
             }
           : undefined
       )
-      .gte(
-        'fecha_registro',
-        fechaInicio
-      )
-      .lte(
-        'fecha_registro',
-        fechaFin
-      )
+
 
   // =====================================================
   // TIPO VEHÍCULO
@@ -738,14 +733,7 @@ async function obtenerResumen({
         equipos_prevencion,
         documentos
       `)
-      .gte(
-        'fecha_registro',
-        fechaInicio
-      )
-      .lte(
-        'fecha_registro',
-        fechaFin
-      )
+
 
   if (
     tipoVehiculo
@@ -917,7 +905,13 @@ export async function GET(request) {
         searchParams.get(
           'recurso'
         )
-      ) ||
+      )
+
+  if (fechaInicio) consulta = consulta.gte('fecha_registro', fechaInicio)
+  if (fechaFin) consulta = consulta.lte('fecha_registro', fechaFin)
+
+  if (fechaInicio) consulta = consulta.gte('fecha_registro', fechaInicio)
+  if (fechaFin) consulta = consulta.lte('fecha_registro', fechaFin) ||
       'vehiculos'
 
     // =====================================================
