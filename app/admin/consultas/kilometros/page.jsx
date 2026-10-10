@@ -2446,21 +2446,179 @@ export default function KilometrosPage() {
           textoRegreso="Seguimiento Operativo y Consultas"
         />
 
+        {resultado && esTodaFlota && <>
+              {/* RESUMEN GENERAL */}
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+
+                <Kpi
+                  titulo="KM Preoperacionales"
+                  valor={
+                    fmtKm(
+                      resumen
+                        ?.km_preoperacionales
+                    )
+                  }
+                  icono="fa-clipboard-check"
+                  tipo="success"
+                />
+
+                <Kpi
+                  titulo="KM Horarios"
+                  valor={
+                    fmtKm(
+                      resumen
+                        ?.km_horarios
+                    )
+                  }
+                  icono="fa-clock"
+                />
+
+                <Kpi
+                  titulo="Diferencia"
+                  valor={
+                    fmtKm(
+                      resumen
+                        ?.diferencia
+                    )
+                  }
+                  icono="fa-code-compare"
+                  tipo="warning"
+                />
+
+                <Kpi
+                  titulo="Vehículos Analizados"
+                  valor={
+                    resumen
+                      ?.total_vehiculos ||
+                    0
+                  }
+                  icono="fa-car-side"
+                />
+
+              </div>
+
+              {/* CALIDAD GENERAL */}
+
+              <ContenedorModulo className="overflow-hidden">
+                <TituloSeccion titulo="Calidad de los registros de jornadas y preoperacionales" icono={<ShieldCheck size={17} />} className="!rounded-b-none" />
+                <div className="p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+
+                  <Kpi
+                    titulo="Cerradas"
+                    valor={
+                      resumen
+                        ?.jornadas_cerradas ||
+                      0
+                    }
+                    icono="fa-circle-check"
+                    tipo="success"
+                  />
+
+                  <Kpi
+                    titulo="No Cerradas"
+                    valor={
+                      resumen
+                        ?.jornadas_no_cerradas ||
+                      0
+                    }
+                    icono="fa-triangle-exclamation"
+                    tipo={
+                      Number(
+                        resumen
+                          ?.jornadas_no_cerradas ||
+                        0
+                      ) >
+                      0
+                        ? 'danger'
+                        : 'success'
+                    }
+                  />
+
+                  <Kpi
+                    titulo="Abiertas"
+                    valor={
+                      resumen
+                        ?.jornadas_abiertas ||
+                      0
+                    }
+                    icono="fa-clock"
+                    tipo={
+                      Number(
+                        resumen
+                          ?.jornadas_abiertas ||
+                        0
+                      ) >
+                      0
+                        ? 'warning'
+                        : 'success'
+                    }
+                  />
+
+                  <Kpi
+                    titulo="KM inválidos"
+                    valor={
+                      resumen
+                        ?.horarios_km_invalidos ||
+                      0
+                    }
+                    icono="fa-exclamation"
+                    tipo={
+                      Number(
+                        resumen
+                          ?.horarios_km_invalidos ||
+                        0
+                      ) >
+                      0
+                        ? 'danger'
+                        : 'success'
+                    }
+                  />
+
+                  <Kpi
+                    titulo="Vehículos con registros por revisar"
+                    valor={
+                      resumen
+                        ?.vehiculos_con_alertas ||
+                      0
+                    }
+                    icono="fa-car-burst"
+                    tipo={
+                      Number(
+                        resumen
+                          ?.vehiculos_con_alertas ||
+                        0
+                      ) >
+                      0
+                        ? 'warning'
+                        : 'success'
+                    }
+                  />
+
+                </div>
+                  <p className="mt-3 text-xs text-slate-600">Revisión por jornadas abiertas o no cerradas, kilometrajes faltantes o inconsistentes, o lecturas preoperacionales sin referencia anterior.</p>
+                </div>
+              </ContenedorModulo>
+
+        </>}
+
+        {(!resultado || !esTodaFlota) && (
         {/* ==================================================
             FILTROS
         ================================================== */}
 
-        <ContenedorModulo className="p-4">
-          <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto]">
-            <label className="min-w-0 text-xs font-semibold text-slate-700">Fecha inicial
+        <div className="flex justify-end">
+          <div className="flex flex-wrap items-end justify-end gap-2">
+            <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha inicial
               <input type="date" name="startDate" value={filters.startDate} max={hoyBogota()}
                 onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
             </label>
-            <label className="min-w-0 text-xs font-semibold text-slate-700">Fecha final
+            <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha final
               <input type="date" name="endDate" value={filters.endDate} max={hoyBogota()}
                 onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
             </label>
-            <label className="min-w-0 text-xs font-semibold text-slate-700">Vehículo
+            <label className="w-[215px] text-xs font-semibold text-slate-700">Vehículo
               <select name="placa" value={filters.placa} onChange={onFilterChange} disabled={cargandoCatalogo}
                 className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 disabled:bg-slate-100">
                 <option value="">Toda la flota</option>
@@ -2470,35 +2628,16 @@ export default function KilometrosPage() {
               </select>
             </label>
             <div className="flex items-center gap-2">
+              {resultado && esTodaFlota && <>
+                <BotonAccion tipo="excel" onClick={exportXLSX} disabled={exporting} className="h-10"><FileSpreadsheet size={15} /> Excel</BotonAccion>
+                <BotonAccion tipo="pdf" onClick={exportPDF} disabled={exporting} className="h-10"><FileText size={15} /> PDF</BotonAccion>
+              </>}
               <BotonAccion tipo="limpiar" onClick={limpiar} className="h-10"><Eraser size={15} /> Limpiar</BotonAccion>
             </div>
           </div>
-        </ContenedorModulo>
-
-        {/* ==================================================
-            MENSAJE
-        ================================================== */}
-
-        {status && (
-
-          <p
-            className={`text-center text-xs ${
-              status.includes(
-                '❌'
-              )
-                ? 'text-red-600'
-                : status.includes(
-                    '⚠️'
-                  )
-                  ? 'text-amber-600'
-                  : 'text-blue-700'
-            }`}
-          >
-            {status}
-          </p>
+        </div>
 
         )}
-
         {/* ==================================================
             RESULTADO INDIVIDUAL
         ================================================== */}
@@ -2809,167 +2948,62 @@ export default function KilometrosPage() {
 
             <>
 
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <BotonAccion tipo="excel" onClick={exportXLSX} disabled={!resultado || exporting} title="Exportar reporte de toda la flota">
-                  <FileSpreadsheet size={15} /> Excel
-                </BotonAccion>
-                <BotonAccion tipo="pdf" onClick={exportPDF} disabled={!resultado || exporting} title="Exportar reporte de toda la flota">
-                  <FileText size={15} /> PDF
-                </BotonAccion>
-              </div>
+        {/* ==================================================
+            FILTROS
+        ================================================== */}
 
-              {/* RESUMEN GENERAL */}
+        <div className="flex justify-end">
+          <div className="flex flex-wrap items-end justify-end gap-2">
+            <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha inicial
+              <input type="date" name="startDate" value={filters.startDate} max={hoyBogota()}
+                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
+            </label>
+            <label className="w-[150px] text-xs font-semibold text-slate-700">Fecha final
+              <input type="date" name="endDate" value={filters.endDate} max={hoyBogota()}
+                onChange={onFilterChange} className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800" />
+            </label>
+            <label className="w-[215px] text-xs font-semibold text-slate-700">Vehículo
+              <select name="placa" value={filters.placa} onChange={onFilterChange} disabled={cargandoCatalogo}
+                className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 disabled:bg-slate-100">
+                <option value="">Toda la flota</option>
+                {vehiculosOrdenados.map(vehiculo => <option key={vehiculo.id || vehiculo.placa} value={vehiculo.placa}>
+                  {nombreTipoVehiculo(vehiculo.tipo_vehiculo)} · {vehiculo.placa}{vehiculo.marca ? ` · ${vehiculo.marca}` : ''}
+                </option>)}
+              </select>
+            </label>
+            <div className="flex items-center gap-2">
+              {resultado && esTodaFlota && <>
+                <BotonAccion tipo="excel" onClick={exportXLSX} disabled={exporting} className="h-10"><FileSpreadsheet size={15} /> Excel</BotonAccion>
+                <BotonAccion tipo="pdf" onClick={exportPDF} disabled={exporting} className="h-10"><FileText size={15} /> PDF</BotonAccion>
+              </>}
+              <BotonAccion tipo="limpiar" onClick={limpiar} className="h-10"><Eraser size={15} /> Limpiar</BotonAccion>
+            </div>
+          </div>
+        </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* ==================================================
+            MENSAJE
+        ================================================== */}
 
-                <Kpi
-                  titulo="KM Preoperacionales"
-                  valor={
-                    fmtKm(
-                      resumen
-                        ?.km_preoperacionales
-                    )
-                  }
-                  icono="fa-clipboard-check"
-                  tipo="success"
-                />
+        {status && (
 
-                <Kpi
-                  titulo="KM Horarios"
-                  valor={
-                    fmtKm(
-                      resumen
-                        ?.km_horarios
-                    )
-                  }
-                  icono="fa-clock"
-                />
+          <p
+            className={`text-center text-xs ${
+              status.includes(
+                '❌'
+              )
+                ? 'text-red-600'
+                : status.includes(
+                    '⚠️'
+                  )
+                  ? 'text-amber-600'
+                  : 'text-blue-700'
+            }`}
+          >
+            {status}
+          </p>
 
-                <Kpi
-                  titulo="Diferencia"
-                  valor={
-                    fmtKm(
-                      resumen
-                        ?.diferencia
-                    )
-                  }
-                  icono="fa-code-compare"
-                  tipo="warning"
-                />
-
-                <Kpi
-                  titulo="Vehículos Analizados"
-                  valor={
-                    resumen
-                      ?.total_vehiculos ||
-                    0
-                  }
-                  icono="fa-car-side"
-                />
-
-              </div>
-
-              {/* CALIDAD GENERAL */}
-
-              <ContenedorModulo className="overflow-hidden">
-                <TituloSeccion titulo="Calidad general de los registros" icono={<ShieldCheck size={17} />} className="!rounded-b-none" />
-                <div className="p-4">
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-
-                  <Kpi
-                    titulo="Cerradas"
-                    valor={
-                      resumen
-                        ?.jornadas_cerradas ||
-                      0
-                    }
-                    icono="fa-circle-check"
-                    tipo="success"
-                  />
-
-                  <Kpi
-                    titulo="No Cerradas"
-                    valor={
-                      resumen
-                        ?.jornadas_no_cerradas ||
-                      0
-                    }
-                    icono="fa-triangle-exclamation"
-                    tipo={
-                      Number(
-                        resumen
-                          ?.jornadas_no_cerradas ||
-                        0
-                      ) >
-                      0
-                        ? 'danger'
-                        : 'success'
-                    }
-                  />
-
-                  <Kpi
-                    titulo="Abiertas"
-                    valor={
-                      resumen
-                        ?.jornadas_abiertas ||
-                      0
-                    }
-                    icono="fa-clock"
-                    tipo={
-                      Number(
-                        resumen
-                          ?.jornadas_abiertas ||
-                        0
-                      ) >
-                      0
-                        ? 'warning'
-                        : 'success'
-                    }
-                  />
-
-                  <Kpi
-                    titulo="KM inválidos"
-                    valor={
-                      resumen
-                        ?.horarios_km_invalidos ||
-                      0
-                    }
-                    icono="fa-exclamation"
-                    tipo={
-                      Number(
-                        resumen
-                          ?.horarios_km_invalidos ||
-                        0
-                      ) >
-                      0
-                        ? 'danger'
-                        : 'success'
-                    }
-                  />
-
-                  <Kpi
-                    titulo="Vehículos con alertas"
-                    valor={
-                      resumen
-                        ?.vehiculos_con_alertas ||
-                      0
-                    }
-                    icono="fa-car-burst"
-                    tipo={
-                      Number(
-                        resumen
-                          ?.vehiculos_con_alertas ||
-                        0
-                      ) >
-                      0
-                        ? 'warning'
-                        : 'success'
-                    }
-                  />
-
-                </div>
-                </div>
-              </ContenedorModulo>
+        )}
 
               {/* VEHÍCULOS POR TIPO */}
 
@@ -2999,7 +3033,7 @@ export default function KilometrosPage() {
                       <MarcoTabla className="overflow-x-auto !rounded-none !border-0">
                         <table className="w-full min-w-[920px] border-collapse text-left text-xs">
                           <thead>
-                            <tr>{['Placa', 'Marca / Línea', 'KM Preoperacionales', 'KM Horarios', 'Diferencia', 'Cerradas', 'No Cerradas', 'Abiertas', 'Alertas'].map(titulo =>
+                            <tr>{['Placa', 'Marca / Línea', 'KM Preoperacionales', 'KM Horarios', 'Diferencia', 'Cerradas', 'No Cerradas', 'Abiertas', 'Revisión de registros'].map(titulo =>
                               <th key={titulo} className="border px-3 py-3 font-semibold" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{titulo}</th>
                             )}</tr>
                           </thead>
@@ -3014,7 +3048,7 @@ export default function KilometrosPage() {
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.no_cerradas || 0}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>{item.horarios?.abiertas || 0}</td>
                               <td className="border px-3 py-2" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
-                                {item.tiene_alertas ? <span className="inline-flex items-center gap-1 font-semibold text-amber-700"><AlertTriangle size={14} /> Revisar</span> : 'Sin alertas'}
+                                {item.tiene_alertas ? <div className="space-y-1"><span className="inline-flex items-center gap-1 font-semibold text-amber-700"><AlertTriangle size={14} /> Revisar</span><ul className="list-disc pl-4 text-[11px] text-slate-600">{(item.alertas || []).map((alerta, index) => <li key={alerta.tipo || index}>{alerta.mensaje}</li>)}</ul></div> : 'Sin novedades'}
                               </td>
                             </tr>)}
                           </tbody>
