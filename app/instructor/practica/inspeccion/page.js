@@ -1723,7 +1723,7 @@ const puedeGuardar =
             SECCIONES
         ==================================================== */}
 
-        {[[
+        {[
           {
             id:
               'revisionExterior',
@@ -1764,7 +1764,7 @@ const puedeGuardar =
             desc:
               'SOAT, RTM, licencia, tarjeta de servicio, certificado instructor, cédula.',
           },
-        ]].map((section) => (
+        ].map((section) => (
           <TarjetaInspeccion key={section.id} titulo={section.title} descripcion={section.desc} estado={secciones[section.id]} disabled={!placaSeleccionada || validandoDocumentos || !documentacionVehiculoValida} onChange={(valor) => handleSeccionChange(section.id, valor)} />
         ))}
 
