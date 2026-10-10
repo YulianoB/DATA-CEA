@@ -69,11 +69,11 @@ const obtenerFechaHoraBogota = () => {
 // ============================================================
 
 const SECCIONES_INSPECCION = [
-  { id: 'revisionExterior', numero: 1, titulo: 'Revisión exterior', descripcion: 'Verifique carrocería, faros, llantas, espejos y limpiaparabrisas.' },
-  { id: 'motor', numero: 2, titulo: 'Motor', descripcion: 'Verifique niveles de fluidos, fugas, batería, correas y cadena (en motos).' },
-  { id: 'interiorFuncionamiento', numero: 3, titulo: 'Interior y funcionamiento', descripcion: 'Verifique cinturones, asientos, luces y tablero.' },
-  { id: 'equiposPrevencion', numero: 4, titulo: 'Equipos de prevención y seguridad', descripcion: 'Verifique kit de carretera, casco, señalización y banderín.' },
-  { id: 'documentos', numero: 5, titulo: 'Documentos', descripcion: 'Verifique SOAT, RTM, licencia, tarjeta de servicio, certificado de instructor y cédula.' },
+  { id: 'revisionExterior', numero: 1, titulo: 'Revisión exterior', descripcion: 'Verifique carrocería, faros, llantas, espejos y limpiaparabrisas.', compromiso: 'He revisado los elementos exteriores del vehículo y confirmo que el resultado seleccionado corresponde a su estado actual.' },
+  { id: 'motor', numero: 2, titulo: 'Motor', descripcion: 'Verifique niveles de fluidos, fugas, batería, correas y cadena (en motos).', compromiso: 'He comprobado las condiciones del motor y sus componentes, y declaro si existe alguna falla o incumplimiento actual.' },
+  { id: 'interiorFuncionamiento', numero: 3, titulo: 'Interior y funcionamiento', descripcion: 'Verifique cinturones, asientos, luces y tablero.', compromiso: 'He comprobado el funcionamiento y las condiciones de seguridad del interior del vehículo, y registro el resultado observado.' },
+  { id: 'equiposPrevencion', numero: 4, titulo: 'Equipos de prevención y seguridad', descripcion: 'Verifique kit de carretera, casco, señalización y banderín.', compromiso: 'He verificado la disponibilidad y el estado de los equipos de prevención y seguridad requeridos para la operación.' },
+  { id: 'documentos', numero: 5, titulo: 'Documentos', descripcion: 'Verifique SOAT, RTM, licencia, tarjeta de servicio, certificado de instructor y cédula.', compromiso: 'He comprobado la documentación requerida y declaro si existe algún documento vencido o una irregularidad vigente.' },
 ]
 
 export default function InspeccionPage() {
@@ -190,6 +190,9 @@ export default function InspeccionPage() {
     secciones[item.id] !== 'NO CONFORME' || Boolean((observacionesPorSeccion[item.id] || '').trim())
   )
   const abrirSeccion = (id) => {
+    if (!tarjetasHabilitadas) return
+    const indice = SECCIONES_INSPECCION.findIndex((item) => item.id === id)
+    if (indice < 0 || SECCIONES_INSPECCION.slice(0, indice).some((item) => !secciones[item.id] || (secciones[item.id] === 'NO CONFORME' && !(observacionesPorSeccion[item.id] || '').trim()))) return
     setSeccionActiva(id)
     setObservacionBorrador(observacionesPorSeccion[id] || '')
   }
@@ -1788,14 +1791,14 @@ const puedeGuardar =
           )}
           <div className="grid grid-cols-2 items-stretch gap-3">
             {SECCIONES_INSPECCION.map((section) => (
-              <div key={section.id} className={section.numero === 5 ? 'col-span-2 h-full' : 'h-full'}>
+              <div key={section.id} className={section.numero === 5 ? 'col-start-1 col-span-2 mx-auto w-[calc(50%-0.375rem)] h-full' : 'h-full'}>
                 <TarjetaInspeccionCompacta
                   numero={section.numero}
                   titulo={section.titulo}
                   descripcion={section.descripcion}
                   estado={secciones[section.id]}
                   observacion={observacionesPorSeccion[section.id]}
-                  disabled={!tarjetasHabilitadas}
+                  disabled={!tarjetasHabilitadas || SECCIONES_INSPECCION.slice(0, section.numero - 1).some((item) => !secciones[item.id] || (secciones[item.id] === 'NO CONFORME' && !(observacionesPorSeccion[item.id] || '').trim()))}
                   onClick={() => abrirSeccion(section.id)}
                 />
               </div>
