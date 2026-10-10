@@ -2639,6 +2639,30 @@ export default function KilometrosPage() {
 
         )}
         {/* ==================================================
+            MENSAJE
+        ================================================== */}
+
+        {status && (
+
+          <p
+            className={`text-center text-xs ${
+              status.includes(
+                '❌'
+              )
+                ? 'text-red-600'
+                : status.includes(
+                    '⚠️'
+                  )
+                  ? 'text-amber-600'
+                  : 'text-blue-700'
+            }`}
+          >
+            {status}
+          </p>
+
+        )}
+
+        {/* ==================================================
             RESULTADO INDIVIDUAL
         ================================================== */}
 
@@ -2980,30 +3004,6 @@ export default function KilometrosPage() {
             </div>
           </div>
         </div>
-
-        {/* ==================================================
-            MENSAJE
-        ================================================== */}
-
-        {status && (
-
-          <p
-            className={`text-center text-xs ${
-              status.includes(
-                '❌'
-              )
-                ? 'text-red-600'
-                : status.includes(
-                    '⚠️'
-                  )
-                  ? 'text-amber-600'
-                  : 'text-blue-700'
-            }`}
-          >
-            {status}
-          </p>
-
-        )}
 
               {/* VEHÍCULOS POR TIPO */}
 
