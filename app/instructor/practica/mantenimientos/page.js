@@ -155,6 +155,7 @@ export default function MantenimientosPage() {
   const [observaciones, setObservaciones] = useState('')
 
   const [guardando, setGuardando] = useState(false)
+  const [validacionProveedor, setValidacionProveedor] = useState(false)
   const [seccionAbierta, setSeccionAbierta] = useState(null)
 
   // ============================================================
@@ -754,7 +755,7 @@ export default function MantenimientosPage() {
       return false
     }
 
-    if (!proveedorId) return false
+    if (!proveedorId || !tecnicoId) return false
     if (!repuestos.trim()) return false
 
     if (
@@ -789,6 +790,7 @@ export default function MantenimientosPage() {
     programacionPreventiva,
     actividadesSeleccionadas,
     proveedorId,
+    tecnicoId,
     actividadCatalogoId,
     repuestos,
   ])
@@ -1155,6 +1157,29 @@ export default function MantenimientosPage() {
     }
   }
 
+  const cancelarSeccionProveedor = () => {
+    setProveedorId('')
+    setProveedorInfo(null)
+    setTecnicoId('')
+    setTecnicoInfo(null)
+    setTecnicos([])
+    setActividadesSeleccionadas([])
+    setActividadesProveedor([])
+    setActividadCatalogoId('')
+    setValidacionProveedor(false)
+    setSeccionAbierta(null)
+  }
+
+  const continuarSeccionProveedor = () => {
+    setValidacionProveedor(true)
+    if (!proveedorId || !tecnicoId) {
+      toast.error('Seleccione el proveedor o taller y el técnico que realizó el mantenimiento.')
+      return
+    }
+    setValidacionProveedor(false)
+    setSeccionAbierta(null)
+  }
+
   // ============================================================
   // Render
   // ============================================================
@@ -1274,14 +1299,14 @@ export default function MantenimientosPage() {
             </div>
           )}
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
-            <TarjetaSeccionMantenimiento numero={1} titulo="Proveedor y técnico" descripcion="Datos del taller, proveedor y técnico que realizó el servicio." completada={Boolean(proveedorId)} onClick={() => setSeccionAbierta(1)} />
+            <TarjetaSeccionMantenimiento numero={1} titulo="Proveedor y técnico" descripcion="Datos del taller, proveedor y técnico que realizó el servicio." completada={Boolean(proveedorId && tecnicoId)} onClick={() => setSeccionAbierta(1)} />
             <TarjetaSeccionMantenimiento numero={2} titulo="Actividades y repuestos del servicio" descripcion="Actividades realizadas y repuestos utilizados (obligatorios)." completada={Boolean(repuestos.trim()) && (tipoMant === 'PREVENTIVO' ? actividadesSeleccionadas.length > 0 : Boolean(actividad.trim()))} onClick={() => setSeccionAbierta(2)} />
             <TarjetaSeccionMantenimiento numero={3} titulo="Costos y datos complementarios" descripcion="Valor de repuestos, mano de obra, costo total y factura." completada={Boolean(valorRepuestosStr || valorManoObraStr || factura)} onClick={() => setSeccionAbierta(3)} />
             <TarjetaSeccionMantenimiento numero={4} titulo="Tiempo de parada y observaciones" descripcion="Duración aproximada de la parada y observaciones del servicio." completada={Boolean(tpValor || observaciones)} onClick={() => setSeccionAbierta(4)} />
           </div>
           <AccionesModuloPractica onGuardar={registrar} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar Mantenimiento" />
         {seccionAbierta === 1 && (
-          <ModalSeccionMantenimiento numero={1} titulo="Proveedor y técnico" onCerrar={() => setSeccionAbierta(null)}>
+          <ModalSeccionMantenimiento numero={1} titulo="Proveedor y técnico" onCerrar={continuarSeccionProveedor} onCancelar={cancelarSeccionProveedor} onContinuar={continuarSeccionProveedor}>
             <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-700">
               Los proveedores, talleres, técnicos y actividades que atienden son configurados por Administración. Si el proveedor de la factura aún no aparece, solicite su registro antes de guardar el mantenimiento.
             </div>
@@ -1305,11 +1330,12 @@ export default function MantenimientosPage() {
                   </option>
                 ))}
               </select>
+              {validacionProveedor && !proveedorId && <p role="alert" className="mt-1 text-xs font-semibold text-red-600">Seleccione un proveedor o taller.</p>}
               {tipoMant === 'CORRECTIVO' && (
                 <div className="mt-2">
                   <button
                     type="button"
-                    onClick={() => setModalProveedor(true)}
+                    onClick={() => { setValidacionProveedor(false); setModalProveedor(true) }}
                     className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     + Registrar proveedor que no aparece
@@ -1335,7 +1361,7 @@ export default function MantenimientosPage() {
 
             <div>
               <label className="block text-sm font-semibold mb-1">
-                Técnico
+                Técnico *
               </label>
 
               <select
@@ -1352,6 +1378,7 @@ export default function MantenimientosPage() {
                 ))}
               </select>
 
+              {validacionProveedor && !tecnicoId && <p role="alert" className="mt-1 text-xs font-semibold text-red-600">Seleccione o registre el técnico que realizó el servicio.</p>}
               {proveedorId && tecnicos.length === 0 && (
                 <p className="mt-2 text-xs text-slate-500">
                   Este proveedor no tiene técnicos activos registrados. Puede registrar el técnico que atendió el servicio.
@@ -1363,6 +1390,7 @@ export default function MantenimientosPage() {
                   type="button"
                   onClick={() => {
                     setNuevoTecnico({ nombres: '', documento: '', telefono: '', email: '', observaciones: '' })
+                    setValidacionProveedor(false)
                     setModalTecnico(true)
                   }}
                   className="mt-3 min-h-10 rounded-lg border border-slate-400 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
@@ -1588,9 +1616,9 @@ export default function MantenimientosPage() {
       ====================================================== */}
 
       {modalProveedor && tipoMant === 'CORRECTIVO' && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-800">Registrar proveedor para correctivo</h3>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4">
+          <div role="dialog" aria-modal="true" aria-label="Registrar proveedor para correctivo" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-400 bg-white p-4 shadow-2xl sm:p-5">
+            <h3 className="rounded-lg bg-[#194567] px-3 py-3 text-base font-bold text-white">Registrar proveedor para correctivo</h3>
             <p className="mt-1 text-xs text-slate-600">
               Use los datos de la factura o documento del taller. Este registro se crea sin actividades de mantenimiento asociadas y podrá ser revisado por Administración.
             </p>
@@ -1646,7 +1674,7 @@ export default function MantenimientosPage() {
             </div>
 
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" disabled={guardandoProveedor} onClick={() => setModalProveedor(false)} className="rounded-lg bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-700">Cancelar</button>
+              <button type="button" disabled={guardandoProveedor} onClick={() => { setModalProveedor(false); setNuevoProveedor({ tipo_persona: 'JURIDICA', razon_social: '', nombre_comercial: '', nit_proveedor: '', digito_verificacion: '', direccion: '', telefono: '', email: '' }) }} className="rounded-lg bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-700">Cancelar</button>
               <button type="button" disabled={guardandoProveedor} onClick={guardarNuevoProveedor} className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-900 disabled:bg-gray-400">{guardandoProveedor ? 'Guardando...' : 'Guardar proveedor'}</button>
             </div>
           </div>
@@ -1658,9 +1686,9 @@ export default function MantenimientosPage() {
       ====================================================== */}
 
       {modalTecnico && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-800">Registrar técnico</h3>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4">
+          <div role="dialog" aria-modal="true" aria-label="Registrar técnico" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-400 bg-white p-4 shadow-2xl sm:p-5">
+            <h3 className="rounded-lg bg-[#194567] px-3 py-3 text-base font-bold text-white">Registrar técnico</h3>
             <p className="mt-1 text-xs text-slate-600">
               El proveedor ya debe existir. Verifique especialmente documento y celular antes de guardar.
             </p>
@@ -1692,7 +1720,7 @@ export default function MantenimientosPage() {
             </div>
 
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" disabled={guardandoTecnico} onClick={() => setModalTecnico(false)} className="rounded-lg bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-700">Cancelar</button>
+              <button type="button" disabled={guardandoTecnico} onClick={() => { setModalTecnico(false); setNuevoTecnico({ nombres: '', documento: '', telefono: '', email: '', observaciones: '' }) }} className="rounded-lg bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-700">Cancelar</button>
               <button type="button" disabled={guardandoTecnico} onClick={guardarNuevoTecnico} className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-900 disabled:bg-gray-400">{guardandoTecnico ? 'Guardando...' : 'Guardar técnico'}</button>
             </div>
           </div>
