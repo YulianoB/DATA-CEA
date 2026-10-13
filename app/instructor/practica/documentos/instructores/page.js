@@ -1064,7 +1064,7 @@ export default function DocumentosInstructorPage() {
                                 .a2,
                           })
                         }
-                        className={`mt-2 px-4 py-2 rounded-lg text-sm text-white ${
+                        className={`mt-auto flex min-h-12 w-full items-center justify-center rounded-lg px-2 py-2 text-center text-xs font-semibold text-white ${
                           esVencida(
                             licencias
                               .conduccion
@@ -1077,7 +1077,7 @@ export default function DocumentosInstructorPage() {
 
                         <i className="fas fa-sync-alt mr-2"></i>
 
-                        Renovar
+                        Actualizar
 
                       </button>
 
@@ -1109,7 +1109,7 @@ export default function DocumentosInstructorPage() {
 
                         <i className="fas fa-plus mr-2"></i>
 
-                        Registrar A2
+                        Actualizar
 
                       </button>
 
@@ -1243,7 +1243,7 @@ export default function DocumentosInstructorPage() {
                                 .bc,
                           })
                         }
-                        className={`mt-2 px-4 py-2 rounded-lg text-sm text-white ${
+                        className={`mt-auto flex min-h-12 w-full items-center justify-center rounded-lg px-2 py-2 text-center text-xs font-semibold text-white ${
                           esVencida(
                             licencias
                               .conduccion
@@ -1256,7 +1256,7 @@ export default function DocumentosInstructorPage() {
 
                         <i className="fas fa-sync-alt mr-2"></i>
 
-                        Renovar / Recategorizar
+                        Actualizar
 
                       </button>
 
@@ -1288,7 +1288,7 @@ export default function DocumentosInstructorPage() {
 
                         <i className="fas fa-plus mr-2"></i>
 
-                        Registrar categoría
+                        Actualizar
 
                       </button>
 
@@ -1443,7 +1443,7 @@ export default function DocumentosInstructorPage() {
                                 .a2,
                           })
                         }
-                        className={`mt-2 px-4 py-2 rounded-lg text-sm text-white ${
+                        className={`mt-auto flex min-h-12 w-full items-center justify-center rounded-lg px-2 py-2 text-center text-xs font-semibold text-white ${
                           esVencida(
                             licencias
                               .instructor
@@ -1456,7 +1456,7 @@ export default function DocumentosInstructorPage() {
 
                         <i className="fas fa-sync-alt mr-2"></i>
 
-                        Renovar
+                        Actualizar
 
                       </button>
 
@@ -1488,7 +1488,7 @@ export default function DocumentosInstructorPage() {
 
                         <i className="fas fa-plus mr-2"></i>
 
-                        Registrar A2
+                        Actualizar
 
                       </button>
 
@@ -1634,7 +1634,7 @@ export default function DocumentosInstructorPage() {
                                 .bc,
                           })
                         }
-                        className={`mt-2 px-4 py-2 rounded-lg text-sm text-white ${
+                        className={`mt-auto flex min-h-12 w-full items-center justify-center rounded-lg px-2 py-2 text-center text-xs font-semibold text-white ${
                           esVencida(
                             licencias
                               .instructor
@@ -1647,7 +1647,7 @@ export default function DocumentosInstructorPage() {
 
                         <i className="fas fa-sync-alt mr-2"></i>
 
-                        Renovar / Recategorizar
+                        Actualizar
 
                       </button>
 
@@ -1679,7 +1679,7 @@ export default function DocumentosInstructorPage() {
 
                         <i className="fas fa-plus mr-2"></i>
 
-                        Registrar categoría
+                        Actualizar
 
                       </button>
 
