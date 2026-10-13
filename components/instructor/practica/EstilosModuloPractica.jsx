@@ -79,6 +79,25 @@ export function ModalEvaluacionPractica({ seccion, estado, observacion, onObserv
           <div><p className="text-xs font-bold text-[#194567]">SECCIÓN {seccion.numero} DE 5</p><h2 id="titulo-evaluacion-practica" className="mt-1 text-lg font-bold text-slate-900">{seccion.titulo}</h2></div>
           <button type="button" onClick={onCerrar} aria-label="Cerrar evaluación" className="rounded-lg border border-slate-300 p-2 text-slate-700"><X size={20}/></button>
         </div>
+        {seccion.instruccion && (
+          <div className="mt-3 rounded-xl border border-slate-300 bg-slate-50 p-3">
+            <p className="text-sm font-bold text-[#194567]">Antes de seleccionar el resultado</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-700">{seccion.instruccion}</p>
+            {Array.isArray(seccion.elementos) && seccion.elementos.length > 0 && (
+              <>
+                <p className="mt-3 text-xs font-bold text-slate-800">Elementos por verificar</p>
+                <ul className="mt-2 space-y-2">
+                  {seccion.elementos.map((elemento) => (
+                    <li key={elemento} className="flex items-start gap-2 text-xs leading-relaxed text-slate-700">
+                      <ClipboardCheck size={16} className="mt-0.5 shrink-0 text-[#194567]" aria-hidden="true" />
+                      <span>{elemento}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
         <p className="mt-3 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700">{seccion.compromiso || 'Confirmo que he realizado la inspección y que el resultado refleja el estado actual del vehículo.'}</p>
         <p className="mt-4 text-sm font-semibold text-slate-900">Resultado de la verificación</p>
         <div className="mt-2 grid grid-cols-2 gap-2">
