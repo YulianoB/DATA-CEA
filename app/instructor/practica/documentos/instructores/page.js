@@ -1784,16 +1784,13 @@ export default function DocumentosInstructorPage() {
 
       {modalDocumento && (
 
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102C43]/65 p-2 sm:p-4">
 
-          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-4 shadow-xl sm:p-6">
+          <div className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#DCE4EB] bg-white shadow-2xl">
 
-            <h3 className="text-lg font-bold text-[var(--primary)] mb-1">
+            <div className="shrink-0 bg-[#173A57] px-4 py-3 text-white sm:px-5"><h3 className="text-base font-semibold leading-snug">
 
-              {modalDocumento
-                .licenciaId
-                ? 'Renovar / Actualizar'
-                : 'Registrar'}{' '}
+              Actualizar{' '}
 
               {modalDocumento.tipo ===
               TIPO_INSTRUCTOR
@@ -1801,10 +1798,12 @@ export default function DocumentosInstructorPage() {
                 : 'Licencia de Conducción'}
 
             </h3>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
 
             {instructorSeleccionado && (
 
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="mb-3 break-words text-xs text-slate-500">
 
                 {
                   instructorSeleccionado
@@ -1823,7 +1822,7 @@ export default function DocumentosInstructorPage() {
             {modalDocumento
               .licenciaId && (
 
-              <div className="mb-5 border border-blue-200 bg-blue-50 text-blue-800 rounded-lg p-3 text-xs">
+              <div className="mb-4 rounded-lg border border-[#A9BDCC] bg-[#EFF7FC] p-3 text-xs leading-relaxed text-[#173A57]">
 
                 <div className="flex gap-2 items-start">
 
@@ -1843,7 +1842,7 @@ export default function DocumentosInstructorPage() {
 
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-3">
 
               {/* ============================================
                   CATEGORÍA
@@ -1851,7 +1850,7 @@ export default function DocumentosInstructorPage() {
 
               <div>
 
-                <label className="block mb-1 font-semibold text-sm">
+                <label className="mb-1 block text-xs font-semibold text-[#173A57]">
                   Categoría
                 </label>
 
@@ -1862,14 +1861,14 @@ export default function DocumentosInstructorPage() {
                   <input
                     type="text"
                     readOnly
-                    className="w-full border p-2 rounded-lg text-sm bg-gray-100"
+                    className="min-h-11 w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700"
                     value="A2"
                   />
 
                 ) : (
 
                   <select
-                    className="w-full border p-2 rounded-lg text-sm"
+                    className="min-h-11 w-full rounded-lg border border-[#A9BDCC] bg-white px-3 py-2 text-sm outline-none focus:border-[#367DA8] focus:ring-2 focus:ring-[#367DA8]/20"
                     value={
                       modalDocumento
                         .categoria
@@ -1924,13 +1923,13 @@ export default function DocumentosInstructorPage() {
 
                 <div>
 
-                  <label className="block mb-1 font-semibold text-sm">
+                  <label className="mb-1 block text-xs font-semibold text-[#173A57]">
                     Número de Certificado de Instructor
                   </label>
 
                   <input
                     type="text"
-                    className="w-full border p-2 rounded-lg text-sm uppercase"
+                    className="min-h-11 w-full rounded-lg border border-[#A9BDCC] bg-white px-3 py-2 text-sm uppercase outline-none focus:border-[#367DA8] focus:ring-2 focus:ring-[#367DA8]/20"
                     value={
                       modalDocumento
                         .numero_certificado
@@ -1960,13 +1959,13 @@ export default function DocumentosInstructorPage() {
 
               <div>
 
-                <label className="block mb-1 font-semibold text-sm">
+                <label className="mb-1 block text-xs font-semibold text-[#173A57]">
                   Fecha de Vigencia
                 </label>
 
                 <input
                   type="date"
-                  className="w-full border p-2 rounded-lg text-sm"
+                  className="min-h-11 w-full rounded-lg border border-[#A9BDCC] bg-white px-3 py-2 text-sm outline-none focus:border-[#367DA8] focus:ring-2 focus:ring-[#367DA8]/20"
                   value={
                     modalDocumento
                       .vigencia
@@ -1992,14 +1991,14 @@ export default function DocumentosInstructorPage() {
 
               <div>
 
-                <label className="block mb-1 font-semibold text-sm">
+                <label className="mb-1 block text-xs font-semibold text-[#173A57]">
                   Actualizado por
                 </label>
 
                 <input
                   type="text"
                   readOnly
-                  className="w-full border p-2 rounded-lg text-sm bg-gray-100"
+                  className="min-h-11 w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-700"
                   value={
                     user?.nombreCompleto ||
                     user?.nombre_completo ||
@@ -2015,7 +2014,7 @@ export default function DocumentosInstructorPage() {
                 BOTONES MODAL
             ============================================== */}
 
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="sticky bottom-0 z-10 -mx-4 mt-5 flex gap-2 border-t border-[#DCE4EB] bg-white px-4 pb-1 pt-3 sm:-mx-5 sm:px-5">
 
               <button
                 onClick={() =>
@@ -2026,7 +2025,7 @@ export default function DocumentosInstructorPage() {
                 disabled={
                   guardando
                 }
-                className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
+                className="flex min-h-11 flex-1 items-center justify-center rounded-lg bg-slate-600 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
               >
                 Cancelar
               </button>
@@ -2038,28 +2037,20 @@ export default function DocumentosInstructorPage() {
                 disabled={
                   guardando
                 }
-                className={`px-4 py-2 rounded-lg text-white ${
+                className={`flex min-h-11 flex-1 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold text-white ${
                   guardando
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-[#367DA8] hover:bg-[#194567]'
                 }`}
               >
 
-                {guardando
-                  ? 'Guardando...'
-                  : modalDocumento
-                      .licenciaId
-                  ? modalDocumento
-                      .grupo ===
-                    'bc'
-                    ? 'Renovar / Recategorizar'
-                    : 'Renovar'
-                  : 'Registrar'}
+                {guardando ? 'Guardando...' : 'Guardar'}
 
               </button>
 
             </div>
 
+            </div>
           </div>
 
         </div>
