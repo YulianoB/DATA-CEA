@@ -123,6 +123,42 @@ export function ModalEvaluacionPractica({ seccion, estado, observacion, onObserv
   )
 }
 
+
+export function TarjetaHorarioPractica({ tipo, onClick }) {
+  const entrada = tipo === 'entrada'
+  const Icono = entrada ? CarFront : ClipboardCheck
+  return (
+    <button type="button" onClick={onClick} className="mx-auto flex min-h-44 w-full max-w-sm flex-col rounded-xl border-2 border-slate-500 bg-[#367DA8] p-3 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
+      <div className="mb-2 flex w-full items-center justify-between">
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/25 bg-white/15"><Icono size={29} strokeWidth={2.3} aria-hidden="true" /></span>
+        <ChevronRight size={22} aria-hidden="true" />
+      </div>
+      <span className="text-[10px] font-bold tracking-wide text-sky-100">REGISTRO DE HORARIOS</span>
+      <span className="mt-1 text-sm font-bold">{entrada ? 'Registrar entrada' : 'Registrar salida'}</span>
+      <span className="mt-1 text-xs leading-relaxed text-slate-100">{entrada ? 'Iniciar jornada práctica' : 'Finalizar jornada práctica'}</span>
+      <span className="mt-auto pt-3 text-xs font-semibold">Tocar para registrar</span>
+    </button>
+  )
+}
+
+export function ModalHorarioPractica({ tipo, onCerrar, children }) {
+  const entrada = tipo === 'entrada'
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation">
+      <div role="dialog" aria-modal="true" aria-labelledby={`titulo-modal-${tipo}`} className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-400 bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-[#194567] px-4 py-3 text-white sm:px-5">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/25 bg-white/10">{entrada ? <CarFront size={19} /> : <ClipboardCheck size={19} />}</span>
+            <div><p className="text-[10px] text-sky-200">Instructor de práctica</p><h2 id={`titulo-modal-${tipo}`} className="text-sm font-bold sm:text-base">{entrada ? 'Registro de entrada' : 'Registro de salida'}</h2></div>
+          </div>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar formulario" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/30 bg-white/10"><X size={18} /></button>
+        </div>
+        <div className="p-3 sm:p-4">{children}</div>
+      </div>
+    </div>
+  )
+}
+
 export function AccionesModuloPractica({ onGuardar, onRegresar, onCerrarSesion, puedeGuardar = true, guardando = false, mostrarGuardar = true, textoGuardar = 'Guardar' }) {
   const botonBase = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700'
   return (
