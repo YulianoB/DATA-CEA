@@ -34,7 +34,7 @@ export default function DocumentosPage() {
   ]
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F5F7FA] p-4">
+    <div className="flex min-h-screen items-start justify-center bg-[#F5F7FA] p-4">
       <div className="w-full max-w-2xl rounded-xl border border-[#DCE4EB] bg-white p-4 shadow-lg sm:p-6">
         <div className="relative mb-3 grid grid-cols-[52px_1fr_88px] items-start gap-2">
           <div className="flex justify-start">
