@@ -182,6 +182,8 @@ export default function InspeccionPage() {
   const [observacionesPorSeccion, setObservacionesPorSeccion] = useState({})
   const [seccionActiva, setSeccionActiva] = useState(null)
   const [observacionBorrador, setObservacionBorrador] = useState('')
+  const [modalResultado, setModalResultado] = useState(null)
+  const [confirmacionKm, setConfirmacionKm] = useState(false)
   const inspeccionIniciada = Boolean(seccionActiva) || Object.values(secciones).some((estado) => estado !== null)
   const observacionesUnificadas = SECCIONES_INSPECCION
     .filter((item) => secciones[item.id] === 'NO CONFORME')
@@ -997,6 +999,7 @@ const validarDocumentacionVehiculo =
       )
 
       setMensajeKm('')
+      setConfirmacionKm(false)
       setForzarGuardado(false)
 
       if (
@@ -1039,9 +1042,7 @@ const validarDocumentacionVehiculo =
         resultado.estado ===
         'error'
       ) {
-        toast.error(
-          resultado.mensaje
-        )
+        setModalResultado({ tipo: 'error', titulo: 'Validación de kilometraje', mensaje: resultado.mensaje || 'No fue posible validar el kilometraje.' })
       }
     }
 
@@ -1232,9 +1233,7 @@ const puedeGuardar =
             dup.mensaje
           )
 
-          toast.error(
-            dup.mensaje
-          )
+          setModalResultado({ tipo: 'error', titulo: 'No se pudo guardar', mensaje: dup.mensaje })
 
           return
         }
@@ -1375,9 +1374,7 @@ const puedeGuardar =
             mensaje
           )
 
-          toast.error(
-            mensaje
-          )
+          setModalResultado({ tipo: 'error', titulo: 'No se pudo guardar', mensaje })
 
           return
         }
@@ -1571,22 +1568,7 @@ const puedeGuardar =
         // Éxito
         // ======================================================
 
-        toast.success(
-          consecutivo
-            ? `Inspección guardada (${placaSeleccionada} • ${consecutivo})`
-            : `Inspección guardada (${placaSeleccionada})`,
-          {
-            duration: 1400,
-          }
-        )
-
-        setTimeout(() => {
-          resetearEstados()
-
-          router.push(
-            '/instructor/practica'
-          )
-        }, 1450)
+        setModalResultado({ tipo: 'guardado', titulo: 'Inspección guardada correctamente', mensaje: consecutivo ? `Placa ${placaSeleccionada} · Consecutivo ${consecutivo}.` : `Placa ${placaSeleccionada}.` })
       } catch (error) {
         console.error(
           'Error inesperado guardando inspección:',
@@ -1600,9 +1582,7 @@ const puedeGuardar =
           mensaje
         )
 
-        toast.error(
-          mensaje
-        )
+        setModalResultado({ tipo: 'error', titulo: 'Error al guardar', mensaje })
       } finally {
         setGuardando(false)
       }
@@ -1723,6 +1703,12 @@ const puedeGuardar =
               onChange={
                 handleKmChange
               }
+              onBlur={() => {
+                if (!confirmacionKm && kilometraje.trim() !== '' && kilometrajeValido && !mostrarModalKm && !inspeccionIniciada) {
+                  setConfirmacionKm(true)
+                  setModalResultado({ tipo: 'exito', titulo: 'Kilometraje validado', mensaje: mensajeKm || 'El kilometraje ingresado es válido. Puede continuar con la inspección.' })
+                }
+              }}
               disabled={
                 !placaSeleccionada ||
                 validandoDocumentos ||
@@ -1837,13 +1823,7 @@ const puedeGuardar =
             MENSAJE GUARDADO
         ==================================================== */}
 
-        {mensajeGuardado && (
 
-          <div className="mt-4 text-sm text-red-700">
-            {mensajeGuardado}
-          </div>
-
-        )}
 
         {/* ====================================================
             BOTONES
@@ -2249,6 +2229,24 @@ const puedeGuardar =
         </div>
       )}
 
+      {modalResultado && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-4" role="presentation">
+          <div role="alertdialog" aria-modal="true" aria-labelledby="titulo-resultado-inspeccion" aria-describedby="mensaje-resultado-inspeccion" className="w-full max-w-sm rounded-2xl border border-slate-300 bg-white p-5 shadow-2xl">
+            <h2 id="titulo-resultado-inspeccion" className={`text-lg font-bold ${modalResultado.tipo === 'error' ? 'text-red-700' : 'text-[#194567]'}`}>{modalResultado.titulo}</h2>
+            <p id="mensaje-resultado-inspeccion" className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{modalResultado.mensaje}</p>
+            <button type="button" autoFocus onClick={() => {
+              const guardado = modalResultado.tipo === 'guardado'
+              setModalResultado(null)
+              if (guardado) {
+                resetearEstados()
+                router.push('/instructor/practica')
+              }
+            }} className="mt-5 min-h-11 w-full rounded-lg bg-[#194567] px-4 py-2 font-semibold text-white">
+              {modalResultado.tipo === 'guardado' ? 'Aceptar y regresar' : 'Entendido'}
+            </button>
+          </div>
+        </div>
+      )}
       {/* ======================================================
           MODAL KILOMETRAJE
       ====================================================== */}
