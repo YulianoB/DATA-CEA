@@ -2445,14 +2445,14 @@ export default function HorariosPracticaPage() {
 
         {tengoAbierta && registroAbierto && modalHorario === 'salida' && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation">
-            <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal-salida" className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-              <div className="sticky top-0 z-10 flex items-center justify-between bg-[#194567] px-4 py-3 text-white">
-                <h2 id="titulo-modal-salida" className="text-base font-bold">Registro de salida</h2>
-                <button type="button" onClick={() => setModalHorario(null)} aria-label="Cerrar formulario de salida" className="rounded-lg border border-white/40 px-3 py-1.5 text-sm">Cerrar</button>
+            <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal-salida" className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-300 bg-white shadow-2xl">
+              <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-[#194567] px-5 py-4 text-white">
+                <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15"><i className="fas fa-sign-out-alt text-xl" aria-hidden="true"></i></span><div><p className="text-[10px] font-bold uppercase tracking-wider text-sky-200">Jornada práctica</p><h2 id="titulo-modal-salida" className="text-lg font-bold">Registro de salida</h2><p className="text-xs text-slate-200">Datos de cierre de la jornada</p></div></div>
+                <button type="button" onClick={() => setModalHorario(null)} aria-label="Cerrar formulario de salida" className="rounded-lg border border-white/40 px-3 py-2 text-xs font-semibold hover:bg-white/10">Cerrar ✕</button>
               </div>
           <div className="border rounded-lg shadow-sm">
 
-            <h3 className="bg-[var(--primary-dark)] text-white font-semibold px-4 py-2 rounded-t-lg flex items-center gap-2 text-sm">
+            <h3 className="bg-slate-100 text-[#194567] font-bold px-4 py-3 flex items-center gap-2 text-sm border-b border-slate-200">
 
               <i className="fas fa-sign-out-alt text-red-300"></i>
 
