@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from 'react'
 import {
   Toaster,
@@ -18,6 +19,9 @@ import {
 import {
   cerrarSesion,
 } from '@/lib/auth/logout'
+
+const formatoKm = (valor) => String(valor ?? '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+const formatoMensajeKm = (mensaje) => String(mensaje || '').replace(/\b\d{4,}\b/g, (n) => Number(n).toLocaleString('es-CO'))
 
 // ============================================================
 // Helpers Bogotá
@@ -164,6 +168,14 @@ export default function HorariosPracticaPage() {
   const router =
     useRouter()
   const [modalHorario, setModalHorario] = useState(null)
+  const kmInicialRef = useRef(null)
+  const kmFinalRef = useRef(null)
+  const solicitudInicialRef = useRef(0)
+  const solicitudFinalRef = useRef(0)
+  const [kmInicialValidado, setKmInicialValidado] = useState('')
+  const [kmFinalValidado, setKmFinalValidado] = useState('')
+  const [validandoKmInicial, setValidandoKmInicial] = useState(false)
+  const [validandoKmFinal, setValidandoKmFinal] = useState(false)
 
   const [
     user,
@@ -1184,215 +1196,99 @@ export default function HorariosPracticaPage() {
   // Kilometraje entrada
   // ==========================================================
 
-  const onKmInicialChange =
-    async (
-      e
-    ) => {
-      const val =
-        e
-          .target
-          .value
+  const onKmInicialChange = (e) => {
+    solicitudInicialRef.current += 1
+    setKmInicial(e.target.value.replace(/\D/g, ''))
+    setMsgKmInicial('')
+    setForzarKmInicial(false)
+    setKmInicialValidado('')
+    setValidandoKmInicial(false)
+    setModalKm(null)
+  }
 
-      setKmInicial(
-        val
-      )
-
-      setMsgKmInicial(
-        ''
-      )
-
-      setForzarKmInicial(
-        false
-      )
-
-      if (
-        !nitActual ||
-        !placa ||
-        val === ''
-      ) {
-        return
-      }
-
-      const resultado =
-        await validarKilometraje(
-          nitActual,
-          placa,
-          parseInt(
-            val,
-            10
-          )
-        )
-
-      setMsgKmInicial(
-        resultado
-          ?.mensaje ||
-        ''
-      )
-
-      if (
-        resultado
-          .estado ===
-        'error'
-      ) {
-        toast.error(
-          resultado
-            .mensaje
-        )
-
-        return
-      }
-
-      if (
-        resultado
-          .estado ===
-        'advertencia'
-      ) {
+  const onKmInicialBlur = async () => {
+    const valor = kmInicial.trim()
+    if (!nitActual || !placa || !valor || kmInicialValidado === valor) return
+    const solicitud = ++solicitudInicialRef.current
+    setValidandoKmInicial(true)
+    try {
+      const resultado = await validarKilometraje(nitActual, placa, Number(valor))
+      if (solicitud !== solicitudInicialRef.current) return
+      setMsgKmInicial(resultado?.mensaje || '')
+      setKmInicialValidado(valor)
+      if (resultado.estado === 'error') {
+        toast.error(formatoMensajeKm(resultado.mensaje || 'No fue posible validar el kilometraje.'))
+      } else if (resultado.estado === 'advertencia') {
         setModalKm({
-          titulo:
-            'Advertencia de Kilometraje (Entrada)',
-
-          maxKm:
-            resultado
-              .maxKm,
-
-          diferencia:
-            resultado
-              .diferencia,
-
-          fuente:
-            resultado
-              .fuente,
-
-          campo:
-            resultado
-              .campo,
-
-          onConfirm:
-            () => {
-              setForzarKmInicial(
-                true
-              )
-
-              setModalKm(
-                null
-              )
-            },
+          titulo: 'Advertencia de kilometraje (entrada)',
+          tipo: 'entrada',
+          kilometraje: valor,
+          maxKm: resultado.maxKm,
+          diferencia: resultado.diferencia,
+          fuente: resultado.fuente,
+          campo: resultado.campo,
+          onConfirm: () => {
+            setForzarKmInicial(true)
+            setModalKm(null)
+          },
         })
-
-        return
       }
-
-      setModalKm(
-        null
-      )
+    } catch {
+      if (solicitud !== solicitudInicialRef.current) return
+      setMsgKmInicial('No fue posible validar el kilometraje.')
+      setKmInicialValidado('')
+      toast.error('No fue posible validar el kilometraje.')
+    } finally {
+      if (solicitud === solicitudInicialRef.current) setValidandoKmInicial(false)
     }
+  }
 
-  // ==========================================================
-  // Kilometraje salida
-  // ==========================================================
+  const onKmFinalChange = (e) => {
+    solicitudFinalRef.current += 1
+    setKmFinal(e.target.value.replace(/\D/g, ''))
+    setMsgKmFinal('')
+    setForzarKmFinal(false)
+    setKmFinalValidado('')
+    setValidandoKmFinal(false)
+    setModalKm(null)
+  }
 
-  const onKmFinalChange =
-    async (
-      e
-    ) => {
-      const val =
-        e
-          .target
-          .value
-
-      setKmFinal(
-        val
-      )
-
-      setMsgKmFinal(
-        ''
-      )
-
-      setForzarKmFinal(
-        false
-      )
-
-      if (
-        !nitActual ||
-        !placa ||
-        val === ''
-      ) {
-        return
-      }
-
-      const resultado =
-        await validarKilometraje(
-          nitActual,
-          placa,
-          parseInt(
-            val,
-            10
-          )
-        )
-
-      setMsgKmFinal(
-        resultado
-          ?.mensaje ||
-        ''
-      )
-
-      if (
-        resultado
-          .estado ===
-        'error'
-      ) {
-        toast.error(
-          resultado
-            .mensaje
-        )
-
-        return
-      }
-
-      if (
-        resultado
-          .estado ===
-        'advertencia'
-      ) {
+  const onKmFinalBlur = async () => {
+    const valor = kmFinal.trim()
+    if (!nitActual || !placa || !valor || kmFinalValidado === valor) return
+    const solicitud = ++solicitudFinalRef.current
+    setValidandoKmFinal(true)
+    try {
+      const resultado = await validarKilometraje(nitActual, placa, Number(valor))
+      if (solicitud !== solicitudFinalRef.current) return
+      setMsgKmFinal(resultado?.mensaje || '')
+      setKmFinalValidado(valor)
+      if (resultado.estado === 'error') {
+        toast.error(formatoMensajeKm(resultado.mensaje || 'No fue posible validar el kilometraje.'))
+      } else if (resultado.estado === 'advertencia') {
         setModalKm({
-          titulo:
-            'Advertencia de Kilometraje (Salida)',
-
-          maxKm:
-            resultado
-              .maxKm,
-
-          diferencia:
-            resultado
-              .diferencia,
-
-          fuente:
-            resultado
-              .fuente,
-
-          campo:
-            resultado
-              .campo,
-
-          onConfirm:
-            () => {
-              setForzarKmFinal(
-                true
-              )
-
-              setModalKm(
-                null
-              )
-            },
+          titulo: 'Advertencia de kilometraje (salida)',
+          tipo: 'salida',
+          kilometraje: valor,
+          maxKm: resultado.maxKm,
+          diferencia: resultado.diferencia,
+          fuente: resultado.fuente,
+          campo: resultado.campo,
+          onConfirm: () => {
+            setForzarKmFinal(true)
+            setModalKm(null)
+          },
         })
-
-        return
       }
-
-      setModalKm(
-        null
-      )
+    } catch {
+      if (solicitud !== solicitudFinalRef.current) return
+      setMsgKmFinal('No fue posible validar el kilometraje.')
+      setKmFinalValidado('')
+      toast.error('No fue posible validar el kilometraje.')
+    } finally {
+      if (solicitud === solicitudFinalRef.current) setValidandoKmFinal(false)
     }
+  }
 
   // ==========================================================
   // Valores numéricos
@@ -1609,6 +1505,10 @@ export default function HorariosPracticaPage() {
 
         return (
           kmOk &&
+          !validandoKmInicial &&
+          kmInicialValidado !== '' && kmInicialValidado === kmInicial &&
+          !modalKm &&
+          (!String(msgKmInicial).toLowerCase().includes('supera') || forzarKmInicial) &&
           clasesOk
         )
       },
@@ -1621,6 +1521,7 @@ export default function HorariosPracticaPage() {
         tengoAbierta,
         msgKmInicial,
         forzarKmInicial,
+        validandoKmInicial, kmInicialValidado, kmInicial, modalKm,
         clasesProg,
       ]
     )
@@ -1711,6 +1612,10 @@ export default function HorariosPracticaPage() {
           reglaClases &&
           reglaAprendices &&
           kmOk &&
+          !validandoKmFinal &&
+          kmFinalValidado !== '' && kmFinalValidado === kmFinal &&
+          !modalKm &&
+          (!String(msgKmFinal).toLowerCase().includes('supera') || forzarKmFinal) &&
           tiempoOk
         )
       },
@@ -1721,6 +1626,7 @@ export default function HorariosPracticaPage() {
         kmFinalNum,
         msgKmFinal,
         forzarKmFinal,
+        validandoKmFinal, kmFinalValidado, kmFinal, modalKm,
         clasesDictadas,
         clasesNum,
         numAprendices,
@@ -2216,68 +2122,26 @@ export default function HorariosPracticaPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex items-start justify-center bg-slate-100 p-3 sm:p-6">
 
       <Toaster
         position="top-center"
         richColors
       />
 
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg p-6">
+      <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl p-4 sm:p-6">
 
-        <h2 className="text-2xl font-bold mb-4 text-center flex items-center justify-center gap-2 border-b pb-3 text-[var(--primary)]">
-
-          <i className="fas fa-calendar-alt text-[var(--primary)]"></i>
-
-          Registro de Horarios - Instructor Práctica
-
-        </h2>
-
-        <div className="bg-gray-50 p-2 rounded mb-4 text-xs border text-center">
-
-          <span>
-            Usuario:{' '}
-
-            <strong>
-              {
-                user
-                  .nombreCompleto
-              }
-            </strong>
-          </span>
-
-          {user
-            .rol && (
-
-            <span>
-              {' '}
-              (
-              {
-                user
-                  .rol
-              }
-              )
-            </span>
-
-          )}
-
-          {user
-            .nombreEmpresa && (
-
-            <span className="block mt-1">
-              CEA:{' '}
-
-              <strong>
-                {
-                  user
-                    .nombreEmpresa
-                }
-              </strong>
-            </span>
-
-          )}
-
-        </div>
+        <header className="-mx-4 -mt-4 mb-6 bg-[#194567] px-5 py-5 text-white sm:-mx-6 sm:-mt-6 sm:px-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15"><i className="fas fa-calendar-alt text-2xl" aria-hidden="true"></i></span>
+            <div><p className="text-[11px] font-bold uppercase tracking-widest text-sky-200">Instructor · Práctica</p><h1 className="text-xl font-bold sm:text-2xl">Registro de horarios</h1><p className="mt-1 text-xs text-slate-200">Control de entrada y salida de la jornada</p></div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-white/20 pt-3 text-xs text-slate-100">
+            <span>Usuario: <strong className="text-white">{user.nombreCompleto}</strong></span>
+            {user.rol && <span>Rol: <strong className="text-white">{user.rol}</strong></span>}
+            {user.nombreEmpresa && <span>CEA: <strong className="text-white">{user.nombreEmpresa}</strong></span>}
+          </div>
+        </header>
 
         {!tengoAbierta && (
           <button type="button" onClick={() => setModalHorario('entrada')} className="mx-auto mb-6 flex min-h-44 w-full max-w-sm flex-col rounded-xl border-2 border-slate-500 bg-[#367DA8] p-4 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
@@ -2291,14 +2155,14 @@ export default function HorariosPracticaPage() {
 
         {!tengoAbierta && modalHorario === 'entrada' && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation">
-          <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal-entrada" className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between bg-[#194567] px-4 py-3 text-white">
-              <h2 id="titulo-modal-entrada" className="text-base font-bold">Registro de entrada</h2>
-              <button type="button" onClick={() => setModalHorario(null)} aria-label="Cerrar formulario de entrada" className="rounded-lg border border-white/40 px-3 py-1.5 text-sm">Cerrar</button>
+          <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal-entrada" className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-300 bg-white shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-[#194567] px-5 py-4 text-white">
+              <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15"><i className="fas fa-sign-in-alt text-xl" aria-hidden="true"></i></span><div><p className="text-[10px] font-bold uppercase tracking-wider text-sky-200">Jornada práctica</p><h2 id="titulo-modal-entrada" className="text-lg font-bold">Registro de entrada</h2><p className="text-xs text-slate-200">Datos de inicio de la jornada</p></div></div>
+              <button type="button" onClick={() => setModalHorario(null)} aria-label="Cerrar formulario de entrada" className="rounded-lg border border-white/40 px-3 py-2 text-xs font-semibold hover:bg-white/10">Cerrar ✕</button>
             </div>
           <div className="border rounded-lg shadow-sm">
 
-            <h3 className="bg-[var(--primary-dark)] text-white font-semibold px-4 py-2 rounded-t-lg flex items-center gap-2 text-sm">
+            <h3 className="bg-slate-100 text-[#194567] font-bold px-4 py-3 flex items-center gap-2 text-sm border-b border-slate-200">
 
               <i className="fas fa-sign-in-alt text-green-300"></i>
 
@@ -2434,8 +2298,9 @@ export default function HorariosPracticaPage() {
                   </label>
 
                   <input
-                    type="number"
-                    min="0"
+                    ref={kmInicialRef}
+                    type="text"
+                    inputMode="numeric"
                     className={`w-full border p-2 rounded text-sm ${
                       (
                         !documentacionInstructorValida ||
@@ -2447,8 +2312,9 @@ export default function HorariosPracticaPage() {
                         : ''
                     }`}
                     value={
-                      kmInicial
+                      formatoKm(kmInicial)
                     }
+                    onBlur={onKmInicialBlur}
                     onChange={
                       onKmInicialChange
                     }
@@ -2480,7 +2346,7 @@ export default function HorariosPracticaPage() {
                       }`}
                     >
                       {
-                        msgKmInicial
+                        formatoMensajeKm(msgKmInicial)
                       }
                     </small>
 
@@ -2669,16 +2535,19 @@ export default function HorariosPracticaPage() {
                   </label>
 
                   <input
-                    type="number"
+                    ref={kmFinalRef}
+                    type="text"
+                    inputMode="numeric"
                     className="w-full border p-2 rounded text-sm"
-                    min={
+                    data-min={
                       registroAbierto
                         .km_inicial ??
                       0
                     }
                     value={
-                      kmFinal
+                      formatoKm(kmFinal)
                     }
+                    onBlur={onKmFinalBlur}
                     onChange={
                       onKmFinalChange
                     }
@@ -2704,7 +2573,7 @@ export default function HorariosPracticaPage() {
                       }`}
                     >
                       {
-                        msgKmFinal
+                        formatoMensajeKm(msgKmFinal)
                       }
                     </small>
 
@@ -3305,105 +3174,28 @@ export default function HorariosPracticaPage() {
       ====================================================== */}
 
       {modalKm && (
-
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-
-          <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
-
-            <h3 className="text-lg font-bold mb-3 text-red-600">
-              {
-                modalKm
-                  .titulo
-              }
-            </h3>
-
-            <p className="text-sm mb-2">
-              El valor ingresado supera en más de 300 km el último registrado.
-            </p>
-
-            <p className="text-sm mb-1">
-
-              <b>
-                Último registro:
-              </b>{' '}
-
-              {
-                modalKm
-                  .maxKm
-              } km
-
-            </p>
-
-            <p className="text-sm mb-1">
-
-              <b>
-                Fuente:
-              </b>{' '}
-
-              {
-                modalKm
-                  .fuente
-              }{' '}
-
-              (
-              {
-                modalKm
-                  .campo
-              }
-              )
-
-            </p>
-
-            <p className="text-sm mb-4">
-
-              <b>
-                Diferencia:
-              </b>{' '}
-
-              {
-                modalKm
-                  .diferencia
-              } km
-
-            </p>
-
-            <div className="flex justify-end gap-3">
-
-              <button
-                onClick={
-                  () =>
-                    setModalKm(
-                      null
-                    )
-                }
-                className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded"
-              >
-
-                Cancelar
-
-              </button>
-
-              <button
-                onClick={
-                  () =>
-                    modalKm
-                      .onConfirm &&
-                    modalKm
-                      .onConfirm()
-                }
-                className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded"
-              >
-
-                Confirmar y Continuar
-
-              </button>
-
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/70 p-3 sm:p-4">
+          <div role="alertdialog" aria-modal="true" aria-labelledby="titulo-alerta-km" className="w-full max-w-md overflow-hidden rounded-2xl border border-amber-300 bg-white shadow-2xl">
+            <div className="flex items-start gap-3 bg-amber-50 px-5 py-4 border-b border-amber-200">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700"><i className="fas fa-exclamation-triangle text-xl" aria-hidden="true"></i></span>
+              <div><p className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Validación de kilometraje</p><h3 id="titulo-alerta-km" className="mt-1 text-base font-bold text-slate-900">{modalKm.titulo}</h3><p className="mt-1 text-xs text-amber-800">Se requiere su confirmación para continuar.</p></div>
             </div>
-
+            <div className="space-y-4 px-5 py-5">
+              <p className="text-sm leading-relaxed text-slate-700">El kilometraje ingresado supera en más de <strong>300 km</strong> el último registro del vehículo.</p>
+              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+                <div><p className="text-xs text-slate-500">Kilometraje ingresado</p><p className="font-bold text-[#194567]">{formatoKm(modalKm.kilometraje)} km</p></div>
+                <div><p className="text-xs text-slate-500">Último registro</p><p className="font-bold text-slate-900">{formatoKm(modalKm.maxKm)} km</p></div>
+                <div><p className="text-xs text-slate-500">Diferencia</p><p className="font-bold text-amber-700">{formatoKm(modalKm.diferencia)} km</p></div>
+                <div><p className="text-xs text-slate-500">Fuente</p><p className="font-semibold text-slate-800">{modalKm.fuente || '-'} {modalKm.campo ? '(' + modalKm.campo + ')' : ''}</p></div>
+              </div>
+              <p className="text-xs text-slate-600">Si el valor es incorrecto, seleccione Cancelar para corregirlo. Si es correcto, confirme expresamente.</p>
+              <div className="flex flex-wrap justify-end gap-2">
+                <button type="button" onClick={() => { const tipo = modalKm.tipo; setModalKm(null); requestAnimationFrame(() => (tipo === 'entrada' ? kmInicialRef : kmFinalRef).current?.focus()) }} className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancelar y corregir</button>
+                <button type="button" onClick={() => modalKm.onConfirm?.()} className="rounded-lg bg-[#194567] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#12344f]">Confirmar y continuar</button>
+              </div>
+            </div>
           </div>
-
         </div>
-
       )}
 
     </div>
