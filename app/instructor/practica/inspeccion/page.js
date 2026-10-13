@@ -182,6 +182,7 @@ export default function InspeccionPage() {
   const [observacionesPorSeccion, setObservacionesPorSeccion] = useState({})
   const [seccionActiva, setSeccionActiva] = useState(null)
   const [observacionBorrador, setObservacionBorrador] = useState('')
+  const inspeccionIniciada = Boolean(seccionActiva) || Object.values(secciones).some((estado) => estado !== null)
   const observacionesUnificadas = SECCIONES_INSPECCION
     .filter((item) => secciones[item.id] === 'NO CONFORME')
     .map((item) => `Sección ${item.numero} - ${item.titulo}: ${(observacionesPorSeccion[item.id] || '').trim()}`)
@@ -1682,7 +1683,7 @@ const puedeGuardar =
 
             </select>
 
-            {mensajeDuplicado && (
+            {mensajeDuplicado && (!duplicadoValido || !inspeccionIniciada) && (
               <p
                 className={`text-xs mt-1 ${
                   mensajeDuplicado.includes(
@@ -1729,7 +1730,7 @@ const puedeGuardar =
               }
             />
 
-            {mensajeKm && (
+            {mensajeKm && (!kilometrajeValido || !inspeccionIniciada || mensajeKmNormalizado.includes('supera')) && (
               <p
                 className={`text-xs mt-1 ${
                   mensajeKm
