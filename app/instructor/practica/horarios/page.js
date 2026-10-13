@@ -163,6 +163,7 @@ const fmtHM = (
 export default function HorariosPracticaPage() {
   const router =
     useRouter()
+  const [modalHorario, setModalHorario] = useState(null)
 
   const [
     user,
@@ -2279,8 +2280,23 @@ export default function HorariosPracticaPage() {
         </div>
 
         {!tengoAbierta && (
+          <button type="button" onClick={() => setModalHorario('entrada')} className="mx-auto mb-6 flex min-h-44 w-full max-w-sm flex-col rounded-xl border-2 border-slate-500 bg-[#367DA8] p-4 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
+            <i className="fas fa-sign-in-alt mb-3 text-3xl" aria-hidden="true"></i>
+            <span className="text-xs font-bold tracking-wide text-sky-100">REGISTRO DE HORARIOS</span>
+            <span className="mt-2 text-lg font-bold">Registrar entrada</span>
+            <span className="mt-2 text-sm text-slate-100">Abrir formulario de ingreso a la jornada práctica</span>
+            <span className="mt-auto pt-3 text-sm font-semibold">Tocar para registrar <i className="fas fa-chevron-right ml-1" aria-hidden="true"></i></span>
+          </button>
+        )}
 
-          <div className="border rounded-lg shadow-sm mb-8">
+        {!tengoAbierta && modalHorario === 'entrada' && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation">
+          <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal-entrada" className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between bg-[#194567] px-4 py-3 text-white">
+              <h2 id="titulo-modal-entrada" className="text-base font-bold">Registro de entrada</h2>
+              <button type="button" onClick={() => setModalHorario(null)} aria-label="Cerrar formulario de entrada" className="rounded-lg border border-white/40 px-3 py-1.5 text-sm">Cerrar</button>
+            </div>
+          <div className="border rounded-lg shadow-sm">
 
             <h3 className="bg-[var(--primary-dark)] text-white font-semibold px-4 py-2 rounded-t-lg flex items-center gap-2 text-sm">
 
@@ -2547,11 +2563,28 @@ export default function HorariosPracticaPage() {
             </div>
 
           </div>
-
+          </div>
+          </div>
         )}
 
-        {tengoAbierta &&
-          registroAbierto && (
+        {tengoAbierta && registroAbierto && (
+          <button type="button" onClick={() => setModalHorario('salida')} className="mx-auto mb-6 flex min-h-44 w-full max-w-sm flex-col rounded-xl border-2 border-slate-500 bg-[#367DA8] p-4 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
+            <i className="fas fa-sign-out-alt mb-3 text-3xl" aria-hidden="true"></i>
+            <span className="text-xs font-bold tracking-wide text-sky-100">REGISTRO DE HORARIOS</span>
+            <span className="mt-2 text-lg font-bold">Registrar salida</span>
+            <span className="mt-2 text-sm text-slate-100">Abrir formulario de finalización de la jornada práctica</span>
+            <span className="mt-auto pt-3 text-sm font-semibold">Tocar para registrar <i className="fas fa-chevron-right ml-1" aria-hidden="true"></i></span>
+          </button>
+        )}
+
+        {tengoAbierta && registroAbierto && modalHorario === 'salida' && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation">
+            <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal-salida" className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+              <div className="sticky top-0 z-10 flex items-center justify-between bg-[#194567] px-4 py-3 text-white">
+                <h2 id="titulo-modal-salida" className="text-base font-bold">Registro de salida</h2>
+                <button type="button" onClick={() => setModalHorario(null)} aria-label="Cerrar formulario de salida" className="rounded-lg border border-white/40 px-3 py-1.5 text-sm">Cerrar</button>
+              </div>
+          <div className="border rounded-lg shadow-sm">
 
           <div className="border rounded-lg shadow-sm">
 
@@ -2869,7 +2902,8 @@ export default function HorariosPracticaPage() {
             </div>
 
           </div>
-
+            </div>
+          </div>
         )}
 
         <div className="flex justify-center gap-4 mt-8 flex-wrap">
