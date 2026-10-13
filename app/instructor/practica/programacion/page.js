@@ -18,6 +18,9 @@ import {
   toast,
 } from 'sonner'
 
+import { EncabezadoPractica } from '@/components/instructor/practica/EstilosModuloPractica'
+import { cerrarSesion } from '@/lib/auth/logout'
+
 // =========================================================
 // CONSTANTES
 // =========================================================
@@ -1330,8 +1333,9 @@ export default function InstructorProgramacionPage() {
     <div
       className="
         min-h-screen
-        bg-gray-100
-        pb-10
+        bg-[#F5F7FA]
+        p-2
+        sm:p-4
       "
     >
       <Toaster
@@ -1339,122 +1343,14 @@ export default function InstructorProgramacionPage() {
         richColors
       />
 
-      {/* ===============================================
-          ENCABEZADO
-      =============================================== */}
-
-      <div
-        className="
-          sticky
-          top-0
-          z-30
-          bg-slate-800
-          text-white
-          shadow-md
-        "
-      >
-        <div
-          className="
-            max-w-7xl
-            mx-auto
-            px-4
-            py-3
-          "
-        >
-          <div
-            className="
-              flex
-              items-center
-              gap-3
-            "
-          >
-            <button
-              type="button"
-              onClick={
-                volver
-              }
-              className="
-                w-9
-                h-9
-                flex
-                items-center
-                justify-center
-                rounded-lg
-                bg-white/10
-                hover:bg-white/20
-                transition
-              "
-              title="Volver"
-            >
-              <i className="fas fa-arrow-left"></i>
-            </button>
-
-            <div
-              className="
-                min-w-0
-                flex-1
-              "
-            >
-              <h1
-                className="
-                  text-base
-                  font-black
-                  uppercase
-                  tracking-wide
-                  truncate
-                "
-              >
-                Programación de Clases
-              </h1>
-
-              <p
-                className="
-                  text-[10px]
-                  text-slate-300
-                  truncate
-                "
-              >
-                Consulta de programación asignada
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={
-                cargarProgramacion
-              }
-              disabled={
-                cargando
-              }
-              className="
-                w-9
-                h-9
-                flex
-                items-center
-                justify-center
-                rounded-lg
-                bg-white/10
-                hover:bg-white/20
-                disabled:opacity-50
-                transition
-              "
-              title="Actualizar"
-            >
-              <i
-                className={`
-                  fas
-                  fa-sync-alt
-                  ${
-                    cargando
-                      ? 'fa-spin'
-                      : ''
-                  }
-                `}
-              ></i>
-            </button>
-          </div>
-        </div>
-      </div>
+      <div className="mx-auto w-full max-w-7xl overflow-hidden rounded-2xl border border-[#DCE4EB] bg-white shadow-lg">
+        <EncabezadoPractica
+          titulo="Programación de Clases"
+          usuario={instructor?.nombre_completo || user?.nombreCompleto || user?.usuario}
+          cea={empresa?.nombre || user?.nombreEmpresa}
+          onRegresar={volver}
+          onCerrarSesion={() => cerrarSesion(router)}
+        />
 
       <main
         className="
@@ -1465,99 +1361,18 @@ export default function InstructorProgramacionPage() {
           py-4
         "
       >
-        {/* =============================================
-            INFORMACIÓN INSTRUCTOR
-        ============================================= */}
-
-        <div
-          className="
-            bg-white
-            border
-            border-gray-200
-            rounded-xl
-            shadow-sm
-            p-4
-            mb-4
-          "
-        >
-          <div
-            className="
-              flex
-              items-start
-              gap-3
-            "
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={cargarProgramacion}
+            disabled={cargando}
+            aria-label="Actualizar programación"
+            title="Actualizar programación"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#367DA8] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#194567] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <div
-              className="
-                w-11
-                h-11
-                flex
-                items-center
-                justify-center
-                rounded-full
-                bg-sky-100
-                text-sky-700
-                shrink-0
-              "
-            >
-              <i className="fas fa-user-tie text-lg"></i>
-            </div>
-
-            <div
-              className="
-                min-w-0
-                flex-1
-              "
-            >
-              <p
-                className="
-                  text-[9px]
-                  font-black
-                  uppercase
-                  tracking-wide
-                  text-gray-400
-                "
-              >
-                Instructor
-              </p>
-
-              <p
-                className="
-                  text-sm
-                  sm:text-base
-                  font-black
-                  text-gray-800
-                  uppercase
-                "
-              >
-                {instructor
-                  ?.nombre_completo ||
-                  user
-                    ?.nombreCompleto ||
-                  'INSTRUCTOR'}
-              </p>
-
-              {(empresa?.nombre ||
-                user?.nombreEmpresa) && (
-                <p
-                  className="
-                    mt-1
-                    text-[10px]
-                    text-gray-500
-                  "
-                >
-                  CEA:{' '}
-
-                  <strong>
-                    {empresa
-                      ?.nombre ||
-                      user
-                        ?.nombreEmpresa}
-                  </strong>
-                </p>
-              )}
-            </div>
-          </div>
+            <i className={`fas fa-sync-alt ${cargando ? 'fa-spin' : ''}`} aria-hidden="true"></i>
+            Actualizar
+          </button>
         </div>
 
         {/* =============================================
@@ -1597,8 +1412,9 @@ export default function InstructorProgramacionPage() {
                   className={`
                     rounded-lg
                     px-1
+                    min-h-11
                     py-2.5
-                    text-[9px]
+                    text-[10px]
                     sm:text-[10px]
                     font-black
                     uppercase
@@ -3490,6 +3306,7 @@ export default function InstructorProgramacionPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
