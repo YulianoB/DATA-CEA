@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
+import { CarFront, ShieldCheck, Wrench, IdCard, FileBadge } from 'lucide-react'
+import { EncabezadoPractica } from '@/components/instructor/practica/EstilosModuloPractica'
 
 // ============================================================
 // CONSTANTES
@@ -841,83 +843,35 @@ export default function DocumentosVehiculosPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA] p-2 sm:p-4">
 
       <Toaster
         position="top-center"
         richColors
       />
 
-      <div className="w-full max-w-5xl bg-white rounded-xl shadow-lg p-5 sm:p-6">
+      <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-[#DCE4EB] bg-white shadow-lg">
 
-        {/* ==================================================
-            TÍTULO
-        ================================================== */}
-
-        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--primary)] flex items-center justify-center gap-2">
-
-          <i className="fas fa-car"></i>
-
-          Documentos de Vehículos
-
-        </h2>
-
-        {/* ==================================================
-            USUARIO
-        ================================================== */}
-
-        <div className="bg-blue-50 border border-blue-200 text-[var(--primary-dark)] p-2 rounded-md mb-6 text-center text-sm">
-
-          <span>
-            Usuario:{' '}
-
-            <strong>
-              {user.nombreCompleto ||
-                user.nombre_completo}
-            </strong>
-          </span>
-
-          {user.rol && (
-            <span>
-              {' '}
-              ({user.rol})
-            </span>
-          )}
-
-          {user.nombreEmpresa && (
-            <span className="block mt-1">
-
-              CEA:{' '}
-
-              <strong>
-                {
-                  user.nombreEmpresa
-                }
-              </strong>
-
-            </span>
-          )}
-
-        </div>
-
+        <EncabezadoPractica
+          titulo="Documentos de Vehículos"
+          usuario={user.nombreCompleto || user.nombre_completo || user.usuario}
+          cea={user.nombreEmpresa || user.nombre_empresa}
+          onRegresar={() => router.push('/instructor/practica/documentos')}
+          onCerrarSesion={handleLogout}
+        />
+        <main className="px-3 py-4 sm:px-5 sm:py-5">
         {/* ==================================================
             SELECT VEHÍCULO
         ================================================== */}
 
-        <div className="border rounded-lg overflow-hidden mb-5">
+        <div className="mb-4 rounded-xl border border-[#DCE4EB] bg-slate-50 p-3">
 
-          <div className="bg-black text-white px-3 py-2 text-sm font-semibold flex items-center gap-2">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#194567]"><CarFront size={18} /> Seleccionar vehículo</div>
 
-            <i className="fas fa-id-card-alt"></i>
-
-            Vehículo
-
-          </div>
-
-          <div className="p-3">
+          <div className="p-0">
 
             <select
-              className="w-full border p-2 rounded text-sm"
+              className="min-h-11 w-full rounded-lg border border-[#A9BDCC] bg-white p-2 text-sm"
               value={
                 vehiculoId
               }
@@ -970,7 +924,7 @@ export default function DocumentosVehiculosPage() {
 
         {vehiculoSeleccionado && (
 
-          <div className="bg-gray-50 border rounded-lg p-3 mb-6 grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+          <div className="mb-4 grid grid-cols-2 gap-2 rounded-lg border border-[#DCE4EB] bg-slate-50 p-3 text-xs sm:grid-cols-4">
 
             <div>
 
@@ -1063,33 +1017,33 @@ export default function DocumentosVehiculosPage() {
         {vehiculoSeleccionado &&
           !cargandoDocumentos && (
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 items-stretch gap-2">
 
             {/* ==============================================
                 SOAT
             ============================================== */}
 
             <div
-              className={`border rounded-xl p-5 shadow-sm ${claseTarjetaEstado(
+              className={`flex h-full min-w-0 flex-col rounded-xl border p-2.5 shadow-sm sm:p-3 ${claseTarjetaEstado(
                 documentos.soat
               )}`}
             >
 
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
 
                 <div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
 
-                    <i className="fas fa-shield-alt text-lg"></i>
+                    <ShieldCheck size={18} className="shrink-0 text-[#194567]" />
 
-                    <h3 className="font-bold">
+                    <h3 className="text-xs font-bold text-[#173A57]">
                       SOAT
                     </h3>
 
                   </div>
 
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="mt-1 text-[10px] leading-snug text-slate-500">
                     Seguro Obligatorio de Accidentes de Tránsito
                   </p>
 
@@ -1109,7 +1063,7 @@ export default function DocumentosVehiculosPage() {
 
               {documentos.soat ? (
 
-                <div className="mt-5 text-sm space-y-2">
+                <div className="flex flex-1 flex-col space-y-1.5 break-words text-xs">
 
                   <p>
                     <strong>
@@ -1190,18 +1144,18 @@ export default function DocumentosVehiculosPage() {
                         documentos.soat
                       )
                     }
-                    className={`mt-2 px-4 py-2 rounded-lg text-sm text-white ${
+                    className={`mt-auto flex min-h-12 w-full items-center justify-center rounded-lg px-2 py-2 text-center text-xs font-semibold text-white ${
                       esVencido(
                         documentos.soat
                       )
                         ? 'bg-red-600 hover:bg-red-700'
-                        : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                        : 'bg-[#367DA8] hover:bg-[#194567]'
                     }`}
                   >
 
                     <i className="fas fa-sync-alt mr-2"></i>
 
-                    Renovar SOAT
+                    Actualizar
 
                   </button>
 
@@ -1209,9 +1163,9 @@ export default function DocumentosVehiculosPage() {
 
               ) : (
 
-                <div className="mt-5">
+                <div className="flex flex-1 flex-col">
 
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="mb-3 text-xs text-slate-500">
                     No existe un SOAT registrado para este vehículo.
                   </p>
 
@@ -1222,12 +1176,12 @@ export default function DocumentosVehiculosPage() {
                         null
                       )
                     }
-                    className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded-lg text-sm"
+                    className="mt-auto flex min-h-12 w-full items-center justify-center rounded-lg bg-[#367DA8] px-2 py-2 text-center text-xs font-semibold text-white hover:bg-[#194567]"
                   >
 
                     <i className="fas fa-plus mr-2"></i>
 
-                    Registrar SOAT
+                    Actualizar
 
                   </button>
 
@@ -1242,26 +1196,26 @@ export default function DocumentosVehiculosPage() {
             ============================================== */}
 
             <div
-              className={`border rounded-xl p-5 shadow-sm ${claseTarjetaEstado(
+              className={`flex h-full min-w-0 flex-col rounded-xl border p-2.5 shadow-sm sm:p-3 ${claseTarjetaEstado(
                 documentos.rtm
               )}`}
             >
 
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
 
                 <div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
 
-                    <i className="fas fa-tools text-lg"></i>
+                    <Wrench size={18} className="shrink-0 text-[#194567]" />
 
-                    <h3 className="font-bold">
+                    <h3 className="text-xs font-bold text-[#173A57]">
                       Revisión Técnico-Mecánica
                     </h3>
 
                   </div>
 
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="mt-1 text-[10px] leading-snug text-slate-500">
                     RTM
                   </p>
 
@@ -1281,7 +1235,7 @@ export default function DocumentosVehiculosPage() {
 
               {documentos.rtm ? (
 
-                <div className="mt-5 text-sm space-y-2">
+                <div className="flex flex-1 flex-col space-y-1.5 break-words text-xs">
 
                   <p>
                     <strong>
@@ -1362,18 +1316,18 @@ export default function DocumentosVehiculosPage() {
                         documentos.rtm
                       )
                     }
-                    className={`mt-2 px-4 py-2 rounded-lg text-sm text-white ${
+                    className={`mt-auto flex min-h-12 w-full items-center justify-center rounded-lg px-2 py-2 text-center text-xs font-semibold text-white ${
                       esVencido(
                         documentos.rtm
                       )
                         ? 'bg-red-600 hover:bg-red-700'
-                        : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                        : 'bg-[#367DA8] hover:bg-[#194567]'
                     }`}
                   >
 
                     <i className="fas fa-sync-alt mr-2"></i>
 
-                    Renovar RTM
+                    Actualizar
 
                   </button>
 
@@ -1381,9 +1335,9 @@ export default function DocumentosVehiculosPage() {
 
               ) : (
 
-                <div className="mt-5">
+                <div className="flex flex-1 flex-col">
 
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="mb-3 text-xs text-slate-500">
                     No existe una RTM registrada para este vehículo.
                   </p>
 
@@ -1394,12 +1348,12 @@ export default function DocumentosVehiculosPage() {
                         null
                       )
                     }
-                    className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded-lg text-sm"
+                    className="mt-auto flex min-h-12 w-full items-center justify-center rounded-lg bg-[#367DA8] px-2 py-2 text-center text-xs font-semibold text-white hover:bg-[#194567]"
                   >
 
                     <i className="fas fa-plus mr-2"></i>
 
-                    Registrar RTM
+                    Actualizar
 
                   </button>
 
@@ -1414,27 +1368,27 @@ export default function DocumentosVehiculosPage() {
             ============================================== */}
 
             <div
-              className={`border rounded-xl p-5 shadow-sm ${claseTarjetaEstado(
+              className={`flex h-full min-w-0 flex-col rounded-xl border p-2.5 shadow-sm sm:p-3 ${claseTarjetaEstado(
                 documentos
                   .tarjeta_servicio
               )}`}
             >
 
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
 
                 <div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
 
-                    <i className="fas fa-address-card text-lg"></i>
+                    <FileBadge size={18} className="shrink-0 text-[#194567]" />
 
-                    <h3 className="font-bold">
+                    <h3 className="text-xs font-bold text-[#173A57]">
                       Tarjeta de Servicio
                     </h3>
 
                   </div>
 
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="mt-1 text-[10px] leading-snug text-slate-500">
                     Documento de vinculación del vehículo al CEA
                   </p>
 
@@ -1466,7 +1420,7 @@ export default function DocumentosVehiculosPage() {
               {documentos
                 .tarjeta_servicio ? (
 
-                <div className="mt-5 text-sm space-y-2">
+                <div className="flex flex-1 flex-col space-y-1.5 break-words text-xs">
 
                   <p>
                     <strong>
@@ -1553,9 +1507,9 @@ export default function DocumentosVehiculosPage() {
 
               ) : (
 
-                <div className="mt-5">
+                <div className="flex flex-1 flex-col">
 
-                  <p className="text-sm text-gray-500 mb-3">
+                  <p className="mb-3 text-xs text-slate-500">
                     No existe una Tarjeta de Servicio registrada para este vehículo.
                   </p>
 
@@ -1577,23 +1531,23 @@ export default function DocumentosVehiculosPage() {
                 LICENCIA DE TRÁNSITO
             ============================================== */}
 
-            <div className="border border-gray-300 bg-gray-50 rounded-xl p-5 shadow-sm">
+            <div className="flex h-full min-w-0 flex-col rounded-xl border border-slate-300 bg-slate-50 p-2.5 shadow-sm sm:p-3">
 
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
 
                 <div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
 
-                    <i className="fas fa-id-card text-lg"></i>
+                    <IdCard size={18} className="shrink-0 text-[#194567]" />
 
-                    <h3 className="font-bold">
+                    <h3 className="text-xs font-bold text-[#173A57]">
                       Licencia de Tránsito
                     </h3>
 
                   </div>
 
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="mt-1 text-[10px] leading-snug text-slate-500">
                     Información de matrícula del vehículo
                   </p>
 
@@ -1609,7 +1563,7 @@ export default function DocumentosVehiculosPage() {
 
               </div>
 
-              <div className="mt-5 text-sm space-y-2">
+              <div className="flex flex-1 flex-col space-y-1.5 break-words text-xs">
 
                 <p>
                   <strong>
@@ -1653,41 +1607,7 @@ export default function DocumentosVehiculosPage() {
 
         )}
 
-        {/* ==================================================
-            NAVEGACIÓN
-        ================================================== */}
-
-        <div className="flex justify-center gap-3 mt-8 flex-wrap">
-
-          <button
-            onClick={() =>
-              router.push(
-                '/instructor/practica/documentos'
-              )
-            }
-            className="bg-gray-600 hover:bg-gray-800 text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
-          >
-
-            <i className="fas fa-arrow-left"></i>
-
-            Regresar
-
-          </button>
-
-          <button
-            onClick={
-              handleLogout
-            }
-            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
-          >
-
-            <i className="fas fa-sign-out-alt"></i>
-
-            Cerrar Sesión
-
-          </button>
-
-        </div>
+        </main>
 
       </div>
 
@@ -1699,7 +1619,7 @@ export default function DocumentosVehiculosPage() {
 
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
 
-          <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-4 shadow-xl sm:p-6">
 
             <h3 className="text-lg font-bold text-[var(--primary)] mb-1">
 
@@ -1944,7 +1864,7 @@ export default function DocumentosVehiculosPage() {
                 className={`px-4 py-2 rounded-lg text-white ${
                   guardando
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                    : 'bg-[#367DA8] hover:bg-[#194567]'
                 }`}
               >
 
