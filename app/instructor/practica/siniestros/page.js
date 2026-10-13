@@ -281,6 +281,12 @@ export default function SiniestrosPage() {
     )
   }
 
+  const validarPersonas = (valor) => {
+    const error = validarEnteroMin0(valor)
+    if (error) return error
+    return Number(valor) >= 1 ? '' : 'Debe registrar al menos una persona involucrada.'
+  }
+
   const onPersChange = (e) => {
     const clean =
       e.target.value.replace(
@@ -291,7 +297,7 @@ export default function SiniestrosPage() {
     setPersonasInvolucradas(clean)
 
     setMsgPers(
-      validarEnteroMin0(clean)
+      validarPersonas(clean)
     )
   }
 
@@ -409,7 +415,7 @@ export default function SiniestrosPage() {
       Boolean(tipoSiniestro)
 
     const okPers =
-      validarEnteroMin0(
+      validarPersonas(
         personasInvolucradas
       ) === ''
 
@@ -649,7 +655,7 @@ export default function SiniestrosPage() {
     cerrarSesion(router)
 
   const seccionCompleta = (numero) => {
-    if (numero === 1) return [personasInvolucradas, heridosLeves, heridosGraves, fatalidades].every((v) => v !== '' && validarEnteroMin0(v) === '')
+    if (numero === 1) return validarPersonas(personasInvolucradas) === '' && [heridosLeves, heridosGraves, fatalidades].every((v) => validarEnteroMin0(v) === '')
     if (numero === 2) return Boolean(nombreConductor.trim() && documentoConductor.trim())
     if (numero === 3) return Boolean(resumen.trim())
     return puedeGuardar
@@ -815,22 +821,25 @@ export default function SiniestrosPage() {
           </div>
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
             <TarjetaSeccionSiniestro numero={1} titulo="Personas involucradas" descripcion="Total de personas, lesionados leves, graves y fallecidos." completada={seccionCompleta(1)} onClick={() => abrirSeccion(1)} />
-            <TarjetaSeccionSiniestro numero={2} titulo="Responsable del vehículo" descripcion="Datos del instructor responsable, no del aprendiz." completada={seccionCompleta(2)} onClick={() => abrirSeccion(2)} />
+            <TarjetaSeccionSiniestro numero={2} titulo="Responsable del vehículo" descripcion="Instructor o personal autorizado a cargo del vehículo." completada={seccionCompleta(2)} onClick={() => abrirSeccion(2)} />
             <TarjetaSeccionSiniestro numero={3} titulo="Descripción del siniestro" descripcion="Hora, lugar, vehículos y hechos relevantes." completada={seccionCompleta(3)} onClick={() => abrirSeccion(3)} />
             <TarjetaSeccionSiniestro numero={4} titulo="Revisión del registro" descripcion="Verifique los datos antes de guardar." completada={seccionCompleta(4)} onClick={() => abrirSeccion(4)} />
           </div>
           <AccionesModuloPractica onGuardar={registrarSiniestro} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar Siniestro" />
           {seccionAbierta === 1 && <ModalSeccionSiniestro numero={1} titulo="Personas involucradas" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
-            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-slate-800">Registre las cifras correspondientes a este siniestro. Escriba 0 cuando no haya personas en alguna categoría. Los lesionados y fallecidos forman parte del total de personas involucradas.</div>
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-slate-800">Registre al menos una persona involucrada. En heridos leves, heridos graves y fatalidades escriba 0 si no hubo casos; estos campos no pueden quedar vacíos. Los lesionados y fallecidos forman parte del total de personas involucradas.</div>
             <div>
               <label className="block mb-1 font-semibold text-sm">
                 Personas Involucradas
               </label>
-              <p className="mb-2 text-xs leading-relaxed text-slate-600">Cuente todas las personas directamente involucradas en este siniestro: conductor, pasajeros, peatones u otros actores viales, tanto ilesos como lesionados o fallecidos. No registre aquí el número de vehículos.</p>
+              <p className="mb-2 text-xs leading-relaxed text-slate-600">Cuente todas las personas directamente involucradas en este siniestro: conductor, pasajeros, peatones u otros actores viales, tanto ilesos como lesionados o fallecidos. No registre aquí el número de vehículos. Este valor debe ser un número entero igual o mayor que 1.</p>
 
               <input
                 type="number"
-                min="0"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                required
                 className="w-full border p-2 rounded-lg text-sm"
                 value={personasInvolucradas}
                 onChange={onPersChange}
@@ -852,6 +861,9 @@ export default function SiniestrosPage() {
               <input
                 type="number"
                 min="0"
+                step="1"
+                inputMode="numeric"
+                required
                 className="w-full border p-2 rounded-lg text-sm"
                 value={heridosLeves}
                 onChange={onLevChange}
@@ -873,6 +885,9 @@ export default function SiniestrosPage() {
               <input
                 type="number"
                 min="0"
+                step="1"
+                inputMode="numeric"
+                required
                 className="w-full border p-2 rounded-lg text-sm"
                 value={heridosGraves}
                 onChange={onGravChange}
@@ -893,6 +908,9 @@ export default function SiniestrosPage() {
               <input
                 type="number"
                 min="0"
+                step="1"
+                inputMode="numeric"
+                required
                 className="w-full border p-2 rounded-lg text-sm"
                 value={fatalidades}
                 onChange={onFatChange}
@@ -907,10 +925,10 @@ export default function SiniestrosPage() {
             {erroresSeccion && !seccionCompleta(seccionAbierta) && <p role="alert" className="text-xs font-semibold text-red-600">Complete todos los campos obligatorios con valores válidos.</p>}
           </ModalSeccionSiniestro>}
           {seccionAbierta === 2 && <ModalSeccionSiniestro numero={2} titulo="Responsable del vehículo" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
-            <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-slate-800">Registre los datos del instructor del CEA que tenía a cargo el vehículo durante la práctica en la que ocurrió el siniestro. No registre aquí los datos del aprendiz, aunque estuviera conduciendo.</p>
+            <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-slate-800">Registre los datos de la persona del CEA responsable del vehículo en el momento del siniestro. Durante una clase práctica corresponde al instructor responsable, no al aprendiz, aunque este estuviera conduciendo. En otros desplazamientos puede ser personal administrativo u otro empleado autorizado que tuviera el vehículo a su cargo, por ejemplo, al llevarlo a parqueadero o mantenimiento.</p>
             <div>
               <label className="block mb-1 font-semibold text-sm">
-                Nombre del instructor responsable del vehículo <span className="text-red-600">*</span>
+                Nombre de la persona responsable del vehículo <span className="text-red-600">*</span>
               </label>
 
               <input
@@ -929,7 +947,7 @@ export default function SiniestrosPage() {
 
             <div>
               <label className="block mb-1 font-semibold text-sm">
-                Documento de identidad del instructor responsable <span className="text-red-600">*</span>
+                Documento de identidad de la persona responsable <span className="text-red-600">*</span>
               </label>
 
               <input
@@ -977,11 +995,11 @@ export default function SiniestrosPage() {
                 ['Placa', placa], ['Fecha del siniestro', fechaSiniestro], ['Tipo de siniestro', tipoSiniestro],
                 ['Personas involucradas', personasInvolucradas], ['Heridos leves', heridosLeves],
                 ['Heridos graves', heridosGraves], ['Fatalidades', fatalidades],
-                ['Instructor responsable del vehículo', nombreConductor], ['Documento del instructor responsable', documentoConductor],
+                ['Persona responsable del vehículo', nombreConductor], ['Documento de la persona responsable', documentoConductor],
                 ['Descripción detallada del siniestro', resumen],
               ].map(([etiqueta, valor]) => {
                 const esCantidad = ['Personas involucradas', 'Heridos leves', 'Heridos graves', 'Fatalidades'].includes(etiqueta)
-                const pendiente = esCantidad ? validarEnteroMin0(valor) !== '' : !String(valor ?? '').trim()
+                const pendiente = etiqueta === 'Personas involucradas' ? validarPersonas(valor) !== '' : esCantidad ? validarEnteroMin0(valor) !== '' : !String(valor ?? '').trim()
                 return <div key={etiqueta} className={`rounded-lg border p-3 ${pendiente ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
                   <dt className={`text-xs font-semibold ${pendiente ? 'text-red-700' : 'text-slate-600'}`}>{etiqueta} <span className="text-red-600">*</span></dt>
                   <dd className={`mt-1 break-words font-medium ${pendiente ? 'text-red-700' : 'text-slate-900'}`}>{pendiente ? 'Obligatorio: pendiente o inválido' : valor}</dd>
