@@ -3,7 +3,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
 import { EncabezadoPractica, TarjetaInspeccionCompacta, ModalEvaluacionPractica, AccionesModuloPractica, GUIAS_NO_CONFORMIDAD } from '@/components/instructor/practica/EstilosModuloPractica'
@@ -144,6 +144,10 @@ export default function InspeccionPage() {
     mensajeKm,
     setMensajeKm,
   ] = useState('')
+
+  const [kmValidadoPara, setKmValidadoPara] = useState('')
+  const [validandoKm, setValidandoKm] = useState(false)
+  const solicitudKmRef = useRef(0)
 
   // ============================================================
   // Alerta plan de mantenimiento
@@ -473,6 +477,9 @@ export default function InspeccionPage() {
 
   const resetPorCambioPlaca =
     () => {
+      solicitudKmRef.current += 1
+      setKmValidadoPara('')
+      setValidandoKm(false)
       setKilometraje('')
       setMensajeKm('')
 
@@ -988,61 +995,51 @@ const validarDocumentacionVehiculo =
   // Kilometraje
   // ============================================================
 
-  const handleKmChange =
-    async (e) => {
-      const nuevoKm =
-        e.target.value
+  const handleKmChange = (e) => {
+    solicitudKmRef.current += 1
+    setKilometraje(e.target.value)
+    setMensajeKm('')
+    setKmValidadoPara('')
+    setValidandoKm(false)
+    setForzarGuardado(false)
+    setMostrarModalKm(false)
+    setDatosKm(null)
+  }
 
-      setKilometraje(
-        nuevoKm
-      )
+  const handleKmBlur = async () => {
+    const valor = kilometraje.trim()
+    if (!nitActual || !placaSeleccionada || valor === '' || !Number.isFinite(Number(valor)) || Number(valor) < 0) return
+    if (kmValidadoPara === valor) return
 
-      setMensajeKm('')
-      setForzarGuardado(false)
+    const solicitud = ++solicitudKmRef.current
+    const placaAlValidar = placaSeleccionada
+    setValidandoKm(true)
+    setMensajeKm('')
+    setKmValidadoPara('')
 
-      if (
-        !nitActual ||
-        !placaSeleccionada ||
-        nuevoKm === ''
-      ) {
-        return
-      }
+    try {
+      const resultado = await validarKilometraje(nitActual, placaAlValidar, Number(valor))
+      if (solicitud !== solicitudKmRef.current) return
 
-      const resultado =
-        await validarKilometraje(
-          nitActual,
-          placaSeleccionada,
-          parseInt(
-            nuevoKm,
-            10
-          )
-        )
-
-      setMensajeKm(
-        resultado.mensaje ||
-          ''
-      )
-
-      if (
-        resultado.estado ===
-        'advertencia'
-      ) {
+      setMensajeKm(resultado.mensaje || '')
+      setKmValidadoPara(valor)
+      if (resultado.estado === 'advertencia') {
         setDatosKm(resultado)
         setMostrarModalKm(true)
-
-        return
+      } else {
+        setMostrarModalKm(false)
+        setDatosKm(null)
+        if (resultado.estado === 'error') toast.error(resultado.mensaje || 'No fue posible validar el kilometraje.')
       }
-
-      setMostrarModalKm(false)
-      setDatosKm(null)
-
-      if (
-        resultado.estado ===
-        'error'
-      ) {
-        toast.error(resultado.mensaje || 'No fue posible validar el kilometraje.')
-      }
+    } catch (error) {
+      if (solicitud !== solicitudKmRef.current) return
+      setMensajeKm('No fue posible validar el kilometraje.')
+      setKmValidadoPara('')
+      toast.error('No fue posible validar el kilometraje.')
+    } finally {
+      if (solicitud === solicitudKmRef.current) setValidandoKm(false)
     }
+  }
 
   // ============================================================
   // Secciones
@@ -1093,6 +1090,9 @@ const validarDocumentacionVehiculo =
   ).toLowerCase()
 
 const kilometrajeValido =
+  !validandoKm &&
+  !mostrarModalKm &&
+  kmValidadoPara === kilometraje.trim() &&
   (
     mensajeKm &&
     !mensajeKmNormalizado.includes(
@@ -1108,7 +1108,7 @@ const kilometrajeValido =
       'error'
     )
   ) ||
-  forzarGuardado
+  (!validandoKm && !mostrarModalKm && kmValidadoPara === kilometraje.trim() && forzarGuardado)
 
 const mensajeDuplicadoNormalizado =
   String(
@@ -1701,6 +1701,7 @@ const puedeGuardar =
               onChange={
                 handleKmChange
               }
+              onBlur={handleKmBlur}
               disabled={
                 !placaSeleccionada ||
                 validandoDocumentos ||
