@@ -197,6 +197,47 @@ export function ModalSeccionMantenimiento({ numero, titulo, onCerrar, onCancelar
   )
 }
 
+
+const ICONOS_SINIESTRO = [CarFront, ShieldCheck, FileText, ClipboardCheck]
+
+export function TarjetaSeccionSiniestro({ numero, titulo, descripcion, completada, onClick }) {
+  const Icono = ICONOS_SINIESTRO[numero - 1] || FileText
+  return (
+    <button type="button" onClick={onClick} className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 border-slate-500 p-3 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${completada ? 'bg-[#194567]' : 'bg-[#367DA8]'}`}>
+      <div className="mb-2 flex w-full items-center justify-between gap-2">
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/25 bg-white/15"><Icono size={29} strokeWidth={2.3} aria-hidden="true" /></span>
+        {completada ? <CircleCheck size={22} className="text-emerald-200" /> : <ChevronRight size={22} />}
+      </div>
+      <span className="text-[10px] font-bold tracking-wide text-sky-100">SECCIÓN {numero}</span>
+      <span className="mt-1 text-sm font-bold leading-snug">{titulo}</span>
+      <span className="mt-1 text-xs leading-relaxed text-slate-100">{descripcion}</span>
+      <span className="mt-auto pt-3 text-xs font-semibold">{completada ? 'Información completa' : 'Tocar para diligenciar'}</span>
+    </button>
+  )
+}
+
+export function ModalSeccionSiniestro({ numero, titulo, onCancelar, onContinuar, children, revision = false }) {
+  const Icono = ICONOS_SINIESTRO[numero - 1] || FileText
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4">
+      <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal-siniestro" className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-400 bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-[#194567] px-4 py-3 text-white sm:px-5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/25 bg-white/10"><Icono size={19} /></span>
+            <div className="min-w-0"><p className="text-[10px] text-sky-200">SECCIÓN {numero} DE 4</p><h2 id="titulo-modal-siniestro" className="text-sm font-bold sm:text-base">{titulo}</h2></div>
+          </div>
+          <button type="button" onClick={onCancelar} aria-label="Cerrar sección" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/30 bg-white/10"><X size={18} /></button>
+        </div>
+        <div className="space-y-4 p-3 sm:p-5">{children}</div>
+        <div className="flex justify-end gap-2 border-t border-slate-200 p-3 sm:p-4">
+          <button type="button" onClick={onCancelar} className="min-h-11 rounded-lg bg-slate-600 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-700">{revision ? 'Cerrar' : 'Cancelar'}</button>
+          {!revision && <button type="button" onClick={onContinuar} className="min-h-11 rounded-lg bg-[#194567] px-5 py-2 text-sm font-semibold text-white hover:bg-[#082745]">Continuar</button>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function AccionesModuloPractica({ onGuardar, onRegresar, onCerrarSesion, puedeGuardar = true, guardando = false, mostrarGuardar = true, textoGuardar = 'Guardar' }) {
   const botonBase = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700'
   return (
