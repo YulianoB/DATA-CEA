@@ -1674,7 +1674,8 @@ export async function POST(request) {
         !Number.isInteger(
           clases
         ) ||
-        clases < 1
+        clases < 1 ||
+        clases > 12
       ) {
         return NextResponse.json(
           {
@@ -1682,7 +1683,7 @@ export async function POST(request) {
               'failed',
 
             message:
-              'Debe registrar al menos una clase programada.',
+              'Las clases programadas deben estar entre 1 y 12.',
           },
           {
             status: 400,
