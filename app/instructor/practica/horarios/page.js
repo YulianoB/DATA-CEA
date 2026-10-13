@@ -2566,6 +2566,7 @@ export default function HorariosPracticaPage() {
                     className="w-full border p-2 rounded text-sm"
                     min="0"
                     max="12"
+                    aria-invalid={clasesDictadas !== '' && (!Number.isInteger(clasesNum) || clasesNum < 0 || clasesNum > 12)}
                     value={
                       clasesDictadas
                     }
@@ -2581,21 +2582,11 @@ export default function HorariosPracticaPage() {
                     }
                   />
 
-                  {Number.isFinite(
-                    clasesNum
-                  ) &&
-                    clasesNum >
-                      12 && (
-
-                      <small className="text-red-600 text-xs">
-                        No puede superar{' '}
-                        <b>
-                          12
-                        </b>{' '}
-                        clases al día.
-                      </small>
-
-                    )}
+                  {clasesDictadas !== '' && (!Number.isInteger(clasesNum) || clasesNum < 0 || clasesNum > 12) && (
+                    <p role="alert" className="mt-1 text-xs font-semibold text-red-600">
+                      Las clases dictadas deben ser un número entero entre 0 y 12.
+                    </p>
+                  )}
 
                 </div>
 
@@ -2610,6 +2601,7 @@ export default function HorariosPracticaPage() {
                     className="w-full border p-2 rounded text-sm"
                     min="0"
                     max="6"
+                    aria-invalid={numAprendices !== '' && (!Number.isInteger(aprendicesNum) || aprendicesNum < 0 || aprendicesNum > 6)}
                     value={
                       numAprendices
                     }
@@ -2625,21 +2617,11 @@ export default function HorariosPracticaPage() {
                     }
                   />
 
-                  {Number.isFinite(
-                    aprendicesNum
-                  ) &&
-                    aprendicesNum >
-                      6 && (
-
-                      <small className="text-red-600 text-xs">
-                        No puede superar{' '}
-                        <b>
-                          6
-                        </b>{' '}
-                        aprendices.
-                      </small>
-
-                    )}
+                  {numAprendices !== '' && (!Number.isInteger(aprendicesNum) || aprendicesNum < 0 || aprendicesNum > 6) && (
+                    <p role="alert" className="mt-1 text-xs font-semibold text-red-600">
+                      El número de aprendices debe ser un número entero entre 0 y 6.
+                    </p>
+                  )}
 
                 </div>
 
