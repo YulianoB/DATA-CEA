@@ -648,12 +648,6 @@ export default function SiniestrosPage() {
   const handleLogout = () =>
     cerrarSesion(router)
 
-  const camposPorSeccion = {
-    1: [personasInvolucradas, heridosLeves, heridosGraves, fatalidades],
-    2: [nombreConductor, documentoConductor],
-    3: [resumen],
-  }
-
   const seccionCompleta = (numero) => {
     if (numero === 1) return [personasInvolucradas, heridosLeves, heridosGraves, fatalidades].every((v) => v !== '' && validarEnteroMin0(v) === '')
     if (numero === 2) return Boolean(nombreConductor.trim() && documentoConductor.trim())
@@ -944,6 +938,7 @@ export default function SiniestrosPage() {
                   {msgDoc}
                 </small>
               )}
+            </div>
             {erroresSeccion && !seccionCompleta(seccionAbierta) && <p role="alert" className="text-xs font-semibold text-red-600">Complete todos los campos obligatorios con valores válidos.</p>}
           </ModalSeccionSiniestro>}
           {seccionAbierta === 3 && <ModalSeccionSiniestro numero={3} titulo="Descripción del siniestro" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
@@ -983,5 +978,4 @@ export default function SiniestrosPage() {
       </div>
     </div>
   )
-}
 }
