@@ -815,13 +815,13 @@ export default function SiniestrosPage() {
           </div>
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
             <TarjetaSeccionSiniestro numero={1} titulo="Personas involucradas" descripcion="Total de personas, lesionados leves, graves y fallecidos." completada={seccionCompleta(1)} onClick={() => abrirSeccion(1)} />
-            <TarjetaSeccionSiniestro numero={2} titulo="Responsable del vehículo" descripcion="Nombre y documento del conductor." completada={seccionCompleta(2)} onClick={() => abrirSeccion(2)} />
-            <TarjetaSeccionSiniestro numero={3} titulo="Descripción del siniestro" descripcion="Relato de los hechos ocurridos." completada={seccionCompleta(3)} onClick={() => abrirSeccion(3)} />
+            <TarjetaSeccionSiniestro numero={2} titulo="Responsable del vehículo" descripcion="Datos del instructor responsable, no del aprendiz." completada={seccionCompleta(2)} onClick={() => abrirSeccion(2)} />
+            <TarjetaSeccionSiniestro numero={3} titulo="Descripción del siniestro" descripcion="Hora, lugar, vehículos y hechos relevantes." completada={seccionCompleta(3)} onClick={() => abrirSeccion(3)} />
             <TarjetaSeccionSiniestro numero={4} titulo="Revisión del registro" descripcion="Verifique los datos antes de guardar." completada={seccionCompleta(4)} onClick={() => abrirSeccion(4)} />
           </div>
           <AccionesModuloPractica onGuardar={registrarSiniestro} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar Siniestro" />
           {seccionAbierta === 1 && <ModalSeccionSiniestro numero={1} titulo="Personas involucradas" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
-            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-slate-800">Registre las cifras correspondientes a este siniestro, no el acumulado trimestral. Escriba 0 cuando no haya personas en alguna categoría. Los lesionados y fallecidos forman parte del total de personas involucradas.</div>
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-slate-800">Registre las cifras correspondientes a este siniestro. Escriba 0 cuando no haya personas en alguna categoría. Los lesionados y fallecidos forman parte del total de personas involucradas.</div>
             <div>
               <label className="block mb-1 font-semibold text-sm">
                 Personas Involucradas
@@ -907,9 +907,10 @@ export default function SiniestrosPage() {
             {erroresSeccion && !seccionCompleta(seccionAbierta) && <p role="alert" className="text-xs font-semibold text-red-600">Complete todos los campos obligatorios con valores válidos.</p>}
           </ModalSeccionSiniestro>}
           {seccionAbierta === 2 && <ModalSeccionSiniestro numero={2} titulo="Responsable del vehículo" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
+            <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-slate-800">Registre los datos del instructor del CEA que tenía a cargo el vehículo durante la práctica en la que ocurrió el siniestro. No registre aquí los datos del aprendiz, aunque estuviera conduciendo.</p>
             <div>
               <label className="block mb-1 font-semibold text-sm">
-                Nombre del responsable del vehículo
+                Nombre del instructor responsable del vehículo <span className="text-red-600">*</span>
               </label>
 
               <input
@@ -928,7 +929,7 @@ export default function SiniestrosPage() {
 
             <div>
               <label className="block mb-1 font-semibold text-sm">
-                Documento del Conductor
+                Documento de identidad del instructor responsable <span className="text-red-600">*</span>
               </label>
 
               <input
@@ -948,14 +949,16 @@ export default function SiniestrosPage() {
             {erroresSeccion && !seccionCompleta(seccionAbierta) && <p role="alert" className="text-xs font-semibold text-red-600">Complete todos los campos obligatorios con valores válidos.</p>}
           </ModalSeccionSiniestro>}
           {seccionAbierta === 3 && <ModalSeccionSiniestro numero={3} titulo="Descripción del siniestro" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
-            <p className="text-xs leading-relaxed text-slate-600">Describa de forma clara y objetiva qué ocurrió, dónde sucedió y las circunstancias relevantes del siniestro.</p>
+            <p className="text-xs leading-relaxed text-slate-600">Describa los hechos de forma cronológica, clara y objetiva. Incluya la hora aproximada, la ubicación exacta o referencia del lugar, los vehículos y actores viales involucrados, qué sucedió antes y durante el evento, daños o lesiones conocidos y cualquier otro detalle relevante. Evite atribuir responsabilidades que no hayan sido establecidas.</p>
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-slate-800"><strong>Ejemplo orientativo (datos ficticios):</strong> A las 10:20 a. m., durante una clase práctica en la carrera 15 con calle 100, el vehículo de enseñanza de placa ABC123, conducido por el aprendiz bajo supervisión del instructor, tuvo una colisión con otro vehículo en una intersección. Ambos vehículos se detuvieron. Se observaron daños en el parachoques delantero del vehículo de enseñanza. No se reportaron personas lesionadas al momento del registro. Se informó la novedad al CEA. Describa únicamente los hechos que conozca y verifique.</div>
             <label className="block mb-1 font-semibold text-sm">
-              Resumen del Siniestro
+              Descripción detallada del siniestro <span className="text-red-600">*</span>
             </label>
 
             <textarea
               className="w-full border p-2 rounded-lg text-sm"
-              rows="4"
+              rows="6"
+              placeholder="Indique hora, lugar, vehículos, secuencia de los hechos, personas involucradas y consecuencias conocidas..."
               value={resumen}
               onChange={onResumenChange}
             />
@@ -974,9 +977,16 @@ export default function SiniestrosPage() {
                 ['Placa', placa], ['Fecha del siniestro', fechaSiniestro], ['Tipo de siniestro', tipoSiniestro],
                 ['Personas involucradas', personasInvolucradas], ['Heridos leves', heridosLeves],
                 ['Heridos graves', heridosGraves], ['Fatalidades', fatalidades],
-                ['Responsable del vehículo', nombreConductor], ['Documento del conductor', documentoConductor],
-                ['Resumen del siniestro', resumen],
-              ].map(([etiqueta, valor]) => <div key={etiqueta} className="rounded-lg border border-slate-200 bg-slate-50 p-3"><dt className="text-xs font-semibold text-slate-600">{etiqueta}</dt><dd className="mt-1 break-words font-medium text-slate-900">{valor === '' ? 'Pendiente' : valor}</dd></div>)}
+                ['Instructor responsable del vehículo', nombreConductor], ['Documento del instructor responsable', documentoConductor],
+                ['Descripción detallada del siniestro', resumen],
+              ].map(([etiqueta, valor]) => {
+                const esCantidad = ['Personas involucradas', 'Heridos leves', 'Heridos graves', 'Fatalidades'].includes(etiqueta)
+                const pendiente = esCantidad ? validarEnteroMin0(valor) !== '' : !String(valor ?? '').trim()
+                return <div key={etiqueta} className={`rounded-lg border p-3 ${pendiente ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
+                  <dt className={`text-xs font-semibold ${pendiente ? 'text-red-700' : 'text-slate-600'}`}>{etiqueta} <span className="text-red-600">*</span></dt>
+                  <dd className={`mt-1 break-words font-medium ${pendiente ? 'text-red-700' : 'text-slate-900'}`}>{pendiente ? 'Obligatorio: pendiente o inválido' : valor}</dd>
+                </div>
+              })}
             </dl>
             {!puedeGuardar && <p className="text-xs font-semibold text-amber-700">Hay campos pendientes o inválidos. Complete el formulario antes de registrar.</p>}
           </ModalSeccionSiniestro>}
