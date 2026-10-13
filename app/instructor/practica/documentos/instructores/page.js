@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
+import { Bike, CarFront, ContactRound, IdCard } from 'lucide-react'
+import { EncabezadoPractica, PiePaginaPractica } from '@/components/instructor/practica/EstilosModuloPractica'
 
 // ============================================================
 // CONSTANTES
@@ -105,8 +107,7 @@ function claseTarjetaEstado(
 ) {
   if (!licencia) {
     return (
-      'border-gray-300 ' +
-      'bg-gray-50'
+      'border-slate-300 bg-white'
     )
   }
 
@@ -116,8 +117,7 @@ function claseTarjetaEstado(
     )
   ) {
     return (
-      'border-red-300 ' +
-      'bg-red-50'
+      'border-red-300 bg-red-50/40'
     )
   }
 
@@ -127,14 +127,12 @@ function claseTarjetaEstado(
     )
   ) {
     return (
-      'border-green-300 ' +
-      'bg-green-50'
+      'border-emerald-300 bg-emerald-50/40'
     )
   }
 
   return (
-    'border-gray-300 ' +
-    'bg-gray-50'
+    'border-slate-300 bg-white'
   )
 }
 
@@ -883,130 +881,26 @@ export default function DocumentosInstructorPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA] p-2 sm:p-4">
 
       <Toaster
         position="top-center"
         richColors
       />
 
-      <div className="w-full max-w-5xl bg-white rounded-xl shadow-lg p-5 sm:p-6">
+      <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-[#DCE4EB] bg-white shadow-lg">
 
-        {/* ==================================================
-            TÍTULO
-        ================================================== */}
-
-        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--primary)] flex items-center justify-center gap-2">
-
-          <i className="fas fa-id-card-alt"></i>
-
-          Documentos del Instructor de Práctica
-
-        </h2>
-
-        {/* ==================================================
-            USUARIO
-        ================================================== */}
-
-        <div className="bg-blue-50 border border-blue-200 text-[var(--primary-dark)] p-2 rounded-md mb-6 text-center text-sm">
-
-          <span>
-            Usuario:{' '}
-
-            <strong>
-              {user.nombreCompleto ||
-                user.nombre_completo}
-            </strong>
-          </span>
-
-          {user.rol && (
-            <span>
-              {' '}
-              ({user.rol})
-            </span>
+        <EncabezadoPractica
+          titulo="Documentos del Instructor"
+          usuario={user.nombreCompleto || user.nombre_completo || user.usuario}
+          cea={user.nombreEmpresa || user.nombre_empresa}
+          onRegresar={() => router.push('/instructor/practica/documentos')}
+          onCerrarSesion={handleLogout}
+        />
+        <main className="px-3 py-4 sm:px-5 sm:py-5">
+          {cargandoLicencias && !instructorSeleccionado && (
+            <p className="py-6 text-center text-sm text-slate-500">Cargando información del instructor...</p>
           )}
-
-          {user.nombreEmpresa && (
-            <span className="block mt-1">
-              CEA:{' '}
-
-              <strong>
-                {
-                  user.nombreEmpresa
-                }
-              </strong>
-            </span>
-          )}
-
-        </div>
-
-        {/* ==================================================
-            INFORMACIÓN INSTRUCTOR
-        ================================================== */}
-
-        {cargandoLicencias &&
-          !instructorSeleccionado && (
-
-          <div className="text-center py-8 text-gray-500 text-sm">
-
-            <i className="fas fa-spinner fa-spin mr-2"></i>
-
-            Cargando información del instructor...
-
-          </div>
-
-        )}
-
-        {instructorSeleccionado && (
-
-          <div className="bg-gray-50 border rounded-lg p-3 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-
-            <div>
-
-              <p className="text-xs text-gray-500">
-                Instructor
-              </p>
-
-              <p className="font-semibold">
-                {
-                  instructorSeleccionado
-                    .nombre_completo
-                }
-              </p>
-
-            </div>
-
-            <div>
-
-              <p className="text-xs text-gray-500">
-                Documento
-              </p>
-
-              <p className="font-semibold">
-                {
-                  instructorSeleccionado
-                    .documento ||
-                  '-'
-                }
-              </p>
-
-            </div>
-
-            <div>
-
-              <p className="text-xs text-gray-500">
-                Rol
-              </p>
-
-              <p className="font-semibold">
-                INSTRUCTOR PRÁCTICA
-              </p>
-
-            </div>
-
-          </div>
-
-        )}
 
         {/* ==================================================
             CARGANDO LICENCIAS
@@ -1032,47 +926,39 @@ export default function DocumentosInstructorPage() {
         {instructorSeleccionado &&
           !cargandoLicencias && (
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             {/* ==============================================
                 LICENCIA DE CONDUCCIÓN
             ============================================== */}
 
-            <div className="border rounded-xl overflow-hidden shadow-sm">
+            <div className="min-w-0">
 
-              <div className="bg-gray-900 text-white px-4 py-3 flex items-center gap-2">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#194567]"><CarFront size={19} /><span>Licencia de Conducción</span></div>
 
-                <i className="fas fa-car"></i>
-
-                <span className="font-semibold">
-                  Licencia de Conducción
-                </span>
-
-              </div>
-
-              <div className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-2">
 
                 {/* ==========================================
                     CONDUCCIÓN A2
                 ========================================== */}
 
                 <div
-                  className={`border rounded-lg p-4 ${claseTarjetaEstado(
+                  className={`min-w-0 rounded-xl border p-2.5 shadow-sm sm:p-3 ${claseTarjetaEstado(
                     licencias
                       .conduccion
                       .a2
                   )}`}
                 >
 
-                  <div className="flex justify-between gap-3 items-start">
+                  <div className="flex flex-wrap justify-between gap-2 items-start">
 
                     <div>
 
-                      <p className="font-semibold text-sm">
+                      <p className="text-xs font-semibold text-[#173A57]">
                         Motocicleta
                       </p>
 
-                      <p className="text-xs text-gray-500">
+                      <p className="text-[11px] text-slate-500">
                         Categoría A2
                       </p>
 
@@ -1092,7 +978,7 @@ export default function DocumentosInstructorPage() {
 
                     ) : (
 
-                      <span className="text-xs bg-gray-200 rounded px-2 py-1">
+                      <span className="rounded bg-slate-200 px-2 py-1 text-[10px]">
                         A2
                       </span>
 
@@ -1104,7 +990,7 @@ export default function DocumentosInstructorPage() {
                     .conduccion
                     .a2 ? (
 
-                    <div className="mt-4 text-sm space-y-2">
+                    <div className="mt-3 space-y-1.5 break-words text-xs">
 
                       <p>
                         <strong>
@@ -1185,7 +1071,7 @@ export default function DocumentosInstructorPage() {
                               .a2
                           )
                             ? 'bg-red-600 hover:bg-red-700'
-                            : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                            : 'bg-[#367DA8] hover:bg-[#194567]'
                         }`}
                       >
 
@@ -1199,9 +1085,9 @@ export default function DocumentosInstructorPage() {
 
                   ) : (
 
-                    <div className="mt-4">
+                    <div className="mt-3">
 
-                      <p className="text-sm text-gray-500 mb-3">
+                      <p className="mb-2 text-xs text-slate-500">
                         Sin registro.
                       </p>
 
@@ -1218,7 +1104,7 @@ export default function DocumentosInstructorPage() {
                               null,
                           })
                         }
-                        className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded-lg text-sm"
+                        className="min-h-10 w-full rounded-lg bg-[#367DA8] px-2 py-2 text-xs font-semibold text-white hover:bg-[#194567]"
                       >
 
                         <i className="fas fa-plus mr-2"></i>
@@ -1238,22 +1124,22 @@ export default function DocumentosInstructorPage() {
                 ========================================== */}
 
                 <div
-                  className={`border rounded-lg p-4 ${claseTarjetaEstado(
+                  className={`min-w-0 rounded-xl border p-2.5 shadow-sm sm:p-3 ${claseTarjetaEstado(
                     licencias
                       .conduccion
                       .bc
                   )}`}
                 >
 
-                  <div className="flex justify-between gap-3 items-start">
+                  <div className="flex flex-wrap justify-between gap-2 items-start">
 
                     <div>
 
-                      <p className="font-semibold text-sm">
+                      <p className="text-xs font-semibold text-[#173A57]">
                         Automóvil / Categoría B-C
                       </p>
 
-                      <p className="text-xs text-gray-500">
+                      <p className="text-[11px] text-slate-500">
                         B1, B1-C1, B2-C2 o B3-C3
                       </p>
 
@@ -1279,7 +1165,7 @@ export default function DocumentosInstructorPage() {
                     .conduccion
                     .bc ? (
 
-                    <div className="mt-4 text-sm space-y-2">
+                    <div className="mt-3 space-y-1.5 break-words text-xs">
 
                       <p>
                         <strong>
@@ -1364,7 +1250,7 @@ export default function DocumentosInstructorPage() {
                               .bc
                           )
                             ? 'bg-red-600 hover:bg-red-700'
-                            : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                            : 'bg-[#367DA8] hover:bg-[#194567]'
                         }`}
                       >
 
@@ -1378,9 +1264,9 @@ export default function DocumentosInstructorPage() {
 
                   ) : (
 
-                    <div className="mt-4">
+                    <div className="mt-3">
 
-                      <p className="text-sm text-gray-500 mb-3">
+                      <p className="mb-2 text-xs text-slate-500">
                         Sin registro.
                       </p>
 
@@ -1397,7 +1283,7 @@ export default function DocumentosInstructorPage() {
                               null,
                           })
                         }
-                        className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded-lg text-sm"
+                        className="min-h-10 w-full rounded-lg bg-[#367DA8] px-2 py-2 text-xs font-semibold text-white hover:bg-[#194567]"
                       >
 
                         <i className="fas fa-plus mr-2"></i>
@@ -1420,41 +1306,33 @@ export default function DocumentosInstructorPage() {
                 CERTIFICADO DE INSTRUCTOR
             ============================================== */}
 
-            <div className="border rounded-xl overflow-hidden shadow-sm">
+            <div className="min-w-0">
 
-              <div className="bg-gray-900 text-white px-4 py-3 flex items-center gap-2">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#194567]"><IdCard size={19} /><span>Certificado de Instructor</span></div>
 
-                <i className="fas fa-id-badge"></i>
-
-                <span className="font-semibold">
-                  Certificado de Instructor
-                </span>
-
-              </div>
-
-              <div className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-2">
 
                 {/* ==========================================
                     CERTIFICADO A2
                 ========================================== */}
 
                 <div
-                  className={`border rounded-lg p-4 ${claseTarjetaEstado(
+                  className={`min-w-0 rounded-xl border p-2.5 shadow-sm sm:p-3 ${claseTarjetaEstado(
                     licencias
                       .instructor
                       .a2
                   )}`}
                 >
 
-                  <div className="flex justify-between gap-3 items-start">
+                  <div className="flex flex-wrap justify-between gap-2 items-start">
 
                     <div>
 
-                      <p className="font-semibold text-sm">
+                      <p className="text-xs font-semibold text-[#173A57]">
                         Motocicleta
                       </p>
 
-                      <p className="text-xs text-gray-500">
+                      <p className="text-[11px] text-slate-500">
                         Categoría A2
                       </p>
 
@@ -1474,7 +1352,7 @@ export default function DocumentosInstructorPage() {
 
                     ) : (
 
-                      <span className="text-xs bg-gray-200 rounded px-2 py-1">
+                      <span className="rounded bg-slate-200 px-2 py-1 text-[10px]">
                         A2
                       </span>
 
@@ -1486,7 +1364,7 @@ export default function DocumentosInstructorPage() {
                     .instructor
                     .a2 ? (
 
-                    <div className="mt-4 text-sm space-y-2">
+                    <div className="mt-3 space-y-1.5 break-words text-xs">
 
                       <p>
                         <strong>
@@ -1572,7 +1450,7 @@ export default function DocumentosInstructorPage() {
                               .a2
                           )
                             ? 'bg-red-600 hover:bg-red-700'
-                            : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                            : 'bg-[#367DA8] hover:bg-[#194567]'
                         }`}
                       >
 
@@ -1586,9 +1464,9 @@ export default function DocumentosInstructorPage() {
 
                   ) : (
 
-                    <div className="mt-4">
+                    <div className="mt-3">
 
-                      <p className="text-sm text-gray-500 mb-3">
+                      <p className="mb-2 text-xs text-slate-500">
                         Sin registro.
                       </p>
 
@@ -1605,7 +1483,7 @@ export default function DocumentosInstructorPage() {
                               null,
                           })
                         }
-                        className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded-lg text-sm"
+                        className="min-h-10 w-full rounded-lg bg-[#367DA8] px-2 py-2 text-xs font-semibold text-white hover:bg-[#194567]"
                       >
 
                         <i className="fas fa-plus mr-2"></i>
@@ -1625,22 +1503,22 @@ export default function DocumentosInstructorPage() {
                 ========================================== */}
 
                 <div
-                  className={`border rounded-lg p-4 ${claseTarjetaEstado(
+                  className={`min-w-0 rounded-xl border p-2.5 shadow-sm sm:p-3 ${claseTarjetaEstado(
                     licencias
                       .instructor
                       .bc
                   )}`}
                 >
 
-                  <div className="flex justify-between gap-3 items-start">
+                  <div className="flex flex-wrap justify-between gap-2 items-start">
 
                     <div>
 
-                      <p className="font-semibold text-sm">
+                      <p className="text-xs font-semibold text-[#173A57]">
                         Automóvil / Categoría B-C
                       </p>
 
-                      <p className="text-xs text-gray-500">
+                      <p className="text-[11px] text-slate-500">
                         B1, B1-C1, B2-C2 o B3-C3
                       </p>
 
@@ -1666,7 +1544,7 @@ export default function DocumentosInstructorPage() {
                     .instructor
                     .bc ? (
 
-                    <div className="mt-4 text-sm space-y-2">
+                    <div className="mt-3 space-y-1.5 break-words text-xs">
 
                       <p>
                         <strong>
@@ -1763,7 +1641,7 @@ export default function DocumentosInstructorPage() {
                               .bc
                           )
                             ? 'bg-red-600 hover:bg-red-700'
-                            : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                            : 'bg-[#367DA8] hover:bg-[#194567]'
                         }`}
                       >
 
@@ -1777,9 +1655,9 @@ export default function DocumentosInstructorPage() {
 
                   ) : (
 
-                    <div className="mt-4">
+                    <div className="mt-3">
 
-                      <p className="text-sm text-gray-500 mb-3">
+                      <p className="mb-2 text-xs text-slate-500">
                         Sin registro.
                       </p>
 
@@ -1796,7 +1674,7 @@ export default function DocumentosInstructorPage() {
                               null,
                           })
                         }
-                        className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded-lg text-sm"
+                        className="min-h-10 w-full rounded-lg bg-[#367DA8] px-2 py-2 text-xs font-semibold text-white hover:bg-[#194567]"
                       >
 
                         <i className="fas fa-plus mr-2"></i>
@@ -1819,41 +1697,8 @@ export default function DocumentosInstructorPage() {
 
         )}
 
-        {/* ==================================================
-            NAVEGACIÓN
-        ================================================== */}
-
-        <div className="flex justify-center gap-3 mt-8 flex-wrap">
-
-          <button
-            onClick={() =>
-              router.push(
-                '/instructor/practica/documentos'
-              )
-            }
-            className="bg-gray-600 hover:bg-gray-800 text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
-          >
-
-            <i className="fas fa-arrow-left"></i>
-
-            Regresar
-
-          </button>
-
-          <button
-            onClick={
-              handleLogout
-            }
-            className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white py-2 px-4 rounded-lg shadow-md flex items-center gap-2 text-sm"
-          >
-
-            <i className="fas fa-sign-out-alt"></i>
-
-            Cerrar Sesión
-
-          </button>
-
-        </div>
+          <PiePaginaPractica />
+        </main>
 
       </div>
 
@@ -1866,7 +1711,7 @@ export default function DocumentosInstructorPage() {
 
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
 
-          <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-4 shadow-xl sm:p-6">
 
             <div className="flex items-center gap-3 mb-4">
 
@@ -1942,7 +1787,7 @@ export default function DocumentosInstructorPage() {
 
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
 
-          <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-4 shadow-xl sm:p-6">
 
             <h3 className="text-lg font-bold text-[var(--primary)] mb-1">
 
@@ -2197,7 +2042,7 @@ export default function DocumentosInstructorPage() {
                 className={`px-4 py-2 rounded-lg text-white ${
                   guardando
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
+                    : 'bg-[#367DA8] hover:bg-[#194567]'
                 }`}
               >
 
