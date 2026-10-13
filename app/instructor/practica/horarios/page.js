@@ -3,6 +3,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { EncabezadoPractica, TarjetaHorarioPractica, ModalHorarioPractica } from '@/components/instructor/practica/EstilosModuloPractica'
 import {
   useEffect,
   useMemo,
@@ -2122,44 +2123,22 @@ export default function HorariosPracticaPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-start justify-center bg-slate-100 p-3 sm:p-6">
+    <div className="min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
 
       <Toaster
         position="top-center"
         richColors
       />
 
-      <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-lg">
 
-        <header className="-mx-4 -mt-4 mb-6 bg-[#194567] px-5 py-5 text-white sm:-mx-6 sm:-mt-6 sm:px-6">
-          <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15"><i className="fas fa-calendar-alt text-2xl" aria-hidden="true"></i></span>
-            <div><p className="text-[11px] font-bold uppercase tracking-widest text-sky-200">Instructor · Práctica</p><h1 className="text-xl font-bold sm:text-2xl">Registro de horarios</h1><p className="mt-1 text-xs text-slate-200">Control de entrada y salida de la jornada</p></div>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-white/20 pt-3 text-xs text-slate-100">
-            <span>Usuario: <strong className="text-white">{user.nombreCompleto}</strong></span>
-            {user.rol && <span>Rol: <strong className="text-white">{user.rol}</strong></span>}
-            {user.nombreEmpresa && <span>CEA: <strong className="text-white">{user.nombreEmpresa}</strong></span>}
-          </div>
-        </header>
+        <EncabezadoPractica titulo="Registro de Horarios" usuario={user.nombreCompleto} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={handleLogout} />
+        <main className="px-3 py-4 sm:px-6 sm:py-6">
 
-        {!tengoAbierta && (
-          <button type="button" onClick={() => setModalHorario('entrada')} className="mx-auto mb-6 flex min-h-44 w-full max-w-sm flex-col rounded-xl border-2 border-slate-500 bg-[#367DA8] p-4 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
-            <i className="fas fa-sign-in-alt mb-3 text-3xl" aria-hidden="true"></i>
-            <span className="text-xs font-bold tracking-wide text-sky-100">REGISTRO DE HORARIOS</span>
-            <span className="mt-2 text-lg font-bold">Registrar entrada</span>
-            <span className="mt-2 text-sm text-slate-100">Abrir formulario de ingreso a la jornada práctica</span>
-            <span className="mt-auto pt-3 text-sm font-semibold">Tocar para registrar <i className="fas fa-chevron-right ml-1" aria-hidden="true"></i></span>
-          </button>
-        )}
+        {!tengoAbierta && <TarjetaHorarioPractica tipo="entrada" onClick={() => setModalHorario('entrada')} />}
 
         {!tengoAbierta && modalHorario === 'entrada' && (
-          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation">
-          <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal-entrada" className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-300 bg-white shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-[#194567] px-5 py-4 text-white">
-              <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15"><i className="fas fa-sign-in-alt text-xl" aria-hidden="true"></i></span><div><p className="text-[10px] font-bold uppercase tracking-wider text-sky-200">Jornada práctica</p><h2 id="titulo-modal-entrada" className="text-lg font-bold">Registro de entrada</h2><p className="text-xs text-slate-200">Datos de inicio de la jornada</p></div></div>
-              <button type="button" onClick={() => setModalHorario(null)} aria-label="Cerrar formulario de entrada" className="rounded-lg border border-white/40 px-3 py-2 text-xs font-semibold hover:bg-white/10">Cerrar ✕</button>
-            </div>
+          <ModalHorarioPractica tipo="entrada" onCerrar={() => setModalHorario(null)}>
           <div className="border rounded-lg shadow-sm">
 
             <h3 className="bg-slate-100 text-[#194567] font-bold px-4 py-3 flex items-center gap-2 text-sm border-b border-slate-200">
@@ -2429,27 +2408,13 @@ export default function HorariosPracticaPage() {
             </div>
 
           </div>
-          </div>
-          </div>
+          </ModalHorarioPractica>
         )}
 
-        {tengoAbierta && registroAbierto && (
-          <button type="button" onClick={() => setModalHorario('salida')} className="mx-auto mb-6 flex min-h-44 w-full max-w-sm flex-col rounded-xl border-2 border-slate-500 bg-[#367DA8] p-4 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
-            <i className="fas fa-sign-out-alt mb-3 text-3xl" aria-hidden="true"></i>
-            <span className="text-xs font-bold tracking-wide text-sky-100">REGISTRO DE HORARIOS</span>
-            <span className="mt-2 text-lg font-bold">Registrar salida</span>
-            <span className="mt-2 text-sm text-slate-100">Abrir formulario de finalización de la jornada práctica</span>
-            <span className="mt-auto pt-3 text-sm font-semibold">Tocar para registrar <i className="fas fa-chevron-right ml-1" aria-hidden="true"></i></span>
-          </button>
-        )}
+        {tengoAbierta && registroAbierto && <TarjetaHorarioPractica tipo="salida" onClick={() => setModalHorario('salida')} />}
 
         {tengoAbierta && registroAbierto && modalHorario === 'salida' && (
-          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation">
-            <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal-salida" className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-300 bg-white shadow-2xl">
-              <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-[#194567] px-5 py-4 text-white">
-                <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15"><i className="fas fa-sign-out-alt text-xl" aria-hidden="true"></i></span><div><p className="text-[10px] font-bold uppercase tracking-wider text-sky-200">Jornada práctica</p><h2 id="titulo-modal-salida" className="text-lg font-bold">Registro de salida</h2><p className="text-xs text-slate-200">Datos de cierre de la jornada</p></div></div>
-                <button type="button" onClick={() => setModalHorario(null)} aria-label="Cerrar formulario de salida" className="rounded-lg border border-white/40 px-3 py-2 text-xs font-semibold hover:bg-white/10">Cerrar ✕</button>
-              </div>
+          <ModalHorarioPractica tipo="salida" onCerrar={() => setModalHorario(null)}>
           <div className="border rounded-lg shadow-sm">
 
             <h3 className="bg-slate-100 text-[#194567] font-bold px-4 py-3 flex items-center gap-2 text-sm border-b border-slate-200">
@@ -2769,42 +2734,10 @@ export default function HorariosPracticaPage() {
             </div>
 
           </div>
-            </div>
-          </div>
+          </ModalHorarioPractica>
         )}
 
-        <div className="flex justify-center gap-4 mt-8 flex-wrap">
-
-          <button
-            onClick={
-              () =>
-                router.push(
-                  '/instructor/practica'
-                )
-            }
-            className="bg-gray-600 hover:bg-gray-800 text-white py-2 px-4 rounded-lg shadow-md text-sm"
-          >
-
-            <i className="fas fa-arrow-left mr-2"></i>
-
-            Regresar
-
-          </button>
-
-          <button
-            onClick={
-              handleLogout
-            }
-            className="bg-[var(--danger)] hover:bg-red-800 text-white py-2 px-4 rounded-lg shadow-md text-sm"
-          >
-
-            <i className="fas fa-sign-out-alt mr-2"></i>
-
-            Cerrar Sesión
-
-          </button>
-
-        </div>
+        </main>
 
       </div>
 
