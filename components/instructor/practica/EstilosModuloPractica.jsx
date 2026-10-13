@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useEffect, useRef } from 'react'
 import { ClipboardCheck, ArrowLeft, LogOut, CircleCheck, TriangleAlert, Save, ChevronRight, X, FileText, CarFront, Wrench, Gauge, ShieldCheck, LockKeyhole } from 'lucide-react'
 
 export function EncabezadoPractica({ titulo, usuario, cea, onRegresar, onCerrarSesion }) {
@@ -72,6 +73,10 @@ export function TarjetaInspeccionCompacta({ numero, titulo, descripcion, estado,
 export function ModalEvaluacionPractica({ seccion, estado, observacion, onObservacionChange, onEvaluar, onCerrar, guia }) {
   if (!seccion) return null
   const requiereObservacion = estado === 'NO CONFORME'
+  const observacionRef = useRef(null)
+  useEffect(() => {
+    if (requiereObservacion) observacionRef.current?.focus()
+  }, [requiereObservacion, seccion?.id])
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
       <div role="dialog" aria-modal="true" aria-labelledby="titulo-evaluacion-practica" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-400 bg-white p-4 shadow-2xl sm:p-5">
@@ -108,7 +113,7 @@ export function ModalEvaluacionPractica({ seccion, estado, observacion, onObserv
           <div className="mt-4 rounded-xl border border-amber-500 bg-amber-50 p-3">
             <p className="text-xs leading-relaxed text-amber-950">{guia}</p>
             <label htmlFor="observacion-seccion-practica" className="mt-3 block text-sm font-semibold text-slate-900">Observación obligatoria de esta sección</label>
-            <textarea id="observacion-seccion-practica" rows={3} value={observacion} onChange={(e) => onObservacionChange(e.target.value)} placeholder="Describa la falla o incumplimiento que existe actualmente." className="mt-1 w-full rounded-lg border border-slate-400 bg-white p-3 text-base text-slate-900" />
+            <textarea ref={observacionRef} id="observacion-seccion-practica" rows={3} value={observacion} onChange={(e) => onObservacionChange(e.target.value)} placeholder="Describa la falla o incumplimiento que existe actualmente." className="mt-1 w-full rounded-lg border border-slate-400 bg-white p-3 text-base text-slate-900" />
             <button type="button" disabled={!observacion.trim()} onClick={() => onEvaluar('CONFIRMAR_NO_CONFORME')} className="mt-3 min-h-11 w-full rounded-lg bg-[#194567] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400">Confirmar y cerrar</button>
           </div>
         )}
