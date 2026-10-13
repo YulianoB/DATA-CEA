@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
+import { EncabezadoPractica, TarjetaSeccionSiniestro, ModalSeccionSiniestro, AccionesModuloPractica } from '@/components/instructor/practica/EstilosModuloPractica'
 
 // ============================================================
 // Zona horaria Bogotá
@@ -104,6 +105,8 @@ export default function SiniestrosPage() {
   ] = useState('')
 
   const [resumen, setResumen] = useState('')
+  const [seccionAbierta, setSeccionAbierta] = useState(null)
+  const [erroresSeccion, setErroresSeccion] = useState(false)
 
   // ============================================================
   // Mensajes de validación
@@ -645,6 +648,60 @@ export default function SiniestrosPage() {
   const handleLogout = () =>
     cerrarSesion(router)
 
+  const camposPorSeccion = {
+    1: [personasInvolucradas, heridosLeves, heridosGraves, fatalidades],
+    2: [nombreConductor, documentoConductor],
+    3: [resumen],
+  }
+
+  const seccionCompleta = (numero) => {
+    if (numero === 1) return [personasInvolucradas, heridosLeves, heridosGraves, fatalidades].every((v) => v !== '' && validarEnteroMin0(v) === '')
+    if (numero === 2) return Boolean(nombreConductor.trim() && documentoConductor.trim())
+    if (numero === 3) return Boolean(resumen.trim())
+    return puedeGuardar
+  }
+
+  const snapshotSeccion = (numero) => {
+    if (numero === 1) return [personasInvolucradas, heridosLeves, heridosGraves, fatalidades]
+    if (numero === 2) return [nombreConductor, documentoConductor]
+    if (numero === 3) return [resumen]
+    return []
+  }
+
+  const [snapshotModal, setSnapshotModal] = useState([])
+  const abrirSeccion = (numero) => {
+    setSnapshotModal(snapshotSeccion(numero))
+    setErroresSeccion(false)
+    setSeccionAbierta(numero)
+  }
+  const cancelarSeccion = () => {
+    if (seccionAbierta === 1) {
+      setPersonasInvolucradas(snapshotModal[0] ?? '')
+      setHeridosLeves(snapshotModal[1] ?? '')
+      setHeridosGraves(snapshotModal[2] ?? '')
+      setFatalidades(snapshotModal[3] ?? '')
+      setMsgPers(''); setMsgLev(''); setMsgGrav(''); setMsgFat('')
+    } else if (seccionAbierta === 2) {
+      setNombreConductor(snapshotModal[0] ?? '')
+      setDocumentoConductor(snapshotModal[1] ?? '')
+      setMsgNombre(''); setMsgDoc('')
+    } else if (seccionAbierta === 3) {
+      setResumen(snapshotModal[0] ?? '')
+      setMsgResumen('')
+    }
+    setErroresSeccion(false)
+    setSeccionAbierta(null)
+  }
+  const continuarSeccion = () => {
+    if (!seccionCompleta(seccionAbierta)) {
+      setErroresSeccion(true)
+      toast.error('Complete los campos obligatorios de esta sección antes de continuar.')
+      return
+    }
+    setErroresSeccion(false)
+    setSeccionAbierta(null)
+  }
+
   // ============================================================
   // Render
   // ============================================================
@@ -658,66 +715,48 @@ export default function SiniestrosPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <Toaster
-        position="top-center"
-        richColors
-      />
+    <div className="min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
+      <Toaster position="top-center" richColors />
+      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-lg">
+        <EncabezadoPractica titulo="Registro de Siniestros Viales" usuario={user.nombreCompleto} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={handleLogout} />
+        <main className="px-3 py-4 sm:px-6 sm:py-6">
+          <p className="mb-4 text-xs text-slate-600">Diligencie la placa, fecha y tipo de siniestro. Después complete las secciones.</p>
+          <div className="mb-4 grid grid-cols-2 gap-3">
+            <div className="min-w-0">              <label className="block mb-1 font-semibold text-sm">
+                Placa del Vehículo
+              </label>
 
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg p-4 sm:p-6">
+              <select
+                className="w-full border p-2 rounded-lg text-sm"
+                value={placa}
+                onChange={onPlacaChange}
+                disabled={cargandoPlacas}
+              >
+                <option value="">
+                  {cargandoPlacas
+                    ? 'Cargando vehículos...'
+                    : '-- Selecciona la Placa --'}
+                </option>
 
-        {/* Título */}
+                {placas.map(
+                  (item) => (
+                    <option
+                      key={item}
+                      value={item}
+                    >
+                      {item}
+                    </option>
+                  )
+                )}
+              </select>
 
-        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--primary)] flex items-center justify-center gap-2">
-          <i className="fas fa-car-crash text-[var(--primary)]"></i>
-          Registro de Siniestros Viales
-        </h2>
-
-        {/* Usuario */}
-
-        <div className="bg-gray-50 p-2 sm:p-3 rounded mb-4 text-sm border text-center">
-
-          <span>
-            Usuario:{' '}
-            <strong>
-              {user.nombreCompleto}
-            </strong>
-          </span>
-
-          {user.rol && (
-            <span>
-              {' '}
-              ({user.rol})
-            </span>
-          )}
-
-          {user.nombreEmpresa && (
-            <span className="block mt-1">
-              CEA:{' '}
-              <strong>
-                {user.nombreEmpresa}
-              </strong>
-            </span>
-          )}
-        </div>
-
-        {/* =====================================================
-            DATOS DEL SINIESTRO
-        ====================================================== */}
-
-        <div className="mb-8 border border-gray-300 rounded-lg p-4 bg-gray-50">
-
-          <div className="bg-black text-white px-3 py-1 rounded-t-md mb-4 text-sm font-semibold flex items-center gap-2">
-            <i className="fas fa-clipboard-list"></i>
-            Datos del Siniestro
-          </div>
-
-          {/* Fecha y tipo */}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-
-            <div>
-              <label className="block mb-1 font-semibold text-sm">
+              {msgPlaca && (
+                <small className="text-red-600 text-xs">
+                  {msgPlaca}
+                </small>
+              )}
+            </div></div>
+            <div className="min-w-0">              <label className="block mb-1 font-semibold text-sm">
                 Fecha del Siniestro
               </label>
 
@@ -733,11 +772,9 @@ export default function SiniestrosPage() {
                 <small className="text-red-600 text-xs">
                   {msgFecha}
                 </small>
-              )}
-            </div>
-
-            <div>
-              <label className="block mb-1 font-semibold text-sm">
+              )}</div>
+          </div>
+          <div className="mb-5">              <label className="block mb-1 font-semibold text-sm">
                 Tipo de Siniestro
               </label>
 
@@ -780,13 +817,15 @@ export default function SiniestrosPage() {
                   {msgTipo}
                 </small>
               )}
-            </div>
+            </div></div>
+          <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
+            <TarjetaSeccionSiniestro numero={1} titulo="Personas involucradas" descripcion="Personas, heridos y fatalidades." completada={seccionCompleta(1)} onClick={() => abrirSeccion(1)} />
+            <TarjetaSeccionSiniestro numero={2} titulo="Responsable del vehículo" descripcion="Nombre y documento del conductor." completada={seccionCompleta(2)} onClick={() => abrirSeccion(2)} />
+            <TarjetaSeccionSiniestro numero={3} titulo="Descripción del siniestro" descripcion="Relato de los hechos ocurridos." completada={seccionCompleta(3)} onClick={() => abrirSeccion(3)} />
+            <TarjetaSeccionSiniestro numero={4} titulo="Revisión del registro" descripcion="Verifique los datos antes de guardar." completada={seccionCompleta(4)} onClick={() => abrirSeccion(4)} />
           </div>
-
-          {/* Personas involucradas */}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-
+          <AccionesModuloPractica onGuardar={registrarSiniestro} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar Siniestro" />
+          {seccionAbierta === 1 && <ModalSeccionSiniestro numero={1} titulo="Personas involucradas" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
             <div>
               <label className="block mb-1 font-semibold text-sm">
                 Personas Involucradas
@@ -846,12 +885,6 @@ export default function SiniestrosPage() {
                 </small>
               )}
             </div>
-          </div>
-
-          {/* Fatalidades y placa */}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-
             <div>
               <label className="block mb-1 font-semibold text-sm">
                 Fatalidades
@@ -871,48 +904,9 @@ export default function SiniestrosPage() {
                 </small>
               )}
             </div>
-
-            <div>
-              <label className="block mb-1 font-semibold text-sm">
-                Placa del Vehículo
-              </label>
-
-              <select
-                className="w-full border p-2 rounded-lg text-sm"
-                value={placa}
-                onChange={onPlacaChange}
-                disabled={cargandoPlacas}
-              >
-                <option value="">
-                  {cargandoPlacas
-                    ? 'Cargando vehículos...'
-                    : '-- Selecciona la Placa --'}
-                </option>
-
-                {placas.map(
-                  (item) => (
-                    <option
-                      key={item}
-                      value={item}
-                    >
-                      {item}
-                    </option>
-                  )
-                )}
-              </select>
-
-              {msgPlaca && (
-                <small className="text-red-600 text-xs">
-                  {msgPlaca}
-                </small>
-              )}
-            </div>
-          </div>
-
-          {/* Conductor */}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-
+            {erroresSeccion && !seccionCompleta(seccionAbierta) && <p role="alert" className="text-xs font-semibold text-red-600">Complete todos los campos obligatorios con valores válidos.</p>}
+          </ModalSeccionSiniestro>}
+          {seccionAbierta === 2 && <ModalSeccionSiniestro numero={2} titulo="Responsable del vehículo" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
             <div>
               <label className="block mb-1 font-semibold text-sm">
                 Nombre del responsable del vehículo
@@ -950,12 +944,10 @@ export default function SiniestrosPage() {
                   {msgDoc}
                 </small>
               )}
-            </div>
-          </div>
-
-          {/* Resumen */}
-
-          <div>
+            {erroresSeccion && !seccionCompleta(seccionAbierta) && <p role="alert" className="text-xs font-semibold text-red-600">Complete todos los campos obligatorios con valores válidos.</p>}
+          </ModalSeccionSiniestro>}
+          {seccionAbierta === 3 && <ModalSeccionSiniestro numero={3} titulo="Descripción del siniestro" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
+            <p className="text-xs leading-relaxed text-slate-600">Describa de forma clara y objetiva qué ocurrió, dónde sucedió y las circunstancias relevantes del siniestro.</p>
             <label className="block mb-1 font-semibold text-sm">
               Resumen del Siniestro
             </label>
@@ -972,57 +964,24 @@ export default function SiniestrosPage() {
                 {msgResumen}
               </small>
             )}
-          </div>
-        </div>
-
-        {/* =====================================================
-            BOTONES
-        ====================================================== */}
-
-        <div className="mt-8 space-y-4">
-
-          <div className="flex justify-center">
-            <button
-              onClick={registrarSiniestro}
-              disabled={!puedeGuardar}
-              className={`bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white py-2 px-6 rounded-lg shadow-md text-sm flex items-center gap-2 ${
-                !puedeGuardar
-                  ? 'opacity-70 cursor-not-allowed'
-                  : ''
-              }`}
-            >
-              <i className="fas fa-file-alt"></i>
-
-              {guardando
-                ? 'Guardando...'
-                : 'Registrar Siniestro'}
-            </button>
-          </div>
-
-          <div className="flex justify-center gap-3 flex-wrap">
-
-            <button
-              onClick={() =>
-                router.push(
-                  '/instructor/practica'
-                )
-              }
-              className="bg-gray-600 hover:bg-gray-800 text-white py-2 px-4 rounded-lg shadow-md text-sm flex items-center gap-2"
-            >
-              <i className="fas fa-arrow-left"></i>
-              Regresar
-            </button>
-
-            <button
-              onClick={handleLogout}
-              className="bg-[var(--danger)] hover:bg-red-800 text-white py-2 px-4 rounded-lg shadow-md text-sm flex items-center gap-2"
-            >
-              <i className="fas fa-sign-out-alt"></i>
-              Cerrar Sesión
-            </button>
-          </div>
-        </div>
+            {erroresSeccion && !seccionCompleta(seccionAbierta) && <p role="alert" className="text-xs font-semibold text-red-600">Complete todos los campos obligatorios con valores válidos.</p>}
+          </ModalSeccionSiniestro>}
+          {seccionAbierta === 4 && <ModalSeccionSiniestro numero={4} titulo="Revisión del registro" revision onCancelar={() => setSeccionAbierta(null)}>
+            <p className="text-xs text-slate-600">Verifique la información antes de registrar el siniestro.</p>
+            <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+              {[
+                ['Placa', placa], ['Fecha del siniestro', fechaSiniestro], ['Tipo de siniestro', tipoSiniestro],
+                ['Personas involucradas', personasInvolucradas], ['Heridos leves', heridosLeves],
+                ['Heridos graves', heridosGraves], ['Fatalidades', fatalidades],
+                ['Responsable del vehículo', nombreConductor], ['Documento del conductor', documentoConductor],
+                ['Resumen del siniestro', resumen],
+              ].map(([etiqueta, valor]) => <div key={etiqueta} className="rounded-lg border border-slate-200 bg-slate-50 p-3"><dt className="text-xs font-semibold text-slate-600">{etiqueta}</dt><dd className="mt-1 break-words font-medium text-slate-900">{valor === '' ? 'Pendiente' : valor}</dd></div>)}
+            </dl>
+            {!puedeGuardar && <p className="text-xs font-semibold text-amber-700">Hay campos pendientes o inválidos. Complete el formulario antes de registrar.</p>}
+          </ModalSeccionSiniestro>}
+        </main>
       </div>
     </div>
   )
+}
 }
