@@ -814,17 +814,19 @@ export default function SiniestrosPage() {
               )}
           </div>
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
-            <TarjetaSeccionSiniestro numero={1} titulo="Personas involucradas" descripcion="Personas, heridos y fatalidades." completada={seccionCompleta(1)} onClick={() => abrirSeccion(1)} />
+            <TarjetaSeccionSiniestro numero={1} titulo="Personas involucradas" descripcion="Total de personas, lesionados leves, graves y fallecidos." completada={seccionCompleta(1)} onClick={() => abrirSeccion(1)} />
             <TarjetaSeccionSiniestro numero={2} titulo="Responsable del vehículo" descripcion="Nombre y documento del conductor." completada={seccionCompleta(2)} onClick={() => abrirSeccion(2)} />
             <TarjetaSeccionSiniestro numero={3} titulo="Descripción del siniestro" descripcion="Relato de los hechos ocurridos." completada={seccionCompleta(3)} onClick={() => abrirSeccion(3)} />
             <TarjetaSeccionSiniestro numero={4} titulo="Revisión del registro" descripcion="Verifique los datos antes de guardar." completada={seccionCompleta(4)} onClick={() => abrirSeccion(4)} />
           </div>
           <AccionesModuloPractica onGuardar={registrarSiniestro} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar Siniestro" />
           {seccionAbierta === 1 && <ModalSeccionSiniestro numero={1} titulo="Personas involucradas" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-slate-800">Registre las cifras correspondientes a este siniestro, no el acumulado trimestral. Escriba 0 cuando no haya personas en alguna categoría. Los lesionados y fallecidos forman parte del total de personas involucradas.</div>
             <div>
               <label className="block mb-1 font-semibold text-sm">
                 Personas Involucradas
               </label>
+              <p className="mb-2 text-xs leading-relaxed text-slate-600">Cuente todas las personas directamente involucradas en este siniestro: conductor, pasajeros, peatones u otros actores viales, tanto ilesos como lesionados o fallecidos. No registre aquí el número de vehículos.</p>
 
               <input
                 type="number"
@@ -845,6 +847,7 @@ export default function SiniestrosPage() {
               <label className="block mb-1 font-semibold text-sm">
                 Heridos Leves
               </label>
+              <p className="mb-2 text-xs leading-relaxed text-slate-600">Personas con lesiones que no comprometen su vida, como contusiones, esguinces o heridas menores, generalmente con atención ambulatoria y menos de 30 días de incapacidad.</p>
 
               <input
                 type="number"
@@ -865,6 +868,7 @@ export default function SiniestrosPage() {
               <label className="block mb-1 font-semibold text-sm">
                 Heridos Graves
               </label>
+              <p className="mb-2 text-xs leading-relaxed text-slate-600">Personas con lesiones severas, como fracturas, amputaciones o traumatismos; el manual considera hospitalización superior a 24 horas o incapacidad mayor de 30 días.</p>
 
               <input
                 type="number"
@@ -884,6 +888,7 @@ export default function SiniestrosPage() {
               <label className="block mb-1 font-semibold text-sm">
                 Fatalidades
               </label>
+              <p className="mb-2 text-xs leading-relaxed text-slate-600">Personas que fallecieron a causa del siniestro en el lugar, durante el traslado o dentro de los 30 días posteriores al hecho.</p>
 
               <input
                 type="number"
