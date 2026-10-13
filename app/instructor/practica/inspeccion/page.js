@@ -183,7 +183,6 @@ export default function InspeccionPage() {
   const [seccionActiva, setSeccionActiva] = useState(null)
   const [observacionBorrador, setObservacionBorrador] = useState('')
   const [modalResultado, setModalResultado] = useState(null)
-  const [confirmacionKm, setConfirmacionKm] = useState(false)
   const inspeccionIniciada = Boolean(seccionActiva) || Object.values(secciones).some((estado) => estado !== null)
   const observacionesUnificadas = SECCIONES_INSPECCION
     .filter((item) => secciones[item.id] === 'NO CONFORME')
@@ -999,7 +998,6 @@ const validarDocumentacionVehiculo =
       )
 
       setMensajeKm('')
-      setConfirmacionKm(false)
       setForzarGuardado(false)
 
       if (
@@ -1042,7 +1040,7 @@ const validarDocumentacionVehiculo =
         resultado.estado ===
         'error'
       ) {
-        setModalResultado({ tipo: 'error', titulo: 'Validación de kilometraje', mensaje: resultado.mensaje || 'No fue posible validar el kilometraje.' })
+        toast.error(resultado.mensaje || 'No fue posible validar el kilometraje.')
       }
     }
 
@@ -1703,12 +1701,6 @@ const puedeGuardar =
               onChange={
                 handleKmChange
               }
-              onBlur={() => {
-                if (!confirmacionKm && kilometraje.trim() !== '' && kilometrajeValido && !mostrarModalKm && !inspeccionIniciada) {
-                  setConfirmacionKm(true)
-                  setModalResultado({ tipo: 'exito', titulo: 'Kilometraje validado', mensaje: mensajeKm || 'El kilometraje ingresado es válido. Puede continuar con la inspección.' })
-                }
-              }}
               disabled={
                 !placaSeleccionada ||
                 validandoDocumentos ||
