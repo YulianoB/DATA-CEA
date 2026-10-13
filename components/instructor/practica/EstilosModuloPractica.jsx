@@ -274,8 +274,10 @@ export const GUIAS_NO_CONFORMIDAD = {
 
 export function PiePaginaPractica() {
   return (
-    <footer className="mt-5 border-t border-[#DCE4EB] pt-3 text-center text-[11px] leading-relaxed text-[#64748B]">
-      © {new Date().getFullYear()} DATA CEA. Todos los derechos reservados.
+    <footer className="mt-5 border-t border-[#DCE4EB] pt-3 text-center">
+      <p className="text-[10px] font-medium tracking-wide text-[#7A8895]">
+        DATA CEA · Sistema de Registro y Control de Datos para Centros de Enseñanza Automovilística · © 2026 Yuliano Armando Buitrago López. Todos los derechos reservados.
+      </p>
     </footer>
   )
 }
