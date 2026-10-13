@@ -52,10 +52,10 @@ export function TarjetaInspeccionCompacta({ numero, titulo, descripcion, estado,
   const conforme = estado === 'CONFORME'
   const noConforme = estado === 'NO CONFORME'
   const Icono = ICONOS_INSPECCION[numero - 1] || FileText
-  const fondo = disabled ? 'bg-slate-200 text-slate-500 border-slate-400' : 'bg-[#194567] text-white border-slate-500'
+  const fondo = disabled ? 'bg-slate-200 text-slate-500 border-slate-400' : estado ? 'bg-[#194567] text-white border-slate-500' : 'bg-[#367DA8] text-white border-slate-500'
   return (
     <button type="button" disabled={disabled} onClick={onClick}
-      className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 p-3 text-left shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${fondo} ${disabled ? 'cursor-not-allowed' : 'hover:bg-[#123653] active:scale-[0.99]'}`}>
+      className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 p-3 text-left shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${fondo} ${disabled ? 'cursor-not-allowed' : 'hover:brightness-95 active:scale-[0.99]'}`}>
       <div className="mb-2 flex w-full items-center justify-between gap-2">
         <span className={`inline-flex h-12 w-12 items-center justify-center rounded-xl border border-current/25 ${disabled ? 'bg-slate-300 text-slate-500' : 'bg-white/15 text-white'}`}><Icono size={29} strokeWidth={2.3} aria-hidden="true" /></span>
         {disabled ? <LockKeyhole size={19} className="text-slate-500" /> : conforme ? <CircleCheck size={22} className="text-emerald-200" /> : noConforme ? <TriangleAlert size={22} className="text-amber-200" /> : <ChevronRight size={22} className="text-white" />}
