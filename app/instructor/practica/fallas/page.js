@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { validarKilometraje } from '@/lib/servicios/validaciones'
 import { cerrarSesion } from '@/lib/auth/logout'
+import { EncabezadoPractica, TarjetaSeccionSiniestro, ModalSeccionSiniestro, AccionesModuloPractica } from '@/components/instructor/practica/EstilosModuloPractica'
 
 // ============================================================
 // Helpers fecha/hora Bogotá
@@ -176,6 +177,9 @@ export default function FallasPage() {
   // ============================================================
 
   const [guardando, setGuardando] = useState(false)
+  const [seccionAbierta, setSeccionAbierta] = useState(null)
+  const [snapshotSeccion, setSnapshotSeccion] = useState('')
+  const [mostrarErrorSeccion, setMostrarErrorSeccion] = useState(false)
 
   // ============================================================
   // Cargar sesión
@@ -741,6 +745,30 @@ export default function FallasPage() {
   const handleLogout = () =>
     cerrarSesion(router)
 
+  const abrirSeccion = (numero) => {
+    setSnapshotSeccion(numero === 1 ? descripcion : numero === 2 ? acciones : '')
+    setMostrarErrorSeccion(false)
+    setSeccionAbierta(numero)
+  }
+
+  const cancelarSeccion = () => {
+    if (seccionAbierta === 1) setDescripcion(snapshotSeccion)
+    if (seccionAbierta === 2) setAcciones(snapshotSeccion)
+    setMostrarErrorSeccion(false)
+    setSeccionAbierta(null)
+  }
+
+  const continuarSeccion = () => {
+    const completo = seccionAbierta === 1 ? descripcion.trim() : seccionAbierta === 2 ? acciones.trim() : true
+    if (!completo) {
+      setMostrarErrorSeccion(true)
+      toast.error('Complete el campo obligatorio antes de continuar.')
+      return
+    }
+    setMostrarErrorSeccion(false)
+    setSeccionAbierta(null)
+  }
+
   // ============================================================
   // Render
   // ============================================================
@@ -753,310 +781,78 @@ export default function FallasPage() {
     )
   }
 
-  const mostrarErrPlaca =
-    tocoPlaca &&
-    !placa
-
-  const mostrarErrDesc =
-    tocoDescripcion &&
-    descripcion.trim().length === 0
-
-  const mostrarErrAcc =
-    tocoAcciones &&
-    acciones.trim().length === 0
+  const kilometrajeValido = km !== '' && Number.isFinite(Number(km)) && Number(km) >= 0 && (Boolean(forzarKm) || (Boolean(msgKm) && !/menor|no fue posible|no se identificó|error/i.test(msgKm)))
+  const datosReporteCompletos = Boolean(placa && kilometrajeValido && nitActual)
+  const resumenCampos = [
+    ['Placa', placa, Boolean(placa)],
+    ['Tipo de vehículo', tipoVehiculo, true],
+    ['Marca', marca, true],
+    ['Kilometraje', km === '' ? '' : `${km} km`, kilometrajeValido],
+    ['Persona que registra', user.nombreCompleto || user.usuario || '', true],
+    ['Descripción de la falla', descripcion, Boolean(descripcion.trim())],
+    ['Acciones realizadas', acciones, Boolean(acciones.trim())],
+    ['Estado inicial', 'PENDIENTE', true],
+  ]
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <Toaster
-        position="top-center"
-        richColors
-      />
-
-      <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-5">
-
-        {/* Título */}
-
-        <h2 className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2 border-b pb-2 text-[var(--primary-dark)]">
-          <i className="fas fa-exclamation-triangle text-[var(--primary)]"></i>
-          Registro de Fallas en Misión
-        </h2>
-
-        {/* Usuario */}
-
-        <div className="bg-gray-50 p-2 rounded mb-4 text-xs border text-center">
-
-          <span>
-            Usuario:{' '}
-            <strong>
-              {user.nombreCompleto}
-            </strong>
-          </span>
-
-          {user.rol && (
-            <span>
-              {' '}
-              ({user.rol})
-            </span>
-          )}
-
-          {user.nombreEmpresa && (
-            <span className="block mt-1">
-              CEA:{' '}
-              <strong>
-                {user.nombreEmpresa}
-              </strong>
-            </span>
-          )}
-        </div>
-
-        {/* Formulario */}
-
-        <div className="space-y-6">
-
-          {/* Vehículo */}
-
-          <div className="border rounded-lg overflow-hidden shadow-sm">
-
-            <div className="bg-gray-900 text-white px-3 py-2 font-semibold text-sm flex items-center gap-2">
-              <i className="fas fa-car"></i>
-              Vehículo
+    <div className="min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
+      <Toaster position="top-center" richColors />
+      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-lg">
+        <EncabezadoPractica titulo="Registro de Fallas en Misión" usuario={user.nombreCompleto} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={handleLogout} />
+        <main className="px-3 py-4 sm:px-6 sm:py-6">
+          <p className="mb-4 text-xs text-slate-600">Seleccione el vehículo, registre el kilometraje y diligencie las secciones del reporte.</p>
+          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="falla-placa" className="mb-1 block text-sm font-semibold">Placa del vehículo <span className="text-red-600">*</span></label>
+              <select id="falla-placa" className="w-full rounded-lg border border-slate-400 bg-white p-2.5 text-sm" value={placa} onChange={(e) => { setPlaca(e.target.value); setTocoPlaca(true); setKm(''); setMsgKm(''); setForzarKm(false); setModalKm(null) }} onBlur={() => setTocoPlaca(true)} disabled={cargandoVehiculos} required>
+                <option value="">{cargandoVehiculos ? 'Cargando vehículos...' : '-- Seleccione una placa --'}</option>
+                {vehiculos.map((vehiculo) => <option key={vehiculo.placa} value={vehiculo.placa}>{vehiculo.placa}</option>)}
+              </select>
+              {tocoPlaca && !placa && <p className="mt-1 text-xs text-red-600">Seleccione una placa.</p>}
             </div>
-
-            <div className="p-3 space-y-3">
-
-              {/* Placa */}
-
-              <div>
-                <label className="block mb-1 font-semibold text-sm">
-                  Placa del Vehículo
-                </label>
-
-                <select
-                  className={`w-full border p-2 rounded text-sm ${
-                    mostrarErrPlaca
-                      ? 'border-red-500'
-                      : ''
-                  }`}
-                  value={placa}
-                  onChange={(e) => {
-                    setPlaca(
-                      e.target.value
-                    )
-
-                    setTocoPlaca(true)
-                  }}
-                  onBlur={() =>
-                    setTocoPlaca(true)
-                  }
-                  disabled={cargandoVehiculos}
-                  required
-                >
-                  <option value="">
-                    {cargandoVehiculos
-                      ? 'Cargando vehículos...'
-                      : '-- Selecciona una placa --'}
-                  </option>
-
-                  {vehiculos.map(
-                    (vehiculo) => (
-                      <option
-                        key={vehiculo.placa}
-                        value={vehiculo.placa}
-                      >
-                        {vehiculo.placa}
-                      </option>
-                    )
-                  )}
-                </select>
-
-                {mostrarErrPlaca && (
-                  <small className="text-xs text-red-600">
-                    Debes seleccionar una placa.
-                  </small>
-                )}
-
-                <div className="text-xs text-gray-600 mt-2">
-
-                  <p>
-                    <strong>
-                      Tipo de Vehículo:
-                    </strong>{' '}
-                    {tipoVehiculo}
-                  </p>
-
-                  <p>
-                    <strong>
-                      Marca:
-                    </strong>{' '}
-                    {marca}
-                  </p>
-                </div>
-              </div>
-
-              {/* Kilometraje */}
-
-              <div>
-                <label className="block mb-1 font-semibold text-sm">
-                  Kilometraje Actual
-                </label>
-
-                <input
-                  type="number"
-                  className={`w-full border p-2 rounded text-sm ${
-                    !placa
-                      ? 'bg-gray-100 cursor-not-allowed'
-                      : ''
-                  }`}
-                  placeholder="Ingrese el kilometraje"
-                  min="0"
-                  value={km}
-                  onChange={onKmChange}
-                  disabled={!placa}
-                  required
-                />
-
-                {msgKm && (
-                  <small
-                    className={`text-xs mt-1 block ${
-                      msgKm.includes('menor')
-                        ? 'text-red-600'
-                        : msgKm.includes('supera')
-                        ? 'text-orange-600'
-                        : 'text-green-600'
-                    }`}
-                  >
-                    {msgKm}
-                  </small>
-                )}
-              </div>
+            <div>
+              <label htmlFor="falla-km" className="mb-1 block text-sm font-semibold">Kilometraje actual <span className="text-red-600">*</span></label>
+              <input id="falla-km" type="number" min="0" step="1" inputMode="numeric" value={km} onChange={onKmChange} disabled={!placa} placeholder="Kilometraje del vehículo" className="w-full rounded-lg border border-slate-400 p-2.5 text-sm disabled:bg-slate-100" required />
+              {msgKm && <p className={`mt-1 text-xs ${/menor|no fue posible|no se identificó|error/i.test(msgKm) ? 'text-red-600' : 'text-amber-700'}`}>{msgKm}</p>}
             </div>
           </div>
-
-          {/* Descripción */}
-
-          <div className="border rounded-lg overflow-hidden shadow-sm">
-
-            <div className="bg-gray-900 text-white px-3 py-2 font-semibold text-sm flex items-center gap-2">
-              <i className="fas fa-file-alt"></i>
-              Descripción
-            </div>
-
-            <div className="p-3">
-
-              <textarea
-                className={`w-full border p-2 rounded text-sm ${
-                  mostrarErrDesc
-                    ? 'border-red-500'
-                    : ''
-                }`}
-                rows="3"
-                value={descripcion}
-                onChange={(e) =>
-                  setDescripcion(
-                    e.target.value
-                  )
-                }
-                onBlur={() =>
-                  setTocoDescripcion(true)
-                }
-                placeholder="Describa la falla..."
-                required
-              />
-
-              {mostrarErrDesc && (
-                <small className="text-xs text-red-600">
-                  La descripción es obligatoria.
-                </small>
-              )}
-            </div>
+          {placa && <div className="mb-5 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700"><strong>Vehículo:</strong> {tipoVehiculo} · <strong>Marca:</strong> {marca}</div>}
+          <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
+            <TarjetaSeccionSiniestro numero={1} titulo="Descripción de la falla" descripcion="Qué ocurrió, síntomas y condiciones." completada={Boolean(descripcion.trim())} onClick={() => abrirSeccion(1)} />
+            <TarjetaSeccionSiniestro numero={2} titulo="Acciones realizadas" descripcion="Medidas adoptadas ante la novedad." completada={Boolean(acciones.trim())} onClick={() => abrirSeccion(2)} />
+            <TarjetaSeccionSiniestro numero={3} titulo="Datos del reporte" descripcion="Vehículo, responsable y registro." completada={datosReporteCompletos} onClick={() => abrirSeccion(3)} />
+            <TarjetaSeccionSiniestro numero={4} titulo="Revisión del registro" descripcion="Verifique los datos antes de guardar." completada={puedeGuardar} onClick={() => abrirSeccion(4)} />
           </div>
-
-          {/* Acciones */}
-
-          <div className="border rounded-lg overflow-hidden shadow-sm">
-
-            <div className="bg-gray-900 text-white px-3 py-2 font-semibold text-sm flex items-center gap-2">
-              <i className="fas fa-tasks"></i>
-              Acciones Tomadas
-            </div>
-
-            <div className="p-3">
-
-              <textarea
-                className={`w-full border p-2 rounded text-sm ${
-                  mostrarErrAcc
-                    ? 'border-red-500'
-                    : ''
-                }`}
-                rows="3"
-                value={acciones}
-                onChange={(e) =>
-                  setAcciones(
-                    e.target.value
-                  )
-                }
-                onBlur={() =>
-                  setTocoAcciones(true)
-                }
-                placeholder="Describa las acciones tomadas..."
-                required
-              />
-
-              {mostrarErrAcc && (
-                <small className="text-xs text-red-600">
-                  Las acciones tomadas son obligatorias.
-                </small>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Botones */}
-
-        <div className="flex justify-center gap-3 mt-6 flex-wrap">
-
-          <button
-            onClick={registrarFalla}
-            disabled={
-              !puedeGuardar ||
-              guardando
-            }
-            className={`py-2 px-4 rounded-lg shadow-md text-sm ${
-              puedeGuardar &&
-              !guardando
-                ? 'bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white'
-                : 'bg-gray-400 text-gray-700 cursor-not-allowed'
-            }`}
-          >
-            <i className="fas fa-save mr-2"></i>
-
-            {guardando
-              ? 'Guardando...'
-              : 'Registrar'}
-          </button>
-
-          <button
-            onClick={() =>
-              router.push(
-                '/instructor/practica'
-              )
-            }
-            className="bg-gray-600 hover:bg-gray-800 text-white py-2 px-4 rounded-lg shadow-md text-sm"
-          >
-            <i className="fas fa-arrow-left mr-2"></i>
-            Regresar
-          </button>
-
-          <button
-            onClick={handleLogout}
-            className="bg-[var(--danger)] hover:bg-red-800 text-white py-2 px-4 rounded-lg shadow-md text-sm"
-          >
-            <i className="fas fa-sign-out-alt mr-2"></i>
-            Cerrar Sesión
-          </button>
-        </div>
+          <AccionesModuloPractica onGuardar={registrarFalla} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar falla" />
+        </main>
       </div>
-
+      {seccionAbierta === 1 && <ModalSeccionSiniestro numero={1} titulo="Descripción de la falla" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
+        <p className="text-xs leading-relaxed text-slate-700">Describa qué falla presentó el vehículo, cuándo se identificó, qué síntomas se observaron y en qué condiciones ocurrió. Incluya ruidos, testigos encendidos, pérdida de potencia u otras señales relevantes, según corresponda.</p>
+        <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs text-slate-700"><strong>Ejemplo:</strong> Durante el desplazamiento, el vehículo presentó pérdida de potencia y se encendió el testigo del motor. La novedad se identificó al iniciar la marcha.</p>
+        <label htmlFor="falla-descripcion" className="block text-sm font-semibold">Descripción de la falla <span className="text-red-600">*</span></label>
+        <textarea id="falla-descripcion" rows={5} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Describa la novedad observada..." className="w-full rounded-lg border border-slate-400 p-3 text-sm" />
+        {mostrarErrorSeccion && !descripcion.trim() && <p role="alert" className="text-xs font-semibold text-red-600">La descripción es obligatoria.</p>}
+      </ModalSeccionSiniestro>}
+      {seccionAbierta === 2 && <ModalSeccionSiniestro numero={2} titulo="Acciones realizadas" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
+        <p className="text-xs leading-relaxed text-slate-700">Indique qué medidas se adoptaron ante la falla: detener el vehículo, informar al CEA, solicitar asistencia o suspender su uso. No registre reparaciones que no se hayan efectuado.</p>
+        <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs text-slate-700"><strong>Ejemplo:</strong> Se detuvo el vehículo en un lugar seguro, se informó al coordinador y se suspendió su utilización hasta la revisión técnica. Si aún no hubo intervención, indique que la novedad fue reportada y está pendiente de revisión.</p>
+        <label htmlFor="falla-acciones" className="block text-sm font-semibold">Acciones tomadas <span className="text-red-600">*</span></label>
+        <textarea id="falla-acciones" rows={5} value={acciones} onChange={(e) => setAcciones(e.target.value)} placeholder="Describa únicamente las acciones realizadas..." className="w-full rounded-lg border border-slate-400 p-3 text-sm" />
+        {mostrarErrorSeccion && !acciones.trim() && <p role="alert" className="text-xs font-semibold text-red-600">Las acciones tomadas son obligatorias.</p>}
+      </ModalSeccionSiniestro>}
+      {seccionAbierta === 3 && <ModalSeccionSiniestro numero={3} titulo="Datos del reporte" revision onCancelar={() => setSeccionAbierta(null)}>
+        <p className="text-xs text-slate-600">Estos datos se obtienen del vehículo seleccionado y de la sesión actual. La fecha y la hora se generan automáticamente al registrar.</p>
+        <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+          {resumenCampos.slice(0, 5).map(([etiqueta, valor, valido]) => <div key={etiqueta} className={`rounded-lg border p-3 ${valido ? 'border-slate-200 bg-slate-50' : 'border-red-400 bg-red-50'}`}><dt className="text-xs font-semibold text-slate-600">{etiqueta}</dt><dd className="mt-1 break-words font-medium">{valor || 'Pendiente'}</dd></div>)}
+        </dl>
+      </ModalSeccionSiniestro>}
+      {seccionAbierta === 4 && <ModalSeccionSiniestro numero={4} titulo="Revisión del registro" revision onCancelar={() => setSeccionAbierta(null)}>
+        <p className="text-xs text-slate-600">Revise los datos antes de registrar. Los campos obligatorios pendientes se muestran en rojo.</p>
+        <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+          {resumenCampos.map(([etiqueta, valor, valido]) => <div key={etiqueta} className={`rounded-lg border p-3 ${valido ? 'border-slate-200 bg-slate-50' : 'border-red-400 bg-red-50'}`}><dt className={`text-xs font-semibold ${valido ? 'text-slate-600' : 'text-red-700'}`}>{etiqueta}{['Placa', 'Kilometraje', 'Descripción de la falla', 'Acciones realizadas'].includes(etiqueta) && <span className="ml-1 text-red-600">*</span>}</dt><dd className={`mt-1 break-words font-medium ${valido ? 'text-slate-900' : 'text-red-700'}`}>{valido ? (valor || 'No disponible') : 'Obligatorio: pendiente o inválido'}</dd></div>)}
+        </dl>
+        {!puedeGuardar && <p className="text-xs font-semibold text-amber-700">Complete los campos obligatorios y valide el kilometraje antes de guardar.</p>}
+      </ModalSeccionSiniestro>}
       {/* Modal kilometraje */}
 
       {modalKm && (
