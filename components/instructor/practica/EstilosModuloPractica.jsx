@@ -71,12 +71,12 @@ export function TarjetaInspeccionCompacta({ numero, titulo, descripcion, estado,
 }
 
 export function ModalEvaluacionPractica({ seccion, estado, observacion, onObservacionChange, onEvaluar, onCerrar, guia }) {
-  if (!seccion) return null
-  const requiereObservacion = estado === 'NO CONFORME'
+  const requiereObservacion = Boolean(seccion) && estado === 'NO CONFORME'
   const observacionRef = useRef(null)
   useEffect(() => {
     if (requiereObservacion) observacionRef.current?.focus()
   }, [requiereObservacion, seccion?.id])
+  if (!seccion) return null
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
       <div role="dialog" aria-modal="true" aria-labelledby="titulo-evaluacion-practica" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-400 bg-white p-4 shadow-2xl sm:p-5">
