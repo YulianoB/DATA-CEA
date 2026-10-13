@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
+import { EncabezadoPractica } from '@/components/instructor/practica/EstilosModuloPractica'
 
 const MESES = [
   'ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN',
@@ -684,54 +685,22 @@ export default function PlanMantenimientoInstructorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+    <div className="min-h-screen bg-[#F5F7FA] p-2 sm:p-4">
       <Toaster
         position="top-center"
         richColors
       />
 
-      <div className="mx-auto min-h-screen w-full max-w-xl bg-white shadow-xl">
-        <div className="sticky top-2 z-30 mx-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-3 text-white shadow-lg">
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  '/instructor/practica'
-                )
-              }
-              className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-slate-600 bg-slate-700 px-3 text-[10px] font-black"
-            >
-              <i className="fas fa-arrow-left text-[10px]"></i>
-              Regresar
-            </button>
+      <div className="mx-auto w-full max-w-xl overflow-hidden rounded-2xl border border-[#DCE4EB] bg-white shadow-lg">
+        <EncabezadoPractica
+          titulo="Plan de Mantenimiento"
+          usuario={user.nombreCompleto || user.nombre_completo || user.usuario}
+          cea={user.nombreEmpresa || user.nombre_empresa}
+          onRegresar={() => router.push('/instructor/practica')}
+          onCerrarSesion={() => cerrarSesion(router)}
+        />
 
-            <div className="min-w-0 flex-1 text-center">
-              <h1 className="truncate text-xs font-black uppercase sm:text-sm">
-                Plan de Mantenimiento
-              </h1>
-
-              <p className="mt-0.5 text-[8px] text-slate-300">
-                Consulta por vehículo
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                cerrarSesion(
-                  router
-                )
-              }
-              className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[var(--danger)] px-3 text-[10px] font-black"
-            >
-              <i className="fas fa-sign-out-alt text-[10px]"></i>
-              Salir
-            </button>
-          </div>
-        </div>
-
-        <main className="p-3 pb-8">
+        <main className="p-3 pb-5 sm:p-4">
           <section className="rounded-xl border border-slate-300 bg-slate-50 p-3">
             <div className="grid grid-cols-[minmax(0,1fr)_76px_92px] gap-2">
               <div>
@@ -754,7 +723,7 @@ export default function PlanMantenimientoInstructorPage() {
                     }
                   }
                   disabled={cargando}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs font-black text-slate-800"
+                  className="h-11 min-w-0 w-full rounded-lg border border-[#A9BDCC] bg-white px-2 text-xs font-bold text-[#173A57]"
                 >
                   <option value="">
                     {cargando
@@ -804,7 +773,7 @@ export default function PlanMantenimientoInstructorPage() {
                       )
                     }
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs font-bold"
+                  className="h-11 min-w-0 w-full rounded-lg border border-[#A9BDCC] bg-white px-2 text-xs font-bold text-[#173A57]"
                 >
                   {(
                     data
@@ -828,7 +797,7 @@ export default function PlanMantenimientoInstructorPage() {
                   Frecuencia base
                 </label>
 
-                <div className="flex h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-2 text-[10px] font-black text-slate-800">
+                <div className="flex h-11 min-w-0 items-center justify-center rounded-lg border border-[#A9BDCC] bg-white px-1 text-center text-[10px] font-bold text-[#173A57]">
                   {vista
                     ? formatoKm(
                         vista?.frecuencia_base_km ??
