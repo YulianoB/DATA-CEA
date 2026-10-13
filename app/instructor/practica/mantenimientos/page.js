@@ -724,6 +724,8 @@ export default function MantenimientosPage() {
   // Validación del formulario
   // ============================================================
 
+  const tarjetasHabilitadas = Boolean(nitActual && placa && tipoMant && kilometraje !== '' && Number.isFinite(Number(kilometraje)) && Number(kilometraje) >= 0 && !modalKm && (forzarKm || (msgKm && !/menor|no fue posible|no se identificó|error/i.test(msgKm))))
+
   const puedeGuardar = useMemo(() => {
     if (!nitActual || !placa) return false
 
@@ -1299,10 +1301,10 @@ export default function MantenimientosPage() {
             </div>
           )}
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
-            <TarjetaSeccionMantenimiento numero={1} titulo="Proveedor y técnico" descripcion="Datos del taller, proveedor y técnico que realizó el servicio." completada={Boolean(proveedorId && tecnicoId)} onClick={() => setSeccionAbierta(1)} />
-            <TarjetaSeccionMantenimiento numero={2} titulo="Actividades y repuestos del servicio" descripcion="Actividades realizadas y repuestos utilizados (obligatorios)." completada={Boolean(repuestos.trim()) && (tipoMant === 'PREVENTIVO' ? actividadesSeleccionadas.length > 0 : Boolean(actividad.trim()))} onClick={() => setSeccionAbierta(2)} />
-            <TarjetaSeccionMantenimiento numero={3} titulo="Costos y datos complementarios" descripcion="Valor de repuestos, mano de obra, costo total y factura." completada={Boolean(valorRepuestosStr || valorManoObraStr || factura)} onClick={() => setSeccionAbierta(3)} />
-            <TarjetaSeccionMantenimiento numero={4} titulo="Tiempo de parada y observaciones" descripcion="Duración aproximada de la parada y observaciones del servicio." completada={Boolean(tpValor || observaciones)} onClick={() => setSeccionAbierta(4)} />
+            <TarjetaSeccionMantenimiento numero={1} disabled={!tarjetasHabilitadas} titulo="Proveedor y técnico" descripcion="Datos del taller, proveedor y técnico que realizó el servicio." completada={Boolean(proveedorId && tecnicoId)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(1) }} />
+            <TarjetaSeccionMantenimiento numero={2} disabled={!tarjetasHabilitadas} titulo="Actividades y repuestos del servicio" descripcion="Actividades realizadas y repuestos utilizados (obligatorios)." completada={Boolean(repuestos.trim()) && (tipoMant === 'PREVENTIVO' ? actividadesSeleccionadas.length > 0 : Boolean(actividad.trim()))} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(2) }} />
+            <TarjetaSeccionMantenimiento numero={3} disabled={!tarjetasHabilitadas} titulo="Costos y datos complementarios" descripcion="Valor de repuestos, mano de obra, costo total y factura." completada={Boolean(valorRepuestosStr || valorManoObraStr || factura)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(3) }} />
+            <TarjetaSeccionMantenimiento numero={4} disabled={!tarjetasHabilitadas} titulo="Tiempo de parada y observaciones" descripcion="Duración aproximada de la parada y observaciones del servicio." completada={Boolean(tpValor || observaciones)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(4) }} />
           </div>
           <AccionesModuloPractica onGuardar={registrar} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar Mantenimiento" />
         {seccionAbierta === 1 && (
