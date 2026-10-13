@@ -188,7 +188,7 @@ export function ModalSeccionMantenimiento({ numero, titulo, onCerrar, onCancelar
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/25 bg-white/10"><Icono size={19} /></span>
             <div className="min-w-0"><p className="text-[10px] text-sky-200">SECCIÓN {numero} DE 4</p><h2 id="titulo-modal-mantenimiento" className="text-sm font-bold sm:text-base">{titulo}</h2></div>
           </div>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar sección" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/30 bg-white/10"><X size={18} /></button>
+          <button type="button" onClick={onCancelar || onCerrar} aria-label="Cerrar sección" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/30 bg-white/10"><X size={18} /></button>
         </div>
         <div className="space-y-4 p-3 sm:p-5">{children}</div>
         <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 p-3 sm:p-4">{onCancelar && <button type="button" onClick={onCancelar} className="min-h-11 rounded-lg bg-slate-600 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-700">Cancelar</button>}<button type="button" onClick={onContinuar || onCerrar} disabled={!puedeContinuar} className={`min-h-11 rounded-lg px-5 py-2 text-sm font-semibold text-white ${puedeContinuar ? "bg-[#194567] hover:bg-[#082745]" : "cursor-not-allowed bg-slate-300"}`}>Continuar</button></div>
