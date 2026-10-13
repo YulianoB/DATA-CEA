@@ -654,6 +654,8 @@ export default function SiniestrosPage() {
   const handleLogout = () =>
     cerrarSesion(router)
 
+  const tarjetasHabilitadas = Boolean(placa && fechaSiniestro && tipoSiniestro)
+
   const seccionCompleta = (numero) => {
     if (numero === 1) return validarPersonas(personasInvolucradas) === '' && [heridosLeves, heridosGraves, fatalidades].every((v) => validarEnteroMin0(v) === '')
     if (numero === 2) return Boolean(nombreConductor.trim() && documentoConductor.trim())
@@ -670,6 +672,7 @@ export default function SiniestrosPage() {
 
   const [snapshotModal, setSnapshotModal] = useState([])
   const abrirSeccion = (numero) => {
+    if (!placa || !fechaSiniestro || !tipoSiniestro) return
     setSnapshotModal(snapshotSeccion(numero))
     setErroresSeccion(false)
     setSeccionAbierta(numero)
@@ -820,10 +823,10 @@ export default function SiniestrosPage() {
               )}
           </div>
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
-            <TarjetaSeccionSiniestro numero={1} titulo="Personas involucradas" descripcion="Total de personas, lesionados leves, graves y fallecidos." completada={seccionCompleta(1)} onClick={() => abrirSeccion(1)} />
-            <TarjetaSeccionSiniestro numero={2} titulo="Responsable del vehículo" descripcion="Instructor o personal autorizado a cargo del vehículo." completada={seccionCompleta(2)} onClick={() => abrirSeccion(2)} />
-            <TarjetaSeccionSiniestro numero={3} titulo="Descripción del siniestro" descripcion="Hora, lugar, vehículos y hechos relevantes." completada={seccionCompleta(3)} onClick={() => abrirSeccion(3)} />
-            <TarjetaSeccionSiniestro numero={4} titulo="Revisión del registro" descripcion="Verifique los datos antes de guardar." completada={seccionCompleta(4)} onClick={() => abrirSeccion(4)} />
+            <TarjetaSeccionSiniestro numero={1} disabled={!tarjetasHabilitadas} titulo="Personas involucradas" descripcion="Total de personas, lesionados leves, graves y fallecidos." completada={seccionCompleta(1)} onClick={() => abrirSeccion(1)} />
+            <TarjetaSeccionSiniestro numero={2} disabled={!tarjetasHabilitadas} titulo="Responsable del vehículo" descripcion="Instructor o personal autorizado a cargo del vehículo." completada={seccionCompleta(2)} onClick={() => abrirSeccion(2)} />
+            <TarjetaSeccionSiniestro numero={3} disabled={!tarjetasHabilitadas} titulo="Descripción del siniestro" descripcion="Hora, lugar, vehículos y hechos relevantes." completada={seccionCompleta(3)} onClick={() => abrirSeccion(3)} />
+            <TarjetaSeccionSiniestro numero={4} disabled={!tarjetasHabilitadas} titulo="Revisión del registro" descripcion="Verifique los datos antes de guardar." completada={seccionCompleta(4)} onClick={() => abrirSeccion(4)} />
           </div>
           <AccionesModuloPractica onGuardar={registrarSiniestro} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar Siniestro" />
           {seccionAbierta === 1 && <ModalSeccionSiniestro numero={1} titulo="Personas involucradas" onCancelar={cancelarSeccion} onContinuar={continuarSeccion}>
