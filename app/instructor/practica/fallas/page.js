@@ -746,6 +746,7 @@ export default function FallasPage() {
     cerrarSesion(router)
 
   const abrirSeccion = (numero) => {
+    if (!placa || !nitActual || !km || modalKm || !(forzarKm || (msgKm && !/menor|no fue posible|no se identificó|error/i.test(msgKm)))) return
     setSnapshotSeccion(numero === 1 ? descripcion : numero === 2 ? acciones : '')
     setMostrarErrorSeccion(false)
     setSeccionAbierta(numero)
@@ -782,7 +783,8 @@ export default function FallasPage() {
   }
 
   const kilometrajeValido = km !== '' && Number.isFinite(Number(km)) && Number(km) >= 0 && (Boolean(forzarKm) || (Boolean(msgKm) && !/menor|no fue posible|no se identificó|error/i.test(msgKm)))
-  const datosReporteCompletos = Boolean(placa && kilometrajeValido && nitActual)
+  const tarjetasHabilitadas = Boolean(placa && kilometrajeValido && nitActual && !modalKm)
+  const datosReporteCompletos = tarjetasHabilitadas
   const resumenCampos = [
     ['Placa', placa, Boolean(placa)],
     ['Tipo de vehículo', tipoVehiculo, true],
@@ -818,10 +820,10 @@ export default function FallasPage() {
           </div>
           {placa && <div className="mb-5 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700"><strong>Vehículo:</strong> {tipoVehiculo} · <strong>Marca:</strong> {marca}</div>}
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
-            <TarjetaSeccionSiniestro numero={1} titulo="Descripción de la falla" descripcion="Qué ocurrió, síntomas y condiciones." completada={Boolean(descripcion.trim())} onClick={() => abrirSeccion(1)} />
-            <TarjetaSeccionSiniestro numero={2} titulo="Acciones realizadas" descripcion="Medidas adoptadas ante la novedad." completada={Boolean(acciones.trim())} onClick={() => abrirSeccion(2)} />
-            <TarjetaSeccionSiniestro numero={3} titulo="Datos del reporte" descripcion="Vehículo, responsable y registro." completada={datosReporteCompletos} onClick={() => abrirSeccion(3)} />
-            <TarjetaSeccionSiniestro numero={4} titulo="Revisión del registro" descripcion="Verifique los datos antes de guardar." completada={puedeGuardar} onClick={() => abrirSeccion(4)} />
+            <TarjetaSeccionSiniestro numero={1} disabled={!tarjetasHabilitadas} titulo="Descripción de la falla" descripcion="Qué ocurrió, síntomas y condiciones." completada={Boolean(descripcion.trim())} onClick={() => abrirSeccion(1)} />
+            <TarjetaSeccionSiniestro numero={2} disabled={!tarjetasHabilitadas} titulo="Acciones realizadas" descripcion="Medidas adoptadas ante la novedad." completada={Boolean(acciones.trim())} onClick={() => abrirSeccion(2)} />
+            <TarjetaSeccionSiniestro numero={3} disabled={!tarjetasHabilitadas} titulo="Datos del reporte" descripcion="Vehículo, responsable y registro." completada={datosReporteCompletos} onClick={() => abrirSeccion(3)} />
+            <TarjetaSeccionSiniestro numero={4} disabled={!tarjetasHabilitadas} titulo="Revisión del registro" descripcion="Verifique los datos antes de guardar." completada={puedeGuardar} onClick={() => abrirSeccion(4)} />
           </div>
           <AccionesModuloPractica onGuardar={registrarFalla} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar falla" />
         </main>
