@@ -171,7 +171,7 @@ export default function InstructorPracticaPage() {
   ]
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA] p-4">
+    <div className="min-h-screen flex items-start justify-center bg-[#F5F7FA] p-4">
       <Toaster position="top-center" richColors />
 
       <div className="max-w-2xl w-full bg-white rounded-xl border border-[#DCE4EB] shadow-lg p-6">
