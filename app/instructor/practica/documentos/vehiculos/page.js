@@ -843,7 +843,7 @@ export default function DocumentosVehiculosPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA] p-2 sm:p-4">
+    <div className="min-h-screen flex items-start justify-center bg-[#F5F7FA] p-2 sm:p-4">
 
       <Toaster
         position="top-center"
