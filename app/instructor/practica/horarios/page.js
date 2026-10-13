@@ -2374,7 +2374,13 @@ export default function HorariosPracticaPage() {
                       !placa ||
                       !inspeccionOk
                     }
+                    aria-invalid={clasesProg !== '' && (!Number.isInteger(Number(clasesProg)) || Number(clasesProg) < 1 || Number(clasesProg) > 12)}
                   />
+                  {clasesProg !== '' && (!Number.isInteger(Number(clasesProg)) || Number(clasesProg) < 1 || Number(clasesProg) > 12) && (
+                    <p role="alert" className="mt-1 text-xs font-semibold text-red-600">
+                      Las clases programadas deben ser un número entero entre 1 y 12.
+                    </p>
+                  )}
 
                 </div>
 
