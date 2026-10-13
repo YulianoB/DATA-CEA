@@ -178,7 +178,7 @@ export function TarjetaSeccionMantenimiento({ numero, titulo, descripcion, compl
   )
 }
 
-export function ModalSeccionMantenimiento({ numero, titulo, onCerrar, children }) {
+export function ModalSeccionMantenimiento({ numero, titulo, onCerrar, onCancelar, onContinuar, puedeContinuar = true, children }) {
   const Icono = ICONOS_MANTENIMIENTO[numero - 1] || Wrench
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4" role="presentation">
@@ -191,7 +191,7 @@ export function ModalSeccionMantenimiento({ numero, titulo, onCerrar, children }
           <button type="button" onClick={onCerrar} aria-label="Cerrar sección" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/30 bg-white/10"><X size={18} /></button>
         </div>
         <div className="space-y-4 p-3 sm:p-5">{children}</div>
-        <div className="border-t border-slate-200 p-3 text-right sm:p-4"><button type="button" onClick={onCerrar} className="min-h-11 rounded-lg bg-[#194567] px-5 py-2 text-sm font-semibold text-white hover:bg-[#082745]">Volver a las tarjetas</button></div>
+        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 p-3 sm:p-4">{onCancelar && <button type="button" onClick={onCancelar} className="min-h-11 rounded-lg bg-slate-600 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-700">Cancelar</button>}<button type="button" onClick={onContinuar || onCerrar} disabled={!puedeContinuar} className={`min-h-11 rounded-lg px-5 py-2 text-sm font-semibold text-white ${puedeContinuar ? "bg-[#194567] hover:bg-[#082745]" : "cursor-not-allowed bg-slate-300"}`}>Continuar</button></div>
       </div>
     </div>
   )
