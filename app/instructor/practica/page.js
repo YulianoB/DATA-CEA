@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
+import { PiePaginaPractica } from '@/components/instructor/practica/EstilosModuloPractica'
 import {
   CalendarDays,
   CarFront,
@@ -257,6 +258,7 @@ export default function InstructorPracticaPage() {
             )
           })}
         </div>
+        <PiePaginaPractica />
       </div>
     </div>
   )}
