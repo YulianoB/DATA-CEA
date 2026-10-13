@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { validarKilometraje } from '@/lib/servicios/validaciones'
 import { cerrarSesion } from '@/lib/auth/logout'
+import { EncabezadoPractica, TarjetaSeccionMantenimiento, ModalSeccionMantenimiento, AccionesModuloPractica } from '@/components/instructor/practica/EstilosModuloPractica'
 
 // ============================================================
 // Helpers zona Bogotá
@@ -154,6 +155,7 @@ export default function MantenimientosPage() {
   const [observaciones, setObservaciones] = useState('')
 
   const [guardando, setGuardando] = useState(false)
+  const [seccionAbierta, setSeccionAbierta] = useState(null)
 
   // ============================================================
   // Sesión
@@ -1166,175 +1168,40 @@ export default function MantenimientosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-2 sm:p-4">
-
-      <Toaster
-        position="top-center"
-        richColors
-      />
-
-      <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-3 sm:p-5">
-
-        {/* Título */}
-
-        <h2 className="text-xl sm:text-2xl font-bold text-center text-[var(--primary)] mb-4">
-          <i className="fas fa-tools mr-2"></i>
-          Registro de Mantenimiento
-        </h2>
-
-        <div className="mb-4 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-700">
-          Los campos marcados con <b>*</b> son obligatorios.
-        </div>
-
-        {/* Usuario */}
-
-        <div className="bg-gray-50 border rounded-lg p-3 text-sm text-center mb-6">
-          Usuario:{' '}
-          <strong>
-            {user.nombreCompleto ||
-              user.usuario}
-          </strong>
-        </div>
-
-        {/* =====================================================
-            VEHÍCULO
-        ====================================================== */}
-
-        <div className="border rounded-lg overflow-hidden mb-6">
-
-          <div className="bg-gray-900 text-white px-4 py-2 font-semibold">
-            <i className="fas fa-car mr-2"></i>
-            Vehículo
-          </div>
-
-          <div className="p-4 space-y-4">
-
-            <div>
-              <label className="block text-sm font-semibold mb-1">
-                Placa *
-              </label>
-
-              <select
-                className="w-full border p-2 min-h-11 rounded-lg text-sm"
-                value={placa}
-                onChange={(e) => {
-                  setPlaca(e.target.value)
-                  setKilometraje('')
-                  setMsgKm('')
-                  setForzarKm(false)
-                  setModalKm(null)
-                }}
-              >
-                <option value="">
-                  -- Seleccione una placa --
-                </option>
-
-                {vehiculos.map((vehiculo) => (
-                  <option
-                    key={vehiculo.id || vehiculo.placa}
-                    value={vehiculo.placa}
-                  >
-                    {vehiculo.placa}
-                  </option>
-                ))}
+    <div className="min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
+      <Toaster position="top-center" richColors />
+      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-lg">
+        <EncabezadoPractica titulo="Registro de Mantenimiento" usuario={user.nombreCompleto || user.usuario} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={() => cerrarSesion(router)} />
+        <main className="px-3 py-4 sm:px-6 sm:py-6">
+          <p className="mb-4 text-xs text-slate-600">Los campos marcados con <b>*</b> son obligatorios.</p>
+          <div className="mb-4 grid grid-cols-2 gap-3">
+            <div className="min-w-0">
+              <label className="mb-1 block text-sm font-semibold">Placa *</label>
+              <select className="min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm" value={placa} onChange={(e) => {
+                setPlaca(e.target.value); setKilometraje(''); setMsgKm(''); setForzarKm(false); setModalKm(null)
+              }}>
+                <option value="">-- Seleccione una placa --</option>
+                {vehiculos.map((vehiculo) => <option key={vehiculo.id || vehiculo.placa} value={vehiculo.placa}>{vehiculo.placa}</option>)}
               </select>
-
-              <div className="mt-2 text-xs text-gray-600">
-                <p>
-                  <b>Tipo:</b>{' '}
-                  {vehiculoInfo.tipo}
-                </p>
-
-                <p>
-                  <b>Marca:</b>{' '}
-                  {vehiculoInfo.marca}
-                </p>
-              </div>
+              <p className="mt-1 text-[11px] text-slate-600">Tipo: {vehiculoInfo.tipo} · Marca: {vehiculoInfo.marca}</p>
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-1">
-                Kilometraje *
-              </label>
-
-              <input
-                type="number"
-                min="0"
-                className={`w-full border p-2 min-h-11 rounded-lg text-sm ${
-                  !placa
-                    ? 'bg-gray-100 cursor-not-allowed'
-                    : ''
-                }`}
-                value={kilometraje}
-                disabled={!placa}
-                onChange={onKmChange}
-                placeholder="Kilometraje actual"
-              />
-
-              {msgKm && (
-                <p
-                  className={`text-xs mt-1 ${
-                    String(msgKm)
-                      .toLowerCase()
-                      .includes('menor')
-                      ? 'text-red-600'
-                      : String(msgKm)
-                          .toLowerCase()
-                          .includes('supera')
-                        ? 'text-orange-600'
-                        : 'text-green-600'
-                  }`}
-                >
-                  {msgKm}
-                </p>
-              )}
-
-              {forzarKm && (
-                <p className="text-xs mt-1 text-orange-600 font-semibold">
-                  Kilometraje confirmado manualmente.
-                </p>
-              )}
+            <div className="min-w-0">
+              <label className="mb-1 block text-sm font-semibold">Kilometraje *</label>
+              <input type="number" min="0" className={`min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm ${!placa ? 'cursor-not-allowed bg-gray-100' : ''}`} value={kilometraje} disabled={!placa} onChange={onKmChange} placeholder="Kilometraje actual" />
+              {msgKm && <p className={`mt-1 text-xs ${String(msgKm).toLowerCase().includes('menor') ? 'text-red-600' : String(msgKm).toLowerCase().includes('supera') ? 'text-orange-600' : 'text-green-600'}`}>{msgKm}</p>}
+              {forzarKm && <p className="mt-1 text-xs font-semibold text-orange-600">Kilometraje confirmado manualmente.</p>}
             </div>
           </div>
-        </div>
-
-        {/* =====================================================
-            MANTENIMIENTO
-        ====================================================== */}
-
-        <div className="border rounded-lg overflow-hidden mb-6">
-
-          <div className="bg-gray-900 text-white px-4 py-2 font-semibold">
-            <i className="fas fa-wrench mr-2"></i>
-            Información del mantenimiento
+          <div className="mb-4">
+            <label className="mb-1 block text-sm font-semibold">Tipo de mantenimiento *</label>
+            <select className="min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm" value={tipoMant} onChange={onTipoMantChange}>
+              <option value="">-- Seleccione --</option>
+              <option value="PREVENTIVO">Preventivo</option>
+              <option value="CORRECTIVO">Correctivo</option>
+            </select>
           </div>
-
-          <div className="p-4 space-y-4">
-
-            <div>
-              <label className="block text-sm font-semibold mb-1">
-                Tipo de mantenimiento *
-              </label>
-
-              <select
-                className="w-full border p-2 min-h-11 rounded-lg text-sm"
-                value={tipoMant}
-                onChange={onTipoMantChange}
-              >
-                <option value="">
-                  -- Seleccione --
-                </option>
-
-                <option value="PREVENTIVO">
-                  Preventivo
-                </option>
-
-                <option value="CORRECTIVO">
-                  Correctivo
-                </option>
-              </select>
-            </div>
-
+          {tipoMant === 'PREVENTIVO' && (
+            <div className="mb-4">
             {tipoMant === 'PREVENTIVO' && (
               <div className="space-y-3">
                 {cargandoProgramacion ? (
@@ -1406,20 +1273,17 @@ export default function MantenimientosPage() {
                 )}
               </div>
             )}
+            </div>
+          )}
+          <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
+            <TarjetaSeccionMantenimiento numero={1} titulo="Proveedor y técnico" descripcion="Datos del taller, proveedor y técnico que realizó el servicio." completada={Boolean(proveedorId)} onClick={() => setSeccionAbierta(1)} />
+            <TarjetaSeccionMantenimiento numero={2} titulo="Actividades y repuestos del servicio" descripcion="Actividades realizadas y repuestos utilizados (obligatorios)." completada={Boolean(repuestos.trim()) && (tipoMant === 'PREVENTIVO' ? actividadesSeleccionadas.length > 0 : Boolean(actividad.trim()))} onClick={() => setSeccionAbierta(2)} />
+            <TarjetaSeccionMantenimiento numero={3} titulo="Costos y datos complementarios" descripcion="Valor de repuestos, mano de obra, costo total y factura." completada={Boolean(valorRepuestosStr || valorManoObraStr || factura)} onClick={() => setSeccionAbierta(3)} />
+            <TarjetaSeccionMantenimiento numero={4} titulo="Tiempo de parada y observaciones" descripcion="Duración aproximada de la parada y observaciones del servicio." completada={Boolean(tpValor || observaciones)} onClick={() => setSeccionAbierta(4)} />
           </div>
-        </div>
-
-        {/* =====================================================
-            PROVEEDOR
-        ====================================================== */}
-
-        <div className="border rounded-lg overflow-hidden mb-6">
-          <div className="bg-gray-900 text-white px-4 py-2 font-semibold">
-            <i className="fas fa-building mr-2"></i>
-            Proveedor y técnico
-          </div>
-
-          <div className="p-4 space-y-5">
+          <AccionesModuloPractica onGuardar={registrar} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar Mantenimiento" />
+        {seccionAbierta === 1 && (
+          <ModalSeccionMantenimiento numero={1} titulo="Proveedor y técnico" onCerrar={() => setSeccionAbierta(null)}>
             <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-700">
               Los proveedores, talleres, técnicos y actividades que atienden son configurados por Administración. Si el proveedor de la factura aún no aparece, solicite su registro antes de guardar el mantenimiento.
             </div>
@@ -1519,20 +1383,11 @@ export default function MantenimientosPage() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
+          </ModalSeccionMantenimiento>
+        )}
 
-        {/* =====================================================
-            ACTIVIDADES Y REPUESTOS
-        ====================================================== */}
-
-        <div className="border rounded-lg overflow-hidden mb-6">
-          <div className="bg-gray-900 text-white px-4 py-2 font-semibold">
-            <i className="fas fa-clipboard-check mr-2"></i>
-            Actividades y repuestos del servicio
-          </div>
-
-          <div className="p-4 space-y-5">
+        {seccionAbierta === 2 && (
+          <ModalSeccionMantenimiento numero={2} titulo="Actividades y repuestos del servicio" onCerrar={() => setSeccionAbierta(null)}>
             {tipoMant === 'PREVENTIVO' && (
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
@@ -1587,12 +1442,13 @@ export default function MantenimientosPage() {
             {tipoMant === 'CORRECTIVO' && (
               <div>
                 <label className="block text-sm font-semibold mb-1">Actividad realizada *</label>
+                <p className="mb-2 text-xs leading-relaxed text-slate-600">Describa de forma clara el diagnóstico, la reparación o el trabajo correctivo efectivamente realizado durante el servicio.</p>
                 <textarea
                   className="w-full border p-2 rounded-lg text-sm"
                   rows="3"
                   value={actividad}
                   onChange={(e) => setActividad(e.target.value.toUpperCase())}
-                  placeholder="Describa el diagnóstico, reparación o trabajo correctivo realizado."
+                  placeholder="Describa la actividad realizada"
                 />
                 <p className="mt-1 text-[11px] text-slate-500">
                   El mantenimiento correctivo no se relaciona con las actividades del Plan de Mantenimiento.
@@ -1602,31 +1458,21 @@ export default function MantenimientosPage() {
 
             <div>
               <label className="block text-sm font-semibold mb-1">Repuestos utilizados *</label>
+              <p className="mb-2 text-xs leading-relaxed text-slate-600">Indique los repuestos instalados o reemplazados. Si el servicio no requirió repuestos, escriba NO APLICA.</p>
               <textarea
                 className="w-full border p-2 min-h-11 rounded-lg text-sm"
                 rows="3"
                 value={repuestos}
                 onChange={(e) => setRepuestos(e.target.value.toUpperCase())}
-                placeholder="Describa los repuestos utilizados. Si no se utilizaron, escriba NO APLICA."
+                placeholder="Repuestos utilizados"
               />
               <p className="mt-1 text-[11px] text-slate-500">Campo obligatorio. Si el servicio no requirió repuestos, registre NO APLICA.</p>
             </div>
-          </div>
-        </div>
+          </ModalSeccionMantenimiento>
+        )}
 
-        {/* =====================================================
-            COSTOS Y DATOS COMPLEMENTARIOS
-        ====================================================== */}
-
-        <div className="border rounded-lg overflow-hidden mb-6">
-
-          <div className="bg-gray-900 text-white px-4 py-2 font-semibold">
-            <i className="fas fa-file-invoice-dollar mr-2"></i>
-            Costos y datos complementarios
-          </div>
-
-          <div className="p-4 space-y-4">
-
+        {seccionAbierta === 3 && (
+          <ModalSeccionMantenimiento numero={3} titulo="Costos y datos complementarios" onCerrar={() => setSeccionAbierta(null)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               <div>
@@ -1672,7 +1518,28 @@ export default function MantenimientosPage() {
                 </span>
               </p>
             </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">
+                Factura
+              </label>
 
+              <input
+                type="text"
+                className="w-full border p-2 min-h-11 rounded-lg text-sm"
+                value={factura}
+                onChange={(e) =>
+                  setFactura(
+                    e.target.value.toUpperCase()
+                  )
+                }
+                placeholder="Número de factura"
+              />
+            </div>
+          </ModalSeccionMantenimiento>
+        )}
+
+        {seccionAbierta === 4 && (
+          <ModalSeccionMantenimiento numero={4} titulo="Tiempo de parada y observaciones" onCerrar={() => setSeccionAbierta(null)}>
             <div>
               <label className="block text-sm font-semibold mb-1">
                 Tiempo de parada aproximado (horas)
@@ -1695,25 +1562,6 @@ export default function MantenimientosPage() {
                 Desde esta versión el tiempo de parada se registra únicamente en horas.
               </p>
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-1">
-                Factura
-              </label>
-
-              <input
-                type="text"
-                className="w-full border p-2 min-h-11 rounded-lg text-sm"
-                value={factura}
-                onChange={(e) =>
-                  setFactura(
-                    e.target.value.toUpperCase()
-                  )
-                }
-                placeholder="Número de factura"
-              />
-            </div>
-
             <div>
               <label className="block text-sm font-semibold mb-1">
                 Observaciones
@@ -1731,60 +1579,10 @@ export default function MantenimientosPage() {
                 placeholder="Observaciones adicionales"
               />
             </div>
-          </div>
-        </div>
+          </ModalSeccionMantenimiento>
+        )}
 
-        {/* =====================================================
-            BOTONES
-        ====================================================== */}
-
-        <div className="flex justify-center gap-3 flex-wrap">
-
-          <button
-            type="button"
-            disabled={
-              !puedeGuardar ||
-              guardando
-            }
-            onClick={registrar}
-            className={`min-h-11 py-2 px-5 rounded-lg shadow-md text-sm text-white ${
-              puedeGuardar &&
-              !guardando
-                ? 'bg-[var(--primary)] hover:bg-[var(--primary-dark)]'
-                : 'bg-gray-400 cursor-not-allowed'
-            }`}
-          >
-            <i className="fas fa-save mr-2"></i>
-
-            {guardando
-              ? 'Guardando...'
-              : 'Registrar Mantenimiento'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                '/instructor/practica'
-              )
-            }
-            className="bg-gray-600 hover:bg-gray-800 text-white min-h-11 py-2 px-4 rounded-lg shadow-md text-sm"
-          >
-            <i className="fas fa-arrow-left mr-2"></i>
-            Regresar
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              cerrarSesion(router)
-            }
-            className="bg-[var(--danger)] hover:bg-red-800 text-white min-h-11 py-2 px-4 rounded-lg shadow-md text-sm"
-          >
-            <i className="fas fa-sign-out-alt mr-2"></i>
-            Cerrar Sesión
-          </button>
-        </div>
+        </main>
       </div>
 
       {/* =====================================================
@@ -1792,7 +1590,7 @@ export default function MantenimientosPage() {
       ====================================================== */}
 
       {modalProveedor && tipoMant === 'CORRECTIVO' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
             <h3 className="text-lg font-bold text-slate-800">Registrar proveedor para correctivo</h3>
             <p className="mt-1 text-xs text-slate-600">
