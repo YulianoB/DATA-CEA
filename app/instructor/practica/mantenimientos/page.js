@@ -1202,7 +1202,6 @@ export default function MantenimientosPage() {
           </div>
           {tipoMant === 'PREVENTIVO' && (
             <div className="mb-4">
-            {tipoMant === 'PREVENTIVO' && (
               <div className="space-y-3">
                 {cargandoProgramacion ? (
                   <div className="border rounded-xl p-4 bg-slate-50 text-sm text-slate-600 text-center">
@@ -1272,7 +1271,6 @@ export default function MantenimientosPage() {
                   </div>
                 )}
               </div>
-            )}
             </div>
           )}
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
