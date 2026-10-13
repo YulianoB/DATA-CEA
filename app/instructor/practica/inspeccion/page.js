@@ -12,6 +12,14 @@ import {
   validarKilometraje,
 } from '@/lib/servicios/validaciones'
 
+const formatearKm = (valor) => {
+  const digitos = String(valor ?? '').replace(/\D/g, '')
+  return digitos.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+const formatearMensajeKm = (mensaje) =>
+  String(mensaje || '').replace(/\b\d{4,}\b/g, (numero) => Number(numero).toLocaleString('es-CO'))
+
 // ============================================================
 // Helpers Bogotá
 // ============================================================
@@ -149,6 +157,8 @@ export default function InspeccionPage() {
   const [estadoValidacionKm, setEstadoValidacionKm] = useState('pendiente')
   const [validandoKm, setValidandoKm] = useState(false)
   const solicitudKmRef = useRef(0)
+  const inputKmRef = useRef(null)
+  const tarjetaPrimeraRef = useRef(null)
 
   // ============================================================
   // Alerta plan de mantenimiento
@@ -999,7 +1009,23 @@ const validarDocumentacionVehiculo =
 
   const handleKmChange = (e) => {
     solicitudKmRef.current += 1
-    setKilometraje(e.target.value)
+    const entrada = e.target.value
+    const posicion = e.target.selectionStart ?? entrada.length
+    const digitosAntes = entrada.slice(0, posicion).replace(/\D/g, '').length
+    const valor = entrada.replace(/\D/g, '')
+    setKilometraje(valor)
+    requestAnimationFrame(() => {
+      const input = inputKmRef.current
+      if (!input || document.activeElement !== input) return
+      const formato = formatearKm(valor)
+      let indice = 0
+      let digitos = 0
+      while (indice < formato.length && digitos < digitosAntes) {
+        if (/\d/.test(formato[indice])) digitos++
+        indice++
+      }
+      input.setSelectionRange(indice, indice)
+    })
     setMensajeKm('')
     setKmValidadoPara('')
       setEstadoValidacionKm('pendiente')
@@ -1680,7 +1706,10 @@ const puedeGuardar =
             </label>
 
             <input
-              type="number"
+              ref={inputKmRef}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
               className={`w-full border p-2 rounded text-sm h-10 ${
                 (
                 !placaSeleccionada ||
@@ -1690,8 +1719,7 @@ const puedeGuardar =
                 ? 'bg-gray-100 cursor-not-allowed'
                 : ''
               }`}
-              min="0"
-              value={kilometraje}
+              value={formatearKm(kilometraje)}
               onChange={
                 handleKmChange
               }
@@ -1721,7 +1749,7 @@ const puedeGuardar =
                     : 'text-green-600'
                 }`}
               >
-                {mensajeKm}
+                {formatearMensajeKm(mensajeKm)}
               </p>
             )}
 
@@ -1765,7 +1793,7 @@ const puedeGuardar =
           )}
           <div className="grid grid-cols-2 items-stretch gap-3">
             {SECCIONES_INSPECCION.map((section) => (
-              <div key={section.id} className={section.numero === 5 ? 'col-start-1 col-span-2 mx-auto w-[calc(50%-0.375rem)] h-full' : 'h-full'}>
+              <div key={section.id} ref={section.numero === 1 ? tarjetaPrimeraRef : undefined} className={section.numero === 5 ? 'col-start-1 col-span-2 mx-auto w-[calc(50%-0.375rem)] h-full' : 'h-full'}>
                 <TarjetaInspeccionCompacta
                   numero={section.numero}
                   titulo={section.titulo}
@@ -2283,7 +2311,7 @@ const puedeGuardar =
               Diferencia:{' '}
 
               <strong>
-                {datosKm.diferencia} km
+                {formatearKm(datosKm.diferencia)} km
               </strong>
 
             </p>
@@ -2298,6 +2326,7 @@ const puedeGuardar =
 
                   setDatosKm(null)
                   setEstadoValidacionKm('cancelado')
+                  requestAnimationFrame(() => inputKmRef.current?.focus())
                   setForzarGuardado(
                     false
                   )
@@ -2316,6 +2345,7 @@ const puedeGuardar =
                   )
 
                   setEstadoValidacionKm('confirmado')
+                  requestAnimationFrame(() => tarjetaPrimeraRef.current?.querySelector('button')?.focus())
                   setForzarGuardado(
                     true
                   )
