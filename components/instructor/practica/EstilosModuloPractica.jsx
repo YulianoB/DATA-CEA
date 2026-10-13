@@ -270,3 +270,12 @@ export const GUIAS_NO_CONFORMIDAD = {
   equiposPrevencion: 'Señale el elemento obligatorio faltante, vencido o defectuoso. No marque No conforme si todos los equipos están disponibles y en buen estado.',
   documentos: 'Si los documentos están vigentes, marque Conforme, aunque venzan pronto. Marque No conforme únicamente cuando exista un documento vencido, faltante o inválido.',
 }
+
+
+export function PiePaginaPractica() {
+  return (
+    <footer className="mt-5 border-t border-[#DCE4EB] pt-3 text-center text-[11px] leading-relaxed text-[#64748B]">
+      © {new Date().getFullYear()} DATA CEA. Todos los derechos reservados.
+    </footer>
+  )
+}
