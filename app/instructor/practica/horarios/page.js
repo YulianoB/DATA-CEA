@@ -2586,8 +2586,6 @@ export default function HorariosPracticaPage() {
               </div>
           <div className="border rounded-lg shadow-sm">
 
-          <div className="border rounded-lg shadow-sm">
-
             <h3 className="bg-[var(--primary-dark)] text-white font-semibold px-4 py-2 rounded-t-lg flex items-center gap-2 text-sm">
 
               <i className="fas fa-sign-out-alt text-red-300"></i>
