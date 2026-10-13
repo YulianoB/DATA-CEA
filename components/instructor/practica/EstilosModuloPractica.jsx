@@ -162,18 +162,18 @@ export function ModalHorarioPractica({ tipo, onCerrar, children }) {
 
 const ICONOS_MANTENIMIENTO = [Wrench, ClipboardCheck, FileText, Gauge]
 
-export function TarjetaSeccionMantenimiento({ numero, titulo, descripcion, completada, onClick }) {
+export function TarjetaSeccionMantenimiento({ numero, titulo, descripcion, completada, onClick, disabled = false }) {
   const Icono = ICONOS_MANTENIMIENTO[numero - 1] || Wrench
   return (
-    <button type="button" onClick={onClick} className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 border-slate-500 p-3 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${completada ? 'bg-[#194567]' : 'bg-[#367DA8]'}`}>
+    <button type="button" onClick={onClick} disabled={disabled} className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 border-slate-500 p-3 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${disabled ? 'cursor-not-allowed border-slate-400 bg-slate-400 opacity-75' : completada ? 'bg-[#194567]' : 'bg-[#367DA8]'}`}>
       <div className="mb-2 flex w-full items-center justify-between gap-2">
         <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/25 bg-white/15"><Icono size={29} strokeWidth={2.3} aria-hidden="true" /></span>
-        {completada ? <CircleCheck size={22} className="text-emerald-200" /> : <ChevronRight size={22} />}
+        {disabled ? <X size={22} /> : completada ? <CircleCheck size={22} className="text-emerald-200" /> : <ChevronRight size={22} />}
       </div>
       <span className="text-[10px] font-bold tracking-wide text-sky-100">SECCIÓN {numero}</span>
       <span className="mt-1 text-sm font-bold leading-snug">{titulo}</span>
       <span className="mt-1 text-xs leading-relaxed text-slate-100">{descripcion}</span>
-      <span className="mt-auto pt-3 text-xs font-semibold">{completada ? 'Información registrada' : 'Tocar para diligenciar'}</span>
+      <span className="mt-auto pt-3 text-xs font-semibold">{disabled ? 'Bloqueada: complete los datos iniciales' : completada ? 'Información registrada' : 'Tocar para diligenciar'}</span>
     </button>
   )
 }
@@ -200,18 +200,18 @@ export function ModalSeccionMantenimiento({ numero, titulo, onCerrar, onCancelar
 
 const ICONOS_SINIESTRO = [CarFront, ShieldCheck, FileText, ClipboardCheck]
 
-export function TarjetaSeccionSiniestro({ numero, titulo, descripcion, completada, onClick }) {
+export function TarjetaSeccionSiniestro({ numero, titulo, descripcion, completada, onClick, disabled = false }) {
   const Icono = ICONOS_SINIESTRO[numero - 1] || FileText
   return (
-    <button type="button" onClick={onClick} className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 border-slate-500 p-3 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${completada ? 'bg-[#194567]' : 'bg-[#367DA8]'}`}>
+    <button type="button" onClick={onClick} disabled={disabled} className={`flex h-full min-h-44 w-full flex-col rounded-xl border-2 border-slate-500 p-3 text-left text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 ${disabled ? 'cursor-not-allowed border-slate-400 bg-slate-400 opacity-75' : completada ? 'bg-[#194567]' : 'bg-[#367DA8]'}`}>
       <div className="mb-2 flex w-full items-center justify-between gap-2">
         <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/25 bg-white/15"><Icono size={29} strokeWidth={2.3} aria-hidden="true" /></span>
-        {completada ? <CircleCheck size={22} className="text-emerald-200" /> : <ChevronRight size={22} />}
+        {disabled ? <X size={22} /> : completada ? <CircleCheck size={22} className="text-emerald-200" /> : <ChevronRight size={22} />}
       </div>
       <span className="text-[10px] font-bold tracking-wide text-sky-100">SECCIÓN {numero}</span>
       <span className="mt-1 text-sm font-bold leading-snug">{titulo}</span>
       <span className="mt-1 text-xs leading-relaxed text-slate-100">{descripcion}</span>
-      <span className="mt-auto pt-3 text-xs font-semibold">{completada ? 'Información completa' : 'Tocar para diligenciar'}</span>
+      <span className="mt-auto pt-3 text-xs font-semibold">{disabled ? 'Bloqueada: complete los datos iniciales' : completada ? 'Información completa' : 'Tocar para diligenciar'}</span>
     </button>
   )
 }
