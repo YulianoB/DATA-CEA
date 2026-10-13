@@ -1502,7 +1502,9 @@ export default function HorariosPracticaPage() {
             clasesNumero
           ) &&
           clasesNumero >=
-            1
+            1 &&
+          clasesNumero <=
+            12
 
         return (
           kmOk &&
@@ -2342,6 +2344,7 @@ export default function HorariosPracticaPage() {
                   <input
                     type="number"
                     min="1"
+                    max="12"
                     className={`w-full border p-2 rounded text-sm ${
                       (
                         !documentacionInstructorValida ||
