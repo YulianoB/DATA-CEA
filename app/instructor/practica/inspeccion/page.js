@@ -1805,6 +1805,7 @@ const puedeGuardar =
             ))}
           </div>
         </div>
+        {algunaNoConforme && (
         <div className={`mt-4 rounded-xl border p-3 ${algunaNoConforme ? 'border-amber-500 bg-amber-50' : 'border-slate-400 bg-slate-50'}`}>
           <h2 className="text-sm font-bold text-slate-900">Resumen de observaciones</h2>
           {algunaNoConforme ? (
@@ -1820,6 +1821,7 @@ const puedeGuardar =
           ) : <p className="mt-1 text-xs text-slate-600">Sin no conformidades registradas.</p>}
           {algunaNoConforme && !observacionesCompletas && <p className="mt-2 text-xs font-semibold text-red-700">Debe registrar una observación para cada sección No conforme.</p>}
         </div>
+        )}
         <ModalEvaluacionPractica
           seccion={SECCIONES_INSPECCION.find((item) => item.id === seccionActiva)}
           estado={secciones[seccionActiva]}
