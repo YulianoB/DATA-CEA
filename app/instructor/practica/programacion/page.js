@@ -1361,213 +1361,71 @@ export default function InstructorProgramacionPage() {
           py-4
         "
       >
-        <div className="mb-3 flex justify-end">
+        {/* Selector compacto de vista y acceso a hoy */}
+        <div className="mb-2 grid grid-cols-[repeat(4,minmax(0,1fr))_auto] gap-1 rounded-xl border border-[#DCE4EB] bg-white p-1.5 shadow-sm">
+          {VISTAS.map(item => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => cambiarVista(item.id)}
+              aria-pressed={vista === item.id}
+              className={`min-h-9 min-w-0 rounded-lg px-1 py-1 text-[10px] font-bold uppercase transition sm:text-xs ${
+                vista === item.id
+                  ? 'bg-[#194567] text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={irHoy}
+            title="Ir a hoy"
+            aria-label="Ir a hoy"
+            className="min-h-9 rounded-lg border border-[#A9BDCC] bg-[#EFF7FC] px-2 text-[10px] font-bold text-[#194567] hover:bg-sky-100"
+          >
+            Hoy
+          </button>
+        </div>
+
+        {/* Navegación de fechas y actualización en una sola fila */}
+        <div className="mb-3 flex items-center gap-1.5 rounded-xl border border-[#DCE4EB] bg-white p-1.5 shadow-sm">
+          <button
+            type="button"
+            onClick={irAnterior}
+            aria-label="Período anterior"
+            title="Período anterior"
+            className="flex h-10 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[#173A57] hover:bg-slate-200"
+          >
+            <i className="fas fa-chevron-left" aria-hidden="true"></i>
+          </button>
+          <div className="min-w-0 flex-1 text-center">
+            <p className="truncate text-[9px] font-semibold uppercase text-slate-500">{vista}</p>
+            <p className="break-words text-[10px] font-bold leading-tight text-[#173A57] sm:text-xs">
+              {formatearRango(rango.inicio, rango.fin)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={irSiguiente}
+            aria-label="Período siguiente"
+            title="Período siguiente"
+            className="flex h-10 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[#173A57] hover:bg-slate-200"
+          >
+            <i className="fas fa-chevron-right" aria-hidden="true"></i>
+          </button>
           <button
             type="button"
             onClick={cargarProgramacion}
             disabled={cargando}
             aria-label="Actualizar programación"
             title="Actualizar programación"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#367DA8] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#194567] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 shrink-0 items-center justify-center gap-1 rounded-lg bg-[#367DA8] px-2 text-[10px] font-semibold text-white hover:bg-[#194567] disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
           >
             <i className={`fas fa-sync-alt ${cargando ? 'fa-spin' : ''}`} aria-hidden="true"></i>
-            Actualizar
+            <span>Actualizar</span>
           </button>
-        </div>
-
-        {/* =============================================
-            SELECTOR DE VISTA
-        ============================================= */}
-
-        <div
-          className="
-            bg-white
-            border
-            border-gray-200
-            rounded-xl
-            shadow-sm
-            p-2
-            mb-4
-          "
-        >
-          <div
-            className="
-              grid
-              grid-cols-4
-              gap-1
-            "
-          >
-            {VISTAS.map(
-              item => (
-                <button
-                  key={
-                    item.id
-                  }
-                  type="button"
-                  onClick={() =>
-                    cambiarVista(
-                      item.id
-                    )
-                  }
-                  className={`
-                    rounded-lg
-                    px-1
-                    min-h-11
-                    py-2.5
-                    text-[10px]
-                    sm:text-[10px]
-                    font-black
-                    uppercase
-                    transition
-                    ${
-                      vista ===
-                      item.id
-                        ? 'bg-sky-700 text-yellow-300 shadow-sm'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }
-                  `}
-                >
-                  {item.label}
-                </button>
-              )
-            )}
-          </div>
-        </div>
-
-        {/* =============================================
-            NAVEGACIÓN DE FECHAS
-        ============================================= */}
-
-        <div
-          className="
-            bg-white
-            border
-            border-gray-200
-            rounded-xl
-            shadow-sm
-            p-3
-            mb-4
-          "
-        >
-          <div
-            className="
-              flex
-              items-center
-              justify-between
-              gap-2
-            "
-          >
-            <button
-              type="button"
-              onClick={
-                irAnterior
-              }
-              className="
-                w-10
-                h-10
-                rounded-lg
-                bg-gray-100
-                text-gray-700
-                hover:bg-gray-200
-                flex
-                items-center
-                justify-center
-                shrink-0
-              "
-              title="Periodo anterior"
-            >
-              <i className="fas fa-chevron-left"></i>
-            </button>
-
-            <div
-              className="
-                min-w-0
-                flex-1
-                text-center
-              "
-            >
-              <p
-                className="
-                  text-[8px]
-                  font-black
-                  uppercase
-                  text-gray-400
-                "
-              >
-                {vista}
-              </p>
-
-              <p
-                className="
-                  text-xs
-                  sm:text-sm
-                  font-black
-                  text-gray-800
-                  capitalize
-                "
-              >
-                {formatearRango(
-                  rango.inicio,
-                  rango.fin
-                )}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={
-                irSiguiente
-              }
-              className="
-                w-10
-                h-10
-                rounded-lg
-                bg-gray-100
-                text-gray-700
-                hover:bg-gray-200
-                flex
-                items-center
-                justify-center
-                shrink-0
-              "
-              title="Periodo siguiente"
-            >
-              <i className="fas fa-chevron-right"></i>
-            </button>
-          </div>
-
-          <div
-            className="
-              flex
-              justify-center
-              mt-3
-            "
-          >
-            <button
-              type="button"
-              onClick={
-                irHoy
-              }
-              className="
-                rounded-full
-                bg-sky-50
-                border
-                border-sky-200
-                text-sky-700
-                px-4
-                py-1.5
-                text-[9px]
-                font-black
-                uppercase
-                hover:bg-sky-100
-                transition
-              "
-            >
-              <i className="fas fa-calendar-day mr-1.5"></i>
-
-              Hoy
-            </button>
-          </div>
         </div>
 
         {/* =============================================
