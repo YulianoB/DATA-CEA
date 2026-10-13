@@ -146,6 +146,7 @@ export default function InspeccionPage() {
   ] = useState('')
 
   const [kmValidadoPara, setKmValidadoPara] = useState('')
+  const [estadoValidacionKm, setEstadoValidacionKm] = useState('pendiente')
   const [validandoKm, setValidandoKm] = useState(false)
   const solicitudKmRef = useRef(0)
 
@@ -479,6 +480,7 @@ export default function InspeccionPage() {
     () => {
       solicitudKmRef.current += 1
       setKmValidadoPara('')
+      setEstadoValidacionKm('pendiente')
       setValidandoKm(false)
       setKilometraje('')
       setMensajeKm('')
@@ -1000,6 +1002,7 @@ const validarDocumentacionVehiculo =
     setKilometraje(e.target.value)
     setMensajeKm('')
     setKmValidadoPara('')
+      setEstadoValidacionKm('pendiente')
     setValidandoKm(false)
     setForzarGuardado(false)
     setMostrarModalKm(false)
@@ -1009,13 +1012,14 @@ const validarDocumentacionVehiculo =
   const handleKmBlur = async () => {
     const valor = kilometraje.trim()
     if (!nitActual || !placaSeleccionada || valor === '' || !Number.isFinite(Number(valor)) || Number(valor) < 0) return
-    if (kmValidadoPara === valor) return
+    if (kmValidadoPara === valor && estadoValidacionKm !== 'pendiente') return
 
     const solicitud = ++solicitudKmRef.current
     const placaAlValidar = placaSeleccionada
     setValidandoKm(true)
     setMensajeKm('')
     setKmValidadoPara('')
+      setEstadoValidacionKm('pendiente')
 
     try {
       const resultado = await validarKilometraje(nitActual, placaAlValidar, Number(valor))
@@ -1024,9 +1028,11 @@ const validarDocumentacionVehiculo =
       setMensajeKm(resultado.mensaje || '')
       setKmValidadoPara(valor)
       if (resultado.estado === 'advertencia') {
+        setEstadoValidacionKm('requiere_confirmacion')
         setDatosKm(resultado)
         setMostrarModalKm(true)
       } else {
+        setEstadoValidacionKm(resultado.estado === 'error' ? 'error' : 'validado')
         setMostrarModalKm(false)
         setDatosKm(null)
         if (resultado.estado === 'error') toast.error(resultado.mensaje || 'No fue posible validar el kilometraje.')
@@ -1035,6 +1041,8 @@ const validarDocumentacionVehiculo =
       if (solicitud !== solicitudKmRef.current) return
       setMensajeKm('No fue posible validar el kilometraje.')
       setKmValidadoPara('')
+      setEstadoValidacionKm('pendiente')
+      setEstadoValidacionKm('error')
       toast.error('No fue posible validar el kilometraje.')
     } finally {
       if (solicitud === solicitudKmRef.current) setValidandoKm(false)
@@ -1092,23 +1100,9 @@ const validarDocumentacionVehiculo =
 const kilometrajeValido =
   !validandoKm &&
   !mostrarModalKm &&
+  kmValidadoPara !== '' &&
   kmValidadoPara === kilometraje.trim() &&
-  (
-    mensajeKm &&
-    !mensajeKmNormalizado.includes(
-      'menor'
-    ) &&
-    !mensajeKmNormalizado.includes(
-      'no fue posible'
-    ) &&
-    !mensajeKmNormalizado.includes(
-      'no se identificó'
-    ) &&
-    !mensajeKmNormalizado.includes(
-      'error'
-    )
-  ) ||
-  (!validandoKm && !mostrarModalKm && kmValidadoPara === kilometraje.trim() && forzarGuardado)
+  (estadoValidacionKm === 'validado' || (estadoValidacionKm === 'confirmado' && forzarGuardado))
 
 const mensajeDuplicadoNormalizado =
   String(
@@ -2303,6 +2297,7 @@ const puedeGuardar =
                   )
 
                   setDatosKm(null)
+                  setEstadoValidacionKm('cancelado')
                   setForzarGuardado(
                     false
                   )
@@ -2320,6 +2315,7 @@ const puedeGuardar =
                     false
                   )
 
+                  setEstadoValidacionKm('confirmado')
                   setForzarGuardado(
                     true
                   )
