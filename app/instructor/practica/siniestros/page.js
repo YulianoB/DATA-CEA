@@ -766,7 +766,8 @@ export default function SiniestrosPage() {
                 <small className="text-red-600 text-xs">
                   {msgFecha}
                 </small>
-              )}</div>
+              )}
+            </div>
           </div>
           <div className="mb-5">              <label className="block mb-1 font-semibold text-sm">
                 Tipo de Siniestro
