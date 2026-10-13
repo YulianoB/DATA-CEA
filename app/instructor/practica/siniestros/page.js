@@ -749,7 +749,7 @@ export default function SiniestrosPage() {
                   {msgPlaca}
                 </small>
               )}
-            </div></div>
+            </div>
             <div className="min-w-0">              <label className="block mb-1 font-semibold text-sm">
                 Fecha del Siniestro
               </label>
@@ -812,7 +812,7 @@ export default function SiniestrosPage() {
                   {msgTipo}
                 </small>
               )}
-            </div></div>
+          </div>
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
             <TarjetaSeccionSiniestro numero={1} titulo="Personas involucradas" descripcion="Personas, heridos y fatalidades." completada={seccionCompleta(1)} onClick={() => abrirSeccion(1)} />
             <TarjetaSeccionSiniestro numero={2} titulo="Responsable del vehículo" descripcion="Nombre y documento del conductor." completada={seccionCompleta(2)} onClick={() => abrirSeccion(2)} />
