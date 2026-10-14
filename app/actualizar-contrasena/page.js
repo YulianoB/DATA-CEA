@@ -1,13 +1,13 @@
 // app/actualizar-contrasena/page.js
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { mostrarExito, mostrarError } from '@/lib/ui/toast'
 
-export default function ActualizarContrasenaPage() {
+function ActualizarContrasenaPage() {
   const searchParams = useSearchParams()
   const nit = searchParams.get('nit') || ''
 
@@ -202,5 +202,13 @@ export default function ActualizarContrasenaPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <ActualizarContrasenaPage />
+    </Suspense>
   )
 }
