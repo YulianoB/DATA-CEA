@@ -203,7 +203,9 @@ export default function LoginPage() {
       if (!res.ok || json.status !== 'success') {
         const msg = json.message || 'Usuario, contraseña o perfil incorrecto.'
         setError(msg)
-        mostrarError(msg)
+        // Una credencial incorrecta es una validación esperada, no un error técnico.
+        // Se muestra en el formulario sin invocar toast.error, que el entorno
+        // de desarrollo puede interpretar como un error de consola.
         return
       }
 
