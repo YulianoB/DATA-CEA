@@ -1942,6 +1942,16 @@ function CuentaUsuario({
         </div>
 
         <form onSubmit={guardarCuenta} className="space-y-4">
+          {!cuenta.auth_user_id && !cuenta.fecha_registro_app && (
+            <div role="status" className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-[#194567]">
+              <p className="font-semibold">Registro pendiente</p>
+              <p className="mt-1">
+                Esta cuenta puede autorizarse para registrarse en DATA CEA mediante el estado Preautorizado.
+                Pasará automáticamente a Activo cuando el usuario complete correctamente su registro.
+                Si no desea permitir el registro, seleccione Inactivo.
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <CampoInput
               label="Documento"
