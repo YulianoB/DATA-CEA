@@ -1480,7 +1480,7 @@ export default function HojaVidaPersonalPage() {
       setPerfilesCuenta((cuenta?.perfiles_usuario || []).filter((perfil) => perfil.estado === 'activo').map((perfil) => perfil.rol))
       setFormCuenta({
         email_autorizado: cuenta?.email_autorizado || data?.personal?.email || '',
-        estado: cuenta?.estado || 'activo',
+        estado: cuenta?.estado || 'pre_autorizado',
         observaciones: cuenta?.observaciones || '',
       })
     } catch (error) {
@@ -1967,8 +1967,8 @@ function CuentaUsuario({
               value={formCuenta.estado}
               onChange={cambiarCuenta}
               options={[
-                ...(formCuenta.estado === 'pre_autorizado' ? [['pre_autorizado', 'Preautorizado (pendiente de registro)']] : []),
-                ['activo', 'Activo'],
+                ...(!cuenta.auth_user_id && !cuenta.fecha_registro_app ? [['pre_autorizado', 'Preautorizado (pendiente de registro)']] : []),
+                ...(cuenta.auth_user_id && cuenta.fecha_registro_app ? [['activo', 'Activo']] : []),
                 ['inactivo', 'Inactivo'],
                 ...(formCuenta.estado === 'suspendido' ? [['suspendido', 'Suspendido (estado anterior)']] : []),
               ]}
