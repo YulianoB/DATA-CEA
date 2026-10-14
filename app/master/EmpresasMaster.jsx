@@ -11,13 +11,37 @@ import CampoMunicipioBusqueda from '@/components/admin/CampoMunicipioBusqueda'
 
 const CAMPOS = [
   { titulo: 'Identificación', items: [['nit','NIT *'],['codigo','Código interno del CEA *'],['nombre','Nombre comercial *'],['razon_social','Razón social'],['nivel_cea','Nivel CEA *','nivel'],['estado','Estado','estado']] },
-  { titulo: 'Información de contacto', items: [['direccion','Dirección'],['ciudad','Ciudad'],['departamento','Departamento'],['telefono','Teléfono'],['email_principal','Correo principal'],['representante_legal','Representante legal'],['documento_representante','Documento representante']] },
+  { titulo: 'Información de contacto', items: [['direccion','Dirección'],['departamento','Departamento'],['ciudad','Ciudad'],['telefono','Teléfono'],['email_principal','Correo principal'],['representante_legal','Representante legal'],['documento_representante','Documento representante']] },
   { titulo: 'Conexión Supabase', items: [['supabase_url','URL del proyecto *'],['supabase_anon_key','Clave pública (anon) *']] },
   { titulo: 'Notificaciones y otros datos', items: [['correos_notificacion','Correos notificaciones'],['correos_mantenimiento','Correos mantenimiento'],['correos_preoperacional','Correos preoperacional'],['correos_siniestros','Correos siniestros'],['correos_vencimientos','Correos vencimientos'],['observaciones','Observaciones']] },
 ]
 const inicial = { nit:'', codigo:'', nombre:'', razon_social:'', nivel_cea:'NIVEL II', estado:'activo', supabase_url:'', supabase_anon_key:'' }
 const inputClass = 'mt-1.5 w-full rounded-xl border border-slate-400 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-[#24638C] focus:ring-2 focus:ring-blue-200'
 const boton = 'rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50'
+
+const CAMPOS_NUMERICOS = new Set(['nit','telefono','documento_representante'])
+const CAMPOS_CORREOS = new Set(['email_principal','correos_notificacion','correos_mantenimiento','correos_preoperacional','correos_siniestros','correos_vencimientos'])
+const CAMPOS_SIN_MAYUSCULAS = new Set(['supabase_url','supabase_anon_key','estado',...CAMPOS_CORREOS])
+const CORREO_VALIDO = /^[^\\s@,;]+@[^\\s@,;]+\\.[^\\s@,;]+$/
+function normalizarCampo(campo, valor) {
+  if (CAMPOS_NUMERICOS.has(campo)) return valor.replace(/[^0-9]/g,'')
+  if (CAMPOS_CORREOS.has(campo)) return valor.toLowerCase()
+  return CAMPOS_SIN_MAYUSCULAS.has(campo) ? valor : valor.toLocaleUpperCase('es-CO')
+}
+function validarFormulario(form) {
+  for (const campo of CAMPOS_CORREOS) {
+    const valor = String(form[campo] || '').trim()
+    if (!valor) continue
+    const correos = valor.split(/[;,]/).map(v=>v.trim())
+    if (correos.some(v=>!CORREO_VALIDO.test(v))) return 'Verifica el formato de los correos en ' + campo.replaceAll('_',' ') + '. Separa varios correos con coma o punto y coma.'
+  }
+  for (const campo of CAMPOS_NUMERICOS) {
+    const valor = String(form[campo] || '').trim()
+    if (valor && !/^[0-9]+$/.test(valor)) return 'El campo ' + campo.replaceAll('_',' ') + ' debe contener únicamente números enteros.'
+  }
+  return ''
+}
+
 export default function EmpresasMaster() {
   const [empresas,setEmpresas] = useState([])
   const [cargando,setCargando] = useState(true)
@@ -57,7 +81,7 @@ export default function EmpresasMaster() {
   }
   function vault(empresa) {editar(empresa)}
   async function guardarEmpresa(e) {
-    e.preventDefault();setGuardando(true);setError('');setMensaje('')
+    e.preventDefault();const validacion=validarFormulario(form);if(validacion){setError(validacion);setResultado({tipo:'error',mensaje:validacion});return}setGuardando(true);setError('');setMensaje('')
     try {
       const url = modo === 'nuevo' ? '/api/master/empresas' : '/api/master/empresas/'+seleccion.id
       const res = await fetch(url,{method:modo==='nuevo'?'POST':'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
@@ -168,9 +192,9 @@ export default function EmpresasMaster() {
           {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           {mensaje && <p role="status" className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{mensaje}</p>}
           {(modo==='nuevo'||modo==='editar') && <form id="form-empresa" onSubmit={guardarEmpresa} className="space-y-6">
-            {CAMPOS.map(grupo=><section key={grupo.titulo} className="overflow-hidden rounded-xl border border-slate-400 bg-slate-50/50 shadow-sm"><div className="px-3 py-2 text-xs font-bold text-white" style={{backgroundColor:ESTILO_SECCIONES.fondo}}>{grupo.titulo}</div><div className="grid gap-4 p-4 md:grid-cols-2">{grupo.items.map(([campo,etiqueta,tipo])=> campo==='departamento' ? <CampoCatalogo key={campo} catalogo="departamentos" endpoint="/api/master/catalogos" label="Departamento" name="departamento-master" required={false} value={form.departamento??''} onOpcionesCargadas={setDepartamentos} onChange={e=>setForm(prev=>({...prev,departamento:e.target.value,ciudad:''}))} /> : campo==='ciudad' ? <CampoMunicipioBusqueda key={campo} endpoint="/api/master/catalogos" departamentoId={departamentos.find(d=>d.nombre===form.departamento)?.id} value={form.ciudad??''} className={inputClass} onChange={value=>setForm(prev=>({...prev,ciudad:value}))} /> : <label key={campo} className="block text-sm font-medium text-slate-700">{etiqueta}
+            {CAMPOS.map(grupo=><section key={grupo.titulo} className="overflow-hidden rounded-xl border border-slate-400 bg-slate-50/50 shadow-sm"><div className="px-3 py-2 text-xs font-bold text-white" style={{backgroundColor:ESTILO_SECCIONES.fondo}}>{grupo.titulo}</div><div className="grid gap-4 p-4 md:grid-cols-2">{grupo.items.map(([campo,etiqueta,tipo])=> campo==='departamento' ? <CampoCatalogo key={campo} catalogo="departamentos" endpoint="/api/master/catalogos" label="Departamento" name="departamento-master" required={false} value={form.departamento??''} onOpcionesCargadas={setDepartamentos} onChange={e=>setForm(prev=>({...prev,departamento:e.target.value,ciudad:''}))} /> : campo==='ciudad' ? <CampoMunicipioBusqueda key={campo} endpoint="/api/master/catalogos" departamentoId={departamentos.find(d=>d.nombre===form.departamento)?.id} value={form.ciudad??''} className={inputClass} onChange={value=>setForm(prev=>({...prev,ciudad:value.toLocaleUpperCase('es-CO')}))} /> : <label key={campo} className="block text-sm font-medium text-slate-700">{etiqueta}
               {tipo ? <select className={inputClass} value={form[campo]??''} onChange={e=>setForm({...form,[campo]:e.target.value})}>{(tipo==='nivel'?['NIVEL I','NIVEL II','NIVEL III']:['activo','inactivo']).map(x=><option key={x} value={x}>{x}</option>)}</select> :
-              <input className={inputClass} type={campo==='email_principal'?'email':'text'} required={['nit','codigo','nombre','supabase_url','supabase_anon_key'].includes(campo)} value={form[campo]??''} onChange={e=>setForm({...form,[campo]:e.target.value})} autoComplete="off" />}
+              <input className={inputClass} type={campo==='email_principal'?'email':'text'} required={['nit','codigo','nombre','supabase_url','supabase_anon_key'].includes(campo)} value={form[campo]??''} onChange={e=>setForm(prev=>({...prev,[campo]:normalizarCampo(campo,e.target.value)}))} inputMode={CAMPOS_NUMERICOS.has(campo)?'numeric':undefined} pattern={CAMPOS_NUMERICOS.has(campo)?'[0-9]*':undefined} autoComplete="off" />}
             </label>)}</div></section>)}
             <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">NIT y código interno pueden corregirse, pero deben ser únicos. El código interno es una abreviatura para identificar al CEA en DATA CEA (por ejemplo, JY). Verifica cuidadosamente los cambios de identificación y conexión. El logotipo de cada CEA se administra en el bucket privado; no se utiliza logo_url. La credencial privada se guarda exclusivamente en Vault.</p>
             <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
