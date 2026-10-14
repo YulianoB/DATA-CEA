@@ -87,16 +87,27 @@ export default function EmpresasMaster() {
       const res = await fetch(url,{method:modo==='nuevo'?'POST':'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
       const data = await res.json()
       if (!res.ok) throw Error(data.message || 'No fue posible guardar.')
-      if (modo==='nuevo') {
-        setSeleccion({id:data.id,nombre:form.nombre,clave_configurada:false})
-        setModo('editar')
-        setMensaje('CEA registrado. Ya puedes configurar su credencial Vault en este mismo formulario.')
-        setResultado({tipo:'exito',mensaje:'CEA registrado correctamente. Ahora puedes configurar la Service Role Key.'})
-      } else {
-        cerrar()
-        setResultado({tipo:'exito',mensaje:'Los datos del CEA se actualizaron correctamente.'})
+      const empresaId = modo === 'nuevo' ? data.id : seleccion.id
+      let vaultError = ''
+      if (clave.trim()) {
+        try {
+          const respuestaClave = await fetch('/api/master/empresas/' + empresaId + '/clave', {
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave:clave.trim()})
+          })
+          const datosClave = await respuestaClave.json()
+          if (!respuestaClave.ok) throw Error(datosClave.message || 'No fue posible guardar la Service Role Key.')
+        } catch (err) { vaultError = err.message }
       }
       await cargar()
+      if (vaultError) {
+        setSeleccion({id:empresaId,nombre:form.nombre,clave_configurada:modo==='editar'?seleccion.clave_configurada:false})
+        setModo('editar')
+        setError('Los datos del CEA se guardaron, pero Vault presentó un error: ' + vaultError)
+        setResultado({tipo:'error',mensaje:'El CEA se guardó, pero la Service Role Key no pudo almacenarse en Vault. Puedes intentar guardar la clave nuevamente.'})
+      } else {
+        cerrar()
+        setResultado({tipo:'exito',mensaje:modo==='nuevo'?'CEA registrado correctamente'+(clave.trim()?' y Service Role Key guardada en Vault.':'. Recuerda configurar su Service Role Key.'):'Los datos del CEA se actualizaron correctamente'+(clave.trim()?' y se reemplazó la Service Role Key.':'.')})
+      }
     } catch(e) {setError(e.message);setResultado({tipo:'error',mensaje:e.message})} finally {setGuardando(false)}
   }
   async function guardarVault(e) {
@@ -196,23 +207,24 @@ export default function EmpresasMaster() {
               {tipo ? <select className={inputClass} value={form[campo]??''} onChange={e=>setForm({...form,[campo]:e.target.value})}>{(tipo==='nivel'?['NIVEL I','NIVEL II','NIVEL III']:['activo','inactivo']).map(x=><option key={x} value={x}>{x}</option>)}</select> :
               <input className={inputClass} type={campo==='email_principal'?'email':'text'} required={['nit','codigo','nombre','supabase_url','supabase_anon_key'].includes(campo)} value={form[campo]??''} onChange={e=>setForm(prev=>({...prev,[campo]:normalizarCampo(campo,e.target.value)}))} inputMode={CAMPOS_NUMERICOS.has(campo)?'numeric':undefined} pattern={CAMPOS_NUMERICOS.has(campo)?'[0-9]*':undefined} autoComplete="off" />}
             </label>)}</div></section>)}
+            <section className="overflow-hidden rounded-xl border border-slate-400 bg-slate-50/50 shadow-sm">
+              <div className="px-3 py-2 text-xs font-bold text-white" style={{backgroundColor:ESTILO_SECCIONES.fondo}}>Credencial privada · Vault</div>
+              <div className="p-4">
+                <label className="block text-sm font-medium text-slate-700">Service Role Key {modo==='editar'?'(opcional: solo para reemplazar)':'(configuración inicial)'}
+                  <input type={mostrarClave?'text':'password'} value={clave} onChange={e=>setClave(e.target.value)} autoComplete="new-password" className={inputClass} placeholder={modo==='editar'?'Dejar vacío para conservar la clave actual':'Ingresar la clave privada del nuevo CEA'} />
+                </label>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <p className="text-xs text-slate-600">{modo==='editar'?(seleccion?.clave_configurada?'Vault configurado. Si no ingresas una nueva clave, se conserva la actual.':'Vault pendiente de configuración.'):'La credencial se almacenará en Vault después de crear el CEA.'}</p>
+                  <button type="button" onClick={()=>setMostrarClave(v=>!v)} className="rounded-lg border border-slate-400 px-3 py-1.5 text-xs font-semibold">{mostrarClave?'Ocultar':'Mostrar'}</button>
+                </div>
+              </div>
+            </section>
             <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">NIT y código interno pueden corregirse, pero deben ser únicos. El código interno es una abreviatura para identificar al CEA en DATA CEA (por ejemplo, JY). Verifica cuidadosamente los cambios de identificación y conexión. El logotipo de cada CEA se administra en el bucket privado; no se utiliza logo_url. La credencial privada se guarda exclusivamente en Vault.</p>
             <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
               <button type="button" onClick={cerrar} className={boton+' border border-slate-300'}>Cancelar</button>
               <button type="submit" disabled={guardando} className={boton+' bg-[#204c93] text-white'}>{guardando?'Guardando…':modo==='nuevo'?'Registrar CEA':'Guardar cambios'}</button>
             </div>
           </form>}
-          {modo==='editar' && seleccion && <section className="mt-6 overflow-hidden rounded-xl border border-slate-400 bg-slate-50/50 shadow-sm">
-            <h3 className="bg-[#737B87] px-3 py-2 text-xs font-bold text-white">Credencial administrativa Vault · {seleccion.clave_configurada ? "Reemplazar clave" : "Configurar clave"}</h3>
-            <div className="p-4"><p className="mt-1 text-xs text-slate-500">Estado: {seleccion.clave_configurada?'Configurada':'Pendiente'}. Puedes ingresar una nueva Service Role Key y guardarla para reemplazar la anterior. La clave actual nunca se muestra.</p>
-            <form onSubmit={guardarVault} className="mt-3 flex flex-wrap items-end gap-3">
-              <label className="min-w-0 flex-1 text-sm font-medium">Service Role Key
-                <input type={mostrarClave?'text':'password'} value={clave} onChange={e=>setClave(e.target.value)} required autoComplete="off" className={inputClass} />
-              </label>
-              <button type="button" onClick={()=>setMostrarClave(!mostrarClave)} className={boton+' border border-slate-300'}>{mostrarClave?'Ocultar':'Mostrar'}</button>
-              <button type="submit" disabled={guardando} className={boton+' bg-[#204c93] text-white'}>{guardando?'Guardando…':'Guardar en Vault'}</button>
-            </form>
-          </div></section>}
         </div>
       </section>
     </div>}
