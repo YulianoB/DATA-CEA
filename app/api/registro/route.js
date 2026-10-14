@@ -1,25 +1,6 @@
 // app/api/registro/route.js
 import { NextResponse } from 'next/server'
-import { getMasterSupabase } from '@/lib/supabaseMaster'
-import { crearClienteEmpresa } from '@/lib/supabaseDinamico'
-import { createClient } from '@supabase/supabase-js'
-
-async function obtenerEmpresa(nit) {
-  const master = getMasterSupabase()
-
-  const { data, error } = await master
-    .from('empresas')
-    .select('*')
-    .eq('nit', nit)
-    .eq('estado', 'activo')
-    .single()
-
-  if (error || !data) {
-    throw new Error('Empresa no encontrada o inactiva.')
-  }
-
-  return data
-}
+import { obtenerSupabaseEmpresaPorNit, obtenerSupabaseAdminEmpresaPorNit } from '@/lib/supabaseEmpresaServer'
 
 function normalizarDocumento(valor) {
   return String(valor || '').trim().replace(/\D/g, '')
@@ -60,9 +41,7 @@ export async function POST(request) {
       )
     }
 
-    const empresa = await obtenerEmpresa(nit)
-
-    const supabaseEmpresa = crearClienteEmpresa(empresa)
+    const { empresa, supabase: supabaseEmpresa } = await obtenerSupabaseEmpresaPorNit(nit)
 
     const { data: cuenta, error: cuentaError } = await supabaseEmpresa
       .from('cuentas_usuario')
@@ -135,19 +114,7 @@ export async function POST(request) {
       )
     }
 
-    const serviceRoleKey = empresa.supabase_service_role_key || process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!serviceRoleKey) {
-      return NextResponse.json(
-        {
-          status: 'failed',
-          message: 'No está configurada la llave privada del CEA para crear usuarios Auth.',
-        },
-        { status: 500 }
-      )
-    }
-
-    const supabaseAdmin = createClient(empresa.supabase_url, serviceRoleKey)
+    const { supabaseAdmin } = await obtenerSupabaseAdminEmpresaPorNit(nit)
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
