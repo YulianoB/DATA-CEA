@@ -471,7 +471,7 @@ export default function PersonalAdminPage() {
 
   const cambiarEstadoAcceso = async (item) => {
     if (!item.cuenta) return toast.warning('Esta persona no tiene cuenta de acceso.')
-    const nuevoEstado = item.cuenta.estado === 'activo' ? 'inactivo' : 'activo'
+    const nuevoEstado = ['activo', 'pre_autorizado'].includes(item.cuenta.estado) ? 'inactivo' : (item.cuenta.auth_user_id && item.cuenta.fecha_registro_app ? 'activo' : 'pre_autorizado')
     const accion = nuevoEstado === 'inactivo' ? 'Inactivar' : 'Activar'
     setCambiandoAccesoId(item.id)
     try {
@@ -1581,7 +1581,7 @@ export default function PersonalAdminPage() {
           <div role="alertdialog" aria-modal="true" aria-labelledby="titulo-confirmar-acceso" className="w-full max-w-md overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl">
             <div className="flex items-center gap-2 bg-[#194567] px-4 py-3 text-white"><i className="fas fa-user-shield" aria-hidden="true"></i><h2 id="titulo-confirmar-acceso" className="text-sm font-bold">Confirmar cambio de acceso</h2></div>
             <div className="px-5 py-5 text-sm text-slate-700">
-              ¿Desea {confirmacionAcceso.cuenta?.estado === 'activo' ? 'inactivar' : 'activar'} el acceso de <strong>{confirmacionAcceso.nombres} {confirmacionAcceso.apellidos}</strong>?
+              ¿Desea {['activo', 'pre_autorizado'].includes(confirmacionAcceso.cuenta?.estado) ? 'inactivar' : 'activar'} el acceso de <strong>{confirmacionAcceso.nombres} {confirmacionAcceso.apellidos}</strong>?
               <p className="mt-2 text-xs text-slate-500">El estado laboral y el historial de la persona no cambiarán.</p>
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
@@ -2766,12 +2766,12 @@ export default function PersonalAdminPage() {
                       <td className="p-3 align-middle">
                         <div className="mx-auto flex w-full max-w-[180px] flex-col items-stretch gap-2">
                           <Link href={`/admin/personal/${item.id}`} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-3 py-2 text-center text-xs font-semibold text-white hover:bg-[var(--primary-dark)]">
-                            <i className="fas fa-file-alt" aria-hidden="true"></i> Hoja de vida
+                            <i className="fas fa-file-alt" aria-hidden="true"></i> Administrar
                           </Link>
                           {item.cuenta ? (
-                            <button type="button" onClick={() => solicitarCambioAcceso(item)} disabled={cambiandoAccesoId === item.id} className={`inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-center text-xs font-semibold text-white disabled:opacity-50 ${item.cuenta.estado === 'activo' ? 'bg-red-700 hover:bg-red-800' : 'bg-[#194567] hover:bg-[#12344e]'}`} title="Cambiar acceso sin modificar el estado laboral">
-                              <i className={`fas ${item.cuenta.estado === 'activo' ? 'fa-user-lock' : 'fa-user-check'}`} aria-hidden="true"></i>
-                              {cambiandoAccesoId === item.id ? 'Procesando...' : item.cuenta.estado === 'activo' ? 'Inactivar acceso' : 'Activar acceso'}
+                            <button type="button" onClick={() => solicitarCambioAcceso(item)} disabled={cambiandoAccesoId === item.id} className={`inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-center text-xs font-semibold text-white disabled:opacity-50 ${['activo', 'pre_autorizado'].includes(item.cuenta.estado) ? 'bg-red-700 hover:bg-red-800' : 'bg-[#194567] hover:bg-[#12344e]'}`} title="Cambiar acceso sin modificar el estado laboral">
+                              <i className={`fas ${['activo', 'pre_autorizado'].includes(item.cuenta.estado) ? 'fa-user-lock' : 'fa-user-check'}`} aria-hidden="true"></i>
+                              {cambiandoAccesoId === item.id ? 'Procesando...' : ['activo', 'pre_autorizado'].includes(item.cuenta.estado) ? 'Inactivar' : 'Activar'}
                             </button>
                           ) : <span className="text-center text-xs text-slate-500">Sin cuenta</span>}
                         </div>
