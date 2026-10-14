@@ -22,7 +22,7 @@ const boton = 'rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:
 const CAMPOS_NUMERICOS = new Set(['nit','telefono','documento_representante'])
 const CAMPOS_CORREOS = new Set(['email_principal','correos_notificacion','correos_mantenimiento','correos_preoperacional','correos_siniestros','correos_vencimientos'])
 const CAMPOS_SIN_MAYUSCULAS = new Set(['supabase_url','supabase_anon_key','estado',...CAMPOS_CORREOS])
-const CORREO_VALIDO = /^[^\\s@,;]+@[^\\s@,;]+\\.[^\\s@,;]+$/
+const CORREO_VALIDO = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/
 function normalizarCampo(campo, valor) {
   if (CAMPOS_NUMERICOS.has(campo)) return valor.replace(/[^0-9]/g,'')
   if (CAMPOS_CORREOS.has(campo)) return valor.toLowerCase()
