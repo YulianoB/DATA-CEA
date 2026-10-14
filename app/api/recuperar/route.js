@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { getMasterSupabase } from '@/lib/supabaseMaster'
 import { crearClienteEmpresa } from '@/lib/supabaseDinamico'
+import { obtenerSupabaseAdminEmpresaPorNit } from '@/lib/supabaseEmpresaServer'
 
 async function obtenerEmpresa(nit) {
   const master = getMasterSupabase()
@@ -118,19 +118,8 @@ export async function POST(request) {
       )
     }
 
-    const serviceRoleKey = empresa.supabase_service_role_key || process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!serviceRoleKey) {
-      return NextResponse.json(
-        {
-          status: 'failed',
-          message: 'No está configurada la llave privada para recuperación de contraseña.',
-        },
-        { status: 500 }
-      )
-    }
-
-    const supabaseAdmin = createClient(empresa.supabase_url, serviceRoleKey)
+    // Recupera la credencial administrativa del CEA desde Supabase Vault.
+    const { supabaseAdmin } = await obtenerSupabaseAdminEmpresaPorNit(nit)
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
