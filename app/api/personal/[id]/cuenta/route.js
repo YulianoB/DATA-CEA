@@ -160,7 +160,7 @@ export async function PATCH(request, { params }) {
       await supabase
         .from('cuentas_usuario')
         .select(
-          'id, personal_id, email, email_autorizado, auth_user_id, estado'
+          'id, personal_id, email, email_autorizado, auth_user_id, fecha_registro_app, estado'
         )
         .eq('personal_id', id)
         .maybeSingle()
@@ -195,6 +195,20 @@ export async function PATCH(request, { params }) {
       if (estado === 'activo' && perfilesSolicitados.length === 0) {
         return NextResponse.json({ status: 'failed', message: 'Una cuenta activa debe tener al menos un perfil autorizado.' }, { status: 400 })
       }
+    }
+
+    const registroCompletado = Boolean(cuentaActual.auth_user_id && cuentaActual.fecha_registro_app)
+    if (estado === 'activo' && !registroCompletado) {
+      return NextResponse.json({ status: 'failed', message: 'La cuenta no ha completado el registro. Seleccione Preautorizado.' }, { status: 400 })
+    }
+    if (estado === 'pre_autorizado' && registroCompletado) {
+      return NextResponse.json({ status: 'failed', message: 'Una cuenta registrada no puede volver a Preautorizado.' }, { status: 400 })
+    }
+    if (estado === 'suspendido' && cuentaActual.estado !== 'suspendido') {
+      return NextResponse.json({ status: 'failed', message: 'No se permiten nuevas suspensiones.' }, { status: 400 })
+    }
+    if (estado === 'pre_autorizado' && perfilesSolicitados?.length === 0) {
+      return NextResponse.json({ status: 'failed', message: 'La cuenta preautorizada debe tener al menos un perfil.' }, { status: 400 })
     }
 
     const emailAnterior =
