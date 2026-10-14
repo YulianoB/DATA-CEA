@@ -567,7 +567,9 @@ export async function GET(request) {
         created_at,
         cuentas_usuario (
           id,
-          estado
+          estado,
+          auth_user_id,
+          fecha_registro_app
         ),
         perfiles_usuario (
           id,
