@@ -1,7 +1,7 @@
 // app/api/reuniones/route.js
 
 import { NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
+import { sesionNotificaciones, enviarAvisoCorporativo } from '@/lib/notificacionesCorporativasServer'
 
 import {
   obtenerSupabaseEmpresaDesdeRequest,
@@ -381,69 +381,6 @@ async function finalizeExpiredMeetings(
 }
 
 
-function institutionalList() {
-  const principal =
-    (
-      process.env
-        .MAIL_INSTITUCIONAL ||
-      ''
-    ).trim()
-
-  const respaldo =
-    (
-      process.env
-        .NEXT_PUBLIC_MAIL_MANTENIMIENTO ||
-      ''
-    ).trim()
-
-  const lista =
-    (
-      principal ||
-      respaldo ||
-      ''
-    )
-      .split(',')
-      .map(
-        (email) =>
-          email.trim()
-      )
-      .filter(Boolean)
-
-  return Array.from(
-    new Set(lista)
-  )
-}
-
-
-function buildTransport() {
-  const port =
-    Number(
-      process.env.SMTP_PORT ||
-      '465'
-    )
-
-  return nodemailer
-    .createTransport({
-      host:
-        process.env.SMTP_HOST,
-
-      port,
-
-      secure:
-        port === 465,
-
-      auth: {
-        user:
-          process.env.SMTP_USER,
-
-        pass:
-          process.env.SMTP_PASS,
-      },
-    })
-}
-
-
-
 function normalizarPoblacionCitacion(
   valor
 ) {
@@ -747,40 +684,6 @@ async function guardarCitados(
 }
 
 
-async function marcarCorreoCitado(
-  supabase,
-  reunionId,
-  documento
-) {
-  const {
-    error,
-  } =
-    await supabase
-      .from(
-        'reuniones_citados'
-      )
-      .update({
-        correo_enviado:
-          true,
-      })
-      .eq(
-        'reunion_id',
-        reunionId
-      )
-      .eq(
-        'documento',
-        documento
-      )
-
-  if (error) {
-    console.error(
-      `No fue posible marcar correo enviado para ${documento}:`,
-      error
-    )
-  }
-}
-
-
 async function validarActividadPesv(
   supabase,
   actividadId
@@ -968,6 +871,13 @@ export async function POST(
   try {
     const body =
       await request.json()
+
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) return NextResponse.json({ status: 'error', message: 'Sesión no autorizada.' }, { status: 403 })
+    if (body.nit && String(body.nit).trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'error', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+    body.nit = sesion.nitEmpresa
 
     const resultadoEmpresa =
       await obtenerSupabaseEmpresaDesdeRequest(
@@ -1224,118 +1134,23 @@ export async function POST(
     }
 
 
-    const transporter =
-      buildTransport()
-
-
-    const from =
-      process.env.SMTP_FROM ||
-      process.env.SMTP_USER
-
-
-    const asunto =
-      `📢 Citación a reunión: ${payload.tipo_reunion}`
-
-
-    const cuerpo =
-      `Has sido citado(a) a la siguiente reunión de carácter obligatorio:\n\n` +
-      `Tipo: ${payload.tipo_reunion}\n` +
-      `Descripción: ${payload.descripcion}\n` +
-      `Fecha: ${payload.fecha_programada}\n` +
-      `Hora: ${payload.hora_inicio} a ${payload.hora_fin}\n` +
-      `Lugar: ${payload.lugar || '-'}\n` +
-      `Modalidad: ${payload.modalidad}\n` +
-      `Responsable: ${payload.responsable || '-'}\n\n` +
-      `Por favor registrar tu asistencia en el horario indicado.`
-
-
-    await Promise.all(
-      participantes
-        .filter(
-          (participante) =>
-            participante.email &&
-            participante.documento
-        )
-        .map(
-          async (
-            participante
-          ) => {
-            try {
-              await transporter
-                .sendMail({
-                  from,
-
-                  to:
-                    participante.email,
-
-                  subject:
-                    asunto,
-
-                  text:
-                    `Hola ${participante.nombre_completo},\n\n${cuerpo}`,
-                })
-
-              await marcarCorreoCitado(
-                supabase,
-                inserted.id,
-                participante
-                  .documento
-              )
-
-              return true
-            } catch (
-              errorCorreo
-            ) {
-              console.error(
-                `No fue posible enviar correo a ${participante.email}:`,
-                errorCorreo
-              )
-
-              return false
-            }
-          }
-        )
-    )
-
-
-    const institucional =
-      institutionalList()
-
-
-    if (
-      institucional.length
-    ) {
-      await transporter
-        .sendMail({
-          from,
-
-          to:
-            institucional
-              .join(','),
-
-          subject:
-            `📌 Soporte de citación: ${payload.tipo_reunion}`,
-
-          text:
-            'Tu cliente de correo no admite HTML.',
-
-          html:
-            `${reunionDetailsHtml(payload)}` +
-            `<p><strong>Participantes citados:</strong></p>` +
-            `${participantesTableHtml(participantes)}`,
-        })
-        .catch(
-          (error) => {
-            console.error(
-              'No fue posible enviar el correo institucional:',
-              error
-            )
-
-            return null
-          }
-        )
+    // Un solo aviso institucional; nunca se envía a correos individuales.
+    try {
+      await enviarAvisoCorporativo({
+        nit: sesion.nitEmpresa,
+        asunto: 'Nueva citación a reunión: ' + payload.tipo_reunion,
+        detalles: [
+          ['Tipo', payload.tipo_reunion], ['Descripción', payload.descripcion],
+          ['Fecha', payload.fecha_programada],
+          ['Horario', payload.hora_inicio + ' a ' + payload.hora_fin],
+          ['Lugar', payload.lugar], ['Modalidad', payload.modalidad],
+          ['Responsable', payload.responsable], ['Dirigido a', payload.dirigido_a],
+        ],
+        participantes,
+      })
+    } catch (errorCorreo) {
+      console.error('No se envió aviso corporativo de reunión:', errorCorreo)
     }
-
 
     return NextResponse.json(
       {
