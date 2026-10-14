@@ -46,53 +46,6 @@ const ahoraBogota = () => {
 }
 
 // ============================================================
-// Helpers correo
-// ============================================================
-
-async function enviarCorreoFallas({ tipo, asunto, html }) {
-  try {
-    const res = await fetch('/api/email/enviar', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ tipo, asunto, html }),
-    })
-
-    const json = await res.json()
-
-    if (!json.ok) {
-      console.error(
-        'Error enviando correo:',
-        json.error
-      )
-
-      return {
-        ok: false,
-        error: json.error,
-      }
-    }
-
-    return {
-      ok: true,
-    }
-  } catch (error) {
-    console.error(
-      'Error enviando correo:',
-      error?.message || error
-    )
-
-    return {
-      ok: false,
-      error:
-        error?.message ||
-        String(error),
-    }
-  }
-}
-
-
-// ============================================================
 // Página
 // ============================================================
 
@@ -533,38 +486,7 @@ export default function FallasPage() {
         json?.falla?.consecutivo ||
         ''
 
-      // Notificación exclusivamente corporativa, después de guardar la falla.
-      // El servidor obtiene los destinatarios desde cea_master según el NIT de la sesión.
-      try {
-        const asuntoC = `🚧 Nueva falla reportada (${consecutivo}) - ${placa}`
-        const htmlC = `
-          <p><strong>Se registró un reporte de falla en misión.</strong></p>
-          <ul>
-            <li><b>Consecutivo:</b> ${consecutivo}</li>
-            <li><b>Fecha:</b> ${fecha}</li>
-            <li><b>Hora:</b> ${hora}</li>
-            <li><b>Placa:</b> ${placa}</li>
-            <li><b>Tipo:</b> ${tipoVehiculo}</li>
-            <li><b>Marca:</b> ${marca}</li>
-            <li><b>Kilometraje:</b> ${Number(km)}</li>
-            <li><b>Encargado:</b> ${user?.nombreCompleto || user?.usuario || ''}</li>
-            <li><b>Descripción:</b> ${descripcion.trim().toUpperCase()}</li>
-            <li><b>Acciones:</b> ${acciones.trim().toUpperCase()}</li>
-            <li><b>Estado:</b> PENDIENTE</li>
-          </ul>
-          <p><em>Correo automático del sistema.</em></p>
-        `
-        const resultadoCorreo = await enviarCorreoFallas({
-          tipo: 'fallas',
-          asunto: asuntoC,
-          html: htmlC,
-        })
-        if (!resultadoCorreo.ok) {
-          console.error('Notificación corporativa de falla no enviada:', resultadoCorreo.error)
-        }
-      } catch (error) {
-        console.error('Error enviando notificación de falla:', error)
-      }
+      // La API de registro envía la notificación corporativa desde el servidor.
 
       // ========================================================
       // Éxito
