@@ -14,7 +14,7 @@ const CAMPOS = [
   { titulo: 'Notificaciones y otros datos', items: [['correos_notificacion','Correos notificaciones'],['correos_mantenimiento','Correos mantenimiento'],['correos_preoperacional','Correos preoperacional'],['correos_siniestros','Correos siniestros'],['correos_vencimientos','Correos vencimientos'],['logo_url','URL del logo'],['observaciones','Observaciones']] },
 ]
 const inicial = { nit:'', codigo:'', nombre:'', razon_social:'', nivel_cea:'NIVEL II', estado:'activo', supabase_url:'', supabase_anon_key:'' }
-const inputClass = 'mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100'
+const inputClass = 'mt-1.5 w-full rounded-xl border-2 border-slate-400 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-[#24638C] focus:ring-2 focus:ring-blue-200'
 const boton = 'rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50'
 export default function EmpresasMaster() {
   const [empresas,setEmpresas] = useState([])
@@ -153,7 +153,7 @@ export default function EmpresasMaster() {
     </div>
 
     {modo && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 md:p-6" role="presentation">
-      <section role="dialog" aria-modal="true" aria-labelledby="titulo-form-empresa" className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+      <section role="dialog" aria-modal="true" aria-labelledby="titulo-form-empresa" className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border-2 border-slate-500 bg-white shadow-2xl">
         <div className="flex items-center justify-between gap-4 rounded-t-xl px-5 py-3 text-white" style={{backgroundColor:"#194567"}}>
           <div><h2 id="titulo-form-empresa" className="text-lg font-bold">{modo==='nuevo'?'Registrar nuevo CEA':modo==='cargando'?'Cargando datos…':'Editar CEA'}</h2><p className="text-xs text-blue-100">{seleccion?.nombre || 'Información institucional y configuración'}</p></div>
           <button type="button" onClick={cerrar} disabled={guardando} className="rounded-lg border border-white/30 px-3 py-1.5 text-sm">Cerrar ×</button>
@@ -162,19 +162,19 @@ export default function EmpresasMaster() {
           {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           {mensaje && <p role="status" className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{mensaje}</p>}
           {(modo==='nuevo'||modo==='editar') && <form id="form-empresa" onSubmit={guardarEmpresa} className="space-y-6">
-            {CAMPOS.map(grupo=><fieldset key={grupo.titulo}><legend className="mb-3 w-full rounded-t-lg px-3 py-2 text-xs font-bold text-white" style={{backgroundColor:ESTILO_SECCIONES.fondo}}>{grupo.titulo}</legend><div className="grid gap-4 md:grid-cols-2">{grupo.items.map(([campo,etiqueta,tipo])=><label key={campo} className="block text-sm font-medium text-slate-700">{etiqueta}
+            {CAMPOS.map(grupo=><fieldset key={grupo.titulo} className="rounded-xl border-2 border-slate-400 bg-slate-50/50 p-3 shadow-sm md:p-4"><legend className="mb-3 w-full rounded-t-lg px-3 py-2 text-xs font-bold text-white" style={{backgroundColor:ESTILO_SECCIONES.fondo}}>{grupo.titulo}</legend><div className="grid gap-4 md:grid-cols-2">{grupo.items.map(([campo,etiqueta,tipo])=><label key={campo} className="block text-sm font-medium text-slate-700">{etiqueta}
               {tipo ? <select className={inputClass} value={form[campo]??''} onChange={e=>setForm({...form,[campo]:e.target.value})}>{(tipo==='nivel'?['NIVEL I','NIVEL II','NIVEL III']:['activo','inactivo']).map(x=><option key={x} value={x}>{x}</option>)}</select> :
-              <input className={inputClass} type={campo==='email_principal'?'email':'text'} required={['nit','codigo','nombre','supabase_url','supabase_anon_key'].includes(campo)} disabled={modo==='editar'&&['nit','codigo'].includes(campo)} value={form[campo]??''} onChange={e=>setForm({...form,[campo]:e.target.value})} autoComplete="off" />}
+              <input className={inputClass} type={campo==='email_principal'?'email':'text'} required={['nit','codigo','nombre','supabase_url','supabase_anon_key'].includes(campo)} value={form[campo]??''} onChange={e=>setForm({...form,[campo]:e.target.value})} autoComplete="off" />}
             </label>)}</div></fieldset>)}
-            <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">NIT y código son únicos y no se modifican al editar. La credencial privada se guarda exclusivamente en Vault.</p>
+            <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">NIT y código pueden corregirse, pero deben ser únicos. Verifica cuidadosamente los cambios de identificación y conexión. La credencial privada se guarda exclusivamente en Vault.</p>
             <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
               <button type="button" onClick={cerrar} className={boton+' border border-slate-300'}>Cancelar</button>
               <button type="submit" disabled={guardando} className={boton+' bg-[#204c93] text-white'}>{guardando?'Guardando…':modo==='nuevo'?'Registrar CEA':'Guardar cambios'}</button>
             </div>
           </form>}
-          {modo==='editar' && seleccion && <section className="mt-6 border-t border-slate-200 pt-5">
-            <h3 className="font-bold text-[#204c93]">Credencial administrativa Vault</h3>
-            <p className="mt-1 text-xs text-slate-500">Estado: {seleccion.clave_configurada?'Configurada':'Pendiente'}. La clave guardada no puede visualizarse; al introducir una nueva se reemplaza.</p>
+          {modo==='editar' && seleccion && <section className="mt-6 rounded-xl border-2 border-slate-400 bg-slate-50/50 p-4 shadow-sm">
+            <h3 className="rounded-t-lg bg-[#737B87] px-3 py-2 text-xs font-bold text-white">Credencial administrativa Vault · {seleccion.clave_configurada ? "Reemplazar clave" : "Configurar clave"}</h3>
+            <p className="mt-1 text-xs text-slate-500">Estado: {seleccion.clave_configurada?'Configurada':'Pendiente'}. Puedes ingresar una nueva Service Role Key y guardarla para reemplazar la anterior. La clave actual nunca se muestra.</p>
             <form onSubmit={guardarVault} className="mt-3 flex flex-wrap items-end gap-3">
               <label className="min-w-0 flex-1 text-sm font-medium">Service Role Key
                 <input type={mostrarClave?'text':'password'} value={clave} onChange={e=>setClave(e.target.value)} required autoComplete="off" className={inputClass} />
