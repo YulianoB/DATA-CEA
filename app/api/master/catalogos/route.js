@@ -12,7 +12,7 @@ export async function GET(request) {
   const catalogo = url.searchParams.get('catalogo')
   if (!['departamentos','municipios'].includes(catalogo)) return NextResponse.json({status:'failed',message:'Catálogo no permitido.'},{status:400})
   const departamentoId = url.searchParams.get('departamento_id')
-  if (catalogo === 'municipios' && (!departamentoId || !/^\\d+$/.test(departamentoId))) return NextResponse.json({status:'failed',message:'Departamento inválido.'},{status:400})
+  if (catalogo === 'municipios' && (!departamentoId || !/^[0-9]+$/.test(departamentoId))) return NextResponse.json({status:'failed',message:'Departamento inválido.'},{status:400})
   try {
     const {data:empresas,error:err} = await getMasterSupabase().from('empresas').select('nit').eq('estado','activo').not('supabase_service_role_secret_id','is',null).order('id').limit(10)
     if (err) throw err
