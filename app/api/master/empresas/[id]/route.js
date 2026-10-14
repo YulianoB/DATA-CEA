@@ -27,7 +27,7 @@ export async function PATCH(request, context) {
   let body
   try { body = await request.json() } catch { return responder('Solicitud inválida.', 400) }
   if (!body || typeof body !== 'object' || Array.isArray(body)) return responder('Datos inválidos.', 400)
-  const permitidos = CAMPOS_EMPRESA.filter(k => k !== 'nit' && k !== 'codigo')
+  const permitidos = CAMPOS_EMPRESA
   const cambios = {}
   for (const campo of permitidos) {
     if (!Object.prototype.hasOwnProperty.call(body, campo)) continue
@@ -35,7 +35,7 @@ export async function PATCH(request, context) {
     cambios[campo] = body[campo].trim()
   }
   if (!Object.keys(cambios).length) return responder('No hay cambios para guardar.', 400)
-  if (cambios.nombre !== undefined && !cambios.nombre) return responder('El nombre es obligatorio.', 400)
+  if (['nit', 'codigo', 'nombre'].some(k => cambios[k] !== undefined && !cambios[k])) return responder('NIT, código y nombre son obligatorios.', 400)
   if (cambios.nivel_cea !== undefined && !['NIVEL I','NIVEL II','NIVEL III'].includes(cambios.nivel_cea)) return responder('Nivel inválido.', 400)
   if (cambios.estado !== undefined && !['activo','inactivo'].includes(cambios.estado)) return responder('Estado inválido.', 400)
   if (cambios.supabase_url !== undefined) {
@@ -44,7 +44,10 @@ export async function PATCH(request, context) {
   }
   if (cambios.supabase_anon_key !== undefined && !cambios.supabase_anon_key) return responder('La clave pública es obligatoria.', 400)
   const { data, error } = await getMasterSupabase().from('empresas').update({ ...cambios, updated_at: new Date().toISOString() }).eq('id', Number(id)).select('id').maybeSingle()
-  if (error) return responder('No fue posible actualizar la empresa.', 500)
+  if (error) {
+    if (error.code === '23505') return responder('Ya existe otra empresa con ese NIT o código.', 409)
+    return responder('No fue posible actualizar la empresa.', 500)
+  }
   if (!data) return responder('Empresa no encontrada.', 404)
   return NextResponse.json({ ok: true })
 }
