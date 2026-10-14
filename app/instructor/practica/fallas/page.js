@@ -49,26 +49,14 @@ const ahoraBogota = () => {
 // Helpers correo
 // ============================================================
 
-async function enviarCorreoFallas({
-  para,
-  asunto,
-  html,
-  cc,
-  bcc,
-}) {
+async function enviarCorreoFallas({ tipo, asunto, html }) {
   try {
     const res = await fetch('/api/email/enviar', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        para,
-        asunto,
-        html,
-        cc,
-        bcc,
-      }),
+      body: JSON.stringify({ tipo, asunto, html }),
     })
 
     const json = await res.json()
@@ -103,18 +91,6 @@ async function enviarCorreoFallas({
   }
 }
 
-function obtenerDestinatariosCorporativos() {
-  const correos =
-    process.env.NEXT_PUBLIC_MAIL_MANTENIMIENTO ||
-    ''
-
-  return correos
-    .split(',')
-    .map((correo) =>
-      correo.trim()
-    )
-    .filter(Boolean)
-}
 
 // ============================================================
 // Página
@@ -557,136 +533,37 @@ export default function FallasPage() {
         json?.falla?.consecutivo ||
         ''
 
-      // ========================================================
-      // Correo al usuario
-      // ========================================================
-
+      // Notificación exclusivamente corporativa, después de guardar la falla.
+      // El servidor obtiene los destinatarios desde cea_master según el NIT de la sesión.
       try {
-        const correoUsuario =
-          user?.email ||
-          ''
-
-        if (correoUsuario) {
-          const asunto =
-            `Reporte de Falla registrado: ${consecutivo}`
-
-          const html = `
-            <p>Hola ${
-              user?.nombreCompleto ||
-              user?.usuario ||
-              ''
-            },</p>
-
-            <p>
-              Reporte técnico de falla en vehículo en misión –
-              Acción de seguimiento necesaria:
-            </p>
-
-            <ul>
-              <li><b>Consecutivo:</b> ${consecutivo}</li>
-              <li><b>Fecha:</b> ${fecha}</li>
-              <li><b>Hora:</b> ${hora}</li>
-              <li><b>Placa:</b> ${placa}</li>
-              <li><b>Tipo:</b> ${tipoVehiculo}</li>
-              <li><b>Marca:</b> ${marca}</li>
-              <li><b>Kilometraje:</b> ${Number(km)}</li>
-              <li><b>Encargado:</b> ${
-                user?.nombreCompleto ||
-                user?.usuario ||
-                ''
-              }</li>
-              <li><b>Descripción:</b> ${
-                descripcion
-                  .trim()
-                  .toUpperCase()
-              }</li>
-              <li><b>Acciones:</b> ${
-                acciones
-                  .trim()
-                  .toUpperCase()
-              }</li>
-              <li><b>Estado:</b> PENDIENTE</li>
-            </ul>
-
-            <p>
-              <em>
-                Correo automático del sistema.
-              </em>
-            </p>
-          `
-
-          await enviarCorreoFallas({
-            para: correoUsuario,
-            asunto,
-            html,
-          })
-        }
-
-        // ======================================================
-        // Correo corporativo
-        // ======================================================
-
-        const destinatarios =
-          obtenerDestinatariosCorporativos()
-
-        if (
-          destinatarios.length > 0
-        ) {
-          const asuntoC =
-            `🚧 Nueva falla reportada (${consecutivo}) - ${placa}`
-
-          const htmlC = `
-            <p>
-              <strong>
-                Se registró un reporte de falla en misión.
-              </strong>
-            </p>
-
-            <ul>
-              <li><b>Consecutivo:</b> ${consecutivo}</li>
-              <li><b>Fecha:</b> ${fecha}</li>
-              <li><b>Hora:</b> ${hora}</li>
-              <li><b>Placa:</b> ${placa}</li>
-              <li><b>Tipo:</b> ${tipoVehiculo}</li>
-              <li><b>Marca:</b> ${marca}</li>
-              <li><b>Kilometraje:</b> ${Number(km)}</li>
-              <li><b>Encargado:</b> ${
-                user?.nombreCompleto ||
-                user?.usuario ||
-                ''
-              }</li>
-              <li><b>Descripción:</b> ${
-                descripcion
-                  .trim()
-                  .toUpperCase()
-              }</li>
-              <li><b>Acciones:</b> ${
-                acciones
-                  .trim()
-                  .toUpperCase()
-              }</li>
-              <li><b>Estado:</b> PENDIENTE</li>
-            </ul>
-
-            <p>
-              <em>
-                Correo automático del sistema.
-              </em>
-            </p>
-          `
-
-          await enviarCorreoFallas({
-            para: destinatarios,
-            asunto: asuntoC,
-            html: htmlC,
-          })
+        const asuntoC = `🚧 Nueva falla reportada (${consecutivo}) - ${placa}`
+        const htmlC = `
+          <p><strong>Se registró un reporte de falla en misión.</strong></p>
+          <ul>
+            <li><b>Consecutivo:</b> ${consecutivo}</li>
+            <li><b>Fecha:</b> ${fecha}</li>
+            <li><b>Hora:</b> ${hora}</li>
+            <li><b>Placa:</b> ${placa}</li>
+            <li><b>Tipo:</b> ${tipoVehiculo}</li>
+            <li><b>Marca:</b> ${marca}</li>
+            <li><b>Kilometraje:</b> ${Number(km)}</li>
+            <li><b>Encargado:</b> ${user?.nombreCompleto || user?.usuario || ''}</li>
+            <li><b>Descripción:</b> ${descripcion.trim().toUpperCase()}</li>
+            <li><b>Acciones:</b> ${acciones.trim().toUpperCase()}</li>
+            <li><b>Estado:</b> PENDIENTE</li>
+          </ul>
+          <p><em>Correo automático del sistema.</em></p>
+        `
+        const resultadoCorreo = await enviarCorreoFallas({
+          tipo: 'fallas',
+          asunto: asuntoC,
+          html: htmlC,
+        })
+        if (!resultadoCorreo.ok) {
+          console.error('Notificación corporativa de falla no enviada:', resultadoCorreo.error)
         }
       } catch (error) {
-        console.error(
-          'Error enviando correos de falla:',
-          error?.message ||
-          error
-        )
+        console.error('Error enviando notificación de falla:', error)
       }
 
       // ========================================================
