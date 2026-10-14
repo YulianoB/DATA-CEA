@@ -583,6 +583,11 @@ export async function POST(request) {
     const body =
       await request.json()
 
+    // El NIT de la petición debe pertenecer a la sesión firmada.
+    const sesion = await validarSesionOperativa(request, body?.nit)
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada para este CEA.' }, { status: 403 })
+
+
     const { supabaseAdmin } =
       await obtenerSupabaseAdminEmpresaDesdeRequest(
         request,
@@ -591,10 +596,6 @@ export async function POST(request) {
 
     const supabase =
       supabaseAdmin
-
-    // El NIT de la petición debe pertenecer a la sesión firmada.
-    const sesion = await validarSesionOperativa(request, body?.nit)
-    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada para este CEA.' }, { status: 403 })
 
     const accion =
       normalizarTexto(
