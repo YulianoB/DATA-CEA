@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Toaster, toast } from 'sonner'
 import { cerrarSesion } from '@/lib/auth/logout'
@@ -336,7 +336,7 @@ function TarjetaMantenimiento({
   )
 }
 
-export default function PlanMantenimientoInstructorPage() {
+function PlanMantenimientoInstructorPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -958,5 +958,13 @@ export default function PlanMantenimientoInstructorPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <PlanMantenimientoInstructorPage />
+    </Suspense>
   )
 }
