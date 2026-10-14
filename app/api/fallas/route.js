@@ -1,6 +1,7 @@
 // app/api/fallas/route.js
 
 import { NextResponse } from 'next/server'
+import { validarSesionOperativa, notificarRegistroCorporativo } from '@/lib/notificacionesCorporativasServer'
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
   respuestaErrorEmpresa,
@@ -112,6 +113,10 @@ export async function POST(request) {
       )
 
     const supabase = supabaseAdmin
+
+    // El NIT de la petición debe pertenecer a la sesión firmada.
+    const sesion = await validarSesionOperativa(request, body?.nit)
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada para este CEA.' }, { status: 403 })
 
     const accion =
       normalizarTexto(body.accion)
@@ -458,6 +463,13 @@ export async function POST(request) {
         },
         { status: 500 }
       )
+    }
+
+    // Envío solo tras guardar el registro; fallos SMTP no revierten el guardado.
+    try {
+      await notificarRegistroCorporativo({ nit: sesion.nitEmpresa, tipo: 'fallas', registro: falla })
+    } catch (errorCorreo) {
+      console.error('Notificación corporativa no enviada:', errorCorreo)
     }
 
     // =====================================================
