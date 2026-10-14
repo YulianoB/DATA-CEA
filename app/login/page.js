@@ -84,7 +84,6 @@ export default function LoginPage() {
         setNit(lista[0].nit)
       }
     } catch (err) {
-      console.error(err)
       setError('No fue posible cargar la lista de CEA.')
       mostrarError('No fue posible cargar la lista de CEA.')
     } finally {
@@ -128,7 +127,6 @@ export default function LoginPage() {
 
       return listaPerfiles
     } catch (err) {
-      console.error(err)
       setError(err.message || 'No fue posible validar el usuario.')
       mostrarError(err.message || 'No fue posible validar el usuario.')
       return null
@@ -202,8 +200,11 @@ export default function LoginPage() {
 
       const json = await res.json()
 
-      if (json.status !== 'success') {
-        throw new Error(json.message || 'Usuario, contraseña o perfil incorrecto.')
+      if (!res.ok || json.status !== 'success') {
+        const msg = json.message || 'Usuario, contraseña o perfil incorrecto.'
+        setError(msg)
+        mostrarError(msg)
+        return
       }
 
       localStorage.clear()
@@ -221,7 +222,6 @@ export default function LoginPage() {
 
       router.push(rutaPorRol(json.rol))
     } catch (err) {
-      console.error(err)
       const msg = err.message || 'Error al conectar con el servidor.'
       setError(msg)
       mostrarError(msg)
