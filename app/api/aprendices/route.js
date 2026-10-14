@@ -1,11 +1,26 @@
 // app/api/aprendices/route.js
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { sesionNotificaciones } from '@/lib/notificacionesCorporativasServer'
+import { obtenerSupabaseAdminEmpresaPorNit, respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+async function clienteAutorizado(req) {
+  const sesion = await sesionNotificaciones(req, ['ADMINISTRATIVO'])
+  if (!sesion) return null
+  const nitSesion = String(sesion.nitEmpresa || '').trim()
+  const nitSolicitado = new URL(req.url).searchParams.get('nit') || req.headers.get('x-cea-nit')
+  if (nitSolicitado && String(nitSolicitado).trim() !== nitSesion) {
+    const error = new Error('La empresa solicitada no corresponde a la sesión.')
+    error.status = 403
+    throw error
+  }
+  const { supabaseAdmin } = await obtenerSupabaseAdminEmpresaPorNit(nitSesion)
+  return supabaseAdmin
+}
+
+function responderError(error) {
+  const { status, body } = respuestaErrorEmpresa(error)
+  return NextResponse.json(body, { status })
+}
 
 const CATS_VALIDAS = new Set(['A2','B1','C1','C2','RC1','C3'])
 
@@ -26,6 +41,8 @@ function toIntOrNull(v) {
 // GET: devuelve TODAS las matrículas para un documento (orden desc por fecha de creación)
 export async function GET(req) {
   try {
+    const supabase = await clienteAutorizado(req)
+    if (!supabase) return NextResponse.json({ status: 'error', message: 'Sesión administrativa requerida.' }, { status: 401 })
     const { searchParams } = new URL(req.url)
     const documento = searchParams.get('documento')
     if (!documento) {
@@ -44,13 +61,15 @@ export async function GET(req) {
       latest: (data && data.length ? data[0] : null)
     }, { status: 200 })
   } catch (e) {
-    return NextResponse.json({ status: 'error', message: e.message }, { status: 500 })
+    return responderError(e)
   }
 }
 
 // POST: crea UNA matrícula (el trigger pone consecutivo/fecha/estado)
 export async function POST(req) {
   try {
+    const supabase = await clienteAutorizado(req)
+    if (!supabase) return NextResponse.json({ status: 'error', message: 'Sesión administrativa requerida.' }, { status: 401 })
     const body = await req.json()
     const oblig = ['tipo_doc','documento','nombres','apellidos','fecha_nacimiento','genero']
     const faltantes = oblig.filter(k => !String(body?.[k] ?? '').trim())
@@ -110,6 +129,6 @@ export async function POST(req) {
       data: { id: data.id, consecutivo: data.consecutivo, fecha_matricula: data.fecha_matricula }
     }, { status: 201 })
   } catch (e) {
-    return NextResponse.json({ status: 'error', message: e.message }, { status: 500 })
+    return responderError(e)
   }
 }
