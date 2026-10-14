@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { AlertCircle, Loader2, Printer, X } from 'lucide-react'
 
@@ -208,7 +208,7 @@ function FilaDocumento({ children, className = '' }) {
   )
 }
 
-export default function EvidenciaA4Page() {
+function EvidenciaA4Page() {
   const searchParams = useSearchParams()
   const nit = texto(searchParams.get('nit'))
   const anio = Number(searchParams.get('anio') || 0)
@@ -572,5 +572,13 @@ export default function EvidenciaA4Page() {
         }
       `}</style>
     </>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <EvidenciaA4Page />
+    </Suspense>
   )
 }
