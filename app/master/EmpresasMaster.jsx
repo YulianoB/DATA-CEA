@@ -6,12 +6,14 @@ import { Building2, LogOut, Plus, Eraser, Pencil, Power, Save, X } from 'lucide-
 import { ESTILO_ENCABEZADO } from '@/components/admin/EncabezadoModulo'
 import { ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, BotonAccion, FranjaSuperiorModal } from '@/components/admin/EstiloModulo'
 import ModalResultado from '@/components/admin/ModalResultado'
+import CampoCatalogo from '@/components/admin/CampoCatalogo'
+import CampoMunicipioBusqueda from '@/components/admin/CampoMunicipioBusqueda'
 
 const CAMPOS = [
   { titulo: 'Identificación', items: [['nit','NIT *'],['codigo','Código interno del CEA *'],['nombre','Nombre comercial *'],['razon_social','Razón social'],['nivel_cea','Nivel CEA *','nivel'],['estado','Estado','estado']] },
   { titulo: 'Información de contacto', items: [['direccion','Dirección'],['ciudad','Ciudad'],['departamento','Departamento'],['telefono','Teléfono'],['email_principal','Correo principal'],['representante_legal','Representante legal'],['documento_representante','Documento representante']] },
   { titulo: 'Conexión Supabase', items: [['supabase_url','URL del proyecto *'],['supabase_anon_key','Clave pública (anon) *']] },
-  { titulo: 'Notificaciones y otros datos', items: [['correos_notificacion','Correos notificaciones'],['correos_mantenimiento','Correos mantenimiento'],['correos_preoperacional','Correos preoperacional'],['correos_siniestros','Correos siniestros'],['correos_vencimientos','Correos vencimientos'],['logo_url','URL del logo'],['observaciones','Observaciones']] },
+  { titulo: 'Notificaciones y otros datos', items: [['correos_notificacion','Correos notificaciones'],['correos_mantenimiento','Correos mantenimiento'],['correos_preoperacional','Correos preoperacional'],['correos_siniestros','Correos siniestros'],['correos_vencimientos','Correos vencimientos'],['observaciones','Observaciones']] },
 ]
 const inicial = { nit:'', codigo:'', nombre:'', razon_social:'', nivel_cea:'NIVEL II', estado:'activo', supabase_url:'', supabase_anon_key:'' }
 const inputClass = 'mt-1.5 w-full rounded-xl border border-slate-400 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-[#24638C] focus:ring-2 focus:ring-blue-200'
@@ -29,6 +31,8 @@ export default function EmpresasMaster() {
   const [guardando,setGuardando] = useState(false)
   const [mostrarClave,setMostrarClave] = useState(false)
   const [confirmacion,setConfirmacion] = useState(null)
+  const [departamentos,setDepartamentos] = useState([])
+  const [resultado,setResultado] = useState(null)
 
   async function cargar() {
     setCargando(true)
@@ -41,7 +45,7 @@ export default function EmpresasMaster() {
   }
   useEffect(()=>{cargar()},[])
   function cerrar() {setModo('');setSeleccion(null);setClave('');setForm(inicial);setMostrarClave(false)}
-  function nuevo() {cerrar();setMensaje('');setModo('nuevo')}
+  function nuevo() {cerrar();setMensaje('');setError('');setModo('nuevo')}
   async function editar(empresa) {
     cerrar();setMensaje('');setError('');setSeleccion(empresa);setModo('cargando')
     try {
@@ -63,12 +67,13 @@ export default function EmpresasMaster() {
         setSeleccion({id:data.id,nombre:form.nombre,clave_configurada:false})
         setModo('editar')
         setMensaje('CEA registrado. Ya puedes configurar su credencial Vault en este mismo formulario.')
+        setResultado({tipo:'exito',mensaje:'CEA registrado correctamente. Ahora puedes configurar la Service Role Key.'})
       } else {
         cerrar()
-        setMensaje('Datos de la empresa actualizados.')
+        setResultado({tipo:'exito',mensaje:'Los datos del CEA se actualizaron correctamente.'})
       }
       await cargar()
-    } catch(e) {setError(e.message)} finally {setGuardando(false)}
+    } catch(e) {setError(e.message);setResultado({tipo:'error',mensaje:e.message})} finally {setGuardando(false)}
   }
   async function guardarVault(e) {
     e.preventDefault();if(!seleccion || !clave.trim())return
@@ -77,8 +82,8 @@ export default function EmpresasMaster() {
       const res = await fetch('/api/master/empresas/'+seleccion.id+'/clave',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave})})
       const data = await res.json()
       if (!res.ok) throw Error(data.message || 'No fue posible guardar la credencial.')
-      setClave('');setSeleccion({...seleccion,clave_configurada:true});setMensaje('La credencial se guardó en Vault.');await cargar()
-    } catch(e) {setError(e.message)} finally {setGuardando(false)}
+      setClave('');setSeleccion({...seleccion,clave_configurada:true});setMensaje('La credencial se guardó en Vault.');setResultado({tipo:'exito',mensaje:'La Service Role Key se guardó correctamente en Vault.'});await cargar()
+    } catch(e) {setError(e.message);setResultado({tipo:'error',mensaje:e.message})} finally {setGuardando(false)}
   }
   async function cambiarEstado() {
     if (!confirmacion) return
@@ -94,8 +99,9 @@ export default function EmpresasMaster() {
       if (!res.ok) throw Error(data.message || 'No fue posible cambiar el estado.')
       setConfirmacion(null)
       setMensaje('El CEA ' + empresa.nombre + ' ahora está ' + siguiente + '.')
+      setResultado({tipo:'exito',mensaje:'Estado actualizado correctamente.'})
       await cargar()
-    } catch(e) {setError(e.message)} finally {setGuardando(false)}
+    } catch(e) {setError(e.message);setResultado({tipo:'error',mensaje:e.message})} finally {setGuardando(false)}
   }
 
   const filtradas = empresas.filter(e => [e.nombre,e.nit].some(v => String(v||'').toLowerCase().includes(busqueda.trim().toLowerCase())))
@@ -162,11 +168,11 @@ export default function EmpresasMaster() {
           {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           {mensaje && <p role="status" className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{mensaje}</p>}
           {(modo==='nuevo'||modo==='editar') && <form id="form-empresa" onSubmit={guardarEmpresa} className="space-y-6">
-            {CAMPOS.map(grupo=><section key={grupo.titulo} className="overflow-hidden rounded-xl border border-slate-400 bg-slate-50/50 shadow-sm"><div className="px-3 py-2 text-xs font-bold text-white" style={{backgroundColor:ESTILO_SECCIONES.fondo}}>{grupo.titulo}</div><div className="grid gap-4 p-4 md:grid-cols-2">{grupo.items.map(([campo,etiqueta,tipo])=><label key={campo} className="block text-sm font-medium text-slate-700">{etiqueta}
+            {CAMPOS.map(grupo=><section key={grupo.titulo} className="overflow-hidden rounded-xl border border-slate-400 bg-slate-50/50 shadow-sm"><div className="px-3 py-2 text-xs font-bold text-white" style={{backgroundColor:ESTILO_SECCIONES.fondo}}>{grupo.titulo}</div><div className="grid gap-4 p-4 md:grid-cols-2">{grupo.items.map(([campo,etiqueta,tipo])=> campo==='departamento' ? <CampoCatalogo key={campo} catalogo="departamentos" endpoint="/api/master/catalogos" label="Departamento" name="departamento-master" required={false} value={form.departamento??''} onOpcionesCargadas={setDepartamentos} onChange={e=>setForm(prev=>({...prev,departamento:e.target.value,ciudad:''}))} /> : campo==='ciudad' ? <CampoMunicipioBusqueda key={campo} endpoint="/api/master/catalogos" departamentoId={departamentos.find(d=>d.nombre===form.departamento)?.id} value={form.ciudad??''} className={inputClass} onChange={value=>setForm(prev=>({...prev,ciudad:value}))} /> : <label key={campo} className="block text-sm font-medium text-slate-700">{etiqueta}
               {tipo ? <select className={inputClass} value={form[campo]??''} onChange={e=>setForm({...form,[campo]:e.target.value})}>{(tipo==='nivel'?['NIVEL I','NIVEL II','NIVEL III']:['activo','inactivo']).map(x=><option key={x} value={x}>{x}</option>)}</select> :
               <input className={inputClass} type={campo==='email_principal'?'email':'text'} required={['nit','codigo','nombre','supabase_url','supabase_anon_key'].includes(campo)} value={form[campo]??''} onChange={e=>setForm({...form,[campo]:e.target.value})} autoComplete="off" />}
             </label>)}</div></section>)}
-            <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">NIT y código interno pueden corregirse, pero deben ser únicos. El código interno es una abreviatura para identificar al CEA en DATA CEA (por ejemplo, JY). Verifica cuidadosamente los cambios de identificación y conexión. La credencial privada se guarda exclusivamente en Vault.</p>
+            <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">NIT y código interno pueden corregirse, pero deben ser únicos. El código interno es una abreviatura para identificar al CEA en DATA CEA (por ejemplo, JY). Verifica cuidadosamente los cambios de identificación y conexión. El logotipo de cada CEA se administra en el bucket privado; no se utiliza logo_url. La credencial privada se guarda exclusivamente en Vault.</p>
             <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
               <button type="button" onClick={cerrar} className={boton+' border border-slate-300'}>Cancelar</button>
               <button type="submit" disabled={guardando} className={boton+' bg-[#204c93] text-white'}>{guardando?'Guardando…':modo==='nuevo'?'Registrar CEA':'Guardar cambios'}</button>
@@ -186,6 +192,7 @@ export default function EmpresasMaster() {
         </div>
       </section>
     </div>}
+    <ModalResultado abierto={Boolean(resultado)} tipo={resultado?.tipo || "exito"} titulo={resultado?.tipo === "error" ? "No fue posible guardar" : "Operación realizada correctamente"} mensaje={resultado?.mensaje || ""} onCerrar={()=>setResultado(null)} />
     <ModalResultado abierto={Boolean(confirmacion)} tipo="confirmacion" titulo="Confirmar cambio de estado" mensaje={confirmacion ? '¿Deseas ' + (confirmacion.estado === 'activo' ? 'desactivar' : 'activar') + ' el CEA ' + confirmacion.nombre + '?' : ''} textoBoton="CONFIRMAR" onCerrar={() => { if (!guardando) setConfirmacion(null) }} onConfirmar={() => { if (!guardando) cambiarEstado() }} />
   </main>
 }
