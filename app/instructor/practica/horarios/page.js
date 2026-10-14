@@ -1725,9 +1725,161 @@ export default function HorariosPracticaPage() {
             ?.jornada ||
           null
 
-        // Notificación corporativa gestionada por la API de horarios.
+        // Notificación corporativa enviada desde la API de horarios.
 
-        // Notificación corporativa gestionada por la API de horarios.
+        if (
+          jornada
+        ) {
+          setTengoAbierta(
+            true
+          )
+
+          setRegistroAbierto(
+            jornada
+          )
+        }
+
+        toast.success(
+          'Entrada registrada correctamente.',
+          {
+            duration:
+              1200,
+          }
+        )
+
+        setTimeout(
+          () => {
+            router.push(
+              '/instructor/practica'
+            )
+          },
+          1250
+        )
+      } catch (
+        error
+      ) {
+        console.error(
+          'Error registrando entrada:',
+          error
+        )
+
+        toast.error(
+          'Error inesperado al registrar la entrada.'
+        )
+      } finally {
+        setGuardando(
+          false
+        )
+      }
+    }
+
+  // ==========================================================
+  // Registrar salida
+  // ==========================================================
+
+  const registrarSalida =
+    async () => {
+      if (
+        !puedeRegistrarSalida ||
+        guardando ||
+        !user ||
+        !nitActual ||
+        !registroAbierto
+      ) {
+        return
+      }
+
+      setGuardando(
+        true
+      )
+
+      try {
+        const {
+          fecha,
+          hora,
+          timestamp,
+        } =
+          ahoraBogota()
+
+        const duracion =
+          calcDuracionHoras(
+            clasesDictadas
+          )
+
+        const payload = {
+          nit:
+            nitActual,
+
+          accion:
+            'salida',
+
+          id:
+            registroAbierto
+              .id,
+
+          timestamp_salida:
+            timestamp,
+
+          fecha_salida:
+            fecha,
+
+          hora_salida:
+            hora,
+
+          km_final:
+            Number(
+              kmFinal
+            ),
+
+          clases_dictadas:
+            Number(
+              clasesDictadas
+            ),
+
+          num_aprendices:
+            Number(
+              numAprendices
+            ),
+        }
+
+        const res =
+          await fetch(
+            '/api/horarios',
+            {
+              method:
+                'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify(
+                  payload
+                ),
+            }
+          )
+
+        const json =
+          await res.json()
+
+        if (
+          !res.ok ||
+          json
+            ?.status !==
+            'success'
+        ) {
+          toast.error(
+            json
+              ?.message ||
+            'No se pudo registrar la salida.'
+          )
+
+          return
+        }
+
+        // Notificación corporativa enviada desde la API de horarios.
 
         toast.success(
           'Salida registrada correctamente.',
