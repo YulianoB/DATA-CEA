@@ -286,12 +286,11 @@ export default function LoginPage() {
         </h1>
 
         <p className="text-sm sm:text-sm max-w-lg text-justify z-10">
-          Permite registrar y controlar horarios laborales, inspecciones preoperacionales,
-          mantenimientos, fallas y siniestros viales. Facilita gestionar documentos
-          de vehículos e instructores, programar reuniones, capacitaciones y clases
-          prácticas, así como registrar matrículas de aprendices. Adicionalmente,
-          posibilita generar reportes e indicadores para apoyar el envío de información
-          a la plataforma SISI de la Superintendencia de Transporte.
+          DATA CEA es una plataforma integral para la gestión administrativa y operativa
+          de los Centros de Enseñanza Automovilística. Centraliza la información de
+          aprendices, instructores, vehículos y procesos institucionales, facilitando
+          el seguimiento, el control documental y la generación de indicadores para
+          una gestión eficiente y el cumplimiento normativo.
         </p>
       </div>
 
