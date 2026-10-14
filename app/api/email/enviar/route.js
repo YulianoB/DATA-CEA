@@ -45,6 +45,7 @@ async function obtenerSesion(request) {
 }
 
 export async function POST(request) {
+  return NextResponse.json({ ok: false, error: 'Esta operación no está disponible.' }, { status: 403 })
   try {
     const sesion = await obtenerSesion(request)
     if (!sesion?.nitEmpresa) {
