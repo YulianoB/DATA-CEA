@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { AlertCircle, Loader2, Printer, X } from 'lucide-react'
 function texto(valor) { return String(valor ?? '').trim() }
@@ -86,7 +86,7 @@ function EncabezadoDocumento({ encabezado, documento, logo }) {
   )
 }
 function FilaDocumento({ children, className = '' }) { return <tr className={className}><td className="celda-documento">{children}</td></tr> }
-export default function EvidenciaB4Page() {
+function EvidenciaB4Page() {
   const searchParams = useSearchParams()
   const nit = texto(searchParams.get('nit')), anio = Number(searchParams.get('anio') || 0), trimestre = Number(searchParams.get('trimestre') || 0), token = texto(searchParams.get('token'))
   const [datos, setDatos] = useState(null), [encabezado, setEncabezado] = useState(null), [documento, setDocumento] = useState(null), [logo, setLogo] = useState(null), [cargando, setCargando] = useState(true), [error, setError] = useState('')
@@ -140,5 +140,13 @@ export default function EvidenciaB4Page() {
         *{box-sizing:border-box}html,body{margin:0;padding:0}body{background:#e5e7eb;color:#111827;font-family:Arial,Helvetica,sans-serif}.acciones{position:sticky;top:0;z-index:50;width:216mm;max-width:calc(100vw - 24px);margin:10px auto 0;padding:0;background:transparent}.acciones-inner{width:100%;display:flex;justify-content:flex-end;gap:8px}.acciones button{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}.acciones .principal{border-color:#ea580c;background:#ea580c;color:#fff}.hoja{width:216mm;min-height:279mm;margin:16px auto;background:#fff;padding:12mm 14mm 14mm;box-shadow:0 4px 18px rgba(15,23,42,.18)}.tabla-documento{width:100%;border-collapse:collapse;table-layout:fixed}.encabezado-celda,.celda-documento{padding:0;border:0;vertical-align:top}.tabla-encabezado{width:100%;table-layout:fixed;border-collapse:collapse;color:#000}.celda-encabezado{border:1px solid #000;padding:.8mm 1.2mm}.elementos-encabezado{display:flex;height:100%;flex-direction:column;justify-content:center;gap:.4mm}.elementos-encabezado img{display:block;max-width:100%;max-height:18mm;margin:auto;object-fit:contain}.texto-encabezado{overflow-wrap:anywhere;line-height:1.15}.separador-encabezado{height:5mm}h1{margin:0 0 4mm;text-align:center;font-size:13px;line-height:1.3}h2{margin:0 0 2.5mm;font-size:9.5px;line-height:1.3;text-align:left}.identificacion{display:grid;grid-template-columns:1fr 1fr;border:1px solid #94a3b8;margin-bottom:4mm;font-size:9px}.identificacion div{padding:1.5mm 2mm;border-bottom:1px solid #cbd5e1}.identificacion div:nth-child(odd){border-right:1px solid #cbd5e1}.identificacion div:nth-last-child(-n+2){border-bottom:0}.parrafo,.expedicion{font-size:10px;line-height:1.45;text-align:justify;margin:0 0 3.5mm}.bloque-recursos{margin-top:1mm}.recursos{width:100%;border-collapse:collapse;margin:2.5mm 0 3mm;font-size:8.5px}.recursos th,.recursos td{border:1px solid #64748b;padding:1.5mm 1.8mm;vertical-align:top;line-height:1.3}.recursos th{background:#e2e8f0;text-align:center;font-weight:700}.recursos th:nth-child(1){width:42%}.recursos th:nth-child(2){width:38%}.recursos th:nth-child(3){width:20%}.recursos .valor{text-align:right;white-space:nowrap}.recursos tfoot td{background:#f1f5f9;font-weight:700}.nota{margin:0 0 3.5mm;font-size:8.5px;line-height:1.4;text-align:justify;color:#475569}.verificacion{margin-top:1mm}.cierre{padding-top:1mm}.firma{width:72%;margin-top:6mm;font-size:9px;line-height:1.4}.espacio-firma{height:12mm}.firma .linea{width:78%;border-top:1px solid #111827;margin-bottom:1mm}.firma strong,.firma span{display:block}.bloque-no-dividir,.recursos tr,.firma{break-inside:avoid;page-break-inside:avoid}.estado{min-height:100vh;display:flex;align-items:center;justify-content:center;gap:10px;background:#f8fafc;padding:24px;font-size:14px}.estado-cargando{position:fixed;inset:0;width:100vw;height:100vh;min-height:100vh;margin:0;z-index:9999;text-align:center}.estado.error{color:#b91c1c}.estado.error p{margin:5px 0 0}.spin{animation:girar 1s linear infinite}@keyframes girar{to{transform:rotate(360deg)}}@page{size:letter portrait;margin:0}@media print{html,body{background:#fff}.no-print{display:none!important}.hoja{width:216mm;min-height:279mm;margin:0;padding:12mm 14mm 14mm;box-shadow:none}.tabla-documento{width:100%}.encabezado-repetible{display:table-header-group}.separador-encabezado{height:5mm}.celda-documento{padding:0}.recursos thead{display:table-header-group}.recursos tr{break-inside:avoid;page-break-inside:avoid}}
       `}</style>
     </>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <EvidenciaB4Page />
+    </Suspense>
   )
 }
