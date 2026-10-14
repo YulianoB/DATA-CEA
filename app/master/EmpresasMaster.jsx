@@ -12,8 +12,8 @@ import CampoMunicipioBusqueda from '@/components/admin/CampoMunicipioBusqueda'
 const CAMPOS = [
   { titulo: 'Identificación', items: [['nit','NIT *'],['codigo','Código interno del CEA *'],['nombre','Nombre comercial *'],['razon_social','Razón social'],['nivel_cea','Nivel CEA *','nivel'],['estado','Estado','estado']] },
   { titulo: 'Información de contacto', items: [['direccion','Dirección'],['departamento','Departamento'],['ciudad','Ciudad'],['telefono','Teléfono'],['email_principal','Correo principal'],['representante_legal','Representante legal'],['documento_representante','Documento representante']] },
-  { titulo: 'Conexión Supabase', items: [['supabase_url','URL del proyecto *'],['supabase_anon_key','Clave pública (anon) *']] },
   { titulo: 'Notificaciones y otros datos', items: [['correos_notificacion','Correos notificaciones'],['correos_mantenimiento','Correos mantenimiento'],['correos_preoperacional','Correos preoperacional'],['correos_siniestros','Correos siniestros'],['correos_vencimientos','Correos vencimientos'],['observaciones','Observaciones']] },
+  { titulo: 'Conexión Supabase', items: [['supabase_url','URL del proyecto *'],['supabase_anon_key','Clave pública (anon) *']] },
 ]
 const inicial = { nit:'', codigo:'', nombre:'', razon_social:'', nivel_cea:'NIVEL II', estado:'activo', supabase_url:'', supabase_anon_key:'' }
 const inputClass = 'mt-1.5 w-full rounded-xl border border-slate-400 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-[#24638C] focus:ring-2 focus:ring-blue-200'
@@ -219,7 +219,7 @@ export default function EmpresasMaster() {
                 </div>
               </div>
             </section>
-            <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">NIT y código interno pueden corregirse, pero deben ser únicos. El código interno es una abreviatura para identificar al CEA en DATA CEA (por ejemplo, JY). Verifica cuidadosamente los cambios de identificación y conexión. El logotipo de cada CEA se administra en el bucket privado; no se utiliza logo_url. La credencial privada se guarda exclusivamente en Vault.</p>
+
             <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
               <button type="button" onClick={cerrar} className={boton+' border border-slate-300'}>Cancelar</button>
               <button type="submit" disabled={guardando} className={boton+' bg-[#204c93] text-white'}>{guardando?'Guardando…':modo==='nuevo'?'Registrar CEA':'Guardar cambios'}</button>
