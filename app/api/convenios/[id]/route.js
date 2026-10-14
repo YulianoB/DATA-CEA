@@ -1,17 +1,13 @@
 // app/api/convenios/[id]/route.js
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+import { obtenerSupabaseAdminEmpresaDesdeRequest, respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
 
 function digitsOnly(s = '') { return String(s || '').replace(/\D+/g, '') }
 function isValidEmail(s = '') { return !s || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) }
 
 export async function PATCH(_req, { params }) {
   try {
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaDesdeRequest(_req)
     const id = Number(params?.id)
     if (!id) return NextResponse.json({ status:'error', message:'ID inválido.' }, { status: 400 })
     const body = await _req.json()
