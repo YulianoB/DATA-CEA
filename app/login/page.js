@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import MasterAccessDialog from './MasterAccessDialog'
 import { mostrarExito, mostrarError } from '@/lib/ui/toast'
 
 function normalizarDocumento(valor) {
@@ -234,6 +235,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
+      <MasterAccessDialog />
       <div className="flex-1 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white flex flex-col items-center justify-center p-10 relative overflow-hidden">
         <div
           className="absolute bottom-0 left-0 w-80 h-80 opacity-40"
