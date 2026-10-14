@@ -2476,8 +2476,10 @@ export async function POST(request) {
             'id',
             id
           )
+          .eq('estado_registro', 'Abierto')
+          .eq('fecha_entrada', new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))
           .select()
-          .single()
+          .maybeSingle()
 
       if (
         error
@@ -2496,6 +2498,8 @@ export async function POST(request) {
           }
         )
       }
+
+      if (!data) return NextResponse.json({ status: 'warning', message: 'La jornada ya no está abierta o corresponde a un día anterior.' }, { status: 409 })
 
       return NextResponse.json({
         status:
