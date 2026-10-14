@@ -399,61 +399,6 @@ export default function InspeccionPage() {
     cerrarSesion(router)
 
   // ============================================================
-  // Correo
-  // ============================================================
-
-  const enviarCorreoInspeccion = async ({ tipo, asunto, html }) => {
-      try {
-        const res =
-          await fetch(
-            '/api/email/enviar',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type':
-                  'application/json',
-              },
-              body: JSON.stringify({ tipo, asunto, html }),
-            }
-          )
-
-        const json =
-          await res.json()
-
-        if (!json.ok) {
-          console.error(
-            'Error enviando correo:',
-            json.error
-          )
-
-          return {
-            ok: false,
-            error:
-              json.error,
-          }
-        }
-
-        return {
-          ok: true,
-        }
-      } catch (error) {
-        console.error(
-          'Error enviando correo:',
-          error?.message ||
-            error
-        )
-
-        return {
-          ok: false,
-          error:
-            error?.message ||
-            String(error),
-        }
-      }
-    }
-
-
-  // ============================================================
   // Limpiar campos al cambiar placa
   // ============================================================
 
@@ -1377,39 +1322,7 @@ const puedeGuardar =
             ?.consecutivo ||
           ''
 
-        // Solo se notifica a los correos corporativos cuando existen observaciones.
-        // Los destinatarios se consultan en cea_master por el NIT de la sesión.
-        if (hayObs) {
-          const asuntoM = consecutivo
-            ? `🚨 Observación en inspección preoperacional: ${placaSeleccionada} (${consecutivo})`
-            : `🚨 Observación en inspección preoperacional: ${placaSeleccionada}`
-          const htmlM = `
-            <p><strong>Se ha registrado una inspección con observaciones para seguimiento.</strong></p>
-            <ul>
-              ${consecutivo ? `<li><strong>Consecutivo:</strong> ${consecutivo}</li>` : ''}
-              <li><strong>Placa:</strong> ${placaSeleccionada}</li>
-              <li><strong>Tipo de Vehículo:</strong> ${tipo}</li>
-              <li><strong>Marca:</strong> ${marcaVehiculo}</li>
-              <li><strong>Usuario responsable:</strong> ${user?.nombreCompleto || ''}</li>
-              <li><strong>Fecha:</strong> ${fecha} ${hora}</li>
-              <li><strong>Kilometraje:</strong> ${kilometraje}</li>
-            </ul>
-            <p><strong>Observaciones:</strong><br>${observacionesUnificadas.trim()}</p>
-            <p><em>Correo automático generado por el sistema.</em></p>
-          `
-          try {
-            const resultadoCorreo = await enviarCorreoInspeccion({
-              tipo: 'preoperacional',
-              asunto: asuntoM,
-              html: htmlM,
-            })
-            if (!resultadoCorreo.ok) {
-              console.error('Notificación corporativa preoperacional no enviada:', resultadoCorreo.error)
-            }
-          } catch (error) {
-            console.error('Error enviando notificación preoperacional:', error)
-          }
-        }
+        // El servidor notifica solo si el registro guardado contiene observaciones.
 
         // ======================================================
         // Éxito
