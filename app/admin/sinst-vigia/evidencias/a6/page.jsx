@@ -1,6 +1,6 @@
 // app/admin/sinst-vigia/evidencias/a6/page.jsx
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { AlertCircle, Loader2, Printer, X } from 'lucide-react'
 function texto(valor) { return String(valor ?? '').trim() }
@@ -87,7 +87,7 @@ function obtenerDocumentoA6(documentos, titulo) {
   })
   return exacto || { nombre_documento: titulo || 'JUSTIFICACIÓN DE EVIDENCIA A-6 – SINST - VIGIA 2', codigo: 'SINST-VIGIA 2', fecha_edicion: null, version: '', vigencia: null }
 }
-export default function EvidenciaA6Page() {
+function EvidenciaA6Page() {
   const searchParams = useSearchParams()
   const nit = texto(searchParams.get('nit')), anio = Number(searchParams.get('anio') || 0), trimestre = Number(searchParams.get('trimestre') || 0), token = texto(searchParams.get('token'))
   const [datos, setDatos] = useState(null), [encabezado, setEncabezado] = useState(null), [documento, setDocumento] = useState(null), [logo, setLogo] = useState(null), [cargando, setCargando] = useState(true), [error, setError] = useState('')
@@ -137,5 +137,13 @@ export default function EvidenciaA6Page() {
         *{box-sizing:border-box}html,body{margin:0;padding:0}body{background:#e5e7eb;color:#111827;font-family:Arial,Helvetica,sans-serif}.acciones{position:sticky;top:0;z-index:50;width:216mm;max-width:calc(100vw - 24px);margin:10px auto 0}.acciones-inner{display:flex;justify-content:flex-end;gap:8px}.acciones button{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}.acciones .principal{border-color:#ea580c;background:#ea580c;color:#fff}.hoja{width:216mm;min-height:279mm;margin:16px auto;background:#fff;padding:12mm 14mm 14mm;box-shadow:0 4px 18px rgba(15,23,42,.18)}.tabla-documento{width:100%;border-collapse:collapse;table-layout:fixed}.encabezado-celda,.celda-documento{padding:0;border:0;vertical-align:top}.tabla-encabezado{width:100%;table-layout:fixed;border-collapse:collapse;color:#000}.celda-encabezado{border:1px solid #000;padding:.8mm 1.2mm}.elementos-encabezado{display:flex;height:100%;flex-direction:column;justify-content:center;gap:.4mm}.elementos-encabezado img{display:block;max-width:100%;max-height:18mm;margin:auto;object-fit:contain}.texto-encabezado{overflow-wrap:anywhere;line-height:1.15}.separador-encabezado{height:5mm}h1{margin:0 0 4mm;text-align:center;font-size:13px;line-height:1.3}h2{margin:0 0 2.5mm;font-size:10px;line-height:1.3}.identificacion{display:grid;grid-template-columns:1fr 1fr;border:1px solid #94a3b8;margin-bottom:5mm;font-size:9px}.identificacion div{padding:1.5mm 2mm;border-bottom:1px solid #cbd5e1}.identificacion div:nth-child(odd){border-right:1px solid #cbd5e1}.identificacion div:nth-last-child(-n+2){border-bottom:0}.requisito{border:1px solid #cbd5e1;background:#f8fafc;padding:3mm;margin-bottom:5mm}.requisito h2{margin-bottom:1.5mm}.justificacion{margin-top:1mm}.parrafo{font-size:10px;line-height:1.55;text-align:justify;margin:0 0 4mm}.bloque-no-dividir{break-inside:avoid;page-break-inside:avoid}.estado{min-height:100vh;display:flex;align-items:center;justify-content:center;gap:10px;background:#f8fafc;padding:24px;font-size:14px}.estado.error{color:#b91c1c}.estado.error p{margin:5px 0 0}@page{size:letter portrait;margin:0}@media print{html,body{background:#fff}.no-print{display:none!important}.hoja{width:216mm;min-height:279mm;margin:0;padding:12mm 14mm 14mm;box-shadow:none}.encabezado-repetible{display:table-header-group}.separador-encabezado{height:5mm}}
       `}</style>
     </>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <EvidenciaA6Page />
+    </Suspense>
   )
 }
