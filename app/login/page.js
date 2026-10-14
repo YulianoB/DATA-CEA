@@ -236,9 +236,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       <MasterAccessDialog />
-      <div className="flex-1 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white flex flex-col items-center justify-center p-10 relative overflow-hidden">
+      <div className="md:flex-1 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white flex flex-col items-center justify-center px-4 py-3 md:p-10 relative overflow-hidden">
         <div
-          className="absolute bottom-0 left-0 w-80 h-80 opacity-40"
+          className="hidden md:block absolute bottom-0 left-0 w-80 h-80 opacity-40"
           style={{
             backgroundImage: `
               linear-gradient(to right, rgba(143, 213, 244, 0.5) 1px, transparent 1px),
@@ -248,7 +248,7 @@ export default function LoginPage() {
         />
 
         <div
-          className="absolute bottom-0 left-0 w-92 h-92 opacity-40 rounded-full overflow-hidden"
+          className="hidden md:block absolute bottom-0 left-0 w-92 h-92 opacity-40 rounded-full overflow-hidden"
           style={{
             backgroundImage: `
               repeating-radial-gradient(
@@ -271,23 +271,23 @@ export default function LoginPage() {
           }}
         />
 
-        <div className="mb-2 z-10">
+        <div className="mb-0 md:mb-2 z-10">
           <Image
             src="/logo.png"
             alt="Logo DATA CEA"
             width={300}
             height={300}
             priority
-            style={{ width: 'auto', height: 'auto' }}
+            className="w-[150px] h-auto md:w-[300px]"
           />
         </div>
 
-        <h1 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-sky-400 via-cyan-300 to-emerald-300 bg-clip-text text-transparent z-10">
+        <h1 className="hidden md:block text-2xl font-bold mb-4 text-center bg-gradient-to-r from-sky-400 via-cyan-300 to-emerald-300 bg-clip-text text-transparent z-10">
           Sistema de Registro y Control de Datos para <br />
           Centros de Enseñanza Automovilística
         </h1>
 
-        <p className="text-sm sm:text-sm max-w-lg text-justify z-10">
+        <p className="hidden md:block text-sm sm:text-sm max-w-lg text-justify z-10">
           DATA CEA es una plataforma integral para la gestión administrativa y operativa
           de los Centros de Enseñanza Automovilística. Centraliza la información de
           aprendices, instructores, vehículos y procesos institucionales, facilitando
@@ -296,8 +296,8 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="flex-1 flex items-center justify-center bg-gray-100 p-8">
-        <div className="w-full max-w-md bg-white shadow-2xl rounded-lg p-8 border border-gray-200">
+      <div className="flex-1 flex items-start md:items-center justify-center bg-gray-100 px-4 py-5 md:p-8">
+        <div className="w-full max-w-md bg-white shadow-2xl rounded-lg px-5 py-6 md:p-8 border border-gray-200">
           <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
             Iniciar Sesión
           </h2>
