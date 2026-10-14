@@ -1,92 +1,87 @@
 // app/api/email/enviar/route.js
-
 import nodemailer from 'nodemailer'
 import { NextResponse } from 'next/server'
+import { jwtVerify } from 'jose'
+import { getMasterSupabase } from '@/lib/supabaseMaster'
 
 export const dynamic = 'force-dynamic'
 
-function normalizeRecipients(input) {
-  if (!input) return ''
+const COOKIE_NAME = process.env.COOKIE_NAME || 'cea_session'
+const CAMPOS = Object.freeze({
+  fallas: 'correos_mantenimiento',
+  mantenimiento: 'correos_mantenimiento',
+  preoperacional: 'correos_preoperacional',
+  siniestros: 'correos_siniestros',
+  vencimientos: 'correos_vencimientos',
+  notificacion: 'correos_notificacion',
+})
 
-  const lista = Array.isArray(input)
-    ? input
-    : String(input).split(',')
-
-  return lista
-    .map((email) => String(email || '').trim().toLowerCase())
-    .filter(Boolean)
-    .join(',')
+function respuestaError(error, status) {
+  return NextResponse.json({ ok: false, error }, { status })
 }
 
-function emailValido(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+function destinatariosValidos(valor) {
+  const correos = String(valor || '')
+    .split(/[;,\n]+/)
+    .map((correo) => correo.trim().toLowerCase())
+    .filter(Boolean)
+  const unicos = [...new Set(correos)]
+  if (unicos.some((correo) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))) {
+    return null
+  }
+  return unicos
 }
 
-function validarDestinatarios(input) {
-  if (!input) return true
-
-  const lista = String(input)
-    .split(',')
-    .map((email) => email.trim())
-    .filter(Boolean)
-
-  return lista.every(emailValido)
+async function obtenerSesion(request) {
+  const token = request.cookies.get(COOKIE_NAME)?.value
+  const secret = process.env.AUTH_SECRET
+  if (!token || !secret) return null
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
+    return payload
+  } catch {
+    return null
+  }
 }
 
 export async function POST(request) {
   try {
+    const sesion = await obtenerSesion(request)
+    if (!sesion?.nitEmpresa) {
+      return respuestaError('Sesión no válida o expirada.', 401)
+    }
+
     const body = await request.json()
+    const { tipo, asunto, html } = body || {}
+    const campo = Object.prototype.hasOwnProperty.call(CAMPOS, tipo)
+      ? CAMPOS[tipo]
+      : null
 
-    const {
-      para,
-      asunto,
-      html,
-      cc,
-      bcc,
-    } = body || {}
-
-    if (!para || !asunto || !html) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'Faltan campos: para, asunto, html.',
-        },
-        { status: 400 }
-      )
+    if (!campo) {
+      return respuestaError('Tipo de notificación no permitido.', 400)
+    }
+    if (typeof asunto !== 'string' || !asunto.trim() ||
+        typeof html !== 'string' || !html.trim()) {
+      return respuestaError('Faltan campos: asunto y html.', 400)
+    }
+    if (asunto.length > 250 || html.length > 100000) {
+      return respuestaError('El contenido del correo supera el límite permitido.', 400)
     }
 
-    const to = normalizeRecipients(para)
-    const ccNorm = normalizeRecipients(cc)
-    const bccNorm = normalizeRecipients(bcc)
+    const master = getMasterSupabase()
+    const { data: empresa, error } = await master
+      .from('empresas')
+      .select(`nit, estado, ${campo}`)
+      .eq('nit', String(sesion.nitEmpresa))
+      .eq('estado', 'activo')
+      .maybeSingle()
 
-    if (!validarDestinatarios(to)) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'Uno o más destinatarios no tienen un correo válido.',
-        },
-        { status: 400 }
-      )
-    }
+    if (error) throw error
+    if (!empresa) return respuestaError('CEA no encontrado o inactivo.', 403)
 
-    if (ccNorm && !validarDestinatarios(ccNorm)) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'Uno o más correos CC no son válidos.',
-        },
-        { status: 400 }
-      )
-    }
-
-    if (bccNorm && !validarDestinatarios(bccNorm)) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'Uno o más correos BCC no son válidos.',
-        },
-        { status: 400 }
-      )
+    const destinatarios = destinatariosValidos(empresa[campo])
+    if (!destinatarios || destinatarios.length === 0) {
+      return respuestaError('El CEA no tiene destinatarios corporativos válidos para esta notificación.', 422)
     }
 
     const host = process.env.SMTP_HOST
@@ -95,56 +90,28 @@ export async function POST(request) {
     const pass = process.env.SMTP_PASS
     const from = process.env.SMTP_FROM || user
 
-    if (!host || !user || !pass) {
-      console.error(
-        'Configuración SMTP incompleta. Verifique SMTP_HOST, SMTP_USER y SMTP_PASS.'
-      )
-
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'El servicio de correo no está configurado correctamente.',
-        },
-        { status: 500 }
-      )
+    if (!host || !user || !pass || !Number.isInteger(port) || port <= 0) {
+      console.error('Configuración SMTP incompleta.')
+      return respuestaError('El servicio de correo no está configurado correctamente.', 500)
     }
 
     const transporter = nodemailer.createTransport({
       host,
       port,
       secure: port === 465,
-      auth: {
-        user,
-        pass,
-      },
+      auth: { user, pass },
     })
 
     await transporter.sendMail({
       from,
-      to,
-      ...(ccNorm ? { cc: ccNorm } : {}),
-      ...(bccNorm ? { bcc: bccNorm } : {}),
-      subject: String(asunto).trim(),
+      to: destinatarios.join(','),
+      subject: asunto.trim(),
       html,
     })
 
-    return NextResponse.json({
-      ok: true,
-    })
+    return NextResponse.json({ ok: true })
   } catch (error) {
-    console.error(
-      'Error POST /api/email/enviar:',
-      error
-    )
-
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          error?.message ||
-          'No fue posible enviar el correo.',
-      },
-      { status: 500 }
-    )
+    console.error('Error POST /api/email/enviar:', error)
+    return respuestaError('No fue posible enviar el correo corporativo.', 500)
   }
 }
