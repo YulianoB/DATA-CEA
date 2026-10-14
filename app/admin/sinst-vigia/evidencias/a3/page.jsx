@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 function texto(valor) {
@@ -321,7 +321,7 @@ function EncabezadoDocumento({ encabezado, documento, logo }) {
 }
 
 
-export default function EvidenciaA3Page() {
+function EvidenciaA3Page() {
   const searchParams = useSearchParams()
 
   const nit = texto(searchParams.get('nit'))
@@ -772,5 +772,13 @@ export default function EvidenciaA3Page() {
         </table>
       </main>
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <EvidenciaA3Page />
+    </Suspense>
   )
 }
