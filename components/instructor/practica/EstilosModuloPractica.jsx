@@ -7,14 +7,10 @@ import { ClipboardCheck, ArrowLeft, LogOut, CircleCheck, TriangleAlert, Save, Ch
 export function EncabezadoPractica({ titulo, usuario, cea, onRegresar, onCerrarSesion }) {
   return (
     <header className="rounded-t-2xl border-b-2 border-emerald-300 bg-gradient-to-r from-[#082745] to-[#194567] px-3 py-3 text-white sm:px-5">
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5">
         <Image src="/logo.png" alt="DATA CEA" width={80} height={40} priority className="h-9 w-auto max-w-[76px] shrink-0 object-contain" />
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-300/40 bg-white/10">
-          <ClipboardCheck size={19} />
-        </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-sm font-bold leading-tight sm:text-base">{titulo}</h1>
-          <p className="text-[10px] text-slate-200">Instructor de práctica</p>
+          <h1 className="text-sm font-bold leading-snug break-words sm:text-base">{titulo}</h1>
         </div>
         <button type="button" onClick={onRegresar} aria-label="Regresar" title="Regresar" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/30 bg-white/10"><ArrowLeft size={18} /></button>
         <button type="button" onClick={onCerrarSesion} aria-label="Cerrar sesión" title="Cerrar sesión" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-700"><LogOut size={18} /></button>
