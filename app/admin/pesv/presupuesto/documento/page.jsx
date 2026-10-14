@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { FileDown, X } from 'lucide-react'
 
@@ -170,7 +170,7 @@ function EncabezadoDocumento({ encabezado, documento, logo }) {
   )
 }
 
-export default function DocumentoPresupuestoPesvPage() {
+function DocumentoPresupuestoPesvPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const nit = texto(searchParams.get('nit'))
@@ -382,5 +382,13 @@ export default function DocumentoPresupuestoPesvPage() {
       `}</style>
 
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <DocumentoPresupuestoPesvPage />
+    </Suspense>
   )
 }
