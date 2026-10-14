@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
  */
 export default function CampoCatalogo({
   catalogo, label, name, value = '', onChange, nit,
-  departamentoId, onOpcionesCargadas, required = true, disabled = false, wrapperClass = '',
+  departamentoId, endpoint = '/api/catalogos', onOpcionesCargadas, required = true, disabled = false, wrapperClass = '',
 }) {
   const [opciones, setOpciones] = useState([])
   const [cargando, setCargando] = useState(false)
@@ -18,7 +18,7 @@ export default function CampoCatalogo({
 
   useEffect(() => {
     const controlador = new AbortController()
-    if (!nit || (catalogo === 'municipios' && !departamentoId)) {
+    if ((!nit && endpoint === '/api/catalogos') || (catalogo === 'municipios' && !departamentoId)) {
       setOpciones([])
       setError('')
       setCargando(false)
@@ -30,9 +30,9 @@ export default function CampoCatalogo({
       setError('')
       setOpciones([])
       try {
-        const parametros = new URLSearchParams({ catalogo, nit: String(nit) })
+        const parametros = new URLSearchParams({ catalogo, ...(nit ? {nit:String(nit)} : {}) })
         if (catalogo === 'municipios') parametros.set('departamento_id', String(departamentoId))
-        const respuesta = await fetch(`/api/catalogos?${parametros.toString()}`, {
+        const respuesta = await fetch(`${endpoint}?${parametros.toString()}`, {
           signal: controlador.signal,
           cache: 'no-store',
         })
@@ -52,9 +52,9 @@ export default function CampoCatalogo({
     }
     cargar()
     return () => controlador.abort()
-  }, [catalogo, nit, departamentoId])
+  }, [catalogo, nit, departamentoId, endpoint])
 
-  const disponible = Boolean(nit) && (catalogo !== 'municipios' || Boolean(departamentoId))
+  const disponible = (Boolean(nit) || endpoint !== '/api/catalogos') && (catalogo !== 'municipios' || Boolean(departamentoId))
   // Se conserva el valor previo aunque no figure en el catálogo activo, para no borrar registros históricos.
   const valorActual = String(value ?? '')
   const existe = opciones.some((item) => item.nombre === valorActual)
