@@ -1,11 +1,6 @@
 // app/api/convenios/route.js
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+import { obtenerSupabaseAdminEmpresaDesdeRequest, respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
 
 function digitsOnly(s = '') {
   return String(s || '').replace(/\D+/g, '')
@@ -28,6 +23,7 @@ function normalizeIn(payload = {}) {
 
 export async function GET(req) {
   try {
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaDesdeRequest(req)
     const { searchParams } = new URL(req.url)
     const q = (searchParams.get('q') || '').trim()
     const includeInactivos = (searchParams.get('include_inactivos') || 'false').toLowerCase() === 'true'
@@ -51,6 +47,7 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const body = await req.json()
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaDesdeRequest(req, body)
     const n = normalizeIn(body)
 
     // Validaciones mínimas
