@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState } from 'react'
 
-export default function CampoMunicipioBusqueda({ nit, departamentoId, value = '', onChange, className = '', disabled = false }) {
+export default function CampoMunicipioBusqueda({ nit, departamentoId, value = '', onChange, className = '', disabled = false, endpoint = '/api/catalogos' }) {
   const [municipios, setMunicipios] = useState([])
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
@@ -12,7 +12,7 @@ export default function CampoMunicipioBusqueda({ nit, departamentoId, value = ''
     const controller = new AbortController()
     setMunicipios([])
     setError('')
-    if (!nit || !departamentoId) return () => controller.abort()
+    if ((!nit && endpoint === '/api/catalogos') || !departamentoId) return () => controller.abort()
 
     async function cargar() {
       setCargando(true)
@@ -20,9 +20,9 @@ export default function CampoMunicipioBusqueda({ nit, departamentoId, value = ''
         const params = new URLSearchParams({
           catalogo: 'municipios',
           departamento_id: String(departamentoId),
-          nit: String(nit),
+          ...(nit ? {nit:String(nit)} : {}),
         })
-        const response = await fetch(`/api/catalogos?${params}`, { signal: controller.signal, cache: 'no-store' })
+        const response = await fetch(`${endpoint}?${params}`, { signal: controller.signal, cache: 'no-store' })
         const json = await response.json()
         if (!response.ok || json.status !== 'success') throw new Error(json.message || 'No se pudieron cargar los municipios.')
         if (!controller.signal.aborted) setMunicipios(json.data || [])
@@ -34,7 +34,7 @@ export default function CampoMunicipioBusqueda({ nit, departamentoId, value = ''
     }
     cargar()
     return () => controller.abort()
-  }, [nit, departamentoId])
+  }, [nit, departamentoId, endpoint])
 
   return (
     <div>
