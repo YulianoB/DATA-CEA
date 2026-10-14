@@ -1,7 +1,7 @@
 // app/api/horarios/route.js
 
 import { NextResponse } from 'next/server'
-import { sesionNotificaciones, enviarAvisoCorporativo } from '@/lib/notificacionesCorporativasServer'
+import { sesionNotificaciones } from '@/lib/notificacionesCorporativasServer'
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
   respuestaErrorEmpresa,
@@ -2092,19 +2092,6 @@ export async function POST(request) {
         )
       }
 
-      try {
-        await enviarAvisoCorporativo({
-          nit: sesion.nitEmpresa,
-          asunto: 'Entrada de práctica registrada',
-          detalles: [
-            ['Fecha', inserted.fecha_entrada], ['Hora', inserted.hora_entrada],
-            ['Instructor', nombreCompleto], ['Placa', inserted.placa],
-            ['Kilometraje inicial', inserted.km_inicial],
-            ['Clases programadas', inserted.clases_programadas],
-          ],
-        })
-      } catch (errorCorreo) { console.error('No se envió aviso de entrada:', errorCorreo) }
-
       return NextResponse.json(
         {
           status:
@@ -2509,20 +2496,6 @@ export async function POST(request) {
           }
         )
       }
-
-      try {
-        await enviarAvisoCorporativo({
-          nit: sesion.nitEmpresa,
-          asunto: 'Salida de práctica registrada',
-          detalles: [
-            ['Fecha', data.fecha_salida], ['Hora', data.hora_salida],
-            ['Instructor', data.nombre_completo], ['Placa', data.placa],
-            ['Kilometraje inicial', data.km_inicial], ['Kilometraje final', data.km_final],
-            ['Clases dictadas', data.clases_dictadas], ['Aprendices', data.num_aprendices],
-            ['Duración', data.duracion_jornada],
-          ],
-        })
-      } catch (errorCorreo) { console.error('No se envió aviso de salida:', errorCorreo) }
 
       return NextResponse.json({
         status:
