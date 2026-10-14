@@ -1,6 +1,7 @@
 // app/api/preoperacionales/route.js
 
 import { NextResponse } from 'next/server'
+import { validarSesionOperativa, notificarRegistroCorporativo } from '@/lib/notificacionesCorporativasServer'
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
   respuestaErrorEmpresa,
@@ -590,6 +591,10 @@ export async function POST(request) {
 
     const supabase =
       supabaseAdmin
+
+    // El NIT de la petición debe pertenecer a la sesión firmada.
+    const sesion = await validarSesionOperativa(request, body?.nit)
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada para este CEA.' }, { status: 403 })
 
     const accion =
       normalizarTexto(
@@ -1281,6 +1286,13 @@ if (
           status: 500,
         }
       )
+    }
+
+    // Envío solo tras guardar el registro; fallos SMTP no revierten el guardado.
+    try {
+      await notificarRegistroCorporativo({ nit: sesion.nitEmpresa, tipo: 'preoperacional', registro: inspeccion })
+    } catch (errorCorreo) {
+      console.error('Notificación corporativa no enviada:', errorCorreo)
     }
 
     // =====================================================
