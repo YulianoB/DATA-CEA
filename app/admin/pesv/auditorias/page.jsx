@@ -3730,7 +3730,7 @@ export default function AuditoriasPesvPage() {
                               gap-1
                             "
                           >
-                            <button
+                            <BotonConsultar
                               type="button"
                               onClick={
                                 () =>
@@ -3738,21 +3738,11 @@ export default function AuditoriasPesvPage() {
                                     item
                                   )
                               }
-                              className="
-                                rounded
-                                border
-                                border-slate-600
-                                px-2
-                                py-1
-                                text-[10px]
-                                font-semibold
-                                text-slate-700
-                              "
                             >
                               Gestionar
-                            </button>
+                            </BotonConsultar>
 
-                            <button
+                            <BotonEditar
                               type="button"
                               onClick={
                                 () =>
@@ -3760,21 +3750,11 @@ export default function AuditoriasPesvPage() {
                                     item
                                   )
                               }
-                              className="
-                                rounded
-                                border
-                                border-blue-300
-                                px-2
-                                py-1
-                                text-[10px]
-                                font-semibold
-                                text-blue-700
-                              "
                             >
                               Editar
-                            </button>
+                            </BotonEditar>
 
-                            <button
+                            <BotonPdf
                               type="button"
                               onClick={
                                 () =>
@@ -3782,21 +3762,11 @@ export default function AuditoriasPesvPage() {
                                     item
                                   )
                               }
-                              className="
-                                rounded
-                                border
-                                border-emerald-300
-                                px-2
-                                py-1
-                                text-[10px]
-                                font-semibold
-                                text-emerald-700
-                              "
                             >
                               Informe PDF
-                            </button>
+                            </BotonPdf>
 
-                            <button
+                            <BotonEliminar
                               type="button"
                               onClick={
                                 () =>
@@ -3804,19 +3774,9 @@ export default function AuditoriasPesvPage() {
                                     item
                                   )
                               }
-                              className="
-                                rounded
-                                border
-                                border-red-300
-                                px-2
-                                py-1
-                                text-[10px]
-                                font-semibold
-                                text-red-700
-                              "
                             >
                               Eliminar
-                            </button>
+                            </BotonEliminar>
                           </div>
                         </td>
                       </tr>
