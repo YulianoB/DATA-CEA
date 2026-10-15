@@ -1590,8 +1590,7 @@ const puedeGuardar =
           onGuardar={handleGuardar}
           puedeGuardar={puedeGuardar}
           guardando={guardando}
-          onRegresar={() => router.push('/instructor/practica')}
-          onCerrarSesion={handleLogout}
+          textoGuardar="Registrar Preoperacional"
         />
 
         </main>
