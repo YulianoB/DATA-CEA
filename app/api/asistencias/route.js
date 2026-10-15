@@ -187,6 +187,19 @@ export async function POST(request) {
       )
     }
 
+    // La asistencia solo se admite durante el horario programado en Bogotá.
+    const ahora = nowBogotaParts()
+    const fecha = String(reunion.fecha_programada || '')
+    const inicio = String(reunion.hora_inicio || '').slice(0, 5)
+    const fin = String(reunion.hora_fin || '').slice(0, 5)
+    const estado = String(reunion.estado || '').trim().toLowerCase()
+    if (estado !== 'programada' || fecha !== ahora.ymd || ahora.hm < inicio || ahora.hm >= fin) {
+      return NextResponse.json({
+        status: 'warning',
+        message: 'El registro de asistencia solo está disponible durante el horario de la reunión.',
+      }, { status: 200 })
+    }
+
     // 3. Evitar duplicado
     const {
       count: existe,
