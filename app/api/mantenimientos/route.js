@@ -1,3 +1,4 @@
+import { esVehiculoActivo } from '@/lib/vehiculosActivos'
 // app/api/mantenimientos/route.js
 
 import { NextResponse } from 'next/server'
@@ -36,9 +37,6 @@ function normalizarClave(valor) {
     .toUpperCase()
 }
 
-function esVehiculoActivo(estado) {
-  return normalizarClave(estado) === 'ACTIVO'
-}
 
 function obtenerFamiliaMantenimiento(tipoVehiculo) {
   const tipo = normalizarClave(tipoVehiculo)
