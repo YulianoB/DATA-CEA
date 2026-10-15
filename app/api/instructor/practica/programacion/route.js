@@ -1,4 +1,3 @@
-import { esVehiculoActivo } from '@/lib/vehiculosActivos'
 // app/api/instructor/practica/programacion/route.js
 
 import {
@@ -629,9 +628,7 @@ async function consultarProgramacionInstructor(
     )
   }
 
-  const clases = (data || []).filter(
-    (clase) => esVehiculoActivo(clase?.vehiculo?.estado)
-  )
+  const clases = data || []
 
   // =======================================================
   // RECIBOS REFUERZO
