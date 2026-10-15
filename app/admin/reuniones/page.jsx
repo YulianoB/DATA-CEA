@@ -12,7 +12,7 @@ import {
 } from 'next/navigation'
 
 import { Toaster, toast } from 'sonner'
-import { CalendarDays, CalendarPlus, RefreshCw, FilterX, Eye, FileSpreadsheet, Ban, X, Clock, CheckCircle2, ShieldCheck, Users, Save } from 'lucide-react'
+import { CalendarDays, CalendarPlus, RefreshCw, FilterX, Eye, FileSpreadsheet, FileText, Ban, X, Clock, CheckCircle2, ShieldCheck, Users, Save } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BotonAccion, BotonAgregar, BotonActualizar, BotonLimpiar, BotonGuardar, BotonCancelar, BotonVerDetalle, BotonExcel, BotonEliminar, TarjetaModulo, MarcoTabla, FranjaSuperiorModal, ESTILO_SECCIONES, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 
@@ -991,6 +991,15 @@ export default function AdminReunionesPage() {
     }
 
 
+  const abrirListaAsistencia = (id) => {
+    if (!nitActual) {
+      toast.error('No se encontró el CEA de la sesión.')
+      return
+    }
+    window.open(`/admin/reuniones/lista-asistencia/${encodeURIComponent(id)}?nit=${encodeURIComponent(nitActual)}`, '_blank')
+  }
+
+
   // ==========================================================
   // RESÚMENES
   // ==========================================================
@@ -1253,6 +1262,7 @@ export default function AdminReunionesPage() {
                           <div className="flex flex-wrap justify-center gap-1.5">
                             <BotonVerDetalle type="button" title="Ver detalle" aria-label="Ver detalle" onClick={() => setReunionDetalle(reunion)}><Eye size={15}/></BotonVerDetalle>
                             {reunion.estado === 'Ejecutada' && <BotonExcel type="button" title="Descargar asistentes Excel" aria-label="Descargar Excel" onClick={() => descargarExcel(reunion.id)}><FileSpreadsheet size={15}/></BotonExcel>}
+                            {reunion.estado === 'Ejecutada' && <BotonAccion type="button" title="Lista de asistencia PDF" aria-label="Lista de asistencia PDF" onClick={() => abrirListaAsistencia(reunion.id)}><FileText size={15}/></BotonAccion>}
                             {reunion.estado === 'Programada' && !reunionFinalizada(reunion) && <BotonEliminar type="button" title="Cancelar reunión" aria-label="Cancelar reunión" onClick={() => cancelarReunion(reunion.id, reunion.estado)}><Ban size={15}/></BotonEliminar>}
                           </div>
                         </td>
@@ -1319,6 +1329,7 @@ export default function AdminReunionesPage() {
             </div>
             <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
               {reunionDetalle.estado === 'Ejecutada' && <BotonExcel type="button" onClick={() => descargarExcel(reunionDetalle.id)}><FileSpreadsheet size={15}/> Descargar asistentes</BotonExcel>}
+              {reunionDetalle.estado === 'Ejecutada' && <BotonAccion type="button" onClick={() => abrirListaAsistencia(reunionDetalle.id)}><FileText size={15}/> Lista de asistencia PDF</BotonAccion>}
               <BotonCancelar type="button" onClick={() => setReunionDetalle(null)}><X size={15}/> Cerrar</BotonCancelar>
             </div>
           </section>
