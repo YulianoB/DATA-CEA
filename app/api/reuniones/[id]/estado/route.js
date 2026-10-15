@@ -203,6 +203,25 @@ export async function PATCH(request, { params }) {
       )
     }
 
+    // Una reunión cuyo horario ya terminó permanece en su estado histórico.
+    // Si no hubo asistencias, conserva «Programada» y no puede cancelarse después.
+    const zonaHoraria = 'America/Bogota'
+    const ahora = new Date()
+    const fechaActual = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zonaHoraria, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(ahora)
+    const horaActual = new Intl.DateTimeFormat('en-GB', {
+      timeZone: zonaHoraria, hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(ahora)
+    const fechaReunion = String(reunion.fecha_programada || '').slice(0, 10)
+    const horaFin = String(reunion.hora_fin || '').slice(0, 5)
+    if (fechaReunion < fechaActual || (fechaReunion === fechaActual && horaFin <= horaActual)) {
+      return NextResponse.json({
+        status: 'error',
+        message: 'La reunión ya finalizó. No se puede cancelar ni modificar su estado histórico.',
+      }, { status: 409 })
+    }
+
     // Actualizar estado
     const { error: updateError } =
       await supabase
