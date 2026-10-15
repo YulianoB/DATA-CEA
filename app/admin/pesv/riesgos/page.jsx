@@ -2,6 +2,7 @@
 
 'use client'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonPdf } from '@/components/admin/EstiloModulo'
 import { AlertTriangle } from 'lucide-react'
 
 
@@ -1937,7 +1938,7 @@ return (
               /admin/pesv/riesgos/imprimir?anio=VIGENCIA
           ================================================ */}
 
-          <button
+          <BotonPdf
             type="button"
             onClick={
               generarPdfMatrizRiesgos
@@ -1945,23 +1946,6 @@ return (
             disabled={
               cargando
             }
-            className="
-              bg-red-600
-              hover:bg-red-700
-              disabled:bg-gray-400
-              disabled:cursor-not-allowed
-              text-white
-              px-3
-              py-1.5
-              rounded
-              text-[10px]
-              font-bold
-              whitespace-nowrap
-              flex
-              items-center
-              justify-center
-              gap-1.5
-            "
           >
             <i
               className="
@@ -1971,7 +1955,7 @@ return (
             ></i>
 
             Generar PDF
-          </button>
+          </BotonPdf>
         </div>
       </div>
 
