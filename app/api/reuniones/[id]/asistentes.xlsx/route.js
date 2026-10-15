@@ -90,6 +90,13 @@ export async function GET(request, { params }) {
       )
     }
 
+    if (reunion.estado !== 'Ejecutada') {
+      return NextResponse.json({
+        status: 'error',
+        message: 'La lista de asistencia solo está disponible para reuniones ejecutadas.',
+      }, { status: 403 })
+    }
+
     // 2. Obtener asistencias
     const { data: asistencias, error: asistenciasError } =
       await supabase
