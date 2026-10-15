@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
+import { Printer, X } from 'lucide-react'
+import { BotonImprimir, BotonCancelar, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
 
 const texto = (v) => String(v ?? '').trim()
 function Encabezado({ encabezado, documento, logo }) {
@@ -57,21 +59,25 @@ export default function ListaAsistencia() {
       if (!doc) throw new Error('Configure y active el documento LISTA DE ASISTENCIA antes de imprimir.')
       if (!db.encabezado?.estructura) throw new Error('No se encontró el encabezado documental del CEA.')
       if (activo) { setDatos(da); setConfig({ encabezado: db.encabezado, documento: doc }) }
-      if (c?.ok) { const ld = await c.json().catch(() => null); if (activo) setLogo(texto(ld?.logo?.url || ld?.logo_url || ld?.url)) }
+      if (c?.ok) { const ld = await c.json().catch(() => null); if (activo) setLogo(texto(ld?.logo?.actual || ld?.logo?.url || ld?.logo_url || ld?.url)) }
     }).catch(e => { if (activo) setError(e.message) })
     return () => { activo = false }
   }, [id, nit])
   const r = datos?.reunion
   return <main className="documento">
-    <style>{`@page{size:A4 portrait;margin:14mm 12mm}body{background:#e8edf2}.documento{max-width:210mm;margin:20px auto;padding:15mm 12mm;background:white;color:#111;font-family:Arial,sans-serif;font-size:10pt}.cabecera{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:16px}.cabecera td{border:1px solid #333;padding:4px;overflow-wrap:anywhere}.titulo{text-align:center;font-weight:bold;font-size:14pt;margin:15px 0}.datos{width:100%;border-collapse:collapse;margin-bottom:18px}.datos td{padding:5px 7px;border:1px solid #777}.datos td:first-child{font-weight:bold;width:26%;background:#f3f4f6}.asistentes{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8pt}.asistentes th,.asistentes td{border:1px solid #666;padding:6px 4px;overflow-wrap:anywhere}.asistentes th{background:#e9eef3}.asistentes thead{display:table-header-group}.asistentes tr{break-inside:avoid}.acciones{display:flex;gap:8px;margin-bottom:18px}.acciones button{padding:9px 16px;border:1px solid #aaa;border-radius:6px;cursor:pointer}@media print{body{background:white}.documento{max-width:none;margin:0;padding:0}.acciones{display:none}.cabecera{break-inside:avoid}.datos{break-inside:avoid}}`}</style>
-    <div className="acciones"><button type="button" onClick={() => window.print()}>Imprimir / Guardar PDF</button><button type="button" onClick={() => window.close()}>Cerrar</button></div>
+    <style>{`@page{size:A4 portrait;margin:14mm 12mm}body{background:#e8edf2}.documento{max-width:210mm;margin:20px auto;padding:15mm 12mm;background:white;color:#111;font-family:Arial,sans-serif;font-size:10pt}.cabecera{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:16px}.cabecera td{border:1px solid #333;padding:4px;overflow-wrap:anywhere}.titulo{text-align:center;font-weight:bold;font-size:14pt;margin:15px 0}.datos{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:18px}.datos td{padding:5px 7px;border:1px solid #777}.datos td:first-child,.datos td.etiqueta{font-weight:bold;background:#f3f4f6}.datos td{text-align:center;vertical-align:middle}.datos td:first-child{width:17%}.asistentes{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8pt}.asistentes th,.asistentes td{border:1px solid #666;padding:6px 4px;overflow-wrap:anywhere}.asistentes th{background:${ESTILO_ENCABEZADO_TABLA.fondo};color:${ESTILO_ENCABEZADO_TABLA.texto};font-weight:700}.asistentes th,.asistentes td{text-align:center;vertical-align:middle}.asistentes thead{display:table-header-group}.asistentes tr{break-inside:avoid}.acciones{display:flex;gap:8px;margin-bottom:18px}@media print{body{background:white}.documento{max-width:none;margin:0;padding:0}.acciones{display:none}.cabecera{break-inside:avoid}.datos{break-inside:avoid}}`}</style>
+    <div className="acciones"><BotonImprimir type="button" onClick={() => window.print()}><Printer size={15}/> Imprimir / Guardar PDF</BotonImprimir><BotonCancelar type="button" onClick={() => window.close()}><X size={15}/> Cerrar</BotonCancelar></div>
     {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
     {!error && !datos && <p>Cargando lista de asistencia...</p>}
     {r && config && <>
       <Encabezado encabezado={config.encabezado} documento={config.documento} logo={logo}/>
       <h1 className="titulo">LISTA DE ASISTENCIA</h1>
       <table className="datos"><tbody>
-        { [['Tipo de reunión',r.tipo_reunion],['Descripción',r.descripcion],['Fecha',r.fecha_programada],['Horario',`${r.hora_inicio} - ${r.hora_fin}`],['Modalidad',r.modalidad],['Responsable',r.responsable],['Dirigido a',r.dirigido_a],['Lugar',r.lugar],['Total de asistentes',datos.asistentes.length]].map(([k,v]) => <tr key={k}><td>{k}</td><td>{texto(v) || '-'}</td></tr>) }
+        <tr><td>Tipo de reunión</td><td colSpan={5}>{texto(r.tipo_reunion) || '-'}</td></tr>
+        <tr><td>Descripción</td><td colSpan={5}>{texto(r.descripcion) || '-'}</td></tr>
+        <tr><td>Fecha</td><td>{texto(r.fecha_programada) || '-'}</td><td className="etiqueta">Horario</td><td>{texto(r.hora_inicio)} - {texto(r.hora_fin)}</td><td className="etiqueta">Modalidad</td><td>{texto(r.modalidad) || '-'}</td></tr>
+        <tr><td>Responsable</td><td colSpan={2}>{texto(r.responsable) || '-'}</td><td className="etiqueta">Dirigido a</td><td colSpan={2}>{texto(r.dirigido_a) || '-'}</td></tr>
+        <tr><td>Lugar</td><td colSpan={2}>{texto(r.lugar) || '-'}</td><td className="etiqueta">Total de asistentes</td><td colSpan={2}>{datos.asistentes.length}</td></tr>
       </tbody></table>
       <h2 style={{ fontSize: '11pt', marginBottom: 8 }}>Listado de asistentes</h2>
       <table className="asistentes"><colgroup><col style={{width:'5%'}}/><col style={{width:'26%'}}/><col style={{width:'15%'}}/><col style={{width:'16%'}}/><col style={{width:'14%'}}/><col style={{width:'24%'}}/></colgroup><thead><tr>{['#','Nombre','Documento','Rol','Teléfono','Correo electrónico'].map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{datos.asistentes.map((a,i)=><tr key={i}><td>{i+1}</td><td>{texto(a.nombre_usuario)||'-'}</td><td>{texto(a.documento_usuario)||'-'}</td><td>{texto(a.rol_usuario)||'-'}</td><td>{texto(a.telefono)||'-'}</td><td>{texto(a.email)||'-'}</td></tr>)}</tbody></table>
