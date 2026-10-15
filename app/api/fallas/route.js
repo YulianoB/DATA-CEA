@@ -1,3 +1,4 @@
+import { filtrarVehiculosActivos } from '@/lib/vehiculosActivos'
 // app/api/fallas/route.js
 
 import { NextResponse } from 'next/server'
@@ -77,7 +78,7 @@ export async function GET(request) {
 
       return NextResponse.json({
         status: 'success',
-        vehiculos: data || [],
+        vehiculos: filtrarVehiculosActivos(data),
       })
     }
 
