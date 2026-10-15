@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export default function MasterAccessDialog() {
+export default function MasterAccessDialog({ solicitudApertura = 0 }) {
   const router = useRouter()
   const [abierto, setAbierto] = useState(false)
   const [correo, setCorreo] = useState('')
@@ -12,6 +12,10 @@ export default function MasterAccessDialog() {
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
   const correoRef = useRef(null)
+
+  useEffect(() => {
+    if (solicitudApertura > 0) setAbierto(true)
+  }, [solicitudApertura])
 
   useEffect(() => {
     function teclas(event) {
