@@ -1,3 +1,4 @@
+import { esVehiculoActivo } from '@/lib/vehiculosActivos'
 // app/api/admin/mantenimientos/plan-mantenimiento/route.js
 // NUEVO MODELO:
 // - No almacena proyecciones futuras.
@@ -157,7 +158,7 @@ function restarDias(fecha, dias) {
 }
 
 function esActivo(valor) {
-  return ['ACTIVO', 'ACTIVA'].includes(clave(valor))
+  return esVehiculoActivo(valor)
 }
 
 function configuracionActiva(valor) {
