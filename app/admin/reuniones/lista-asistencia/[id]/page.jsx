@@ -64,9 +64,17 @@ export default function ListaAsistencia() {
     return () => { activo = false }
   }, [id, nit])
   const r = datos?.reunion
-  return <main className="documento">
-    <style>{`@page{size:A4 portrait;margin:14mm 12mm}body{background:#e8edf2}.documento{max-width:210mm;margin:20px auto;padding:15mm 12mm;background:white;color:#111;font-family:Arial,sans-serif;font-size:10pt}.cabecera{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:16px}.cabecera td{border:1px solid #333;padding:4px;overflow-wrap:anywhere}.titulo{text-align:center;font-weight:bold;font-size:14pt;margin:15px 0}.datos{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:18px}.datos td{padding:5px 7px;border:1px solid #777}.datos td:first-child,.datos td.etiqueta{font-weight:bold;background:#f3f4f6}.datos td{text-align:center;vertical-align:middle}.datos td:first-child{width:17%}.asistentes{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8pt}.asistentes th,.asistentes td{border:1px solid #666;padding:6px 4px;overflow-wrap:anywhere}.asistentes th{background:${ESTILO_ENCABEZADO_TABLA.fondo};color:${ESTILO_ENCABEZADO_TABLA.texto};font-weight:700}.asistentes th,.asistentes td{text-align:center;vertical-align:middle}.asistentes thead{display:table-header-group}.asistentes tr{break-inside:avoid}.acciones{display:flex;gap:8px;margin-bottom:18px}@media print{body{background:white}.documento{max-width:none;margin:0;padding:0}.acciones{display:none}.cabecera{break-inside:avoid}.datos{break-inside:avoid}}`}</style>
+  const fechaArchivo = texto(r?.fecha_programada).slice(0, 10)
+  const nombreArchivo = `Lista de asistencia - ${fechaArchivo || 'sin fecha'}`
+  useEffect(() => {
+    const tituloAnterior = document.title
+    if (r) document.title = nombreArchivo
+    return () => { document.title = tituloAnterior }
+  }, [r, nombreArchivo])
+  return <main className="vista-previa">
+    <style>{`@page{size:A4 portrait;margin:12mm}*{box-sizing:border-box}html,body{margin:0;padding:0}body{background:#e8edf2}.vista-previa{max-width:240mm;margin:22px auto;padding:18px;background:#f1f5f9;border:1px solid #d6dfe8;border-radius:12px}.documento{width:100%;max-width:210mm;margin:0 auto;padding:12mm;background:white;color:#111;font-family:Arial,sans-serif;font-size:9pt;box-shadow:0 2px 12px rgba(15,23,42,.10)}.cabecera,.datos,.asistentes{width:100%;max-width:100%;border-collapse:collapse;table-layout:fixed}.cabecera{margin-bottom:12px}.cabecera td{border:1px solid #333;padding:4px;overflow-wrap:anywhere}.titulo{text-align:center;font-weight:bold;font-size:13pt;margin:12px 0}.datos{margin-bottom:12px}.datos td{padding:5px 6px;border:1px solid #777;text-align:left;vertical-align:middle;overflow-wrap:break-word}.datos td:first-child,.datos td.etiqueta{font-weight:bold;background:#f3f4f6}.datos td:first-child{width:17%}.datos .fila-datos td{white-space:nowrap;font-size:8pt;padding:5px 4px}.asistentes{font-size:8pt}.asistentes th,.asistentes td{border:1px solid #666;padding:6px 4px;overflow-wrap:anywhere;text-align:center;vertical-align:middle}.asistentes th{background:${ESTILO_ENCABEZADO_TABLA.fondo};color:${ESTILO_ENCABEZADO_TABLA.texto};font-weight:700}.asistentes thead{display:table-header-group}.asistentes tr{break-inside:avoid}.acciones{display:flex;justify-content:flex-end;gap:8px;margin:0 auto 16px;max-width:210mm}@media print{@page{size:A4 portrait;margin:12mm}html,body{width:100%;background:white!important;margin:0!important;padding:0!important}.vista-previa{width:100%;max-width:none;margin:0;padding:0;border:0;border-radius:0;background:white}.documento{width:100%;max-width:none;margin:0;padding:0;box-shadow:none}.acciones{display:none!important}.cabecera,.datos{break-inside:avoid}.asistentes th{-webkit-print-color-adjust:exact;print-color-adjust:exact}} `}</style>
     <div className="acciones"><BotonImprimir type="button" onClick={() => window.print()}><Printer size={15}/> Imprimir / Guardar PDF</BotonImprimir><BotonCancelar type="button" onClick={() => window.close()}><X size={15}/> Cerrar</BotonCancelar></div>
+    <section className="documento">
     {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
     {!error && !datos && <p>Cargando lista de asistencia...</p>}
     {r && config && <>
@@ -75,12 +83,13 @@ export default function ListaAsistencia() {
       <table className="datos"><tbody>
         <tr><td>Tipo de reunión</td><td colSpan={5}>{texto(r.tipo_reunion) || '-'}</td></tr>
         <tr><td>Descripción</td><td colSpan={5}>{texto(r.descripcion) || '-'}</td></tr>
-        <tr><td>Fecha</td><td>{texto(r.fecha_programada) || '-'}</td><td className="etiqueta">Horario</td><td>{texto(r.hora_inicio)} - {texto(r.hora_fin)}</td><td className="etiqueta">Modalidad</td><td>{texto(r.modalidad) || '-'}</td></tr>
-        <tr><td>Responsable</td><td colSpan={2}>{texto(r.responsable) || '-'}</td><td className="etiqueta">Dirigido a</td><td colSpan={2}>{texto(r.dirigido_a) || '-'}</td></tr>
-        <tr><td>Lugar</td><td colSpan={2}>{texto(r.lugar) || '-'}</td><td className="etiqueta">Total de asistentes</td><td colSpan={2}>{datos.asistentes.length}</td></tr>
+        <tr className="fila-datos"><td>Fecha</td><td>{texto(r.fecha_programada) || '-'}</td><td className="etiqueta">Horario</td><td>{texto(r.hora_inicio).slice(0,5)} - {texto(r.hora_fin).slice(0,5)}</td><td className="etiqueta">Modalidad</td><td>{texto(r.modalidad) || '-'}</td></tr>
+        <tr className="fila-datos"><td>Responsable</td><td colSpan={2}>{texto(r.responsable) || '-'}</td><td className="etiqueta">Dirigido a</td><td colSpan={2}>{texto(r.dirigido_a) || '-'}</td></tr>
+        <tr className="fila-datos"><td>Lugar</td><td colSpan={2}>{texto(r.lugar) || '-'}</td><td className="etiqueta">Total de asistentes</td><td colSpan={2}>{datos.asistentes.length}</td></tr>
       </tbody></table>
       <h2 style={{ fontSize: '11pt', marginBottom: 8 }}>Listado de asistentes</h2>
       <table className="asistentes"><colgroup><col style={{width:'5%'}}/><col style={{width:'26%'}}/><col style={{width:'15%'}}/><col style={{width:'16%'}}/><col style={{width:'14%'}}/><col style={{width:'24%'}}/></colgroup><thead><tr>{['#','Nombre','Documento','Rol','Teléfono','Correo electrónico'].map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{datos.asistentes.map((a,i)=><tr key={i}><td>{i+1}</td><td>{texto(a.nombre_usuario)||'-'}</td><td>{texto(a.documento_usuario)||'-'}</td><td>{texto(a.rol_usuario)||'-'}</td><td>{texto(a.telefono)||'-'}</td><td>{texto(a.email)||'-'}</td></tr>)}</tbody></table>
     </>}
+    </section>
   </main>
 }
