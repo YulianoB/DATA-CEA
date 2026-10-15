@@ -1,3 +1,4 @@
+import { filtrarVehiculosActivos } from '@/lib/vehiculosActivos'
 // app/api/siniestros/route.js
 import { NextResponse } from 'next/server'
 
@@ -169,8 +170,7 @@ export async function GET(request) {
         status:
           'success',
 
-        vehiculos:
-          data || [],
+        vehiculos: filtrarVehiculosActivos(data),
       })
     }
 
