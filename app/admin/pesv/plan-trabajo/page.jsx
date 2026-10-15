@@ -2,6 +2,7 @@
 
 'use client'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { BotonPdf } from '@/components/admin/EstiloModulo'
 import { ClipboardList } from 'lucide-react'
 
 
@@ -1721,7 +1722,7 @@ export default function PlanTrabajoPesvPage() {
 
           <div className="flex flex-wrap gap-2">
             {plan?.id && (
-              <button
+              <BotonPdf
                 type="button"
                 onClick={() => {
                   const params =
@@ -1735,11 +1736,10 @@ export default function PlanTrabajoPesvPage() {
                     `/admin/pesv/plan-trabajo/documento?${params.toString()}`
                   )
                 }}
-                className="bg-blue-900 hover:bg-blue-950 text-white border border-blue-950 rounded px-3 py-1.5 text-[10px] font-bold transition"
               >
                 <i className="fas fa-file-pdf mr-1.5"></i>
                 Generar PDF
-              </button>
+              </BotonPdf>
             )}
           </div>
         </div>
