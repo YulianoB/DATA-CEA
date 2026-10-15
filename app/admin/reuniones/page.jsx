@@ -365,6 +365,20 @@ function ResumenCard({
 // PÁGINA
 // ============================================================
 
+function reunionFinalizada(reunion) {
+  if (!reunion?.fecha_programada || !reunion?.hora_fin) return false
+  const partes = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date())
+  const dato = (tipo) => partes.find((parte) => parte.type === tipo)?.value || ''
+  const hoy = `${dato('year')}-${dato('month')}-${dato('day')}`
+  const hora = `${dato('hour')}:${dato('minute')}`
+  const fechaReunion = String(reunion.fecha_programada).slice(0, 10)
+  const horaFin = String(reunion.hora_fin).slice(0, 5)
+  return fechaReunion < hoy || (fechaReunion === hoy && horaFin <= hora)
+}
+
 export default function AdminReunionesPage() {
   const router =
     useRouter()
@@ -1239,7 +1253,7 @@ export default function AdminReunionesPage() {
                           <div className="flex flex-wrap justify-center gap-1.5">
                             <BotonVerDetalle type="button" title="Ver detalle" aria-label="Ver detalle" onClick={() => setReunionDetalle(reunion)}><Eye size={15}/></BotonVerDetalle>
                             <BotonExcel type="button" title="Descargar asistentes Excel" aria-label="Descargar Excel" onClick={() => descargarExcel(reunion.id)}><FileSpreadsheet size={15}/></BotonExcel>
-                            {reunion.estado === 'Programada' && <BotonEliminar type="button" title="Cancelar reunión" aria-label="Cancelar reunión" onClick={() => cancelarReunion(reunion.id, reunion.estado)}><Ban size={15}/></BotonEliminar>}
+                            {reunion.estado === 'Programada' && !reunionFinalizada(reunion) && <BotonEliminar type="button" title="Cancelar reunión" aria-label="Cancelar reunión" onClick={() => cancelarReunion(reunion.id, reunion.estado)}><Ban size={15}/></BotonEliminar>}
                           </div>
                         </td>
                       </tr>
