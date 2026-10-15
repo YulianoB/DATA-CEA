@@ -135,7 +135,7 @@ export async function GET(request) {
       (data || []).find(
         (reunion) =>
           String(reunion.hora_inicio) <= hm &&
-          hm <= String(reunion.hora_fin)
+          hm < String(reunion.hora_fin).slice(0, 5)
       ) || null
 
     return NextResponse.json({
