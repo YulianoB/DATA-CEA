@@ -1,3 +1,4 @@
+import { esVehiculoActivo } from '@/lib/vehiculosActivos'
 // app/api/horarios/route.js
 
 import { NextResponse } from 'next/server'
@@ -1158,7 +1159,8 @@ export async function GET(request) {
         .select(`
           placa,
           tipo_vehiculo,
-          marca
+          marca,
+          estado
         `)
         .order(
           'placa',
