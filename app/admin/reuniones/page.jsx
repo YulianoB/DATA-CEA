@@ -1252,7 +1252,7 @@ export default function AdminReunionesPage() {
                         <td className="border border-[#CBD5E1] px-3 py-2 text-center">
                           <div className="flex flex-wrap justify-center gap-1.5">
                             <BotonVerDetalle type="button" title="Ver detalle" aria-label="Ver detalle" onClick={() => setReunionDetalle(reunion)}><Eye size={15}/></BotonVerDetalle>
-                            <BotonExcel type="button" title="Descargar asistentes Excel" aria-label="Descargar Excel" onClick={() => descargarExcel(reunion.id)}><FileSpreadsheet size={15}/></BotonExcel>
+                            {reunion.estado === 'Ejecutada' && <BotonExcel type="button" title="Descargar asistentes Excel" aria-label="Descargar Excel" onClick={() => descargarExcel(reunion.id)}><FileSpreadsheet size={15}/></BotonExcel>}
                             {reunion.estado === 'Programada' && !reunionFinalizada(reunion) && <BotonEliminar type="button" title="Cancelar reunión" aria-label="Cancelar reunión" onClick={() => cancelarReunion(reunion.id, reunion.estado)}><Ban size={15}/></BotonEliminar>}
                           </div>
                         </td>
