@@ -2,6 +2,8 @@
 
 'use client'
 
+import { BotonImprimir, BotonRegresar } from '@/components/admin/EstiloModulo'
+
 import {
   useEffect,
   useMemo,
@@ -1957,6 +1959,8 @@ export default function ImprimirMatrizRiesgosPage() {
       "
     >
 
+      <style>{`@page { size: 330.2mm 215.9mm; margin: 0; } @media print { .hoja-matriz-riesgos-pesv { padding: 6mm !important; } }`}</style>
+
       {/* ====================================================
           BARRA DE ACCIONES
           NO SE IMPRIME
@@ -2027,32 +2031,7 @@ export default function ImprimirMatrizRiesgosPage() {
             gap-2
           "
         >
-          <button
-            type="button"
-            onClick={() =>
-              window.print()
-            }
-            className="
-              bg-emerald-600
-              hover:bg-emerald-700
-              text-white
-              px-4
-              py-2
-              rounded
-              text-xs
-              font-bold
-            "
-          >
-            <i
-              className="
-                fas
-                fa-print
-                mr-2
-              "
-            ></i>
-
-            Imprimir / Guardar PDF
-          </button>
+          <BotonImprimir type="button" onClick={() => window.print()}><i className="fas fa-print mr-2"></i>Imprimir / Guardar PDF</BotonImprimir>
 
 
           <button
