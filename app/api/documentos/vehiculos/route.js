@@ -1,3 +1,4 @@
+import { filtrarVehiculosActivos } from '@/lib/vehiculosActivos'
 // app/api/documentos/vehiculos/route.js
 
 import { NextResponse } from 'next/server'
@@ -645,26 +646,7 @@ export async function GET(request) {
         )
       }
 
-      const vehiculos =
-        (
-          Array.isArray(data)
-            ? data
-            : []
-        )
-          .filter(
-            (vehiculo) => {
-              const estado =
-                normalizarMinusculas(
-                  vehiculo.estado
-                )
-
-              return (
-                !estado ||
-                estado ===
-                  'activo'
-              )
-            }
-          )
+      const vehiculos = filtrarVehiculosActivos(data)
 
       return NextResponse.json({
         status:
