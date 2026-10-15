@@ -2,6 +2,7 @@
 
 'use client'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { ESTILO_SECCIONES, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, BotonConsultar, BotonEditar, BotonPdf, BotonEliminar } from '@/components/admin/EstiloModulo'
 import { ClipboardCheck } from 'lucide-react'
 
 
@@ -3463,25 +3464,7 @@ export default function AuditoriasPesvPage() {
             shadow-sm
           "
         >
-          <div
-            className="
-              border-b
-              border-slate-300
-              px-4
-              py-3
-            "
-          >
-            <h2
-              className="
-                text-xs
-                font-bold
-                uppercase
-                text-slate-700
-              "
-            >
-              Auditorías vigencia {anio}
-            </h2>
-          </div>
+          <div className="px-4 py-3" style={{ backgroundColor: ESTILO_SECCIONES.fondo, color: ESTILO_SECCIONES.texto, borderBottom: `1px solid ${ESTILO_SECCIONES.borde}`, borderRadius: ESTILO_SECCIONES.radioSuperior }}><h2 className="text-xs font-bold uppercase">Auditorías vigencia {anio}</h2></div>
 
           {cargando ? (
             <div
@@ -3541,53 +3524,46 @@ export default function AuditoriasPesvPage() {
             >
               <table
                 className="
-                  min-w-full
+                  min-w-full border-collapse
                   text-center
                   text-xs
                 "
               >
-                <thead
-                  className="
-                    bg-slate-50
-                    text-[9px]
-                    uppercase
-                    text-slate-500
-                  "
-                >
+                <thead className="text-[9px] uppercase" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                   <tr>
-                    <th className="px-3 py-3">
+                    <th style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3">
                       Código
                     </th>
 
-                    <th className="px-3 py-3">
+                    <th style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3">
                       Auditoría
                     </th>
 
-                    <th className="px-3 py-3">
+                    <th style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3">
                       Tipo
                     </th>
 
-                    <th className="px-3 py-3">
+                    <th style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3">
                       Fecha
                     </th>
 
-                    <th className="px-3 py-3">
+                    <th style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3">
                       Estado
                     </th>
 
-                    <th className="px-3 py-3 text-center">
+                    <th style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3 text-center">
                       Hallazgos
                     </th>
 
-                    <th className="px-3 py-3 text-center">
+                    <th style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3 text-center">
                       NC
                     </th>
 
-                    <th className="px-3 py-3 text-center">
+                    <th style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3 text-center">
                       Acc. pendientes
                     </th>
 
-                    <th className="px-3 py-3 text-center">
+                    <th style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3 text-center">
                       Acciones
                     </th>
                   </tr>
@@ -3616,7 +3592,7 @@ export default function AuditoriasPesvPage() {
                             : 'hover:bg-slate-50'
                         }
                       >
-                        <td
+                        <td style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }}
                           className="
                             whitespace-nowrap
                             px-3
@@ -3628,7 +3604,7 @@ export default function AuditoriasPesvPage() {
                           {item.codigo}
                         </td>
 
-                        <td
+                        <td style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }}
                           className="
                             min-w-[220px]
                             px-3
@@ -3658,13 +3634,13 @@ export default function AuditoriasPesvPage() {
                           </p>
                         </td>
 
-                        <td className="px-3 py-3">
+                        <td style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3">
                           {etiqueta(
                             item.tipo_auditoria
                           )}
                         </td>
 
-                        <td
+                        <td style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }}
                           className="
                             whitespace-nowrap
                             px-3
@@ -3677,7 +3653,7 @@ export default function AuditoriasPesvPage() {
                           )}
                         </td>
 
-                        <td className="px-3 py-3">
+                        <td style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }} className="px-3 py-3">
                           <span
                             className={`
                               inline-flex
@@ -3698,7 +3674,7 @@ export default function AuditoriasPesvPage() {
                           </span>
                         </td>
 
-                        <td
+                        <td style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }}
                           className="
                             px-3
                             py-3
@@ -3711,7 +3687,7 @@ export default function AuditoriasPesvPage() {
                             0}
                         </td>
 
-                        <td
+                        <td style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }}
                           className="
                             px-3
                             py-3
@@ -3725,7 +3701,7 @@ export default function AuditoriasPesvPage() {
                             0}
                         </td>
 
-                        <td
+                        <td style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }}
                           className="
                             px-3
                             py-3
@@ -3739,7 +3715,7 @@ export default function AuditoriasPesvPage() {
                             0}
                         </td>
 
-                        <td
+                        <td style={{ border: `1px solid ${ESTILO_CELDAS_TABLA.borde}` }}
                           className="
                             whitespace-nowrap
                             px-3
