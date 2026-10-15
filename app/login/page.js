@@ -1,7 +1,7 @@
 //app/login/page.js
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -51,6 +51,14 @@ function rutaPorRol(rol) {
 
 export default function LoginPage() {
   const router = useRouter()
+  const [solicitudMaster, setSolicitudMaster] = useState(0)
+  const pulsacionLogoRef = useRef(null)
+  const iniciarPulsacionLogo = (event) => {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+    clearTimeout(pulsacionLogoRef.current)
+    pulsacionLogoRef.current = setTimeout(() => setSolicitudMaster((n) => n + 1), 1200)
+  }
+  const cancelarPulsacionLogo = () => clearTimeout(pulsacionLogoRef.current)
 
   const [empresas, setEmpresas] = useState([])
   const [nit, setNit] = useState('')
@@ -235,7 +243,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      <MasterAccessDialog />
+      <MasterAccessDialog solicitudApertura={solicitudMaster} />
       <div className="md:flex-1 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white flex flex-col items-center justify-center px-4 py-3 md:p-10 relative overflow-hidden">
         <div
           className="hidden md:block absolute bottom-0 left-0 w-80 h-80 opacity-40"
@@ -271,7 +279,7 @@ export default function LoginPage() {
           }}
         />
 
-        <div className="mb-0 md:mb-2 z-10">
+        <div className="mb-0 md:mb-2 z-10 select-none" onPointerDown={iniciarPulsacionLogo} onPointerUp={cancelarPulsacionLogo} onPointerCancel={cancelarPulsacionLogo} onPointerLeave={cancelarPulsacionLogo} onContextMenu={(event) => event.preventDefault()}>
           <Image
             src="/logo.png"
             alt="Logo DATA CEA"
