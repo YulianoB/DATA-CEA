@@ -1,6 +1,9 @@
 // app/admin/pesv/plan-trabajo/page.jsx
 
 'use client'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { ClipboardList } from 'lucide-react'
+
 
 import {
   useEffect,
@@ -1675,72 +1678,7 @@ export default function PlanTrabajoPesvPage() {
       <div className="max-w-[1750px] mx-auto bg-white border border-gray-200 shadow-lg rounded-xl overflow-hidden">
 
         {/* ENCABEZADO */}
-        <div className="bg-slate-800 text-white px-5 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <i className="fas fa-clipboard-list text-2xl mt-1"></i>
-
-            <div>
-              <h1 className="text-lg md:text-xl font-black uppercase tracking-wide">
-                PESV · Plan Anual de Trabajo
-              </h1>
-
-              <p className="text-[10px] md:text-[11px] text-slate-300 mt-0.5">
-                Programación y seguimiento mediante matriz mensual
-              </p>
-
-              <div className="mt-1 text-[10px] text-slate-300">
-                Usuario:{' '}
-                <strong className="text-white">
-                  {obtenerNombreUsuario(user)}
-                </strong>
-
-                <span className="mx-1.5 text-slate-500">
-                  ·
-                </span>
-
-                CEA:{' '}
-                <strong className="text-white">
-                  {obtenerNombreEmpresa(user)}
-                </strong>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                router.push('/admin/pesv')
-              }
-              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-1.5 rounded text-[10px] md:text-[11px] transition"
-            >
-              <i className="fas fa-arrow-left mr-1.5"></i>
-              PESV
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                router.push('/admin')
-              }
-              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-1.5 rounded text-[10px] md:text-[11px] transition"
-            >
-              <i className="fas fa-home mr-1.5"></i>
-              Menú
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                cerrarSesion(router)
-              }
-              className="bg-[var(--danger)] hover:bg-[var(--danger-dark)] text-white px-3 py-1.5 rounded text-[10px] md:text-[11px] transition"
-            >
-              <i className="fas fa-sign-out-alt mr-1.5"></i>
-              Salir
-            </button>
-          </div>
-        </div>
+        <EncabezadoModulo titulo="PESV · Plan Anual de Trabajo" subtitulo="Programación y seguimiento mediante matriz mensual" icono={ClipboardList} rutaRegreso="/admin/pesv" textoRegreso="PESV" />
 
         {/* VIGENCIA */}
         <div className="bg-gray-50 border-b border-gray-200 px-4 py-2.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
