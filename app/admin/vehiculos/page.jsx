@@ -1846,7 +1846,7 @@ export default function VehiculosAdminPage() {
                           <button
                             type="button"
                             onClick={() => guardarDocumentoVehiculo(tipo)}
-                            disabled={Boolean(guardandoDocumento)}
+                            disabled={guardandoDocumento === tipo}
                             className="mt-3 w-full rounded-lg bg-[#0968B0] px-3 py-2 text-xs font-semibold text-white hover:bg-[#07548E] disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {guardandoDocumento === tipo
