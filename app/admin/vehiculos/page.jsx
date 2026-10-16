@@ -103,6 +103,8 @@ const FORM_INICIAL = {
   tipo_vehiculo: '',
   modelo: '',
   cilindraje: '',
+  tipo_combustible: '',
+  numero_pasajeros: '',
   marca: '',
   linea: '',
   tipo_carroceria: '',
@@ -587,7 +589,7 @@ export default function VehiculosAdminPage() {
           ...prev,
 
           [name]:
-            name === 'cilindraje'
+            name === 'cilindraje' || name === 'numero_pasajeros'
               ? value.replace(/\D/g, '')
               : camposMayusculas.includes(
               name
@@ -879,6 +881,12 @@ export default function VehiculosAdminPage() {
 
         cilindraje:
           vehiculo.cilindraje ?? '',
+
+        tipo_combustible:
+          vehiculo.tipo_combustible || '',
+
+        numero_pasajeros:
+          vehiculo.numero_pasajeros ?? '',
 
         marca:
           vehiculo.marca ||
@@ -1589,6 +1597,13 @@ export default function VehiculosAdminPage() {
               />
 
               <CampoInput
+                label="Número VIN"
+                name="vin"
+                value={form.vin}
+                onChange={onChange}
+              />
+
+              <CampoInput
                 label="Cilindraje (cm³)"
                 name="cilindraje"
                 type="text"
@@ -1598,15 +1613,31 @@ export default function VehiculosAdminPage() {
                 onChange={onChange}
               />
 
+              <CampoSelect
+                label="Tipo de combustible"
+                name="tipo_combustible"
+                value={form.tipo_combustible}
+                onChange={onChange}
+                options={[
+                  ['', '-- Seleccione --'],
+                  ['GASOLINA', 'Gasolina'],
+                  ['DIESEL', 'Diésel'],
+                  ['GAS NATURAL', 'Gas natural'],
+                  ['ELECTRICO', 'Eléctrico'],
+                  ['HIBRIDO', 'Híbrido'],
+                  ['OTRO', 'Otro'],
+                ]}
+              />
+
               <CampoInput
-                label="Número VIN"
-                name="vin"
-                value={
-                  form.vin
-                }
-                onChange={
-                  onChange
-                }
+                label="Número de pasajeros"
+                name="numero_pasajeros"
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                value={form.numero_pasajeros}
+                onChange={onChange}
               />
 
             </div>
