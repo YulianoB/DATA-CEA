@@ -1733,7 +1733,7 @@ return (
                 <div className="grid grid-cols-1 xl:grid-cols-[0.76fr_1.54fr_1.7fr] print:grid-cols-[0.76fr_1.54fr_1.7fr] gap-0">
 
                   <div className="p-4 border-b xl:border-b-0 xl:border-r print:border-b-0 print:border-r flex flex-col justify-center">
-                    <h1 className="text-3xl sm:text-4xl font-black text-[var(--primary)] tracking-wide leading-none">
+                    <h1 className="text-[28px] sm:text-[34px] font-black text-[var(--primary)] tracking-wide leading-none">
                       {vehiculo.placa}
                     </h1>
 
@@ -1757,30 +1757,26 @@ return (
                         Cilindraje: {vehiculo.cilindraje != null ? `${new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(vehiculo.cilindraje)} cm³` : '-'}
                       </p>
                       <p className="text-[11px] leading-snug text-gray-600">
-                        Tipo de combustible: {vehiculo.tipo_combustible || '-'}
+                        Combustible: {vehiculo.tipo_combustible || '-'}
                       </p>
                       <p className="text-[11px] leading-snug text-gray-600">
                         Número de pasajeros: {vehiculo.numero_pasajeros ?? '-'}
                       </p>
                     </div>
 
-                    <p className="mt-4 text-[11px] leading-snug text-gray-600">
-                      <span className="font-semibold">Kilometraje promedio mensual (últimos 6 meses):</span>{' '}
-                      <strong className="text-gray-800">
-                        {formatearNumero(kilometraje.promedio_mensual_6_meses)} km
-                      </strong>
-                    </p>
                   </div>
 
                   <div className="p-3 border-b xl:border-b-0 xl:border-r print:border-b-0 print:border-r space-y-3">
                     <BloqueDatosCabecera titulo="Identificación y características">
                       <DatoCompacto label="Clasificación" valor={vehiculo.clasificacion} />
-                      <DatoCompacto label="Origen" valor={vehiculo.origen} />
-                      <DatoCompacto label="Propietario" valor={vehiculo.propietario} />
-                      <DatoCompacto label="Fecha adquisición" valor={formatearFecha(vehiculo.fecha_adquisicion)} />
                       <DatoCompacto label="Línea" valor={vehiculo.linea} />
                       <DatoCompacto label="Carrocería" valor={vehiculo.tipo_carroceria} />
                       <DatoCompacto label="GPS" valor={vehiculo.gps} />
+                      <DatoCompacto label="Fecha adquisición" valor={formatearFecha(vehiculo.fecha_adquisicion)} />
+                      <DatoCompacto label="Origen" valor={vehiculo.origen} />
+                      <div className="col-span-full">
+                        <DatoCompacto label="Propietario" valor={vehiculo.propietario} />
+                      </div>
                     </BloqueDatosCabecera>
 
                     <BloqueDatosCabecera titulo="Identificadores técnicos">
@@ -1792,22 +1788,9 @@ return (
                     <BloqueDatosCabecera titulo="Licencia de tránsito">
                       <DatoCompacto label="Número" valor={vehiculo.numero_licencia_transito} />
                       <DatoCompacto label="Fecha matrícula" valor={formatearFecha(vehiculo.fecha_matricula)} />
-                      <DatoCompacto label="Organismo" valor={vehiculo.organismo_transito} />
-                    </BloqueDatosCabecera>
-
-                    <BloqueDatosCabecera titulo="Vinculación actual al CEA">
-                      {vinculacionActiva ? (
-                        <>
-                          <DatoCompacto label="Fecha" valor={formatearFecha(vinculacionActiva.fecha_vinculacion)} />
-                          <DatoCompacto label="Estado" valor="ACTIVA" />
-                          <DatoCompacto label="Motivo" valor={vinculacionActiva.motivo_vinculacion} />
-                          <DatoCompacto label="Responsable" valor={vinculacionActiva.creado_por} />
-                        </>
-                      ) : (
-                        <div className="col-span-full text-[11px] text-amber-700">
-                          El vehículo no tiene una vinculación activa registrada.
-                        </div>
-                      )}
+                      <div className="col-span-full">
+                        <DatoCompacto label="Organismo" valor={vehiculo.organismo_transito} />
+                      </div>
                     </BloqueDatosCabecera>
                   </div>
 
@@ -2795,7 +2778,7 @@ return (
                     Estado
                   </th>
                   <th className="border p-2 text-left">
-                    Responsable
+                    Actualizado por
                   </th>
                 </tr>
 
@@ -3353,10 +3336,10 @@ function DatoCompacto({
 }) {
   return (
     <div className="min-w-0 text-[10px] leading-tight">
-      <span className="font-semibold text-gray-500">
-        {label}:{' '}
+      <span className="block font-semibold text-gray-500">
+        {label}:
       </span>
-      <span className="font-semibold text-gray-800 break-words">
+      <span className="block font-semibold text-gray-800 break-words">
         {valor || '-'}
       </span>
     </div>
