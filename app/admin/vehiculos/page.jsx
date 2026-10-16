@@ -572,6 +572,7 @@ export default function VehiculosAdminPage() {
 
       const camposMayusculas = [
         'placa',
+        'tipo_vehiculo',
         'propietario',
         'modelo',
         'marca',
@@ -1482,37 +1483,11 @@ export default function VehiculosAdminPage() {
                 ]}
               />
 
-              <CampoSelect
+              <CampoInput
                 label="Tipo de vehículo *"
                 name="tipo_vehiculo"
-                value={
-                  form.tipo_vehiculo
-                }
-                onChange={
-                  onChange
-                }
-                options={[
-                  [
-                    '',
-                    '-- Seleccione --',
-                  ],
-                  [
-                    'Automovil',
-                    'Automóvil',
-                  ],
-                  [
-                    'Camioneta',
-                    'Camioneta',
-                  ],
-                  [
-                    'Motocicleta',
-                    'Motocicleta',
-                  ],
-                  [
-                    'Camión',
-                    'Camión',
-                  ],
-                ]}
+                value={form.tipo_vehiculo}
+                onChange={onChange}
               />
 
               <CampoInput
