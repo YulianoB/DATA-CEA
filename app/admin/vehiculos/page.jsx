@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
 
 import {
   ESTILO_SECCIONES,
@@ -213,6 +214,17 @@ export default function VehiculosAdminPage() {
     guardandoDocumento,
     setGuardandoDocumento,
   ] = useState('')
+
+  const [resultadoDocumento, setResultadoDocumento] = useState({
+    abierto: false,
+    tipo: 'exito',
+    titulo: '',
+    mensaje: '',
+  })
+
+  const mostrarResultadoDocumento = (tipo, titulo, mensaje) => {
+    setResultadoDocumento({ abierto: true, tipo, titulo, mensaje })
+  }
 
   // ==========================================================
   // LISTADO
@@ -775,12 +787,12 @@ export default function VehiculosAdminPage() {
       const datos = documentosForm[tipo] || {}
 
       if (!datos.numero_documento || !datos.fecha_expedicion || !datos.fecha_vigencia) {
-        toast.warning('Complete número, fecha de expedición y fecha de vigencia.')
+        mostrarResultadoDocumento('error', 'Datos incompletos', 'Complete número, fecha de expedición y fecha de vigencia.')
         return
       }
 
       if (datos.fecha_vigencia < datos.fecha_expedicion) {
-        toast.warning('La vigencia no puede ser anterior a la fecha de expedición.')
+        mostrarResultadoDocumento('error', 'Fechas incorrectas', 'La vigencia no puede ser anterior a la fecha de expedición.')
         return
       }
 
@@ -814,7 +826,7 @@ export default function VehiculosAdminPage() {
         const result = await response.json()
 
         if (response.status === 409 || result?.status === 'warning') {
-          toast.warning(result?.message || 'El documento ya tiene estos mismos datos.')
+          mostrarResultadoDocumento('error', 'Documento sin cambios', result?.message || 'El documento ya tiene estos mismos datos.')
           return
         }
 
@@ -822,7 +834,7 @@ export default function VehiculosAdminPage() {
           throw new Error(result?.message || 'No fue posible guardar el documento.')
         }
 
-        toast.success(result?.message || 'Documento actualizado correctamente.')
+        mostrarResultadoDocumento('exito', 'Documento actualizado', `${tipo === DOCUMENTO_TARJETA_SERVICIO ? 'Tarjeta de Servicio' : tipo}: ${result?.message || 'Documento actualizado correctamente.'}`)
 
         await cargarDocumentosVehiculo({
           id: editandoId,
@@ -831,7 +843,7 @@ export default function VehiculosAdminPage() {
         await cargarVehiculos()
       } catch (error) {
         console.error('Error guardando documento del vehículo:', error)
-        toast.error(error?.message || 'No fue posible guardar el documento.')
+        mostrarResultadoDocumento('error', 'No fue posible actualizar el documento', error?.message || 'No fue posible guardar el documento.')
       } finally {
         setGuardandoDocumento('')
       }
@@ -1839,9 +1851,7 @@ export default function VehiculosAdminPage() {
                           >
                             {guardandoDocumento === tipo
                               ? 'Guardando...'
-                              : datos.numero_documento
-                              ? 'Registrar nueva versión'
-                              : 'Registrar documento'}
+                              : 'Actualizar/Guardar'}
                           </button>
                         </div>
                       )
@@ -1882,6 +1892,14 @@ export default function VehiculosAdminPage() {
         </form>
           </div>
         )}
+
+        <ModalResultado
+          abierto={resultadoDocumento.abierto}
+          tipo={resultadoDocumento.tipo}
+          titulo={resultadoDocumento.titulo}
+          mensaje={resultadoDocumento.mensaje}
+          onCerrar={() => setResultadoDocumento((prev) => ({ ...prev, abierto: false }))}
+        />
 
         {/* ==================================================
             LISTADO PRINCIPAL
