@@ -63,6 +63,7 @@ const SELECT_VEHICULO = `
   fecha_adquisicion,
 
   modelo,
+  cilindraje,
   linea,
   tipo_carroceria,
 
@@ -556,6 +557,11 @@ function construirPayloadVehiculo(
         body.modelo
       ) ||
       null,
+
+    cilindraje:
+      body.cilindraje === '' || body.cilindraje == null
+        ? null
+        : Number(body.cilindraje),
 
     linea:
       normalizarMayusculas(
