@@ -483,6 +483,42 @@ export default function VehiculosAdminPage() {
       filtroEstado,
     ])
 
+  const gruposVehiculos = useMemo(() => {
+    const tipos = [
+      { clave: 'AUTOMOVIL', titulo: 'Automóviles' },
+      { clave: 'CAMIONETA', titulo: 'Camionetas' },
+      { clave: 'MOTOCICLETA', titulo: 'Motocicletas' },
+      { clave: 'CAMION', titulo: 'Camiones' },
+    ]
+
+    const normalizarTipo = (valor) =>
+      String(valor || '')
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+
+    const grupos = tipos.map(({ clave, titulo }) => ({
+      clave,
+      titulo,
+      vehiculos: vehiculosFiltrados.filter(
+        (vehiculo) => normalizarTipo(vehiculo.tipo_vehiculo) === clave
+      ),
+    }))
+
+    const otros = vehiculosFiltrados.filter(
+      (vehiculo) => !tipos.some(
+        ({ clave }) => normalizarTipo(vehiculo.tipo_vehiculo) === clave
+      )
+    )
+
+    if (otros.length) {
+      grupos.push({ clave: 'OTROS', titulo: 'Otros vehículos', vehiculos: otros })
+    }
+
+    return grupos.filter((grupo) => grupo.vehiculos.length > 0)
+  }, [vehiculosFiltrados])
+
   const resumenVehiculos =
     useMemo(() => {
       const porTipo = new Map()
@@ -1925,7 +1961,13 @@ export default function VehiculosAdminPage() {
                     <tr><td colSpan="9" className="border border-slate-300 p-6 text-center text-gray-500">Cargando vehículos...</td></tr>
                   ) : vehiculosFiltrados.length === 0 ? (
                     <tr><td colSpan="9" className="border border-slate-300 p-6 text-center text-gray-500">No hay vehículos registrados.</td></tr>
-                  ) : vehiculosFiltrados.map((vehiculo) => {
+                  ) : gruposVehiculos.flatMap((grupo) => [
+                    <tr key={`grupo-${grupo.clave}`}>
+                      <td colSpan="9" className="border border-slate-300 bg-slate-100 px-3 py-2 text-left font-bold text-slate-800">
+                        {grupo.titulo} ({grupo.vehiculos.length})
+                      </td>
+                    </tr>,
+                    ...grupo.vehiculos.map((vehiculo) => {
                     const activo = String(vehiculo.estado || '').toUpperCase() === ESTADO_ACTIVO
                     const estadoVigencia = (dato) => {
                       const estado = String(dato?.estado || 'SIN REGISTRO').toUpperCase()
@@ -1970,7 +2012,8 @@ export default function VehiculosAdminPage() {
                         </td>
                       </tr>
                     )
-                  })}
+                  }),
+                  ])}
                 </tbody>
               </table>
             </div>
