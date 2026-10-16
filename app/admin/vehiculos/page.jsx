@@ -102,6 +102,7 @@ const FORM_INICIAL = {
 
   tipo_vehiculo: '',
   modelo: '',
+  cilindraje: '',
   marca: '',
   linea: '',
   tipo_carroceria: '',
@@ -838,6 +839,9 @@ export default function VehiculosAdminPage() {
           vehiculo.modelo ||
           '',
 
+        cilindraje:
+          vehiculo.cilindraje ?? '',
+
         marca:
           vehiculo.marca ||
           '',
@@ -1544,6 +1548,17 @@ export default function VehiculosAdminPage() {
                 onChange={
                   onChange
                 }
+              />
+
+              <CampoInput
+                label="Cilindraje (cm³)"
+                name="cilindraje"
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                value={form.cilindraje}
+                onChange={onChange}
               />
 
               <CampoInput
