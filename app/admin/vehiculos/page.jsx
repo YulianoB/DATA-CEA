@@ -1947,27 +1947,61 @@ export default function VehiculosAdminPage() {
               </BotonAccion>
             </div>
 
+            {cargando ? (
             <div className="overflow-x-auto rounded-lg border" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
-              <table className="w-full border-collapse text-sm">
-                <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
-                  <tr>
-                    {['Placa','Tipo','Marca','Modelo','GPS','SOAT','RTM','Estado','Acciones'].map((titulo) => (
-                      <th key={titulo} className="border border-slate-300 p-2 text-center font-bold whitespace-nowrap">{titulo}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {cargando ? (
-                    <tr><td colSpan="9" className="border border-slate-300 p-6 text-center text-gray-500">Cargando vehículos...</td></tr>
-                  ) : vehiculosFiltrados.length === 0 ? (
-                    <tr><td colSpan="9" className="border border-slate-300 p-6 text-center text-gray-500">No hay vehículos registrados.</td></tr>
-                  ) : gruposVehiculos.flatMap((grupo) => [
-                    <tr key={`grupo-${grupo.clave}`}>
-                      <td colSpan="9" className="border border-slate-300 bg-slate-100 px-3 py-2 text-left font-bold text-slate-800">
-                        {grupo.titulo} ({grupo.vehiculos.length})
-                      </td>
-                    </tr>,
-                    ...grupo.vehiculos.map((vehiculo) => {
+                  <table className="w-full border-collapse text-sm">
+                    <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
+                      <tr>
+                        {['Placa','Tipo','Marca','Modelo','GPS','SOAT','RTM','Estado','Acciones'].map((titulo) => (
+                          <th key={titulo} className="border border-slate-300 p-2 text-center font-bold whitespace-nowrap">{titulo}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td colSpan="9" className="border border-slate-300 p-6 text-center text-gray-500">Cargando vehículos...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+            ) : vehiculosFiltrados.length === 0 ? (
+            <div className="overflow-x-auto rounded-lg border" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
+                  <table className="w-full border-collapse text-sm">
+                    <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
+                      <tr>
+                        {['Placa','Tipo','Marca','Modelo','GPS','SOAT','RTM','Estado','Acciones'].map((titulo) => (
+                          <th key={titulo} className="border border-slate-300 p-2 text-center font-bold whitespace-nowrap">{titulo}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td colSpan="9" className="border border-slate-300 p-6 text-center text-gray-500">No hay vehículos registrados.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+            ) : (
+              {gruposVehiculos.map((grupo) => (
+              <section key={grupo.clave} className="mb-5 last:mb-0">
+                <div
+                  className="px-4 py-2.5 text-sm font-semibold"
+                  style={{
+                    backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo,
+                    color: ESTILO_SECCIONES_SECUNDARIAS.texto,
+                    border: `${ESTILO_SECCIONES_SECUNDARIAS.grosorBorde}px solid ${ESTILO_SECCIONES_SECUNDARIAS.borde}`,
+                    borderRadius: ESTILO_SECCIONES_SECUNDARIAS.radioSuperior,
+                  }}
+                >
+                  {grupo.titulo} ({grupo.vehiculos.length})
+                </div>
+                <div className="overflow-x-auto rounded-lg border" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
+                  <table className="w-full border-collapse text-sm">
+                    <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
+                      <tr>
+                        {['Placa','Tipo','Marca','Modelo','GPS','SOAT','RTM','Estado','Acciones'].map((titulo) => (
+                          <th key={titulo} className="border border-slate-300 p-2 text-center font-bold whitespace-nowrap">{titulo}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grupo.vehiculos.map((vehiculo) => {
                     const activo = String(vehiculo.estado || '').toUpperCase() === ESTADO_ACTIVO
                     const estadoVigencia = (dato) => {
                       const estado = String(dato?.estado || 'SIN REGISTRO').toUpperCase()
@@ -2012,11 +2046,13 @@ export default function VehiculosAdminPage() {
                         </td>
                       </tr>
                     )
-                  }),
-                  ])}
-                </tbody>
-              </table>
-            </div>
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ))}
+            )}
           </div>
         </div>
 
