@@ -1756,6 +1756,12 @@ return (
                       <p className="text-sm font-semibold text-gray-600 mt-1">
                         Cilindraje: {vehiculo.cilindraje != null ? `${new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(vehiculo.cilindraje)} cm³` : '-'}
                       </p>
+                      <p className="text-sm font-semibold text-gray-600 mt-1">
+                        Tipo de combustible: {vehiculo.tipo_combustible || '-'}
+                      </p>
+                      <p className="text-sm font-semibold text-gray-600 mt-1">
+                        Número de pasajeros: {vehiculo.numero_pasajeros ?? '-'}
+                      </p>
                     </div>
 
                     <p className="mt-4 text-[11px] leading-snug text-gray-600">
