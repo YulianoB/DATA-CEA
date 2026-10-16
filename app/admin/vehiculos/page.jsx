@@ -1978,7 +1978,7 @@ export default function VehiculosAdminPage() {
                   </table>
                 </div>
             ) : (
-              {gruposVehiculos.map((grupo) => (
+              gruposVehiculos.map((grupo) => (
               <section key={grupo.clave} className="mb-5 last:mb-0">
                 <div
                   className="px-4 py-2.5 text-sm font-semibold"
