@@ -1754,7 +1754,7 @@ return (
                       )}
 
                       <p className="text-sm font-semibold text-gray-600 mt-1">
-                        Cilindraje: {vehiculo.cilindraje != null ? `${vehiculo.cilindraje} cm³` : '-'}
+                        Cilindraje: {vehiculo.cilindraje != null ? `${new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(vehiculo.cilindraje)} cm³` : '-'}
                       </p>
                     </div>
 

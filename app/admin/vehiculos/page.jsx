@@ -551,7 +551,9 @@ export default function VehiculosAdminPage() {
           ...prev,
 
           [name]:
-            camposMayusculas.includes(
+            name === 'cilindraje'
+              ? value.replace(/\D/g, '')
+              : camposMayusculas.includes(
               name
             )
               ? normalizarMayusculas(
@@ -1553,11 +1555,10 @@ export default function VehiculosAdminPage() {
               <CampoInput
                 label="Cilindraje (cm³)"
                 name="cilindraje"
-                type="number"
-                min="1"
-                step="1"
+                type="text"
                 inputMode="numeric"
-                value={form.cilindraje}
+                pattern="[0-9.]*"
+                value={form.cilindraje === '' ? '' : new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(Number(form.cilindraje))}
                 onChange={onChange}
               />
 
