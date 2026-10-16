@@ -1752,6 +1752,10 @@ return (
                           Modelo {vehiculo.modelo}
                         </p>
                       )}
+
+                      <p className="text-sm font-semibold text-gray-600 mt-1">
+                        Cilindraje: {vehiculo.cilindraje != null ? `${vehiculo.cilindraje} cm³` : '-'}
+                      </p>
                     </div>
 
                     <p className="mt-4 text-[11px] leading-snug text-gray-600">
