@@ -2010,6 +2010,9 @@ export default function VehiculosAdminPage() {
                     const activo = String(vehiculo.estado || '').toUpperCase() === ESTADO_ACTIVO
                     const estadoVigencia = (dato) => {
                       const estado = String(dato?.estado || 'SIN REGISTRO').toUpperCase()
+                      if (!activo) {
+                        return <span className="text-[11px] font-semibold text-slate-400">{estado === 'VIGENTE' ? 'Vigente' : estado === 'VENCIDO' ? 'Vencido' : 'Sin registro'}</span>
+                      }
                       if (estado === 'VIGENTE') return <span className="text-[11px] font-semibold text-green-700">Vigente</span>
                       if (estado === 'VENCIDO') return <span className="text-[11px] font-semibold text-red-600">Vencido</span>
                       return <span className="text-[11px] text-slate-500">Sin registro</span>
@@ -2030,7 +2033,7 @@ export default function VehiculosAdminPage() {
                         </td>
                         <td className="border border-slate-300 p-2 text-center">
                           <div className="flex flex-wrap items-center justify-center gap-1.5">
-                            <BotonAccion tipo="editarVehiculo" type="button" className="!px-2.5 !py-1.5" onClick={() => editarVehiculo(vehiculo)}>
+                            <BotonAccion tipo="editarVehiculo" type="button" disabled={!activo} aria-label={!activo ? 'Edición no disponible para vehículos inactivos' : 'Editar vehículo'} title={!activo ? 'Active el vehículo para editar su información' : 'Editar vehículo'} className={`!px-2.5 !py-1.5 ${!activo ? 'opacity-40 cursor-not-allowed grayscale' : ''}`} onClick={() => { if (activo) editarVehiculo(vehiculo) }}>
                               <Pencil size={14} /> Editar
                             </BotonAccion>
                             <Link href={`/admin/vehiculos/${vehiculo.id}`}>
