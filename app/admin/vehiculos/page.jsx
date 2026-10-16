@@ -572,7 +572,7 @@ export default function VehiculosAdminPage() {
 
       const camposMayusculas = [
         'placa',
-        'tipo_vehiculo',
+        'tipo_combustible',
         'propietario',
         'modelo',
         'marca',
@@ -1483,11 +1483,18 @@ export default function VehiculosAdminPage() {
                 ]}
               />
 
-              <CampoInput
+              <CampoSelect
                 label="Tipo de vehículo *"
                 name="tipo_vehiculo"
                 value={form.tipo_vehiculo}
                 onChange={onChange}
+                options={[
+                  ['', '-- Seleccione --'],
+                  ['Automovil', 'Automóvil'],
+                  ['Camioneta', 'Camioneta'],
+                  ['Motocicleta', 'Motocicleta'],
+                  ['Camión', 'Camión'],
+                ]}
               />
 
               <CampoInput
@@ -1588,20 +1595,11 @@ export default function VehiculosAdminPage() {
                 onChange={onChange}
               />
 
-              <CampoSelect
+              <CampoInput
                 label="Tipo de combustible"
                 name="tipo_combustible"
                 value={form.tipo_combustible}
                 onChange={onChange}
-                options={[
-                  ['', '-- Seleccione --'],
-                  ['GASOLINA', 'Gasolina'],
-                  ['DIESEL', 'Diésel'],
-                  ['GAS NATURAL', 'Gas natural'],
-                  ['ELECTRICO', 'Eléctrico'],
-                  ['HIBRIDO', 'Híbrido'],
-                  ['OTRO', 'Otro'],
-                ]}
               />
 
               <CampoInput
