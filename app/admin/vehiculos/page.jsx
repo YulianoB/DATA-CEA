@@ -977,9 +977,7 @@ export default function VehiculosAdminPage() {
         validarFormulario()
 
       if (mensaje) {
-        toast.warning(
-          mensaje
-        )
+        mostrarResultadoDocumento('error', 'Verifique los datos del vehículo', mensaje)
 
         return
       }
@@ -1051,10 +1049,7 @@ export default function VehiculosAdminPage() {
           result?.status ===
             'warning'
         ) {
-          toast.warning(
-            result?.message ||
-              'No fue posible completar la operación.'
-          )
+          mostrarResultadoDocumento('error', 'No fue posible completar la operación', result?.message || 'Revise los datos del vehículo.')
 
           return
         }
@@ -1064,22 +1059,12 @@ export default function VehiculosAdminPage() {
           result?.status !==
             'success'
         ) {
-          toast.error(
-            result?.message ||
-              'No fue posible guardar el vehículo.'
-          )
+          mostrarResultadoDocumento('error', 'No fue posible guardar el vehículo', result?.message || 'No fue posible guardar el vehículo.')
 
           return
         }
 
-        toast.success(
-          result?.message ||
-            (
-              editandoId
-                ? 'Vehículo actualizado correctamente.'
-                : 'Vehículo registrado correctamente.'
-            )
-        )
+        mostrarResultadoDocumento('exito', editandoId ? 'Vehículo actualizado' : 'Vehículo registrado', result?.message || (editandoId ? 'Vehículo actualizado correctamente.' : 'Vehículo registrado correctamente.'))
 
         limpiarFormulario()
         setModalFormulario(false)
@@ -1091,9 +1076,7 @@ export default function VehiculosAdminPage() {
           error
         )
 
-        toast.error(
-          'No fue posible comunicarse con el servidor.'
-        )
+        mostrarResultadoDocumento('error', 'Error de conexión', 'No fue posible comunicarse con el servidor.')
       } finally {
         setGuardando(
           false
@@ -2033,11 +2016,11 @@ export default function VehiculosAdminPage() {
                     }
                     return (
                       <tr key={vehiculo.id} className="hover:bg-slate-50">
-                        <td className="border border-slate-300 p-2 text-center font-bold">{vehiculo.placa}</td>
-                        <td className="border border-slate-300 p-2 text-center">{vehiculo.tipo_vehiculo || '-'}</td>
-                        <td className="border border-slate-300 p-2 text-left">{vehiculo.marca || '-'}</td>
-                        <td className="border border-slate-300 p-2 text-center">{vehiculo.modelo || '-'}</td>
-                        <td className="border border-slate-300 p-2 text-center">{String(vehiculo.gps || '').toUpperCase() === 'SI' ? 'Sí' : String(vehiculo.gps || '').toUpperCase() === 'NO' ? 'No' : '-'}</td>
+                        <td className={`border border-slate-300 p-2 text-center font-bold ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.placa}</td>
+                        <td className={`border border-slate-300 p-2 text-center ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.tipo_vehiculo || '-'}</td>
+                        <td className={`border border-slate-300 p-2 text-left ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.marca || '-'}</td>
+                        <td className={`border border-slate-300 p-2 text-center ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.modelo || '-'}</td>
+                        <td className={`border border-slate-300 p-2 text-center ${!activo ? 'text-slate-400' : ''}`}>{String(vehiculo.gps || '').toUpperCase() === 'SI' ? 'Sí' : String(vehiculo.gps || '').toUpperCase() === 'NO' ? 'No' : '-'}</td>
                         <td className="border border-slate-300 p-2 text-center">{estadoVigencia(vehiculo.soat)}</td>
                         <td className="border border-slate-300 p-2 text-center">{estadoVigencia(vehiculo.rtm)}</td>
                         <td className="border border-slate-300 p-2 text-center">
