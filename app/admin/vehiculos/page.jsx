@@ -2051,7 +2051,7 @@ export default function VehiculosAdminPage() {
                   </table>
                 </div>
               </section>
-            ))}
+            ))
             )}
           </div>
         </div>
