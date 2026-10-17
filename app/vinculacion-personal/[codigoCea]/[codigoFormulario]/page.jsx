@@ -20,6 +20,49 @@ const MAYUSCULA = new Set(['nombres','apellidos','direccion','profesion','cargo'
 const TELEFONOS = new Set(['telefono','contacto_emergencia_telefono','telefono_contacto'])
 const normalizar = (nombre, valor) => typeof valor !== 'string' ? valor : TELEFONOS.has(nombre) ? valor.replace(/[^0-9]/g,'') : MAYUSCULA.has(nombre) ? valor.toLocaleUpperCase('es-CO') : valor
 
+const tiene = v => String(v ?? '').trim().length > 0
+function validarSecciones(p, estudios, experiencias, licencias, referencia, autorizado, documentoAutorizacion) {
+  const errores = {}
+  const agregar = (paso, texto) => { (errores[paso] ||= []).push(texto) }
+  for (const [k, nombre] of [['nombres','Nombres'],['apellidos','Apellidos'],['telefono','Teléfono'],['direccion','Dirección'],['departamento_residencia','Departamento'],['ciudad_residencia','Ciudad / Municipio'],['contacto_emergencia_nombre','Contacto de emergencia'],['contacto_emergencia_parentesco','Parentesco de emergencia'],['contacto_emergencia_telefono','Teléfono de emergencia']]) {
+    if (!tiene(p[k])) agregar(1, nombre)
+  }
+  if (p.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(p.email)) agregar(1, 'Correo electrónico válido')
+  if (p.trabaja_cea) {
+    for (const [k, nombre] of [['tipo_personal','Tipo de vinculación'],['grupo_personal','Grupo de trabajo'],['cargo','Cargo'],['tipo_contrato','Tipo de contrato'],['tipo_permanencia','Permanencia en el CEA'],['fecha_vinculacion','Fecha de vinculación']]) {
+      if (!tiene(p[k])) agregar(2, nombre)
+    }
+  }
+  if (p.rol_conductor_instructor) {
+    for (const tipo of ['INSTRUCTOR','CONDUCCION']) {
+      const items = licencias.filter(l => l.tipo_licencia === tipo)
+      const etiqueta = tipo === 'INSTRUCTOR' ? 'Certificado de instructor' : 'Licencia de conducción'
+      if (!items.length) agregar(2, etiqueta + ': seleccione al menos una categoría')
+      for (const l of items) {
+        if (!tiene(l.vigencia)) agregar(2, etiqueta + ' ' + l.categoria + ': vigencia')
+        if (tipo === 'INSTRUCTOR' && !tiene(l.numero_certificado)) agregar(2, etiqueta + ' ' + l.categoria + ': número de certificado')
+      }
+    }
+    if (!estudios.some(e => e.nivel_estudio === 'BACHILLER')) agregar(3, 'Registre la formación de bachiller del instructor')
+  }
+  estudios.forEach((e,i) => {
+    if (Object.values(e).some(tiene)) for (const [k, nombre] of [['nivel_estudio','Tipo de formación'],['titulo','Título o nombre del curso'],['institucion','Institución']]) {
+      if (!tiene(e[k])) agregar(3, 'Estudio ' + (i+1) + ': ' + nombre)
+    }
+  })
+  experiencias.forEach((e,i) => {
+    if (Object.values(e).some(v => typeof v === 'string' && tiene(v)) || e.actualmente) {
+      for (const [k, nombre] of [['empresa','Empresa'],['cargo','Cargo'],['fecha_inicio','Fecha de inicio']]) if (!tiene(e[k])) agregar(4, 'Experiencia ' + (i+1) + ': ' + nombre)
+      if (e.fecha_fin && e.fecha_inicio && e.fecha_fin < e.fecha_inicio) agregar(4, 'Experiencia ' + (i+1) + ': la fecha de retiro es anterior al inicio')
+    }
+  })
+  for (const [k,nombre] of [['nombre','Nombre de la referencia'],['telefono','Teléfono de la referencia']]) if (!tiene(referencia[k])) agregar(5,nombre)
+  if (tiene(referencia.nombre) && tiene(p.contacto_emergencia_nombre) && referencia.nombre.trim().toLowerCase() === p.contacto_emergencia_nombre.trim().toLowerCase()) agregar(5, 'La referencia debe ser diferente del contacto de emergencia')
+  if (!documentoAutorizacion?.version) agregar(5, 'El CEA debe publicar la autorización de datos')
+  if (!autorizado) agregar(5, 'Aceptar el tratamiento de datos personales')
+  return errores
+}
+
 export default function VinculacionPersonalPage() {
   const { codigoCea, codigoFormulario } = useParams()
   const [config, setConfig] = useState(null)
@@ -38,6 +81,7 @@ export default function VinculacionPersonalPage() {
   const [autorizado, setAutorizado] = useState(false)
   const [ocupado, setOcupado] = useState(false)
   const [mensaje, setMensaje] = useState('')
+  const [erroresSeccion, setErroresSeccion] = useState({})
   const [enviado, setEnviado] = useState(false)
 
   useEffect(() => {
@@ -76,16 +120,22 @@ export default function VinculacionPersonalPage() {
   async function enviar(e) {
     e.preventDefault()
     setMensaje('')
-    if (!documentoAutorizacion?.version) return setMensaje('El CEA debe publicar la autorización del personal antes de recibir formularios.')
-    if (!personal.nombres.trim() || !personal.apellidos.trim() || !referencia.nombre.trim() || !referencia.telefono.trim() || !autorizado) return setMensaje('Complete nombres, apellidos, referencia personal y autorización de datos.')
-    if (referencia.nombre.trim().toLowerCase() === personal.contacto_emergencia_nombre.trim().toLowerCase()) return setMensaje('La referencia debe ser diferente del contacto de emergencia.')
+    const errores = validarSecciones(personal, estudios, experiencias, licencias, referencia, autorizado, documentoAutorizacion)
+    setErroresSeccion(errores)
+    const pendientes = Object.keys(errores).map(Number).sort((a,b)=>a-b)
+    if (pendientes.length) {
+      setPaso(pendientes[0])
+      setMensaje('Hay datos pendientes. Complete los campos indicados en esta sección y revise las secciones marcadas.')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
     setOcupado(true)
     try {
       const r = await fetch('/api/public/personal/enviar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cea:codigoCea,formulario:codigoFormulario,personal,estudios,experiencias,licencias,referencia,autorizado,documento_version:documentoAutorizacion.version})})
       const j=await r.json()
       if(!r.ok)throw new Error(j.mensaje)
       setEnviado(true);setMensaje(j.mensaje)
-    }catch(e){setMensaje(e.message)}finally{setOcupado(false)}
+    }catch(e){setMensaje(e.message);window.scrollTo({top:0,behavior:'smooth'})}finally{setOcupado(false)}
   }
   const endpointCatalogos = '/api/public/personal/catalogos?cea=' + encodeURIComponent(codigoCea || '') + '&formulario=' + encodeURIComponent(codigoFormulario || '')
   const departamentoId = departamentos.find(d => d.nombre === personal.departamento_residencia)?.id
@@ -113,9 +163,9 @@ export default function VinculacionPersonalPage() {
   return <main className="min-h-screen bg-slate-100 px-3 py-8"><section className="mx-auto max-w-3xl rounded-lg border bg-white p-5 shadow-sm">
     <h1 className="text-xl font-bold text-[#194567]">{config.titulo}</h1><p className="mt-1 text-sm text-slate-600">{config.cea}</p>
     {enviado?<p className="mt-8 rounded bg-green-50 p-4 text-green-800" role="status">Formulario enviado correctamente. La administración revisará su información.</p>:<>
-    <div className="mt-5 flex flex-wrap gap-2">{pasos.map((p,i)=><span key={p} className={'rounded px-2 py-1 text-xs '+(i===paso?'bg-[#194567] text-white':'bg-slate-100 text-slate-600')}>{i+1}. {p}</span>)}</div>
+    <div className="mt-5 flex flex-wrap gap-2">{pasos.map((p,i)=><button type="button" key={p} disabled={!validado && i!==0} onClick={()=>{setPaso(i);setMensaje('');window.scrollTo({top:0,behavior:'smooth'})}} className={'rounded px-2 py-1 text-xs disabled:cursor-not-allowed '+(i===paso?'bg-[#194567] text-white':erroresSeccion[i]?.length?'bg-amber-100 font-semibold text-amber-900':'bg-slate-100 text-slate-600')}>{i+1}. {p}{erroresSeccion[i]?.length?' ('+erroresSeccion[i].length+')':''}</button>)}</div>
     <div className="mt-3 h-2 rounded bg-slate-200"><div className="h-2 rounded bg-[#194567]" style={{width:((paso+1)/pasos.length*100)+'%'}}/></div>
-    <form onSubmit={enviar} className="mt-6 space-y-4">
+    <form noValidate onSubmit={enviar} className="mt-6 space-y-4">
     {paso===0&&<><label className="block text-sm font-medium">Tipo de documento<select value={personal.tipo_documento} onChange={e=>actualizar('tipo_documento',e.target.value)} className="mt-1 w-full rounded border p-2">{['CC','CE','TI','PPT','PA'].map(x=><option key={x}>{x}</option>)}</select></label>{renderCampo(campo('documento','Número de documento','text',true))}<button type="button" disabled={ocupado} onClick={verificar} className="rounded bg-[#194567] px-4 py-2 text-white">Validar documento y continuar</button></>}
     {paso===1&&<div className="grid gap-4 sm:grid-cols-2">{[campo('nombres','Nombres','text',true),campo('apellidos','Apellidos','text',true),campo('fecha_nacimiento','Fecha de nacimiento','date'),campo('genero','Género'),campo('telefono','Teléfono'),campo('email','Correo','email'),campo('direccion','Dirección'),campo('departamento_residencia','Departamento'),campo('ciudad_residencia','Ciudad / Municipio'),campo('escolaridad','Escolaridad'),campo('profesion','Profesión u oficio'),campo('eps','EPS'),campo('arl','ARL'),campo('fondo_pension','Fondo de pensión'),campo('contacto_emergencia_nombre','Contacto de emergencia'),campo('contacto_emergencia_parentesco','Parentesco'),campo('contacto_emergencia_telefono','Teléfono de emergencia')].map(c=>renderCampo(c))}</div>}
     {paso===2&&<div className="space-y-4"><label className="flex gap-2"><input type="checkbox" checked={personal.trabaja_cea} onChange={e=>actualizar('trabaja_cea',e.target.checked)}/>Actualmente trabaja en este CEA</label>{personal.trabaja_cea&&<div className="grid gap-3 sm:grid-cols-2">{[campo('tipo_personal','Tipo de vinculación'),campo('grupo_personal','Grupo de trabajo'),campo('cargo','Cargo'),campo('tipo_contrato','Tipo de contrato'),campo('tipo_permanencia','Permanencia en el CEA'),campo('fecha_vinculacion','Fecha de vinculación','date')].map(c=>renderCampo(c))}</div>}<label className="flex gap-2"><input type="checkbox" checked={personal.rol_conductor_instructor} onChange={e=>actualizar('rol_conductor_instructor',e.target.checked)}/>Desempeña rol de instructor</label>{personal.rol_conductor_instructor&&<div className="space-y-4">
@@ -138,6 +188,7 @@ export default function VinculacionPersonalPage() {
     {paso===3&&<div className="space-y-4"><p className="rounded bg-blue-50 p-3 text-sm">Registre sus estudios académicos y formación complementaria: bachillerato, diplomados, cursos, seminarios y certificaciones. Los instructores deben incluir como mínimo su formación de bachiller.</p>{estudios.map((x,i)=><div key={i} className="grid gap-3 rounded border p-3 sm:grid-cols-2">{[campo('nivel_estudio','Tipo de formación'),campo('titulo','Título o nombre del curso'),campo('institucion','Institución o entidad formadora'),campo('fecha_grado','Fecha de finalización','date'),campo('observaciones','Observaciones')].map(c=>renderCampo(c,x,(n,v)=>modificarLista(setEstudios,i,n,v)))}</div>)}<button type="button" onClick={()=>setEstudios(x=>[...x,{nivel_estudio:'',titulo:'',institucion:'',fecha_grado:''}])} className="rounded border px-3 py-2">Agregar estudio</button></div>}
     {paso===4&&<div className="space-y-4">{experiencias.map((x,i)=><div key={i} className="grid gap-3 rounded border p-3 sm:grid-cols-2">{[campo('empresa','Empresa'),campo('cargo','Cargo'),campo('fecha_inicio','Fecha de inicio','date'),...(x.actualmente?[]:[campo('fecha_fin','Fecha de retiro','date')]),campo('jefe_inmediato','Jefe inmediato'),campo('telefono_contacto','Teléfono de contacto'),campo('observaciones','Observaciones'),campo('funciones','Funciones realizadas','textarea')].map(c=>renderCampo(c,x,(n,v)=>modificarLista(setExperiencias,i,n,v)))}<label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={Boolean(x.actualmente)} onChange={e=>setExperiencias(prev=>prev.map((item,j)=>j===i?{...item,actualmente:e.target.checked,fecha_fin:e.target.checked?'':item.fecha_fin}:item))}/>Labora actualmente en esta empresa</label></div>)}<button type="button" onClick={()=>setExperiencias(x=>[...x,{empresa:'',cargo:'',fecha_inicio:'',fecha_fin:''}])} className="rounded border px-3 py-2">Agregar experiencia</button></div>}
     {paso===5&&<div className="space-y-4"><p className="text-sm text-slate-600">Indique una referencia personal diferente del contacto de emergencia.</p>{[campo('nombre','Nombre de la referencia','text',true),campo('telefono','Teléfono','text',true),campo('relacion','Relación')].map(c=>renderCampo(c,referencia,(n,v)=>setReferencia(p=>({...p,[n]:normalizar(n,v)}))))}<label className="flex items-start gap-2 text-sm"><input type="checkbox" disabled={!documentoAutorizacion} checked={autorizado} onChange={e=>setAutorizado(e.target.checked)}/>He leído la información de tratamiento de datos personales y autorizo su tratamiento para gestionar mi expediente en el CEA.</label><button type="button" onClick={()=>setVerAutorizacion(true)} className="text-sm font-semibold text-[#194567] underline">Leer autorización para el tratamiento de datos personales{documentoAutorizacion ? ' · Versión '+documentoAutorizacion.version : ''}</button>{errorAutorizacion&&<p role="alert" className="text-sm text-amber-800">{errorAutorizacion}</p>}</div>}
+    {erroresSeccion[paso]?.length>0&&<div role="alert" className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-bold">Datos pendientes en esta sección:</p><ul className="mt-1 list-inside list-disc">{erroresSeccion[paso].map((error,i)=><li key={i}>{error}</li>)}</ul></div>}
     {mensaje&&<p role="alert" className="rounded bg-amber-50 p-3 text-sm text-amber-900">{mensaje}</p>}
     {validado&&<div className="flex justify-between border-t pt-4"><button type="button" onClick={()=>{setMensaje('');setPaso(x=>Math.max(1,x-1))}} disabled={paso===1||ocupado} className="rounded border px-4 py-2 disabled:opacity-40">Anterior</button>{paso<5?<button type="button" onClick={()=>{setMensaje('');setPaso(x=>Math.min(5,x+1))}} className="rounded bg-[#194567] px-4 py-2 text-white">Siguiente</button>:<button type="submit" disabled={ocupado} className="rounded bg-[#194567] px-4 py-2 text-white disabled:opacity-50">{ocupado?'Enviando...':'Enviar formulario'}</button>}</div>}
     </form></>}
