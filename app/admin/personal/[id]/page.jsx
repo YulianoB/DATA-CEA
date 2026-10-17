@@ -1920,6 +1920,7 @@ export default function HojaVidaPersonalPage() {
             )}
             {tab === 'experiencia' && (
               <ExperienciaLaboral
+                editorCerradoVersion={editorCerradoVersion}
                 experiencia={experiencia}
                 formExperiencia={formExperiencia}
                 cambiarExperiencia={cambiarExperiencia}
@@ -2393,7 +2394,8 @@ function TablaEstudios({ estudios, editarEstudio, eliminarEstudio }) {
   )
 }
 
-function ExperienciaLaboral({ experiencia, formExperiencia, cambiarExperiencia, guardarExperiencia, guardandoExperiencia, cargandoExperiencia, editarExperiencia, eliminarExperiencia, cancelarEdicionExperiencia }) {
+function ExperienciaLaboral({ editorCerradoVersion, experiencia, formExperiencia, cambiarExperiencia, guardarExperiencia, guardandoExperiencia, cargandoExperiencia, editarExperiencia, eliminarExperiencia, cancelarEdicionExperiencia }) {
+  useEffect(() => { if (editorCerradoVersion > 0) setModalAbierto(false) }, [editorCerradoVersion])
   const [modalAbierto, setModalAbierto] = useState(false)
   useEffect(() => {
     if (formExperiencia.id) setModalAbierto(true)
