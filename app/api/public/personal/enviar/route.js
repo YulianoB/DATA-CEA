@@ -25,6 +25,7 @@ export async function POST(request) {
     }
     const estudios = Array.isArray(body.estudios) ? body.estudios.slice(0, 10) : []
     const experiencias = Array.isArray(body.experiencias) ? body.experiencias.slice(0, 10) : []
+    const licencias = Array.isArray(body.licencias) ? body.licencias.slice(0, 10) : []
     if (p.rol_conductor_instructor && !estudios.some(x => limpio(x.nivel_estudio))) {
       return NextResponse.json({ mensaje: 'El instructor debe registrar sus estudios.' }, { status: 400 })
     }
@@ -64,6 +65,7 @@ export async function POST(request) {
       personalId = creado.id
       const operaciones = [
         ['referencias_personal', [{ personal_id: personalId, tipo_referencia: 'personal', nombre: limpio(ref.nombre), telefono: opcional(ref.telefono, 40), relacion: opcional(ref.relacion), ocupacion_cargo: opcional(ref.ocupacion_cargo) }]],
+        ['licencias_personal', p.rol_conductor_instructor ? licencias.filter(x=>limpio(x.categoria)).map(x=>({ personal_id: personalId, documento, nombre_completo: nombres + ' ' + apellidos, rol: 'INSTRUCTOR', categoria: limpio(x.categoria), tipo_licencia: limpio(x.tipo_licencia) || 'CONDUCCION', numero_certificado: opcional(x.numero_certificado), vigencia: opcional(x.vigencia) })) : []],
         ['estudios_personal', estudios.filter(x=>limpio(x.nivel_estudio)).map(x=>({ personal_id: personalId, nivel_estudio: limpio(x.nivel_estudio), titulo: opcional(x.titulo), institucion: opcional(x.institucion), fecha_grado: opcional(x.fecha_grado) }))],
         ['experiencia_laboral_personal', experiencias.filter(x=>limpio(x.empresa)).map(x=>({ personal_id: personalId, empresa: limpio(x.empresa), cargo: opcional(x.cargo), fecha_inicio: opcional(x.fecha_inicio), fecha_fin: opcional(x.fecha_fin), funciones: opcional(x.funciones, 1000) }))],
         ['autorizaciones_datos_personal', [{ personal_id: personalId, documento_version: 'formulario_publico', autorizado: true, medio: 'formulario_publico', evidencia: { origen: 'formulario_publico', fecha: new Date().toISOString() } }]],
@@ -76,7 +78,7 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, mensaje: 'Formulario enviado correctamente.' }, { status: 201 })
     } catch (error) {
       if (personalId) {
-        for (const tabla of ['autorizaciones_datos_personal','experiencia_laboral_personal','estudios_personal','referencias_personal']) {
+        for (const tabla of ['autorizaciones_datos_personal','licencias_personal','experiencia_laboral_personal','estudios_personal','referencias_personal']) {
           await supabaseAdmin.from(tabla).delete().eq('personal_id', personalId)
         }
         await supabaseAdmin.from('personal').delete().eq('id', personalId)
