@@ -741,7 +741,9 @@ export default function HojaVidaPersonalPage() {
       telefono_contacto: item.telefono_contacto || '',
       observaciones: item.observaciones || '',
     })
-    mostrarResultado('error', 'Editando experiencia laboral seleccionada.')
+
+    // Abrir el editor no constituye un error.
+
   }
 
   function cancelarEdicionExperiencia() {
@@ -939,7 +941,9 @@ export default function HojaVidaPersonalPage() {
         ? String(licencia.vigencia).slice(0, 10)
         : '',
     })
-    mostrarResultado('error', 'Editando licencia seleccionada.')
+
+    // Abrir el editor no constituye un error.
+
   }
 
   function cancelarEdicionLicencia() {
@@ -1184,7 +1188,9 @@ export default function HojaVidaPersonalPage() {
       relacion: referencia.relacion || '',
       observaciones: referencia.observaciones || '',
     })
-    mostrarResultado('error', 'Editando referencia seleccionada.')
+
+    // Abrir el editor no constituye un error.
+
   }
 
   function cancelarEdicionReferencia() {
@@ -1344,7 +1350,9 @@ export default function HojaVidaPersonalPage() {
       evaluador: evaluacion.evaluador || '',
       observaciones: evaluacion.observaciones || '',
     })
-    mostrarResultado('error', 'Editando evaluación seleccionada.')
+
+    // Abrir el editor no constituye un error.
+
   }
 
   function cancelarEdicionEvaluacion() {
