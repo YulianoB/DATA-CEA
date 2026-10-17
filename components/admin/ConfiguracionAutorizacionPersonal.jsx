@@ -21,7 +21,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   const [empresa,setEmpresa]=useState(null)
   const [plantilla,setPlantilla]=useState('')
   const [nombre,setNombre]=useState('AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES DEL PERSONAL')
-  const [codigo,setCodigo]=useState('SGI')
+  const [codigo,setCodigo]=useState('')
   const [version,setVersion]=useState('01')
   const [fechaEdicion,setFechaEdicion]=useState(new Date().toISOString().slice(0,10))
   const [fechaVigencia,setFechaVigencia]=useState('')
@@ -76,23 +76,23 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
     }catch(e){setMensaje(e.message)}finally{setGuardando(false)}
   }
   const boton='rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50'
-  const input='mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-500'
-  const etiqueta='text-xs font-bold uppercase text-slate-600'
+  const input='mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-800 outline-none focus:border-teal-500 disabled:bg-slate-50'
+  const etiqueta='block text-xs font-bold uppercase text-slate-600'
   const panel='overflow-hidden rounded-xl border border-teal-400 bg-white shadow-sm'
   return <div className="space-y-5">
     {mensaje&&<p role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-slate-800">{mensaje}</p>}
     <section className={panel}>
       <header className="flex flex-wrap items-center justify-between gap-3 bg-teal-800 px-5 py-4 text-white">
         <div><h2 className="text-sm font-bold">Datos de la Autorización para el Tratamiento de Datos del Personal</h2><p className="mt-1 text-xs text-teal-100">El diseño del encabezado es compartido. Aquí se configuran los datos propios de este documento.</p></div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="rounded-lg border border-white/50 px-3 py-2 text-xs font-bold" onClick={()=>setHistorica(versiones[0]||null)}>↶ Versiones anteriores</button>
-          <button type="button" className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold" onClick={()=>{setModo('nuevo');setVersion('');aplicarTexto(vigente?.contenido||plantilla)}}>＋ Crear nueva versión</button>
-          <button type="button" className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-teal-900" onClick={()=>{if(vigente){aplicarTexto(vigente.contenido);setVersion(vigente.version);setModo('actual')}}}>Consultar versión actual</button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" className="rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20" onClick={()=>setHistorica(versiones[0]||null)}>↶ Versiones anteriores{versiones.length ? ` (${versiones.length})` : ''}</button>
+          <button type="button" className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800" onClick={()=>{setModo('nuevo');setVersion('');aplicarTexto(vigente?.contenido||plantilla)}}>＋ Crear nueva versión</button>
+          <button type="button" className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100" onClick={()=>{if(vigente){aplicarTexto(vigente.contenido);setVersion(vigente.version);setModo('actual')}}}>{vigente ? 'Editar versión actual' : 'Consultar versión actual'}</button>
         </div>
       </header>
       <div className="p-5">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <label className={etiqueta+' xl:col-span-2'}>Nombre del documento<input className={input} value={nombre} onChange={e=>setNombre(e.target.value)} disabled={modo==='actual'}/></label>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(330px,2fr)_minmax(130px,0.7fr)_minmax(205px,1fr)_minmax(205px,1fr)]">
+          <label className={etiqueta}>Nombre del documento<input className={input} value={nombre} onChange={e=>setNombre(e.target.value)} disabled={modo==='actual'}/></label>
           <label className={etiqueta}>Código<input className={input} value={codigo} onChange={e=>setCodigo(e.target.value)} disabled={modo==='actual'}/></label>
           <label className={etiqueta}>Fecha de elaboración<input className={input} type="date" value={fechaEdicion} onChange={e=>setFechaEdicion(e.target.value)} disabled={modo==='actual'}/></label>
           <label className={etiqueta}>Versión<input className={input} value={version} onChange={e=>setVersion(e.target.value)} disabled={modo==='actual'} placeholder="02"/></label>
