@@ -2656,6 +2656,9 @@ export default function PersonalAdminPage() {
                   </th>
 
                   <th className="text-left p-3 font-bold whitespace-nowrap">
+                    Aprobación
+                  </th>
+                  <th className="text-left p-3 font-bold whitespace-nowrap">
                     Acciones
                   </th>
 
@@ -2670,7 +2673,7 @@ export default function PersonalAdminPage() {
                   <tr>
 
                     <td
-                      colSpan="9"
+                      colSpan="10"
                       className="p-4 text-center text-gray-500"
                     >
                       Cargando listado...
@@ -2684,7 +2687,7 @@ export default function PersonalAdminPage() {
                   <tr>
 
                     <td
-                      colSpan="9"
+                      colSpan="10"
                       className="p-4 text-center text-gray-500"
                     >
                       No hay personal registrado.
@@ -2763,6 +2766,11 @@ export default function PersonalAdminPage() {
                         {item.estado || '-'}
                       </td>
 
+                      <td className="p-3">
+                        {item.origen_registro === 'formulario_publico'
+                          ? (item.estado_aprobacion === 'aprobado' ? 'Aprobado' : item.estado_aprobacion === 'en_revision' ? 'En revisión' : 'Pendiente')
+                          : 'Registro manual'}
+                      </td>
                       <td className="p-3 align-middle">
                         <div className="mx-auto flex w-full max-w-[180px] flex-col items-stretch gap-2">
                           <Link href={`/admin/personal/${item.id}`} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-3 py-2 text-center text-xs font-semibold text-white hover:bg-[var(--primary-dark)]">
