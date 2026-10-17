@@ -42,6 +42,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
       setVersiones(data.versiones||[])
       setEmpresa(data.empresa||null)
       setPlantilla(data.plantilla||'')
+      setCodigo('')
       if(!(data.versiones||[]).length) {
         const base=desdeTexto(data.plantilla)
         setNombre(base.nombre)
@@ -87,17 +88,17 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" className="rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20" onClick={()=>setHistorica(versiones[0]||null)}>↶ Versiones anteriores{versiones.length ? ` (${versiones.length})` : ''}</button>
           <button type="button" className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800" onClick={()=>{setModo('nuevo');setVersion('');aplicarTexto(vigente?.contenido||plantilla)}}>＋ Crear nueva versión</button>
-          <button type="button" className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100" onClick={()=>{if(vigente){aplicarTexto(vigente.contenido);setVersion(vigente.version);setModo('actual')}}}>{vigente ? 'Editar versión actual' : 'Consultar versión actual'}</button>
+          <button type="button" className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100" onClick={()=>{if(vigente){aplicarTexto(vigente.contenido);setVersion(vigente.version);setModo('actual')}}}>Consultar versión actual</button>
         </div>
       </header>
       <div className="p-5">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(330px,2fr)_minmax(130px,0.7fr)_minmax(205px,1fr)_minmax(205px,1fr)]">
-          <label className={etiqueta}>Nombre del documento<input className={input} value={nombre} onChange={e=>setNombre(e.target.value)} disabled={modo==='actual'}/></label>
-          <label className={etiqueta}>Código<input className={input} value={codigo} onChange={e=>setCodigo(e.target.value)} disabled={modo==='actual'}/></label>
-          <label className={etiqueta}>Fecha de elaboración<input className={input} type="date" value={fechaEdicion} onChange={e=>setFechaEdicion(e.target.value)} disabled={modo==='actual'}/></label>
-          <label className={etiqueta}>Versión<input className={input} value={version} onChange={e=>setVersion(e.target.value)} disabled={modo==='actual'} placeholder="02"/></label>
+          <label className={etiqueta}>Nombre del documento<input className={input+' font-normal'} value={nombre} onChange={e=>setNombre(e.target.value)} disabled={modo==='actual'}/></label>
+          <label className={etiqueta}>Código<input className={input+' font-normal'} value={codigo} onChange={e=>setCodigo(e.target.value)} disabled={modo==='actual'}/></label>
+          <label className={etiqueta}>Fecha de elaboración<input className={input+' font-normal'} type="date" value={fechaEdicion} onChange={e=>setFechaEdicion(e.target.value)} disabled={modo==='actual'}/></label>
+          <label className={etiqueta}>Versión<input className={input+' font-normal'} value={version} onChange={e=>setVersion(e.target.value)} disabled={modo==='actual'} placeholder="02"/></label>
           <label className={etiqueta}>Fecha de vigencia<input className={input} type="date" value={fechaVigencia} onChange={e=>setFechaVigencia(e.target.value)} disabled={modo==='actual'}/></label>
-          <label className={etiqueta+' md:col-span-2 xl:col-span-4'}>Observaciones<input className={input} value={observaciones} onChange={e=>setObservaciones(e.target.value)} disabled={modo==='actual'}/></label>
+          <label className={etiqueta+' md:col-span-2 xl:col-span-4'}>Observaciones<input className={input+' font-normal'} value={observaciones} onChange={e=>setObservaciones(e.target.value)} disabled={modo==='actual'}/></label>
         </div>
         <div className="mt-4 flex items-center justify-end border-t border-slate-200 pt-3 text-xs text-slate-700">Estado del documento: <span className="ml-2 rounded-full bg-emerald-100 px-3 py-1 font-bold text-emerald-800">{vigente?'Activo · versión '+vigente.version:'Sin publicar'}</span></div>
       </div>
