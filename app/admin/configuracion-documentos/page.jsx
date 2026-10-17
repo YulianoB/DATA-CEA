@@ -15,6 +15,7 @@ import {
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { Files } from 'lucide-react'
 import ModalResultado from '@/components/admin/ModalResultado'
+import ConfiguracionAutorizacionPersonal from '@/components/admin/ConfiguracionAutorizacionPersonal'
 import { ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, FranjaSuperiorModal, BotonAccion, BotonEditar, BotonAgregar, BotonEliminar, BotonGuardar } from '@/components/admin/EstiloModulo'
 
 
@@ -70,6 +71,11 @@ const PESTANAS_PRINCIPALES = [
       'Autorización de Datos',
     icon:
       'fa-user-shield',
+  },
+  {
+    value: 'AUTORIZACION_DATOS_PERSONAL',
+    label: 'Tratamiento de datos del personal',
+    icon: 'fa-id-card',
   },
 ]
 
@@ -7181,6 +7187,8 @@ export default function ConfiguracionDocumentosPage() {
           </div>
         </div>
 
+
+        {pestanaPrincipal === 'AUTORIZACION_DATOS_PERSONAL' && <ConfiguracionAutorizacionPersonal />}
 
         {/* ===============================================
             DATOS DEL DOCUMENTO
