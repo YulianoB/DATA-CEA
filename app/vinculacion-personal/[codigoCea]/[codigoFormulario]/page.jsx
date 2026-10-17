@@ -32,6 +32,8 @@ export default function VinculacionPersonalPage() {
   const [experiencias, setExperiencias] = useState([{empresa:'', cargo:'', fecha_inicio:'', fecha_fin:''}])
   const [licencias, setLicencias] = useState([])
   const [verAutorizacion, setVerAutorizacion] = useState(false)
+  const [documentoAutorizacion, setDocumentoAutorizacion] = useState(null)
+  const [errorAutorizacion, setErrorAutorizacion] = useState('')
   const [referencia, setReferencia] = useState({nombre:'', telefono:'', relacion:''})
   const [autorizado, setAutorizado] = useState(false)
   const [ocupado, setOcupado] = useState(false)
@@ -43,6 +45,18 @@ export default function VinculacionPersonalPage() {
     fetch('/api/public/personal/formulario?' + new URLSearchParams({cea:codigoCea, formulario:codigoFormulario}), {cache:'no-store'})
       .then(async r => {const j=await r.json(); if(!r.ok) throw new Error(j.mensaje); setConfig(j)})
       .catch(e=>setErrorConfig(e.message || 'Enlace no disponible.'))
+  }, [codigoCea, codigoFormulario])
+
+  useEffect(() => {
+    if (!codigoCea || !codigoFormulario) return
+    fetch('/api/public/personal/autorizacion?' + new URLSearchParams({ cea: codigoCea, formulario: codigoFormulario }), { cache: 'no-store' })
+      .then(async response => {
+        const data = await response.json()
+        if (!response.ok || !data.ok) throw new Error(data.mensaje || 'Autorización no disponible.')
+        setDocumentoAutorizacion(data.documento)
+        setErrorAutorizacion('')
+      })
+      .catch(error => { setDocumentoAutorizacion(null); setErrorAutorizacion(error.message) })
   }, [codigoCea, codigoFormulario])
 
   const actualizar = (nombre, valor) => setPersonal(p=>({...p,[nombre]:normalizar(nombre,valor)}))
@@ -62,11 +76,12 @@ export default function VinculacionPersonalPage() {
   async function enviar(e) {
     e.preventDefault()
     setMensaje('')
+    if (!documentoAutorizacion?.version) return setMensaje('El CEA debe publicar la autorización del personal antes de recibir formularios.')
     if (!personal.nombres.trim() || !personal.apellidos.trim() || !referencia.nombre.trim() || !referencia.telefono.trim() || !autorizado) return setMensaje('Complete nombres, apellidos, referencia personal y autorización de datos.')
     if (referencia.nombre.trim().toLowerCase() === personal.contacto_emergencia_nombre.trim().toLowerCase()) return setMensaje('La referencia debe ser diferente del contacto de emergencia.')
     setOcupado(true)
     try {
-      const r = await fetch('/api/public/personal/enviar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cea:codigoCea,formulario:codigoFormulario,personal,estudios,experiencias,licencias,referencia,autorizado})})
+      const r = await fetch('/api/public/personal/enviar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cea:codigoCea,formulario:codigoFormulario,personal,estudios,experiencias,licencias,referencia,autorizado,documento_version:documentoAutorizacion.version})})
       const j=await r.json()
       if(!r.ok)throw new Error(j.mensaje)
       setEnviado(true);setMensaje(j.mensaje)
@@ -122,15 +137,14 @@ export default function VinculacionPersonalPage() {
 </div>}{renderCampo(campo('perfil_profesional','Perfil profesional','textarea'))}</div>}
     {paso===3&&<div className="space-y-4"><p className="rounded bg-blue-50 p-3 text-sm">Registre sus estudios académicos y formación complementaria: bachillerato, diplomados, cursos, seminarios y certificaciones. Los instructores deben incluir como mínimo su formación de bachiller.</p>{estudios.map((x,i)=><div key={i} className="grid gap-3 rounded border p-3 sm:grid-cols-2">{[campo('nivel_estudio','Tipo de formación'),campo('titulo','Título o nombre del curso'),campo('institucion','Institución o entidad formadora'),campo('fecha_grado','Fecha de finalización','date'),campo('observaciones','Observaciones')].map(c=>renderCampo(c,x,(n,v)=>modificarLista(setEstudios,i,n,v)))}</div>)}<button type="button" onClick={()=>setEstudios(x=>[...x,{nivel_estudio:'',titulo:'',institucion:'',fecha_grado:''}])} className="rounded border px-3 py-2">Agregar estudio</button></div>}
     {paso===4&&<div className="space-y-4">{experiencias.map((x,i)=><div key={i} className="grid gap-3 rounded border p-3 sm:grid-cols-2">{[campo('empresa','Empresa'),campo('cargo','Cargo'),campo('fecha_inicio','Fecha de inicio','date'),...(x.actualmente?[]:[campo('fecha_fin','Fecha de retiro','date')]),campo('jefe_inmediato','Jefe inmediato'),campo('telefono_contacto','Teléfono de contacto'),campo('observaciones','Observaciones'),campo('funciones','Funciones realizadas','textarea')].map(c=>renderCampo(c,x,(n,v)=>modificarLista(setExperiencias,i,n,v)))}<label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={Boolean(x.actualmente)} onChange={e=>setExperiencias(prev=>prev.map((item,j)=>j===i?{...item,actualmente:e.target.checked,fecha_fin:e.target.checked?'':item.fecha_fin}:item))}/>Labora actualmente en esta empresa</label></div>)}<button type="button" onClick={()=>setExperiencias(x=>[...x,{empresa:'',cargo:'',fecha_inicio:'',fecha_fin:''}])} className="rounded border px-3 py-2">Agregar experiencia</button></div>}
-    {paso===5&&<div className="space-y-4"><p className="text-sm text-slate-600">Indique una referencia personal diferente del contacto de emergencia.</p>{[campo('nombre','Nombre de la referencia','text',true),campo('telefono','Teléfono','text',true),campo('relacion','Relación')].map(c=>renderCampo(c,referencia,(n,v)=>setReferencia(p=>({...p,[n]:normalizar(n,v)}))))}<label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={autorizado} onChange={e=>setAutorizado(e.target.checked)}/>He leído la información de tratamiento de datos personales y autorizo su tratamiento para gestionar mi expediente en el CEA.</label><button type="button" onClick={()=>setVerAutorizacion(true)} className="text-sm font-semibold text-[#194567] underline">Leer información sobre tratamiento de datos personales</button></div>}
+    {paso===5&&<div className="space-y-4"><p className="text-sm text-slate-600">Indique una referencia personal diferente del contacto de emergencia.</p>{[campo('nombre','Nombre de la referencia','text',true),campo('telefono','Teléfono','text',true),campo('relacion','Relación')].map(c=>renderCampo(c,referencia,(n,v)=>setReferencia(p=>({...p,[n]:normalizar(n,v)}))))}<label className="flex items-start gap-2 text-sm"><input type="checkbox" disabled={!documentoAutorizacion} checked={autorizado} onChange={e=>setAutorizado(e.target.checked)}/>He leído la información de tratamiento de datos personales y autorizo su tratamiento para gestionar mi expediente en el CEA.</label><button type="button" onClick={()=>setVerAutorizacion(true)} className="text-sm font-semibold text-[#194567] underline">Leer autorización para el tratamiento de datos personales{documentoAutorizacion ? ' · Versión '+documentoAutorizacion.version : ''}</button>{errorAutorizacion&&<p role="alert" className="text-sm text-amber-800">{errorAutorizacion}</p>}</div>}
     {mensaje&&<p role="alert" className="rounded bg-amber-50 p-3 text-sm text-amber-900">{mensaje}</p>}
     {validado&&<div className="flex justify-between border-t pt-4"><button type="button" onClick={()=>{setMensaje('');setPaso(x=>Math.max(1,x-1))}} disabled={paso===1||ocupado} className="rounded border px-4 py-2 disabled:opacity-40">Anterior</button>{paso<5?<button type="button" onClick={()=>{setMensaje('');setPaso(x=>Math.min(5,x+1))}} className="rounded bg-[#194567] px-4 py-2 text-white">Siguiente</button>:<button type="submit" disabled={ocupado} className="rounded bg-[#194567] px-4 py-2 text-white disabled:opacity-50">{ocupado?'Enviando...':'Enviar formulario'}</button>}</div>}
     </form></>}
     {verAutorizacion&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"><section role="dialog" aria-modal="true" aria-labelledby="titulo-privacidad" className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded bg-white p-5">
       <h2 id="titulo-privacidad" className="text-lg font-bold text-[#194567]">Información sobre tratamiento de datos personales</h2>
-      <p className="mt-4 text-sm">El CEA identificado en este formulario recibirá los datos que usted proporcione para gestionar su expediente de personal, revisar su formación, experiencia, contacto y vinculación.</p>
-      <p className="mt-3 text-sm">De acuerdo con la Ley 1581 de 2012, puede solicitar conocer, actualizar o rectificar sus datos y ejercer sus derechos ante el responsable del tratamiento.</p>
-      <p className="mt-3 rounded bg-amber-50 p-3 text-sm">Información general provisional: el CEA debe incorporar su texto institucional vigente, con identificación del responsable, finalidades completas y canales de atención, antes de recopilar datos reales.</p>
+      <p className="mt-2 text-sm font-semibold">{config.cea} {documentoAutorizacion ? '· Versión '+documentoAutorizacion.version : ''}</p>
+      {documentoAutorizacion ? <pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-relaxed">{documentoAutorizacion.contenido}</pre> : <p className="mt-4 text-sm text-amber-800">{errorAutorizacion || 'Documento no disponible.'}</p>}
       <button type="button" onClick={()=>setVerAutorizacion(false)} className="mt-4 rounded bg-[#194567] px-4 py-2 text-white">Cerrar y volver</button>
     </section></div>}
   </section></main>
