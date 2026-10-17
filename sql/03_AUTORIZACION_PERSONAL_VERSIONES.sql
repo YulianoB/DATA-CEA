@@ -17,3 +17,29 @@ ALTER TABLE public.autorizacion_personal_versiones ENABLE ROW LEVEL SECURITY;
 -- Sin políticas de acceso directo: las API servidoras del CEA usan cliente de servicio.
 COMMENT ON TABLE public.autorizacion_personal_versiones IS
   'Versiones publicadas de la autorización de tratamiento de datos del personal del CEA. No modificar versiones históricas.';
+
+-- Publicación transaccional para no dejar dos versiones vigentes.
+CREATE OR REPLACE FUNCTION public.publicar_autorizacion_personal_version(
+  p_version text, p_contenido text
+) RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_id bigint;
+BEGIN
+  PERFORM pg_advisory_xact_lock(918274, 2026);
+  IF length(btrim(coalesce(p_version, ''))) = 0
+     OR length(p_version) > 30
+     OR length(btrim(coalesce(p_contenido, ''))) < 100 THEN
+    RAISE EXCEPTION 'Versión o contenido inválidos';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.autorizacion_personal_versiones WHERE version = btrim(p_version)) THEN
+    RAISE EXCEPTION 'La versión ya existe y no puede sobrescribirse';
+  END IF;
+  UPDATE public.autorizacion_personal_versiones SET vigente = false WHERE vigente = true;
+  INSERT INTO public.autorizacion_personal_versiones(version, contenido, vigente)
+    VALUES (btrim(p_version), btrim(p_contenido), true) RETURNING id INTO v_id;
+  RETURN v_id;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.publicar_autorizacion_personal_version(text,text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.publicar_autorizacion_personal_version(text,text) TO service_role;
