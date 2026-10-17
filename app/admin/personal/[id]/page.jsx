@@ -853,7 +853,7 @@ export default function HojaVidaPersonalPage() {
       fecha_grado: item.fecha_grado || '',
       observaciones: item.observaciones || '',
     })
-    mostrarResultado('error', 'Editando estudio seleccionado.')
+    /* La edición solo abre el formulario; no es un error. */
   }
 
   function cancelarEdicionEstudio() {
@@ -1465,7 +1465,7 @@ export default function HojaVidaPersonalPage() {
       estado: documento.estado || 'vigente',
       observaciones: documento.observaciones || '',
     })
-    mostrarResultado('error', 'Editando documento seleccionado.')
+    /* La edición solo abre el formulario; no es un error. */
   }
 
   function cancelarEdicionDocumento() {
