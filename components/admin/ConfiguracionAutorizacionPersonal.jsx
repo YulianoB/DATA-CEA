@@ -1,101 +1,128 @@
 'use client'
-
-import { useEffect, useState } from 'react'
-
-const ENDPOINT = '/api/admin/configuracion-autorizacion-personal'
-
+import { useCallback, useEffect, useState } from 'react'
+const API = '/api/admin/configuracion-autorizacion-personal'
+const titulos = ['RESPONSABLE DEL TRATAMIENTO','MARCO NORMATIVO','INFORMACIÓN TRATADA','FINALIDADES','PLATAFORMA TECNOLÓGICA DATA-CEA','DESTINATARIOS Y SEGURIDAD','DATOS SENSIBLES','DERECHOS DEL TITULAR','CANALES DE ATENCIÓN Y POLÍTICA INSTITUCIONAL','CONSERVACIÓN','DECLARACIÓN Y AUTORIZACIÓN','CONSTANCIA ELECTRÓNICA']
+const nuevo = (titulo='', contenido='') => ({ id: Math.random().toString(36).slice(2), titulo, contenido })
+function desdeTexto(texto) {
+  const partes = String(texto || '').split(/\n(?=\d{1,2}\. [A-ZÁÉÍÓÚÑ])/)
+  const encabezado = partes.shift() || ''
+  const secciones = partes.map(p => {
+    const lineas = p.trim().split('\n')
+    const titulo = lineas.shift().replace(/^\d{1,2}\.\s*/, '')
+    return nuevo(titulo, lineas.join('\n').trim())
+  })
+  return { nombre: encabezado.trim() || 'AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES DEL PERSONAL', secciones: secciones.length ? secciones : [nuevo('RESPONSABLE DEL TRATAMIENTO')] }
+}
+function construir(nombre, secciones) {
+  return [nombre.trim(), ...secciones.filter(s=>s.titulo.trim() || s.contenido.trim()).map((s,i)=>`${i+1}. ${s.titulo.trim().toUpperCase()}\n${s.contenido.trim()}`)].join('\n\n')
+}
 export default function ConfiguracionAutorizacionPersonal() {
-  const [versiones, setVersiones] = useState([])
-  const [plantilla, setPlantilla] = useState('')
-  const [empresa, setEmpresa] = useState(null)
-  const [version, setVersion] = useState('1.0')
-  const [contenido, setContenido] = useState('')
-  const [cargando, setCargando] = useState(true)
-  const [guardando, setGuardando] = useState(false)
-  const [mensaje, setMensaje] = useState('')
-  const [historica, setHistorica] = useState(null)
-
-  async function cargar() {
+  const [versiones,setVersiones]=useState([])
+  const [empresa,setEmpresa]=useState(null)
+  const [plantilla,setPlantilla]=useState('')
+  const [nombre,setNombre]=useState('AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES DEL PERSONAL')
+  const [codigo,setCodigo]=useState('SGI')
+  const [version,setVersion]=useState('01')
+  const [fechaEdicion,setFechaEdicion]=useState(new Date().toISOString().slice(0,10))
+  const [fechaVigencia,setFechaVigencia]=useState('')
+  const [observaciones,setObservaciones]=useState('')
+  const [secciones,setSecciones]=useState([])
+  const [cargando,setCargando]=useState(true)
+  const [guardando,setGuardando]=useState(false)
+  const [mensaje,setMensaje]=useState('')
+  const [historica,setHistorica]=useState(null)
+  const [modo,setModo]=useState('nuevo')
+  const cargar=useCallback(async()=>{
     setCargando(true)
     try {
-      const respuesta = await fetch(ENDPOINT, { cache: 'no-store' })
-      const data = await respuesta.json()
-      if (!respuesta.ok || !data.ok) throw new Error(data.mensaje || 'No se pudieron consultar las versiones.')
-      setVersiones(data.versiones || [])
-      setEmpresa(data.empresa || null)
-      setPlantilla(data.plantilla || '')
-      setContenido(actual => actual || data.plantilla || '')
-    } catch (error) {
-      setMensaje(error.message)
-    } finally {
-      setCargando(false)
-    }
+      const r=await fetch(API,{cache:'no-store'})
+      const data=await r.json()
+      if(!r.ok || !data.ok) throw Error(data.mensaje || 'No fue posible consultar las versiones.')
+      setVersiones(data.versiones||[])
+      setEmpresa(data.empresa||null)
+      setPlantilla(data.plantilla||'')
+      if(!(data.versiones||[]).length) {
+        const base=desdeTexto(data.plantilla)
+        setNombre(base.nombre)
+        setSecciones(base.secciones)
+      }
+      setMensaje('')
+    }catch(e){setMensaje(e.message)}
+    finally{setCargando(false)}
+  },[])
+  useEffect(()=>{cargar()},[cargar])
+  const vigente=versiones.find(v=>v.vigente)
+  function aplicarTexto(texto) {
+    const d=desdeTexto(texto)
+    setNombre(d.nombre)
+    setSecciones(d.secciones)
   }
-
-  useEffect(() => { cargar() }, [])
-
-  async function publicar() {
-    if (!window.confirm('¿Publicar esta versión? El contenido quedará archivado y no podrá editarse después.')) return
-    setGuardando(true)
-    setMensaje('')
-    try {
-      const respuesta = await fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ version, contenido }),
-      })
-      const data = await respuesta.json()
-      if (!respuesta.ok || !data.ok) throw new Error(data.mensaje || 'No se pudo publicar la versión.')
-      setMensaje('Versión publicada correctamente. El formulario público utilizará este texto.')
-      setHistorica(null)
+  function modificar(id,campo,valor){setSecciones(xs=>xs.map(x=>x.id===id?{...x,[campo]:valor}:x))}
+  function mover(i,dir){setSecciones(xs=>{const a=[...xs],j=i+dir;if(j<0||j>=a.length)return xs;[a[i],a[j]]=[a[j],a[i]];return a})}
+  async function publicar(){
+    if(!nombre.trim()||secciones.some(s=>!s.titulo.trim()||!s.contenido.trim())){setMensaje('Complete el nombre, el título y el contenido de todas las secciones.');return}
+    const contenido=construir(nombre,secciones)
+    if(contenido.length<100){setMensaje('El documento debe tener al menos 100 caracteres.');return}
+    if(!window.confirm('¿Publicar la nueva versión? La versión anterior se conservará y la nueva quedará vigente.'))return
+    setGuardando(true);setMensaje('')
+    try{
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({version,contenido,nombre_documento:nombre,codigo,fecha_edicion:fechaEdicion,fecha_vigencia:fechaVigencia,observaciones})})
+      const d=await r.json()
+      if(!r.ok||!d.ok)throw Error(d.mensaje||'No se pudo publicar.')
       await cargar()
-    } catch (error) {
-      setMensaje(error.message)
-    } finally {
-      setGuardando(false)
-    }
+      setModo('actual')
+      setMensaje('Versión publicada correctamente. El formulario público mostrará este documento.')
+    }catch(e){setMensaje(e.message)}finally{setGuardando(false)}
   }
-
-  const vigente = versiones.find(item => item.vigente)
-  return <section className="space-y-5 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
-    <div className="border-b border-slate-200 pb-3">
-      <h2 className="text-base font-bold text-[#194567]">Tratamiento de datos del personal</h2>
-      <p className="mt-1 text-sm text-slate-600">Documento independiente de la autorización para aprendices. La identidad institucional y el encabezado corresponden a la configuración del CEA.</p>
-      {empresa && <p className="mt-2 text-xs font-semibold text-slate-600">{empresa.nombre}{empresa.nit ? ' · NIT ' + empresa.nit : ''}</p>}
-    </div>
-    {mensaje && <p role="status" className="rounded border border-slate-300 bg-slate-50 p-3 text-sm">{mensaje}</p>}
-    {cargando ? <p className="text-sm">Cargando documento...</p> : <>
-      <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm">
-        <strong>Versión vigente: </strong>{vigente ? vigente.version : 'Sin publicar'}
-        <p className="mt-1 text-xs">Solo una versión publicada puede estar vigente. Las versiones anteriores se conservan íntegramente.</p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-4">
-        <label className="text-sm font-semibold">Nueva versión
-          <input value={version} onChange={e=>setVersion(e.target.value)} maxLength={30} className="mt-1 w-full rounded border border-slate-300 p-2" placeholder="1.0" />
-        </label>
-        <div className="flex items-end gap-2 sm:col-span-3">
-          <button type="button" onClick={()=>setContenido(plantilla)} className="rounded border border-slate-300 px-3 py-2 text-sm">Restablecer plantilla base</button>
-          {vigente && <button type="button" onClick={()=>setContenido(vigente.contenido)} className="rounded border border-slate-300 px-3 py-2 text-sm">Usar versión vigente como base</button>}
+  const boton='rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50'
+  const input='mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-500'
+  const etiqueta='text-xs font-bold uppercase text-slate-600'
+  const panel='overflow-hidden rounded-xl border border-teal-400 bg-white shadow-sm'
+  return <div className="space-y-5">
+    {mensaje&&<p role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-slate-800">{mensaje}</p>}
+    <section className={panel}>
+      <header className="flex flex-wrap items-center justify-between gap-3 bg-teal-800 px-5 py-4 text-white">
+        <div><h2 className="text-sm font-bold">Datos de la Autorización para el Tratamiento de Datos del Personal</h2><p className="mt-1 text-xs text-teal-100">El diseño del encabezado es compartido. Aquí se configuran los datos propios de este documento.</p></div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="rounded-lg border border-white/50 px-3 py-2 text-xs font-bold" onClick={()=>setHistorica(versiones[0]||null)}>↶ Versiones anteriores</button>
+          <button type="button" className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold" onClick={()=>{setModo('nuevo');setVersion('');aplicarTexto(vigente?.contenido||plantilla)}}>＋ Crear nueva versión</button>
+          <button type="button" className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-teal-900" onClick={()=>{if(vigente){aplicarTexto(vigente.contenido);setVersion(vigente.version);setModo('actual')}}}>Consultar versión actual</button>
         </div>
+      </header>
+      <div className="p-5">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <label className={etiqueta+' xl:col-span-2'}>Nombre del documento<input className={input} value={nombre} onChange={e=>setNombre(e.target.value)} disabled={modo==='actual'}/></label>
+          <label className={etiqueta}>Código<input className={input} value={codigo} onChange={e=>setCodigo(e.target.value)} disabled={modo==='actual'}/></label>
+          <label className={etiqueta}>Fecha de elaboración<input className={input} type="date" value={fechaEdicion} onChange={e=>setFechaEdicion(e.target.value)} disabled={modo==='actual'}/></label>
+          <label className={etiqueta}>Versión<input className={input} value={version} onChange={e=>setVersion(e.target.value)} disabled={modo==='actual'} placeholder="02"/></label>
+          <label className={etiqueta}>Fecha de vigencia<input className={input} type="date" value={fechaVigencia} onChange={e=>setFechaVigencia(e.target.value)} disabled={modo==='actual'}/></label>
+          <label className={etiqueta+' md:col-span-2 xl:col-span-4'}>Observaciones<input className={input} value={observaciones} onChange={e=>setObservaciones(e.target.value)} disabled={modo==='actual'}/></label>
+        </div>
+        <div className="mt-4 flex items-center justify-end border-t border-slate-200 pt-3 text-xs text-slate-700">Estado del documento: <span className="ml-2 rounded-full bg-emerald-100 px-3 py-1 font-bold text-emerald-800">{vigente?'Activo · versión '+vigente.version:'Sin publicar'}</span></div>
       </div>
-      <label className="block text-sm font-semibold">Contenido propuesto para publicar
-        <textarea value={contenido} onChange={e=>setContenido(e.target.value)} rows={19} maxLength={30000} className="mt-2 w-full rounded border border-slate-300 p-3 font-mono text-xs leading-relaxed" />
-      </label>
-      <p className="text-xs text-amber-800">Antes de publicar, verifique la política institucional de tratamiento de datos y sus canales de atención. El documento se almacena una sola vez por versión en la base de datos de este CEA.</p>
-      <button type="button" disabled={guardando || contenido.trim().length < 100} onClick={publicar} className="rounded bg-[#194567] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{guardando ? 'Publicando...' : 'Publicar nueva versión'}</button>
-      <div className="border-t pt-4">
-        <h3 className="text-sm font-bold text-[#194567]">Historial de versiones</h3>
-        {!versiones.length ? <p className="mt-2 text-sm text-slate-600">Todavía no hay versiones publicadas.</p> : <div className="mt-2 space-y-2">{versiones.map(item=><div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 p-3 text-sm">
-          <span>Versión {item.version} · {new Date(item.fecha_publicacion).toLocaleString('es-CO')}{item.vigente ? ' · Vigente' : ' · Histórica'}</span>
-          <button type="button" className="text-[#194567] underline" onClick={()=>setHistorica(item)}>Consultar texto</button>
-        </div>)}</div>}
+    </section>
+    <section className={panel}>
+      <header className="bg-teal-700 px-5 py-4 text-white"><h2 className="text-sm font-bold">Configuración general de la autorización</h2><p className="mt-1 text-xs text-teal-100">Los canales de atención, el responsable y las finalidades se definen en las secciones legales. No se modifican los datos de aprendices.</p></header>
+      <div className="grid gap-4 p-5 sm:grid-cols-2">
+        <div><p className={etiqueta}>Centro de Enseñanza Automovilística</p><p className="mt-1 rounded-lg border bg-slate-50 p-3 text-sm">{empresa?.nombre||'CEA'}</p></div>
+        <div><p className={etiqueta}>NIT del responsable</p><p className="mt-1 rounded-lg border bg-slate-50 p-3 text-sm">{empresa?.nit||'—'}</p></div>
+        <p className="sm:col-span-2 text-xs text-slate-600">Verifique los canales oficiales del CEA y la ubicación de su política de tratamiento de datos dentro de la sección correspondiente antes de publicar.</p>
       </div>
-      {historica && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4">
-        <section role="dialog" aria-modal="true" aria-label={'Documento versión '+historica.version} className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-lg bg-white p-5">
-          <div className="flex justify-between gap-3"><h3 className="font-bold">Autorización del personal — Versión {historica.version}</h3><button type="button" onClick={()=>setHistorica(null)} className="rounded border px-3 py-1">Cerrar</button></div>
-          <pre className="mt-3 overflow-auto whitespace-pre-wrap font-sans text-sm leading-relaxed">{historica.contenido}</pre>
-        </section>
-      </div>}
-    </>}
-  </section>
+    </section>
+    <section className={panel}>
+      <header className="flex items-center justify-between gap-3 bg-slate-700 px-5 py-4 text-white"><div><h2 className="text-sm font-bold">Secciones legales del documento</h2><p className="mt-1 text-xs text-slate-200">Configure los textos específicos del personal, sus derechos y las finalidades del tratamiento.</p></div><button type="button" disabled={modo==='actual'} onClick={()=>setSecciones(xs=>[...xs,nuevo()])} className="rounded-lg bg-teal-400 px-4 py-2 text-xs font-bold text-slate-900 disabled:opacity-50">＋ Agregar sección</button></header>
+      <div className="space-y-4 p-5">{secciones.map((s,i)=><div key={s.id} className="overflow-hidden rounded-xl border border-slate-300 bg-slate-50 shadow-sm">
+        <header className="flex items-center justify-between gap-3 bg-teal-50 px-5 py-3"><div><h3 className="text-xs font-black uppercase text-teal-800">{s.titulo||'Nueva sección'}</h3><p className="text-xs text-slate-500">Orden {i+1}</p></div><div className="flex gap-1"><button className={boton} disabled={modo==='actual'||i===0} onClick={()=>mover(i,-1)} type="button" aria-label="Subir sección">↑</button><button className={boton} disabled={modo==='actual'||i===secciones.length-1} onClick={()=>mover(i,1)} type="button" aria-label="Bajar sección">↓</button><button className={boton} disabled={modo==='actual'} onClick={()=>setSecciones(xs=>xs.filter(x=>x.id!==s.id))} type="button" aria-label="Eliminar sección">✕</button></div></header>
+        <div className="grid gap-4 p-5 md:grid-cols-[minmax(200px,1fr)_minmax(0,3fr)]"><label className={etiqueta}>Título de la sección<input className={input} value={s.titulo} disabled={modo==='actual'} onChange={e=>modificar(s.id,'titulo',e.target.value)}/></label><label className={etiqueta}>Contenido<textarea className={input+' min-h-44 resize-y leading-relaxed'} rows={8} value={s.contenido} disabled={modo==='actual'} onChange={e=>modificar(s.id,'contenido',e.target.value)}/></label></div>
+      </div>)}</div>
+    </section>
+    <section className={panel}><header className="bg-slate-700 px-5 py-4 text-white"><h2 className="text-sm font-bold">Publicación e historial de versiones</h2><p className="mt-1 text-xs text-slate-200">Las versiones publicadas son inmutables. Crear una nueva versión conserva el documento anterior.</p></header>
+      <div className="space-y-3 p-5">
+        {modo==='actual'&&<button type="button" className={boton} onClick={()=>{setModo('nuevo');setVersion('')}}>Crear nueva versión a partir de esta</button>}
+        {modo!=='actual'&&<button type="button" disabled={guardando||cargando||!version.trim()} onClick={publicar} className="rounded-lg bg-emerald-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{guardando?'Publicando...':'Guardar y publicar nueva versión'}</button>}
+        {cargando?<p className="text-sm">Consultando versiones...</p>:versiones.length===0?<p className="text-sm text-slate-600">No existen versiones publicadas.</p>:versiones.map(v=><div key={v.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"><span>Versión {v.version} · {new Date(v.fecha_publicacion).toLocaleString('es-CO')} {v.vigente?'· Vigente':'· Histórica'}</span><button className={boton} type="button" onClick={()=>setHistorica(v)}>Consultar documento</button></div>)}
+      </div>
+    </section>
+    {historica&&<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"><section role="dialog" aria-modal="true" aria-label={'Documento versión '+historica.version} className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-xl bg-white p-5"><div className="flex justify-between gap-3"><h3 className="font-bold text-[#194567]">Autorización del personal · Versión {historica.version}</h3><button type="button" className={boton} onClick={()=>setHistorica(null)}>Cerrar</button></div><pre className="mt-4 overflow-auto whitespace-pre-wrap font-sans text-sm leading-relaxed">{historica.contenido}</pre></section></div>}
+  </div>
 }
