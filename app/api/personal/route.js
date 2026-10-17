@@ -562,6 +562,8 @@ export async function GET(request) {
         grupo_personal,
         tipo_personal,
         estado,
+        origen_registro,
+        estado_aprobacion,
         rol_conductor_instructor,
         tipo_vehiculo_rol,
         created_at,
