@@ -32,7 +32,7 @@ export default function CampoCatalogo({
       try {
         const parametros = new URLSearchParams({ catalogo, ...(nit ? {nit:String(nit)} : {}) })
         if (catalogo === 'municipios') parametros.set('departamento_id', String(departamentoId))
-        const respuesta = await fetch(`${endpoint}?${parametros.toString()}`, {
+        const respuesta = await fetch(`${endpoint}${endpoint.includes('?') ? '&' : '?'}${parametros.toString()}`, {
           signal: controlador.signal,
           cache: 'no-store',
         })
