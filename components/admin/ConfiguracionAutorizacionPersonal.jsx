@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
+import ModalResultado from '@/components/admin/ModalResultado'
 const API = '/api/admin/configuracion-autorizacion-personal'
 const titulos = ['RESPONSABLE DEL TRATAMIENTO','MARCO NORMATIVO','INFORMACIÓN TRATADA','FINALIDADES','PLATAFORMA TECNOLÓGICA DATA-CEA','DESTINATARIOS Y SEGURIDAD','DATOS SENSIBLES','DERECHOS DEL TITULAR','CANALES DE ATENCIÓN Y POLÍTICA INSTITUCIONAL','CONSERVACIÓN','DECLARACIÓN Y AUTORIZACIÓN','CONSTANCIA ELECTRÓNICA']
 const nuevo = (titulo='', contenido='') => ({ id: Math.random().toString(36).slice(2), titulo, contenido })
@@ -30,6 +31,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   const [cargando,setCargando]=useState(true)
   const [guardando,setGuardando]=useState(false)
   const [mensaje,setMensaje]=useState('')
+  const [confirmarPublicacion,setConfirmarPublicacion]=useState(false)
   const [historica,setHistorica]=useState(null)
   const [modo,setModo]=useState('nuevo')
   const cargar=useCallback(async()=>{
@@ -61,11 +63,15 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   }
   function modificar(id,campo,valor){setSecciones(xs=>xs.map(x=>x.id===id?{...x,[campo]:valor}:x))}
   function mover(i,dir){setSecciones(xs=>{const a=[...xs],j=i+dir;if(j<0||j>=a.length)return xs;[a[i],a[j]]=[a[j],a[i]];return a})}
-  async function publicar(){
+  function publicar(){
     if(!nombre.trim()||secciones.some(s=>!s.titulo.trim()||!s.contenido.trim())){setMensaje('Complete el nombre, el título y el contenido de todas las secciones.');return}
     const contenido=construir(nombre,secciones)
     if(contenido.length<100){setMensaje('El documento debe tener al menos 100 caracteres.');return}
-    if(!window.confirm('¿Publicar la nueva versión? La versión anterior se conservará y la nueva quedará vigente.'))return
+    setConfirmarPublicacion(true)
+  }
+  async function confirmarYPublicar(){
+    setConfirmarPublicacion(false)
+    if(guardando)return
     setGuardando(true);setMensaje('')
     try{
       const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-cea-nit':nitEmpresa},body:JSON.stringify({version,contenido,nombre_documento:nombre,codigo,fecha_edicion:fechaEdicion,fecha_vigencia:fechaVigencia,observaciones})})
@@ -81,6 +87,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   const etiqueta='block text-xs font-bold uppercase text-slate-600'
   const panel='overflow-hidden rounded-xl border border-teal-400 bg-white shadow-sm'
   return <div className="space-y-5">
+    <ModalResultado abierto={confirmarPublicacion} tipo="confirmacion" titulo="Publicar nueva versión" mensaje="¿Desea publicar esta nueva versión? La versión anterior se conservará y la nueva quedará vigente." textoBoton="PUBLICAR" textoCancelar="CANCELAR" onCerrar={()=>setConfirmarPublicacion(false)} onConfirmar={confirmarYPublicar} />
     {mensaje&&<p role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-slate-800">{mensaje}</p>}
     <section className={panel}>
       <header className="flex flex-wrap items-center justify-between gap-3 bg-teal-800 px-5 py-4 text-white">
