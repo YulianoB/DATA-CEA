@@ -144,7 +144,7 @@ export default function VinculacionPersonalPage() {
     {verAutorizacion&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"><section role="dialog" aria-modal="true" aria-labelledby="titulo-privacidad" className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded bg-white p-5">
       <h2 id="titulo-privacidad" className="text-lg font-bold text-[#194567]">Información sobre tratamiento de datos personales</h2>
       <p className="mt-2 text-sm font-semibold">{config.cea} {documentoAutorizacion ? '· Versión '+documentoAutorizacion.version : ''}</p>
-      {documentoAutorizacion ? <pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-relaxed">{documentoAutorizacion.contenido}</pre> : <p className="mt-4 text-sm text-amber-800">{errorAutorizacion || 'Documento no disponible.'}</p>}
+      {documentoAutorizacion ? <div className="mt-4 whitespace-pre-wrap font-sans text-sm font-normal leading-relaxed text-slate-800">{documentoAutorizacion.contenido.split(/\n/).map((line,i)=><p key={i} className={/^\d{1,2}\.\s+[A-ZÁÉÍÓÚÑ]/.test(line) ? "mt-4 font-bold text-slate-900" : "font-normal"}>{line || "\u00a0"}</p>)}</div> : <p className="mt-4 text-sm text-amber-800">{errorAutorizacion || 'Documento no disponible.'}</p>}
       <button type="button" onClick={()=>setVerAutorizacion(false)} className="mt-4 rounded bg-[#194567] px-4 py-2 text-white">Cerrar y volver</button>
     </section></div>}
   </section></main>
