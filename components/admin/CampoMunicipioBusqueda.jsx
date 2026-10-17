@@ -22,7 +22,7 @@ export default function CampoMunicipioBusqueda({ nit, departamentoId, value = ''
           departamento_id: String(departamentoId),
           ...(nit ? {nit:String(nit)} : {}),
         })
-        const response = await fetch(`${endpoint}?${params}`, { signal: controller.signal, cache: 'no-store' })
+        const response = await fetch(`${endpoint}${endpoint.includes('?') ? '&' : '?'}${params}`, { signal: controller.signal, cache: 'no-store' })
         const json = await response.json()
         if (!response.ok || json.status !== 'success') throw new Error(json.message || 'No se pudieron cargar los municipios.')
         if (!controller.signal.aborted) setMunicipios(json.data || [])
