@@ -27,7 +27,7 @@ function validarSecciones(p, estudios, experiencias, licencias, referencia, auto
   for (const [k, nombre] of [['nombres','Nombres'],['apellidos','Apellidos'],['telefono','Teléfono'],['direccion','Dirección'],['departamento_residencia','Departamento'],['ciudad_residencia','Ciudad / Municipio'],['contacto_emergencia_nombre','Contacto de emergencia'],['contacto_emergencia_parentesco','Parentesco de emergencia'],['contacto_emergencia_telefono','Teléfono de emergencia']]) {
     if (!tiene(p[k])) agregar(1, nombre)
   }
-  if (p.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(p.email)) agregar(1, 'El correo electrónico tiene un formato inválido')
+  if (p.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)) agregar(1, 'El correo electrónico tiene un formato inválido')
   if (p.trabaja_cea) {
     for (const [k, nombre] of [['tipo_personal','Tipo de vinculación'],['grupo_personal','Grupo de trabajo'],['cargo','Cargo'],['tipo_contrato','Tipo de contrato'],['tipo_permanencia','Permanencia en el CEA'],['fecha_vinculacion','Fecha de vinculación']]) {
       if (!tiene(p[k])) agregar(2, nombre)
