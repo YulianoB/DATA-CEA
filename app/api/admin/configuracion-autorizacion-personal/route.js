@@ -21,7 +21,7 @@ export async function GET(request) {
     })
   } catch (error) {
     console.error('Consultar autorización personal:', error)
-    return json({ ok: false, mensaje: 'No fue posible consultar las versiones. Verifique que se haya ejecutado la migración SQL en la base de pruebas del CEA.' }, 500)
+    return json({ ok: false, mensaje: error?.code === '42P01' ? 'No existe la tabla de versiones en la base de datos conectada a este CEA.' : error?.code === '42501' ? 'La conexión no tiene permisos para consultar las versiones.' : 'No fue posible consultar las versiones. Revise los registros del servidor.', codigo: error?.code || 'ERROR_CONSULTA' }, 500)
   }
 }
 
