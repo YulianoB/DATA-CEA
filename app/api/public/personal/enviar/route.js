@@ -42,6 +42,11 @@ export async function POST(request) {
       }
     }
     const { supabaseAdmin } = await resolverFormularioPersonal(body.cea, body.formulario)
+    const { data: documentoVigente, error: errorDocumento } = await supabaseAdmin.from('autorizacion_personal_versiones').select('version').eq('vigente', true).maybeSingle()
+    if (errorDocumento) throw errorDocumento
+    if (!documentoVigente || !limpio(body.documento_version, 30) || documentoVigente.version !== body.documento_version) {
+      return NextResponse.json({ mensaje: 'La autorización del personal no está disponible o cambió de versión. Consulte y acepte la versión vigente antes de enviar.' }, { status: 409 })
+    }
     const { data: existente, error: errorExistente } = await supabaseAdmin.from('personal').select('id').eq('documento', documento).limit(1)
     if (errorExistente) throw errorExistente
     if (existente?.length) return NextResponse.json({ mensaje: 'El documento ya está registrado. Contacte al administrador.' }, { status: 409 })
@@ -82,7 +87,7 @@ export async function POST(request) {
         ['licencias_personal', p.rol_conductor_instructor ? licencias.filter(x=>limpio(x.categoria)).map(x=>({ personal_id: personalId, documento, nombre_completo: nombres + ' ' + apellidos, rol: 'INSTRUCTOR', categoria: limpio(x.categoria), tipo_licencia: limpio(x.tipo_licencia) || 'CONDUCCION', numero_certificado: opcional(x.numero_certificado), vigencia: opcional(x.vigencia) })) : []],
         ['estudios_personal', estudios.filter(x=>limpio(x.nivel_estudio)).map(x=>({ personal_id: personalId, nivel_estudio: limpio(x.nivel_estudio), titulo: opcional(x.titulo), institucion: opcional(x.institucion), fecha_grado: opcional(x.fecha_grado), observaciones: opcional(x.observaciones,1000) }))],
         ['experiencia_laboral_personal', experiencias.filter(x=>limpio(x.empresa)).map(x=>({ personal_id: personalId, empresa: limpio(x.empresa), cargo: opcional(x.cargo), fecha_inicio: opcional(x.fecha_inicio), fecha_fin: x.actualmente ? null : opcional(x.fecha_fin), actualmente: Boolean(x.actualmente), jefe_inmediato: opcional(x.jefe_inmediato), telefono_contacto: opcional(x.telefono_contacto,40), observaciones: opcional(x.observaciones,1000), funciones: opcional(x.funciones, 1000) }))],
-        ['autorizaciones_datos_personal', [{ personal_id: personalId, documento_version: 'formulario_publico', autorizado: true, medio: 'formulario_publico', evidencia: { origen: 'formulario_publico', fecha: new Date().toISOString() } }]],
+        ['autorizaciones_datos_personal', [{ personal_id: personalId, documento_version: documentoVigente.version, autorizado: true, medio: 'formulario_publico', evidencia: { origen: 'formulario_publico', fecha: new Date().toISOString() } }]],
       ]
       for (const [tabla, filas] of operaciones) {
         if (!filas.length) continue
