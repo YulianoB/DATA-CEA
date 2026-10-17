@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { obtenerSupabaseAdminEmpresaDesdeRequest } from '@/lib/supabaseEmpresaServer'
-import { PLANTILLA_AUTORIZACION_PERSONAL } from '@/lib/autorizacionPersonalDocumento'
+import { resolverMarcadoresPersonal, PLANTILLA_AUTORIZACION_PERSONAL } from '@/lib/autorizacionPersonalDocumento'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,6 +18,7 @@ export async function GET(request) {
       empresa: { nombre: empresa?.nombre || '', nit: empresa?.nit || '' },
       versiones: data || [],
       plantilla: PLANTILLA_AUTORIZACION_PERSONAL,
+      vista_previa: resolverMarcadoresPersonal(PLANTILLA_AUTORIZACION_PERSONAL, empresa),
     })
   } catch (error) {
     console.error('Consultar autorización personal:', error)
