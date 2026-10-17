@@ -44,7 +44,7 @@ export async function POST(request) {
     const obligatorio = v => typeof v === 'string' && v.trim().length > 0
     const faltantes = ['telefono','direccion','departamento_residencia','ciudad_residencia','contacto_emergencia_nombre','contacto_emergencia_parentesco','contacto_emergencia_telefono'].filter(k => !obligatorio(p[k]))
     if (faltantes.length) return NextResponse.json({mensaje:'Complete los datos de contacto, residencia y contacto de emergencia.'},{status:400})
-    if (p.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(p.email)) return NextResponse.json({mensaje:'Ingrese un correo electrónico válido.'},{status:400})
+    if (p.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)) return NextResponse.json({mensaje:'Ingrese un correo electrónico válido.'},{status:400})
     if (p.trabaja_cea && ['tipo_personal','grupo_personal','cargo','tipo_contrato','tipo_permanencia','fecha_vinculacion'].some(k=>!obligatorio(p[k]))) {
       return NextResponse.json({mensaje:'Complete los datos de vinculación con el CEA.'},{status:400})
     }
