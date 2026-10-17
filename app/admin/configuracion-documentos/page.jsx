@@ -7188,7 +7188,7 @@ export default function ConfiguracionDocumentosPage() {
         </div>
 
 
-        {pestanaPrincipal === 'AUTORIZACION_DATOS_PERSONAL' && <ConfiguracionAutorizacionPersonal />}
+        {pestanaPrincipal === 'AUTORIZACION_DATOS_PERSONAL' && <ConfiguracionAutorizacionPersonal nitEmpresa={nitEmpresa} />}
 
         {/* ===============================================
             DATOS DEL DOCUMENTO
