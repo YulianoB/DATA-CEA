@@ -199,7 +199,16 @@ const CAMPOS_GENERALES = CAMPOS_EDICION_GENERAL.flatMap(([, campos]) => campos.m
 export default function HojaVidaPersonalPage() {
   const params = useParams()
   const [resultadoModal, setResultadoModal] = useState(null)
+  const [cierreEditorPendiente, setCierreEditorPendiente] = useState(false)
+  const [editorCerradoVersion, setEditorCerradoVersion] = useState(0)
   const mostrarResultado = (tipo, mensaje) => setResultadoModal({ tipo, mensaje: String(mensaje || '') })
+  const aceptarResultado = () => {
+    setResultadoModal(null)
+    if (cierreEditorPendiente) {
+      setCierreEditorPendiente(false)
+      setEditorCerradoVersion((version) => version + 1)
+    }
+  }
   const [confirmacion, setConfirmacion] = useState(null)
   const confirmarAccion = (mensaje) => new Promise((resolver) => {
     setConfirmacion({ mensaje, resolver })
@@ -716,6 +725,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar la experiencia laboral.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', formExperiencia.id ? 'Experiencia laboral actualizada correctamente.' : 'Experiencia laboral registrada correctamente.')
       setFormExperiencia(EXPERIENCIA_INICIAL)
       await cargarExperiencia()
@@ -765,6 +775,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar la experiencia laboral.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', 'Experiencia laboral eliminada correctamente.')
       if (formExperiencia.id === experienciaId) {
         setFormExperiencia(EXPERIENCIA_INICIAL)
@@ -835,6 +846,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar el estudio.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', editando ? 'Estudio actualizado correctamente.' : 'Estudio registrado correctamente.')
       setFormEstudio(ESTUDIO_INICIAL)
       await cargarEstudios()
@@ -877,6 +889,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar el estudio.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', 'Estudio eliminado correctamente.')
       if (formEstudio.id === estudioId) {
         setFormEstudio(ESTUDIO_INICIAL)
@@ -1124,6 +1137,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar la licencia.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', 'Licencia eliminada correctamente.')
       if (formLicencia.id === licenciaId) {
         setFormLicencia(LICENCIA_INICIAL)
@@ -1212,6 +1226,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar la referencia.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', 'Referencia eliminada correctamente.')
       if (formReferencia.id === referenciaId) {
         setFormReferencia(REFERENCIA_INICIAL)
@@ -1259,6 +1274,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar la referencia.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', formReferencia.id ? 'Referencia actualizada correctamente.' : 'Referencia registrada correctamente.')
       setFormReferencia(REFERENCIA_INICIAL)
       await cargarReferencias()
@@ -1330,6 +1346,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar la evaluación.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', formEvaluacion.id ? 'Evaluación actualizada correctamente.' : 'Evaluación registrada correctamente.')
       setFormEvaluacion(EVALUACION_INICIAL)
       await cargarEvaluaciones()
@@ -1374,6 +1391,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar la evaluación.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', 'Evaluación eliminada correctamente.')
       if (formEvaluacion.id === evaluacionId) {
         setFormEvaluacion(EVALUACION_INICIAL)
@@ -1451,6 +1469,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible guardar el documento.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', formDocumento.id ? 'Documento actualizado correctamente.' : 'Documento registrado correctamente.')
       setFormDocumento(DOCUMENTO_INICIAL)
       await cargarDocumentos()
@@ -1495,6 +1514,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible eliminar el documento.')
       }
 
+      setCierreEditorPendiente(true)
       mostrarResultado('exito', 'Documento eliminado correctamente.')
       if (formDocumento.id === documentoId) {
         setFormDocumento(DOCUMENTO_INICIAL)
@@ -1649,7 +1669,7 @@ export default function HojaVidaPersonalPage() {
           </div>
         </div>
       )}
-      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
+      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={aceptarResultado} />
       <ModalResultado abierto={Boolean(confirmacion)} tipo="confirmacion" mensaje={confirmacion?.mensaje} onCerrar={() => cerrarConfirmacion(false)} onConfirmar={() => cerrarConfirmacion(true)} />
         <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
           <p className="text-gray-600">Cargando hoja de vida...</p>
@@ -1707,7 +1727,7 @@ export default function HojaVidaPersonalPage() {
           </div>
         </div>
       )}
-      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
+      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={aceptarResultado} />
       <ModalResultado abierto={Boolean(confirmacion)} tipo="confirmacion" mensaje={confirmacion?.mensaje} onCerrar={() => cerrarConfirmacion(false)} onConfirmar={() => cerrarConfirmacion(true)} />
         <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
           <p className="text-red-700">No se encontró el registro de personal.</p>
@@ -1784,7 +1804,7 @@ export default function HojaVidaPersonalPage() {
           </div>
         </div>
       )}
-      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={() => setResultadoModal(null)} />
+      <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={aceptarResultado} />
       <ModalResultado abierto={Boolean(confirmacion)} tipo="confirmacion" mensaje={confirmacion?.mensaje} onCerrar={() => cerrarConfirmacion(false)} onConfirmar={() => cerrarConfirmacion(true)} />
 
       <div className="mx-auto max-w-7xl space-y-4">
@@ -1864,6 +1884,7 @@ export default function HojaVidaPersonalPage() {
             {tab === 'licencias' &&
               puedeGestionarLicencias && (
               <Licencias
+                editorCerradoVersion={editorCerradoVersion}
                 licencias={licencias}
                 formLicencia={formLicencia}
                 cambiarLicencia={cambiarLicencia}
@@ -1877,6 +1898,7 @@ export default function HojaVidaPersonalPage() {
             )}
             {tab === 'estudios' && (
               <Estudios
+                editorCerradoVersion={editorCerradoVersion}
                 estudios={estudios}
                 formEstudio={formEstudio}
                 cambiarEstudio={cambiarEstudio}
@@ -1903,6 +1925,7 @@ export default function HojaVidaPersonalPage() {
             )}
             {tab === 'referencias' && (
               <Referencias
+                editorCerradoVersion={editorCerradoVersion}
                 referencias={referencias}
                 formReferencia={formReferencia}
                 cambiarReferencia={cambiarReferencia}
@@ -1916,6 +1939,7 @@ export default function HojaVidaPersonalPage() {
             )}
             {tab === 'documentos' && (
               <Documentos
+                editorCerradoVersion={editorCerradoVersion}
                 documentos={documentos}
                 formDocumento={formDocumento}
                 cambiarDocumento={cambiarDocumento}
@@ -1929,6 +1953,7 @@ export default function HojaVidaPersonalPage() {
             )}
             {tab === 'evaluaciones' && (
               <Evaluaciones
+                editorCerradoVersion={editorCerradoVersion}
                 evaluaciones={evaluaciones}
                 formEvaluacion={formEvaluacion}
                 cambiarEvaluacion={cambiarEvaluacion}
@@ -2241,7 +2266,9 @@ function ModalExpediente({ abierto, titulo, cerrar, children }) {
   )
 }
 
-function Estudios({ estudios, formEstudio, cambiarEstudio, guardarEstudio, guardandoEstudio, cargandoEstudios, editarEstudio, eliminarEstudio, cancelarEdicionEstudio }) {
+function Estudios({
+  editorCerradoVersion, estudios, formEstudio, cambiarEstudio, guardarEstudio, guardandoEstudio, cargandoEstudios, editarEstudio, eliminarEstudio, cancelarEdicionEstudio }) {
+  useEffect(() => { if (editorCerradoVersion > 0) setModalAbierto(false) }, [editorCerradoVersion])
   const [modalAbierto, setModalAbierto] = useState(false)
   useEffect(() => {
     if (formEstudio.id) setModalAbierto(true)
@@ -2496,6 +2523,7 @@ function TablaExperiencia({ experiencia, editarExperiencia, eliminarExperiencia 
 }
 
 function Licencias({
+  editorCerradoVersion,
   licencias,
   formLicencia,
   cambiarLicencia,
@@ -2506,6 +2534,7 @@ function Licencias({
   eliminarLicencia,
   cancelarEdicionLicencia,
 }) {
+  useEffect(() => { if (editorCerradoVersion > 0) setModalAbierto(false) }, [editorCerradoVersion])
   const [modalAbierto, setModalAbierto] = useState(false)
   useEffect(() => {
     if (formLicencia.id) setModalAbierto(true)
@@ -2789,6 +2818,7 @@ function TablaLicencias({
 
 
 function Referencias({
+  editorCerradoVersion,
   referencias,
   formReferencia,
   cambiarReferencia,
@@ -2799,6 +2829,7 @@ function Referencias({
   eliminarReferencia,
   cancelarEdicionReferencia,
 }) {
+  useEffect(() => { if (editorCerradoVersion > 0) setModalAbierto(false) }, [editorCerradoVersion])
   const [modalAbierto, setModalAbierto] = useState(false)
   useEffect(() => {
     if (formReferencia.id) setModalAbierto(true)
@@ -2942,6 +2973,7 @@ function TablaReferencias({ referencias, editarReferencia, eliminarReferencia })
 
 
 function Evaluaciones({
+  editorCerradoVersion,
   evaluaciones,
   formEvaluacion,
   cambiarEvaluacion,
@@ -2952,6 +2984,7 @@ function Evaluaciones({
   eliminarEvaluacion,
   cancelarEdicionEvaluacion,
 }) {
+  useEffect(() => { if (editorCerradoVersion > 0) setModalAbierto(false) }, [editorCerradoVersion])
   const [modalAbierto, setModalAbierto] = useState(false)
   useEffect(() => {
     if (formEvaluacion.id) setModalAbierto(true)
@@ -3096,6 +3129,7 @@ function TablaEvaluaciones({ evaluaciones, editarEvaluacion, eliminarEvaluacion 
 
 
 function Documentos({
+  editorCerradoVersion,
   documentos,
   formDocumento,
   cambiarDocumento,
@@ -3106,6 +3140,7 @@ function Documentos({
   eliminarDocumento,
   cancelarEdicionDocumento,
 }) {
+  useEffect(() => { if (editorCerradoVersion > 0) setModalAbierto(false) }, [editorCerradoVersion])
   const [modalAbierto, setModalAbierto] = useState(false)
   useEffect(() => {
     if (formDocumento.id) setModalAbierto(true)
