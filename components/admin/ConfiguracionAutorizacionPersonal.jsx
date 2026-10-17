@@ -16,7 +16,7 @@ function desdeTexto(texto) {
 function construir(nombre, secciones) {
   return [nombre.trim(), ...secciones.filter(s=>s.titulo.trim() || s.contenido.trim()).map((s,i)=>`${i+1}. ${s.titulo.trim().toUpperCase()}\n${s.contenido.trim()}`)].join('\n\n')
 }
-export default function ConfiguracionAutorizacionPersonal() {
+export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   const [versiones,setVersiones]=useState([])
   const [empresa,setEmpresa]=useState(null)
   const [plantilla,setPlantilla]=useState('')
@@ -26,16 +26,17 @@ export default function ConfiguracionAutorizacionPersonal() {
   const [fechaEdicion,setFechaEdicion]=useState(new Date().toISOString().slice(0,10))
   const [fechaVigencia,setFechaVigencia]=useState('')
   const [observaciones,setObservaciones]=useState('')
-  const [secciones,setSecciones]=useState([])
+  const [secciones,setSecciones]=useState(()=>desdeTexto('').secciones)
   const [cargando,setCargando]=useState(true)
   const [guardando,setGuardando]=useState(false)
   const [mensaje,setMensaje]=useState('')
   const [historica,setHistorica]=useState(null)
   const [modo,setModo]=useState('nuevo')
   const cargar=useCallback(async()=>{
+    if (!nitEmpresa) return
     setCargando(true)
     try {
-      const r=await fetch(API,{cache:'no-store'})
+      const r=await fetch(API,{cache:'no-store',headers:{'x-cea-nit':nitEmpresa}})
       const data=await r.json()
       if(!r.ok || !data.ok) throw Error(data.mensaje || 'No fue posible consultar las versiones.')
       setVersiones(data.versiones||[])
@@ -49,7 +50,7 @@ export default function ConfiguracionAutorizacionPersonal() {
       setMensaje('')
     }catch(e){setMensaje(e.message)}
     finally{setCargando(false)}
-  },[])
+  },[nitEmpresa])
   useEffect(()=>{cargar()},[cargar])
   const vigente=versiones.find(v=>v.vigente)
   function aplicarTexto(texto) {
@@ -66,7 +67,7 @@ export default function ConfiguracionAutorizacionPersonal() {
     if(!window.confirm('¿Publicar la nueva versión? La versión anterior se conservará y la nueva quedará vigente.'))return
     setGuardando(true);setMensaje('')
     try{
-      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({version,contenido,nombre_documento:nombre,codigo,fecha_edicion:fechaEdicion,fecha_vigencia:fechaVigencia,observaciones})})
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-cea-nit':nitEmpresa},body:JSON.stringify({version,contenido,nombre_documento:nombre,codigo,fecha_edicion:fechaEdicion,fecha_vigencia:fechaVigencia,observaciones})})
       const d=await r.json()
       if(!r.ok||!d.ok)throw Error(d.mensaje||'No se pudo publicar.')
       await cargar()
