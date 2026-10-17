@@ -353,3 +353,46 @@ export async function PATCH(request, { params }) {
     return respuestaError(error)
   }
 }
+
+export async function POST(request, { params }) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+    const { supabase } = await obtenerSupabaseEmpresaDesdeRequest(request, body)
+    const roles = [...new Set(Array.isArray(body.perfiles) ? body.perfiles : [])]
+    if (!roles.length || roles.some(rol => !Object.prototype.hasOwnProperty.call(ROLES_PERMITIDOS, rol))) {
+      return NextResponse.json({ status: 'failed', message: 'Seleccione al menos un perfil autorizado válido.' }, { status: 400 })
+    }
+    const email = normalizarEmail(body.email_autorizado)
+    if (!emailValido(email)) return NextResponse.json({ status: 'failed', message: 'Indique un correo autorizado válido.' }, { status: 400 })
+    const { data: persona, error: personaError } = await supabase.from('personal').select('id, documento, email, origen_registro, estado_aprobacion').eq('id', id).single()
+    if (personaError || !persona) return NextResponse.json({ status: 'failed', message: 'Personal no encontrado.' }, { status: 404 })
+    if (persona.origen_registro !== 'formulario_publico' || persona.estado_aprobacion !== 'aprobado') {
+      return NextResponse.json({ status: 'failed', message: 'Primero deben aprobarse todas las secciones del expediente público.' }, { status: 400 })
+    }
+    const { data: existente, error: existenteError } = await supabase.from('cuentas_usuario').select('id').eq('personal_id', id).maybeSingle()
+    if (existenteError) throw existenteError
+    if (existente) return NextResponse.json({ status: 'failed', message: 'Ya existe una cuenta para este personal. Actualice sus perfiles desde esta sección.' }, { status: 409 })
+    const ahora = new Date().toISOString()
+    const { data: cuenta, error: cuentaError } = await supabase.from('cuentas_usuario').insert({
+      personal_id: id, documento: persona.documento, usuario_login: persona.documento,
+      email, email_autorizado: email, estado: 'pre_autorizado',
+      fecha_preautorizacion: ahora, creado_por_nombre: body.actualizado_por || 'ADMINISTRATIVO',
+      observaciones: body.observaciones || null,
+    }).select('id').single()
+    if (cuentaError) throw cuentaError
+    const { error: perfilesError } = await supabase.from('perfiles_usuario').insert(roles.map(rol => ({
+      cuenta_usuario_id: cuenta.id, personal_id: id, rol,
+      menu_tipo: ROLES_PERMITIDOS[rol], estado: 'activo',
+      asignado_por_nombre: body.actualizado_por || 'ADMINISTRATIVO',
+    })))
+    if (perfilesError) {
+      await supabase.from('cuentas_usuario').delete().eq('id', cuenta.id)
+      throw perfilesError
+    }
+    return NextResponse.json({ status: 'success', message: 'Cuenta preautorizada con perfiles asignados. La persona ya puede registrarse.' })
+  } catch (error) {
+    console.error('Error POST /api/personal/[id]/cuenta:', error)
+    return respuestaError(error)
+  }
+}
