@@ -32,6 +32,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   const [guardando,setGuardando]=useState(false)
   const [mensaje,setMensaje]=useState('')
   const [confirmarPublicacion,setConfirmarPublicacion]=useState(false)
+  const [resultadoPublicacion,setResultadoPublicacion]=useState(null)
   const [historica,setHistorica]=useState(null)
   const [modo,setModo]=useState('nuevo')
   const cargar=useCallback(async()=>{
@@ -51,7 +52,8 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
         setSecciones(base.secciones)
       }
       setMensaje('')
-    }catch(e){setMensaje(e.message)}
+      return true
+    }catch(e){setMensaje(e.message);return false}
     finally{setCargando(false)}
   },[nitEmpresa])
   useEffect(()=>{cargar()},[cargar])
@@ -63,10 +65,14 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   }
   function modificar(id,campo,valor){setSecciones(xs=>xs.map(x=>x.id===id?{...x,[campo]:valor}:x))}
   function mover(i,dir){setSecciones(xs=>{const a=[...xs],j=i+dir;if(j<0||j>=a.length)return xs;[a[i],a[j]]=[a[j],a[i]];return a})}
+  function mostrarResultado(tipo,mensaje){
+    setResultadoPublicacion({tipo,mensaje})
+    window.scrollTo({top:0,behavior:'smooth'})
+  }
   function publicar(){
-    if(!nombre.trim()||secciones.some(s=>!s.titulo.trim()||!s.contenido.trim())){setMensaje('Complete el nombre, el título y el contenido de todas las secciones.');return}
+    if(!nombre.trim()||secciones.some(s=>!s.titulo.trim()||!s.contenido.trim())){mostrarResultado('error','Complete el nombre, el título y el contenido de todas las secciones.');return}
     const contenido=construir(nombre,secciones)
-    if(contenido.length<100){setMensaje('El documento debe tener al menos 100 caracteres.');return}
+    if(contenido.length<100){mostrarResultado('error','El documento debe tener al menos 100 caracteres.');return}
     setConfirmarPublicacion(true)
   }
   async function confirmarYPublicar(){
@@ -74,19 +80,21 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
     if(guardando)return
     setGuardando(true);setMensaje('')
     try{
+      const contenido=construir(nombre,secciones)
       const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-cea-nit':nitEmpresa},body:JSON.stringify({version,contenido,nombre_documento:nombre,codigo,fecha_edicion:fechaEdicion,fecha_vigencia:fechaVigencia,observaciones})})
       const d=await r.json()
       if(!r.ok||!d.ok)throw Error(d.mensaje||'No se pudo publicar.')
-      await cargar()
+      const recargado=await cargar()
       setModo('actual')
-      setMensaje('Versión publicada correctamente. El formulario público mostrará este documento.')
-    }catch(e){setMensaje(e.message)}finally{setGuardando(false)}
+      mostrarResultado('exito',recargado?'Versión publicada correctamente. El formulario público mostrará este documento.':'La versión fue publicada, pero no fue posible actualizar el historial. Recargue la página para consultar la versión vigente.')
+    }catch(e){mostrarResultado('error',e.message||'No fue posible publicar la versión.')}finally{setGuardando(false)}
   }
   const boton='rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50'
   const input='mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-800 outline-none focus:border-teal-500 disabled:bg-slate-50'
   const etiqueta='block text-xs font-bold uppercase text-slate-600'
   const panel='overflow-hidden rounded-xl border border-teal-400 bg-white shadow-sm'
   return <div className="space-y-5">
+    <ModalResultado abierto={Boolean(resultadoPublicacion)} tipo={resultadoPublicacion?.tipo} titulo={resultadoPublicacion?.tipo==='exito'?'Publicación realizada':'No fue posible publicar'} mensaje={resultadoPublicacion?.mensaje} onCerrar={()=>setResultadoPublicacion(null)} />
     <ModalResultado abierto={confirmarPublicacion} tipo="confirmacion" titulo="Publicar nueva versión" mensaje="¿Desea publicar esta nueva versión? La versión anterior se conservará y la nueva quedará vigente." textoBoton="PUBLICAR" textoCancelar="CANCELAR" onCerrar={()=>setConfirmarPublicacion(false)} onConfirmar={confirmarYPublicar} />
     {mensaje&&<p role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-slate-800">{mensaje}</p>}
     <section className={panel}>
