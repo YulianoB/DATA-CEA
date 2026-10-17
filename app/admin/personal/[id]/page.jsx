@@ -1564,6 +1564,14 @@ export default function HojaVidaPersonalPage() {
   async function guardarCuenta(event) {
     event.preventDefault()
 
+    if (!cuentaUsuario && (data?.personal?.origen_registro !== 'formulario_publico' || totalAprobado !== seccionesAprobables.length)) {
+      mostrarResultado('error', 'Primero deben aprobarse todas las secciones del expediente.')
+      return
+    }
+    if (!perfilesCuenta.length) {
+      mostrarResultado('error', 'Seleccione al menos un perfil autorizado.')
+      return
+    }
     if (!formCuenta.email_autorizado) {
       mostrarResultado('error', 'El correo autorizado es obligatorio.')
       return
@@ -1582,7 +1590,7 @@ export default function HojaVidaPersonalPage() {
     setGuardandoCuenta(true)
     try {
       const response = await fetch(`/api/personal/${id}/cuenta`, {
-        method: 'PATCH',
+        method: cuentaUsuario ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nit: nitActual,
@@ -1600,7 +1608,7 @@ export default function HojaVidaPersonalPage() {
         throw new Error(result.message || 'No fue posible actualizar la cuenta de usuario.')
       }
 
-      mostrarResultado('exito', 'Cuenta de usuario actualizada correctamente.')
+      mostrarResultado('exito', cuentaUsuario ? 'Cuenta de usuario actualizada correctamente.' : 'Perfiles asignados y cuenta preautorizada. La persona ya puede registrarse en DATA-CEA.')
       setCuentaUsuario(result.cuenta || null)
       setData((prev) => ({
         ...prev,
@@ -2008,13 +2016,7 @@ function CuentaUsuario({
     return <p className="rounded-lg border p-4 text-sm text-gray-500">Cargando cuenta de usuario...</p>
   }
 
-  if (!cuenta) {
-    return (
-      <div className="rounded-lg border bg-yellow-50 p-4 text-sm text-yellow-800">
-        Esta persona no tiene cuenta de usuario creada. Si necesita acceso, debe preautorizarse desde el registro de personal o desde el módulo administrativo correspondiente.
-      </div>
-    )
-  }
+  
 
   return (
     <div className="space-y-6">
@@ -2027,7 +2029,7 @@ function CuentaUsuario({
         </div>
 
         <form onSubmit={guardarCuenta} className="space-y-4">
-          {!cuenta.auth_user_id && !cuenta.fecha_registro_app && (
+          {!cuenta?.auth_user_id && !cuenta?.fecha_registro_app && (
             <div role="status" className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-[#194567]">
               <p className="font-semibold">Registro pendiente</p>
               <p className="mt-1">
@@ -2040,12 +2042,12 @@ function CuentaUsuario({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <CampoInput
               label="Documento"
-              value={cuenta.documento || ''}
+              value={cuenta?.documento || ''}
               disabled
             />
             <CampoInput
               label="Usuario login"
-              value={cuenta.usuario_login || cuenta.documento || ''}
+              value={cuenta?.usuario_login || cuenta?.documento || ''}
               disabled
             />
             <CampoInput
@@ -2062,25 +2064,25 @@ function CuentaUsuario({
               value={formCuenta.estado}
               onChange={cambiarCuenta}
               options={[
-                ...(!cuenta.auth_user_id && !cuenta.fecha_registro_app ? [['pre_autorizado', 'Preautorizado (pendiente de registro)']] : []),
-                ...(cuenta.auth_user_id && cuenta.fecha_registro_app ? [['activo', 'Activo']] : []),
+                ...(!cuenta?.auth_user_id && !cuenta?.fecha_registro_app ? [['pre_autorizado', 'Preautorizado (pendiente de registro)']] : []),
+                ...(cuenta?.auth_user_id && cuenta?.fecha_registro_app ? [['activo', 'Activo']] : []),
                 ['inactivo', 'Inactivo'],
                 ...(formCuenta.estado === 'suspendido' ? [['suspendido', 'Suspendido (estado anterior)']] : []),
               ]}
             />
             <CampoInput
               label="Fecha preautorización"
-              value={fecha(cuenta.fecha_preautorizacion)}
+              value={fecha(cuenta?.fecha_preautorizacion)}
               disabled
             />
             <CampoInput
               label="Fecha registro app"
-              value={fecha(cuenta.fecha_registro_app)}
+              value={fecha(cuenta?.fecha_registro_app)}
               disabled
             />
             <CampoInput
               label="Último acceso"
-              value={cuenta.fecha_ultimo_acceso ? String(cuenta.fecha_ultimo_acceso).slice(0, 19).replace('T', ' ') : '-'}
+              value={cuenta?.fecha_ultimo_acceso ? String(cuenta.fecha_ultimo_acceso).slice(0, 19).replace('T', ' ') : '-'}
               disabled
             />
           </div>
@@ -2117,7 +2119,7 @@ function CuentaUsuario({
               disabled={guardandoCuenta}
               className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:bg-gray-400"
             >
-              <i className="fas fa-save mr-2" aria-hidden="true"></i>{guardandoCuenta ? 'Guardando...' : 'Guardar cambios de cuenta'}
+              <i className="fas fa-save mr-2" aria-hidden="true"></i>{guardandoCuenta ? 'Guardando...' : cuenta ? 'Guardar cambios de cuenta' : 'Asignar perfiles y preautorizar registro'}
             </button>
           </div>
         </form>
