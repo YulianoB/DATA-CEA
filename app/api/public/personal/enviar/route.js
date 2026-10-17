@@ -41,6 +41,19 @@ export async function POST(request) {
         }
       }
     }
+    const obligatorio = v => typeof v === 'string' && v.trim().length > 0
+    const faltantes = ['telefono','direccion','departamento_residencia','ciudad_residencia','contacto_emergencia_nombre','contacto_emergencia_parentesco','contacto_emergencia_telefono'].filter(k => !obligatorio(p[k]))
+    if (faltantes.length) return NextResponse.json({mensaje:'Complete los datos de contacto, residencia y contacto de emergencia.'},{status:400})
+    if (p.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(p.email)) return NextResponse.json({mensaje:'Ingrese un correo electrónico válido.'},{status:400})
+    if (p.trabaja_cea && ['tipo_personal','grupo_personal','cargo','tipo_contrato','tipo_permanencia','fecha_vinculacion'].some(k=>!obligatorio(p[k]))) {
+      return NextResponse.json({mensaje:'Complete los datos de vinculación con el CEA.'},{status:400})
+    }
+    if (estudios.some(x => Object.values(x).some(v => typeof v === 'string' && obligatorio(v)) && ['nivel_estudio','titulo','institucion'].some(k=>!obligatorio(x[k])))) {
+      return NextResponse.json({mensaje:'Complete tipo de formación, título e institución de cada estudio registrado.'},{status:400})
+    }
+    if (experiencias.some(x => (Object.values(x).some(v => typeof v === 'string' && obligatorio(v)) || x.actualmente) && (['empresa','cargo','fecha_inicio'].some(k=>!obligatorio(x[k])) || (x.fecha_fin && x.fecha_inicio && x.fecha_fin < x.fecha_inicio)))) {
+      return NextResponse.json({mensaje:'Complete empresa, cargo y fecha de inicio de cada experiencia, y revise sus fechas.'},{status:400})
+    }
     const { supabaseAdmin } = await resolverFormularioPersonal(body.cea, body.formulario)
     const { data: documentoVigente, error: errorDocumento } = await supabaseAdmin.from('autorizacion_personal_versiones').select('version').eq('vigente', true).maybeSingle()
     if (errorDocumento) throw errorDocumento
