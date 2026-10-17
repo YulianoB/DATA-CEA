@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
  */
 export default function CampoCatalogo({
   catalogo, label, name, value = '', onChange, nit,
-  departamentoId, endpoint = '/api/catalogos', onOpcionesCargadas, required = true, disabled = false, wrapperClass = '',
+  departamentoId, endpoint = '/api/catalogos', onOpcionesCargadas, required = true, disabled = false, wrapperClass = '', opcionesAdicionales = [],
 }) {
   const [opciones, setOpciones] = useState([])
   const [cargando, setCargando] = useState(false)
@@ -72,7 +72,8 @@ export default function CampoCatalogo({
         className="w-full border border-slate-500 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20"
       >
         <option value="">{!disponible ? 'Seleccione primero el departamento' : cargando ? 'Cargando...' : 'Seleccione'}</option>
-        {valorActual && !existe && !cargando && <option value={valorActual}>{valorActual} (valor registrado)</option>}
+        {opcionesAdicionales.filter(op => !opciones.some(item => item.nombre === op)).map(op => <option key={'extra-'+op} value={op}>{op}</option>)}
+        {valorActual && !existe && !opcionesAdicionales.includes(valorActual) && !cargando && <option value={valorActual}>{valorActual} (valor registrado)</option>}
         {opciones.map((item) => <option key={item.id} value={item.nombre}>{item.nombre}</option>)}
       </select>
       {error && <p role="alert" className="mt-1 text-xs text-red-600">{error}</p>}
