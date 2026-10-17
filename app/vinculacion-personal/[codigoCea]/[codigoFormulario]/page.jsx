@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import CampoCatalogo from '@/components/admin/CampoCatalogo'
+import CampoMunicipioBusqueda from '@/components/admin/CampoMunicipioBusqueda'
 
 const inicial = { tipo_documento:'CC', documento:'', nombres:'', apellidos:'', telefono:'', email:'', contacto_emergencia_nombre:'', contacto_emergencia_parentesco:'', contacto_emergencia_telefono:'', perfil_profesional:'', tipo_personal:'contratista', trabaja_cea:false, rol_conductor_instructor:false }
 const pasos = ['Identificación', 'Información general', 'Vinculación y perfil', 'Estudios', 'Experiencia', 'Referencia y envío']
@@ -9,6 +11,7 @@ const campo = (nombre, titulo, tipo='text', obligatorio=false) => ({ nombre, tit
 export default function VinculacionPersonalPage() {
   const { codigoCea, codigoFormulario } = useParams()
   const [config, setConfig] = useState(null)
+  const [departamentos, setDepartamentos] = useState([])
   const [errorConfig, setErrorConfig] = useState('')
   const [paso, setPaso] = useState(0)
   const [validado, setValidado] = useState(false)
@@ -56,7 +59,17 @@ export default function VinculacionPersonalPage() {
       setEnviado(true);setMensaje(j.mensaje)
     }catch(e){setMensaje(e.message)}finally{setOcupado(false)}
   }
+  const endpointCatalogos = '/api/public/personal/catalogos?cea=' + encodeURIComponent(codigoCea || '') + '&formulario=' + encodeURIComponent(codigoFormulario || '')
+  const departamentoId = departamentos.find(d => d.nombre === personal.departamento_residencia)?.id
+
   function renderCampo(c, objeto=personal, fn=actualizar) {
+    if (objeto === personal && ['departamento_residencia','ciudad_residencia','eps','arl','fondo_pension'].includes(c.nombre)) {
+      if (c.nombre === 'ciudad_residencia') return <CampoMunicipioBusqueda key={c.nombre} departamentoId={departamentoId} endpoint={endpointCatalogos} value={personal.ciudad_residencia || ''} onChange={valor=>actualizar('ciudad_residencia',valor)} className="mt-1 w-full rounded border border-slate-300 p-2 text-sm" />
+      const catalogo = { departamento_residencia:'departamentos', eps:'eps', arl:'arl', fondo_pension:'fondos_pensiones' }[c.nombre]
+      return <CampoCatalogo key={c.nombre} catalogo={catalogo} name={c.nombre} label={c.titulo} value={personal[c.nombre] || ''} endpoint={endpointCatalogos} required={false}
+        onOpcionesCargadas={c.nombre === 'departamento_residencia' ? setDepartamentos : undefined}
+        onChange={e => setPersonal(p => ({ ...p, [c.nombre]:e.target.value, ...(c.nombre === 'departamento_residencia' ? { ciudad_residencia:'' } : {}) }))} />
+    }
     return <label key={c.nombre} className="block text-sm font-medium text-slate-700">{c.titulo}{c.obligatorio?' *':''}
       {c.tipo==='textarea'?<textarea rows={4} value={objeto[c.nombre]||''} onChange={e=>fn(c.nombre,e.target.value)} className="mt-1 w-full rounded border border-slate-300 p-2"/>:
       <input type={c.tipo} required={c.obligatorio} value={objeto[c.nombre]||''} onChange={e=>fn(c.nombre,e.target.value)} className="mt-1 w-full rounded border border-slate-300 p-2"/>}
