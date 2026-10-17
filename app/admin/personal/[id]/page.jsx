@@ -214,6 +214,8 @@ export default function HojaVidaPersonalPage() {
   const [tab, setTab] = useState('general')
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState(null)
+  const [aprobaciones, setAprobaciones] = useState([])
+  const [aprobando, setAprobando] = useState(false)
 
   const [perfilProfesional, setPerfilProfesional] = useState('')
   const [guardandoPerfil, setGuardandoPerfil] = useState(false)
@@ -354,6 +356,13 @@ export default function HojaVidaPersonalPage() {
       }
 
       setData(result)
+      if (result.personal?.origen_registro === 'formulario_publico') {
+        try {
+          const respuestaAprobaciones = await fetch(`/api/personal/${id}/aprobaciones`, { cache: 'no-store' })
+          const jsonAprobaciones = await respuestaAprobaciones.json()
+          if (respuestaAprobaciones.ok) setAprobaciones(jsonAprobaciones.aprobaciones || [])
+        } catch (error) { console.error('No fue posible cargar aprobaciones', error) }
+      }
       setPerfilProfesional(result.personal?.perfil_profesional || '')
       setLicencias(result.personal?.licencias_personal || result.licencias || [])
       await cargarFotografia()
@@ -363,6 +372,30 @@ export default function HojaVidaPersonalPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const seccionesAprobables = ['general', 'licencias', 'estudios', 'experiencia', 'referencias'].filter(
+    (seccion) => seccion !== 'licencias' || puedeGestionarLicencias
+  )
+  const totalAprobado = seccionesAprobables.filter((seccion) =>
+    aprobaciones.some((a) => a.seccion === seccion && a.estado === 'aprobado')
+  ).length
+
+  async function aprobarSeccion() {
+    if (aprobando || !seccionesAprobables.includes(tab)) return
+    setAprobando(true)
+    try {
+      const respuesta = await fetch(`/api/personal/${id}/aprobaciones`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seccion: tab }),
+      })
+      const json = await respuesta.json()
+      if (!respuesta.ok) throw new Error(json.message || 'No fue posible aprobar la sección.')
+      setAprobaciones(json.aprobaciones || [])
+      setData((prev) => ({ ...prev, personal: { ...prev.personal, estado_aprobacion: json.completo ? 'aprobado' : 'en_revision' } }))
+      mostrarResultado('exito', json.completo ? 'Todas las secciones aprobadas.' : 'Sección aprobada correctamente.')
+    } catch (error) { mostrarResultado('error', error.message) }
+    finally { setAprobando(false) }
   }
 
   async function cargarFotografia() {
@@ -1775,6 +1808,12 @@ export default function HojaVidaPersonalPage() {
         <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
           <nav aria-label="Secciones de la hoja de vida" className="overflow-hidden rounded-lg border border-[#194567] bg-[#194567] p-2 text-white shadow-sm lg:sticky lg:top-4">
             <p className="hidden border-b border-white/25 px-3 py-3 text-xs font-bold uppercase tracking-wide text-white lg:mb-2 lg:block">Contenido del expediente</p>
+            {data?.personal?.origen_registro === 'formulario_publico' && (
+              <div className="mb-3 rounded border border-white/30 p-3 text-xs">
+                <p className="mb-2 font-semibold">Progreso de aprobación: {totalAprobado} de {seccionesAprobables.length}</p>
+                <div className="h-2 overflow-hidden rounded bg-white/25"><div className="h-full bg-white" style={{ width: `${seccionesAprobables.length ? totalAprobado / seccionesAprobables.length * 100 : 0}%` }} /></div>
+              </div>
+            )}
             <div role="tablist" aria-label="Secciones de la hoja de vida" className="flex gap-2 overflow-x-auto lg:flex-col">
             {tabsVisibles.map((item) => (
               <button
@@ -1786,6 +1825,11 @@ export default function HojaVidaPersonalPage() {
                 className={`whitespace-nowrap rounded-md px-3 py-2 text-left text-xs font-semibold transition ${tab === item.key ? 'bg-white text-[#194567] shadow-sm' : 'border border-white/20 bg-white/10 text-white hover:bg-white/20'}`}
               >
                 {item.label}
+                {data?.personal?.origen_registro === 'formulario_publico' && seccionesAprobables.includes(item.key) && (
+                  <span className="ml-2" aria-label={aprobaciones.some(a=>a.seccion===item.key&&a.estado==='aprobado') ? 'Aprobada' : 'Pendiente'}>
+                    {aprobaciones.some(a=>a.seccion===item.key&&a.estado==='aprobado') ? '✓' : '○'}
+                  </span>
+                )}
               </button>
             ))}
             </div>
@@ -1900,6 +1944,14 @@ export default function HojaVidaPersonalPage() {
                 perfilesCuenta={perfilesCuenta}
                 setPerfilesCuenta={setPerfilesCuenta}
               />
+            )}
+            {data?.personal?.origen_registro === 'formulario_publico' && seccionesAprobables.includes(tab) && (
+              <div className="mt-5 border-t border-slate-200 pt-4">
+                <button type="button" onClick={aprobarSeccion} disabled={aprobando || aprobaciones.some(a=>a.seccion===tab&&a.estado==='aprobado')}
+                  className="rounded bg-[#194567] px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-400">
+                  {aprobaciones.some(a=>a.seccion===tab&&a.estado==='aprobado') ? 'Sección aprobada' : aprobando ? 'Aprobando...' : 'Aprobar sección'}
+                </button>
+              </div>
             )}
           </section>
         </div>
@@ -2142,14 +2194,7 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
             <h3 className="text-sm font-bold text-[#194567]">Perfil profesional</h3>
             <p className="text-sm text-gray-500">Completa aquí el resumen de hoja de vida. Este texto no se convierte a mayúsculas.</p>
           </div>
-          <button
-            type="button"
-            onClick={guardarPerfilProfesional}
-            disabled={guardandoPerfil}
-            className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] disabled:bg-gray-400"
-          >
-            {guardandoPerfil ? 'Guardando...' : 'Guardar perfil'}
-          </button>
+
         </div>
         <textarea
           value={perfilProfesional}
@@ -2158,6 +2203,7 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
           placeholder="Ejemplo: Instructor de conducción con experiencia en formación teórica y práctica, orientación al servicio y conocimiento en seguridad vial..."
           className="w-full rounded-lg border bg-white p-4 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
+        <div className="mt-3 flex justify-end"><button type="button" onClick={guardarPerfilProfesional} disabled={guardandoPerfil} className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white disabled:bg-gray-400">{guardandoPerfil ? 'Guardando...' : 'Guardar perfil'}</button></div>
       </section>
     </div>
   )
