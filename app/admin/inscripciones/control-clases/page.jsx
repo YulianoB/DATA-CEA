@@ -797,7 +797,7 @@ function TablaModulo({
             py-1
           "
         >
-          TEMA / CONTENIDO
+          COMPETENCIA A DESARROLLAR
         </th>
 
             <th
@@ -1009,7 +1009,7 @@ function TablaPractica({
                 py-1
               "
             >
-              TEMA / CONTENIDO
+              COMPETENCIA A DESARROLLAR
             </th>
 
             <th
