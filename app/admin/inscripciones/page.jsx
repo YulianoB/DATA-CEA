@@ -748,6 +748,7 @@ export default function InscripcionesPage() {
 
   // ==========================================================
   // FILTROS
+  // Cargar inicialmente las inscripciones del día actual.
   // ==========================================================
 
   const [
@@ -764,6 +765,21 @@ export default function InscripcionesPage() {
       fecha_fin:
         '',
     })
+
+  useEffect(() => {
+    const ahora = new Date()
+    const hoy = [
+      ahora.getFullYear(),
+      String(ahora.getMonth() + 1).padStart(2, '0'),
+      String(ahora.getDate()).padStart(2, '0'),
+    ].join('-')
+
+    setFiltros((actuales) => ({
+      ...actuales,
+      fecha_inicio: hoy,
+      fecha_fin: hoy,
+    }))
+  }, [])
 
   // ==========================================================
   // RESULTADOS
