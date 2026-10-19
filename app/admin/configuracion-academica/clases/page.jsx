@@ -5325,7 +5325,7 @@ async function restaurarLogoAnterior() {
 
 
               <Campo
-                etiqueta="Contenido para tarjeta"
+                etiqueta="Contenido para tarjeta (competencias a desarrollar)"
               >
                 <textarea
                   rows={3}
@@ -5352,7 +5352,10 @@ async function restaurarLogoAnterior() {
                     text-xs
                   "
                 />
-              </Campo>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    Este texto se mostrará en la columna «COMPETENCIA A DESARROLLAR» del Control de Clases.
+                  </p>              </Campo>
 
 
               <Campo
@@ -5700,7 +5703,7 @@ async function restaurarLogoAnterior() {
 
 
               <Campo
-                etiqueta="Contenido para tarjeta"
+                etiqueta="Contenido para tarjeta (competencias a desarrollar)"
               >
                 <textarea
                   rows={3}
@@ -5727,7 +5730,10 @@ async function restaurarLogoAnterior() {
                     text-xs
                   "
                 />
-              </Campo>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    Este texto se mostrará en la columna «COMPETENCIA A DESARROLLAR» del Control de Clases.
+                  </p>              </Campo>
 
 
               <Campo
