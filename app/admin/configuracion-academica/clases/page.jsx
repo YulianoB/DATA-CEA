@@ -1708,6 +1708,7 @@ async function restaurarLogoAnterior() {
     // El formulario inicia sin categoría ni módulo, independientemente del plan visible.
     setNuevaClase({
       modulo_id: '',
+      modulo_referencia_id: '',
       categorias_destino: [],
       nombre_grupo: '',
       modulo_nombre: '',
@@ -1750,6 +1751,7 @@ async function restaurarLogoAnterior() {
     setNuevaClase(anterior => ({
       ...anterior,
       modulo_id: moduloOrigen.id,
+      modulo_referencia_id: modulo.id,
       modulo_nombre: moduloOrigen.nombre,
       tipo_formacion: moduloOrigen.tipo_formacion,
       categoria,
@@ -1761,7 +1763,7 @@ async function restaurarLogoAnterior() {
 
   function alternarCategoriaNueva(categoria, marcada) {
     setNuevaClase(anterior => {
-      const referencias = modulos.find(m => Number(m.id) === Number(anterior.modulo_id))
+      const referencias = modulos.find(m => Number(m.id) === Number(anterior.modulo_referencia_id || anterior.modulo_id))
       if (!referencias) return anterior
       const disponibles = anterior.categorias_destino || []
       const seleccion = marcada
@@ -5185,7 +5187,7 @@ async function restaurarLogoAnterior() {
               "
             >
               <Campo etiqueta="Tipo de formación y módulo">
-                <select value={nuevaClase.modulo_id || ''} onChange={e => cambiarModuloNueva(e.target.value)}
+                <select value={nuevaClase.modulo_referencia_id || ''} onChange={e => cambiarModuloNueva(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs">
                   <option value="">Seleccione el tipo de formación y módulo...</option>
                   {modulos.filter(modulo =>
