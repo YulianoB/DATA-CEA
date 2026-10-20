@@ -3959,7 +3959,7 @@ async function restaurarLogoAnterior() {
 
                           <div className="overflow-x-auto">
                             <div className="min-w-[1050px]">
-                              <div className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] gap-0 border-y border-slate-400 bg-slate-100 text-[10px] font-extrabold uppercase text-slate-700 [&>span]:border-r [&>span]:border-slate-400 [&>span]:px-2 [&>span]:py-2">
+                              <div className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] gap-0 border-y border-slate-500 bg-slate-100 text-[10px] font-extrabold uppercase text-slate-700 [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>span]:border-r [&>span]:border-slate-500 [&>span]:px-2 [&>span]:py-2 [&>span]:text-center">
                                 <span>Nombre de la clase</span><span>Color</span><span>Duración</span><span>Contenido</span><span>Competencias a desarrollar</span><span>Estado</span><span>Acciones</span>
                               </div>
                             {clasesModulo.map(
@@ -3988,18 +3988,30 @@ async function restaurarLogoAnterior() {
                                   )
 
                                 return (
-                                  <div key={clase.id} className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] items-stretch gap-0 border-b border-slate-400 text-[11px] text-slate-700 hover:bg-slate-50 [&>div]:border-r [&>div]:border-slate-400 [&>div]:px-2 [&>div]:py-2 [&>span]:border-r [&>span]:border-slate-400 [&>span]:px-2 [&>span]:py-2">
+                                  <div key={clase.id} className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] items-stretch gap-0 border-b border-slate-500 text-[11px] text-slate-700 hover:bg-slate-50 [&>div]:border-r [&>div]:border-slate-500 [&>div]:px-2 [&>div]:py-2">
                                     <div className="min-w-0">
                                       <span className="mr-2 text-slate-400">#{clase.numero_clase}</span>
                                       <span className="font-semibold text-slate-900">{clase.nombre}</span>
                                       {grupoClase && <div className="mt-0.5 truncate text-[10px] text-blue-700" title={grupoClase.nombre}>Grupo: {grupoClase.nombre}</div>}
                                     </div>
-                                    <span title={grupoClase ? 'Color del grupo' : 'Color de la clase'} className="inline-block h-5 w-5 rounded border border-slate-300" style={{ backgroundColor: grupoClase?.color_horario || clase.color_horario || '#F1F5F9' }}/>
-                                    <span>{clase.tipo_formacion === 'PRACTICA' ? '—' : clase.duracion_horas ? formatearHoras(clase.duracion_horas) + ' h' : 'Pendiente'}</span>
-                                    <span className="min-w-0 line-clamp-2 break-words text-slate-600" title={texto(clase.contenido)}>{texto(clase.contenido) || 'Pendiente'}</span>
-                                    <span className="min-w-0 line-clamp-2 break-words text-slate-600" title={texto(clase.contenido_tarjeta)}>{texto(clase.contenido_tarjeta) || 'Pendiente'}</span>
-                                    <span className={clase.activo === false ? 'text-slate-500' : 'text-emerald-700'}>{clase.activo === false ? 'Inactiva' : 'Activa'}</span>
-                                    <div className="flex items-center justify-end gap-1">
+                                    <div className="flex items-center justify-center">
+                                      <span title={grupoClase ? 'Color del grupo' : 'Color de la clase'} className="inline-block h-5 w-5 shrink-0 rounded border border-slate-400" style={{backgroundColor: grupoClase?.color_horario || clase.color_horario || '#F1F5F9'}}/>
+                                    </div>
+                                    <div className="flex items-center justify-center text-center">{clase.tipo_formacion === 'PRACTICA' ? '—' : clase.duracion_horas ? formatearHoras(clase.duracion_horas) + ' h' : 'Pendiente'}</div>
+                                    <div className="flex min-w-0 items-center justify-center">
+                                      <span className="min-w-0 break-words text-center text-slate-600" title={texto(clase.contenido)}
+                                        style={{display:'-webkit-box',WebkitBoxOrient:'vertical',WebkitLineClamp:2,overflow:'hidden',lineHeight:'1.35'}}>
+                                        {texto(clase.contenido) || 'Pendiente'}
+                                      </span>
+                                    </div>
+                                    <div className="flex min-w-0 items-center justify-center">
+                                      <span className="min-w-0 break-words text-center text-slate-600" title={texto(clase.contenido_tarjeta)}
+                                        style={{display:'-webkit-box',WebkitBoxOrient:'vertical',WebkitLineClamp:2,overflow:'hidden',lineHeight:'1.35'}}>
+                                        {texto(clase.contenido_tarjeta) || 'Pendiente'}
+                                      </span>
+                                    </div>
+                                    <div className={`flex items-center justify-center text-center ${clase.activo === false ? 'text-slate-500' : 'text-emerald-700'}`}>{clase.activo === false ? 'Inactiva' : 'Activa'}</div>
+                                    <div className="flex items-center justify-center gap-1">
                                       <button type="button" title="Editar clase" onClick={() => abrirEdicion(clase)} className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-800"><i className="fas fa-edit" aria-hidden="true"/></button>
                                       <button type="button" title={clase.activo === false ? 'Activar' : 'Desactivar'} onClick={() => alternarEstadoClase(clase)} disabled={guardando} className="rounded border border-slate-300 bg-white p-2 text-slate-700"><i className="fas fa-power-off" aria-hidden="true"/></button>
                                       <button type="button" title="Eliminar clase" onClick={() => solicitarEliminar(clase)} className="rounded border border-red-200 bg-red-50 p-2 text-red-700"><i className="fas fa-trash" aria-hidden="true"/></button>
@@ -4145,11 +4157,11 @@ async function restaurarLogoAnterior() {
                   <thead className="bg-slate-100 text-[11px] uppercase text-slate-700">
                     <tr>
                       <th className="px-3 py-3">Grupo transversal</th>
-                      <th className="px-3 py-3">Formación</th>
+                      <th className="px-3 py-3 text-center">Formación</th>
                       <th className="px-3 py-3">Categorías a las que aplica</th>
-                      <th className="px-3 py-3">Color</th>
-                      <th className="px-3 py-3">Estado</th>
-                      <th className="px-3 py-3 text-right">Acciones</th>
+                      <th className="px-3 py-3 text-center">Color</th>
+                      <th className="px-3 py-3 text-center">Estado</th>
+                      <th className="px-3 py-3 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -4159,7 +4171,7 @@ async function restaurarLogoAnterior() {
                           <div className="font-semibold text-slate-900">{grupo.nombre}</div>
                           <div className="mt-1 text-[10px] text-slate-500">{(grupo.clases || []).map(c => c.categoria + ': ' + c.nombre).join(' · ')}</div>
                         </td>
-                        <td className="px-3 py-3 align-top">{grupo.tipo_formacion}</td>
+                        <td className="px-3 py-3 text-center align-middle">{grupo.tipo_formacion}</td>
                         <td className="px-3 py-3 align-top">
                           <div className="flex flex-wrap gap-1">
                             {(grupo.categorias || []).map(cat => (
@@ -4167,13 +4179,13 @@ async function restaurarLogoAnterior() {
                             ))}
                           </div>
                         </td>
-                        <td className="px-3 py-3 align-top">
+                        <td className="px-3 py-3 text-center align-middle">
                           <span className="inline-block h-6 w-6 rounded border border-slate-300"
                             style={{backgroundColor: grupo.color_horario || '#F1F5F9'}} title={grupo.color_horario || 'Sin color'}/>
                         </td>
-                        <td className="px-3 py-3 align-top">{grupo.activo === false ? 'Inactivo' : 'Activo'}</td>
-                        <td className="px-3 py-3 align-top">
-                          <div className="flex justify-end gap-1">
+                        <td className="px-3 py-3 text-center align-middle">{grupo.activo === false ? 'Inactivo' : 'Activo'}</td>
+                        <td className="px-3 py-3 text-center align-middle">
+                          <div className="flex justify-center gap-1">
                             <button type="button" title="Editar grupo y asociaciones" aria-label="Editar grupo y asociaciones" onClick={() => abrirEditarGrupo(grupo)}
                               className="rounded border border-amber-200 bg-amber-50 p-2 text-amber-800 hover:bg-amber-100"><i className="fas fa-edit" aria-hidden="true"/></button>
                             <button type="button" title="Eliminar grupo" aria-label="Eliminar grupo" onClick={() => solicitarEliminarGrupo(grupo)}
