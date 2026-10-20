@@ -13,7 +13,7 @@ import {
 } from 'next/navigation'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { BookOpen } from 'lucide-react'
-import { BotonAccion } from '@/components/admin/EstiloModulo'
+import { BotonAccion, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
 
 
 // ============================================================
@@ -2790,6 +2790,50 @@ async function restaurarLogoAnterior() {
   // ELIMINAR GRUPO
   // ============================================================
 
+  async function alternarEstadoGrupo(grupo) {
+    if (guardando) return
+    const activar = grupo.activo === false
+    if (!window.confirm(
+      activar
+        ? `¿Activar el grupo transversal "${grupo.nombre}"?`
+        : `¿Inactivar el grupo transversal "${grupo.nombre}"? Dejará de estar disponible para nuevas programaciones.`
+    )) return
+
+    try {
+      setGuardando(true)
+      setError('')
+      setMensaje('')
+      const nit = obtenerNitUsuario(user)
+      if (!nit) throw new Error('No se encontró el NIT del CEA en la sesión actual.')
+      const respuesta = await fetch('/api/admin/configuracion-academica', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-cea-nit': nit },
+        body: JSON.stringify({
+          nit,
+          recurso: 'GRUPO_TRANSVERSAL',
+          id: grupo.id,
+          nombre: grupo.nombre,
+          tipo_formacion: grupo.tipo_formacion,
+          clase_ids: (grupo.clases || []).map(clase => Number(clase.id)),
+          activo: activar,
+          observaciones: grupo.observaciones || '',
+          color_horario: grupo.color_horario || null,
+          usuario: obtenerNombreUsuario(user),
+        }),
+      })
+      const data = await respuesta.json()
+      if (!respuesta.ok || !data?.ok) {
+        throw new Error(data?.error || data?.mensaje || 'No fue posible actualizar el estado del grupo.')
+      }
+      await cargarDatos({ conservarSeleccion: true })
+      setMensaje(activar ? 'Grupo transversal activado correctamente.' : 'Grupo transversal inactivado correctamente.')
+    } catch (errorEstadoGrupo) {
+      setError(errorEstadoGrupo?.message || 'No fue posible cambiar el estado del grupo.')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
   function solicitarEliminarGrupo(
     grupo
   ) {
@@ -3959,7 +4003,7 @@ async function restaurarLogoAnterior() {
 
                           <div className="overflow-x-auto">
                             <div className="min-w-[1050px]">
-                              <div className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] gap-0 border-y border-slate-500 bg-slate-100 text-[10px] font-extrabold uppercase text-slate-700 [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>span]:border-r [&>span]:border-slate-500 [&>span]:px-2 [&>span]:py-2 [&>span]:text-center">
+                              <div style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }} className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] gap-0 border-y border-slate-500 text-[10px] font-extrabold uppercase [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>span]:border-r [&>span]:border-slate-500 [&>span]:px-2 [&>span]:py-2 [&>span]:text-center">
                                 <span>Nombre de la clase</span><span>Color</span><span>Duración</span><span>Contenido</span><span>Competencias a desarrollar</span><span>Estado</span><span>Acciones</span>
                               </div>
                             {clasesModulo.map(
@@ -4154,7 +4198,7 @@ async function restaurarLogoAnterior() {
             {gruposTransversales.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[960px] border-collapse border border-slate-400 text-left text-xs [&_td]:border [&_td]:border-slate-400 [&_th]:border [&_th]:border-slate-400">
-                  <thead className="bg-slate-100 text-[11px] uppercase text-slate-700">
+                  <thead className="text-[11px] uppercase" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                     <tr>
                       <th className="px-3 py-3">Grupo transversal</th>
                       <th className="px-3 py-3 text-center">Formación</th>
@@ -4183,11 +4227,18 @@ async function restaurarLogoAnterior() {
                           <span className="inline-block h-6 w-6 rounded border border-slate-300"
                             style={{backgroundColor: grupo.color_horario || '#F1F5F9'}} title={grupo.color_horario || 'Sin color'}/>
                         </td>
-                        <td className="px-3 py-3 text-center align-middle">{grupo.activo === false ? 'Inactivo' : 'Activo'}</td>
+                        <td className={`px-3 py-3 text-center align-middle font-medium ${grupo.activo === false ? 'text-slate-500' : 'text-emerald-700'}`}>{grupo.activo === false ? 'Inactivo' : 'Activo'}</td>
                         <td className="px-3 py-3 text-center align-middle">
                           <div className="flex justify-center gap-1">
                             <button type="button" title="Editar grupo y asociaciones" aria-label="Editar grupo y asociaciones" onClick={() => abrirEditarGrupo(grupo)}
                               className="rounded border border-amber-200 bg-amber-50 p-2 text-amber-800 hover:bg-amber-100"><i className="fas fa-edit" aria-hidden="true"/></button>
+                            <button type="button" disabled={guardando}
+                              title={grupo.activo === false ? 'Activar grupo transversal' : 'Inactivar grupo transversal'}
+                              aria-label={grupo.activo === false ? 'Activar grupo transversal' : 'Inactivar grupo transversal'}
+                              onClick={() => alternarEstadoGrupo(grupo)}
+                              className="rounded border border-slate-300 bg-white p-2 text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                              <i className="fas fa-power-off" aria-hidden="true"/>
+                            </button>
                             <button type="button" title="Eliminar grupo" aria-label="Eliminar grupo" onClick={() => solicitarEliminarGrupo(grupo)}
                               className="rounded border border-red-200 bg-red-50 p-2 text-red-700 hover:bg-red-100"><i className="fas fa-trash" aria-hidden="true"/></button>
                           </div>
