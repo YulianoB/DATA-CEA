@@ -1129,7 +1129,7 @@ export default function HojaVidaPersonalPage() {
       return
     }
 
-    const confirmar = await confirmarAccion('¿Deseas eliminar esta licencia o certificado? Esta acción no se puede deshacer.')
+    const confirmar = await confirmarAccion('¿Confirma que este registro de licencia o certificado fue creado por error y desea eliminarlo definitivamente? Los demás registros históricos permanecerán intactos. Esta acción no se puede deshacer.')
     if (!confirmar) return
 
     try {
@@ -2819,9 +2819,18 @@ function TablaLicencias({
                         Actualizar
                       </button>
                     ) : (
-                      <span className="text-xs text-gray-500">
-                        Solo consulta
-                      </span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="text-xs text-gray-500">Histórico · solo consulta</span>
+                        <button
+                          type="button"
+                          onClick={() => eliminarLicencia(licencia.id)}
+                          className="rounded-md border border-red-300 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
+                          title="Eliminar únicamente si el registro histórico se creó por error"
+                        >
+                          <i className="fas fa-trash-alt mr-1" aria-hidden="true"></i>
+                          Eliminar error
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
