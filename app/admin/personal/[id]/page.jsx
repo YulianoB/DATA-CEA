@@ -168,8 +168,8 @@ function claveGrupoLicencia(licencia) {
 const CAMPOS_EDICION_GENERAL = [
   ['Datos personales', [
     ['nombres','Nombres'],['apellidos','Apellidos'],['fecha_nacimiento','Fecha de nacimiento','date'],
-    ['genero','Género','select:femenino|masculino|otro'],['tipo_sangre','Tipo de sangre'],
-    ['estado_civil','Estado civil'],['escolaridad','Nivel académico principal'],
+    ['genero','Género','select:Femenino|Masculino|Otro'],['tipo_sangre','Tipo de sangre','select:O+|O-|A+|A-|B+|B-|AB+|AB-'],
+    ['estado_civil','Estado civil','select:Soltero(a)|Casado(a)|Unión libre|Divorciado(a)|Viudo(a)'],['escolaridad','Nivel académico principal'],
     ['profesion','Profesión u oficio'],['nacionalidad','Nacionalidad'],['numero_hijos','Número de hijos','number'],
   ]],
   ['Contacto', [
@@ -187,7 +187,7 @@ const CAMPOS_EDICION_GENERAL = [
   ['Seguridad social y PESV', [
     ['eps','EPS','catalogo:eps'],['arl','ARL','catalogo:arl'],
     ['fondo_pension','Fondo pensión','catalogo:fondos_pensiones'],
-    ['medio_transporte_trabajo','Medio de transporte'],
+    ['medio_transporte_trabajo','Medio de transporte','select:A pie|Bicicleta|Transporte público|Motocicleta propia|Motocicleta CEA|Automóvil propio|Automóvil CEA|Camioneta propia|Camioneta CEA'],
   ]],
   ['Contacto de emergencia', [
     ['contacto_emergencia_nombre','Nombre'],['contacto_emergencia_parentesco','Parentesco'],
@@ -596,7 +596,7 @@ export default function HojaVidaPersonalPage() {
 
   function abrirEdicionGeneral() {
     const personal = data?.personal || {}
-    setFormGeneral(Object.fromEntries(CAMPOS_GENERALES.map((campo) => [campo, personal[campo] ?? ''])))
+    setFormGeneral(Object.fromEntries(CAMPOS_GENERALES.map((campo) => [campo, campo === 'genero' && personal[campo] ? ({ femenino:'Femenino', masculino:'Masculino', otro:'Otro' }[String(personal[campo]).toLowerCase()] || personal[campo]) : (personal[campo] ?? '')])))
     setEditarGeneralAbierto(true)
   }
 
