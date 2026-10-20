@@ -583,6 +583,12 @@ const [
     setGrupoEliminar,
   ] = useState(null)
 
+  // Crear/editar datos del grupo sin exponer todas las clases;
+  // modificar membresía es una acción independiente.
+  const [modoAsociacionesGrupo, setModoAsociacionesGrupo] = useState(false)
+  const [filtroTemaGrupo, setFiltroTemaGrupo] = useState('')
+  const [mostrarAlternativasGrupo, setMostrarAlternativasGrupo] = useState(false)
+
   const [edicionTextosGrupo, setEdicionTextosGrupo] = useState(null)
 
 
@@ -2237,6 +2243,9 @@ async function restaurarLogoAnterior() {
   // ============================================================
 
   function abrirNuevoGrupo() {
+    setModoAsociacionesGrupo(true)
+    setFiltroTemaGrupo('')
+    setMostrarAlternativasGrupo(false)
     setGrupoEditando({
       id:
         null,
@@ -2275,6 +2284,9 @@ async function restaurarLogoAnterior() {
   function abrirEditarGrupo(
     grupo
   ) {
+    setModoAsociacionesGrupo(false)
+    setFiltroTemaGrupo('')
+    setMostrarAlternativasGrupo(false)
     setGrupoEditando({
       id:
         grupo.id,
@@ -2354,6 +2366,8 @@ async function restaurarLogoAnterior() {
   function cambiarTipoGrupo(
     tipo
   ) {
+    setFiltroTemaGrupo('')
+    setMostrarAlternativasGrupo(false)
     setGrupoEditando(
       (
         anterior
@@ -2892,6 +2906,30 @@ async function restaurarLogoAnterior() {
       grupoEditando,
     ])
 
+
+  // Opciones derivadas del plan de cada CEA; no se fija un catálogo curricular global.
+  const opcionesReferenciaGrupo = useMemo(() => {
+    if (!grupoEditando) return []
+    return clasesAgrupables.filter(clase =>
+      mayusculas(clase.tipo_formacion) === mayusculas(grupoEditando.tipo_formacion) &&
+      !gruposTransversales.some(grupo =>
+        Number(grupo.id) !== Number(grupoEditando.id) &&
+        (grupo.clases || []).some(miembro => Number(miembro.id) === Number(clase.id))
+      )
+    )
+  }, [grupoEditando, clasesAgrupables, gruposTransversales])
+
+  const clasesGrupoFiltradas = useMemo(() => {
+    if (!grupoEditando) return []
+    const filtro = mayusculas(filtroTemaGrupo)
+    return clasesGrupoDisponibles.filter(clase => {
+      const seleccionada = grupoEditando.clase_ids.includes(Number(clase.id))
+      if (seleccionada) return true
+      if (!mostrarAlternativasGrupo && !filtro) return false
+      if (!filtro) return true
+      return mayusculas(clase.nombre).includes(filtro)
+    })
+  }, [grupoEditando, clasesGrupoDisponibles, filtroTemaGrupo, mostrarAlternativasGrupo])
 
   // ============================================================
   // CARGANDO SESIÓN
@@ -3932,8 +3970,8 @@ async function restaurarLogoAnterior() {
                                     className="
                                       flex
                                       flex-col
-                                      gap-3
-                                      p-4
+                                      gap-1.5
+                                      px-3 py-2
                                       transition
                                       hover:bg-slate-50
                                       md:flex-row
@@ -4111,9 +4149,9 @@ async function restaurarLogoAnterior() {
                                       ) && (
                                         <div
                                           className="
-                                            mt-2
+                                            mt-1
                                             text-xs
-                                            leading-relaxed
+                                            leading-snug
                                             text-slate-600
                                           "
                                         >
@@ -4128,8 +4166,10 @@ async function restaurarLogoAnterior() {
                                     <div
                                       className="
                                         flex
+                                        shrink-0
                                         flex-wrap
-                                        gap-2
+                                        items-center
+                                        gap-1.5
                                       "
                                     >
                                       <BotonAccion tipo="editar"
@@ -4918,232 +4958,95 @@ async function restaurarLogoAnterior() {
               </Campo>
 
 
-              <div>
-                <div
-                  className="
-                    mb-2
-                    text-xs
-                    font-semibold
-                    text-slate-700
-                  "
-                >
-                  Clases y categorías
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-bold text-slate-800">Clases asociadas ({grupoEditando.clase_ids.length})</p>
+                  {!grupoEditando.esNuevo && (
+                    <button type="button"
+                      onClick={() => {
+                        setModoAsociacionesGrupo(anterior => !anterior)
+                        setMostrarAlternativasGrupo(false)
+                        setFiltroTemaGrupo('')
+                      }}
+                      className="rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-800">
+                      {modoAsociacionesGrupo ? 'Ocultar selección' : 'Cambiar asociaciones'}
+                    </button>
+                  )}
                 </div>
-
-                <div
-                  className="
-                    rounded-lg
-                    border
-                    border-gray-200
-                    bg-gray-50
-                    p-3
-                  "
-                >
-                  <div
-                    className="
-                      mb-3
-                      text-xs
-                      text-slate-500
-                    "
-                  >
-                    Debe seleccionar por
-                    lo menos dos clases de
-                    categorías diferentes.
+                {!modoAsociacionesGrupo && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {clasesAgrupables.filter(clase => grupoEditando.clase_ids.includes(Number(clase.id))).map(clase => (
+                      <span key={clase.id} className="rounded-md bg-white px-2 py-1 text-xs text-slate-700 ring-1 ring-slate-200">
+                        {clase.categoria} · {clase.nombre}
+                      </span>
+                    ))}
                   </div>
-
-
-                  <div
-                    className="
-                      space-y-4
-                    "
-                  >
-                    {categorias.map(
-                      (
-                        categoria
-                      ) => {
-                        const clasesCategoria =
-                          clasesGrupoDisponibles.filter(
-                            (
-                              clase
-                            ) =>
-                              clase.categoria ===
-                              categoria
-                          )
-
-                        if (
-                          !clasesCategoria.length
-                        ) {
-                          return null
-                        }
-
-                        return (
-                          <div
-                            key={
-                              categoria
-                            }
-                            className="
-                              rounded-lg
-                              border-2
-                              border-slate-300
-                              bg-white
-                              p-3
-                            "
-                          >
-                            <div
-                              className="
-                                mb-2
-                                text-xs
-                                font-extrabold
-                                text-[var(--primary)]
-                              "
-                            >
-                              {
-                                categoria
-                              }
-                            </div>
-
-                            <div
-                              className="
-                                space-y-2
-                              "
-                            >
-                              {clasesCategoria.map(
-                                (
-                                  clase
-                                ) => {
-                                  const ocupadaPor =
-                                    obtenerGrupoClase(
-                                      clase.id
-                                    )
-
-                                  const seleccionada =
-                                    grupoEditando.clase_ids.includes(
-                                      Number(
-                                        clase.id
-                                      )
-                                    )
-
-                                  return (
-                                    <label
-                                      key={
-                                        clase.id
-                                      }
-                                      className={`
-                                        flex
-                                        items-start
-                                        gap-3
-                                        rounded-lg
-                                        border
-                                        p-3
-                                        ${
-                                          ocupadaPor
-                                            ? `
-                                              cursor-not-allowed
-                                              border-gray-200
-                                              bg-gray-100
-                                              opacity-60
-                                            `
-                                            : seleccionada
-                                              ? `
-                                                cursor-pointer
-                                                border-blue-400
-                                                bg-blue-50
-                                              `
-                                              : `
-                                                cursor-pointer
-                                                border-gray-200
-                                                bg-white
-                                                hover:bg-gray-50
-                                              `
-                                        }
-                                      `}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        disabled={
-                                          Boolean(
-                                            ocupadaPor
-                                          )
-                                        }
-                                        checked={
-                                          seleccionada
-                                        }
-                                        onChange={() =>
-                                          alternarClaseGrupo(
-                                            clase.id
-                                          )
-                                        }
-                                        className="
-                                          mt-1
-                                        "
-                                      />
-
-                                      <div
-                                        className="
-                                          min-w-0
-                                          flex-1
-                                        "
-                                      >
-                                        <div
-                                          className="
-                                            text-xs
-                                            font-semibold
-                                            text-slate-800
-                                          "
-                                        >
-                                          {
-                                            clase.nombre
-                                          }
-                                        </div>
-
-                                        {clase.duracion_horas && (
-                                          <div
-                                            className="
-                                              mt-1
-                                              text-xs
-                                              text-slate-500
-                                            "
-                                          >
-                                            Duración:{' '}
-
-                                            {formatearHoras(
-                                              clase.duracion_horas
-                                            )}{' '}
-
-                                            hora(s)
-                                          </div>
-                                        )}
-
-                                        {ocupadaPor && (
-                                          <div
-                                            className="
-                                              mt-1
-                                              text-xs
-                                              font-semibold
-                                              text-purple-700
-                                            "
-                                          >
-                                            Ya pertenece a:{' '}
-
-                                            {
-                                              ocupadaPor.nombre
-                                            }
-                                          </div>
-                                        )}
-                                      </div>
-                                    </label>
-                                  )
-                                }
-                              )}
-                            </div>
-                          </div>
-                        )
-                      }
-                    )}
+                )}
+                {modoAsociacionesGrupo && (
+                  <div className="mt-3 space-y-3">
+                    <p className="text-xs text-slate-500">Primero seleccione una clase de referencia. Solo se mostrarán las clases compatibles por nombre y las ya asociadas.</p>
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Buscar clase o tema
+                      <input type="search" value={filtroTemaGrupo}
+                        onChange={e => { setFiltroTemaGrupo(e.target.value); setMostrarAlternativasGrupo(false) }}
+                        placeholder="Ej. MOVILIDAD SEGURA Y SOSTENIBLE 1"
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"/>
+                    </label>
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Seleccionar clase de referencia
+                      <select value=""
+                        onChange={e => {
+                          const clase = opcionesReferenciaGrupo.find(item => String(item.id) === e.target.value)
+                          if (!clase) return
+                          setFiltroTemaGrupo(clase.nombre)
+                          setMostrarAlternativasGrupo(false)
+                          if (grupoEditando.esNuevo && !texto(grupoEditando.nombre)) cambiarCampoGrupo('nombre', clase.nombre)
+                        }}
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                        <option value="">Seleccionar del plan actual...</option>
+                        {opcionesReferenciaGrupo.map(clase => (
+                          <option value={clase.id} key={clase.id}>{clase.nombre} · {clase.categoria}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-slate-600">
+                      <input type="checkbox" checked={mostrarAlternativasGrupo}
+                        onChange={e => setMostrarAlternativasGrupo(e.target.checked)}/>
+                      Mostrar todas las alternativas (para nombres diferentes entre categorías)
+                    </label>
+                    <div className="max-h-72 space-y-3 overflow-y-auto rounded-md border border-slate-200 bg-white p-2">
+                      {categorias.map(categoria => {
+                        const opciones = clasesGrupoFiltradas.filter(clase => clase.categoria === categoria)
+                        if (!opciones.length) return null
+                        return <div key={categoria} className="space-y-1">
+                          <p className="text-xs font-bold text-blue-900">{categoria}</p>
+                          {opciones.map(clase => {
+                            const ocupada = obtenerGrupoClase(clase.id)
+                            const seleccionada = grupoEditando.clase_ids.includes(Number(clase.id))
+                            const mismaCategoria = clasesAgrupables.some(otra => otra.categoria === categoria &&
+                              otra.id !== clase.id && grupoEditando.clase_ids.includes(Number(otra.id)))
+                            return (
+                              <label key={clase.id} className={`flex items-start gap-2 rounded border p-2 text-xs ${ocupada || (mismaCategoria && !seleccionada) ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-800'}`}>
+                                <input type="checkbox" checked={seleccionada}
+                                  disabled={Boolean(ocupada) || (mismaCategoria && !seleccionada)}
+                                  onChange={() => alternarClaseGrupo(clase.id)}/>
+                                <span><strong>{clase.nombre}</strong>
+                                  <span className="block text-slate-500">{clase.duracion_horas ? `${formatearHoras(clase.duracion_horas)} hora(s)` : 'Sin duración'}</span>
+                                  {ocupada && <span className="block text-purple-600">Ya pertenece a: {ocupada.nombre}</span>}
+                                </span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      })}
+                      {!clasesGrupoFiltradas.length && (
+                        <p className="p-3 text-xs text-slate-500">Busque una clase de referencia o active «Mostrar todas las alternativas».</p>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">La selección deberá contener al menos dos clases de categorías distintas. No se cambian las clases sin guardar.</p>
                   </div>
-                </div>
+                )}
               </div>
-
 
               <Campo
                 etiqueta="Observaciones"
