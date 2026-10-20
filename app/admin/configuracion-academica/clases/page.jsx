@@ -614,7 +614,7 @@ const [
   const [filtroTemaGrupo, setFiltroTemaGrupo] = useState('')
   const [mostrarAlternativasGrupo, setMostrarAlternativasGrupo] = useState(false)
 
-  const [edicionTextosGrupo, setEdicionTextosGrupo] = useState(null)
+
 
 
   // ============================================================
@@ -2921,81 +2921,6 @@ async function restaurarLogoAnterior() {
 
 
 
-  function abrirTextosGrupo(grupo) {
-    const miembros = Array.isArray(grupo.clases) ? grupo.clases : []
-    const ids = miembros.map(clase => Number(clase.id))
-    const primera = clases.find(clase => Number(clase.id) === ids[0])
-    setEdicionTextosGrupo({
-      id: grupo.id,
-      nombre: grupo.nombre,
-      miembros,
-      clase_ids: ids,
-      contenido: texto(primera?.contenido),
-      contenido_tarjeta: texto(primera?.contenido_tarjeta),
-      actualizar_contenido: true,
-      actualizar_tarjeta: true,
-    })
-    setError('')
-    setMensaje('')
-  }
-
-  function cambiarTextosGrupo(campo, valor) {
-    setEdicionTextosGrupo(anterior => anterior ? { ...anterior, [campo]: valor } : anterior)
-  }
-
-  async function guardarTextosGrupo() {
-    if (!edicionTextosGrupo || guardando) return
-    const form = edicionTextosGrupo
-    if (!form.clase_ids.length) {
-      setError('Seleccione al menos una categoría.')
-      return
-    }
-    if ((!form.actualizar_contenido && !form.actualizar_tarjeta) ||
-        (form.actualizar_contenido && !texto(form.contenido)) ||
-        (form.actualizar_tarjeta && !texto(form.contenido_tarjeta))) {
-      setError('Seleccione los campos que actualizará e ingrese sus textos.')
-      return
-    }
-    const resumen = form.miembros
-      .filter(clase => form.clase_ids.includes(Number(clase.id)))
-      .map(clase => clase.categoria + ' — ' + clase.nombre)
-      .join('\n')
-    if (!window.confirm(
-      'Se reemplazarán únicamente los textos seleccionados en las siguientes clases:\n\n' +
-      resumen + '\n\n¿Desea continuar?'
-    )) return
-
-    try {
-      setGuardando(true)
-      setError('')
-      setMensaje('')
-      const nit = obtenerNitUsuario(user)
-      const respuesta = await fetch('/api/admin/configuracion-academica', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-cea-nit': nit },
-        body: JSON.stringify({
-          nit,
-          recurso: 'CONTENIDOS_GRUPO',
-          grupo_id: form.id,
-          clase_ids: form.clase_ids,
-          actualizar_contenido: form.actualizar_contenido,
-          actualizar_tarjeta: form.actualizar_tarjeta,
-          contenido: form.contenido,
-          contenido_tarjeta: form.contenido_tarjeta,
-        }),
-      })
-      const data = await respuesta.json()
-      if (!respuesta.ok || !data?.ok) throw new Error(data?.error || 'No fue posible guardar los textos del grupo.')
-      setEdicionTextosGrupo(null)
-      await cargarDatos({ conservarSeleccion: true })
-      setMensaje(data.message || 'Textos actualizados correctamente.')
-    } catch (err) {
-      setError(err?.message || 'No fue posible actualizar el grupo.')
-    } finally {
-      setGuardando(false)
-    }
-  }
-
   // ============================================================
   // CLASES DEL GRUPO
   // ============================================================
@@ -3604,15 +3529,6 @@ async function restaurarLogoAnterior() {
         </div>
 
 
-        {vistaActual === 'PLAN' && (
-          <div className="flex justify-end py-2">
-            <button type="button" onClick={abrirNuevaClase}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">
-              <i className="fas fa-plus" aria-hidden="true"/> Nueva clase
-            </button>
-          </div>
-        )}
-
         {/* ====================================================
             MENSAJES
         ==================================================== */}
@@ -3681,6 +3597,7 @@ async function restaurarLogoAnterior() {
                   <i className="fas fa-list" aria-hidden="true" />
                   Seleccione la categoría del Plan de Formación
                 </div>
+                <div className="flex flex-wrap items-center gap-3">
                 {planSeleccionado && (
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#E8F2FA]">
                     <span className="font-bold uppercase text-white">{planSeleccionado.nombre}</span>
@@ -3699,6 +3616,11 @@ async function restaurarLogoAnterior() {
                     )}
                   </div>
                 )}
+                  <button type="button" onClick={abrirNuevaClase}
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800">
+                    <i className="fas fa-plus" aria-hidden="true"/> Nueva clase
+                  </button>
+                </div>
               </div>
 
               <div
@@ -4037,7 +3959,7 @@ async function restaurarLogoAnterior() {
 
                           <div className="overflow-x-auto">
                             <div className="min-w-[1050px]">
-                              <div className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] gap-2 bg-slate-100 px-3 py-2 text-[10px] font-extrabold uppercase text-slate-700">
+                              <div className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] gap-0 border-y border-slate-400 bg-slate-100 text-[10px] font-extrabold uppercase text-slate-700 [&>span]:border-r [&>span]:border-slate-400 [&>span]:px-2 [&>span]:py-2">
                                 <span>Nombre de la clase</span><span>Color</span><span>Duración</span><span>Contenido</span><span>Competencias a desarrollar</span><span>Estado</span><span>Acciones</span>
                               </div>
                             {clasesModulo.map(
@@ -4066,7 +3988,7 @@ async function restaurarLogoAnterior() {
                                   )
 
                                 return (
-                                  <div key={clase.id} className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] items-center gap-2 border-b border-slate-200 px-3 py-2 text-[11px] text-slate-700 hover:bg-slate-50">
+                                  <div key={clase.id} className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] items-stretch gap-0 border-b border-slate-400 text-[11px] text-slate-700 hover:bg-slate-50 [&>div]:border-r [&>div]:border-slate-400 [&>div]:px-2 [&>div]:py-2 [&>span]:border-r [&>span]:border-slate-400 [&>span]:px-2 [&>span]:py-2">
                                     <div className="min-w-0">
                                       <span className="mr-2 text-slate-400">#{clase.numero_clase}</span>
                                       <span className="font-semibold text-slate-900">{clase.nombre}</span>
@@ -4219,7 +4141,7 @@ async function restaurarLogoAnterior() {
 
             {gruposTransversales.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[960px] border-collapse text-left text-xs">
+                <table className="w-full min-w-[960px] border-collapse border border-slate-400 text-left text-xs [&_td]:border [&_td]:border-slate-400 [&_th]:border [&_th]:border-slate-400">
                   <thead className="bg-slate-100 text-[11px] uppercase text-slate-700">
                     <tr>
                       <th className="px-3 py-3">Grupo transversal</th>
@@ -4252,8 +4174,6 @@ async function restaurarLogoAnterior() {
                         <td className="px-3 py-3 align-top">{grupo.activo === false ? 'Inactivo' : 'Activo'}</td>
                         <td className="px-3 py-3 align-top">
                           <div className="flex justify-end gap-1">
-                            <button type="button" title="Contenido y competencia" aria-label="Contenido y competencia" onClick={() => abrirTextosGrupo(grupo)}
-                              className="rounded border border-blue-200 bg-blue-50 p-2 text-blue-800 hover:bg-blue-100"><i className="fas fa-pen" aria-hidden="true"/></button>
                             <button type="button" title="Editar grupo y asociaciones" aria-label="Editar grupo y asociaciones" onClick={() => abrirEditarGrupo(grupo)}
                               className="rounded border border-amber-200 bg-amber-50 p-2 text-amber-800 hover:bg-amber-100"><i className="fas fa-edit" aria-hidden="true"/></button>
                             <button type="button" title="Eliminar grupo" aria-label="Eliminar grupo" onClick={() => solicitarEliminarGrupo(grupo)}
@@ -4327,81 +4247,6 @@ async function restaurarLogoAnterior() {
       </div>
 
 
-
-      {/* Edición de textos de clases asociadas al grupo, sin cambiar la agrupación */}
-      {edicionTextosGrupo && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
-            <h2 className="text-lg font-bold text-slate-900">Contenido y competencia · {edicionTextosGrupo.nombre}</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Todas las categorías están seleccionadas inicialmente. Desmarque las que no desea actualizar.
-              Solo se modificarán los campos indicados; los nombres, horarios, duraciones y colores se conservarán.
-            </p>
-            <div className="mt-4 space-y-2">
-              {edicionTextosGrupo.miembros.map(miembro => {
-                const actual = clases.find(clase => Number(clase.id) === Number(miembro.id))
-                const marcado = edicionTextosGrupo.clase_ids.includes(Number(miembro.id))
-                return (
-                  <label key={miembro.id} className="block rounded-lg border border-slate-200 p-3">
-                    <span className="flex items-center gap-2 text-sm font-bold">
-                      <input type="checkbox" checked={marcado}
-                        onChange={() => cambiarTextosGrupo('clase_ids',
-                          marcado
-                            ? edicionTextosGrupo.clase_ids.filter(id => id !== Number(miembro.id))
-                            : [...edicionTextosGrupo.clase_ids, Number(miembro.id)])} />
-                      {miembro.categoria} · {miembro.nombre}
-                    </span>
-                    <span className="mt-1 block text-xs text-slate-500">
-                      Contenido actual: {texto(actual?.contenido) || 'Sin configurar'}
-                    </span>
-                    <span className="mt-1 block text-xs text-slate-500">
-                      Competencia actual: {texto(actual?.contenido_tarjeta) || 'Sin configurar'}
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-            <div className="mt-4 space-y-4">
-              <div className="rounded-lg border border-slate-200 p-3">
-                <label className="mb-2 flex items-center gap-2 text-sm font-bold">
-                  <input type="checkbox" checked={edicionTextosGrupo.actualizar_contenido}
-                    onChange={e => cambiarTextosGrupo('actualizar_contenido', e.target.checked)} />
-                  Actualizar contenido completo
-                </label>
-                <textarea rows={4} className="w-full rounded-lg border border-slate-300 p-2 text-sm"
-                  value={edicionTextosGrupo.contenido}
-                  disabled={!edicionTextosGrupo.actualizar_contenido}
-                  onChange={e => cambiarTextosGrupo('contenido', e.target.value)} />
-              </div>
-              <div className="rounded-lg border border-slate-200 p-3">
-                <label className="mb-2 flex items-center gap-2 text-sm font-bold">
-                  <input type="checkbox" checked={edicionTextosGrupo.actualizar_tarjeta}
-                    onChange={e => cambiarTextosGrupo('actualizar_tarjeta', e.target.checked)} />
-                  Actualizar competencia corta para tarjeta
-                </label>
-                <textarea rows={3} className="w-full rounded-lg border border-slate-300 p-2 text-sm"
-                  value={edicionTextosGrupo.contenido_tarjeta}
-                  disabled={!edicionTextosGrupo.actualizar_tarjeta}
-                  onChange={e => cambiarTextosGrupo('contenido_tarjeta', e.target.value)} />
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-slate-600">
-              Se actualizarán {edicionTextosGrupo.clase_ids.length} de {edicionTextosGrupo.miembros.length} clases.
-              Verifique los textos actuales antes de confirmar.
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" disabled={guardando}
-                onClick={() => setEdicionTextosGrupo(null)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold">Cancelar</button>
-              <button type="button" disabled={guardando || !edicionTextosGrupo.clase_ids.length}
-                onClick={guardarTextosGrupo}
-                className="rounded-lg bg-[#194567] px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
-                {guardando ? 'Guardando...' : 'Aplicar a clases seleccionadas'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ======================================================
           MODAL GRUPO TRANSVERSAL
@@ -4840,22 +4685,6 @@ async function restaurarLogoAnterior() {
                 p-5
               "
             >
-              {(() => {
-                const grupoVinculado = gruposTransversales.find(grupo =>
-                  (grupo.clases || []).some(clase => Number(clase.id) === Number(claseEditando.id)))
-                if (!grupoVinculado) return null
-                return <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
-                  Esta clase está vinculada al grupo <strong>{grupoVinculado.nombre}</strong>.
-                  Puede consultar aquí sus datos actuales. Para aplicar la misma competencia o
-                  contenido a otras categorías, utilice la edición compartida del grupo.
-                  <button type="button" className="mt-2 block rounded border border-blue-300 bg-white px-3 py-2 font-semibold"
-                    onClick={() => {
-                      setClaseEditando(null)
-                      cambiarVista('GRUPOS')
-                      abrirTextosGrupo(grupoVinculado)
-                    }}>Editar contenido y competencia del grupo</button>
-                </div>
-              })()}
               <Campo etiqueta="Tipo de formación y módulo">
                 <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
                   {claseEditando.tipo_formacion} · {modulos.find(m => Number(m.id) === Number(claseEditando.modulo_id))?.nombre || 'Módulo actual'}
@@ -4868,8 +4697,18 @@ async function restaurarLogoAnterior() {
                     : 'No corresponde a grupo transversal'}
                 </div>
               </Campo>
-              <Campo etiqueta="Categoría asociada">
-                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">{claseEditando.categoria}</div>
+              <Campo etiqueta="Categorías habilitadas">
+                <div className="flex flex-wrap gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                  {(gruposTransversales.find(grupo => (grupo.clases || []).some(item => Number(item.id) === Number(claseEditando.id)))?.categorias || [claseEditando.categoria]).map(cat => (
+                    <label key={cat} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-2 py-1">
+                      <input type="checkbox" checked readOnly disabled />
+                      {cat}
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  Las categorías son informativas en la edición. Para modificar asociaciones utilice «Editar grupo» en Grupos Transversales.
+                </p>
               </Campo>
               <Campo
                 etiqueta="Nombre de la clase"
