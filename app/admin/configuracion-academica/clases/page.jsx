@@ -1722,6 +1722,18 @@ async function restaurarLogoAnterior() {
   }
 
 
+  function cambiarModuloNueva(moduloId) {
+    const modulo = modulosPlan.find(item => Number(item.id) === Number(moduloId))
+    if (!modulo) return
+    setNuevaClase(anterior => ({
+      ...anterior,
+      modulo_id: modulo.id,
+      modulo_nombre: modulo.nombre,
+      tipo_formacion: modulo.tipo_formacion,
+      duracion_horas: modulo.tipo_formacion === 'PRACTICA' ? '' : anterior.duracion_horas,
+    }))
+  }
+
   function cerrarNuevaClase() {
     if (
       guardando
@@ -3930,13 +3942,11 @@ async function restaurarLogoAnterior() {
                           </div>
 
 
-                          <div
-                            className="
-                              divide-y
-                              divide-solid
-                              divide-slate-300
-                            "
-                          >
+                          <div className="overflow-x-auto">
+                            <div className="min-w-[1050px]">
+                              <div className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] gap-2 bg-slate-100 px-3 py-2 text-[10px] font-extrabold uppercase text-slate-700">
+                                <span>Nombre de la clase</span><span>Color</span><span>Duración</span><span>Contenido</span><span>Competencias a desarrollar</span><span>Estado</span><span>Acciones</span>
+                              </div>
                             {clasesModulo.map(
                               (
                                 clase
@@ -3963,254 +3973,21 @@ async function restaurarLogoAnterior() {
                                   )
 
                                 return (
-                                  <div
-                                    key={
-                                      clase.id
-                                    }
-                                    className="
-                                      flex
-                                      flex-col
-                                      gap-1.5
-                                      px-3 py-2
-                                      transition
-                                      hover:bg-slate-50
-                                      md:flex-row
-                                      md:items-center
-                                      md:justify-between
-                                    "
-                                  >
-                                    <div
-                                      className="
-                                        min-w-0
-                                        flex-1
-                                      "
-                                    >
-                                      <div
-                                        className="
-                                          flex
-                                          flex-wrap
-                                          items-center
-                                          gap-2
-                                        "
-                                      >
-                                        <span
-                                          className="
-                                            text-xs
-                                            font-bold
-                                            text-slate-400
-                                          "
-                                        >
-                                          #
-                                          {
-                                            clase.numero_clase
-                                          }
-                                        </span>
-
-                                        <span
-                                          className="
-                                            font-semibold
-                                            text-slate-900
-                                          "
-                                        >
-                                          {
-                                            clase.nombre
-                                          }
-                                        </span>
-
-                                        {texto(
-                                          clase.color_horario
-                                        ) &&
-                                          [
-                                            'TEORIA',
-                                            'TALLER',
-                                          ].includes(
-                                            clase.tipo_formacion
-                                          ) && (
-                                            <span
-                                              title="Color en Horario Teórico"
-                                              className="
-                                                inline-block
-                                                h-5
-                                                w-5
-                                                shrink-0
-                                                rounded-md
-                                                border
-                                                border-slate-400
-                                                shadow-sm
-                                              "
-                                              style={{
-                                                backgroundColor:
-                                                  clase.color_horario,
-                                              }}
-                                            ></span>
-                                          )}
-
-                                        {grupoClase && (
-                                          <span
-                                            className="
-                                              rounded-full
-                                              border
-                                              border-purple-200
-                                              bg-purple-50
-                                              px-2
-                                              py-0.5
-                                              text-[10px]
-                                              font-bold
-                                              text-green-700
-                                            "
-                                          >
-                                            <i
-                                              className="
-                                                fas
-                                                fa-link
-                                                mr-1
-                                              "
-                                            ></i>
-
-                                            TRANSVERSAL
-                                          </span>
-                                        )}
-
-                                        {clase.activo ===
-                                          false && (
-                                          <span
-                                            className="
-                                              rounded-full
-                                              bg-gray-100
-                                              px-2
-                                              py-0.5
-                                              text-[10px]
-                                              font-bold
-                                              text-gray-500
-                                            "
-                                          >
-                                            INACTIVA
-                                          </span>
-                                        )}
-                                      </div>
-
-
-                                      {grupoClase && (
-                                        <div
-                                          className="
-                                            mt-1
-                                            text-xs
-                                            font-semibold
-                                            text-blue-800
-                                          "
-                                        >
-                                          Grupo:{' '}
-
-                                          {
-                                            grupoClase.nombre
-                                          }
-                                        </div>
-                                      )}
-
-
-                                      <div
-                                        className="
-                                          mt-1
-                                          text-xs
-                                          text-slate-500
-                                        "
-                                      >
-                                        {clase.tipo_formacion !==
-                                          'PRACTICA' && (
-                                          <>
-                                            Duración:{' '}
-
-                                            {clase.duracion_horas
-                                              ? `${formatearHoras(
-                                                  clase.duracion_horas
-                                                )} hora(s)`
-                                              : 'Sin configurar'}
-                                          </>
-                                        )}
-
-                                        {clase.tipo_formacion ===
-                                          'PRACTICA' && (
-                                          <>
-                                            Contenido
-                                            para tarjeta:{' '}
-
-                                            {texto(
-                                              clase.contenido_tarjeta
-                                            )
-                                              ? 'Configurado'
-                                              : 'Pendiente'}
-                                          </>
-                                        )}
-                                      </div>
-
-
-                                      {texto(
-                                        clase.contenido_tarjeta
-                                      ) && (
-                                        <div
-                                          className="
-                                            mt-1
-                                            text-xs
-                                            leading-snug
-                                            text-slate-600
-                                          "
-                                        >
-                                          {
-                                            clase.contenido_tarjeta
-                                          }
-                                        </div>
-                                      )}
+                                  <div key={clase.id} className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] items-center gap-2 border-b border-slate-200 px-3 py-2 text-[11px] text-slate-700 hover:bg-slate-50">
+                                    <div className="min-w-0">
+                                      <span className="mr-2 text-slate-400">#{clase.numero_clase}</span>
+                                      <span className="font-semibold text-slate-900">{clase.nombre}</span>
+                                      {grupoClase && <div className="mt-0.5 truncate text-[10px] text-blue-700" title={grupoClase.nombre}>Grupo: {grupoClase.nombre}</div>}
                                     </div>
-
-
-                                    <div
-                                      className="
-                                        flex
-                                        shrink-0
-                                        flex-wrap
-                                        items-center
-                                        gap-1.5
-                                      "
-                                    >
-                                      <BotonAccion tipo="editar"
-                                        type="button"
-                                        onClick={() =>
-                                          abrirEdicion(
-                                            clase
-                                          )
-                                        }
-                                        
-                                      >
-                                        <i
-                                          className="
-                                            fas
-                                            fa-edit
-                                            mr-2
-                                          "
-                                        ></i>
-
-                                        Editar
-                                      </BotonAccion>
-
-                                      <BotonAccion tipo="eliminar"
-                                        type="button"
-                                        onClick={() =>
-                                          solicitarEliminar(
-                                            clase
-                                          )
-                                        }
-                                        
-                                      >
-                                        <i
-                                          className="
-                                            fas
-                                            fa-trash
-                                            mr-2
-                                          "
-                                        ></i>
-
-                                        Eliminar
-                                      </BotonAccion>
+                                    <span title={grupoClase ? 'Color del grupo' : 'Color de la clase'} className="inline-block h-5 w-5 rounded border border-slate-300" style={{ backgroundColor: grupoClase?.color_horario || clase.color_horario || '#F1F5F9' }}/>
+                                    <span>{clase.tipo_formacion === 'PRACTICA' ? '—' : clase.duracion_horas ? formatearHoras(clase.duracion_horas) + ' h' : 'Pendiente'}</span>
+                                    <span className="min-w-0 line-clamp-2 break-words text-slate-600" title={texto(clase.contenido)}>{texto(clase.contenido) || 'Pendiente'}</span>
+                                    <span className="min-w-0 line-clamp-2 break-words text-slate-600" title={texto(clase.contenido_tarjeta)}>{texto(clase.contenido_tarjeta) || 'Pendiente'}</span>
+                                    <span className={clase.activo === false ? 'text-slate-500' : 'text-emerald-700'}>{clase.activo === false ? 'Inactiva' : 'Activa'}</span>
+                                    <div className="flex items-center justify-end gap-1">
+                                      <button type="button" title="Editar clase" onClick={() => abrirEdicion(clase)} className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-800"><i className="fas fa-edit" aria-hidden="true"/></button>
+                                      <button type="button" title={clase.activo === false ? 'Activar' : 'Desactivar'} onClick={() => abrirEdicion({...clase, activo: clase.activo === false})} className="rounded border border-slate-300 bg-white p-2 text-slate-700"><i className="fas fa-power-off" aria-hidden="true"/></button>
+                                      <button type="button" title="Eliminar clase" onClick={() => solicitarEliminar(clase)} className="rounded border border-red-200 bg-red-50 p-2 text-red-700"><i className="fas fa-trash" aria-hidden="true"/></button>
                                     </div>
                                   </div>
                                 )
@@ -4258,6 +4035,7 @@ async function restaurarLogoAnterior() {
                                 </BotonAccion>
                               </div>
                             )}
+                            </div>
                           </div>
                         </div>
                       )
@@ -5226,51 +5004,12 @@ async function restaurarLogoAnterior() {
               shadow-xl
             "
           >
-            <div
-              className="
-                border-b
-                border-gray-200
-                bg-slate-800
-                px-5
-                py-4
-                text-white
-              "
-            >
-              <div
-                className="
-                  text-sm
-                  font-bold
-                "
-              >
-                Editar clase
-              </div>
-
-              <div
-                className="
-                  mt-1
-                  text-xs
-                  text-slate-300
-                "
-              >
-                {
-                  claseEditando.categoria
-                }
-
-                {' · '}
-
-                {
-                  claseEditando.tipo_formacion
-                }
-
-                {' · Clase '}
-
-                {
-                  claseEditando.numero_clase
-                }
-              </div>
+            <div className="relative border-b border-gray-200 bg-slate-800 px-5 py-4 text-white">
+              <div className="text-sm font-bold">Editar clase · {claseEditando.categoria} · {claseEditando.tipo_formacion}</div>
+              <button type="button" disabled={guardando} onClick={cerrarEdicion}
+                aria-label="Cerrar sin guardar" title="Cerrar sin guardar"
+                className="absolute right-4 top-3 rounded-md p-2 text-lg text-white hover:bg-slate-700">×</button>
             </div>
-
-
             <div
               className="
                 space-y-4
@@ -5595,66 +5334,51 @@ async function restaurarLogoAnterior() {
               shadow-xl
             "
           >
-            <div
-              className="
-                border-b
-                border-gray-200
-                bg-slate-800
-                px-5
-                py-4
-                text-white
-              "
-            >
-              <div
-                className="
-                  text-sm
-                  font-bold
-                "
-              >
-                Nueva clase
-              </div>
-
-              <div
-                className="
-                  mt-1
-                  text-xs
-                  text-slate-300
-                "
-              >
-                {
-                  nuevaClase.categoria
-                }
-
-                {' · '}
-
-                {
-                  nuevaClase.tipo_formacion
-                }
-              </div>
-
-              <div
-                className="
-                  mt-1
-                  text-xs
-                  font-semibold
-                  text-slate-200
-                "
-              >
-                Módulo:{' '}
-
-                {
-                  nuevaClase.modulo_nombre
-                }
-              </div>
+            <div className="relative border-b border-gray-200 bg-slate-800 px-5 py-4 text-white">
+              <div className="text-sm font-bold">Nueva clase · {nuevaClase.categoria} · {nuevaClase.modulo_nombre}</div>
+              <button type="button" disabled={guardando} onClick={cerrarNuevaClase}
+                aria-label="Cerrar sin guardar" title="Cerrar sin guardar"
+                className="absolute right-4 top-3 rounded-md p-2 text-lg text-white hover:bg-slate-700">×</button>
             </div>
-
-
             <div
               className="
                 space-y-4
                 p-5
               "
             >
+              <Campo etiqueta="Tipo de formación y módulo">
+                <select value={nuevaClase.modulo_id} onChange={e => cambiarModuloNueva(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs">
+                  {modulosPlan.filter(item => item.activo !== false).map(modulo => (
+                    <option key={modulo.id} value={modulo.id}>
+                      {modulo.tipo_formacion === 'TEORIA'
+                        ? (mayusculas(modulo.nombre).includes('TRANSVERSAL') ? 'TEORÍA · SABERES ESENCIALES OBLIGATORIOS TRANSVERSALES' : 'TEORÍA · SABERES ESENCIALES OBLIGATORIOS ESPECÍFICOS')
+                        : modulo.tipo_formacion === 'TALLER' ? 'TALLER · FORMACIÓN BÁSICA APLICADA' : 'PRÁCTICA · FORMACIÓN ESPECÍFICA'}
+                    </option>
+                  ))}
+                </select>
+              </Campo>
+              {nuevaClase.tipo_formacion === 'TEORIA' && mayusculas(nuevaClase.modulo_nombre).includes('TRANSVERSAL') && (
+                <Campo etiqueta="Grupo temático">
+                  <select value="" onChange={e => { if(e.target.value) cambiarCampoNueva('nombre', e.target.value) }}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs">
+                    <option value="">Seleccionar grupo temático...</option>
+                    {['MOVILIDAD SEGURA Y SOSTENIBLE','NORMAS DE TRÁNSITO','SEÑALIZACIÓN VIAL E INFRAESTRUCTURA'].map(tema => (
+                      <option key={tema} value={tema}>{tema}</option>
+                    ))}
+                  </select>
+                </Campo>
+              )}
+              <Campo etiqueta="Categorías habilitadas">
+                <div className="flex flex-wrap gap-2">
+                  {categorias.map(cat => (
+                    <span key={cat} className={cat === nuevaClase.categoria
+                      ? 'rounded border border-blue-400 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800'
+                      : 'rounded border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-400'}>{cat}</span>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Esta clase se crea en la categoría seleccionada. Para compartirla con clases de otras categorías sin duplicarlas, utilice Grupos Transversales.</p>
+              </Campo>
               <Campo
                 etiqueta="Nombre de la clase"
               >
