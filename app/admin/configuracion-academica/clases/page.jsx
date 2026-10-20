@@ -406,7 +406,32 @@ const COLORES_HORARIO = [
   {
     valor: '#64748B',
     nombre: 'Gris oscuro',
-  },
+  },,
+  // TONOS ADICIONALES
+  { valor: '#172554', nombre: 'Azul noche' },
+  { valor: '#166534', nombre: 'Verde bosque' },
+  { valor: '#65A30D', nombre: 'Verde oliva' },
+  { valor: '#D9F99D', nombre: 'Oliva suave' },
+  { valor: '#D1FAE5', nombre: 'Menta pálido' },
+  { valor: '#10B981', nombre: 'Esmeralda' },
+  { valor: '#047857', nombre: 'Esmeralda oscura' },
+  { valor: '#FEF08A', nombre: 'Amarillo suave' },
+  { valor: '#CA8A04', nombre: 'Mostaza' },
+  { valor: '#FED7AA', nombre: 'Melocotón' },
+  { valor: '#FB7185', nombre: 'Coral' },
+  { valor: '#F43F5E', nombre: 'Coral intenso' },
+  { valor: '#9F1239', nombre: 'Borgoña' },
+  { valor: '#86198F', nombre: 'Ciruela' },
+  { valor: '#FBCFE8', nombre: 'Rosa pastel' },
+  { valor: '#C026D3', nombre: 'Magenta' },
+  { valor: '#FDA4AF', nombre: 'Salmón' },
+  { valor: '#C2410C', nombre: 'Terracota' },
+  { valor: '#D6D3D1', nombre: 'Café claro' },
+  { valor: '#92400E', nombre: 'Café' },
+  { valor: '#155E75', nombre: 'Azul petróleo' },
+  { valor: '#475569', nombre: 'Azul grisáceo' },
+  { valor: '#475569', nombre: 'Gris medio oscuro' },
+  { valor: '#334155', nombre: 'Grafito' }
 ]
 
 // ============================================================
@@ -4958,6 +4983,17 @@ async function restaurarLogoAnterior() {
                   </p>              </Campo>
 
 
+              <Campo etiqueta="Color de la clase">
+                <SelectorColorHorario
+                  valor={claseEditando.color_horario}
+                  onChange={color => cambiarCampoEdicion('color_horario',color)}
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  {claseEditando.tipo_formacion === 'PRACTICA'
+                    ? 'Color opcional de identificación. Las prácticas no utilizan el bloque de horario teórico.'
+                    : 'Si esta clase se agrupa transversalmente, el horario mostrará el color del grupo.'}
+                </p>
+              </Campo>
               <Campo
                 etiqueta="Observaciones"
               >
@@ -4988,32 +5024,6 @@ async function restaurarLogoAnterior() {
                 />
               </Campo>
 
-              {[
-                'TEORIA',
-                'TALLER',
-              ].includes(
-                claseEditando
-                  .tipo_formacion
-              ) && (
-                <Campo
-                  etiqueta="Color en Horario Teórico"
-                >
-                  <SelectorColorHorario
-                    valor={
-                      claseEditando
-                        .color_horario
-                    }
-                    onChange={(
-                      color
-                    ) =>
-                      cambiarCampoEdicion(
-                        'color_horario',
-                        color
-                      )
-                    }
-                  />
-                </Campo>
-              )}
 
 
               <label
@@ -5359,6 +5369,17 @@ async function restaurarLogoAnterior() {
                   </p>              </Campo>
 
 
+              <Campo etiqueta="Color de la clase">
+                <SelectorColorHorario
+                  valor={nuevaClase.color_horario}
+                  onChange={color => cambiarCampoNueva('color_horario',color)}
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  {nuevaClase.tipo_formacion === 'PRACTICA'
+                    ? 'Color opcional de identificación. Las prácticas no utilizan el bloque de horario teórico.'
+                    : 'Si esta clase se agrupa transversalmente, el horario mostrará el color del grupo.'}
+                </p>
+              </Campo>
               <Campo
                 etiqueta="Observaciones"
               >
@@ -5389,33 +5410,7 @@ async function restaurarLogoAnterior() {
                 />
               </Campo>
 
-               {[
-                'TEORIA',
-                'TALLER',
-              ].includes(
-                nuevaClase
-                  .tipo_formacion
-              ) && (
-                <Campo
-                  etiqueta="Color en Horario Teórico"
-                >
-                  <SelectorColorHorario
-                    valor={
-                      nuevaClase
-                        .color_horario
-                    }
-                    onChange={(
-                      color
-                    ) =>
-                      cambiarCampoNueva(
-                        'color_horario',
-                        color
-                      )
-                    }
-                  />
-                </Campo>
-              )}
-
+ 
 
               <label
                 className="
@@ -5595,8 +5590,7 @@ function SelectorColorHorario({
           text-slate-500
         "
       >
-        Seleccione el color con el que
-        aparecerá en el Horario Teórico.
+        Seleccione un color de identificación. Si la clase se programa como grupo transversal, prevalece el color del grupo.
       </div>
 
       <div
@@ -5604,7 +5598,8 @@ function SelectorColorHorario({
           grid
           grid-cols-6
           gap-2
-          sm:grid-cols-9
+          sm:grid-cols-10
+          lg:grid-cols-12
         "
       >
         {COLORES_HORARIO.map(
