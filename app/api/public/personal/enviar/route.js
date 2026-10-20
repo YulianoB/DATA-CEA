@@ -46,7 +46,7 @@ export async function POST(request) {
       }
     }
     const obligatorio = v => typeof v === 'string' && v.trim().length > 0
-    const faltantes = ['fecha_nacimiento','genero','tipo_sangre','estado_civil','nacionalidad','escolaridad','profesion','email','medio_transporte_trabajo','perfil_profesional','telefono','direccion','departamento_residencia','ciudad_residencia','contacto_emergencia_nombre','contacto_emergencia_parentesco','contacto_emergencia_telefono'].filter(k => !obligatorio(p[k]))
+    const faltantes = ['fecha_nacimiento','genero','tipo_sangre','estado_civil','nacionalidad','escolaridad','profesion','email','medio_transporte_trabajo','perfil_profesional','eps','arl','fondo_pension','telefono','direccion','departamento_residencia','ciudad_residencia','contacto_emergencia_nombre','contacto_emergencia_parentesco','contacto_emergencia_telefono'].filter(k => !obligatorio(p[k]))
     if (faltantes.length) return NextResponse.json({mensaje:'Complete todos los campos obligatorios de información general, contacto, perfil profesional y transporte.'},{status:400})
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email || '')) return NextResponse.json({mensaje:'Ingrese un correo electrónico válido.'},{status:400})
     if (!GENEROS.includes(p.genero) || !SANGRES.includes(p.tipo_sangre) || !ESTADOS_CIVILES.includes(p.estado_civil) || !TRANSPORTES.includes(p.medio_transporte_trabajo)) return NextResponse.json({mensaje:'Seleccione valores válidos de género, sangre, estado civil y transporte.'},{status:400})
@@ -54,10 +54,11 @@ export async function POST(request) {
     if (p.trabaja_cea && ['tipo_personal','grupo_personal','cargo','tipo_contrato','tipo_permanencia','fecha_vinculacion'].some(k=>!obligatorio(p[k]))) {
       return NextResponse.json({mensaje:'Complete los datos de vinculación con el CEA.'},{status:400})
     }
+    if (!estudios.some(x => ['nivel_estudio','titulo','institucion'].every(k=>obligatorio(x[k])))) return NextResponse.json({mensaje:'Registre al menos un estudio completo (tipo de formación, título e institución).'},{status:400})
     if (estudios.some(x => Object.values(x).some(v => typeof v === 'string' && obligatorio(v)) && ['nivel_estudio','titulo','institucion'].some(k=>!obligatorio(x[k])))) {
       return NextResponse.json({mensaje:'Complete tipo de formación, título e institución de cada estudio registrado.'},{status:400})
     }
-    if (experiencias.some(x => (Object.values(x).some(v => typeof v === 'string' && obligatorio(v)) || x.actualmente) && (['empresa','cargo','fecha_inicio'].some(k=>!obligatorio(x[k])) || (!x.actualmente && !obligatorio(x.fecha_fin)) || (x.fecha_fin && x.fecha_inicio && x.fecha_fin < x.fecha_inicio)))) {
+    if (experiencias.some(x => obligatorio(x.empresa) && (['cargo','fecha_inicio'].some(k=>!obligatorio(x[k])) || (!x.actualmente && !obligatorio(x.fecha_fin)) || (x.fecha_fin && x.fecha_inicio && x.fecha_fin < x.fecha_inicio)))) {
       return NextResponse.json({mensaje:'Complete empresa, cargo y fecha de inicio de cada experiencia, y revise sus fechas.'},{status:400})
     }
     const { supabaseAdmin } = await resolverFormularioPersonal(body.cea, body.formulario)
