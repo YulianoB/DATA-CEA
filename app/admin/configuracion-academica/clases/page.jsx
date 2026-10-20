@@ -1725,35 +1725,58 @@ async function restaurarLogoAnterior() {
     setMensaje('')
   }
 
-  function cambiarCategoriaNueva(categoria) {
-    setNuevaClase(anterior => ({
-      ...anterior,
-      categoria,
-      categorias_destino: categoria ? [categoria] : [],
-      modulo_id: '',
-      modulo_nombre: '',
-      tipo_formacion: '',
-      duracion_horas: '',
-      nombre_grupo: '',
-    }))
+  // Localiza el módulo correspondiente al CEA/categoría sin forzar una
+  // categoría principal en el formulario.
+  function moduloEquivalenteNueva(moduloReferencia, categoria) {
+    if (!moduloReferencia || !categoria) return null
+    const planesCat = planes.filter(plan =>
+      plan.categoria === categoria && plan.estado === 'ACTIVO')
+    const candidatos = modulos.filter(modulo =>
+      modulo.activo !== false &&
+      planesCat.some(plan => Number(plan.id) === Number(modulo.plan_formacion_id)) &&
+      mayusculas(modulo.codigo) === mayusculas(moduloReferencia.codigo) &&
+      mayusculas(modulo.tipo_formacion) === mayusculas(moduloReferencia.tipo_formacion) &&
+      mayusculas(modulo.nombre) === mayusculas(moduloReferencia.nombre))
+    return candidatos.length === 1 ? candidatos[0] : null
   }
 
   function cambiarModuloNueva(moduloId) {
-    const plan = planes.find(item => item.categoria === nuevaClase?.categoria &&
-      item.estado === 'ACTIVO' && modulos.some(m =>
-        Number(m.plan_formacion_id) === Number(item.id) && Number(m.id) === Number(moduloId)))
-    const modulo = modulos.find(item => Number(item.id) === Number(moduloId) &&
-      Number(item.plan_formacion_id) === Number(plan?.id))
+    const modulo = modulos.find(m => Number(m.id) === Number(moduloId))
     if (!modulo) return
+    const seleccionActual = nuevaClase?.categorias_destino || []
+    const compatibles = seleccionActual.filter(cat => Boolean(moduloEquivalenteNueva(modulo, cat)))
+    const categoria = compatibles[0] || ''
+    const moduloOrigen = categoria ? moduloEquivalenteNueva(modulo, categoria) : modulo
     setNuevaClase(anterior => ({
       ...anterior,
-      modulo_id: modulo.id,
-      modulo_nombre: modulo.nombre,
-      tipo_formacion: modulo.tipo_formacion,
-      categorias_destino: [anterior.categoria],
-      nombre_grupo: '',
-      duracion_horas: modulo.tipo_formacion === 'PRACTICA' ? '' : anterior.duracion_horas,
+      modulo_id: moduloOrigen.id,
+      modulo_nombre: moduloOrigen.nombre,
+      tipo_formacion: moduloOrigen.tipo_formacion,
+      categoria,
+      categorias_destino: compatibles,
+      nombre_grupo: compatibles.length > 1 ? anterior.nombre_grupo : '',
+      duracion_horas: moduloOrigen.tipo_formacion === 'PRACTICA' ? '' : anterior.duracion_horas,
     }))
+  }
+
+  function alternarCategoriaNueva(categoria, marcada) {
+    setNuevaClase(anterior => {
+      const referencias = modulos.find(m => Number(m.id) === Number(anterior.modulo_id))
+      if (!referencias) return anterior
+      const disponibles = anterior.categorias_destino || []
+      const seleccion = marcada
+        ? [...new Set([...disponibles, categoria])]
+        : disponibles.filter(cat => cat !== categoria)
+      if (referencias.tipo_formacion === 'PRACTICA' && seleccion.length > 1) return anterior
+      const primera = seleccion[0] || ''
+      const moduloOrigen = primera ? moduloEquivalenteNueva(referencias, primera) : referencias
+      if (!moduloOrigen) return anterior
+      return {
+        ...anterior, categoria: primera, categorias_destino: seleccion,
+        modulo_id: moduloOrigen.id, modulo_nombre: moduloOrigen.nombre,
+        nombre_grupo: seleccion.length > 1 ? anterior.nombre_grupo : '',
+      }
+    })
   }
 
   function cerrarNuevaClase() {
@@ -2009,7 +2032,7 @@ async function restaurarLogoAnterior() {
     }
 
     if (!nuevaClase.categoria || !nuevaClase.modulo_id || !nuevaClase.tipo_formacion) {
-      setError('Seleccione una categoría y un módulo de formación antes de guardar.')
+      setError('Seleccione el módulo de formación y al menos una categoría habilitada antes de guardar.')
       return
     }
 
@@ -2029,7 +2052,7 @@ async function restaurarLogoAnterior() {
     const categoriasDestino = Array.from(new Set(nuevaClase.categorias_destino || [nuevaClase.categoria]))
     const compartida = nuevaClase.tipo_formacion !== 'PRACTICA' && categoriasDestino.length > 1
     if (!categoriasDestino.includes(nuevaClase.categoria)) {
-      setError('La selección debe incluir la categoría actual del módulo.')
+      setError('Seleccione al menos una categoría correspondiente al módulo.')
       return
     }
     if (compartida && (!Number.isFinite(Number(nuevaClase.duracion_horas)) || Number(nuevaClase.duracion_horas) <= 0)) {
@@ -4053,14 +4076,7 @@ async function restaurarLogoAnterior() {
                                     <span className="min-w-0 line-clamp-2 break-words text-slate-600" title={texto(clase.contenido_tarjeta)}>{texto(clase.contenido_tarjeta) || 'Pendiente'}</span>
                                     <span className={clase.activo === false ? 'text-slate-500' : 'text-emerald-700'}>{clase.activo === false ? 'Inactiva' : 'Activa'}</span>
                                     <div className="flex items-center justify-end gap-1">
-                                      <button type="button" title="Editar clase" onClick={() => {
-                                        if (grupoClase) {
-                                          cambiarVista('GRUPOS')
-                                          abrirTextosGrupo(grupoClase)
-                                        } else {
-                                          abrirEdicion(clase)
-                                        }
-                                      }} className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-800"><i className="fas fa-edit" aria-hidden="true"/></button>
+                                      <button type="button" title="Editar clase" onClick={() => abrirEdicion(clase)} className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-800"><i className="fas fa-edit" aria-hidden="true"/></button>
                                       <button type="button" title={clase.activo === false ? 'Activar' : 'Desactivar'} onClick={() => alternarEstadoClase(clase)} disabled={guardando} className="rounded border border-slate-300 bg-white p-2 text-slate-700"><i className="fas fa-power-off" aria-hidden="true"/></button>
                                       <button type="button" title="Eliminar clase" onClick={() => solicitarEliminar(clase)} className="rounded border border-red-200 bg-red-50 p-2 text-red-700"><i className="fas fa-trash" aria-hidden="true"/></button>
                                     </div>
@@ -4822,6 +4838,22 @@ async function restaurarLogoAnterior() {
                 p-5
               "
             >
+              {(() => {
+                const grupoVinculado = gruposTransversales.find(grupo =>
+                  (grupo.clases || []).some(clase => Number(clase.id) === Number(claseEditando.id)))
+                if (!grupoVinculado) return null
+                return <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+                  Esta clase está vinculada al grupo <strong>{grupoVinculado.nombre}</strong>.
+                  Puede consultar aquí sus datos actuales. Para aplicar la misma competencia o
+                  contenido a otras categorías, utilice la edición compartida del grupo.
+                  <button type="button" className="mt-2 block rounded border border-blue-300 bg-white px-3 py-2 font-semibold"
+                    onClick={() => {
+                      setClaseEditando(null)
+                      cambiarVista('GRUPOS')
+                      abrirTextosGrupo(grupoVinculado)
+                    }}>Editar contenido y competencia del grupo</button>
+                </div>
+              })()}
               <Campo etiqueta="Tipo de formación y módulo">
                 <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
                   {claseEditando.tipo_formacion} · {modulos.find(m => Number(m.id) === Number(claseEditando.modulo_id))?.nombre || 'Módulo actual'}
@@ -5152,28 +5184,32 @@ async function restaurarLogoAnterior() {
                 p-5
               "
             >
-              <Campo etiqueta="Categoría principal">
-                <select value={nuevaClase.categoria} onChange={e => cambiarCategoriaNueva(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs">
-                  <option value="">Seleccione la categoría...</option>
-                  {categorias.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
-              </Campo>
               <Campo etiqueta="Tipo de formación y módulo">
-                <select value={nuevaClase.modulo_id} disabled={!nuevaClase.categoria}
-                  onChange={e => cambiarModuloNueva(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs disabled:opacity-60">
-                  <option value="">Seleccione el módulo...</option>
+                <select value={nuevaClase.modulo_id || ''} onChange={e => cambiarModuloNueva(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs">
+                  <option value="">Seleccione el tipo de formación y módulo...</option>
                   {modulos.filter(modulo =>
-                    modulo.activo !== false && planes.some(plan =>
-                      plan.categoria === nuevaClase.categoria &&
-                      plan.estado === 'ACTIVO' &&
-                      Number(plan.id) === Number(modulo.plan_formacion_id))
+                    modulo.activo !== false &&
+                    planes.some(plan => plan.estado === 'ACTIVO' &&
+                      categorias.includes(plan.categoria) &&
+                      Number(plan.id) === Number(modulo.plan_formacion_id)) &&
+                    !modulos.some(otro =>
+                      otro.id < modulo.id && otro.activo !== false &&
+                      mayusculas(otro.codigo) === mayusculas(modulo.codigo) &&
+                      mayusculas(otro.tipo_formacion) === mayusculas(modulo.tipo_formacion) &&
+                      mayusculas(otro.nombre) === mayusculas(modulo.nombre) &&
+                      planes.some(plan => plan.estado === 'ACTIVO' &&
+                        categorias.includes(plan.categoria) &&
+                        Number(plan.id) === Number(otro.plan_formacion_id)))
                   ).map(modulo => (
                     <option key={modulo.id} value={modulo.id}>
                       {modulo.tipo_formacion === 'TEORIA'
-                        ? (mayusculas(modulo.nombre).includes('TRANSVERSAL') ? 'TEORÍA · SABERES ESENCIALES OBLIGATORIOS TRANSVERSALES' : 'TEORÍA · SABERES ESENCIALES OBLIGATORIOS ESPECÍFICOS')
-                        : modulo.tipo_formacion === 'TALLER' ? 'TALLER · FORMACIÓN BÁSICA APLICADA' : 'PRÁCTICA · FORMACIÓN ESPECÍFICA'}
+                        ? (mayusculas(modulo.nombre).includes('TRANSVERSAL')
+                          ? 'TEORÍA · SABERES ESENCIALES OBLIGATORIOS TRANSVERSALES'
+                          : 'TEORÍA · SABERES ESENCIALES OBLIGATORIOS ESPECÍFICOS')
+                        : modulo.tipo_formacion === 'TALLER'
+                          ? 'TALLER · FORMACIÓN BÁSICA APLICADA'
+                          : 'PRÁCTICA · FORMACIÓN ESPECÍFICA'}
                     </option>
                   ))}
                 </select>
@@ -5190,30 +5226,27 @@ async function restaurarLogoAnterior() {
                 </Campo>
               )}
               <Campo etiqueta="Categorías habilitadas">
-                {nuevaClase.tipo_formacion === 'PRACTICA' ? (
-                  <div>
-                    <span className="rounded border border-blue-400 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800">{nuevaClase.categoria}</span>
-                    <p className="mt-2 text-xs text-slate-500">Las clases prácticas se configuran por categoría, sin duración en el formulario.</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex flex-wrap gap-3">
-                      {categorias.map(cat => {
-                        const esPrincipal = cat === nuevaClase.categoria
-                        const marcada = (nuevaClase.categorias_destino || []).includes(cat)
-                        return <label key={cat} className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold">
-                          <input type="checkbox" checked={marcada} disabled={esPrincipal}
-                            onChange={e => cambiarCampoNueva('categorias_destino',
-                              e.target.checked
-                                ? [...new Set([...(nuevaClase.categorias_destino || []),cat])]
-                                : (nuevaClase.categorias_destino || []).filter(c => c !== cat))}/>
-                          {cat}
-                        </label>
-                      })}
-                    </div>
-                    <p className="mt-2 text-xs text-slate-500">Seleccione varias categorías únicamente para clases equivalentes. Se reutilizarán clases existentes compatibles y se creará el grupo sin modificar horarios.</p>
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-3">
+                  {categorias.map(cat => {
+                    const base = modulos.find(m => Number(m.id) === Number(nuevaClase.modulo_id))
+                    const disponible = Boolean(base && moduloEquivalenteNueva(base, cat))
+                    const marcada = (nuevaClase.categorias_destino || []).includes(cat)
+                    const bloqueada = !disponible || (nuevaClase.tipo_formacion === 'PRACTICA' &&
+                      !marcada && (nuevaClase.categorias_destino || []).length >= 1)
+                    return (
+                      <label key={cat} title={!disponible ? 'No existe un módulo equivalente para esta categoría' : ''}
+                        className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold">
+                        <input type="checkbox" checked={marcada} disabled={bloqueada}
+                          onChange={e => alternarCategoriaNueva(cat, e.target.checked)}/>
+                        {cat}
+                      </label>
+                    )
+                  })}
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Seleccione las categorías que correspondan. Para compartir una clase de teoría o taller,
+                  marque al menos dos; las prácticas se crean para una sola categoría y sin duración.
+                </p>
               </Campo>
               {nuevaClase.tipo_formacion !== 'PRACTICA' && (nuevaClase.categorias_destino || []).length > 1 && (
                 <Campo etiqueta="Nombre del grupo transversal">
