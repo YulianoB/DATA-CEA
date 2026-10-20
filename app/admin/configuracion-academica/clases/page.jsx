@@ -2401,7 +2401,7 @@ async function restaurarLogoAnterior() {
   function abrirEditarGrupo(
     grupo
   ) {
-    setModoAsociacionesGrupo(false)
+    setModoAsociacionesGrupo(true)
     setFiltroTemaGrupo('')
     setMostrarAlternativasGrupo(false)
     setGrupoEditando({
@@ -4408,28 +4408,9 @@ async function restaurarLogoAnterior() {
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-xs font-bold text-slate-800">Clases asociadas ({grupoEditando.clase_ids.length})</p>
-                  {!grupoEditando.esNuevo && (
-                    <button type="button"
-                      onClick={() => {
-                        setModoAsociacionesGrupo(anterior => !anterior)
-                        setMostrarAlternativasGrupo(false)
-                        setFiltroTemaGrupo('')
-                      }}
-                      className="rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-800">
-                      {modoAsociacionesGrupo ? 'Ocultar selección' : 'Cambiar asociaciones'}
-                    </button>
-                  )}
+
                 </div>
-                {!modoAsociacionesGrupo && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {clasesAgrupables.filter(clase => grupoEditando.clase_ids.includes(Number(clase.id))).map(clase => (
-                      <span key={clase.id} className="rounded-md bg-white px-2 py-1 text-xs text-slate-700 ring-1 ring-slate-200">
-                        {clase.categoria} · {clase.nombre}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {modoAsociacionesGrupo && (
+
                   <div className="mt-3 space-y-3">
                     <p className="text-xs text-slate-500">Primero seleccione una clase de referencia. Solo se mostrarán las clases compatibles por nombre y las ya asociadas.</p>
                     <label className="block text-xs font-semibold text-slate-700">
@@ -4492,7 +4473,6 @@ async function restaurarLogoAnterior() {
                     </div>
                     <p className="text-xs text-slate-500">La selección deberá contener al menos dos clases de categorías distintas. No se cambian las clases sin guardar.</p>
                   </div>
-                )}
               </div>
 
               <Campo
