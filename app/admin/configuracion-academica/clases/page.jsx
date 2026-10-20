@@ -2810,15 +2810,9 @@ async function restaurarLogoAnterior() {
         headers: { 'Content-Type': 'application/json', 'x-cea-nit': nit },
         body: JSON.stringify({
           nit,
-          recurso: 'GRUPO_TRANSVERSAL',
+          recurso: 'ESTADO_GRUPO_TRANSVERSAL',
           id: grupo.id,
-          nombre: grupo.nombre,
-          tipo_formacion: grupo.tipo_formacion,
-          clase_ids: (grupo.clases || []).map(clase => Number(clase.id)),
           activo: activar,
-          observaciones: grupo.observaciones || '',
-          color_horario: grupo.color_horario || null,
-          usuario: obtenerNombreUsuario(user),
         }),
       })
       const data = await respuesta.json()
