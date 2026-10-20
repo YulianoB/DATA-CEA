@@ -115,7 +115,19 @@ export async function PATCH(request, { params }) {
       if (typeof valor !== 'string' && typeof valor !== 'number' && valor !== null) {
         return NextResponse.json({ status: 'failed', message: `Valor inválido para ${campo}.` }, { status: 400 })
       }
-      actualizacion[campo] = valor === null || String(valor).trim() === '' ? null : String(valor).trim()
+      let normalizado = valor === null || String(valor).trim() === '' ? null : String(valor).trim()
+      if (campo === 'genero' && normalizado !== null) {
+        normalizado = ({ femenino:'Femenino', masculino:'Masculino', otro:'Otro' })[normalizado.toLowerCase()] || normalizado
+        if (!['Femenino','Masculino','Otro'].includes(normalizado)) return NextResponse.json({ status:'failed', message:'Seleccione un género válido.' }, { status:400 })
+      }
+      if (campo === 'tipo_sangre' && normalizado !== null && !['O+','O-','A+','A-','B+','B-','AB+','AB-'].includes(normalizado)) return NextResponse.json({ status:'failed', message:'Seleccione un tipo de sangre válido.' }, { status:400 })
+      if (campo === 'estado_civil' && normalizado !== null && !['Soltero(a)','Casado(a)','Unión libre','Divorciado(a)','Viudo(a)'].includes(normalizado)) return NextResponse.json({ status:'failed', message:'Seleccione un estado civil válido.' }, { status:400 })
+      if (campo === 'medio_transporte_trabajo' && normalizado !== null && !['A pie','Bicicleta','Transporte público','Motocicleta propia','Motocicleta CEA','Automóvil propio','Automóvil CEA','Camioneta propia','Camioneta CEA'].includes(normalizado)) return NextResponse.json({ status:'failed', message:'Seleccione un medio de transporte válido.' }, { status:400 })
+      if (campo === 'numero_hijos' && normalizado !== null) {
+        if (!/^\d+$/.test(normalizado) || !Number.isSafeInteger(Number(normalizado))) return NextResponse.json({ status:'failed', message:'Número de hijos inválido.' }, { status:400 })
+        normalizado = Number(normalizado)
+      }
+      actualizacion[campo] = normalizado
     }
     if (!Object.keys(actualizacion).length) {
       return NextResponse.json({ status: 'failed', message: 'No se recibieron campos para actualizar.' }, { status: 400 })
