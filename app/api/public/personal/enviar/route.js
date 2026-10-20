@@ -6,6 +6,10 @@ export const dynamic = 'force-dynamic'
 
 const limpio = (v, max = 250) => typeof v === 'string' ? v.trim().slice(0, max) : ''
 const opcional = (v, max) => limpio(v, max) || null
+const GENEROS = ['Femenino','Masculino','Otro']
+const SANGRES = ['O+','O-','A+','A-','B+','B-','AB+','AB-']
+const ESTADOS_CIVILES = ['Soltero(a)','Casado(a)','Unión libre','Divorciado(a)','Viudo(a)']
+const TRANSPORTES = ['A pie','Bicicleta','Transporte público','Motocicleta propia','Motocicleta CEA','Automóvil propio','Automóvil CEA','Camioneta propia','Camioneta CEA']
 
 export async function POST(request) {
   try {
@@ -42,16 +46,18 @@ export async function POST(request) {
       }
     }
     const obligatorio = v => typeof v === 'string' && v.trim().length > 0
-    const faltantes = ['telefono','direccion','departamento_residencia','ciudad_residencia','contacto_emergencia_nombre','contacto_emergencia_parentesco','contacto_emergencia_telefono'].filter(k => !obligatorio(p[k]))
-    if (faltantes.length) return NextResponse.json({mensaje:'Complete los datos de contacto, residencia y contacto de emergencia.'},{status:400})
-    if (p.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)) return NextResponse.json({mensaje:'Ingrese un correo electrónico válido.'},{status:400})
+    const faltantes = ['fecha_nacimiento','genero','tipo_sangre','estado_civil','nacionalidad','escolaridad','profesion','email','medio_transporte_trabajo','perfil_profesional','telefono','direccion','departamento_residencia','ciudad_residencia','contacto_emergencia_nombre','contacto_emergencia_parentesco','contacto_emergencia_telefono'].filter(k => !obligatorio(p[k]))
+    if (faltantes.length) return NextResponse.json({mensaje:'Complete todos los campos obligatorios de información general, contacto, perfil profesional y transporte.'},{status:400})
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email || '')) return NextResponse.json({mensaje:'Ingrese un correo electrónico válido.'},{status:400})
+    if (!GENEROS.includes(p.genero) || !SANGRES.includes(p.tipo_sangre) || !ESTADOS_CIVILES.includes(p.estado_civil) || !TRANSPORTES.includes(p.medio_transporte_trabajo)) return NextResponse.json({mensaje:'Seleccione valores válidos de género, sangre, estado civil y transporte.'},{status:400})
+    if (String(p.numero_hijos ?? '').trim() === '' || !Number.isInteger(Number(p.numero_hijos)) || Number(p.numero_hijos) < 0 || !Number.isSafeInteger(Number(p.numero_hijos))) return NextResponse.json({mensaje:'Número de hijos inválido: ingrese un entero igual o superior a 0.'},{status:400})
     if (p.trabaja_cea && ['tipo_personal','grupo_personal','cargo','tipo_contrato','tipo_permanencia','fecha_vinculacion'].some(k=>!obligatorio(p[k]))) {
       return NextResponse.json({mensaje:'Complete los datos de vinculación con el CEA.'},{status:400})
     }
     if (estudios.some(x => Object.values(x).some(v => typeof v === 'string' && obligatorio(v)) && ['nivel_estudio','titulo','institucion'].some(k=>!obligatorio(x[k])))) {
       return NextResponse.json({mensaje:'Complete tipo de formación, título e institución de cada estudio registrado.'},{status:400})
     }
-    if (experiencias.some(x => (Object.values(x).some(v => typeof v === 'string' && obligatorio(v)) || x.actualmente) && (['empresa','cargo','fecha_inicio'].some(k=>!obligatorio(x[k])) || (x.fecha_fin && x.fecha_inicio && x.fecha_fin < x.fecha_inicio)))) {
+    if (experiencias.some(x => (Object.values(x).some(v => typeof v === 'string' && obligatorio(v)) || x.actualmente) && (['empresa','cargo','fecha_inicio'].some(k=>!obligatorio(x[k])) || (!x.actualmente && !obligatorio(x.fecha_fin)) || (x.fecha_fin && x.fecha_inicio && x.fecha_fin < x.fecha_inicio)))) {
       return NextResponse.json({mensaje:'Complete empresa, cargo y fecha de inicio de cada experiencia, y revise sus fechas.'},{status:400})
     }
     const { supabaseAdmin } = await resolverFormularioPersonal(body.cea, body.formulario)
@@ -68,10 +74,11 @@ export async function POST(request) {
       tipo_personal: limpio(p.tipo_personal) || 'contratista',
       tipo_documento: tipoDocumento, documento, nombres, apellidos,
       fecha_nacimiento: opcional(p.fecha_nacimiento),
-      genero: opcional(p.genero), estado_civil: opcional(p.estado_civil),
+      genero: p.genero, tipo_sangre: p.tipo_sangre, estado_civil: p.estado_civil,
+      numero_hijos: Number(p.numero_hijos), medio_transporte_trabajo: p.medio_transporte_trabajo,
       escolaridad: opcional(p.escolaridad), profesion: opcional(p.profesion),
       nacionalidad: opcional(p.nacionalidad), telefono: opcional(p.telefono, 40),
-      email: opcional(p.email), departamento_residencia: opcional(p.departamento_residencia),
+      email: limpio(p.email).toLowerCase(), departamento_residencia: opcional(p.departamento_residencia),
       ciudad_residencia: opcional(p.ciudad_residencia), direccion: opcional(p.direccion),
       contacto_emergencia_nombre: opcional(p.contacto_emergencia_nombre),
       contacto_emergencia_parentesco: opcional(p.contacto_emergencia_parentesco),
