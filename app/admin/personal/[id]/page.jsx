@@ -178,16 +178,16 @@ const CAMPOS_EDICION_GENERAL = [
     ['ciudad_residencia','Ciudad / Municipio','municipio'],['direccion','Dirección'],
   ]],
   ['Vinculación', [
-    ['tipo_personal','Relación con el CEA','select:contratista|colaborador'],
+    ['tipo_personal','Tipo de vinculación','select:contratista|colaborador'],
     ['cargo','Cargo'],['grupo_personal','Grupo de trabajo','select:directivo|administrativo|operativo|servicios_generales'],
-    ['tipo_contrato','Modalidad de contrato','select:prestacion_servicios|termino_indefinido|termino_fijo|obra_labor|aprendiz|otro'],
+    ['tipo_contrato','Tipo de contrato','select:prestacion_servicios|termino_indefinido|termino_fijo|obra_labor|aprendiz|otro'],
     ['tipo_permanencia','Permanencia en el CEA','select:permanente|ocasional|por_dias|por_horas|temporal'],
-    ['fecha_vinculacion','Fecha vinculación','date'],['fecha_retiro','Fecha retiro','date'],
+    ['fecha_vinculacion','Fecha de vinculación','date'],['fecha_retiro','Fecha de retiro','date'],
     ['estado','Estado laboral','select:activo|inactivo'],
   ]],
   ['Seguridad social y PESV', [
     ['eps','EPS','catalogo:eps'],['arl','ARL','catalogo:arl'],
-    ['fondo_pension','Fondo pensión','catalogo:fondos_pensiones'],
+    ['fondo_pension','Fondo de pensión','catalogo:fondos_pensiones'],
     ['medio_transporte_trabajo','Medio de transporte al trabajo','select:A pie|Bicicleta|Transporte público|Motocicleta propia|Motocicleta CEA|Automóvil propio|Automóvil CEA|Camioneta propia|Camioneta CEA'],
   ]],
   ['Contacto de emergencia', [
