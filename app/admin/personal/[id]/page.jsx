@@ -2216,7 +2216,6 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
         <Dato label="Fondo pensión" value={personal.fondo_pension} />
         <Dato label="Medio transporte" value={personal.medio_transporte_trabajo} />
         <Dato label="Rol instructor" value={personal.rol_conductor_instructor ? 'Sí' : 'No'} />
-        <Dato label="Tipo vehículo rol" value={personal.tipo_vehiculo_rol} />
       </Seccion>
 
       <Seccion titulo="Contacto de emergencia">
