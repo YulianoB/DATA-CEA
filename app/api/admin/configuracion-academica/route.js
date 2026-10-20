@@ -2554,6 +2554,25 @@ export async function PATCH(
       })
     }
 
+    // Cambio aislado del estado: no reescribe asociaciones ni otros atributos.
+    if (mayusculas(body?.recurso) === 'ESTADO_GRUPO_TRANSVERSAL') {
+      const grupoId = Number(body?.id)
+      if (!Number.isInteger(grupoId) || grupoId <= 0 || typeof body?.activo !== 'boolean') {
+        return NextResponse.json({ok:false,error:'Indique un grupo y el estado válido.'},{status:400})
+      }
+      const {data:grupo,error:errorGrupo}=await supabase
+        .from('grupos_clases_formacion')
+        .select('id').eq('id',grupoId).maybeSingle()
+      if(errorGrupo) throw new Error('No fue posible comprobar el grupo transversal.')
+      if(!grupo) return NextResponse.json({ok:false,error:'El grupo no existe en este CEA.'},{status:404})
+      const {data:actualizado,error:errorActualizar}=await supabase
+        .from('grupos_clases_formacion')
+        .update({activo:body.activo,updated_at:new Date().toISOString()})
+        .eq('id',grupoId).select('id,activo').single()
+      if(errorActualizar || !actualizado) throw new Error('No fue posible cambiar el estado del grupo.')
+      return NextResponse.json({ok:true,grupo:actualizado,mensaje:body.activo?'Grupo activado.':'Grupo inactivado.'})
+    }
+
     // ========================================================
     // EDITAR GRUPO TRANSVERSAL
     // ========================================================
