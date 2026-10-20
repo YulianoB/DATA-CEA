@@ -26,7 +26,22 @@ export default function VistaPreviaPdfLimpia({ datos, documento, fotoDataUrl }) 
   const roles = perfiles.filter(p => String(p.estado || '').toLowerCase() === 'activo').map(p => p.rol)
   const esInstructor = roles.includes('INSTRUCTOR_TEORIA') || roles.includes('INSTRUCTOR_PRACTICA') || personal.rol_conductor_instructor === true
   const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' })
-  const vigentes = esInstructor ? licencias.filter(l => fecha(l.vigencia) >= hoy && String(l.estado_vigencia || '').toUpperCase() !== 'VENCIDA') : []
+  const claveLicencia = l => {
+    const tipo = texto(l.tipo_licencia).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().includes('INSTRUCTOR') ? 'INSTRUCTOR' : 'CONDUCCION'
+    const categoria = texto(l.categoria).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+    return tipo + ':' + (categoria === 'A2' ? 'A2' : 'BC')
+  }
+  const ultimasPorGrupo = new Map()
+  for (const licencia of [...licencias].sort((a, b) => String(b.fecha_actualizacion || '').localeCompare(String(a.fecha_actualizacion || '')) || Number(b.id || 0) - Number(a.id || 0))) {
+    const clave = claveLicencia(licencia)
+    if (!ultimasPorGrupo.has(clave)) ultimasPorGrupo.set(clave, licencia)
+  }
+  const vigentes = esInstructor ? [...ultimasPorGrupo.values()].filter(l => fecha(l.vigencia) >= hoy && String(l.estado_vigencia || '').toUpperCase() !== 'VENCIDA') : []
+  const experienciasOrdenadas = [...experiencia].sort((a, b) =>
+    Number(Boolean(b.actualmente)) - Number(Boolean(a.actualmente)) ||
+    fecha(b.actualmente ? b.fecha_inicio : (b.fecha_fin || b.fecha_inicio)).localeCompare(fecha(a.actualmente ? a.fecha_inicio : (a.fecha_fin || a.fecha_inicio))) ||
+    fecha(b.fecha_inicio).localeCompare(fecha(a.fecha_inicio))
+  )
   const normalizar = v => texto(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
   const conduccion = vigentes.filter(l => normalizar(l.tipo_licencia).includes('CONDUC'))
   const instructor = vigentes.filter(l => normalizar(l.tipo_licencia).includes('INSTRUCTOR'))
@@ -55,10 +70,6 @@ export default function VistaPreviaPdfLimpia({ datos, documento, fotoDataUrl }) 
             {dato('Documento', personal.documento)}
             {dato('Profesión', personal.profesion)}
             {dato('Escolaridad', personal.escolaridad)}
-            {seccion('Vinculación')}
-            {dato('Relación', personal.tipo_personal)}
-            {dato('Grupo', personal.grupo_personal)}
-            {dato('Fecha', fecha(personal.fecha_vinculacion))}
             {seccion('Estudios')}
             {!estudios.length && dato('Estado', 'Sin estudios registrados')}
             {estudios.map((e, i) => <div key={e.id ?? i} className="mb-2">{dato('Título', e.titulo || e.nivel_estudio)}{dato('Institución', e.institucion)}{dato('Grado', fecha(e.fecha_grado))}</div>)}
@@ -75,7 +86,18 @@ export default function VistaPreviaPdfLimpia({ datos, documento, fotoDataUrl }) 
                 </div>)}
               </div>
             </>}
-            {experiencia.length > 0 && <>{titulo('Experiencia laboral')}{experiencia.map((e, i) => <div key={e.id ?? i} className="mb-3"><strong>{texto(e.cargo).toUpperCase()}</strong><div>{texto(e.empresa)} ({fecha(e.fecha_inicio)} - {e.actualmente ? 'Actualidad' : fecha(e.fecha_fin)})</div><div className="whitespace-pre-wrap">{texto(e.funciones)}</div></div>)}</>}
+            {experienciasOrdenadas.length > 0 && <>{titulo('Experiencia laboral')}{experienciasOrdenadas.map((e, i) => <div key={e.id ?? i} className="mb-3">
+              <strong>{texto(e.cargo).toUpperCase()}</strong>
+              <div>{texto(e.empresa)} ({fecha(e.fecha_inicio)} - {e.actualmente ? 'Actualidad' : fecha(e.fecha_fin)})</div>
+              {!fecha(e.fecha_fin) && Boolean(e.actualmente) ? (
+                texto(e.funciones) && <div className="mt-1"><strong>Funciones realizadas</strong><div className="whitespace-pre-wrap">{texto(e.funciones)}</div></div>
+              ) : (
+                <div className="mt-1">
+                  {dato('Jefe inmediato', e.jefe_inmediato)}
+                  {dato('Teléfono de contacto', e.telefono_contacto)}
+                </div>
+              )}
+            </div>)}</>}
           </main>
         </div>
         <footer className="absolute bottom-0 left-0 right-0 flex justify-between border-t border-slate-300 bg-white px-[5%] py-2 text-[clamp(8px,.9vw,10px)]">
