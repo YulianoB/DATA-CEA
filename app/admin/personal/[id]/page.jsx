@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ModalResultado from '@/components/admin/ModalResultado'
 import CampoCatalogo from '@/components/admin/CampoCatalogo'
+import CampoMunicipioBusqueda from '@/components/admin/CampoMunicipioBusqueda'
 import { generarHojaVidaPdf } from '@/lib/hojaVidaPdf'
 import VistaPreviaPdfLimpia from '@/components/admin/VistaPreviaPdfLimpia'
 
@@ -174,7 +175,7 @@ const CAMPOS_EDICION_GENERAL = [
   ]],
   ['Contacto', [
     ['telefono','Teléfono'],['departamento_residencia','Departamento','catalogo:departamentos'],
-    ['ciudad_residencia','Ciudad'],['direccion','Dirección'],
+    ['ciudad_residencia','Ciudad / Municipio','municipio'],['direccion','Dirección'],
   ]],
   ['Vinculación', [
     ['tipo_personal','Relación con el CEA','select:contratista|colaborador'],
@@ -198,6 +199,7 @@ const CAMPOS_GENERALES = CAMPOS_EDICION_GENERAL.flatMap(([, campos]) => campos.m
 
 export default function HojaVidaPersonalPage() {
   const params = useParams()
+  const [departamentosEdicion, setDepartamentosEdicion] = useState([])
   const [resultadoModal, setResultadoModal] = useState(null)
   const [cierreEditorPendiente, setCierreEditorPendiente] = useState(false)
   const [editorCerradoVersion, setEditorCerradoVersion] = useState(0)
@@ -593,6 +595,8 @@ export default function HojaVidaPersonalPage() {
       setGenerandoPdf(false)
     }
   }
+
+  const departamentoEdicionId = departamentosEdicion.find((d) => d.nombre === formGeneral.departamento_residencia)?.id
 
   function abrirEdicionGeneral() {
     const personal = data?.personal || {}
@@ -1647,15 +1651,17 @@ export default function HojaVidaPersonalPage() {
                     <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2">
                       {campos.map(([campo, etiqueta, tipo = 'text']) => (
                         <div key={campo} className="min-w-0">
-                          {tipo.startsWith('catalogo:') ? (
-                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} />
+                          {tipo === 'municipio' ? (
+                            <CampoMunicipioBusqueda nit={nitActual} departamentoId={departamentoEdicionId} value={formGeneral.ciudad_residencia ?? ''} onChange={(valor) => setFormGeneral((prev) => ({ ...prev, ciudad_residencia: valor }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs" />
+                          ) : tipo.startsWith('catalogo:') ? (
+                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} required={false} onOpcionesCargadas={campo === 'departamento_residencia' ? setDepartamentosEdicion : undefined} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value, ...(campo === 'departamento_residencia' ? { ciudad_residencia: '' } : {}) }))} />
                           ) : (
                             <>
                               <label htmlFor={`general-${campo}`} className="mb-1 block text-xs font-semibold text-slate-600">{etiqueta}</label>
                               {tipo.startsWith('select:') ? (
                                 <select id={`general-${campo}`} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs">
                                   <option value="">Seleccione</option>
-                                  {tipo.slice(7).split('|').map((opcion) => <option key={opcion} value={opcion}>{opcion.replaceAll('_',' ')}</option>)}
+                                  {tipo.slice(7).split('|').map((opcion) => <option key={opcion} value={opcion}>{({ permanente:'Permanente', ocasional:'Ocasional', por_dias:'Por días', por_horas:'Por horas', temporal:'Temporal', prestacion_servicios:'Prestación de servicios', termino_indefinido:'Término indefinido', termino_fijo:'Término fijo', obra_labor:'Obra o labor', servicios_generales:'Servicios generales' })[opcion] || opcion.replaceAll('_',' ').replace(/^./, (letra) => letra.toLocaleUpperCase('es-CO'))}</option>)}
                                   {formGeneral[campo] && !tipo.slice(7).split('|').includes(formGeneral[campo]) && <option value={formGeneral[campo]}>{formGeneral[campo]}</option>}
                                 </select>
                               ) : (
@@ -1705,15 +1711,17 @@ export default function HojaVidaPersonalPage() {
                     <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2">
                       {campos.map(([campo, etiqueta, tipo = 'text']) => (
                         <div key={campo} className="min-w-0">
-                          {tipo.startsWith('catalogo:') ? (
-                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} />
+                          {tipo === 'municipio' ? (
+                            <CampoMunicipioBusqueda nit={nitActual} departamentoId={departamentoEdicionId} value={formGeneral.ciudad_residencia ?? ''} onChange={(valor) => setFormGeneral((prev) => ({ ...prev, ciudad_residencia: valor }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs" />
+                          ) : tipo.startsWith('catalogo:') ? (
+                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} required={false} onOpcionesCargadas={campo === 'departamento_residencia' ? setDepartamentosEdicion : undefined} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value, ...(campo === 'departamento_residencia' ? { ciudad_residencia: '' } : {}) }))} />
                           ) : (
                             <>
                               <label htmlFor={`general-${campo}`} className="mb-1 block text-xs font-semibold text-slate-600">{etiqueta}</label>
                               {tipo.startsWith('select:') ? (
                                 <select id={`general-${campo}`} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs">
                                   <option value="">Seleccione</option>
-                                  {tipo.slice(7).split('|').map((opcion) => <option key={opcion} value={opcion}>{opcion.replaceAll('_',' ')}</option>)}
+                                  {tipo.slice(7).split('|').map((opcion) => <option key={opcion} value={opcion}>{({ permanente:'Permanente', ocasional:'Ocasional', por_dias:'Por días', por_horas:'Por horas', temporal:'Temporal', prestacion_servicios:'Prestación de servicios', termino_indefinido:'Término indefinido', termino_fijo:'Término fijo', obra_labor:'Obra o labor', servicios_generales:'Servicios generales' })[opcion] || opcion.replaceAll('_',' ').replace(/^./, (letra) => letra.toLocaleUpperCase('es-CO'))}</option>)}
                                   {formGeneral[campo] && !tipo.slice(7).split('|').includes(formGeneral[campo]) && <option value={formGeneral[campo]}>{formGeneral[campo]}</option>}
                                 </select>
                               ) : (
@@ -1782,15 +1790,17 @@ export default function HojaVidaPersonalPage() {
                     <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2">
                       {campos.map(([campo, etiqueta, tipo = 'text']) => (
                         <div key={campo} className="min-w-0">
-                          {tipo.startsWith('catalogo:') ? (
-                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} />
+                          {tipo === 'municipio' ? (
+                            <CampoMunicipioBusqueda nit={nitActual} departamentoId={departamentoEdicionId} value={formGeneral.ciudad_residencia ?? ''} onChange={(valor) => setFormGeneral((prev) => ({ ...prev, ciudad_residencia: valor }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs" />
+                          ) : tipo.startsWith('catalogo:') ? (
+                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} required={false} onOpcionesCargadas={campo === 'departamento_residencia' ? setDepartamentosEdicion : undefined} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value, ...(campo === 'departamento_residencia' ? { ciudad_residencia: '' } : {}) }))} />
                           ) : (
                             <>
                               <label htmlFor={`general-${campo}`} className="mb-1 block text-xs font-semibold text-slate-600">{etiqueta}</label>
                               {tipo.startsWith('select:') ? (
                                 <select id={`general-${campo}`} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs">
                                   <option value="">Seleccione</option>
-                                  {tipo.slice(7).split('|').map((opcion) => <option key={opcion} value={opcion}>{opcion.replaceAll('_',' ')}</option>)}
+                                  {tipo.slice(7).split('|').map((opcion) => <option key={opcion} value={opcion}>{({ permanente:'Permanente', ocasional:'Ocasional', por_dias:'Por días', por_horas:'Por horas', temporal:'Temporal', prestacion_servicios:'Prestación de servicios', termino_indefinido:'Término indefinido', termino_fijo:'Término fijo', obra_labor:'Obra o labor', servicios_generales:'Servicios generales' })[opcion] || opcion.replaceAll('_',' ').replace(/^./, (letra) => letra.toLocaleUpperCase('es-CO'))}</option>)}
                                   {formGeneral[campo] && !tipo.slice(7).split('|').includes(formGeneral[campo]) && <option value={formGeneral[campo]}>{formGeneral[campo]}</option>}
                                 </select>
                               ) : (
@@ -2180,7 +2190,7 @@ function InformacionGeneral({ personal, cuenta, perfiles, perfilProfesional, set
         <Dato label="Teléfono" value={personal.telefono} />
         <Dato label="Correo" value={personal.email} />
         <Dato label="Departamento" value={personal.departamento_residencia} />
-        <Dato label="Ciudad" value={personal.ciudad_residencia} />
+        <Dato label="Ciudad / Municipio" value={personal.ciudad_residencia} />
         <Dato label="Dirección" value={personal.direccion} ancho="col-span-2" />
       </Seccion>
 
