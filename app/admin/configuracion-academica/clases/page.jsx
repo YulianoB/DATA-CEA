@@ -583,6 +583,8 @@ const [
     setGrupoEliminar,
   ] = useState(null)
 
+  const [edicionTextosGrupo, setEdicionTextosGrupo] = useState(null)
+
 
   // ============================================================
   // SESIÓN
@@ -2787,6 +2789,82 @@ async function restaurarLogoAnterior() {
   }
 
 
+
+  function abrirTextosGrupo(grupo) {
+    const miembros = Array.isArray(grupo.clases) ? grupo.clases : []
+    const ids = miembros.map(clase => Number(clase.id))
+    const primera = clases.find(clase => Number(clase.id) === ids[0])
+    setEdicionTextosGrupo({
+      id: grupo.id,
+      nombre: grupo.nombre,
+      miembros,
+      clase_ids: ids,
+      contenido: texto(primera?.contenido),
+      contenido_tarjeta: texto(primera?.contenido_tarjeta),
+      actualizar_contenido: true,
+      actualizar_tarjeta: true,
+    })
+    setError('')
+    setMensaje('')
+  }
+
+  function cambiarTextosGrupo(campo, valor) {
+    setEdicionTextosGrupo(anterior => anterior ? { ...anterior, [campo]: valor } : anterior)
+  }
+
+  async function guardarTextosGrupo() {
+    if (!edicionTextosGrupo || guardando) return
+    const form = edicionTextosGrupo
+    if (!form.clase_ids.length) {
+      setError('Seleccione al menos una categoría.')
+      return
+    }
+    if ((!form.actualizar_contenido && !form.actualizar_tarjeta) ||
+        (form.actualizar_contenido && !texto(form.contenido)) ||
+        (form.actualizar_tarjeta && !texto(form.contenido_tarjeta))) {
+      setError('Seleccione los campos que actualizará e ingrese sus textos.')
+      return
+    }
+    const resumen = form.miembros
+      .filter(clase => form.clase_ids.includes(Number(clase.id)))
+      .map(clase => clase.categoria + ' — ' + clase.nombre)
+      .join('\n')
+    if (!window.confirm(
+      'Se reemplazarán únicamente los textos seleccionados en las siguientes clases:\n\n' +
+      resumen + '\n\n¿Desea continuar?'
+    )) return
+
+    try {
+      setGuardando(true)
+      setError('')
+      setMensaje('')
+      const nit = obtenerNitUsuario(user)
+      const respuesta = await fetch('/api/admin/configuracion-academica', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-cea-nit': nit },
+        body: JSON.stringify({
+          nit,
+          recurso: 'CONTENIDOS_GRUPO',
+          grupo_id: form.id,
+          clase_ids: form.clase_ids,
+          actualizar_contenido: form.actualizar_contenido,
+          actualizar_tarjeta: form.actualizar_tarjeta,
+          contenido: form.contenido,
+          contenido_tarjeta: form.contenido_tarjeta,
+        }),
+      })
+      const data = await respuesta.json()
+      if (!respuesta.ok || !data?.ok) throw new Error(data?.error || 'No fue posible guardar los textos del grupo.')
+      setEdicionTextosGrupo(null)
+      await cargarDatos({ conservarSeleccion: true })
+      setMensaje(data.message || 'Textos actualizados correctamente.')
+    } catch (err) {
+      setError(err?.message || 'No fue posible actualizar el grupo.')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
   // ============================================================
   // CLASES DEL GRUPO
   // ============================================================
@@ -4492,6 +4570,14 @@ async function restaurarLogoAnterior() {
                             pt-4
                           "
                         >
+                          <button
+                            type="button"
+                            onClick={() => abrirTextosGrupo(grupo)}
+                            className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100"
+                          >
+                            <i className="fas fa-pen mr-2" aria-hidden="true" />
+                            Contenido y competencia
+                          </button>
                           <BotonAccion tipo="editar"
                             type="button"
                             onClick={() =>
@@ -4598,6 +4684,82 @@ async function restaurarLogoAnterior() {
         )}
       </div>
 
+
+
+      {/* Edición de textos de clases asociadas al grupo, sin cambiar la agrupación */}
+      {edicionTextosGrupo && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+            <h2 className="text-lg font-bold text-slate-900">Contenido y competencia · {edicionTextosGrupo.nombre}</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Todas las categorías están seleccionadas inicialmente. Desmarque las que no desea actualizar.
+              Solo se modificarán los campos indicados; los nombres, horarios, duraciones y colores se conservarán.
+            </p>
+            <div className="mt-4 space-y-2">
+              {edicionTextosGrupo.miembros.map(miembro => {
+                const actual = clases.find(clase => Number(clase.id) === Number(miembro.id))
+                const marcado = edicionTextosGrupo.clase_ids.includes(Number(miembro.id))
+                return (
+                  <label key={miembro.id} className="block rounded-lg border border-slate-200 p-3">
+                    <span className="flex items-center gap-2 text-sm font-bold">
+                      <input type="checkbox" checked={marcado}
+                        onChange={() => cambiarTextosGrupo('clase_ids',
+                          marcado
+                            ? edicionTextosGrupo.clase_ids.filter(id => id !== Number(miembro.id))
+                            : [...edicionTextosGrupo.clase_ids, Number(miembro.id)])} />
+                      {miembro.categoria} · {miembro.nombre}
+                    </span>
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Contenido actual: {texto(actual?.contenido) || 'Sin configurar'}
+                    </span>
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Competencia actual: {texto(actual?.contenido_tarjeta) || 'Sin configurar'}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+            <div className="mt-4 space-y-4">
+              <div className="rounded-lg border border-slate-200 p-3">
+                <label className="mb-2 flex items-center gap-2 text-sm font-bold">
+                  <input type="checkbox" checked={edicionTextosGrupo.actualizar_contenido}
+                    onChange={e => cambiarTextosGrupo('actualizar_contenido', e.target.checked)} />
+                  Actualizar contenido completo
+                </label>
+                <textarea rows={4} className="w-full rounded-lg border border-slate-300 p-2 text-sm"
+                  value={edicionTextosGrupo.contenido}
+                  disabled={!edicionTextosGrupo.actualizar_contenido}
+                  onChange={e => cambiarTextosGrupo('contenido', e.target.value)} />
+              </div>
+              <div className="rounded-lg border border-slate-200 p-3">
+                <label className="mb-2 flex items-center gap-2 text-sm font-bold">
+                  <input type="checkbox" checked={edicionTextosGrupo.actualizar_tarjeta}
+                    onChange={e => cambiarTextosGrupo('actualizar_tarjeta', e.target.checked)} />
+                  Actualizar competencia corta para tarjeta
+                </label>
+                <textarea rows={3} className="w-full rounded-lg border border-slate-300 p-2 text-sm"
+                  value={edicionTextosGrupo.contenido_tarjeta}
+                  disabled={!edicionTextosGrupo.actualizar_tarjeta}
+                  onChange={e => cambiarTextosGrupo('contenido_tarjeta', e.target.value)} />
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-slate-600">
+              Se actualizarán {edicionTextosGrupo.clase_ids.length} de {edicionTextosGrupo.miembros.length} clases.
+              Verifique los textos actuales antes de confirmar.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" disabled={guardando}
+                onClick={() => setEdicionTextosGrupo(null)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold">Cancelar</button>
+              <button type="button" disabled={guardando || !edicionTextosGrupo.clase_ids.length}
+                onClick={guardarTextosGrupo}
+                className="rounded-lg bg-[#194567] px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+                {guardando ? 'Guardando...' : 'Aplicar a clases seleccionadas'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================
           MODAL GRUPO TRANSVERSAL
