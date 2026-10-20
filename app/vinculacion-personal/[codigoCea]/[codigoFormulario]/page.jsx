@@ -161,9 +161,14 @@ export default function VinculacionPersonalPage() {
   const departamentoId = departamentos.find(d => d.nombre === personal.departamento_residencia)?.id
 
   function renderCampo(c, objeto=personal, fn=actualizar) {
-    const invalidado = validacionIntentada && c.obligatorio && !tiene(objeto[c.nombre])
+    const invalidoEspecial = objeto === personal && (
+      (c.nombre === 'email' && tiene(objeto.email) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(objeto.email)) ||
+      (c.nombre === 'numero_hijos' && tiene(objeto.numero_hijos) && (!Number.isInteger(Number(objeto.numero_hijos)) || Number(objeto.numero_hijos) < 0)) ||
+      (['genero','tipo_sangre','estado_civil','medio_transporte_trabajo'].includes(c.nombre) && tiene(objeto[c.nombre]) && !OPCIONES[c.nombre].some(([valor]) => valor === objeto[c.nombre]))
+    )
+    const invalidado = validacionIntentada && c.obligatorio && (!tiene(objeto[c.nombre]) || invalidoEspecial)
     const bordeCampo = invalidado ? 'border-red-600 ring-1 ring-red-500' : 'border-slate-300'
-    const advertencia = invalidado ? <span role="alert" className="mt-1 block text-xs font-semibold text-red-700">Complete este campo obligatorio.</span> : null
+    const advertencia = invalidado ? <span role="alert" className="mt-1 block text-xs font-semibold text-red-700">Revise este campo obligatorio.</span> : null
     if (OPCIONES[c.nombre]) return <label key={c.nombre} className="block text-sm font-medium text-slate-700">{c.titulo}{c.obligatorio ? ' *' : ''}
       <select required={c.obligatorio} value={objeto[c.nombre] || ''} onChange={e=>fn(c.nombre,e.target.value)} className={`mt-1 w-full rounded border bg-white p-2 ${bordeCampo}`}>
         <option value="">Seleccione</option>{OPCIONES[c.nombre].map(([valor,etiqueta])=><option key={valor} value={valor}>{etiqueta}</option>)}
