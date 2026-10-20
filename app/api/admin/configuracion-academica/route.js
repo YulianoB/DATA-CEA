@@ -2481,6 +2481,68 @@ export async function PATCH(
 
 
 
+    // Edición de una clase compartida desde el Plan de Formación.
+    // El grupo sigue existiendo para horarios, pero no se reconstruyen sus asociaciones.
+    if (mayusculas(body?.recurso) === 'EDITAR_CLASE_COMPARTIDA') {
+      const grupoId = Number(body?.grupo_id)
+      const claseId = Number(body?.clase_id)
+      if (!Number.isInteger(grupoId) || grupoId <= 0 || !Number.isInteger(claseId) || claseId <= 0) {
+        return NextResponse.json({ok:false,error:'Identifique la clase y su grupo transversal.'},{status:400})
+      }
+      const nombre = texto(body?.nombre)
+      if (!nombre) return NextResponse.json({ok:false,error:'El nombre de la clase es obligatorio.'},{status:400})
+      const {data:grupo,error:errorGrupo}=await supabase.from('grupos_clases_formacion')
+        .select('id,tipo_formacion,color_horario').eq('id',grupoId).maybeSingle()
+      if(errorGrupo || !grupo) return NextResponse.json({ok:false,error:'No fue posible verificar el grupo.'},{status:400})
+      const {data:detalles,error:errorDetalles}=await supabase.from('grupos_clases_formacion_detalle')
+        .select('clase_formacion_id').eq('grupo_id',grupoId)
+      if(errorDetalles) throw new Error('No fue posible verificar las asociaciones.')
+      const ids=(detalles||[]).map(item=>Number(item.clase_formacion_id))
+      if(ids.length<2 || !ids.includes(claseId) || new Set(ids).size!==ids.length) {
+        return NextResponse.json({ok:false,error:'La clase no pertenece a un grupo compartido válido.'},{status:409})
+      }
+      const {data:clasesGrupo,error:errorClases}=await supabase.from('clases_formacion')
+        .select('id,categoria,tipo_formacion,duracion_horas,nombre,contenido,contenido_tarjeta,observaciones,activo')
+        .in('id',ids)
+      if(errorClases || !Array.isArray(clasesGrupo) || clasesGrupo.length!==ids.length ||
+        clasesGrupo.some(c=>mayusculas(c.tipo_formacion)!==mayusculas(grupo.tipo_formacion) ||
+          !categoriaHabilitadaEmpresa(empresa,c.categoria))) {
+        return NextResponse.json({ok:false,error:'Las clases del grupo no pertenecen todas al CEA o son incompatibles.'},{status:400})
+      }
+      const duracion=numeroPositivoONull(body?.duracion_horas)
+      if(!Number.isFinite(duracion) || duracion<=0) {
+        return NextResponse.json({ok:false,error:'La duración de una clase compartida debe ser válida.'},{status:400})
+      }
+      const grupoColorAnterior=grupo.color_horario || null
+      const nuevoColor=texto(body?.color_horario)||null
+      const ahora=new Date().toISOString()
+      const cambios={
+        nombre, duracion_horas:duracion,
+        contenido:texto(body?.contenido)||null,
+        contenido_tarjeta:texto(body?.contenido_tarjeta)||null,
+        observaciones:texto(body?.observaciones)||null,
+        activo:body?.activo!==false,
+        updated_at:ahora,
+      }
+      // Primero se guarda el color del grupo; si fallan las clases, se revierte.
+      if(nuevoColor!==grupoColorAnterior){
+        const {error:errorColor}=await supabase.from('grupos_clases_formacion')
+          .update({color_horario:nuevoColor,updated_at:ahora}).eq('id',grupoId)
+        if(errorColor) throw new Error('No fue posible actualizar el color del grupo.')
+      }
+      const {data:actualizadas,error:errorGuardar}=await supabase.from('clases_formacion')
+        .update(cambios).in('id',ids).select('id')
+      if(errorGuardar || (actualizadas||[]).length!==ids.length){
+        if(nuevoColor!==grupoColorAnterior){
+          const {error:errorRestaurar}=await supabase.from('grupos_clases_formacion')
+            .update({color_horario:grupoColorAnterior,updated_at:new Date().toISOString()}).eq('id',grupoId)
+          if(errorRestaurar) return NextResponse.json({ok:false,error:'Actualización incompleta: revise los datos antes de reintentar.',requiere_revision:true},{status:500})
+        }
+        throw new Error('No se pudo confirmar la actualización de todas las categorías.')
+      }
+      return NextResponse.json({ok:true,mensaje:'Clase compartida actualizada en todas las categorías asociadas.',cantidad:ids.length})
+    }
+
     // Edición compartida de textos sobre clases existentes.
     // No altera grupos, colores, horas, identificadores ni horarios.
     if (mayusculas(body?.recurso) === 'CONTENIDOS_GRUPO') {
