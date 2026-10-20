@@ -406,7 +406,7 @@ const COLORES_HORARIO = [
   {
     valor: '#64748B',
     nombre: 'Gris oscuro',
-  },,
+  },
   // TONOS ADICIONALES
   { valor: '#172554', nombre: 'Azul noche' },
   { valor: '#166534', nombre: 'Verde bosque' },
