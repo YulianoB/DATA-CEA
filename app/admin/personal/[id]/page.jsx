@@ -1657,7 +1657,7 @@ export default function HojaVidaPersonalPage() {
                           {tipo === 'municipio' ? (
                             <CampoMunicipioBusqueda nit={nitActual} departamentoId={departamentoEdicionId} value={formGeneral.ciudad_residencia ?? ''} onChange={(valor) => setFormGeneral((prev) => ({ ...prev, ciudad_residencia: valor }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs" />
                           ) : tipo.startsWith('catalogo:') ? (
-                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} required={false} onOpcionesCargadas={campo === 'departamento_residencia' ? setDepartamentosEdicion : undefined} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value, ...(campo === 'departamento_residencia' ? { ciudad_residencia: '' } : {}) }))} />
+                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} required={false} opcionesAdicionales={['eps','arl','fondo_pension'].includes(campo) ? ['NO AFILIADO'] : []} onOpcionesCargadas={campo === 'departamento_residencia' ? setDepartamentosEdicion : undefined} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value, ...(campo === 'departamento_residencia' ? { ciudad_residencia: '' } : {}) }))} />
                           ) : (
                             <>
                               <label htmlFor={`general-${campo}`} className="mb-1 block text-xs font-semibold text-slate-600">{etiqueta}</label>
@@ -1718,7 +1718,7 @@ export default function HojaVidaPersonalPage() {
                           {tipo === 'municipio' ? (
                             <CampoMunicipioBusqueda nit={nitActual} departamentoId={departamentoEdicionId} value={formGeneral.ciudad_residencia ?? ''} onChange={(valor) => setFormGeneral((prev) => ({ ...prev, ciudad_residencia: valor }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs" />
                           ) : tipo.startsWith('catalogo:') ? (
-                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} required={false} onOpcionesCargadas={campo === 'departamento_residencia' ? setDepartamentosEdicion : undefined} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value, ...(campo === 'departamento_residencia' ? { ciudad_residencia: '' } : {}) }))} />
+                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} required={false} opcionesAdicionales={['eps','arl','fondo_pension'].includes(campo) ? ['NO AFILIADO'] : []} onOpcionesCargadas={campo === 'departamento_residencia' ? setDepartamentosEdicion : undefined} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value, ...(campo === 'departamento_residencia' ? { ciudad_residencia: '' } : {}) }))} />
                           ) : (
                             <>
                               <label htmlFor={`general-${campo}`} className="mb-1 block text-xs font-semibold text-slate-600">{etiqueta}</label>
@@ -1798,7 +1798,7 @@ export default function HojaVidaPersonalPage() {
                           {tipo === 'municipio' ? (
                             <CampoMunicipioBusqueda nit={nitActual} departamentoId={departamentoEdicionId} value={formGeneral.ciudad_residencia ?? ''} onChange={(valor) => setFormGeneral((prev) => ({ ...prev, ciudad_residencia: valor }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs" />
                           ) : tipo.startsWith('catalogo:') ? (
-                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} required={false} onOpcionesCargadas={campo === 'departamento_residencia' ? setDepartamentosEdicion : undefined} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value, ...(campo === 'departamento_residencia' ? { ciudad_residencia: '' } : {}) }))} />
+                            <CampoCatalogo catalogo={tipo.slice(9)} label={etiqueta} name={campo} value={formGeneral[campo] ?? ''} nit={nitActual} required={false} opcionesAdicionales={['eps','arl','fondo_pension'].includes(campo) ? ['NO AFILIADO'] : []} onOpcionesCargadas={campo === 'departamento_residencia' ? setDepartamentosEdicion : undefined} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value, ...(campo === 'departamento_residencia' ? { ciudad_residencia: '' } : {}) }))} />
                           ) : (
                             <>
                               <label htmlFor={`general-${campo}`} className="mb-1 block text-xs font-semibold text-slate-600">{etiqueta}</label>
