@@ -116,6 +116,7 @@ export async function PATCH(request, { params }) {
         return NextResponse.json({ status: 'failed', message: `Valor inválido para ${campo}.` }, { status: 400 })
       }
       let normalizado = valor === null || String(valor).trim() === '' ? null : String(valor).trim()
+      if (['nacionalidad','direccion','cargo'].includes(campo) && normalizado !== null) normalizado = normalizado.toLocaleUpperCase('es-CO')
       if (campo === 'genero' && normalizado !== null) {
         normalizado = ({ femenino:'Femenino', masculino:'Masculino', otro:'Otro' })[normalizado.toLowerCase()] || normalizado
         if (!['Femenino','Masculino','Otro'].includes(normalizado)) return NextResponse.json({ status:'failed', message:'Seleccione un género válido.' }, { status:400 })
