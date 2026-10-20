@@ -170,7 +170,7 @@ const CAMPOS_EDICION_GENERAL = [
   ['Datos personales', [
     ['nombres','Nombres'],['apellidos','Apellidos'],['fecha_nacimiento','Fecha de nacimiento','date'],
     ['genero','Género','select:Femenino|Masculino|Otro'],['tipo_sangre','Tipo de sangre','select:O+|O-|A+|A-|B+|B-|AB+|AB-'],
-    ['estado_civil','Estado civil','select:Soltero(a)|Casado(a)|Unión libre|Divorciado(a)|Viudo(a)'],['escolaridad','Nivel académico principal'],
+    ['estado_civil','Estado civil','select:Soltero(a)|Casado(a)|Unión libre|Divorciado(a)|Viudo(a)'],['escolaridad','Nivel académico principal','select:BACHILLER|TECNICO|TECNOLOGO|PREGRADO|POSGRADO'],
     ['profesion','Profesión u oficio'],['nacionalidad','Nacionalidad'],['numero_hijos','Número de hijos','number'],
   ]],
   ['Contacto', [
@@ -188,11 +188,11 @@ const CAMPOS_EDICION_GENERAL = [
   ['Seguridad social y PESV', [
     ['eps','EPS','catalogo:eps'],['arl','ARL','catalogo:arl'],
     ['fondo_pension','Fondo pensión','catalogo:fondos_pensiones'],
-    ['medio_transporte_trabajo','Medio de transporte','select:A pie|Bicicleta|Transporte público|Motocicleta propia|Motocicleta CEA|Automóvil propio|Automóvil CEA|Camioneta propia|Camioneta CEA'],
+    ['medio_transporte_trabajo','Medio de transporte al trabajo','select:A pie|Bicicleta|Transporte público|Motocicleta propia|Motocicleta CEA|Automóvil propio|Automóvil CEA|Camioneta propia|Camioneta CEA'],
   ]],
   ['Contacto de emergencia', [
-    ['contacto_emergencia_nombre','Nombre'],['contacto_emergencia_parentesco','Parentesco'],
-    ['contacto_emergencia_telefono','Teléfono'],
+    ['contacto_emergencia_nombre','Contacto de emergencia'],['contacto_emergencia_parentesco','Parentesco de emergencia'],
+    ['contacto_emergencia_telefono','Teléfono de emergencia'],
   ]],
 ]
 const CAMPOS_GENERALES = CAMPOS_EDICION_GENERAL.flatMap(([, campos]) => campos.map(([campo]) => campo))
@@ -597,6 +597,8 @@ export default function HojaVidaPersonalPage() {
   }
 
   const departamentoEdicionId = departamentosEdicion.find((d) => d.nombre === formGeneral.departamento_residencia)?.id
+
+  const normalizarGeneralTexto = (campo, valor) => ['nacionalidad','direccion','cargo'].includes(campo) ? String(valor).toLocaleUpperCase('es-CO') : valor
 
   function abrirEdicionGeneral() {
     const personal = data?.personal || {}
@@ -1662,11 +1664,11 @@ export default function HojaVidaPersonalPage() {
                               {tipo.startsWith('select:') ? (
                                 <select id={`general-${campo}`} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs">
                                   <option value="">Seleccione</option>
-                                  {tipo.slice(7).split('|').map((opcion) => <option key={opcion} value={opcion}>{({ permanente:'Permanente', ocasional:'Ocasional', por_dias:'Por días', por_horas:'Por horas', temporal:'Temporal', prestacion_servicios:'Prestación de servicios', termino_indefinido:'Término indefinido', termino_fijo:'Término fijo', obra_labor:'Obra o labor', servicios_generales:'Servicios generales' })[opcion] || opcion.replaceAll('_',' ').replace(/^./, (letra) => letra.toLocaleUpperCase('es-CO'))}</option>)}
+                                  {tipo.slice(7).split('|').map((opcion) => <option key={opcion} value={opcion}>{({ BACHILLER:'Bachiller', TECNICO:'Técnico', TECNOLOGO:'Tecnólogo', PREGRADO:'Pregrado', POSGRADO:'Posgrado', permanente:'Permanente', ocasional:'Ocasional', por_dias:'Por días', por_horas:'Por horas', temporal:'Temporal', prestacion_servicios:'Prestación de servicios', termino_indefinido:'Término indefinido', termino_fijo:'Término fijo', obra_labor:'Obra o labor', servicios_generales:'Servicios generales' })[opcion] || opcion.replaceAll('_',' ').replace(/^./, (letra) => letra.toLocaleUpperCase('es-CO'))}</option>)}
                                   {formGeneral[campo] && !tipo.slice(7).split('|').includes(formGeneral[campo]) && <option value={formGeneral[campo]}>{formGeneral[campo]}</option>}
                                 </select>
                               ) : (
-                                <input id={`general-${campo}`} type={tipo} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs" />
+                                <input id={`general-${campo}`} type={tipo} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: normalizarGeneralTexto(campo, event.target.value) }))} className={'w-full rounded-md border border-slate-400 bg-white p-2 text-xs ' + (['nacionalidad','direccion','cargo'].includes(campo) ? 'uppercase' : '')} />
                               )}
                             </>
                           )}
@@ -1727,7 +1729,7 @@ export default function HojaVidaPersonalPage() {
                                   {formGeneral[campo] && !tipo.slice(7).split('|').includes(formGeneral[campo]) && <option value={formGeneral[campo]}>{formGeneral[campo]}</option>}
                                 </select>
                               ) : (
-                                <input id={`general-${campo}`} type={tipo} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs" />
+                                <input id={`general-${campo}`} type={tipo} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: normalizarGeneralTexto(campo, event.target.value) }))} className={'w-full rounded-md border border-slate-400 bg-white p-2 text-xs ' + (['nacionalidad','direccion','cargo'].includes(campo) ? 'uppercase' : '')} />
                               )}
                             </>
                           )}
@@ -1807,7 +1809,7 @@ export default function HojaVidaPersonalPage() {
                                   {formGeneral[campo] && !tipo.slice(7).split('|').includes(formGeneral[campo]) && <option value={formGeneral[campo]}>{formGeneral[campo]}</option>}
                                 </select>
                               ) : (
-                                <input id={`general-${campo}`} type={tipo} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: event.target.value }))} className="w-full rounded-md border border-slate-400 bg-white p-2 text-xs" />
+                                <input id={`general-${campo}`} type={tipo} value={formGeneral[campo] ?? ''} onChange={(event) => setFormGeneral((prev) => ({ ...prev, [campo]: normalizarGeneralTexto(campo, event.target.value) }))} className={'w-full rounded-md border border-slate-400 bg-white p-2 text-xs ' + (['nacionalidad','direccion','cargo'].includes(campo) ? 'uppercase' : '')} />
                               )}
                             </>
                           )}
