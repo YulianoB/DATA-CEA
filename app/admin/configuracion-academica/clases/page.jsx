@@ -1941,6 +1941,40 @@ async function restaurarLogoAnterior() {
   }
 
 
+  async function alternarEstadoClase(clase) {
+    const nuevoEstado = clase.activo === false
+    if (!window.confirm(nuevoEstado
+      ? '¿Activar la clase "' + clase.nombre + '"?'
+      : '¿Desactivar la clase "' + clase.nombre + '"? Puede afectar su disponibilidad para la programación futura.')) return
+    try {
+      setGuardando(true)
+      setError('')
+      setMensaje('')
+      const nit = obtenerNitUsuario(user)
+      const respuesta = await fetch('/api/admin/configuracion-academica', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-cea-nit': nit },
+        body: JSON.stringify({
+          nit, id: clase.id, nombre: clase.nombre,
+          duracion_horas: clase.tipo_formacion === 'PRACTICA' ? null : clase.duracion_horas,
+          contenido: clase.contenido || '',
+          contenido_tarjeta: clase.contenido_tarjeta || '',
+          observaciones: clase.observaciones || '',
+          color_horario: clase.color_horario || null,
+          activo: nuevoEstado,
+        }),
+      })
+      const data = await respuesta.json()
+      if (!respuesta.ok || !data?.ok) throw new Error(data?.error || 'No fue posible cambiar el estado.')
+      await cargarDatos({ conservarSeleccion: true })
+      setMensaje(nuevoEstado ? 'Clase activada correctamente.' : 'Clase desactivada correctamente.')
+    } catch (e) {
+      setError(e?.message || 'No fue posible actualizar el estado.')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
   // ============================================================
   // GUARDAR NUEVA CLASE
   // ============================================================
@@ -3986,7 +4020,7 @@ async function restaurarLogoAnterior() {
                                     <span className={clase.activo === false ? 'text-slate-500' : 'text-emerald-700'}>{clase.activo === false ? 'Inactiva' : 'Activa'}</span>
                                     <div className="flex items-center justify-end gap-1">
                                       <button type="button" title="Editar clase" onClick={() => abrirEdicion(clase)} className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-800"><i className="fas fa-edit" aria-hidden="true"/></button>
-                                      <button type="button" title={clase.activo === false ? 'Activar' : 'Desactivar'} onClick={() => abrirEdicion({...clase, activo: clase.activo === false})} className="rounded border border-slate-300 bg-white p-2 text-slate-700"><i className="fas fa-power-off" aria-hidden="true"/></button>
+                                      <button type="button" title={clase.activo === false ? 'Activar' : 'Desactivar'} onClick={() => alternarEstadoClase(clase)} disabled={guardando} className="rounded border border-slate-300 bg-white p-2 text-slate-700"><i className="fas fa-power-off" aria-hidden="true"/></button>
                                       <button type="button" title="Eliminar clase" onClick={() => solicitarEliminar(clase)} className="rounded border border-red-200 bg-red-50 p-2 text-red-700"><i className="fas fa-trash" aria-hidden="true"/></button>
                                     </div>
                                   </div>
