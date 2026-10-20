@@ -1652,17 +1652,19 @@ async function restaurarLogoAnterior() {
   function abrirEdicion(
   clase
 ) {
+  const grupoAsociado = gruposTransversales.find(grupo =>
+    (grupo.clases || []).some(item => Number(item.id) === Number(clase.id)))
   setClaseEditando({
     ...clase,
+    grupo_id: grupoAsociado?.id || null,
+    categorias_asociadas: grupoAsociado?.categorias || [clase.categoria],
+    color_horario_efectivo: grupoAsociado ? texto(grupoAsociado.color_horario) : texto(clase.color_horario),
 
     duracion_horas:
       clase.duracion_horas ??
       '',
 
-    color_horario:
-      texto(
-        clase.color_horario
-      ),
+    color_horario: grupoAsociado ? texto(grupoAsociado.color_horario) : texto(clase.color_horario),
   })
 
     setMensaje('')
@@ -1872,6 +1874,11 @@ async function restaurarLogoAnterior() {
             body:
               JSON.stringify({
                 nit,
+                ...(claseEditando.grupo_id ? {
+                  recurso: 'EDITAR_CLASE_COMPARTIDA',
+                  grupo_id: claseEditando.grupo_id,
+                  clase_id: claseEditando.id,
+                } : {}),
 
                 id:
                   claseEditando.id,
@@ -1936,25 +1943,13 @@ async function restaurarLogoAnterior() {
         )
       }
 
-      setClases(
-        (
-          anteriores
-        ) =>
-          anteriores.map(
-            (item) =>
-              Number(
-                item.id
-              ) ===
-              Number(
-                data.clase.id
-              )
-                ? {
-                    ...item,
-                    ...data.clase,
-                  }
-                : item
-          )
-      )
+      if (!claseEditando.grupo_id && data.clase) {
+        setClases(anteriores => anteriores.map(item =>
+          Number(item.id) === Number(data.clase.id)
+            ? { ...item, ...data.clase }
+            : item
+        ))
+      }
 
       setMensaje(
         data?.mensaje ||
@@ -3460,114 +3455,6 @@ async function restaurarLogoAnterior() {
             </div>
           
         {/* ====================================================
-            SELECTOR DE VISTA
-        ==================================================== */}
-
-        <div
-          className="
-            border-b-2 border-[#194567] bg-transparent px-1 pt-1
-          "
-        >
-          <div
-            className="
-              flex flex-wrap items-end justify-start gap-1
-            "
-          >
-            <button
-              type="button"
-              onClick={() =>
-                cambiarVista(
-                  'PLAN'
-                )
-              }
-              className={`
-                inline-flex items-center justify-center gap-2 rounded-t-lg border border-b-0 px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BEFB3] focus-visible:ring-offset-2
-                ${
-                  vistaActual ===
-                  'PLAN'
-                    ? `
-                      border-[#194567] bg-[#194567] text-white shadow-[inset_0_3px_0_#7BEFB3] hover:bg-[#123B63]
-                    `
-                    : `
-                      border-[#A6C2DB] bg-[#DCEAF5] text-[#194567] hover:border-[#194567] hover:bg-[#A6C2DB] hover:text-[#082745]
-                    `
-                }
-              `}
-            >
-              <i
-                className="
-                  fas
-                  fa-graduation-cap
-                "
-              ></i>
-
-              Plan de Formación
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                cambiarVista(
-                  'GRUPOS'
-                )
-              }
-              className={`
-                inline-flex items-center justify-center gap-2 rounded-t-lg border border-b-0 px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7BEFB3] focus-visible:ring-offset-2
-                ${
-                  vistaActual ===
-                  'GRUPOS'
-                    ? `
-                      border-[#194567] bg-[#194567] text-white shadow-[inset_0_3px_0_#7BEFB3] hover:bg-[#123B63]
-                    `
-                    : `
-                      border-[#A6C2DB] bg-[#DCEAF5] text-[#194567] hover:border-[#194567] hover:bg-[#A6C2DB] hover:text-[#082745]
-                    `
-                }
-              `}
-            >
-              <i
-                className="
-                  fas
-                  fa-link
-                "
-              ></i>
-
-              Grupos Transversales
-
-              {gruposTransversales.length >
-                0 && (
-                <span
-                  className={`
-                    rounded-full
-                    px-2
-                    py-0.5
-                    text-[10px]
-                    font-bold
-                    ${
-                      vistaActual ===
-                      'GRUPOS'
-                        ? `
-                          bg-[#DCEAF5]
-                          text-[#194567]
-                        `
-                        : `
-                          bg-slate-700
-                          text-white
-                        `
-                    }
-                  `}
-                >
-                  {
-                    gruposTransversales.length
-                  }
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-
-
-        {/* ====================================================
             MENSAJES
         ==================================================== */}
 
@@ -3998,7 +3885,7 @@ async function restaurarLogoAnterior() {
                           <div className="overflow-x-auto">
                             <div className="min-w-[1050px]">
                               <div style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }} className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] gap-0 border-y border-slate-500 text-[10px] font-extrabold uppercase [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>span]:border-r [&>span]:border-slate-500 [&>span]:px-2 [&>span]:py-2 [&>span]:text-center">
-                                <span>Nombre de la clase</span><span>Color</span><span>Duración</span><span>Contenido</span><span>Competencias a desarrollar</span><span>Estado</span><span>Acciones</span>
+                                <span>Nombre de la clase</span><span>Color</span><span>Duración</span><span>Categorías</span><span>Competencias a desarrollar</span><span>Estado</span><span>Acciones</span>
                               </div>
                             {clasesModulo.map(
                               (
@@ -4036,11 +3923,10 @@ async function restaurarLogoAnterior() {
                                       <span title={grupoClase ? 'Color del grupo' : 'Color de la clase'} className="inline-block h-5 w-5 shrink-0 rounded border border-slate-400" style={{backgroundColor: grupoClase?.color_horario || clase.color_horario || '#F1F5F9'}}/>
                                     </div>
                                     <div className="flex items-center justify-center text-center">{clase.tipo_formacion === 'PRACTICA' ? '—' : clase.duracion_horas ? formatearHoras(clase.duracion_horas) + ' h' : 'Pendiente'}</div>
-                                    <div className="flex min-w-0 items-center justify-center">
-                                      <span className="min-w-0 break-words text-center text-slate-600" title={texto(clase.contenido)}
-                                        style={{display:'-webkit-box',WebkitBoxOrient:'vertical',WebkitLineClamp:2,overflow:'hidden',lineHeight:'1.35'}}>
-                                        {texto(clase.contenido) || 'Pendiente'}
-                                      </span>
+                                    <div className="flex min-w-0 flex-wrap items-center justify-center gap-1">
+                                      {(grupoClase?.categorias || [clase.categoria]).map(cat => (
+                                        <span key={cat} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">{cat}</span>
+                                      ))}
                                     </div>
                                     <div className="flex min-w-0 items-center justify-center">
                                       <span className="min-w-0 break-words text-center text-slate-600" title={texto(clase.contenido_tarjeta)}
@@ -4092,217 +3978,6 @@ async function restaurarLogoAnterior() {
             )}
           </>
         )}
-
-
-        {/* ====================================================
-            VISTA GRUPOS TRANSVERSALES
-        ==================================================== */}
-
-        {vistaActual ===
-          'GRUPOS' && (
-          <div
-            className="
-              overflow-hidden
-              rounded-xl
-              border-2
-              border-slate-800
-              bg-white
-              shadow-md
-            "
-          >
-            <div
-              className="
-                bg-[#194567]
-                p-4
-                text-white
-              "
-            >
-              <div
-                className="
-                  flex
-                  flex-col
-                  gap-3
-                  md:flex-row
-                  md:items-center
-                  md:justify-between
-                "
-              >
-                <div>
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-2
-                      text-sm
-                      font-extrabold
-                      uppercase
-                    "
-                  >
-                    <i
-                      className="
-                        fas
-                        fa-link
-                      "
-                    ></i>
-
-                    Grupos Transversales
-                  </div>
-
-                  <div
-                    className="
-                      mt-1
-                      max-w-3xl
-                      text-xs
-                      leading-relaxed
-                      text-slate-300
-                    "
-                  >
-                    Agrupe únicamente las
-                    clases que son
-                    equivalentes y pueden
-                    compartirse entre
-                    diferentes categorías.
-                    Las clases específicas
-                    de una sola categoría
-                    no necesitan grupo.
-                  </div>
-                </div>
-
-
-                <BotonAccion tipo="agregar"
-                  type="button"
-                  onClick={
-                    abrirNuevoGrupo
-                  }
-                  
-                >
-                  <i
-                    className="
-                      fas
-                      fa-plus
-                    "
-                  ></i>
-
-                  Nuevo grupo transversal
-                </BotonAccion>
-              </div>
-            </div>
-
-
-            {gruposTransversales.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[960px] border-collapse border border-slate-400 text-left text-xs [&_td]:border [&_td]:border-slate-400 [&_th]:border [&_th]:border-slate-400">
-                  <thead className="text-[11px] uppercase" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
-                    <tr>
-                      <th className="px-3 py-3">Grupo transversal</th>
-                      <th className="px-3 py-3 text-center">Formación</th>
-                      <th className="px-3 py-3">Categorías a las que aplica</th>
-                      <th className="px-3 py-3 text-center">Color</th>
-                      <th className="px-3 py-3 text-center">Estado</th>
-                      <th className="px-3 py-3 text-center">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {gruposTransversales.map(grupo => (
-                      <tr key={grupo.id} className="hover:bg-slate-50">
-                        <td className="max-w-[320px] px-3 py-3 align-top">
-                          <div className="font-semibold text-slate-900">{grupo.nombre}</div>
-                          <div className="mt-1 text-[10px] text-slate-500">{(grupo.clases || []).map(c => c.categoria + ': ' + c.nombre).join(' · ')}</div>
-                        </td>
-                        <td className="px-3 py-3 text-center align-middle">{grupo.tipo_formacion}</td>
-                        <td className="px-3 py-3 align-top">
-                          <div className="flex flex-wrap gap-1">
-                            {(grupo.categorias || []).map(cat => (
-                              <span key={cat} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-bold text-emerald-800">{cat}</span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 text-center align-middle">
-                          <span className="inline-block h-6 w-6 rounded border border-slate-300"
-                            style={{backgroundColor: grupo.color_horario || '#F1F5F9'}} title={grupo.color_horario || 'Sin color'}/>
-                        </td>
-                        <td className={`px-3 py-3 text-center align-middle font-medium ${grupo.activo === false ? 'text-slate-500' : 'text-emerald-700'}`}>{grupo.activo === false ? 'Inactivo' : 'Activo'}</td>
-                        <td className="px-3 py-3 text-center align-middle">
-                          <div className="flex justify-center gap-1">
-                            <button type="button" title="Editar grupo y asociaciones" aria-label="Editar grupo y asociaciones" onClick={() => abrirEditarGrupo(grupo)}
-                              className="rounded border border-amber-200 bg-amber-50 p-2 text-amber-800 hover:bg-amber-100"><i className="fas fa-edit" aria-hidden="true"/></button>
-                            <button type="button" disabled={guardando}
-                              title={grupo.activo === false ? 'Activar grupo transversal' : 'Inactivar grupo transversal'}
-                              aria-label={grupo.activo === false ? 'Activar grupo transversal' : 'Inactivar grupo transversal'}
-                              onClick={() => alternarEstadoGrupo(grupo)}
-                              className="rounded border border-slate-300 bg-white p-2 text-slate-700 hover:bg-slate-100 disabled:opacity-50">
-                              <i className="fas fa-power-off" aria-hidden="true"/>
-                            </button>
-                            <button type="button" title="Eliminar grupo" aria-label="Eliminar grupo" onClick={() => solicitarEliminarGrupo(grupo)}
-                              className="rounded border border-red-200 bg-red-50 p-2 text-red-700 hover:bg-red-100"><i className="fas fa-trash" aria-hidden="true"/></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div
-                className="
-                  bg-slate-50
-                  p-8
-                  text-center
-                "
-              >
-                <div
-                  className="
-                    mx-auto
-                    flex
-                    h-14
-                    w-14
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-slate-200
-                    text-sm
-                    text-slate-600
-                  "
-                >
-                  <i
-                    className="
-                      fas
-                      fa-link
-                    "
-                  ></i>
-                </div>
-
-                <div
-                  className="
-                    mt-3
-                    text-xs
-                    font-bold
-                    text-slate-700
-                  "
-                >
-                  No hay grupos
-                  transversales
-                  configurados.
-                </div>
-
-                <div
-                  className="
-                    mt-1
-                    text-xs
-                    text-slate-500
-                  "
-                >
-                  Solo debe crear grupos
-                  para las clases que se
-                  comparten entre dos o más
-                  categorías.
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
 
 
       {/* ======================================================
@@ -4736,7 +4411,7 @@ async function restaurarLogoAnterior() {
               </Campo>
               <Campo etiqueta="Categorías habilitadas">
                 <div className="flex flex-wrap gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
-                  {(gruposTransversales.find(grupo => (grupo.clases || []).some(item => Number(item.id) === Number(claseEditando.id)))?.categorias || [claseEditando.categoria]).map(cat => (
+                  {(claseEditando.categorias_asociadas || [claseEditando.categoria]).map(cat => (
                     <label key={cat} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-2 py-1">
                       <input type="checkbox" checked readOnly disabled />
                       {cat}
@@ -4744,7 +4419,9 @@ async function restaurarLogoAnterior() {
                   ))}
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
-                  Las categorías son informativas en la edición. Para modificar asociaciones utilice «Editar grupo» en Grupos Transversales.
+                  {claseEditando.grupo_id
+                    ? 'Al guardar se actualizarán todas las categorías asociadas a esta clase.'
+                    : 'Esta clase pertenece únicamente a la categoría indicada.'}
                 </p>
               </Campo>
               <Campo
