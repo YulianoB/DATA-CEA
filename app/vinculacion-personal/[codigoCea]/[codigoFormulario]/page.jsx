@@ -20,7 +20,7 @@ const OPCIONES = {
   tipo_contrato: [['prestacion_servicios','Prestación de servicios'],['termino_indefinido','Término indefinido'],['termino_fijo','Término fijo'],['obra_labor','Obra o labor'],['aprendiz','Aprendiz'],['otro','Otro']],
   tipo_permanencia: [['permanente','Permanente'],['ocasional','Ocasional'],['por_dias','Por días'],['por_horas','Por horas'],['temporal','Temporal']],
 }
-const MAYUSCULA = new Set(['nombres','apellidos','direccion','profesion','cargo','titulo','institucion','empresa','jefe_inmediato','ocupacion_cargo','nombre','relacion','contacto_emergencia_nombre','contacto_emergencia_parentesco','numero_certificado'])
+const MAYUSCULA = new Set(['nombres','apellidos','direccion','nacionalidad','profesion','cargo','titulo','institucion','empresa','jefe_inmediato','ocupacion_cargo','nombre','relacion','contacto_emergencia_nombre','contacto_emergencia_parentesco','numero_certificado'])
 const TELEFONOS = new Set(['telefono','contacto_emergencia_telefono','telefono_contacto'])
 const normalizar = (nombre, valor) => typeof valor !== 'string' ? valor : TELEFONOS.has(nombre) ? valor.replace(/[^0-9]/g,'') : MAYUSCULA.has(nombre) ? valor.toLocaleUpperCase('es-CO') : valor
 
@@ -121,7 +121,7 @@ export default function VinculacionPersonalPage() {
     setErroresSeccion(prev => JSON.stringify(prev) === JSON.stringify(actualizados) ? prev : actualizados)
   }, [validacionIntentada, personal, estudios, experiencias, licencias, referencia, autorizado, documentoAutorizacion])
 
-  const actualizar = (nombre, valor) => setPersonal(p=>({...p,[nombre]: nombre === 'email' ? String(valor).trimStart().toLowerCase() : normalizar(nombre,valor)}))
+  const actualizar = (nombre, valor) => { setMensaje(''); setPersonal(p=>({...p,[nombre]: nombre === 'email' ? String(valor).trimStart().toLowerCase() : normalizar(nombre,valor)})) }
   const modificarLista = (setter, indice, nombre, valor) => setter(prev=>prev.map((f,i)=>i===indice?{...f,[nombre]:normalizar(nombre,valor)}:f))
   async function verificar() {
     setMensaje('')
@@ -138,13 +138,14 @@ export default function VinculacionPersonalPage() {
   async function enviar(e) {
     e.preventDefault()
     setMensaje('')
+    if (!validado) { setPaso(0); setMensaje('Primero valide su número de documento en Identificación.'); return }
     const errores = validarSecciones(personal, estudios, experiencias, licencias, referencia, autorizado, documentoAutorizacion)
     setValidacionIntentada(true)
     setErroresSeccion(errores)
     const pendientes = Object.keys(errores).map(Number).sort((a,b)=>a-b)
     if (pendientes.length) {
       setPaso(pendientes[0])
-      setMensaje('Hay datos pendientes. Complete los campos indicados en esta sección y revise las secciones marcadas.')
+      setMensaje('Faltan campos obligatorios. Los encontrará señalados en rojo en las secciones marcadas.')
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
@@ -160,21 +161,24 @@ export default function VinculacionPersonalPage() {
   const departamentoId = departamentos.find(d => d.nombre === personal.departamento_residencia)?.id
 
   function renderCampo(c, objeto=personal, fn=actualizar) {
+    const invalidado = validacionIntentada && c.obligatorio && !tiene(objeto[c.nombre])
+    const bordeCampo = invalidado ? 'border-red-600 ring-1 ring-red-500' : 'border-slate-300'
+    const advertencia = invalidado ? <span role="alert" className="mt-1 block text-xs font-semibold text-red-700">Complete este campo obligatorio.</span> : null
     if (OPCIONES[c.nombre]) return <label key={c.nombre} className="block text-sm font-medium text-slate-700">{c.titulo}{c.obligatorio ? ' *' : ''}
-      <select required={c.obligatorio} value={objeto[c.nombre] || ''} onChange={e=>fn(c.nombre,e.target.value)} className="mt-1 w-full rounded border border-slate-300 bg-white p-2">
+      <select required={c.obligatorio} value={objeto[c.nombre] || ''} onChange={e=>fn(c.nombre,e.target.value)} className={`mt-1 w-full rounded border bg-white p-2 ${bordeCampo}`}>
         <option value="">Seleccione</option>{OPCIONES[c.nombre].map(([valor,etiqueta])=><option key={valor} value={valor}>{etiqueta}</option>)}
-      </select></label>
+      </select>{advertencia}</label>
     
     if (objeto === personal && ['departamento_residencia','ciudad_residencia','eps','arl','fondo_pension'].includes(c.nombre)) {
-      if (c.nombre === 'ciudad_residencia') return <CampoMunicipioBusqueda key={c.nombre} departamentoId={departamentoId} endpoint={endpointCatalogos} value={personal.ciudad_residencia || ''} onChange={valor=>actualizar('ciudad_residencia',valor)} className="mt-1 w-full rounded border border-slate-300 p-2 text-sm" />
+      if (c.nombre === 'ciudad_residencia') return <div key={c.nombre}><CampoMunicipioBusqueda departamentoId={departamentoId} endpoint={endpointCatalogos} value={personal.ciudad_residencia || ''} onChange={valor=>actualizar('ciudad_residencia',valor)} className={`mt-1 w-full rounded border p-2 text-sm ${bordeCampo}`} />{advertencia}</div>
       const catalogo = { departamento_residencia:'departamentos', eps:'eps', arl:'arl', fondo_pension:'fondos_pensiones' }[c.nombre]
-      return <CampoCatalogo key={c.nombre} catalogo={catalogo} name={c.nombre} label={c.titulo} value={personal[c.nombre] || ''} endpoint={endpointCatalogos} required={c.obligatorio} opcionesAdicionales={['eps','arl','fondo_pension'].includes(c.nombre) ? ['NO AFILIADO'] : []}
+      return <div key={c.nombre} className={invalidado ? 'rounded border border-red-500 p-1' : ''}><CampoCatalogo catalogo={catalogo} name={c.nombre} label={c.titulo + (c.obligatorio ? ' *' : '')} value={personal[c.nombre] || ''} endpoint={endpointCatalogos} required={c.obligatorio} opcionesAdicionales={['eps','arl','fondo_pension'].includes(c.nombre) ? ['NO AFILIADO'] : []}
         onOpcionesCargadas={c.nombre === 'departamento_residencia' ? setDepartamentos : undefined}
-        onChange={e => setPersonal(p => ({ ...p, [c.nombre]:e.target.value, ...(c.nombre === 'departamento_residencia' ? { ciudad_residencia:'' } : {}) }))} />
+        onChange={e => { setMensaje(''); setPersonal(p => ({ ...p, [c.nombre]:e.target.value, ...(c.nombre === 'departamento_residencia' ? { ciudad_residencia:'' } : {}) })) }} />{advertencia}</div>
     }
     return <label key={c.nombre} className="block text-sm font-medium text-slate-700">{c.titulo}{c.obligatorio?' *':''}
-      {c.tipo==='textarea'?<textarea rows={4} required={c.obligatorio} value={objeto[c.nombre]||''} onChange={e=>fn(c.nombre,e.target.value)} className="mt-1 w-full rounded border border-slate-300 p-2"/>:
-      <input type={c.tipo} required={c.obligatorio} value={objeto[c.nombre]||''} onChange={e=>fn(c.nombre,e.target.value)} className={'mt-1 w-full rounded border border-slate-300 p-2 '+(MAYUSCULA.has(c.nombre)?'uppercase':'')}/>} 
+      {c.tipo==='textarea'?<textarea rows={4} required={c.obligatorio} value={objeto[c.nombre]||''} onChange={e=>fn(c.nombre,e.target.value)} className={`mt-1 w-full rounded border p-2 ${bordeCampo}`}/>:
+      <input type={c.tipo} required={c.obligatorio} value={objeto[c.nombre]||''} onChange={e=>fn(c.nombre,e.target.value)} className={'mt-1 w-full rounded border p-2 '+bordeCampo+' '+(MAYUSCULA.has(c.nombre)?'uppercase':'')}/>}{advertencia} 
     </label>
   }
   if (errorConfig) return <main className="mx-auto max-w-2xl p-8" role="alert">{errorConfig}</main>
@@ -182,11 +186,11 @@ export default function VinculacionPersonalPage() {
   return <main className="min-h-screen bg-slate-100 px-3 py-8"><section className="mx-auto max-w-3xl rounded-lg border bg-white p-5 shadow-sm">
     <h1 className="text-xl font-bold text-[#194567]">{config.titulo}</h1><p className="mt-1 text-sm text-slate-600">{config.cea}</p>
     {enviado?<p className="mt-8 rounded bg-green-50 p-4 text-green-800" role="status">Formulario enviado correctamente. La administración revisará su información.</p>:<>
-    <div className="mt-5 flex flex-wrap gap-2">{pasos.map((p,i)=><button type="button" key={p} disabled={!validado && i!==0} onClick={()=>{setPaso(i);setMensaje('');window.scrollTo({top:0,behavior:'smooth'})}} className={'rounded px-2 py-1 text-xs disabled:cursor-not-allowed '+(i===paso?'bg-[#194567] text-white':erroresSeccion[i]?.length?'bg-amber-100 font-semibold text-amber-900':'bg-slate-100 text-slate-600')}>{i+1}. {p}{erroresSeccion[i]?.length?' ('+erroresSeccion[i].length+')':''}</button>)}</div>
+    <div className="mt-5 flex flex-wrap gap-2">{pasos.map((p,i)=><button type="button" key={p} onClick={()=>{setPaso(i);setMensaje('');window.scrollTo({top:0,behavior:'smooth'})}} className={'rounded px-2 py-1 text-xs disabled:cursor-not-allowed '+(i===paso?'bg-[#194567] text-white':erroresSeccion[i]?.length?'bg-amber-100 font-semibold text-amber-900':'bg-slate-100 text-slate-600')}>{i+1}. {p}{erroresSeccion[i]?.length?' ('+erroresSeccion[i].length+')':''}</button>)}</div>
     <div className="mt-3 h-2 rounded bg-slate-200"><div className="h-2 rounded bg-[#194567]" style={{width:((paso+1)/pasos.length*100)+'%'}}/></div>
     <form noValidate onSubmit={enviar} className="mt-6 space-y-4">
     {paso===0&&<><label className="block text-sm font-medium">Tipo de documento<select value={personal.tipo_documento} onChange={e=>actualizar('tipo_documento',e.target.value)} className="mt-1 w-full rounded border p-2">{['CC','CE','TI','PPT','PA'].map(x=><option key={x}>{x}</option>)}</select></label>{renderCampo(campo('documento','Número de documento','text',true))}<button type="button" disabled={ocupado} onClick={verificar} className="rounded bg-[#194567] px-4 py-2 text-white">Validar documento y continuar</button></>}
-    {paso===1&&<div className="grid gap-4 sm:grid-cols-2">{[campo('nombres','Nombres','text',true),campo('apellidos','Apellidos','text',true),campo('fecha_nacimiento','Fecha de nacimiento','date',true),campo('genero','Género','select',true),campo('tipo_sangre','Tipo de sangre','select',true),campo('estado_civil','Estado civil','select',true),campo('nacionalidad','Nacionalidad','text',true),campo('numero_hijos','Número de hijos','number',true),campo('telefono','Teléfono','tel',true),campo('email','Correo electrónico autorizado para DATA-CEA','email',true),campo('direccion','Dirección','text',true),campo('departamento_residencia','Departamento','text',true),campo('ciudad_residencia','Ciudad / Municipio','text',true),campo('escolaridad','Escolaridad','select',true),campo('profesion','Profesión u oficio','text',true),campo('medio_transporte_trabajo','Medio de transporte al trabajo','select',true),campo('eps','EPS'),campo('arl','ARL'),campo('fondo_pension','Fondo de pensión'),campo('contacto_emergencia_nombre','Contacto de emergencia'),campo('contacto_emergencia_parentesco','Parentesco'),campo('contacto_emergencia_telefono','Teléfono de emergencia')].map(c=>renderCampo(c))}</div>}
+    {paso===1&&<div className="grid gap-4 sm:grid-cols-2">{[campo('nombres','Nombres','text',true),campo('apellidos','Apellidos','text',true),campo('fecha_nacimiento','Fecha de nacimiento','date',true),campo('genero','Género','select',true),campo('tipo_sangre','Tipo de sangre','select',true),campo('estado_civil','Estado civil','select',true),campo('nacionalidad','Nacionalidad','text',true),campo('numero_hijos','Número de hijos','number',true),campo('telefono','Teléfono','tel',true),campo('email','Correo electrónico autorizado para DATA-CEA','email',true),campo('direccion','Dirección','text',true),campo('departamento_residencia','Departamento','text',true),campo('ciudad_residencia','Ciudad / Municipio','text',true),campo('escolaridad','Nivel académico principal','select',true),campo('profesion','Profesión u oficio','text',true),campo('medio_transporte_trabajo','Medio de transporte al trabajo','select',true),campo('eps','EPS'),campo('arl','ARL'),campo('fondo_pension','Fondo de pensión'),campo('contacto_emergencia_nombre','Contacto de emergencia','text',true),campo('contacto_emergencia_parentesco','Parentesco de emergencia','text',true),campo('contacto_emergencia_telefono','Teléfono de emergencia','tel',true)].map(c=>renderCampo(c))}</div>}
     {paso===2&&<div className="space-y-4"><label className="flex gap-2"><input type="checkbox" checked={personal.trabaja_cea} onChange={e=>actualizar('trabaja_cea',e.target.checked)}/>Actualmente trabaja en este CEA</label>{personal.trabaja_cea&&<div className="grid gap-3 sm:grid-cols-2">{[campo('tipo_personal','Tipo de vinculación'),campo('grupo_personal','Grupo de trabajo'),campo('cargo','Cargo'),campo('tipo_contrato','Tipo de contrato'),campo('tipo_permanencia','Permanencia en el CEA'),campo('fecha_vinculacion','Fecha de vinculación','date')].map(c=>renderCampo(c))}</div>}{personal.trabaja_cea&&<p className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-[#194567]">Permanencia en el CEA: seleccione <strong>Por horas</strong> si se le programan clases según la demanda y su disponibilidad, aunque trabaje habitualmente con el CEA. Seleccione <strong>Permanente</strong> si tiene una jornada o disponibilidad regular previamente establecida. Esta elección describe la programación, no modifica su tipo de contrato.</p>}<label className="flex gap-2"><input type="checkbox" checked={personal.rol_conductor_instructor} onChange={e=>actualizar('rol_conductor_instructor',e.target.checked)}/>Desempeña rol de instructor</label>{personal.rol_conductor_instructor&&<div className="space-y-4">
   {['INSTRUCTOR','CONDUCCION'].map(tipo=><section key={tipo} className="rounded-lg border border-slate-300 bg-slate-50 p-4">
     <h3 className="font-semibold text-[#194567]">{tipo==='INSTRUCTOR'?'Certificado de instructor':'Licencia de conducción'}</h3>
@@ -209,7 +213,7 @@ export default function VinculacionPersonalPage() {
     {paso===5&&<div className="space-y-4"><p className="text-sm text-slate-600">Indique una referencia personal o laboral diferente del contacto de emergencia.</p><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{[campo('tipo_referencia','Tipo referencia','select',true),campo('nombre','Nombre','text',true),campo('telefono','Teléfono','tel',true),campo('email','Correo','email'),campo('ocupacion_cargo','Ocupación / cargo'),campo('empresa','Empresa'),campo('relacion','Relación / parentesco'),campo('observaciones','Observaciones')].map(c=>renderCampo(c,referencia,(n,v)=>setReferencia(p=>({...p,[n]:normalizar(n,v)}))))}</div><label className="flex items-start gap-2 text-sm"><input type="checkbox" disabled={!documentoAutorizacion} checked={autorizado} required onChange={e=>setAutorizado(e.target.checked)}/>He leído la información de tratamiento de datos personales y autorizo su tratamiento para gestionar mi expediente en el CEA.</label><button type="button" onClick={()=>setVerAutorizacion(true)} className="text-sm font-semibold text-[#194567] underline">Leer autorización para el tratamiento de datos personales{documentoAutorizacion ? ' · Versión '+documentoAutorizacion.version : ''}</button>{errorAutorizacion&&<p role="alert" className="text-sm text-amber-800">{errorAutorizacion}</p>}</div>}
     {erroresSeccion[paso]?.length>0&&<div role="alert" className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-bold">Datos pendientes en esta sección:</p><ul className="mt-1 list-inside list-disc">{erroresSeccion[paso].map((error,i)=><li key={i}>{error}</li>)}</ul></div>}
     {mensaje&&<p role="alert" className="rounded bg-amber-50 p-3 text-sm text-amber-900">{mensaje}</p>}
-    {validado&&<div className="flex justify-between border-t pt-4"><button type="button" onClick={()=>{setMensaje('');setPaso(x=>Math.max(1,x-1))}} disabled={paso===1||ocupado} className="rounded border px-4 py-2 disabled:opacity-40">Anterior</button>{paso<5?<button type="button" onClick={()=>{setMensaje('');setPaso(x=>Math.min(5,x+1))}} className="rounded bg-[#194567] px-4 py-2 text-white">Siguiente</button>:<button type="submit" disabled={ocupado} className="rounded bg-[#194567] px-4 py-2 text-white disabled:opacity-50">{ocupado?'Enviando...':'Enviar formulario'}</button>}</div>}
+    {<div className="flex justify-between border-t pt-4"><button type="button" onClick={()=>{setMensaje('');setPaso(x=>Math.max(1,x-1))}} disabled={paso===0||ocupado} className="rounded border px-4 py-2 disabled:opacity-40">Anterior</button>{paso<5?<button type="button" onClick={()=>{setMensaje('');setPaso(x=>Math.min(5,x+1))}} className="rounded bg-[#194567] px-4 py-2 text-white">Siguiente</button>:<button type="submit" disabled={ocupado} className="rounded bg-[#194567] px-4 py-2 text-white disabled:opacity-50">{ocupado?'Enviando...':'Enviar formulario'}</button>}</div>}
     </form></>}
     {verAutorizacion&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"><section role="dialog" aria-modal="true" aria-labelledby="titulo-privacidad" className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded bg-white p-5">
       <h2 id="titulo-privacidad" className="text-lg font-bold text-[#194567]">Información sobre tratamiento de datos personales</h2>
