@@ -1679,61 +1679,53 @@ async function restaurarLogoAnterior() {
   // NUEVA CLASE
   // ============================================================
 
-  function abrirNuevaClase(
-    modulo
-  ) {
+  function abrirNuevaClase() {
+    // El formulario inicia sin categoría ni módulo, independientemente del plan visible.
     setNuevaClase({
-      modulo_id:
-        modulo.id,
-
-      categorias_destino: [categoriaSeleccionada],
+      modulo_id: '',
+      categorias_destino: [],
       nombre_grupo: '',
-
-      modulo_nombre:
-        modulo.nombre,
-
-      tipo_formacion:
-        modulo.tipo_formacion,
-
-      categoria:
-        categoriaSeleccionada,
-
-      nombre:
-        '',
-
-      duracion_horas:
-        '',
-
-      contenido:
-        '',
-
-      contenido_tarjeta:
-        '',
-
-      observaciones:
-        '',
-
-      color_horario:
-        '',
-
-      activo:
-        true,
+      modulo_nombre: '',
+      tipo_formacion: '',
+      categoria: '',
+      nombre: '',
+      duracion_horas: '',
+      contenido: '',
+      contenido_tarjeta: '',
+      observaciones: '',
+      color_horario: '',
+      activo: true,
     })
-
     setError('')
     setMensaje('')
   }
 
+  function cambiarCategoriaNueva(categoria) {
+    setNuevaClase(anterior => ({
+      ...anterior,
+      categoria,
+      categorias_destino: categoria ? [categoria] : [],
+      modulo_id: '',
+      modulo_nombre: '',
+      tipo_formacion: '',
+      duracion_horas: '',
+      nombre_grupo: '',
+    }))
+  }
 
   function cambiarModuloNueva(moduloId) {
-    const modulo = modulosPlan.find(item => Number(item.id) === Number(moduloId))
+    const plan = planes.find(item => item.categoria === nuevaClase?.categoria &&
+      item.estado === 'ACTIVO' && modulos.some(m =>
+        Number(m.plan_formacion_id) === Number(item.id) && Number(m.id) === Number(moduloId)))
+    const modulo = modulos.find(item => Number(item.id) === Number(moduloId) &&
+      Number(item.plan_formacion_id) === Number(plan?.id))
     if (!modulo) return
     setNuevaClase(anterior => ({
       ...anterior,
       modulo_id: modulo.id,
       modulo_nombre: modulo.nombre,
       tipo_formacion: modulo.tipo_formacion,
-      categorias_destino: [categoriaSeleccionada],
+      categorias_destino: [anterior.categoria],
       nombre_grupo: '',
       duracion_horas: modulo.tipo_formacion === 'PRACTICA' ? '' : anterior.duracion_horas,
     }))
@@ -1988,6 +1980,11 @@ async function restaurarLogoAnterior() {
     if (
       !nuevaClase
     ) {
+      return
+    }
+
+    if (!nuevaClase.categoria || !nuevaClase.modulo_id || !nuevaClase.tipo_formacion) {
+      setError('Seleccione una categoría y un módulo de formación antes de guardar.')
       return
     }
 
@@ -3557,6 +3554,15 @@ async function restaurarLogoAnterior() {
         </div>
 
 
+        {vistaActual === 'PLAN' && (
+          <div className="flex justify-end py-2">
+            <button type="button" onClick={abrirNuevaClase}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">
+              <i className="fas fa-plus" aria-hidden="true"/> Nueva clase
+            </button>
+          </div>
+        )}
+
         {/* ====================================================
             MENSAJES
         ==================================================== */}
@@ -3974,28 +3980,7 @@ async function restaurarLogoAnterior() {
                                 </div>
                               </div>
 
-                              <BotonAccion tipo="agregar"
-                                type="button"
-                                disabled={
-                                  modulo.activo ===
-                                  false
-                                }
-                                onClick={() =>
-                                  abrirNuevaClase(
-                                    modulo
-                                  )
-                                }
-                                
-                              >
-                                <i
-                                  className="
-                                    fas
-                                    fa-plus
-                                  "
-                                ></i>
 
-                                Nueva clase
-                              </BotonAccion>
                             </div>
                           </div>
 
@@ -4043,7 +4028,14 @@ async function restaurarLogoAnterior() {
                                     <span className="min-w-0 line-clamp-2 break-words text-slate-600" title={texto(clase.contenido_tarjeta)}>{texto(clase.contenido_tarjeta) || 'Pendiente'}</span>
                                     <span className={clase.activo === false ? 'text-slate-500' : 'text-emerald-700'}>{clase.activo === false ? 'Inactiva' : 'Activa'}</span>
                                     <div className="flex items-center justify-end gap-1">
-                                      <button type="button" title="Editar clase" onClick={() => abrirEdicion(clase)} className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-800"><i className="fas fa-edit" aria-hidden="true"/></button>
+                                      <button type="button" title="Editar clase" onClick={() => {
+                                        if (grupoClase) {
+                                          cambiarVista('GRUPOS')
+                                          abrirTextosGrupo(grupoClase)
+                                        } else {
+                                          abrirEdicion(clase)
+                                        }
+                                      }} className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-800"><i className="fas fa-edit" aria-hidden="true"/></button>
                                       <button type="button" title={clase.activo === false ? 'Activar' : 'Desactivar'} onClick={() => alternarEstadoClase(clase)} disabled={guardando} className="rounded border border-slate-300 bg-white p-2 text-slate-700"><i className="fas fa-power-off" aria-hidden="true"/></button>
                                       <button type="button" title="Eliminar clase" onClick={() => solicitarEliminar(clase)} className="rounded border border-red-200 bg-red-50 p-2 text-red-700"><i className="fas fa-trash" aria-hidden="true"/></button>
                                     </div>
@@ -4071,26 +4063,7 @@ async function restaurarLogoAnterior() {
                                   configuradas.
                                 </div>
 
-                                <BotonAccion tipo="agregar"
-                                  type="button"
-                                  onClick={() =>
-                                    abrirNuevaClase(
-                                      modulo
-                                    )
-                                  }
-                                  
-                                >
-                                  <i
-                                    className="
-                                      fas
-                                      fa-plus
-                                      mr-2
-                                    "
-                                  ></i>
 
-                                  Crear primera
-                                  clase
-                                </BotonAccion>
                               </div>
                             )}
                             </div>
@@ -4201,303 +4174,53 @@ async function restaurarLogoAnterior() {
             </div>
 
 
-            {gruposTransversales.length >
-            0 ? (
-              <div
-                className="
-                  grid
-                  grid-cols-1
-                  gap-4
-                  bg-slate-50
-                  p-4
-                  lg:grid-cols-2
-                "
-              >
-                {gruposTransversales.map(
-                  (
-                    grupo
-                  ) => (
-                    <div
-                      key={
-                        grupo.id
-                      }
-                      className="
-                        rounded-xl
-                        border-2
-                        border-slate-300
-                        bg-white
-                        p-4
-                        shadow-sm
-                        transition
-                        hover:border-slate-500
-                      "
-                    >
-                      <div
-                        className="
-                          flex
-                          h-full
-                          flex-col
-                        "
-                      >
-                        <div
-                          className="
-                            flex
-                            flex-wrap
-                            items-center
-                            gap-2
-                          "
-                        >
-                          <span
-                            className="
-                              text-xs
-                              font-extrabold
-                              uppercase
-                              text-slate-900
-                            "
-                          >
-                            {
-                              grupo.nombre
-                            }
-                          </span>
-
-                          {texto(
-                            grupo.color_horario
-                          ) && (
-                            <span
-                              title="Color en Horario Teórico"
-                              className="
-                                inline-flex
-                                h-6
-                                w-6
-                                shrink-0
-                                items-center
-                                justify-center
-                                rounded-md
-                                border
-                                border-slate-400
-                                shadow-sm
-                              "
-                              style={{
-                                backgroundColor:
-                                  grupo.color_horario,
-                              }}
-                            >
-                              <i
-                                className="
-                                  fas
-                                  fa-palette
-                                  text-[9px]
-                                  text-slate-700
-                                  drop-shadow
-                                "
-                              ></i>
-                            </span>
-                          )}
-
-                          <span
-                            className="
-                              rounded-full
-                              bg-blue-50
-                              px-2
-                              py-1
-                              text-[10px]
-                              font-bold
-                              text-blue-700
-                            "
-                          >
-                            {
-                              grupo.tipo_formacion
-                            }
-                          </span>
-
-                          {grupo.activo ===
-                            false && (
-                            <span
-                              className="
-                                rounded-full
-                                bg-gray-100
-                                px-2
-                                py-1
-                                text-[10px]
-                                font-bold
-                                text-gray-600
-                              "
-                            >
-                              INACTIVO
-                            </span>
-                          )}
-                        </div>
-
-
-                        <div
-                          className="
-                            mt-3
-                            flex
-                            flex-wrap
-                            gap-2
-                          "
-                        >
-                          {Array.isArray(
-                            grupo.categorias
-                          ) &&
-                            grupo.categorias.map(
-                              (
-                                categoria
-                              ) => (
-                                <span
-                                  key={
-                                    categoria
-                                  }
-                                  className="
-                                    rounded-md
-                                    border
-                                    border-emerald-300
-                                    bg-emerald-50
-                                    px-3
-                                    py-1
-                                    text-xs
-                                    font-extrabold
-                                    text-emerald-700
-                                  "
-                                >
-                                  {
-                                    categoria
-                                  }
-                                </span>
-                              )
-                            )}
-                        </div>
-
-
-                        {Array.isArray(
-                          grupo.clases
-                        ) &&
-                          grupo.clases.length >
-                            0 && (
-                          <div
-                            className="
-                              mt-4
-                              divide-y
-                              divide-slate-200
-                            "
-                          >
-                            {grupo.clases.map(
-                              (
-                                clase
-                              ) => (
-                                <div
-                                  key={
-                                    clase.id
-                                  }
-                                  className="
-                                    bg-slate-50
-                                    px-3
-                                    py-2.5
-                                    text-xs
-                                    text-slate-700
-                                  "
-                                >
-                                  <strong
-                                    className="
-                                      text-slate-900
-                                    "
-                                  >
-                                    {
-                                      clase.categoria
-                                    }
-                                  </strong>
-
-                                  {' · '}
-
-                                  {
-                                    clase.nombre
-                                  }
-                                </div>
-                              )
-                            )}
+            {gruposTransversales.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[960px] border-collapse text-left text-xs">
+                  <thead className="bg-slate-100 text-[11px] uppercase text-slate-700">
+                    <tr>
+                      <th className="px-3 py-3">Grupo transversal</th>
+                      <th className="px-3 py-3">Formación</th>
+                      <th className="px-3 py-3">Categorías a las que aplica</th>
+                      <th className="px-3 py-3">Color</th>
+                      <th className="px-3 py-3">Estado</th>
+                      <th className="px-3 py-3 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {gruposTransversales.map(grupo => (
+                      <tr key={grupo.id} className="hover:bg-slate-50">
+                        <td className="max-w-[320px] px-3 py-3 align-top">
+                          <div className="font-semibold text-slate-900">{grupo.nombre}</div>
+                          <div className="mt-1 text-[10px] text-slate-500">{(grupo.clases || []).map(c => c.categoria + ': ' + c.nombre).join(' · ')}</div>
+                        </td>
+                        <td className="px-3 py-3 align-top">{grupo.tipo_formacion}</td>
+                        <td className="px-3 py-3 align-top">
+                          <div className="flex flex-wrap gap-1">
+                            {(grupo.categorias || []).map(cat => (
+                              <span key={cat} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-bold text-emerald-800">{cat}</span>
+                            ))}
                           </div>
-                        )}
-
-
-                        {texto(
-                          grupo.observaciones
-                        ) && (
-                          <div
-                            className="
-                              mt-3
-                              text-xs
-                              italic
-                              text-slate-500
-                            "
-                          >
-                            {
-                              grupo.observaciones
-                            }
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="inline-block h-6 w-6 rounded border border-slate-300"
+                            style={{backgroundColor: grupo.color_horario || '#F1F5F9'}} title={grupo.color_horario || 'Sin color'}/>
+                        </td>
+                        <td className="px-3 py-3 align-top">{grupo.activo === false ? 'Inactivo' : 'Activo'}</td>
+                        <td className="px-3 py-3 align-top">
+                          <div className="flex justify-end gap-1">
+                            <button type="button" title="Contenido y competencia" aria-label="Contenido y competencia" onClick={() => abrirTextosGrupo(grupo)}
+                              className="rounded border border-blue-200 bg-blue-50 p-2 text-blue-800 hover:bg-blue-100"><i className="fas fa-pen" aria-hidden="true"/></button>
+                            <button type="button" title="Editar grupo y asociaciones" aria-label="Editar grupo y asociaciones" onClick={() => abrirEditarGrupo(grupo)}
+                              className="rounded border border-amber-200 bg-amber-50 p-2 text-amber-800 hover:bg-amber-100"><i className="fas fa-edit" aria-hidden="true"/></button>
+                            <button type="button" title="Eliminar grupo" aria-label="Eliminar grupo" onClick={() => solicitarEliminarGrupo(grupo)}
+                              className="rounded border border-red-200 bg-red-50 p-2 text-red-700 hover:bg-red-100"><i className="fas fa-trash" aria-hidden="true"/></button>
                           </div>
-                        )}
-
-
-                        <div
-                          className="
-                            mt-auto
-                            flex
-                            flex-wrap
-                            gap-2
-                            pt-4
-                          "
-                        >
-                          <button
-                            type="button"
-                            onClick={() => abrirTextosGrupo(grupo)}
-                            className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100"
-                          >
-                            <i className="fas fa-pen mr-2" aria-hidden="true" />
-                            Contenido y competencia
-                          </button>
-                          <BotonAccion tipo="editar"
-                            type="button"
-                            onClick={() =>
-                              abrirEditarGrupo(
-                                grupo
-                              )
-                            }
-                            
-                          >
-                            <i
-                              className="
-                                fas
-                                fa-edit
-                                mr-2
-                              "
-                            ></i>
-
-                            Editar
-                          </BotonAccion>
-
-                          <BotonAccion tipo="eliminar"
-                            type="button"
-                            onClick={() =>
-                              solicitarEliminarGrupo(
-                                grupo
-                              )
-                            }
-                            
-                          >
-                            <i
-                              className="
-                                fas
-                                fa-trash
-                                mr-2
-                              "
-                            ></i>
-
-                            Eliminar
-                          </BotonAccion>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <div
@@ -5074,6 +4797,21 @@ async function restaurarLogoAnterior() {
                 p-5
               "
             >
+              <Campo etiqueta="Tipo de formación y módulo">
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                  {claseEditando.tipo_formacion} · {modulos.find(m => Number(m.id) === Number(claseEditando.modulo_id))?.nombre || 'Módulo actual'}
+                </div>
+              </Campo>
+              <Campo etiqueta="Grupo temático">
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                  {claseEditando.tipo_formacion === 'TEORIA' && mayusculas(modulos.find(m => Number(m.id) === Number(claseEditando.modulo_id))?.nombre).includes('TRANSVERSAL')
+                    ? (['MOVILIDAD SEGURA Y SOSTENIBLE','NORMAS DE TRÁNSITO','SEÑALIZACIÓN VIAL E INFRAESTRUCTURA'].find(t => mayusculas(claseEditando.nombre).includes(t)) || 'Transversal individual')
+                    : 'No corresponde a grupo transversal'}
+                </div>
+              </Campo>
+              <Campo etiqueta="Categoría asociada">
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">{claseEditando.categoria}</div>
+              </Campo>
               <Campo
                 etiqueta="Nombre de la clase"
               >
@@ -5393,7 +5131,7 @@ async function restaurarLogoAnterior() {
             "
           >
             <div className="relative border-b border-gray-200 bg-slate-800 px-5 py-4 text-white">
-              <div className="text-sm font-bold">Nueva clase · {nuevaClase.categoria} · {nuevaClase.modulo_nombre}</div>
+              <div className="text-sm font-bold">Nueva clase {nuevaClase.categoria ? `· ${nuevaClase.categoria}` : ""} {nuevaClase.modulo_nombre ? `· ${nuevaClase.modulo_nombre}` : ""}</div>
               <button type="button" disabled={guardando} onClick={cerrarNuevaClase}
                 aria-label="Cerrar sin guardar" title="Cerrar sin guardar"
                 className="absolute right-4 top-3 rounded-md p-2 text-lg text-white hover:bg-slate-700">×</button>
@@ -5404,10 +5142,24 @@ async function restaurarLogoAnterior() {
                 p-5
               "
             >
-              <Campo etiqueta="Tipo de formación y módulo">
-                <select value={nuevaClase.modulo_id} onChange={e => cambiarModuloNueva(e.target.value)}
+              <Campo etiqueta="Categoría principal">
+                <select value={nuevaClase.categoria} onChange={e => cambiarCategoriaNueva(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs">
-                  {modulosPlan.filter(item => item.activo !== false).map(modulo => (
+                  <option value="">Seleccione la categoría...</option>
+                  {categorias.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
+              </Campo>
+              <Campo etiqueta="Tipo de formación y módulo">
+                <select value={nuevaClase.modulo_id} disabled={!nuevaClase.categoria}
+                  onChange={e => cambiarModuloNueva(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs disabled:opacity-60">
+                  <option value="">Seleccione el módulo...</option>
+                  {modulos.filter(modulo =>
+                    modulo.activo !== false && planes.some(plan =>
+                      plan.categoria === nuevaClase.categoria &&
+                      plan.estado === 'ACTIVO' &&
+                      Number(plan.id) === Number(modulo.plan_formacion_id))
+                  ).map(modulo => (
                     <option key={modulo.id} value={modulo.id}>
                       {modulo.tipo_formacion === 'TEORIA'
                         ? (mayusculas(modulo.nombre).includes('TRANSVERSAL') ? 'TEORÍA · SABERES ESENCIALES OBLIGATORIOS TRANSVERSALES' : 'TEORÍA · SABERES ESENCIALES OBLIGATORIOS ESPECÍFICOS')
