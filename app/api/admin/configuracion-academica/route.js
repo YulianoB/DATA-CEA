@@ -1638,6 +1638,9 @@ export async function POST(
       if(errorOrigen || !moduloOrigen || moduloOrigen.activo===false) {
         return NextResponse.json({ok:false,error:'No se pudo verificar el módulo seleccionado.'},{status:400})
       }
+      if(body?.activo===false) {
+        return NextResponse.json({ok:false,error:'Para crear un grupo compartido, las clases deben estar activas. Puede desactivar registros individuales posteriormente.'},{status:400})
+      }
       const tipo=mayusculas(moduloOrigen.tipo_formacion)
       if(!['TEORIA','TALLER'].includes(tipo)) {
         return NextResponse.json({ok:false,error:'Las prácticas se configuran individualmente por categoría.'},{status:400})
