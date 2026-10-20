@@ -1686,6 +1686,9 @@ async function restaurarLogoAnterior() {
       modulo_id:
         modulo.id,
 
+      categorias_destino: [categoriaSeleccionada],
+      nombre_grupo: '',
+
       modulo_nombre:
         modulo.nombre,
 
@@ -1730,6 +1733,8 @@ async function restaurarLogoAnterior() {
       modulo_id: modulo.id,
       modulo_nombre: modulo.nombre,
       tipo_formacion: modulo.tipo_formacion,
+      categorias_destino: [categoriaSeleccionada],
+      nombre_grupo: '',
       duracion_horas: modulo.tipo_formacion === 'PRACTICA' ? '' : anterior.duracion_horas,
     }))
   }
@@ -1999,6 +2004,20 @@ async function restaurarLogoAnterior() {
       return
     }
 
+    const categoriasDestino = Array.from(new Set(nuevaClase.categorias_destino || [nuevaClase.categoria]))
+    const compartida = nuevaClase.tipo_formacion !== 'PRACTICA' && categoriasDestino.length > 1
+    if (!categoriasDestino.includes(nuevaClase.categoria)) {
+      setError('La selección debe incluir la categoría actual del módulo.')
+      return
+    }
+    if (compartida && (!Number.isFinite(Number(nuevaClase.duracion_horas)) || Number(nuevaClase.duracion_horas) <= 0)) {
+      setError('Para clases compartidas indique una duración mayor que cero.')
+      return
+    }
+    if (compartida && !window.confirm(
+      'Se creará o reutilizará una clase en cada categoría seleccionada y se asociarán a un grupo transversal. ¿Continuar?'
+    )) return
+
     if (
       nuevaClase.tipo_formacion !==
         'PRACTICA' &&
@@ -2061,6 +2080,11 @@ async function restaurarLogoAnterior() {
             body:
               JSON.stringify({
                 nit,
+                ...(compartida ? {
+                  recurso: 'CLASE_COMPARTIDA',
+                  categorias: categoriasDestino,
+                  nombre_grupo: texto(nuevaClase.nombre_grupo) || nombre,
+                } : {}),
 
                 modulo_id:
                   nuevaClase
@@ -5404,15 +5428,39 @@ async function restaurarLogoAnterior() {
                 </Campo>
               )}
               <Campo etiqueta="Categorías habilitadas">
-                <div className="flex flex-wrap gap-2">
-                  {categorias.map(cat => (
-                    <span key={cat} className={cat === nuevaClase.categoria
-                      ? 'rounded border border-blue-400 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800'
-                      : 'rounded border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-400'}>{cat}</span>
-                  ))}
-                </div>
-                <p className="mt-1 text-xs text-slate-500">Esta clase se crea en la categoría seleccionada. Para compartirla con clases de otras categorías sin duplicarlas, utilice Grupos Transversales.</p>
+                {nuevaClase.tipo_formacion === 'PRACTICA' ? (
+                  <div>
+                    <span className="rounded border border-blue-400 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800">{nuevaClase.categoria}</span>
+                    <p className="mt-2 text-xs text-slate-500">Las clases prácticas se configuran por categoría, sin duración en el formulario.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex flex-wrap gap-3">
+                      {categorias.map(cat => {
+                        const esPrincipal = cat === nuevaClase.categoria
+                        const marcada = (nuevaClase.categorias_destino || []).includes(cat)
+                        return <label key={cat} className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold">
+                          <input type="checkbox" checked={marcada} disabled={esPrincipal}
+                            onChange={e => cambiarCampoNueva('categorias_destino',
+                              e.target.checked
+                                ? [...new Set([...(nuevaClase.categorias_destino || []),cat])]
+                                : (nuevaClase.categorias_destino || []).filter(c => c !== cat))}/>
+                          {cat}
+                        </label>
+                      })}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">Seleccione varias categorías únicamente para clases equivalentes. Se reutilizarán clases existentes compatibles y se creará el grupo sin modificar horarios.</p>
+                  </div>
+                )}
               </Campo>
+              {nuevaClase.tipo_formacion !== 'PRACTICA' && (nuevaClase.categorias_destino || []).length > 1 && (
+                <Campo etiqueta="Nombre del grupo transversal">
+                  <input value={nuevaClase.nombre_grupo || ''} placeholder={nuevaClase.nombre || 'Nombre que verá en el horario'}
+                    onChange={e => cambiarCampoNueva('nombre_grupo',e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs"/>
+                  <p className="mt-1 text-xs text-slate-500">Si se deja vacío se utilizará el nombre de la clase. El color seleccionado corresponderá al bloque compartido.</p>
+                </Campo>
+              )}
               <Campo
                 etiqueta="Nombre de la clase"
               >
