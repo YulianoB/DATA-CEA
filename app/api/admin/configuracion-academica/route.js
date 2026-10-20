@@ -2341,6 +2341,80 @@ export async function PATCH(
       supabaseAdmin
 
 
+
+    // Edición compartida de textos sobre clases existentes.
+    // No altera grupos, colores, horas, identificadores ni horarios.
+    if (mayusculas(body?.recurso) === 'CONTENIDOS_GRUPO') {
+      const grupoId = Number(body?.grupo_id)
+      const ids = normalizarIds(body?.clase_ids)
+      const actualizarContenido = body?.actualizar_contenido === true
+      const actualizarTarjeta = body?.actualizar_tarjeta === true
+
+      if (!Number.isInteger(grupoId) || grupoId <= 0 || !ids.length ||
+          (!actualizarContenido && !actualizarTarjeta)) {
+        return NextResponse.json({ ok: false, error: 'Seleccione un grupo, al menos una clase y los campos que desea actualizar.' }, { status: 400 })
+      }
+
+      const contenido = texto(body?.contenido)
+      const contenidoTarjeta = texto(body?.contenido_tarjeta)
+      if ((actualizarContenido && !contenido) || (actualizarTarjeta && !contenidoTarjeta)) {
+        return NextResponse.json({ ok: false, error: 'Los textos seleccionados para actualizar no pueden estar vacíos.' }, { status: 400 })
+      }
+
+      const { data: grupo, error: errorGrupo } = await supabase
+        .from('grupos_clases_formacion')
+        .select('id, tipo_formacion, activo')
+        .eq('id', grupoId)
+        .maybeSingle()
+      if (errorGrupo) throw new Error('No fue posible verificar el grupo transversal.')
+      if (!grupo || grupo.activo === false) {
+        return NextResponse.json({ ok: false, error: 'El grupo no existe o está inactivo.' }, { status: 400 })
+      }
+
+      const { data: relaciones, error: errorRelaciones } = await supabase
+        .from('grupos_clases_formacion_detalle')
+        .select('clase_formacion_id')
+        .eq('grupo_id', grupoId)
+      if (errorRelaciones) throw new Error('No fue posible verificar las clases del grupo.')
+      const permitidas = new Set((relaciones || []).map(item => Number(item.clase_formacion_id)))
+      if (ids.some(id => !permitidas.has(Number(id)))) {
+        return NextResponse.json({ ok: false, error: 'La selección incluye clases que no pertenecen al grupo.' }, { status: 400 })
+      }
+
+      const { data: clasesSeleccionadas, error: errorClases } = await supabase
+        .from('clases_formacion')
+        .select('id, categoria, tipo_formacion, activo')
+        .in('id', ids)
+      if (errorClases) throw new Error('No fue posible comprobar las categorías seleccionadas.')
+      if (!Array.isArray(clasesSeleccionadas) || clasesSeleccionadas.length !== ids.length ||
+          clasesSeleccionadas.some(clase =>
+            clase.activo === false ||
+            mayusculas(clase.tipo_formacion) !== mayusculas(grupo.tipo_formacion) ||
+            !categoriaHabilitadaEmpresa(empresa, clase.categoria))) {
+        return NextResponse.json({ ok: false, error: 'Existen clases inactivas, no autorizadas o incompatibles con el grupo.' }, { status: 400 })
+      }
+
+      const cambios = { updated_at: new Date().toISOString() }
+      if (actualizarContenido) cambios.contenido = contenido
+      if (actualizarTarjeta) cambios.contenido_tarjeta = contenidoTarjeta
+
+      const { data: actualizadas, error: errorActualizar } = await supabase
+        .from('clases_formacion')
+        .update(cambios)
+        .in('id', ids)
+        .select('id')
+      if (errorActualizar) throw new Error('No fue posible actualizar los textos del grupo.')
+      if ((actualizadas || []).length !== ids.length) {
+        throw new Error('No se pudo confirmar la actualización de todas las clases seleccionadas.')
+      }
+
+      return NextResponse.json({
+        ok: true,
+        message: 'Contenido y competencias actualizados en las clases seleccionadas.',
+        cantidad: actualizadas.length,
+      })
+    }
+
     // ========================================================
     // EDITAR GRUPO TRANSVERSAL
     // ========================================================
