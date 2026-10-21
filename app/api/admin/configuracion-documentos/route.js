@@ -4,10 +4,8 @@ import {
   NextResponse,
 } from 'next/server'
 
-import {
-  obtenerSupabaseAdminEmpresaDesdeRequest,
-  respuestaErrorEmpresa,
-} from '@/lib/supabaseEmpresaServer'
+import { respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
+import { obtenerContextoCEA } from '@/lib/autorizacionCEA'
 
 
 // =======================================================
@@ -897,6 +895,91 @@ function normalizarEstructura(
 
 
 // =======================================================
+// PLANTILLA INICIAL POR CEA (NO REEMPLAZA CONFIGURACIONES)
+// =======================================================
+// Misma distribución visual 2 x 3: primera fila con celdas
+// (1,1) y (1,2) combinada con (1,3); segunda fila con 3 celdas.
+// No se copian nombres, códigos, fechas, logos ni valores de otro CEA.
+
+function crearEncabezadoInicial() {
+  function celda(fila, columna, colSpan, tipo) {
+    return {
+      id: `celda-${fila}-${columna}`,
+      fila,
+      columna,
+      rowSpan: 1,
+      colSpan,
+      borde_superior: true,
+      borde_inferior: true,
+      borde_izquierdo: true,
+      borde_derecho: true,
+      alineacion_horizontal: 'center',
+      alineacion_vertical: 'center',
+      elementos: [{
+        tipo,
+        prefijo: '',
+        valor: '',
+        negrita: tipo === 'NOMBRE_DOCUMENTO',
+        tamano_fuente: 9,
+      }],
+    }
+  }
+
+  return {
+    clave: CLAVE_ENCABEZADO,
+    nombre: 'Encabezado documental',
+    filas: 2,
+    columnas: 3,
+    estructura: normalizarEstructura({
+      version_esquema: 1,
+      configuracion: {
+        borde_exterior: true,
+        grosor_borde: 1,
+        padding: 4,
+        altura_total_mm: 24,
+      },
+      filas: [
+        { id: 'fila-1', orden: 1, altura: 12 },
+        { id: 'fila-2', orden: 2, altura: 12 },
+      ],
+      columnas: [1, 2, 3].map((n) => ({
+        id: `columna-${n}`, orden: n, ancho: 100 / 3,
+      })),
+      celdas: [
+        celda(1, 1, 1, 'LOGO'),
+        celda(1, 2, 2, 'NOMBRE_DOCUMENTO'),
+        celda(2, 1, 1, 'CODIGO'),
+        celda(2, 2, 1, 'FECHA_EDICION'),
+        celda(2, 3, 1, 'VERSION'),
+      ],
+    }, 2, 3),
+    usuario_actualizacion: null,
+  }
+}
+
+async function asegurarEncabezadoInicial(supabase) {
+  const { data: existente, error: errorConsulta } = await supabase
+    .from('configuracion_encabezado_documentos')
+    .select('id')
+    .eq('clave', CLAVE_ENCABEZADO)
+    .maybeSingle()
+
+  if (errorConsulta) throw new Error(errorConsulta.message)
+  if (existente) return
+
+  const { error: errorCreacion } = await supabase
+    .from('configuracion_encabezado_documentos')
+    .insert(crearEncabezadoInicial())
+
+  // Si dos solicitudes inicializan simultáneamente, la clave única
+  // evita duplicados. En ese caso se conserva el registro ya creado.
+  if (errorCreacion && errorCreacion.code !== '23505') {
+    throw new Error(errorCreacion.message)
+  }
+}
+
+
+// =======================================================
 // OBTENER CONFIGURACIÓN
 // =======================================================
 
@@ -995,12 +1078,12 @@ export async function GET(
       supabaseAdmin,
       empresa,
     } =
-      await obtenerSupabaseAdminEmpresaDesdeRequest(
-        request
-      )
+      await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'] })
 
     const supabase =
       supabaseAdmin
+
+    await asegurarEncabezadoInicial(supabase)
 
     const configuracion =
       await obtenerConfiguracion(
@@ -1669,10 +1752,7 @@ export async function POST(
     const {
       supabaseAdmin,
     } =
-      await obtenerSupabaseAdminEmpresaDesdeRequest(
-        request,
-        body
-      )
+      await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'], body })
 
     const supabase =
       supabaseAdmin
@@ -1757,10 +1837,7 @@ export async function PATCH(
     const {
       supabaseAdmin,
     } =
-      await obtenerSupabaseAdminEmpresaDesdeRequest(
-        request,
-        body
-      )
+      await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'], body })
 
     const supabase =
       supabaseAdmin
@@ -1865,10 +1942,7 @@ export async function DELETE(
     const {
       supabaseAdmin,
     } =
-      await obtenerSupabaseAdminEmpresaDesdeRequest(
-        request,
-        body
-      )
+      await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'], body })
 
     const supabase =
       supabaseAdmin
