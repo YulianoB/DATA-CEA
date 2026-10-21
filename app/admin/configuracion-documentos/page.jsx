@@ -13551,7 +13551,7 @@ export default function ConfiguracionDocumentosPage() {
                                 max="100"
                                 step="1"
                                 value={
-                                  columna.ancho
+                                  Math.round(Number(columna.ancho ?? 0))
                                 }
                                 onChange={
                                   (
