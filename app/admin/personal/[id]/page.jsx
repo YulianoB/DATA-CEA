@@ -1632,11 +1632,11 @@ export default function HojaVidaPersonalPage() {
     }
   }
 
-  if (!user) return <p className="text-center mt-20">Cargando...</p>
+  if (!user) return <div className="flex min-h-screen items-center justify-center bg-slate-50"><p className="text-gray-600">Cargando...</p></div>
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 p-3 md:p-5">
+      <div className="flex min-h-screen flex-col bg-slate-50 p-3 md:p-5">
       {editarGeneralAbierto && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-3">
           <div role="dialog" aria-modal="true" aria-label="Editar información general" className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-300 bg-white shadow-2xl">
@@ -1688,8 +1688,8 @@ export default function HojaVidaPersonalPage() {
       )}
       <ModalResultado abierto={Boolean(resultadoModal)} tipo={resultadoModal?.tipo} mensaje={resultadoModal?.mensaje} onCerrar={aceptarResultado} />
       <ModalResultado abierto={Boolean(confirmacion)} tipo="confirmacion" mensaje={confirmacion?.mensaje} onCerrar={() => cerrarConfirmacion(false)} onConfirmar={() => cerrarConfirmacion(true)} />
-        <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">Cargando hoja de vida...</p>
+        <div role="status" aria-live="polite" className="flex flex-1 items-center justify-center">
+          <p className="text-center text-gray-600">Cargando hoja de vida...</p>
         </div>
       </div>
     )
