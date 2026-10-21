@@ -9,7 +9,7 @@ export async function GET() {
       .from('empresas')
       .select('nit, codigo, nombre, razon_social, estado')
       .eq('estado', 'activo')
-      .order('nombre', { ascending: true })
+      .order('id', { ascending: true })
 
     if (error) {
       console.error('Error consultando empresas:', error)
