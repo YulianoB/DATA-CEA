@@ -1,8 +1,9 @@
 // app/api/personal/[id]/experiencia/route.js
 
 import { NextResponse } from 'next/server'
+import { sesionNotificaciones } from '@/lib/notificacionesCorporativasServer'
 import {
-  obtenerSupabaseEmpresaDesdeRequest,
+  obtenerSupabaseAdminEmpresaPorNit,
   respuestaErrorEmpresa,
 } from '@/lib/supabaseEmpresaServer'
 
@@ -56,10 +57,16 @@ function respuestaError(error) {
 
 export async function GET(request, { params }) {
   try {
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    const nitSolicitado = new URL(request.url).searchParams.get('nit')
+    if (nitSolicitado && nitSolicitado.trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+
     const { id } = await params
 
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(request)
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const { data, error } = await supabase
       .from('experiencia_laboral_personal')
@@ -96,6 +103,13 @@ export async function GET(request, { params }) {
 
 export async function POST(request, { params }) {
   try {
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    const nitSolicitado = new URL(request.url).searchParams.get('nit')
+    if (nitSolicitado && nitSolicitado.trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+
     const { id } = await params
     const body = await request.json()
 
@@ -111,8 +125,7 @@ export async function POST(request, { params }) {
       )
     }
 
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(request, body)
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const { data, error } = await supabase
       .from('experiencia_laboral_personal')
@@ -151,6 +164,13 @@ export async function POST(request, { params }) {
 
 export async function PATCH(request, { params }) {
   try {
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    const nitSolicitado = new URL(request.url).searchParams.get('nit')
+    if (nitSolicitado && nitSolicitado.trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+
     const { id } = await params
     const body = await request.json()
 
@@ -177,8 +197,7 @@ export async function PATCH(request, { params }) {
       )
     }
 
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(request, body)
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const { data, error } = await supabase
       .from('experiencia_laboral_personal')
@@ -216,6 +235,13 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    const nitSolicitado = new URL(request.url).searchParams.get('nit')
+    if (nitSolicitado && nitSolicitado.trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const experienciaId = searchParams.get('experiencia_id')
@@ -231,8 +257,7 @@ export async function DELETE(request, { params }) {
       )
     }
 
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(request)
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const { error } = await supabase
       .from('experiencia_laboral_personal')
