@@ -1,8 +1,9 @@
 // app/api/personal/[id]/route.js
 
 import { NextResponse } from 'next/server'
+import { sesionNotificaciones } from '@/lib/notificacionesCorporativasServer'
 import {
-  obtenerSupabaseEmpresaDesdeRequest,
+  obtenerSupabaseAdminEmpresaPorNit,
   respuestaErrorEmpresa,
 } from '@/lib/supabaseEmpresaServer'
 
@@ -18,9 +19,17 @@ function respuestaError(error) {
 export async function GET(request, { params }) {
   try {
     const { id } = await params
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) {
+      return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    }
+    const nitSolicitado = new URL(request.url).searchParams.get('nit')
+    if (nitSolicitado && nitSolicitado.trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
 
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(request)
+    const { supabaseAdmin: supabase } =
+      await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const { data, error } = await supabase
       .from('personal')
@@ -91,9 +100,16 @@ export async function PATCH(request, { params }) {
   try {
     const { id } = await params
     const body = await request.json()
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) {
+      return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    }
+    if (body.nit && String(body.nit).trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
 
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(request, body)
+    const { supabaseAdmin: supabase } =
+      await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const camposEditables = [
       'nombres', 'apellidos', 'fecha_nacimiento', 'genero', 'tipo_sangre',
