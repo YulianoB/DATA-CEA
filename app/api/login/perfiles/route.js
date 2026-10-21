@@ -1,25 +1,7 @@
 // app/api/login/perfiles/route.js
 
 import { NextResponse } from 'next/server'
-import { getMasterSupabase } from '@/lib/supabaseMaster'
-import { crearClienteEmpresa } from '@/lib/supabaseDinamico'
-
-async function obtenerEmpresa(nit) {
-  const master = getMasterSupabase()
-
-  const { data, error } = await master
-    .from('empresas')
-    .select('*')
-    .eq('nit', nit)
-    .eq('estado', 'activo')
-    .single()
-
-  if (error || !data) {
-    throw new Error('Empresa no encontrada o inactiva.')
-  }
-
-  return data
-}
+import { obtenerSupabaseAdminEmpresaPorNit } from '@/lib/supabaseEmpresaServer'
 
 function normalizarDocumento(valor) {
   return String(valor || '').trim().replace(/\D/g, '')
@@ -38,10 +20,9 @@ export async function POST(request) {
       )
     }
 
-    const empresa = await obtenerEmpresa(nit)
-    const supabase = crearClienteEmpresa(empresa)
+    const { empresa, supabaseAdmin } = await obtenerSupabaseAdminEmpresaPorNit(nit)
 
-    const { data: cuenta, error } = await supabase
+    const { data: cuenta, error } = await supabaseAdmin
       .from('cuentas_usuario')
       .select(`
         id,
