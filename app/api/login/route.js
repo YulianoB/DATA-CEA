@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { SignJWT } from 'jose'
 import { getMasterSupabase } from '@/lib/supabaseMaster'
 import { crearClienteEmpresa } from '@/lib/supabaseDinamico'
+import { obtenerSupabaseAdminEmpresaPorNit } from '@/lib/supabaseEmpresaServer'
 
 const COOKIE_NAME = process.env.COOKIE_NAME || 'cea_session'
 const secureCookies = process.env.NODE_ENV === 'production'
@@ -64,8 +65,9 @@ export async function POST(req) {
 
     const empresa = await obtenerEmpresa(nit)
     const supabase = crearClienteEmpresa(empresa)
+    const { supabaseAdmin } = await obtenerSupabaseAdminEmpresaPorNit(nit)
 
-    const { data: cuenta, error: cuentaError } = await supabase
+    const { data: cuenta, error: cuentaError } = await supabaseAdmin
       .from('cuentas_usuario')
       .select(`
         id,
@@ -157,7 +159,7 @@ export async function POST(req) {
 
     const nombreCompleto = `${cuenta.personal?.nombres || ''} ${cuenta.personal?.apellidos || ''}`.trim()
 
-    await supabase
+    await supabaseAdmin
       .from('cuentas_usuario')
       .update({ fecha_ultimo_acceso: new Date().toISOString() })
       .eq('id', cuenta.id)
