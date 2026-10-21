@@ -1897,6 +1897,7 @@ export default function PersonalAdminPage() {
                   value={form.eps}
                   onChange={onChange}
                   nit={empresaNit}
+                  opcionesAdicionales={['NO AFILIADO']}
                   wrapperClass="col-span-12 md:col-span-3" />
 <CampoCatalogo
                   catalogo="arl"
@@ -1905,6 +1906,7 @@ export default function PersonalAdminPage() {
                   value={form.arl}
                   onChange={onChange}
                   nit={empresaNit}
+                  opcionesAdicionales={['NO AFILIADO']}
                   wrapperClass="col-span-12 md:col-span-2" />
 <CampoCatalogo
                   catalogo="fondos_pensiones"
@@ -1913,6 +1915,7 @@ export default function PersonalAdminPage() {
                   value={form.fondo_pension}
                   onChange={onChange}
                   nit={empresaNit}
+                  opcionesAdicionales={['NO AFILIADO']}
                   wrapperClass="col-span-12 md:col-span-3" /></div><div className="border-t border-slate-300 pt-3"><h3 className="mb-3 text-sm font-bold text-[#194567]">Contacto de emergencia</h3><div className="grid grid-cols-12 gap-3 items-start [&>*]:min-w-0"><CampoInput
                   label="Nombre completo contacto *"
                   name="contacto_emergencia_nombre"
