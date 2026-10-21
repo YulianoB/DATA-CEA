@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { sesionNotificaciones, enviarAvisoCorporativo } from '@/lib/notificacionesCorporativasServer'
 
 import {
-  obtenerSupabaseEmpresaDesdeRequest,
+  obtenerSupabaseAdminEmpresaPorNit,
   respuestaErrorEmpresa,
 } from '@/lib/supabaseEmpresaServer'
 
@@ -880,14 +880,9 @@ export async function POST(
     body.nit = sesion.nitEmpresa
 
     const resultadoEmpresa =
-      await obtenerSupabaseEmpresaDesdeRequest(
-        request,
-        body
-      )
+      await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
-    supabase =
-      resultadoEmpresa
-        .supabase
+    supabase = resultadoEmpresa.supabaseAdmin
 
 
     if (
@@ -1199,12 +1194,16 @@ export async function GET(
   request
 ) {
   try {
-    const {
-      supabase,
-    } =
-      await obtenerSupabaseEmpresaDesdeRequest(
-        request
-      )
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) {
+      return NextResponse.json({ status: 'error', message: 'Sesión no autorizada.' }, { status: 403 })
+    }
+    const nitSolicitado = new URL(request.url).searchParams.get('nit')
+    if (nitSolicitado && String(nitSolicitado).trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'error', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+    const { supabaseAdmin: supabase } =
+      await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const {
       searchParams,
