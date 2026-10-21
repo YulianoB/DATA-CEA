@@ -4,10 +4,8 @@ import {
   NextResponse,
 } from 'next/server'
 
-import {
-  obtenerSupabaseAdminEmpresaDesdeRequest,
-  respuestaErrorEmpresa,
-} from '@/lib/supabaseEmpresaServer'
+import { respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
+import { obtenerContextoCEA } from '@/lib/autorizacionCEA'
 
 // =========================================================
 // CONSTANTES
@@ -5394,9 +5392,7 @@ export async function GET(
       supabaseAdmin,
       empresa,
     } =
-      await obtenerSupabaseAdminEmpresaDesdeRequest(
-        request
-      )
+      await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'] })
 
     const supabase =
       supabaseAdmin
