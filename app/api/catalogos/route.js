@@ -1,6 +1,6 @@
 // app/api/catalogos/route.js
 import { NextResponse } from 'next/server'
-import { obtenerSupabaseEmpresaDesdeRequest, respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
+import { obtenerContextoCEA, respuestaErrorAutorizacionCEA } from '@/lib/autorizacionCEA'
 
 const CATALOGOS = Object.freeze({
   departamentos: { tabla: 'departamentos', columnas: 'id,nombre,codigo_dane' },
@@ -27,9 +27,16 @@ export async function GET(request) {
   }
 
   try {
-    // El helper existente resuelve la base empresarial a partir del NIT del request.
-    const { supabase } = await obtenerSupabaseEmpresaDesdeRequest(request)
-    let consulta = supabase.from(configuracion.tabla)
+    // El CEA se determina por la sesión; el NIT del navegador solo se contrasta.
+    const { supabaseAdmin } = await obtenerContextoCEA(request, {
+      rolesPermitidos: [
+        'ADMINISTRATIVO',
+        'AUXILIAR_ADMINISTRATIVO',
+        'INSTRUCTOR_TEORIA',
+        'INSTRUCTOR_PRACTICA',
+      ],
+    })
+    let consulta = supabaseAdmin.from(configuracion.tabla)
       .select(configuracion.columnas)
       .eq('activo', true)
       .order('nombre', { ascending: true })
@@ -43,7 +50,6 @@ export async function GET(request) {
     }
     return NextResponse.json({ status: 'success', data: data || [] })
   } catch (error) {
-    const respuesta = respuestaErrorEmpresa(error)
-    return NextResponse.json(respuesta.body, { status: respuesta.status })
+    return respuestaErrorAutorizacionCEA(error)
   }
 }
