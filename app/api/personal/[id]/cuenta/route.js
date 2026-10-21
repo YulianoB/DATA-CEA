@@ -1,9 +1,9 @@
 // app/api/personal/[id]/cuenta/route.js
 
 import { NextResponse } from 'next/server'
+import { sesionNotificaciones } from '@/lib/notificacionesCorporativasServer'
 import {
-  obtenerSupabaseEmpresaDesdeRequest,
-  obtenerSupabaseAdminEmpresaDesdeRequest,
+  obtenerSupabaseAdminEmpresaPorNit,
   respuestaErrorEmpresa,
 } from '@/lib/supabaseEmpresaServer'
 
@@ -33,10 +33,16 @@ function respuestaError(error) {
 
 export async function GET(request, { params }) {
   try {
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    const nitSolicitado = new URL(request.url).searchParams.get('nit')
+    if (nitSolicitado && nitSolicitado.trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+
     const { id } = await params
 
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(request)
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const { data, error } = await supabase
       .from('cuentas_usuario')
@@ -95,6 +101,13 @@ export async function GET(request, { params }) {
 
 export async function PATCH(request, { params }) {
   try {
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    const nitSolicitado = new URL(request.url).searchParams.get('nit')
+    if (nitSolicitado && nitSolicitado.trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+
     const { id } = await params
     const body = await request.json()
 
@@ -150,11 +163,7 @@ export async function PATCH(request, { params }) {
       )
     }
 
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(
-        request,
-        body
-      )
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const { data: cuentaActual, error: cuentaError } =
       await supabase
@@ -222,10 +231,7 @@ export async function PATCH(request, { params }) {
       cuentaActual.auth_user_id
     ) {
       const { supabaseAdmin } =
-        await obtenerSupabaseAdminEmpresaDesdeRequest(
-          request,
-          body
-        )
+        await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
       const { error: authError } =
         await supabaseAdmin.auth.admin.updateUserById(
@@ -356,9 +362,16 @@ export async function PATCH(request, { params }) {
 
 export async function POST(request, { params }) {
   try {
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    const nitSolicitado = new URL(request.url).searchParams.get('nit')
+    if (nitSolicitado && nitSolicitado.trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+
     const { id } = await params
     const body = await request.json()
-    const { supabase } = await obtenerSupabaseEmpresaDesdeRequest(request, body)
+    const { supabaseAdmin: supabase } = await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
     const roles = [...new Set(Array.isArray(body.perfiles) ? body.perfiles : [])]
     if (!roles.length || roles.some(rol => !Object.prototype.hasOwnProperty.call(ROLES_PERMITIDOS, rol))) {
       return NextResponse.json({ status: 'failed', message: 'Seleccione al menos un perfil autorizado válido.' }, { status: 400 })
