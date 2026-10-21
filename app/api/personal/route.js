@@ -1,8 +1,9 @@
 // app/api/personal/route.js
 
 import { NextResponse } from 'next/server'
+import { sesionNotificaciones } from '@/lib/notificacionesCorporativasServer'
 import {
-  obtenerSupabaseEmpresaDesdeRequest,
+  obtenerSupabaseAdminEmpresaPorNit,
   respuestaErrorEmpresa,
 } from '@/lib/supabaseEmpresaServer'
 
@@ -541,10 +542,13 @@ function respuestaError(error) {
 
 export async function GET(request) {
   try {
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(
-        request
-      )
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) {
+      return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    }
+
+    const { supabaseAdmin: supabase } =
+      await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     const {
       data,
@@ -662,11 +666,17 @@ export async function POST(request) {
       licencias,
     } = body
 
-    const { supabase } =
-      await obtenerSupabaseEmpresaDesdeRequest(
-        request,
-        body
-      )
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) {
+      return NextResponse.json({ status: 'failed', message: 'Sesión no autorizada.' }, { status: 403 })
+    }
+    if (body.nit && String(body.nit).trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+    body.nit = sesion.nitEmpresa
+
+    const { supabaseAdmin: supabase } =
+      await obtenerSupabaseAdminEmpresaPorNit(sesion.nitEmpresa)
 
     // ========================================================
     // VALIDACIONES BÁSICAS PERSONAL
