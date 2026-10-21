@@ -980,6 +980,7 @@ export default function ConfiguracionDocumentosPage() {
       console.error(
         err
       )
+      setError(err?.message || 'No fue posible cargar la configuración de documentos.')
     } finally {
       setCargando(
         false
@@ -7187,6 +7188,18 @@ export default function ConfiguracionDocumentosPage() {
           </div>
         </div>
 
+
+        {error && (
+          <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {error}
+          </div>
+        )}
+
+        {pestanaPrincipal === 'ENCABEZADO' && !encabezado && !error && (
+          <div role="status" className="rounded-lg border border-slate-300 bg-white px-5 py-4 text-sm text-slate-700">
+            Este CEA todavía no tiene configurado el encabezado documental GENERAL.
+          </div>
+        )}
 
         {pestanaPrincipal === 'AUTORIZACION_DATOS_PERSONAL' && <ConfiguracionAutorizacionPersonal nitEmpresa={nitEmpresa} />}
 
