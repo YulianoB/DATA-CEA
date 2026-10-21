@@ -1357,6 +1357,10 @@ export default function ConfiguracionDocumentosPage() {
     const data =
       await response.json()
 
+    // Un documento especial aún no configurado es normal en un CEA nuevo.
+    // No debe impedir cargar el diseñador ni generar un error global.
+    if (response.status === 404) return
+
     if (
       !response.ok ||
       !data?.ok
@@ -1430,6 +1434,10 @@ export default function ConfiguracionDocumentosPage() {
 
     const data =
       await response.json()
+
+    // Un documento especial aún no configurado es normal en un CEA nuevo.
+    // No debe impedir cargar el diseñador ni generar un error global.
+    if (response.status === 404) return
 
     if (
       !response.ok ||
