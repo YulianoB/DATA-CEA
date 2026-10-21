@@ -1,6 +1,6 @@
 // app/api/registro/route.js
 import { NextResponse } from 'next/server'
-import { obtenerSupabaseEmpresaPorNit, obtenerSupabaseAdminEmpresaPorNit } from '@/lib/supabaseEmpresaServer'
+import { obtenerSupabaseAdminEmpresaPorNit } from '@/lib/supabaseEmpresaServer'
 
 function normalizarDocumento(valor) {
   return String(valor || '').trim().replace(/\D/g, '')
@@ -41,9 +41,9 @@ export async function POST(request) {
       )
     }
 
-    const { empresa, supabase: supabaseEmpresa } = await obtenerSupabaseEmpresaPorNit(nit)
+    const { empresa, supabaseAdmin } = await obtenerSupabaseAdminEmpresaPorNit(nit)
 
-    const { data: cuenta, error: cuentaError } = await supabaseEmpresa
+    const { data: cuenta, error: cuentaError } = await supabaseAdmin
       .from('cuentas_usuario')
       .select(`
         id,
@@ -114,8 +114,6 @@ export async function POST(request) {
       )
     }
 
-    const { supabaseAdmin } = await obtenerSupabaseAdminEmpresaPorNit(nit)
-
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -146,7 +144,7 @@ export async function POST(request) {
       )
     }
 
-    const { error: actualizarCuentaError } = await supabaseEmpresa
+    const { error: actualizarCuentaError } = await supabaseAdmin
       .from('cuentas_usuario')
       .update({
         auth_user_id: authUserId,
@@ -165,7 +163,7 @@ export async function POST(request) {
       )
     }
 
-    const { error: actualizarPersonalError } = await supabaseEmpresa
+    const { error: actualizarPersonalError } = await supabaseAdmin
       .from('personal')
       .update({
         auth_user_id: authUserId,
