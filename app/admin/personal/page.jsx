@@ -2633,7 +2633,7 @@ export default function PersonalAdminPage() {
             <div className="w-full max-w-full overflow-x-auto overflow-y-hidden pb-2" role="region" aria-label="Tabla de personal registrado; desplácese horizontalmente para ver todas las columnas" tabIndex={0}>
             <table className="w-full min-w-[950px] table-fixed text-[11px] leading-snug">
               <colgroup>
-                {[8, 11, 11, 19, 9, 18, 7, 8, 9].map((ancho, indice) => (
+                {[8, 11, 10, 6, 17, 9, 17, 6, 7, 9].map((ancho, indice) => (
                   <col key={indice} style={{ width: `${ancho}%` }} />
                 ))}
               </colgroup>
@@ -2651,6 +2651,10 @@ export default function PersonalAdminPage() {
 
                   <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Cargo
+                  </th>
+
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
+                    Grupo
                   </th>
 
                   <th className="px-2 py-3 text-left font-bold whitespace-normal">
@@ -2687,7 +2691,7 @@ export default function PersonalAdminPage() {
                   <tr>
 
                     <td
-                      colSpan="9"
+                      colSpan="10"
                       className="p-4 text-center text-gray-500"
                     >
                       Cargando listado...
@@ -2701,7 +2705,7 @@ export default function PersonalAdminPage() {
                   <tr>
 
                     <td
-                      colSpan="9"
+                      colSpan="10"
                       className="p-4 text-center text-gray-500"
                     >
                       No hay personal registrado.
@@ -2732,6 +2736,10 @@ export default function PersonalAdminPage() {
 
                       <td className="break-words px-2 py-3">
                         {item.cargo || '-'}
+                      </td>
+
+                      <td className="break-words px-2 py-3">
+                        {item.grupo_personal || '-'}
                       </td>
 
                       <td className="break-all px-2 py-3">
