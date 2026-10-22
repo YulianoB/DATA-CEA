@@ -483,13 +483,21 @@ async function obtenerClausulas(
 // Solo se usa cuando la configuración está vacía y no tiene cláusulas.
 // Evita sobrescribir contratos editados, cláusulas o versiones existentes.
 async function inicializarContratoSiVacio(supabase, configuracion, clausulas) {
+  const contenidoDePlantilla =
+    configuracion.texto_introductorio === PLANTILLA_CONTRATO_CEA.texto_introductorio &&
+    configuracion.texto_final === PLANTILLA_CONTRATO_CEA.texto_final
+
   if (clausulas.length > 0 ||
-      texto(configuracion.texto_introductorio) ||
-      texto(configuracion.texto_final)) {
+      (!contenidoDePlantilla &&
+       (texto(configuracion.texto_introductorio) || texto(configuracion.texto_final)))) {
     return { configuracion, clausulas }
   }
 
-  const { data: actualizada, error: errorActualizacion } = await supabase
+  // Si una ejecución previa guardó los textos pero no las cláusulas,
+  // se reintenta la creación de cláusulas sin alterar esos textos.
+  let configFinal = configuracion
+  if (!contenidoDePlantilla) {
+    const { data: actualizada, error: errorActualizacion } = await supabase
     .from('configuracion_contrato')
     .update({
       texto_introductorio: PLANTILLA_CONTRATO_CEA.texto_introductorio,
@@ -501,11 +509,11 @@ async function inicializarContratoSiVacio(supabase, configuracion, clausulas) {
     .select(SELECT_CONFIGURACION)
     .maybeSingle()
 
-  // Las columnas pueden contener cadenas vacías por una configuración
-  // anterior. En ese caso se comprueba que ambas permanezcan vacías.
-  let configFinal = actualizada
-  if (errorActualizacion) throw errorActualizacion
-  if (!configFinal) {
+    // Las columnas pueden contener cadenas vacías.
+    // Si otra solicitud ya escribió contenido, no lo sustituimos.
+    configFinal = actualizada
+    if (errorActualizacion) throw errorActualizacion
+    if (!configFinal) {
     const { data: vigente, error: errorVigente } = await supabase
       .from('configuracion_contrato')
       .select(SELECT_CONFIGURACION)
@@ -526,6 +534,7 @@ async function inicializarContratoSiVacio(supabase, configuracion, clausulas) {
       .single()
     if (errorGuardado) throw errorGuardado
     configFinal = guardada
+    }
   }
 
   const filas = PLANTILLA_CONTRATO_CEA.clausulas.map((item) => ({
