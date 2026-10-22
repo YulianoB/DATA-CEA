@@ -16,6 +16,7 @@ import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import { Files } from 'lucide-react'
 import ModalResultado from '@/components/admin/ModalResultado'
 import ConfiguracionAutorizacionPersonal from '@/components/admin/ConfiguracionAutorizacionPersonal'
+import RevisionPlantillaInicialDocumento from '@/components/admin/RevisionPlantillaInicialDocumento'
 import { ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA, FranjaSuperiorModal, BotonAccion, BotonEditar, BotonAgregar, BotonEliminar, BotonGuardar } from '@/components/admin/EstiloModulo'
 
 
@@ -7202,6 +7203,10 @@ export default function ConfiguracionDocumentosPage() {
           onCerrar={() => responderConfirmacion(false)}
           onConfirmar={() => responderConfirmacion(true)}
         />
+
+        {(pestanaPrincipal === 'CODIGO_CONDUCTA' || pestanaPrincipal === 'AUTORIZACION_DATOS_CEA') && (
+          <RevisionPlantillaInicialDocumento key={pestanaPrincipal} tipo={pestanaPrincipal} nitEmpresa={nitEmpresa} />
+        )}
 
         {/* ===============================================
             NAVEGACIÓN DE CONFIGURACIÓN DOCUMENTAL
