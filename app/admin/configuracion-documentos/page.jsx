@@ -7732,7 +7732,7 @@ export default function ConfiguracionDocumentosPage() {
                   <div className="flex items-center justify-end gap-2 border-t border-slate-300 pt-3 text-xs font-semibold text-slate-600">
                     <span>Estado del documento:</span>
                     <span className={`rounded-full px-3 py-1 font-bold ${documentoActivo?.activo !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
-                      {documentoActivo?.activo !== false ? 'Activo' : 'Inactivo'}
+                      {borradorContrato && pestanaPrincipal === 'CONTRATO' || borradoresEspeciales[pestanaPrincipal] ? 'Pendiente de aprobación' : documentoActivo?.activo !== false ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
                 </div>
