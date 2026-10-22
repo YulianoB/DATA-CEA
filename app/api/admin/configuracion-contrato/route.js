@@ -1922,10 +1922,10 @@ export async function POST(
       const intro = texto(body?.texto_introductorio)
       const fin = texto(body?.texto_final)
       const clausulas = Array.isArray(body?.clausulas) ? body.clausulas : []
-      if (!codigo || !version || !fechaEdicion || !vigencia ||
+      if (!version || !fechaEdicion || !vigencia ||
           !intro || !fin || !clausulas.length ||
           clausulas.some(c => !texto(c.titulo) || !texto(c.contenido))) {
-        return NextResponse.json({ ok: false, error: 'Complete código, versión, fechas, textos y todas las cláusulas antes de aprobar.' }, { status: 400 })
+        return NextResponse.json({ ok: false, error: 'Complete versión, fechas, textos y todas las cláusulas antes de aprobar. Código opcional.' }, { status: 400 })
       }
 
       // Solo se actúa dentro del Supabase correspondiente a la sesión validada.
