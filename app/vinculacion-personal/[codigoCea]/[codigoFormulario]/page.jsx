@@ -27,7 +27,7 @@ const SOLO_NUMEROS = new Set(['telefono','contacto_emergencia_telefono','telefon
 const normalizar = (nombre, valor) => {
   if (typeof valor !== 'string') return valor
   if (SOLO_NUMEROS.has(nombre)) return valor.replace(/[^0-9]/g, '')
-  if (SOLO_LETRAS.has(nombre)) return valor.replace(/[^\\p{L}\\s'’\-]/gu, '').toLocaleUpperCase('es-CO')
+  if (SOLO_LETRAS.has(nombre)) return valor.replace(/[^\p{L}\s'’-]/gu, '').toLocaleUpperCase('es-CO')
   return MAYUSCULA.has(nombre) ? valor.toLocaleUpperCase('es-CO') : valor
 }
 
