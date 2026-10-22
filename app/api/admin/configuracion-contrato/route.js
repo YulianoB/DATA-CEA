@@ -478,87 +478,92 @@ async function obtenerClausulas(
 
 
 // ============================================================
-// INICIALIZACIÓN INDEPENDIENTE Y CONSERVADORA POR CEA
+// PLANTILLA DE CONSULTA: NO ESCRIBIR EN BASE DE DATOS
 // ============================================================
-// Solo se usa cuando la configuración está vacía y no tiene cláusulas.
-// Evita sobrescribir contratos editados, cláusulas o versiones existentes.
-async function inicializarContratoSiVacio(supabase, configuracion, clausulas) {
-  const contenidoDePlantilla =
-    configuracion.texto_introductorio === PLANTILLA_CONTRATO_CEA.texto_introductorio &&
-    configuracion.texto_final === PLANTILLA_CONTRATO_CEA.texto_final
 
-  if (clausulas.length > 0 ||
-      (!contenidoDePlantilla &&
-       (texto(configuracion.texto_introductorio) || texto(configuracion.texto_final)))) {
-    return { configuracion, clausulas }
-  }
-
-  // Si una ejecución previa guardó los textos pero no las cláusulas,
-  // se reintenta la creación de cláusulas sin alterar esos textos.
-  let configFinal = configuracion
-  if (!contenidoDePlantilla) {
-    const { data: actualizada, error: errorActualizacion } = await supabase
-    .from('configuracion_contrato')
-    .update({
-      texto_introductorio: PLANTILLA_CONTRATO_CEA.texto_introductorio,
-      texto_final: PLANTILLA_CONTRATO_CEA.texto_final,
-    })
-    .eq('id', configuracion.id)
-    .is('texto_introductorio', null)
-    .is('texto_final', null)
-    .select(SELECT_CONFIGURACION)
+async function consultarContratoExistente(supabase) {
+  const { data: documento, error: e1 } = await supabase
+    .from('configuracion_documentos')
+    .select(SELECT_DOCUMENTO)
+    .eq('tipo_documento', TIPO_DOCUMENTO)
     .maybeSingle()
+  if (e1) throw e1
 
-    // Las columnas pueden contener cadenas vacías.
-    // Si otra solicitud ya escribió contenido, no lo sustituimos.
-    configFinal = actualizada
-    if (errorActualizacion) throw errorActualizacion
-    if (!configFinal) {
-    const { data: vigente, error: errorVigente } = await supabase
-      .from('configuracion_contrato')
-      .select(SELECT_CONFIGURACION)
-      .eq('id', configuracion.id)
-      .single()
-    if (errorVigente) throw errorVigente
-    if (texto(vigente.texto_introductorio) || texto(vigente.texto_final)) {
-      return { configuracion: vigente, clausulas }
-    }
-    const { data: guardada, error: errorGuardado } = await supabase
-      .from('configuracion_contrato')
-      .update({
-        texto_introductorio: PLANTILLA_CONTRATO_CEA.texto_introductorio,
-        texto_final: PLANTILLA_CONTRATO_CEA.texto_final,
-      })
-      .eq('id', configuracion.id)
-      .select(SELECT_CONFIGURACION)
-      .single()
-    if (errorGuardado) throw errorGuardado
-    configFinal = guardada
-    }
+  const { data: configuracion, error: e2 } = await supabase
+    .from('configuracion_contrato')
+    .select(SELECT_CONFIGURACION)
+    .eq('clave', CLAVE_CONFIGURACION)
+    .maybeSingle()
+  if (e2) throw e2
+
+  const clausulas = configuracion?.id
+    ? await obtenerClausulas(supabase, configuracion.id)
+    : []
+  const versiones = documento?.id
+    ? await obtenerVersiones(supabase, documento.id)
+    : []
+
+  // No reabrir como borrador un documento previamente configurado.
+  const borradorInicial = !documento?.version || !documento?.fecha_edicion ||
+    !documento?.vigencia || !configuracion?.id || clausulas.length === 0
+
+  return {
+    documento: documento || {
+      id: null,
+      tipo_documento: TIPO_DOCUMENTO,
+      nombre_documento: PLANTILLA_CONTRATO_CEA.nombre_documento,
+      codigo: null,
+      fecha_edicion: null,
+      version: null,
+      vigencia: null,
+      activo: false,
+      observaciones: null,
+    },
+    configuracion: configuracion || {
+      id: null,
+      clave: CLAVE_CONFIGURACION,
+      nombre_documento: PLANTILLA_CONTRATO_CEA.nombre_documento,
+      texto_introductorio: null,
+      texto_final: null,
+      mostrar_foto: PLANTILLA_CONTRATO_CEA.mostrar_foto,
+      mostrar_huella: PLANTILLA_CONTRATO_CEA.mostrar_huella,
+      activo: false,
+      observaciones: null,
+    },
+    clausulas,
+    versiones,
+    borradorInicial,
   }
-
-  const filas = PLANTILLA_CONTRATO_CEA.clausulas.map((item) => ({
-    configuracion_contrato_id: configuracion.id,
-    orden: item.orden,
-    titulo: item.titulo,
-    contenido: item.contenido,
-    activo: item.activo,
-    usuario_actualizacion: null,
-  }))
-  // La restricción única por (configuracion_contrato_id, orden)
-  // impide duplicados cuando dos sesiones abren simultáneamente.
-  const { error: errorClausulas } = await supabase
-    .from('configuracion_contrato_clausulas')
-    .upsert(filas, {
-      onConflict: 'configuracion_contrato_id,orden',
-      ignoreDuplicates: true,
-    })
-  if (errorClausulas) throw errorClausulas
-
-  const nuevasClausulas = await obtenerClausulas(supabase, configuracion.id)
-  return { configuracion: configFinal, clausulas: nuevasClausulas }
 }
 
+function presentarBorradorContrato(datos) {
+  if (!datos.borradorInicial) return datos
+  return {
+    ...datos,
+    documento: {
+      ...datos.documento,
+      codigo: datos.documento.codigo || '',
+      version: datos.documento.version || '',
+      fecha_edicion: datos.documento.fecha_edicion || '',
+      vigencia: datos.documento.vigencia || '',
+      activo: false,
+    },
+    configuracion: {
+      ...datos.configuracion,
+      texto_introductorio: datos.configuracion.texto_introductorio ||
+        PLANTILLA_CONTRATO_CEA.texto_introductorio,
+      texto_final: datos.configuracion.texto_final ||
+        PLANTILLA_CONTRATO_CEA.texto_final,
+    },
+    clausulas: datos.clausulas.length
+      ? datos.clausulas
+      : PLANTILLA_CONTRATO_CEA.clausulas.map((c, i) => ({
+          ...c,
+          id: -(i + 1),
+          configuracion_contrato_id: datos.configuracion.id || null,
+        })),
+  }
+}
 
 // ============================================================
 // OBTENER VERSIONES HISTÓRICAS
@@ -1394,27 +1399,9 @@ export async function GET(
     const supabase =
       supabaseAdmin
 
-    const documento =
-      await obtenerDocumento(
-        supabase
-      )
-
-    const configuracion =
-      await obtenerConfiguracion(
-        supabase,
-        documento.nombre_documento
-      )
-
-    let [clausulas, versiones] = await Promise.all([
-      obtenerClausulas(supabase, configuracion.id),
-      obtenerVersiones(supabase, documento.id),
-    ])
-
-    const inicializacion = await inicializarContratoSiVacio(
-      supabase, configuracion, clausulas
-    )
-    const configuracionVigente = inicializacion.configuracion
-    clausulas = inicializacion.clausulas
+    const {
+      documento, configuracion, clausulas, versiones, borradorInicial,
+    } = presentarBorradorContrato(await consultarContratoExistente(supabase))
 
     return NextResponse.json(
       {
@@ -1428,7 +1415,8 @@ export async function GET(
 
         documento,
 
-        configuracion: configuracionVigente,
+        configuracion,
+        borrador_inicial: borradorInicial,
 
         clausulas,
 
@@ -1918,6 +1906,63 @@ export async function POST(
 
     const supabase =
       supabaseAdmin
+
+    // Aprobación inicial explícita: no se crea contenido al consultar.
+    if (texto(body?.accion).toUpperCase() === 'APROBAR_PLANTILLA_INICIAL') {
+      const datos = await consultarContratoExistente(supabase)
+      if (!datos.borradorInicial) {
+        return NextResponse.json({ ok: false, error: 'El contrato ya está configurado. Utilice el sistema de versiones.' }, { status: 409 })
+      }
+
+      const nombre = texto(body?.nombre_documento) || PLANTILLA_CONTRATO_CEA.nombre_documento
+      const codigo = texto(body?.codigo)
+      const version = texto(body?.version)
+      const fechaEdicion = fechaValida(body?.fecha_edicion)
+      const vigencia = fechaValida(body?.vigencia)
+      const intro = texto(body?.texto_introductorio)
+      const fin = texto(body?.texto_final)
+      const clausulas = Array.isArray(body?.clausulas) ? body.clausulas : []
+      if (!codigo || !version || !fechaEdicion || !vigencia ||
+          !intro || !fin || !clausulas.length ||
+          clausulas.some(c => !texto(c.titulo) || !texto(c.contenido))) {
+        return NextResponse.json({ ok: false, error: 'Complete código, versión, fechas, textos y todas las cláusulas antes de aprobar.' }, { status: 400 })
+      }
+
+      // Solo se actúa dentro del Supabase correspondiente a la sesión validada.
+      const doc = await obtenerDocumento(supabase)
+      const conf = await obtenerConfiguracion(supabase, nombre)
+      const { error: eDoc } = await supabase
+        .from('configuracion_documentos')
+        .update({
+          nombre_documento: nombre, codigo, version,
+          fecha_edicion: fechaEdicion, vigencia,
+          activo: true, updated_at: new Date().toISOString(),
+        }).eq('id', doc.id)
+      if (eDoc) throw eDoc
+      const { error: eConf } = await supabase
+        .from('configuracion_contrato')
+        .update({
+          nombre_documento: nombre, texto_introductorio: intro,
+          texto_final: fin, activo: true,
+          mostrar_foto: body.mostrar_foto !== false,
+          mostrar_huella: body.mostrar_huella !== false,
+          updated_at: new Date().toISOString(),
+        }).eq('id', conf.id)
+      if (eConf) throw eConf
+
+      const filas = clausulas.map((c, i) => ({
+        configuracion_contrato_id: conf.id,
+        orden: i + 1, titulo: texto(c.titulo),
+        contenido: texto(c.contenido), activo: c.activo !== false,
+      }))
+      const { error: eClauses } = await supabase
+        .from('configuracion_contrato_clausulas')
+        .upsert(filas, { onConflict: 'configuracion_contrato_id,orden' })
+      if (eClauses) throw eClauses
+      return NextResponse.json({
+        ok: true, message: 'Contrato revisado, aprobado y guardado en este CEA.',
+      })
+    }
 
     const documento =
       await obtenerDocumento(
