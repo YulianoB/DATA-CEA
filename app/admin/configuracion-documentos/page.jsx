@@ -7173,8 +7173,8 @@ export default function ConfiguracionDocumentosPage() {
                       <span className="text-sm font-bold">Cláusula {index + 1}</span>
                       <button type="button" onClick={() => setClausulasContrato(v => v.filter((_, i) => i !== index))} className="text-xs font-semibold text-red-700">Quitar</button>
                     </div>
-                    <input aria-label={`Título cláusula ${index+1}`} value={c.titulo || ''} onChange={e => actualizarClausulaLocal(c.id, 'titulo', e.target.value)} className="mb-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                    <textarea aria-label={`Contenido cláusula ${index+1}`} rows={5} value={c.contenido || ''} onChange={e => actualizarClausulaLocal(c.id, 'contenido', e.target.value)} className="w-full rounded-lg border border-slate-300 p-3 text-sm" />
+                    <input aria-label={`Título cláusula ${index+1}`} value={c.titulo || ''} onChange={e => actualizarClausulaLocal(c.id, 'titulo', e.target.value)} className="mb-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold" />
+                    <textarea aria-label={`Contenido cláusula ${index+1}`} rows={5} value={c.contenido || ''} onChange={e => actualizarClausulaLocal(c.id, 'contenido', e.target.value)} className="w-full rounded-lg border border-slate-300 p-3 text-sm font-normal" />
                   </div>
                 ))}
               </div>
