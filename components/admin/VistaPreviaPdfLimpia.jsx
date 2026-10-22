@@ -40,8 +40,13 @@ export default function VistaPreviaPdfLimpia({ datos, documento, fotoDataUrl }) 
   const experienciasOrdenadas = [...experiencia].sort((a, b) =>
     Number(Boolean(b.actualmente)) - Number(Boolean(a.actualmente)) ||
     fecha(b.actualmente ? b.fecha_inicio : (b.fecha_fin || b.fecha_inicio)).localeCompare(fecha(a.actualmente ? a.fecha_inicio : (a.fecha_fin || a.fecha_inicio))) ||
-    fecha(b.fecha_inicio).localeCompare(fecha(a.fecha_inicio))
-  )
+    fecha(b.fecha_inicio).localeCompare(fecha(a.fecha_inicio)) ||
+    Number(b.id || 0) - Number(a.id || 0)
+  ).slice(0, 3)
+  const estudiosRecientes = [...estudios].sort((a, b) =>
+    fecha(b.fecha_grado).localeCompare(fecha(a.fecha_grado)) ||
+    Number(b.id || 0) - Number(a.id || 0)
+  ).slice(0, 5)
   const normalizar = v => texto(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
   const conduccion = vigentes.filter(l => normalizar(l.tipo_licencia).includes('CONDUC'))
   const instructor = vigentes.filter(l => normalizar(l.tipo_licencia).includes('INSTRUCTOR'))
@@ -71,8 +76,10 @@ export default function VistaPreviaPdfLimpia({ datos, documento, fotoDataUrl }) 
             {dato('Profesión', personal.profesion)}
             {dato('Escolaridad', personal.escolaridad)}
             {seccion('Estudios')}
-            {!estudios.length && dato('Estado', 'Sin estudios registrados')}
-            {estudios.map((e, i) => <div key={e.id ?? i} className="mb-2">{dato('Título', e.titulo || e.nivel_estudio)}{dato('Institución', e.institucion)}{dato('Grado', fecha(e.fecha_grado))}</div>)}
+            <div className="text-[9px] font-normal leading-[1.18]">
+              {!estudiosRecientes.length && dato('Estado', 'Sin estudios registrados')}
+              {estudiosRecientes.map((e, i) => <div key={e.id ?? i} className="mb-1.5">{dato('Título', e.titulo || e.nivel_estudio)}{dato('Institución', e.institucion)}{dato('Grado', fecha(e.fecha_grado))}</div>)}
+            </div>
           </aside>
           <main className="px-[9%] pb-6 pt-[10%] text-[clamp(9px,1vw,11px)] leading-[1.3]">
             {titulo('Mi perfil')}
