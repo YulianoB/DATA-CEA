@@ -4002,13 +4002,13 @@ export default function ConfiguracionDocumentosPage() {
   async function aprobarBorradorContrato() {
     const doc = documentos.find(item => item?.tipo_documento === 'CONTRATO')
     if (!doc) return
-    if (!doc.codigo?.trim() || !doc.version?.trim() ||
+    if (!doc.version?.trim() ||
         !doc.fecha_edicion || !doc.vigencia ||
         !configuracionContrato.texto_introductorio?.trim() ||
         !configuracionContrato.texto_final?.trim() ||
         !clausulasContrato.length ||
         clausulasContrato.some(c => !c.titulo?.trim() || !c.contenido?.trim())) {
-      setError('Complete código, fechas, versión y revise los textos y cláusulas antes de aprobar.')
+      setError('Complete fechas, versión y revise los textos y cláusulas antes de aprobar. El código es opcional.')
       return
     }
     if (!await solicitarConfirmacion('¿Confirma que revisó el contenido y desea aprobar y guardar la versión inicial del contrato de este CEA?')) return
