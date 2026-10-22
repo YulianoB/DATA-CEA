@@ -16,7 +16,7 @@ const GENERAL=[
   ['texto_menores_edad','Tratamiento de datos de menores de edad'],
   ['texto_declaracion_final','Declaración y autorización final']
 ]
-const control='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800'
+const control='w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal normal-case text-slate-800'
 const label='block text-xs font-bold uppercase text-slate-700'
 
 export default function RevisionPlantillaInicialDocumento({tipo,nitEmpresa}) {
@@ -72,7 +72,7 @@ export default function RevisionPlantillaInicialDocumento({tipo,nitEmpresa}) {
           </div>
           <h3 className="font-bold text-slate-900">Secciones del documento</h3>
           {plantilla.secciones.map((s,i)=><div key={i} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <label className={label}>Sección {i+1}<input className={control+' mt-1'} value={s.titulo} onChange={e=>seccion(i,'titulo',e.target.value)}/></label>
+            <label className={label}>Sección {i+1}<input className={control+' mt-1 font-bold'} value={s.titulo} onChange={e=>seccion(i,'titulo',e.target.value)}/></label>
             <label className={label}>Contenido<textarea rows={6} className={control+' mt-1 leading-relaxed'} value={s.contenido} onChange={e=>seccion(i,'contenido',e.target.value)}/></label>
           </div>)}
           {tipo==='AUTORIZACION_DATOS_CEA'&&<>
