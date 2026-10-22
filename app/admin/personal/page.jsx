@@ -618,6 +618,17 @@ export default function PersonalAdminPage() {
       busqueda,
     ])
 
+  // Conteos del listado visible, incluidos los resultados del buscador.
+  const resumenGrupos = useMemo(() => {
+    const conteos = { operativo: 0, administrativo: 0, directivo: 0, servicios_generales: 0, otros: 0 }
+    for (const item of personalFiltrado) {
+      const grupo = String(item.grupo_personal || '').trim().toLowerCase()
+      if (grupo in conteos && grupo !== 'otros') conteos[grupo] += 1
+      else conteos.otros += 1
+    }
+    return { ...conteos, total: personalFiltrado.length }
+  }, [personalFiltrado])
+
   // ==========================================================
   // NIT
   // ==========================================================
@@ -2614,7 +2625,17 @@ export default function PersonalAdminPage() {
             <BotonLimpiar type="button" onClick={() => setBusqueda('')} disabled={!busqueda}><Eraser size={15} /> Limpiar</BotonLimpiar>
           </div>
           <FranjaSuperiorModal className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <h2 className="flex items-center gap-2 text-sm font-bold"><Users size={17} /> Personal registrado</h2>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2">
+              <h2 className="flex items-center gap-2 whitespace-nowrap text-sm font-bold"><Users size={17} /> Personal registrado</h2>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" aria-label="Resumen del personal por grupo">
+                <span>Operativos: <strong>{resumenGrupos.operativo}</strong></span>
+                <span>Administrativos: <strong>{resumenGrupos.administrativo}</strong></span>
+                <span>Directivos: <strong>{resumenGrupos.directivo}</strong></span>
+                <span>Servicios generales: <strong>{resumenGrupos.servicios_generales}</strong></span>
+                {resumenGrupos.otros > 0 && <span>Otros / sin grupo: <strong>{resumenGrupos.otros}</strong></span>}
+                <span className="font-semibold">Total: {resumenGrupos.total}</span>
+              </div>
+            </div>
             <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             <button type="button" onClick={async () => {
               try {
