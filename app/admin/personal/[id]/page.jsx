@@ -2322,6 +2322,12 @@ function Estudios({
               ['TECNÓLOGO', 'Tecnólogo'],
               ['PREGRADO', 'Pregrado'],
               ['POSGRADO', 'Posgrado'],
+              ['DIPLOMADO', 'Diplomado'],
+              ['CURSO', 'Curso'],
+              ['CURSO_PRIMER_RESPONDIENTE_ANSV', 'Curso Primer Respondiente ANSV'],
+              ['SEMINARIO', 'Seminario'],
+              ['TALLER', 'Taller'],
+              ['CERTIFICACION', 'Certificación'],
             ]} />
             <CampoInput label="Título obtenido *" name="titulo" value={formEstudio.titulo} onChange={cambiarEstudio} className="uppercase" />
             <CampoInput label="Institución *" name="institucion" value={formEstudio.institucion} onChange={cambiarEstudio} className="uppercase" />
