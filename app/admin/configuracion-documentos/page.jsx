@@ -456,6 +456,9 @@ export default function ConfiguracionDocumentosPage() {
     )
 
   const [borradorContrato, setBorradorContrato] = useState(false)
+  const [borradoresEspeciales, setBorradoresEspeciales] = useState({})
+  const [modalEspecial, setModalEspecial] = useState(null)
+  const [aprobandoEspecial, setAprobandoEspecial] = useState(false)
   const [mostrarRevisionContrato, setMostrarRevisionContrato] = useState(false)
   const [aprobandoContrato, setAprobandoContrato] = useState(false)
   const [confirmacionPendiente, setConfirmacionPendiente] = useState(null)
@@ -1377,6 +1380,7 @@ export default function ConfiguracionDocumentosPage() {
       )
     }
 
+    setBorradoresEspeciales(v=>({...v, CODIGO_CONDUCTA: Boolean(data?.borrador_inicial)}))
     if (
       data?.documento
     ) {
@@ -1455,6 +1459,7 @@ export default function ConfiguracionDocumentosPage() {
       )
     }
 
+    setBorradoresEspeciales(v=>({...v, AUTORIZACION_DATOS_CEA: Boolean(data?.borrador_inicial)}))
     if (
       data?.documento
     ) {
@@ -3866,6 +3871,7 @@ export default function ConfiguracionDocumentosPage() {
 
     // La revisión inicial corresponde exclusivamente a la pestaña Contrato.
     setMostrarRevisionContrato(pestana === 'CONTRATO' && borradorContrato)
+    setModalEspecial(borradoresEspeciales[pestana] ? pestana : null)
 
         setModoEdicionDocumento(
       false
@@ -3960,6 +3966,38 @@ export default function ConfiguracionDocumentosPage() {
     )
   }
 
+
+  async function aprobarBorradorEspecial() {
+    const tipo=modalEspecial, aut=tipo==='AUTORIZACION_DATOS_CEA'
+    if(!['CODIGO_CONDUCTA','AUTORIZACION_DATOS_CEA'].includes(tipo))return
+    const d=documentos.find(x=>x.tipo_documento===tipo)
+    const secciones=aut?seccionesAutorizacionDatos:seccionesCodigoConducta
+    if(!d?.nombre_documento?.trim()||!d?.version?.trim()||!d?.fecha_edicion||!d?.vigencia||
+       !secciones.length||secciones.some(x=>!x.titulo?.trim()||!x.contenido?.trim())){
+      setError('Complete nombre, versión, ambas fechas y secciones. El código es opcional.');return
+    }
+    if(aut&&['texto_datos_biometricos','texto_menores_edad','texto_declaracion_final'].some(k=>!configuracionAutorizacionDatos[k]?.trim())){
+      setError('Complete los textos de datos sensibles, menores y declaración final.');return
+    }
+    if(!await solicitarConfirmacion('¿Desea aprobar y guardar la versión inicial de este documento?'))return
+    setAprobandoEspecial(true)
+    try{
+      const ruta=aut?'configuracion-autorizacion-datos':'configuracion-codigo-conducta'
+      const response=await fetch('/api/admin/'+ruta,{
+        method:'POST',headers:{'Content-Type':'application/json','x-cea-nit':nitEmpresa},
+        body:JSON.stringify({nit:nitEmpresa,accion:'aprobar_plantilla_inicial',
+          nombre_documento:d.nombre_documento,codigo:d.codigo||'',version:d.version,
+          fecha_edicion:d.fecha_edicion,vigencia:d.vigencia,
+          secciones:secciones.map(x=>({titulo:x.titulo,contenido:x.contenido,activo:x.activo})),
+          ...(aut?{configuracion:configuracionAutorizacionDatos}:{})})
+      })
+      const resultado=await response.json()
+      if(!response.ok||!resultado.ok)throw Error(resultado.error||resultado.message||'No fue posible aprobar.')
+      setModalEspecial(null);setBorradoresEspeciales(v=>({...v,[tipo]:false}))
+      if(aut)await cargarAutorizacionDatos();else await cargarCodigoConducta()
+      setMensaje('Versión inicial aprobada correctamente.')
+    }catch(e){setError(e.message||'No fue posible aprobar.')}finally{setAprobandoEspecial(false)}
+  }
 
   async function aprobarBorradorContrato() {
     const doc = documentos.find(item => item?.tipo_documento === 'CONTRATO')
@@ -7185,6 +7223,44 @@ export default function ConfiguracionDocumentosPage() {
           </div>
         )}
 
+        {modalEspecial && pestanaPrincipal===modalEspecial && borradoresEspeciales[modalEspecial] && (
+          <div className="fixed inset-0 z-[82] flex items-center justify-center bg-slate-950/65 p-3">
+            <div role="dialog" aria-modal="true" aria-label="Revisión y aprobación inicial" className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+              <div className="bg-sky-900 p-5 text-white">
+                <h2 className="text-lg font-bold">Revisar y aprobar versión inicial — {modalEspecial==='CODIGO_CONDUCTA'?'Código de Conducta':'Autorización de Datos'}</h2>
+                <p className="mt-1 text-sm">Revise la plantilla y adáptela a su CEA. No se guarda hasta aprobarla. Código opcional, fechas y versión obligatorias.</p>
+              </div>
+              <div className="space-y-4 overflow-y-auto p-5">
+                {['nombre_documento','codigo','fecha_edicion','version','vigencia'].map(k=><label key={k} className="block">
+                  <span className="mb-1 block text-sm font-semibold">{({nombre_documento:'Nombre del documento',codigo:'Código (opcional)',fecha_edicion:'Fecha de elaboración',version:'Versión',vigencia:'Fecha de vigencia / publicación'})[k]}</span>
+                  <input type={['fecha_edicion','vigencia'].includes(k)?'date':'text'} value={documentos.find(x=>x.tipo_documento===modalEspecial)?.[k]||''}
+                    onChange={e=>setDocumentos(xs=>xs.map(x=>x.tipo_documento===modalEspecial?{...x,[k]:e.target.value}:x))}
+                    className="w-full rounded-lg border border-slate-300 p-2 text-sm"/>
+                </label>)}
+                {modalEspecial==='AUTORIZACION_DATOS_CEA' && <section className="space-y-3 rounded-lg border p-3">
+                  <h3 className="font-bold">Configuración general y canales de atención</h3>
+                  {['correo_proteccion_datos','telefono_contacto','direccion_contacto','medio_politica','texto_datos_biometricos','texto_menores_edad','texto_declaracion_final'].map(k=><label key={k} className="block">
+                    <span className="block text-xs font-bold">{k.replaceAll('_',' ')}</span>
+                    <textarea rows={k.startsWith('texto_')?4:2} value={configuracionAutorizacionDatos[k]||''}
+                      onChange={e=>actualizarAutorizacionDatosEstado(k,e.target.value)} className="w-full rounded-lg border p-2 text-sm"/>
+                  </label>)}
+                  <p className="text-xs">Las finalidades individuales se configuran por separado. Ningún consentimiento se activa automáticamente.</p>
+                </section>}
+                <h3 className="font-bold">Secciones editables</h3>
+                {(modalEspecial==='CODIGO_CONDUCTA'?seccionesCodigoConducta:seccionesAutorizacionDatos).map((v,i)=><section key={v.id||i} className="rounded-lg border p-3">
+                  <p className="mb-2 font-semibold">Sección {i+1}</p>
+                  <input aria-label={'Título '+(i+1)} value={v.titulo||''} onChange={e=>modalEspecial==='CODIGO_CONDUCTA'?actualizarSeccionCodigoLocal(v.id,'titulo',e.target.value):actualizarSeccionAutorizacionLocal(v.id,'titulo',e.target.value)} className="mb-2 w-full rounded-lg border p-2"/>
+                  <textarea aria-label={'Contenido '+(i+1)} rows={5} value={v.contenido||''} onChange={e=>modalEspecial==='CODIGO_CONDUCTA'?actualizarSeccionCodigoLocal(v.id,'contenido',e.target.value):actualizarSeccionAutorizacionLocal(v.id,'contenido',e.target.value)} className="w-full rounded-lg border p-2"/>
+                </section>)}
+              </div>
+              <div className="flex justify-end gap-2 border-t p-4">
+                <button type="button" onClick={()=>setModalEspecial(null)} className="rounded-lg border px-4 py-2 font-semibold">Cerrar sin aprobar</button>
+                <button type="button" disabled={aprobandoEspecial} onClick={aprobarBorradorEspecial} className="rounded-lg bg-emerald-700 px-4 py-2 font-bold text-white disabled:opacity-50">{aprobandoEspecial?'Guardando…':'Aprobar y guardar versión inicial'}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ModalResultado
           abierto={Boolean(modalAviso)}
           tipo={modalAviso?.tipo}
@@ -7385,7 +7461,9 @@ export default function ConfiguracionDocumentosPage() {
                 los datos propios de este documento.
               </p>
                 </div>
-                {pestanaPrincipal === 'CONTRATO' && borradorContrato ? (
+                {borradoresEspeciales[pestanaPrincipal] ? (
+                  <button type="button" onClick={()=>setModalEspecial(pestanaPrincipal)} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-sky-900">Revisar y aprobar versión inicial</button>
+                ) : pestanaPrincipal === 'CONTRATO' && borradorContrato ? (
                   <button type="button" onClick={() => setMostrarRevisionContrato(true)} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-sky-900">Revisar y aprobar plantilla inicial</button>
                 ) : !modoEdicionDocumento && (
                   <div className="flex flex-wrap items-center gap-2">
