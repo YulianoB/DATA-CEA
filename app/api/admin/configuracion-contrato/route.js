@@ -4,9 +4,8 @@ import {
   NextResponse,
 } from 'next/server'
 
-import {
-  obtenerSupabaseAdminEmpresaDesdeRequest,
-} from '@/lib/supabaseEmpresaServer'
+import { obtenerContextoCEA } from '@/lib/autorizacionCEA'
+import { PLANTILLA_CONTRATO_CEA } from '@/lib/plantillas-cea/contrato'
 
 
 // ============================================================
@@ -475,6 +474,80 @@ async function obtenerClausulas(
   )
     ? data
     : []
+}
+
+
+// ============================================================
+// INICIALIZACIÓN INDEPENDIENTE Y CONSERVADORA POR CEA
+// ============================================================
+// Solo se usa cuando la configuración está vacía y no tiene cláusulas.
+// Evita sobrescribir contratos editados, cláusulas o versiones existentes.
+async function inicializarContratoSiVacio(supabase, configuracion, clausulas) {
+  if (clausulas.length > 0 ||
+      texto(configuracion.texto_introductorio) ||
+      texto(configuracion.texto_final)) {
+    return { configuracion, clausulas }
+  }
+
+  const { data: actualizada, error: errorActualizacion } = await supabase
+    .from('configuracion_contrato')
+    .update({
+      texto_introductorio: PLANTILLA_CONTRATO_CEA.texto_introductorio,
+      texto_final: PLANTILLA_CONTRATO_CEA.texto_final,
+    })
+    .eq('id', configuracion.id)
+    .is('texto_introductorio', null)
+    .is('texto_final', null)
+    .select(SELECT_CONFIGURACION)
+    .maybeSingle()
+
+  // Las columnas pueden contener cadenas vacías por una configuración
+  // anterior. En ese caso se comprueba que ambas permanezcan vacías.
+  let configFinal = actualizada
+  if (errorActualizacion) throw errorActualizacion
+  if (!configFinal) {
+    const { data: vigente, error: errorVigente } = await supabase
+      .from('configuracion_contrato')
+      .select(SELECT_CONFIGURACION)
+      .eq('id', configuracion.id)
+      .single()
+    if (errorVigente) throw errorVigente
+    if (texto(vigente.texto_introductorio) || texto(vigente.texto_final)) {
+      return { configuracion: vigente, clausulas }
+    }
+    const { data: guardada, error: errorGuardado } = await supabase
+      .from('configuracion_contrato')
+      .update({
+        texto_introductorio: PLANTILLA_CONTRATO_CEA.texto_introductorio,
+        texto_final: PLANTILLA_CONTRATO_CEA.texto_final,
+      })
+      .eq('id', configuracion.id)
+      .select(SELECT_CONFIGURACION)
+      .single()
+    if (errorGuardado) throw errorGuardado
+    configFinal = guardada
+  }
+
+  const filas = PLANTILLA_CONTRATO_CEA.clausulas.map((item) => ({
+    configuracion_contrato_id: configuracion.id,
+    orden: item.orden,
+    titulo: item.titulo,
+    contenido: item.contenido,
+    activo: item.activo,
+    usuario_actualizacion: null,
+  }))
+  // La restricción única por (configuracion_contrato_id, orden)
+  // impide duplicados cuando dos sesiones abren simultáneamente.
+  const { error: errorClausulas } = await supabase
+    .from('configuracion_contrato_clausulas')
+    .upsert(filas, {
+      onConflict: 'configuracion_contrato_id,orden',
+      ignoreDuplicates: true,
+    })
+  if (errorClausulas) throw errorClausulas
+
+  const nuevasClausulas = await obtenerClausulas(supabase, configuracion.id)
+  return { configuracion: configFinal, clausulas: nuevasClausulas }
 }
 
 
@@ -1307,9 +1380,7 @@ export async function GET(
       supabaseAdmin,
       empresa,
     } =
-      await obtenerSupabaseAdminEmpresaDesdeRequest(
-        request
-      )
+      await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'] })
 
     const supabase =
       supabaseAdmin
@@ -1325,23 +1396,16 @@ export async function GET(
         documento.nombre_documento
       )
 
-    const [
-      clausulas,
-      versiones,
-    ] =
-      await Promise.all(
-        [
-          obtenerClausulas(
-            supabase,
-            configuracion.id
-          ),
+    let [clausulas, versiones] = await Promise.all([
+      obtenerClausulas(supabase, configuracion.id),
+      obtenerVersiones(supabase, documento.id),
+    ])
 
-          obtenerVersiones(
-            supabase,
-            documento.id
-          ),
-        ]
-      )
+    const inicializacion = await inicializarContratoSiVacio(
+      supabase, configuracion, clausulas
+    )
+    const configuracionVigente = inicializacion.configuracion
+    clausulas = inicializacion.clausulas
 
     return NextResponse.json(
       {
@@ -1355,7 +1419,7 @@ export async function GET(
 
         documento,
 
-        configuracion,
+        configuracion: configuracionVigente,
 
         clausulas,
 
@@ -1407,10 +1471,7 @@ export async function PATCH(
       supabaseAdmin,
       empresa,
     } =
-      await obtenerSupabaseAdminEmpresaDesdeRequest(
-        request,
-        body
-      )
+      await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'], body })
 
     const supabase =
       supabaseAdmin
@@ -1844,10 +1905,7 @@ export async function POST(
       supabaseAdmin,
       empresa,
     } =
-      await obtenerSupabaseAdminEmpresaDesdeRequest(
-        request,
-        body
-      )
+      await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'], body })
 
     const supabase =
       supabaseAdmin
@@ -2322,10 +2380,7 @@ export async function DELETE(
       supabaseAdmin,
       empresa,
     } =
-      await obtenerSupabaseAdminEmpresaDesdeRequest(
-        request,
-        body
-      )
+      await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'], body })
 
     const supabase =
       supabaseAdmin
