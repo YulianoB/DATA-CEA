@@ -1214,11 +1214,7 @@ export async function GET(
         ),
       ])
 
-    const versiones =
-      await obtenerVersiones(
-        supabase,
-        documento.id
-      )
+    const versiones = documento?.id ? await obtenerVersiones(supabase, documento.id) : []
 
     const borradorInicial = !documento?.version || !documento?.fecha_edicion || !documento?.vigencia || !configuracion || secciones.length === 0
     const documentoVista = documento || { id: null, tipo_documento: TIPO_DOCUMENTO, nombre_documento: PLANTILLA_AUTORIZACION_DATOS_CEA.nombre_documento, codigo: null, version: null, fecha_edicion: null, vigencia: null, activo: false }
