@@ -2629,9 +2629,9 @@ export default function PersonalAdminPage() {
             </div>
           </FranjaSuperiorModal>
 
-          <MarcoTabla className="overflow-x-auto rounded-t-none">
-
-            <table className="min-w-full text-xs">
+          <MarcoTabla className="min-w-0 rounded-t-none">
+            <div className="w-full max-w-full overflow-x-auto overflow-y-hidden pb-2" role="region" aria-label="Tabla de personal registrado; desplácese horizontalmente para ver todas las columnas" tabIndex={0}>
+            <table className="w-full min-w-[1380px] text-[11px] leading-snug">
 
               <thead>
 
@@ -2739,7 +2739,7 @@ export default function PersonalAdminPage() {
                         {item.grupo_personal || '-'}
                       </td>
 
-                      <td className="p-3">
+                      <td className="min-w-[240px] max-w-[320px] break-all p-3">
                         {item.email || '-'}
                       </td>
 
@@ -2785,8 +2785,8 @@ export default function PersonalAdminPage() {
                           ? (item.estado_aprobacion === 'aprobado' ? 'Aprobado' : item.estado_aprobacion === 'en_revision' ? 'En revisión' : 'Pendiente')
                           : 'Registro manual'}
                       </td>
-                      <td className="p-3 align-middle">
-                        <div className="mx-auto flex w-full max-w-[180px] flex-col items-stretch gap-2">
+                      <td className="min-w-[160px] p-3 align-middle">
+                        <div className="mx-auto flex w-full min-w-[136px] max-w-[180px] flex-col items-stretch gap-2">
                           <Link href={`/admin/personal/${item.id}`} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-3 py-2 text-center text-xs font-semibold text-white hover:bg-[var(--primary-dark)]">
                             <i className="fas fa-file-alt" aria-hidden="true"></i> Administrar
                           </Link>
@@ -2807,7 +2807,7 @@ export default function PersonalAdminPage() {
               </tbody>
 
             </table>
-
+            </div>
           </MarcoTabla>
 
         </div>
