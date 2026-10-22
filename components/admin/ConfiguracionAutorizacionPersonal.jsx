@@ -46,10 +46,21 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
       setEmpresa(data.empresa||null)
       setPlantilla(data.plantilla||'')
       setCodigo('')
-      if(!(data.versiones||[]).length) {
-        const base=desdeTexto(data.plantilla)
+      const versionesRecibidas = data.versiones || []
+      const versionVigente = versionesRecibidas.find(v => v.vigente)
+      if (versionVigente?.contenido) {
+        // Mostrar siempre el texto realmente publicado del CEA, en solo lectura.
+        // No modificar versiones ni reemplazarlas por la plantilla del código.
+        const base = desdeTexto(versionVigente.contenido)
         setNombre(base.nombre)
         setSecciones(base.secciones)
+        setVersion(versionVigente.version)
+        setModo('actual')
+      } else if (!versionesRecibidas.length) {
+        const base = desdeTexto(data.plantilla)
+        setNombre(base.nombre)
+        setSecciones(base.secciones)
+        setModo('nuevo')
       }
       setMensaje('')
       return true
