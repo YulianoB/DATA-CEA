@@ -87,6 +87,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
     if(!nombre.trim()||!version.trim()||!fechaEdicion||!fechaVigencia||secciones.some(s=>!s.titulo.trim()||!s.contenido.trim())){mostrarResultado('error','Complete el nombre, el título y el contenido de todas las secciones.');return}
     const contenido=construir(nombre,secciones)
     if(contenido.length<100){mostrarResultado('error','El documento debe tener al menos 100 caracteres.');return}
+    setRevisionInicial(false)
     setConfirmarPublicacion(true)
   }
   async function confirmarYPublicar(){
