@@ -6,6 +6,7 @@ import {
 
 import { respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
 import { obtenerContextoCEA } from '@/lib/autorizacionCEA'
+import { PLANTILLA_CODIGO_CONDUCTA_CEA } from '@/lib/plantillas-cea/codigo-conducta'
 
 
 // ============================================================
@@ -929,15 +930,6 @@ export async function GET(
         supabase
       )
 
-    if (
-      !documento
-    ) {
-      return respuestaError(
-        'No existe la configuración documental del Código de Conducta.',
-        404
-      )
-    }
-
     const [
       secciones,
       versiones,
@@ -953,6 +945,10 @@ export async function GET(
           documento.id
         ),
       ])
+
+    const borradorInicial = !documento?.version || !documento?.fecha_edicion || !documento?.vigencia || secciones.length === 0
+    const documentoVista = documento || { id: null, tipo_documento: TIPO_DOCUMENTO, nombre_documento: PLANTILLA_CODIGO_CONDUCTA_CEA.nombre_documento, codigo: null, version: null, fecha_edicion: null, vigencia: null, activo: false }
+    const seccionesVista = borradorInicial && !secciones.length ? PLANTILLA_CODIGO_CONDUCTA_CEA.secciones.map((c,i)=>({ ...c, id: -(i+1) })) : secciones
 
     return respuestaOk({
       empresa: {
@@ -972,9 +968,10 @@ export async function GET(
           ),
       },
 
-      documento,
+      documento: documentoVista,
+      borrador_inicial: borradorInicial,
 
-      secciones,
+      secciones: seccionesVista,
 
       versiones,
     })
@@ -1302,6 +1299,66 @@ export async function POST(
         body
       )
 
+
+    if (accion === 'aprobar_plantilla_inicial') {
+      const actual = await obtenerDocumento(supabase)
+      const seccionesActuales = await obtenerSecciones(supabase, false)
+      
+      if (actual?.version && actual?.fecha_edicion && actual?.vigencia && seccionesActuales.length) {
+        return respuestaError('Ya existe una versión configurada. Utilice el control de versiones.', 409)
+      }
+      const nombre = texto(body?.nombre_documento)
+      const version = texto(body?.version)
+      const fechaEdicion = texto(body?.fecha_edicion)
+      const vigencia = texto(body?.vigencia)
+      const contenido = Array.isArray(body?.secciones) ? body.secciones : []
+      if (!nombre || !version || !/^\d{4}-\d{2}-\d{2}$/.test(fechaEdicion) ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(vigencia) || !contenido.length ||
+          contenido.some(v => !texto(v?.titulo) || !texto(v?.contenido))) {
+        return respuestaError('Revise nombre, versión, ambas fechas y todas las secciones. El código es opcional.', 400)
+      }
+      
+      // No insertar ninguna plantilla durante GET: solo se guarda al aprobar.
+      const fecha = new Date().toISOString()
+      const documentoPayload = {
+        tipo_documento: TIPO_DOCUMENTO,
+        nombre_documento: nombre,
+        codigo: texto(body?.codigo) || null,
+        version, fecha_edicion: fechaEdicion, vigencia,
+        activo: true, usuario_actualizacion: usuario, updated_at: fecha,
+      }
+      
+      if (!seccionesActuales.length) {
+        const { error: errorSecciones } = await supabase
+          .from('configuracion_codigo_conducta_secciones')
+          .insert(contenido.map((v,i)=>({
+            titulo: texto(v.titulo), contenido: texto(v.contenido), orden: i+1,
+            activo: v.activo !== false, usuario_actualizacion: usuario,
+            created_at: fecha, updated_at: fecha,
+          })))
+        if (errorSecciones) throw errorSecciones
+      } else {
+        // Al aprobar una ficha con secciones existentes, mantener sus registros:
+        // nunca sustituir contenido institucional de manera silenciosa.
+        if (contenido.length !== seccionesActuales.length) return respuestaError('Existen secciones previas. Revise su configuración antes de aprobar.',409)
+        for (let i=0;i<contenido.length;i++){
+          const {error} = await supabase.from('configuracion_codigo_conducta_secciones')
+            .update({titulo:texto(contenido[i].titulo),contenido:texto(contenido[i].contenido),updated_at:fecha})
+            .eq('id',seccionesActuales[i].id)
+          if(error) throw error
+        }
+      }
+      if (actual) {
+        const { error } = await supabase.from('configuracion_documentos')
+          .update(documentoPayload).eq('id',actual.id).eq('tipo_documento',TIPO_DOCUMENTO)
+        if(error) throw error
+      } else {
+        const { error } = await supabase.from('configuracion_documentos')
+          .insert({...documentoPayload, created_at: fecha})
+        if(error) throw error
+      }
+      return respuestaOk({ message: 'Versión inicial aprobada y guardada en la base del CEA.' }, 201)
+    }
 
     // ========================================================
     // CREAR NUEVA VERSIÓN
