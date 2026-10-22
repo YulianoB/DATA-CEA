@@ -73,7 +73,7 @@ export default function RevisionPlantillaInicialDocumento({tipo,nitEmpresa}) {
           <h3 className="font-bold text-slate-900">Secciones del documento</h3>
           {plantilla.secciones.map((s,i)=><div key={i} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
             <label className={label}>Sección {i+1}<input className={control+' mt-1 font-bold'} value={s.titulo} onChange={e=>seccion(i,'titulo',e.target.value)}/></label>
-            <label className={label}>Contenido<textarea rows={6} className={control+' mt-1 leading-relaxed'} value={s.contenido} onChange={e=>seccion(i,'contenido',e.target.value)}/></label>
+            <label className={label}>Contenido<textarea rows={6} className={control+' mt-1 font-normal leading-relaxed'} value={s.contenido} onChange={e=>seccion(i,'contenido',e.target.value)}/></label>
           </div>)}
           {tipo==='AUTORIZACION_DATOS_CEA'&&<>
             <h3 className="font-bold text-slate-900">Configuración general</h3>
