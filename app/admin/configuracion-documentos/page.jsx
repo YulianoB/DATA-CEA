@@ -963,13 +963,13 @@ export default function ConfiguracionDocumentosPage() {
     )
 
     try {
-      await Promise.all(
-        [
-          cargarConfiguracion(),
-          cargarLogo(),
-          cargarContrato(),
-        ]
-      )
+      // Cargar primero la lista de documentos para evitar que la
+      // respuesta base sustituya por carrera el borrador del contrato.
+      await cargarConfiguracion()
+      await Promise.all([
+        cargarLogo(),
+        cargarContrato(),
+      ])
 
       await Promise.all(
         [
