@@ -2726,9 +2726,8 @@ export default function PersonalAdminPage() {
                       </td>
 
                       <td className="break-words px-2 py-3 font-semibold">
-                        {`${item.nombres || ''} ${item.apellidos || ''}`.trim().split(/\s+/).filter(Boolean).map((palabra, indice) => (
-                          <span key={indice} className="block">{palabra}</span>
-                        ))}
+                        <span className="block break-words">{(item.nombres || '').trim()}</span>
+                        <span className="block break-words">{(item.apellidos || '').trim()}</span>
                       </td>
 
                       <td className="break-words px-2 py-3">
