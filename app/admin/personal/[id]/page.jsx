@@ -202,10 +202,15 @@ export default function HojaVidaPersonalPage() {
   const [departamentosEdicion, setDepartamentosEdicion] = useState([])
   const [resultadoModal, setResultadoModal] = useState(null)
   const [cierreEditorPendiente, setCierreEditorPendiente] = useState(false)
+  const [cierreGeneralPendiente, setCierreGeneralPendiente] = useState(false)
   const [editorCerradoVersion, setEditorCerradoVersion] = useState(0)
   const mostrarResultado = (tipo, mensaje) => setResultadoModal({ tipo, mensaje: String(mensaje || '') })
   const aceptarResultado = () => {
     setResultadoModal(null)
+    if (cierreGeneralPendiente) {
+      setCierreGeneralPendiente(false)
+      setEditarGeneralAbierto(false)
+    }
     if (cierreEditorPendiente) {
       setCierreEditorPendiente(false)
       setEditorCerradoVersion((version) => version + 1)
@@ -622,7 +627,7 @@ export default function HojaVidaPersonalPage() {
       const result = await response.json()
       if (!response.ok || result.status !== 'success') throw new Error(result.message || 'No fue posible actualizar la información.')
       setData((prev) => ({ ...prev, personal: { ...prev.personal, ...result.personal } }))
-      setEditarGeneralAbierto(false)
+      setCierreGeneralPendiente(true)
       mostrarResultado('exito', 'Información general actualizada correctamente.')
     } catch (error) {
       mostrarResultado('error', error.message || 'No fue posible guardar los cambios.')
@@ -1096,16 +1101,15 @@ export default function HojaVidaPersonalPage() {
         return
       }
 
-      mostrarResultado('exito', 
-        formLicencia.id
-          ? result?.operacion === 'recategorizacion'
-            ? 'Recategorización registrada. El historial anterior se conserva.'
-            : 'Renovación registrada. El historial anterior se conserva.'
-          : 'Licencia registrada correctamente.'
-      )
-
+      const mensajeExito = formLicencia.id
+        ? result?.operacion === 'recategorizacion'
+          ? 'Recategorización registrada. El historial anterior se conserva.'
+          : 'Renovación registrada. El historial anterior se conserva.'
+        : 'Licencia registrada correctamente.'
       setFormLicencia(LICENCIA_INICIAL)
       await cargarLicencias()
+      setCierreEditorPendiente(true)
+      mostrarResultado('exito', mensajeExito)
     } catch (error) {
       console.error(
         'Error de conexión guardando licencia:',
