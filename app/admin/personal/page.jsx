@@ -2631,9 +2631,9 @@ export default function PersonalAdminPage() {
 
           <MarcoTabla className="min-w-0 rounded-t-none">
             <div className="w-full max-w-full overflow-x-auto overflow-y-hidden pb-2" role="region" aria-label="Tabla de personal registrado; desplácese horizontalmente para ver todas las columnas" tabIndex={0}>
-            <table className="w-full min-w-[1050px] table-fixed text-[11px] leading-snug">
+            <table className="w-full min-w-[950px] table-fixed text-[11px] leading-snug">
               <colgroup>
-                {[8, 12, 10, 7, 19, 8, 8, 7, 9, 12].map((ancho, indice) => (
+                {[8, 11, 11, 19, 9, 18, 7, 8, 9].map((ancho, indice) => (
                   <col key={indice} style={{ width: `${ancho}%` }} />
                 ))}
               </colgroup>
@@ -2651,10 +2651,6 @@ export default function PersonalAdminPage() {
 
                   <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Cargo
-                  </th>
-
-                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
-                    Grupo
                   </th>
 
                   <th className="px-2 py-3 text-left font-bold whitespace-normal">
@@ -2691,7 +2687,7 @@ export default function PersonalAdminPage() {
                   <tr>
 
                     <td
-                      colSpan="10"
+                      colSpan="9"
                       className="p-4 text-center text-gray-500"
                     >
                       Cargando listado...
@@ -2705,7 +2701,7 @@ export default function PersonalAdminPage() {
                   <tr>
 
                     <td
-                      colSpan="10"
+                      colSpan="9"
                       className="p-4 text-center text-gray-500"
                     >
                       No hay personal registrado.
@@ -2730,17 +2726,13 @@ export default function PersonalAdminPage() {
                       </td>
 
                       <td className="break-words px-2 py-3 font-semibold">
-                        {`${item.nombres || ''} ${
-                          item.apellidos || ''
-                        }`.trim()}
+                        {`${item.nombres || ''} ${item.apellidos || ''}`.trim().split(/\s+/).filter(Boolean).map((palabra, indice) => (
+                          <span key={indice} className="block">{palabra}</span>
+                        ))}
                       </td>
 
                       <td className="break-words px-2 py-3">
                         {item.cargo || '-'}
-                      </td>
-
-                      <td className="break-words px-2 py-3">
-                        {item.grupo_personal || '-'}
                       </td>
 
                       <td className="break-all px-2 py-3">
@@ -2751,14 +2743,14 @@ export default function PersonalAdminPage() {
                         {item.cuenta?.estado || 'sin acceso'}
                       </td>
 
-                      <td className="break-words px-2 py-3">
+                      <td className="px-1.5 py-3 text-left align-middle text-[8px] leading-tight [overflow-wrap:anywhere]">
 
                         {(item.perfiles || []).length ===
                         0 ? (
                           '-'
                         ) : (
 
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex min-w-0 flex-col items-start gap-1">
 
                             {item.perfiles.map(
                               (perfil) => (
@@ -2767,7 +2759,7 @@ export default function PersonalAdminPage() {
                                 key={
                                   perfil.id
                                 }
-                                className="px-2 py-1 rounded bg-gray-100 border text-xs"
+                                className="inline-block max-w-full whitespace-normal break-all rounded border bg-gray-100 px-1 py-0.5 text-left text-[8px] font-normal leading-tight"
                               >
                                 {perfil.rol}
                               </span>
