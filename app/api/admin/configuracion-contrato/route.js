@@ -1931,14 +1931,7 @@ export async function POST(
       // Solo se actúa dentro del Supabase correspondiente a la sesión validada.
       const doc = await obtenerDocumento(supabase)
       const conf = await obtenerConfiguracion(supabase, nombre)
-      const { error: eDoc } = await supabase
-        .from('configuracion_documentos')
-        .update({
-          nombre_documento: nombre, codigo, version,
-          fecha_edicion: fechaEdicion, vigencia,
-          activo: true, updated_at: new Date().toISOString(),
-        }).eq('id', doc.id)
-      if (eDoc) throw eDoc
+
       const { error: eConf } = await supabase
         .from('configuracion_contrato')
         .update({
@@ -1959,6 +1952,17 @@ export async function POST(
         .from('configuracion_contrato_clausulas')
         .upsert(filas, { onConflict: 'configuracion_contrato_id,orden' })
       if (eClauses) throw eClauses
+
+      // Publicar la versión solo cuando el contenido y las cláusulas se guardaron.
+      // Si falla un paso anterior, la ficha permanece pendiente de aprobación.
+      const { error: eDoc } = await supabase
+        .from('configuracion_documentos')
+        .update({
+          nombre_documento: nombre, codigo, version,
+          fecha_edicion: fechaEdicion, vigencia,
+          activo: true, updated_at: new Date().toISOString(),
+        }).eq('id', doc.id)
+      if (eDoc) throw eDoc
       return NextResponse.json({
         ok: true, message: 'Contrato revisado, aprobado y guardado en este CEA.',
       })
