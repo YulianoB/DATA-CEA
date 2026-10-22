@@ -2633,7 +2633,7 @@ export default function PersonalAdminPage() {
             <div className="w-full max-w-full overflow-x-auto overflow-y-hidden pb-2" role="region" aria-label="Tabla de personal registrado; desplácese horizontalmente para ver todas las columnas" tabIndex={0}>
             <table className="w-full min-w-[950px] table-fixed text-[11px] leading-snug">
               <colgroup>
-                {[8, 11, 10, 6, 17, 9, 17, 6, 7, 9].map((ancho, indice) => (
+                {[8, 11, 10, 8, 20, 9, 12, 6, 7, 9].map((ancho, indice) => (
                   <col key={indice} style={{ width: `${ancho}%` }} />
                 ))}
               </colgroup>
