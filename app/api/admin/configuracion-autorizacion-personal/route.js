@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { obtenerSupabaseAdminEmpresaDesdeRequest } from '@/lib/supabaseEmpresaServer'
+import { obtenerContextoCEA } from '@/lib/autorizacionCEA'
 import { resolverMarcadoresPersonal, PLANTILLA_AUTORIZACION_PERSONAL } from '@/lib/autorizacionPersonalDocumento'
 
 export const runtime = 'nodejs'
@@ -10,7 +10,7 @@ const json = (body, status = 200) => NextResponse.json(body, { status, headers: 
 
 export async function GET(request) {
   try {
-    const { supabaseAdmin, empresa } = await obtenerSupabaseAdminEmpresaDesdeRequest(request)
+    const { supabaseAdmin, empresa } = await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'] })
     const { data, error } = await supabaseAdmin.from('autorizacion_personal_versiones').select(CAMPOS).order('fecha_publicacion', { ascending: false })
     if (error) throw error
     return json({
@@ -28,7 +28,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { supabaseAdmin } = await obtenerSupabaseAdminEmpresaDesdeRequest(request)
+    const { supabaseAdmin } = await obtenerContextoCEA(request, { rolesPermitidos: ['ADMINISTRATIVO'] })
     const body = await request.json()
     const version = typeof body.version === 'string' ? body.version.trim() : ''
     const contenido = typeof body.contenido === 'string' ? body.contenido.trim() : ''
