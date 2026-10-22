@@ -6,6 +6,7 @@ import {
 
 import { respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
 import { obtenerContextoCEA } from '@/lib/autorizacionCEA'
+import { PLANTILLA_AUTORIZACION_DATOS_CEA } from '@/lib/plantillas-cea/autorizacion-datos'
 
 
 // ============================================================
@@ -1213,29 +1214,17 @@ export async function GET(
         ),
       ])
 
-    if (
-      !documento
-    ) {
-      return respuestaError(
-        'No existe la configuración documental de la Autorización para el Tratamiento de Datos Personales.',
-        404
-      )
-    }
-
-    if (
-      !configuracion
-    ) {
-      return respuestaError(
-        'No existe la configuración GENERAL de la Autorización para el Tratamiento de Datos Personales.',
-        404
-      )
-    }
-
     const versiones =
       await obtenerVersiones(
         supabase,
         documento.id
       )
+
+    const borradorInicial = !documento?.version || !documento?.fecha_edicion || !documento?.vigencia || !configuracion || secciones.length === 0
+    const documentoVista = documento || { id: null, tipo_documento: TIPO_DOCUMENTO, nombre_documento: PLANTILLA_AUTORIZACION_DATOS_CEA.nombre_documento, codigo: null, version: null, fecha_edicion: null, vigencia: null, activo: false }
+    const configuracionVista = borradorInicial ? { ...PLANTILLA_AUTORIZACION_DATOS_CEA.configuracion, ...(configuracion || {}) } : configuracion
+    const seccionesVista = borradorInicial && !secciones.length ? PLANTILLA_AUTORIZACION_DATOS_CEA.secciones.map((v,i)=>({...v,id: -(i+1)})) : secciones
+    const finalidadesVista = finalidades
 
     return respuestaOk({
       empresa: {
@@ -1259,13 +1248,14 @@ export async function GET(
           ),
       },
 
-      documento,
+      documento: documentoVista,
+      borrador_inicial: borradorInicial,
 
-      configuracion,
+      configuracion: configuracionVista,
 
-      secciones,
+      secciones: seccionesVista,
 
-      finalidades,
+      finalidades: finalidadesVista,
 
       versiones,
     })
@@ -1863,6 +1853,86 @@ export async function POST(
       new Date()
         .toISOString()
 
+
+    if (accion === 'aprobar_plantilla_inicial') {
+      const actual = await obtenerDocumento(supabase)
+      const seccionesActuales = await obtenerSecciones(supabase, false)
+      const configuracionActual = await obtenerConfiguracionGeneral(supabase)
+      const finalidadesActuales = await obtenerFinalidades(supabase, false)
+      if (actual?.version && actual?.fecha_edicion && actual?.vigencia && configuracionActual && seccionesActuales.length) {
+        return respuestaError('Ya existe una versión configurada. Utilice el control de versiones.', 409)
+      }
+      const nombre = texto(body?.nombre_documento)
+      const version = texto(body?.version)
+      const fechaEdicion = texto(body?.fecha_edicion)
+      const vigencia = texto(body?.vigencia)
+      const contenido = Array.isArray(body?.secciones) ? body.secciones : []
+      if (!nombre || !version || !/^\d{4}-\d{2}-\d{2}$/.test(fechaEdicion) ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(vigencia) || !contenido.length ||
+          contenido.some(v => !texto(v?.titulo) || !texto(v?.contenido))) {
+        return respuestaError('Revise nombre, versión, ambas fechas y todas las secciones. El código es opcional.', 400)
+      }
+      const cfgBody = body?.configuracion || {}
+      if (!texto(cfgBody.texto_datos_biometricos) || !texto(cfgBody.texto_menores_edad) || !texto(cfgBody.texto_declaracion_final)) {
+        return respuestaError('Complete los textos sobre datos sensibles, menores y declaración final.',400)
+      }
+      // No insertar ninguna plantilla durante GET: solo se guarda al aprobar.
+      const fecha = new Date().toISOString()
+      const documentoPayload = {
+        tipo_documento: TIPO_DOCUMENTO,
+        nombre_documento: nombre,
+        codigo: texto(body?.codigo) || null,
+        version, fecha_edicion: fechaEdicion, vigencia,
+        activo: true, usuario_actualizacion: usuario, updated_at: fecha,
+      }
+      const confPayload = {
+        clave: CLAVE_CONFIGURACION,
+        correo_proteccion_datos: texto(cfgBody.correo_proteccion_datos) || null,
+        telefono_contacto: texto(cfgBody.telefono_contacto) || null,
+        direccion_contacto: texto(cfgBody.direccion_contacto) || null,
+        medio_politica: texto(cfgBody.medio_politica) || null,
+        texto_datos_biometricos: texto(cfgBody.texto_datos_biometricos),
+        texto_menores_edad: texto(cfgBody.texto_menores_edad),
+        texto_declaracion_final: texto(cfgBody.texto_declaracion_final),
+        activo: true, usuario_actualizacion: usuario, updated_at: fecha,
+      }
+      if (!configuracionActual) confPayload.created_at = fecha
+      const { error: errorCfg } = configuracionActual
+        ? await supabase.from('configuracion_autorizacion_datos').update(confPayload).eq('id', configuracionActual.id)
+        : await supabase.from('configuracion_autorizacion_datos').insert(confPayload)
+      if (errorCfg) throw errorCfg
+      
+      if (!seccionesActuales.length) {
+        const { error: errorSecciones } = await supabase
+          .from(TABLA_SECCIONES)
+          .insert(contenido.map((v,i)=>({
+            titulo: texto(v.titulo), contenido: texto(v.contenido), orden: i+1,
+            activo: v.activo !== false, usuario_actualizacion: usuario,
+            created_at: fecha, updated_at: fecha,
+          })))
+        if (errorSecciones) throw errorSecciones
+      } else {
+        // Al aprobar una ficha con secciones existentes, mantener sus registros:
+        // nunca sustituir contenido institucional de manera silenciosa.
+        if (contenido.length !== seccionesActuales.length) return respuestaError('Existen secciones previas. Revise su configuración antes de aprobar.',409)
+        for (let i=0;i<contenido.length;i++){
+          const {error} = await supabase.from(TABLA_SECCIONES)
+            .update({titulo:texto(contenido[i].titulo),contenido:texto(contenido[i].contenido),updated_at:fecha})
+            .eq('id',seccionesActuales[i].id)
+          if(error) throw error
+        }
+      }
+      if (actual) {
+        const { error } = await supabase.from('configuracion_documentos')
+          .update(documentoPayload).eq('id',actual.id).eq('tipo_documento',TIPO_DOCUMENTO)
+        if(error) throw error
+      } else {
+        const { error } = await supabase.from('configuracion_documentos')
+          .insert({...documentoPayload, created_at: fecha})
+        if(error) throw error
+      }
+      return respuestaOk({ message: 'Versión inicial aprobada y guardada en la base del CEA.' }, 201)
+    }
 
     // ========================================================
     // CREAR NUEVA VERSIÓN
