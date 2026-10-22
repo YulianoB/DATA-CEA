@@ -2631,48 +2631,52 @@ export default function PersonalAdminPage() {
 
           <MarcoTabla className="min-w-0 rounded-t-none">
             <div className="w-full max-w-full overflow-x-auto overflow-y-hidden pb-2" role="region" aria-label="Tabla de personal registrado; desplácese horizontalmente para ver todas las columnas" tabIndex={0}>
-            <table className="w-full min-w-[1380px] text-[11px] leading-snug">
-
+            <table className="w-full min-w-[1050px] table-fixed text-[11px] leading-snug">
+              <colgroup>
+                {[8, 12, 10, 7, 19, 8, 8, 7, 9, 12].map((ancho, indice) => (
+                  <col key={indice} style={{ width: `${ancho}%` }} />
+                ))}
+              </colgroup>
               <thead>
 
                 <tr>
 
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Documento
                   </th>
 
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Nombre
                   </th>
 
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Cargo
                   </th>
 
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Grupo
                   </th>
 
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Correo
                   </th>
 
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Cuenta
                   </th>
 
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Perfiles
                   </th>
 
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Estado
                   </th>
 
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Aprobación
                   </th>
-                  <th className="text-left p-3 font-bold whitespace-nowrap">
+                  <th className="px-2 py-3 text-left font-bold whitespace-normal">
                     Acciones
                   </th>
 
@@ -2721,33 +2725,33 @@ export default function PersonalAdminPage() {
                       className="hover:bg-slate-50 transition-colors"
                     >
 
-                      <td className="p-3">
+                      <td className="break-words px-2 py-3">
                         {item.documento}
                       </td>
 
-                      <td className="p-3 font-semibold">
+                      <td className="break-words px-2 py-3 font-semibold">
                         {`${item.nombres || ''} ${
                           item.apellidos || ''
                         }`.trim()}
                       </td>
 
-                      <td className="p-3">
+                      <td className="break-words px-2 py-3">
                         {item.cargo || '-'}
                       </td>
 
-                      <td className="p-3">
+                      <td className="break-words px-2 py-3">
                         {item.grupo_personal || '-'}
                       </td>
 
-                      <td className="min-w-[240px] max-w-[320px] break-all p-3">
+                      <td className="break-all px-2 py-3">
                         {item.email || '-'}
                       </td>
 
-                      <td className="p-3">
+                      <td className="break-words px-2 py-3">
                         {item.cuenta?.estado || 'sin acceso'}
                       </td>
 
-                      <td className="p-3">
+                      <td className="break-words px-2 py-3">
 
                         {(item.perfiles || []).length ===
                         0 ? (
@@ -2776,22 +2780,22 @@ export default function PersonalAdminPage() {
 
                       </td>
 
-                      <td className="p-3">
+                      <td className="break-words px-2 py-3">
                         {item.estado || '-'}
                       </td>
 
-                      <td className="p-3">
+                      <td className="break-words px-2 py-3">
                         {item.origen_registro === 'formulario_publico'
                           ? (item.estado_aprobacion === 'aprobado' ? 'Aprobado' : item.estado_aprobacion === 'en_revision' ? 'En revisión' : 'Pendiente')
                           : 'Registro manual'}
                       </td>
-                      <td className="min-w-[160px] p-3 align-middle">
-                        <div className="mx-auto flex w-full min-w-[136px] max-w-[180px] flex-col items-stretch gap-2">
-                          <Link href={`/admin/personal/${item.id}`} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-3 py-2 text-center text-xs font-semibold text-white hover:bg-[var(--primary-dark)]">
+                      <td className="px-2 py-3 align-middle">
+                        <div className="mx-auto flex w-full min-w-0 flex-col items-stretch gap-1.5">
+                          <Link href={`/admin/personal/${item.id}`} className="inline-flex w-full items-center justify-center gap-1 rounded-md bg-[var(--primary)] px-1.5 py-2 text-center text-[11px] font-semibold text-white hover:bg-[var(--primary-dark)]">
                             <i className="fas fa-file-alt" aria-hidden="true"></i> Administrar
                           </Link>
                           {item.cuenta ? (
-                            <button type="button" onClick={() => solicitarCambioAcceso(item)} disabled={cambiandoAccesoId === item.id} className={`inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-center text-xs font-semibold text-white disabled:opacity-50 ${['activo', 'pre_autorizado'].includes(item.cuenta.estado) ? 'bg-red-700 hover:bg-red-800' : 'bg-[#194567] hover:bg-[#12344e]'}`} title="Cambiar acceso sin modificar el estado laboral">
+                            <button type="button" onClick={() => solicitarCambioAcceso(item)} disabled={cambiandoAccesoId === item.id} className={`inline-flex w-full items-center justify-center gap-1 rounded-md px-1.5 py-2 text-center text-[11px] font-semibold text-white disabled:opacity-50 ${['activo', 'pre_autorizado'].includes(item.cuenta.estado) ? 'bg-red-700 hover:bg-red-800' : 'bg-[#194567] hover:bg-[#12344e]'}`} title="Cambiar acceso sin modificar el estado laboral">
                               <i className={`fas ${['activo', 'pre_autorizado'].includes(item.cuenta.estado) ? 'fa-user-lock' : 'fa-user-check'}`} aria-hidden="true"></i>
                               {cambiandoAccesoId === item.id ? 'Procesando...' : ['activo', 'pre_autorizado'].includes(item.cuenta.estado) ? 'Inactivar' : 'Activar'}
                             </button>
