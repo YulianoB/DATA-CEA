@@ -455,6 +455,9 @@ export default function ConfiguracionDocumentosPage() {
       ''
     )
 
+  const [borradorContrato, setBorradorContrato] = useState(false)
+  const [mostrarRevisionContrato, setMostrarRevisionContrato] = useState(false)
+  const [aprobandoContrato, setAprobandoContrato] = useState(false)
   const [confirmacionPendiente, setConfirmacionPendiente] = useState(null)
   const [modalAviso, setModalAviso] = useState(null)
 
@@ -1272,6 +1275,9 @@ export default function ConfiguracionDocumentosPage() {
         }
       )
     }
+
+    setBorradorContrato(Boolean(data?.borrador_inicial))
+    if (data?.borrador_inicial) setMostrarRevisionContrato(true)
 
     setConfiguracionContrato(
       {
@@ -3951,6 +3957,51 @@ export default function ConfiguracionDocumentosPage() {
     )
   }
 
+
+  async function aprobarBorradorContrato() {
+    const doc = documentos.find(item => item?.tipo_documento === 'CONTRATO')
+    if (!doc) return
+    if (!doc.codigo?.trim() || !doc.version?.trim() ||
+        !doc.fecha_edicion || !doc.vigencia ||
+        !configuracionContrato.texto_introductorio?.trim() ||
+        !configuracionContrato.texto_final?.trim() ||
+        !clausulasContrato.length ||
+        clausulasContrato.some(c => !c.titulo?.trim() || !c.contenido?.trim())) {
+      setError('Complete código, fechas, versión y revise los textos y cláusulas antes de aprobar.')
+      return
+    }
+    if (!await solicitarConfirmacion('¿Confirma que revisó el contenido y desea aprobar y guardar la versión inicial del contrato de este CEA?')) return
+    setAprobandoContrato(true)
+    try {
+      const response = await fetch('/api/admin/configuracion-contrato', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-cea-nit': nitEmpresa },
+        body: JSON.stringify({
+          nit: nitEmpresa, accion: 'APROBAR_PLANTILLA_INICIAL',
+          nombre_documento: doc.nombre_documento,
+          codigo: doc.codigo, version: doc.version,
+          fecha_edicion: doc.fecha_edicion, vigencia: doc.vigencia,
+          texto_introductorio: configuracionContrato.texto_introductorio,
+          texto_final: configuracionContrato.texto_final,
+          mostrar_foto: configuracionContrato.mostrar_foto,
+          mostrar_huella: configuracionContrato.mostrar_huella,
+          clausulas: clausulasContrato.map(c => ({
+            titulo: c.titulo, contenido: c.contenido, activo: c.activo,
+          })),
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok || !data.ok) throw new Error(data.error || 'No fue posible aprobar el contrato.')
+      setMostrarRevisionContrato(false)
+      setBorradorContrato(false)
+      await cargarContrato()
+      setMensaje('Contrato inicial aprobado y guardado para este CEA.')
+    } catch (e) {
+      setError(e.message || 'No fue posible aprobar el contrato.')
+    } finally {
+      setAprobandoContrato(false)
+    }
+  }
 
   async function guardarConfiguracionContrato() {
     const contratoDocumento =
@@ -7077,6 +7128,60 @@ export default function ConfiguracionDocumentosPage() {
           </div>
         )}
 
+        {mostrarRevisionContrato && borradorContrato && (
+          <div className="fixed inset-0 z-[82] flex items-center justify-center bg-slate-950/65 p-3 sm:p-6">
+            <div role="dialog" aria-modal="true" aria-label="Revisar y aprobar contrato inicial" className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+              <div className="bg-sky-900 px-5 py-4 text-white">
+                <h2 className="text-lg font-bold">Plantilla inicial de contrato — Pendiente de aprobación</h2>
+                <p className="mt-1 text-sm text-blue-100">Revise y edite el contenido según su CEA. Hasta aprobarlo, esta plantilla es solo un borrador y no se guardará como documento institucional.</p>
+              </div>
+              <div className="space-y-5 overflow-y-auto p-5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    ['nombre_documento', 'Nombre del documento', 'text'],
+                    ['codigo', 'Código', 'text'],
+                    ['fecha_edicion', 'Fecha de elaboración', 'date'],
+                    ['version', 'Versión', 'text'],
+                    ['vigencia', 'Fecha de vigencia / publicación', 'date'],
+                  ].map(([campo, etiqueta, tipo]) => (
+                    <label key={campo} className={campo === 'nombre_documento' ? 'sm:col-span-2' : ''}>
+                      <span className="mb-1 block text-xs font-semibold text-slate-700">{etiqueta}</span>
+                      <input type={tipo} value={documentos.find(d => d.tipo_documento === 'CONTRATO')?.[campo] || ''} onChange={e => actualizarDocumentoEstado(campo, e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                    </label>
+                  ))}
+                </div>
+                {[
+                  ['texto_introductorio', 'Texto introductorio'],
+                  ['texto_final', 'Texto final'],
+                ].map(([campo, titulo]) => (
+                  <label key={campo} className="block">
+                    <span className="mb-1 block text-sm font-bold text-slate-800">{titulo}</span>
+                    <textarea rows={6} value={configuracionContrato[campo] || ''} onChange={e => actualizarContratoEstado(campo, e.target.value)} className="w-full rounded-lg border border-slate-300 p-3 text-sm" />
+                  </label>
+                ))}
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-slate-900">Cláusulas del contrato</h3>
+                  <button type="button" onClick={() => setClausulasContrato(v => [...v, { id: -Date.now(), titulo: '', contenido: '', activo: true }])} className="rounded-lg border border-blue-300 px-3 py-2 text-xs font-bold text-blue-900">Agregar cláusula</button>
+                </div>
+                {clausulasContrato.map((c, index) => (
+                  <div key={c.id ?? index} className="rounded-lg border border-slate-300 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold">Cláusula {index + 1}</span>
+                      <button type="button" onClick={() => setClausulasContrato(v => v.filter((_, i) => i !== index))} className="text-xs font-semibold text-red-700">Quitar</button>
+                    </div>
+                    <input aria-label={`Título cláusula ${index+1}`} value={c.titulo || ''} onChange={e => actualizarClausulaLocal(c.id, 'titulo', e.target.value)} className="mb-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                    <textarea aria-label={`Contenido cláusula ${index+1}`} rows={5} value={c.contenido || ''} onChange={e => actualizarClausulaLocal(c.id, 'contenido', e.target.value)} className="w-full rounded-lg border border-slate-300 p-3 text-sm" />
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 p-4">
+                <button type="button" onClick={() => setMostrarRevisionContrato(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold">Cerrar sin aprobar</button>
+                <button type="button" disabled={aprobandoContrato} onClick={aprobarBorradorContrato} className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{aprobandoContrato ? 'Guardando...' : 'Aprobar y guardar contrato'}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ModalResultado
           abierto={Boolean(modalAviso)}
           tipo={modalAviso?.tipo}
@@ -7277,7 +7382,9 @@ export default function ConfiguracionDocumentosPage() {
                 los datos propios de este documento.
               </p>
                 </div>
-                {!modoEdicionDocumento && (
+                {pestanaPrincipal === 'CONTRATO' && borradorContrato ? (
+                  <button type="button" onClick={() => setMostrarRevisionContrato(true)} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-sky-900">Revisar y aprobar plantilla inicial</button>
+                ) : !modoEdicionDocumento && (
                   <div className="flex flex-wrap items-center gap-2">
                     <button type="button" onClick={abrirHistorialVersiones} className="rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20"><i className="fas fa-clock-rotate-left mr-2" />Versiones anteriores{versionesDocumentoActivo.length > 0 ? ` (${versionesDocumentoActivo.length})` : ''}</button>
                     <button type="button" onClick={abrirNuevaVersion} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800"><i className="fas fa-code-branch mr-2" />Crear nueva versión</button>
