@@ -940,10 +940,7 @@ export async function GET(
           false
         ),
 
-        obtenerVersiones(
-          supabase,
-          documento.id
-        ),
+        documento?.id ? obtenerVersiones(supabase, documento.id) : Promise.resolve([]),
       ])
 
     const borradorInicial = !documento?.version || !documento?.fecha_edicion || !documento?.vigencia || secciones.length === 0
