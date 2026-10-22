@@ -34,6 +34,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   const [confirmarPublicacion,setConfirmarPublicacion]=useState(false)
   const [resultadoPublicacion,setResultadoPublicacion]=useState(null)
   const [historica,setHistorica]=useState(null)
+  const [revisionInicial,setRevisionInicial]=useState(false)
   const [modo,setModo]=useState('nuevo')
   const cargar=useCallback(async()=>{
     if (!nitEmpresa) return
@@ -61,7 +62,9 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
         setNombre(base.nombre)
         setSecciones(base.secciones)
         setModo('nuevo')
+        setRevisionInicial(true)
       }
+      if (versionVigente) setRevisionInicial(false)
       setMensaje('')
       return true
     }catch(e){setMensaje(e.message);return false}
@@ -81,7 +84,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
     window.scrollTo({top:0,behavior:'smooth'})
   }
   function publicar(){
-    if(!nombre.trim()||secciones.some(s=>!s.titulo.trim()||!s.contenido.trim())){mostrarResultado('error','Complete el nombre, el título y el contenido de todas las secciones.');return}
+    if(!nombre.trim()||!version.trim()||!fechaEdicion||!fechaVigencia||secciones.some(s=>!s.titulo.trim()||!s.contenido.trim())){mostrarResultado('error','Complete el nombre, el título y el contenido de todas las secciones.');return}
     const contenido=construir(nombre,secciones)
     if(contenido.length<100){mostrarResultado('error','El documento debe tener al menos 100 caracteres.');return}
     setConfirmarPublicacion(true)
@@ -97,6 +100,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
       if(!r.ok||!d.ok)throw Error(d.mensaje||'No se pudo publicar.')
       const recargado=await cargar()
       setModo('actual')
+      setRevisionInicial(false)
       mostrarResultado('exito',recargado?'Versión publicada correctamente. El formulario público mostrará este documento.':'La versión fue publicada, pero no fue posible actualizar el historial. Recargue la página para consultar la versión vigente.')
     }catch(e){mostrarResultado('error',e.message||'No fue posible publicar la versión.')}finally{setGuardando(false)}
   }
@@ -107,6 +111,8 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   return <div className="space-y-5">
     <ModalResultado abierto={Boolean(resultadoPublicacion)} tipo={resultadoPublicacion?.tipo} titulo={resultadoPublicacion?.tipo==='exito'?'Publicación realizada':'No fue posible publicar'} mensaje={resultadoPublicacion?.mensaje} onCerrar={()=>setResultadoPublicacion(null)} />
     <ModalResultado abierto={confirmarPublicacion} tipo="confirmacion" titulo="Publicar nueva versión" mensaje="¿Desea publicar esta nueva versión? La versión anterior se conservará y la nueva quedará vigente." textoBoton="PUBLICAR" textoCancelar="CANCELAR" onCerrar={()=>setConfirmarPublicacion(false)} onConfirmar={confirmarYPublicar} />
+    {!cargando&&!vigente&&revisionInicial&&<div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/65 p-3"><section role="dialog" aria-modal="true" aria-label="Revisar y aprobar autorización inicial del personal" className="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"><header className="bg-teal-800 px-5 py-4 text-white"><h2 className="text-lg font-bold">Plantilla inicial de tratamiento de datos del personal — Pendiente de aprobación</h2><p className="mt-1 text-sm">Este borrador no se publicará hasta que usted lo revise y lo apruebe.</p></header><div className="space-y-4 overflow-y-auto p-5"><div className="grid gap-3 sm:grid-cols-2"><label className={etiqueta}>Nombre del documento<input className={input} value={nombre} onChange={e=>setNombre(e.target.value)}/></label><label className={etiqueta}>Código (opcional)<input className={input} value={codigo} onChange={e=>setCodigo(e.target.value)}/></label><label className={etiqueta}>Versión<input className={input} value={version} onChange={e=>setVersion(e.target.value)}/></label><label className={etiqueta}>Fecha de elaboración<input className={input} type="date" value={fechaEdicion} onChange={e=>setFechaEdicion(e.target.value)}/></label><label className={etiqueta}>Fecha de vigencia<input className={input} type="date" value={fechaVigencia} onChange={e=>setFechaVigencia(e.target.value)}/></label></div>{secciones.map((sec,i)=><div key={sec.id} className="rounded-lg border p-3"><label className={etiqueta}>Sección {i+1}<input className={input} value={sec.titulo} onChange={e=>modificar(sec.id,'titulo',e.target.value)}/></label><label className={etiqueta}>Contenido<textarea className={input+' min-h-36'} rows={6} value={sec.contenido} onChange={e=>modificar(sec.id,'contenido',e.target.value)}/></label></div>)}<button type="button" className={boton} onClick={()=>setSecciones(xs=>[...xs,nuevo()])}>Agregar sección</button></div><footer className="flex flex-wrap justify-end gap-2 border-t p-4"><button type="button" className={boton} onClick={()=>setRevisionInicial(false)}>Cerrar sin aprobar</button><button type="button" className="rounded-lg bg-emerald-700 px-4 py-2 font-bold text-white" onClick={publicar}>Revisar y aprobar versión inicial</button></footer></section></div>}
+    {!cargando&&!vigente&&!revisionInicial&&<button type="button" className="rounded-lg border border-teal-600 px-4 py-2 text-sm font-bold text-teal-800" onClick={()=>setRevisionInicial(true)}>Revisar plantilla inicial pendiente de aprobación</button>}
     {mensaje&&<p role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-slate-800">{mensaje}</p>}
     <section className={panel}>
       <header className="flex flex-wrap items-center justify-between gap-3 bg-teal-800 px-5 py-4 text-white">
