@@ -1277,7 +1277,7 @@ export default function ConfiguracionDocumentosPage() {
     }
 
     setBorradorContrato(Boolean(data?.borrador_inicial))
-    if (data?.borrador_inicial) setMostrarRevisionContrato(true)
+    // El modal se abrirá al entrar en la pestaña Contrato, nunca durante la carga general.
 
     setConfiguracionContrato(
       {
@@ -3863,6 +3863,9 @@ export default function ConfiguracionDocumentosPage() {
     setPestanaPrincipal(
       pestana
     )
+
+    // La revisión inicial corresponde exclusivamente a la pestaña Contrato.
+    setMostrarRevisionContrato(pestana === 'CONTRATO' && borradorContrato)
 
         setModoEdicionDocumento(
       false
@@ -7128,7 +7131,7 @@ export default function ConfiguracionDocumentosPage() {
           </div>
         )}
 
-        {mostrarRevisionContrato && borradorContrato && (
+        {pestanaPrincipal === 'CONTRATO' && mostrarRevisionContrato && borradorContrato && (
           <div className="fixed inset-0 z-[82] flex items-center justify-center bg-slate-950/65 p-3 sm:p-6">
             <div role="dialog" aria-modal="true" aria-label="Revisar y aprobar contrato inicial" className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
               <div className="bg-sky-900 px-5 py-4 text-white">
