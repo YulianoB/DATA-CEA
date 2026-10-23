@@ -1834,6 +1834,19 @@ export default function ContratoPage() {
   )
 
 
+  // El diálogo nativo «Guardar como PDF» utiliza el título del documento
+  // para sugerir el nombre del archivo (el usuario puede modificarlo).
+  useEffect(() => {
+    const tituloAnterior = document.title
+    const consecutivo = texto(datos?.matricula?.consecutivo)
+    if (consecutivo) {
+      document.title = `Contrato de Formación en Conducción - ${consecutivo}`
+    }
+    return () => {
+      document.title = tituloAnterior
+    }
+  }, [datos?.matricula?.consecutivo])
+
   // ==========================================================
   // CARGANDO
   // ==========================================================
@@ -1951,19 +1964,6 @@ export default function ContratoPage() {
       ? contrato.clausulas
       : []
 
-
-  // El diálogo nativo «Guardar como PDF» utiliza el título del documento
-  // para sugerir el nombre del archivo (el usuario puede modificarlo).
-  useEffect(() => {
-    const tituloAnterior = document.title
-    const consecutivo = texto(matricula?.consecutivo)
-    if (consecutivo) {
-      document.title = `Contrato de Formación en Conducción - ${consecutivo}`
-    }
-    return () => {
-      document.title = tituloAnterior
-    }
-  }, [matricula?.consecutivo])
 
   // ==========================================================
   // RENDER
