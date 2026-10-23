@@ -3222,30 +3222,28 @@ const streamRef =
 
       {/* Bordes homogéneos exclusivamente dentro de las páginas imprimibles.
           Las caras sin borde configuradas en el diseñador siguen sin borde. */}
-      <style jsx global>{`
-        .hoja-control :is(
-          .border, .border-t, .border-b, .border-l, .border-r,
-          table th, table td
-        ) {
+      <style>{`
+        /* Líneas negras y finas, con sus lados originales preservados. */
+        .hoja-control .border,
+        .hoja-control .border-t,
+        .hoja-control .border-b,
+        .hoja-control .border-l,
+        .hoja-control .border-r,
+        .hoja-control table th,
+        .hoja-control table td {
           border-color: #000 !important;
-          border-width: 0.5px !important;
         }
+        .hoja-control .border { border-width: 0.5px !important; }
+        .hoja-control .border-t { border-top-width: 0.5px !important; }
+        .hoja-control .border-b { border-bottom-width: 0.5px !important; }
+        .hoja-control .border-l { border-left-width: 0.5px !important; }
+        .hoja-control .border-r { border-right-width: 0.5px !important; }
         .hoja-control .encabezado-control-clases > div {
           border-color: #000 !important;
-          border-width: 0.5px !important;
         }
         .hoja-control .campo-dato-control {
           margin-right: -0.5px;
           margin-bottom: -0.5px;
-        }
-        @media print {
-          .hoja-control :is(
-            .border, .border-t, .border-b, .border-l, .border-r,
-            table th, table td
-          ) {
-            border-color: #000 !important;
-            border-width: 0.5px !important;
-          }
         }
       `}</style>
 
