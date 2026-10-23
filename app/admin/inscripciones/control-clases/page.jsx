@@ -3205,7 +3205,8 @@ const streamRef =
           Las caras sin borde configuradas en el diseñador siguen sin borde. */}
       <style>{`
         /* Un único grosor para el conjunto de la tarjeta; sin sombras que dupliquen líneas. */
-        .hoja-control { --linea-control: 0.65px solid #000; }
+        /* Un píxel CSS equivale a 0,75 pt de impresión: línea fina y estable. */
+        .hoja-control { --linea-control: 1px solid #000; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
         .hoja-control .border { border: var(--linea-control) !important; }
         .hoja-control .border-t { border-top: var(--linea-control) !important; }
         .hoja-control .border-b { border-bottom: var(--linea-control) !important; }
@@ -3227,8 +3228,22 @@ const streamRef =
           border-bottom: var(--linea-control) !important;
           margin: 0 !important;
         }
-        .hoja-control .datos-control-clases > div > div:last-child { border-right: 0 !important; }
-        .hoja-control .datos-control-clases > div:last-child > div { border-bottom: 0 !important; }
+        /* Cada fila termina antes del cuadro de foto: el borde izquierdo
+           pertenece únicamente al área de la foto. */
+        .hoja-control .datos-control-clases > div:first-child > div > .campo-dato-control:last-child {
+          border-right: 0 !important;
+        }
+        .hoja-control .datos-control-clases > div:nth-child(2) {
+          border-left: var(--linea-control) !important;
+        }
+        /* La última fila (Celular / Convenio / Ref P) no duplica
+           el borde inferior del contenedor de identificación. */
+        .hoja-control .datos-control-clases > div:first-child > div:last-child > .campo-dato-control {
+          border-bottom: 0 !important;
+        }
+        .hoja-control .datos-control-clases > div:nth-child(3) {
+          border-left: var(--linea-control) !important;
+        }
         .hoja-control .tabla-modulo-control,
         .hoja-control .tabla-practica-control { border: var(--linea-control) !important; }
         .hoja-control .tabla-modulo-control > div:first-child {
@@ -3254,6 +3269,16 @@ const streamRef =
         .hoja-control .tabla-practica-control table tr > :last-child { border-right: 0 !important; }
         .hoja-control .tabla-modulo-control table tbody tr:last-child > *,
         .hoja-control .tabla-practica-control table tbody tr:last-child > * { border-bottom: 0 !important; }
+        /* El mismo trazado debe utilizarse al imprimir o guardar como PDF,
+           independientemente de la opción «Gráficos en segundo plano». */
+        @media print {
+          .hoja-control { --linea-control: 1px solid #000; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          .hoja-control .tabla-modulo-control table,
+          .hoja-control .tabla-practica-control table {
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+          }
+        }
       `}</style>
 
       {/* ====================================================
