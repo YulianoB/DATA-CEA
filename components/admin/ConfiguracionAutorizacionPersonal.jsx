@@ -34,6 +34,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   const [confirmarPublicacion,setConfirmarPublicacion]=useState(false)
   const [resultadoPublicacion,setResultadoPublicacion]=useState(null)
   const [historica,setHistorica]=useState(null)
+  const [mostrarDatosVersion,setMostrarDatosVersion]=useState(false)
   const [revisionInicial,setRevisionInicial]=useState(false)
   const [modo,setModo]=useState('nuevo')
   const cargar=useCallback(async()=>{
@@ -72,6 +73,13 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
   },[nitEmpresa])
   useEffect(()=>{cargar()},[cargar])
   const vigente=versiones.find(v=>v.vigente)
+  function prepararEdicionContenido() {
+    aplicarTexto(vigente?.contenido || plantilla)
+    setVersion('')
+    setModo('nuevo')
+    setMostrarDatosVersion(false)
+    setMensaje('Contenido editable como borrador de una nueva versión. La versión publicada se mantiene intacta. Indique el número de la nueva versión antes de publicar.')
+  }
   function aplicarTexto(texto) {
     const d=desdeTexto(texto)
     setNombre(d.nombre)
@@ -118,10 +126,11 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
     <section className={panel}>
       <header className="flex flex-wrap items-center justify-between gap-3 bg-teal-800 px-5 py-4 text-white">
         <div><h2 className="text-sm font-bold">Datos de la Autorización para el Tratamiento de Datos del Personal</h2><p className="mt-1 text-xs text-teal-100">El diseño del encabezado es compartido. Aquí se configuran los datos propios de este documento.</p></div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <button type="button" className="rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20" onClick={()=>setHistorica(versiones[0]||null)}>↶ Versiones anteriores{versiones.length ? ` (${versiones.length})` : ''}</button>
-          <button type="button" className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800" onClick={()=>{setModo('nuevo');setVersion('');aplicarTexto(vigente?.contenido||plantilla)}}>＋ Crear nueva versión</button>
-          <button type="button" className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100" onClick={()=>{if(vigente){aplicarTexto(vigente.contenido);setVersion(vigente.version);setModo('actual')}}}>Consultar versión actual</button>
+          <button type="button" className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800" onClick={prepararEdicionContenido}>＋ Crear nueva versión</button>
+          <button type="button" className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100" onClick={()=>{setMostrarDatosVersion(true)}}>Editar Versión</button>
+          <button type="button" className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100" onClick={prepararEdicionContenido}>Editar Contenido</button>
         </div>
       </header>
       <div className="p-5">
@@ -158,6 +167,7 @@ export default function ConfiguracionAutorizacionPersonal({ nitEmpresa }) {
         {cargando?<p className="text-sm">Consultando versiones...</p>:versiones.length===0?<p className="text-sm text-slate-600">No existen versiones publicadas.</p>:versiones.map(v=><div key={v.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"><span>Versión {v.version} · {new Date(v.fecha_publicacion).toLocaleString('es-CO')} {v.vigente?'· Vigente':'· Histórica'}</span><button className={boton} type="button" onClick={()=>setHistorica(v)}>Consultar documento</button></div>)}
       </div>
     </section>
+    {mostrarDatosVersion&&<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"><section role="dialog" aria-modal="true" aria-label="Datos de la versión publicada" className="w-full max-w-xl rounded-xl bg-white p-5 shadow-xl"><h3 className="text-base font-bold text-teal-900">Datos de la versión actual</h3><p className="mt-2 text-sm text-slate-700">Las versiones publicadas de tratamiento de datos del personal son inmutables. Para modificar los datos documentales o el contenido, cree una nueva versión a partir de la vigente.</p><p className="mt-3 text-sm text-slate-700">Versión vigente: <strong>{vigente?.version||'Sin publicar'}</strong></p><div className="mt-5 flex justify-end gap-2"><button type="button" className={boton} onClick={()=>setMostrarDatosVersion(false)}>Cerrar</button><button type="button" className="rounded-lg bg-teal-800 px-3 py-2 text-xs font-bold text-white" onClick={prepararEdicionContenido}>Crear versión editable</button></div></section></div>}
     {historica&&<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"><section role="dialog" aria-modal="true" aria-label={'Documento versión '+historica.version} className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-xl bg-white p-5"><div className="flex justify-between gap-3"><h3 className="font-bold text-[#194567]">Autorización del personal · Versión {historica.version}</h3><button type="button" className={boton} onClick={()=>setHistorica(null)}>Cerrar</button></div><div className="mt-4 overflow-auto whitespace-pre-wrap font-sans text-sm font-normal leading-relaxed text-slate-800">{historica.contenido.split(/\n/).map((line,i)=><p key={i} className={/^\d{1,2}\.\s+[A-ZÁÉÍÓÚÑ]/.test(line) ? "mt-4 font-bold text-slate-900" : "font-normal"}>{line || "\u00a0"}</p>)}</div></section></div>}
   </div>
 }
