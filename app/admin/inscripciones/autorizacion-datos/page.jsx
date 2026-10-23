@@ -1247,6 +1247,19 @@ export default function AutorizacionDatosPage() {
     )
 
 
+  // Chrome utiliza el título de la pestaña como nombre sugerido al guardar PDF.
+  // El consecutivo se obtiene de la matrícula cargada, nunca se fija manualmente.
+  useEffect(() => {
+    const tituloAnterior = document.title
+    const consecutivo = texto(datos?.aprendiz?.consecutivo || datos?.matricula?.consecutivo)
+    if (consecutivo) {
+      document.title = `AUT. TRA. DATOS - ${consecutivo}`
+    }
+    return () => {
+      document.title = tituloAnterior
+    }
+  }, [datos?.aprendiz?.consecutivo, datos?.matricula?.consecutivo])
+
   // ==========================================================
   // ESTADOS DE PANTALLA
   // ==========================================================
@@ -1996,57 +2009,59 @@ export default function AutorizacionDatosPage() {
       </section>
 
       <style>{`
-        @page {
-          size: Letter portrait;
-          margin: 0;
-        }
-
         .hoja-autorizacion {
-          width: 216mm;
-          min-height: 279mm;
+          width: 215.9mm;
+          min-height: 279.4mm;
           box-sizing: border-box;
         }
 
-        .pagina-1 {
-          break-after: page;
-          page-break-after: always;
-        }
-
         @media print {
-          html,
-          body {
+          @page {
+            size: Letter portrait;
+            margin: 0;
+          }
+          html, body {
+            width: 215.9mm !important;
             margin: 0 !important;
             padding: 0 !important;
             background: white !important;
           }
-
           body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
+          .no-print { display: none !important; }
 
-          .no-print {
-            display: none !important;
-          }
-
+          /* Cada sección ocupa una hoja física; sin altura mínima artificial
+             que empuje el contenido a una tercera página. */
           .hoja-autorizacion {
-            width: 216mm !important;
-            min-height: 279mm !important;
-            margin: 0 auto !important;
-            padding: 8mm !important;
+            width: 215.9mm !important;
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 7mm 8mm !important;
+            box-sizing: border-box !important;
             box-shadow: none !important;
             background: white !important;
-            overflow: hidden;
+            overflow: visible !important;
+            break-inside: auto;
+          }
+          .hoja-autorizacion.pagina-1 {
+            break-after: page !important;
+            page-break-after: always !important;
+          }
+          .hoja-autorizacion.pagina-2 {
+            break-before: auto !important;
+            break-after: auto !important;
+            page-break-after: auto !important;
           }
 
-          .pagina-1 {
-            break-after: page;
-            page-break-after: always;
-          }
-
-          .pagina-2 {
-            margin-top: 0 !important;
-          }
+          /* Reducción moderada de espacios en los bloques legales;
+             conserva el contenido y los tamaños legibles. */
+          .hoja-autorizacion section.mt-3 { margin-top: 8px !important; }
+          .hoja-autorizacion section.mt-4 { margin-top: 10px !important; }
+          .hoja-autorizacion section .leading-\\[1\\.42\\] { line-height: 1.32 !important; }
+          .hoja-autorizacion .mt-10 { margin-top: 22px !important; }
         }
       `}</style>
     </div>
