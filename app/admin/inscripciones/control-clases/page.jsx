@@ -708,6 +708,7 @@ function TablaModulo({
         mt-2
         border
         border-black
+        tabla-modulo-control
       "
     >
 
@@ -941,6 +942,7 @@ function TablaPractica({
         mt-2
         border
         border-black
+        tabla-practica-control
       "
     >
 
@@ -3232,6 +3234,35 @@ const streamRef =
         }
         .hoja-control table { border-collapse: collapse !important; }
         .hoja-control table th, .hoja-control table td { border-color: #000 !important; }
+        /* El marco, el título, el encabezado y las celdas comparten líneas únicas.
+           1px evita redondeos distintos de 0.75px en la impresión del navegador. */
+        .hoja-control .tabla-modulo-control,
+        .hoja-control .tabla-practica-control {
+          border: 1px solid #000 !important;
+        }
+        .hoja-control .tabla-modulo-control > .border-b {
+          border-bottom: 1px solid #000 !important;
+        }
+        .hoja-control .tabla-modulo-control table,
+        .hoja-control .tabla-practica-control table {
+          width: 100%;
+          border-collapse: separate !important;
+          border-spacing: 0 !important;
+        }
+        .hoja-control .tabla-modulo-control table :is(th, td),
+        .hoja-control .tabla-practica-control table :is(th, td) {
+          border: 0 !important;
+          border-right: 1px solid #000 !important;
+          border-bottom: 1px solid #000 !important;
+        }
+        .hoja-control .tabla-modulo-control table tr > :last-child,
+        .hoja-control .tabla-practica-control table tr > :last-child {
+          border-right: 0 !important;
+        }
+        .hoja-control .tabla-modulo-control table tbody tr:last-child > *,
+        .hoja-control .tabla-practica-control table tbody tr:last-child > * {
+          border-bottom: 0 !important;
+        }
       `}</style>
 
       {/* ====================================================
