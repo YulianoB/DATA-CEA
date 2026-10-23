@@ -46,6 +46,16 @@ const CATEGORIAS = [
 // HELPERS
 // ============================================================
 
+function fechaLocalHoy() {
+  const hoy = new Date()
+  return [
+    hoy.getFullYear(),
+    String(hoy.getMonth() + 1).padStart(2, '0'),
+    String(hoy.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+
 function texto(
   valor
 ) {
@@ -751,35 +761,11 @@ export default function InscripcionesPage() {
   // Cargar inicialmente las inscripciones del día actual.
   // ==========================================================
 
-  const [
-    filtros,
-    setFiltros,
-  ] =
-    useState({
-      q:
-        '',
-
-      fecha_inicio:
-        '',
-
-      fecha_fin:
-        '',
-    })
-
-  useEffect(() => {
-    const ahora = new Date()
-    const hoy = [
-      ahora.getFullYear(),
-      String(ahora.getMonth() + 1).padStart(2, '0'),
-      String(ahora.getDate()).padStart(2, '0'),
-    ].join('-')
-
-    setFiltros((actuales) => ({
-      ...actuales,
-      fecha_inicio: hoy,
-      fecha_fin: hoy,
-    }))
-  }, [])
+  const [filtros, setFiltros] = useState(() => ({
+    q: '',
+    fecha_inicio: fechaLocalHoy(),
+    fecha_fin: fechaLocalHoy(),
+  }))
 
   // ==========================================================
   // RESULTADOS
@@ -1090,28 +1076,6 @@ export default function InscripcionesPage() {
           return
         }
 
-        // ====================================================
-        // EVITAR CONSULTAR CON 1 O 2 CARACTERES
-        // ====================================================
-
-        if (
-          q &&
-          q.length <
-            3 &&
-          !fechaInicio &&
-          !fechaFin
-        ) {
-          setResultados(
-            []
-          )
-
-          setConsultado(
-            false
-          )
-
-          return
-        }
-
         setLoading(
           true
         )
@@ -1155,22 +1119,12 @@ export default function InscripcionesPage() {
             )
           }
 
-          if (
-            fechaInicio
-          ) {
-            params.set(
-              'fecha_inicio',
-              fechaInicio
-            )
+          if (!q && fechaInicio) {
+            params.set('fecha_inicio', fechaInicio)
           }
 
-          if (
-            fechaFin
-          ) {
-            params.set(
-              'fecha_fin',
-              fechaFin
-            )
+          if (!q && fechaFin) {
+            params.set('fecha_fin', fechaFin)
           }
 
           const json =
@@ -1262,15 +1216,6 @@ export default function InscripcionesPage() {
         return
       }
 
-      if (
-        q &&
-        q.length <
-          3 &&
-        !hayFechas
-      ) {
-        return
-      }
-
       debounceRef.current =
         setTimeout(
           () => {
@@ -1328,14 +1273,9 @@ export default function InscripcionesPage() {
 
   function limpiarFiltros() {
     setFiltros({
-      q:
-        '',
-
-      fecha_inicio:
-        '',
-
-      fecha_fin:
-        '',
+      q: '',
+      fecha_inicio: fechaLocalHoy(),
+      fecha_fin: fechaLocalHoy(),
     })
 
     setResultados(
@@ -1721,7 +1661,7 @@ export default function InscripcionesPage() {
               name="q"
               value={filtros.q}
               onChange={cambiarFiltro}
-              placeholder="Documento, nombre, apellido, matrícula o categoría..."
+              placeholder="Buscar en todas las matrículas: nombre, documento, matrícula o categoría..."
               aria-label="Criterio de búsqueda"
               className="
                 w-full
@@ -1739,6 +1679,11 @@ export default function InscripcionesPage() {
                 focus:border-[var(--primary)]
               "
             />
+            {filtros.q.trim() && (
+              <div className="mt-1 text-[10px] text-slate-600">
+                Búsqueda en todas las matrículas del CEA, sin limitar por fechas.
+              </div>
+            )}
 
           </div>
 
