@@ -925,6 +925,19 @@ export default function CodigoConductaPage() {
   )
 
 
+  // Chrome utiliza el título de la pestaña como nombre sugerido
+  // al guardar el documento mediante Imprimir → Guardar como PDF.
+  useEffect(() => {
+    const tituloAnterior = document.title
+    const consecutivo = texto(datos?.matricula?.consecutivo)
+    if (consecutivo) {
+      document.title = `CODIGO CONDUCTA - ${consecutivo}`
+    }
+    return () => {
+      document.title = tituloAnterior
+    }
+  }, [datos?.matricula?.consecutivo])
+
   // ==========================================================
   // CARGANDO
   // ==========================================================
