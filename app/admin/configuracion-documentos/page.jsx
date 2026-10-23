@@ -7404,12 +7404,17 @@ export default function ConfiguracionDocumentosPage() {
                     <button type="button" onClick={abrirHistorialVersiones} className="rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20"><i className="fas fa-clock-rotate-left mr-2" />Versiones anteriores{versionesDocumentoActivo.length > 0 ? ` (${versionesDocumentoActivo.length})` : ''}</button>
                     <button type="button" onClick={abrirNuevaVersion} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800"><i className="fas fa-code-branch mr-2" />Crear nueva versión</button>
                     <button type="button" onClick={editarVersionActual} className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100"><i className="fas fa-pen-to-square mr-2" />Editar Versión</button>
-                    {pestanaPrincipal === 'CONTRATO' && (
-                      <button type="button" onClick={() => { setMostrarModalDatosVersion(false); setModoEdicionDocumento(true); setError(''); setMensaje('Puede editar el texto introductorio, el texto final y cada cláusula. Guarde los cambios en sus respectivos botones.'); }} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100"><i className="fas fa-file-pen mr-2" />Editar Contenido</button>
-                    )}
+                    <button type="button" onClick={() => {
+                      setMostrarModalDatosVersion(false)
+                      setModoEdicionDocumento(true)
+                      setError('')
+                      setMensaje(pestanaPrincipal === 'CONTRATO'
+                        ? 'Puede editar el texto introductorio, el texto final y cada cláusula. Guarde los cambios en sus respectivos botones.'
+                        : 'Puede editar el contenido del documento. Utilice los botones de guardado de las secciones correspondientes.')
+                    }} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100"><i className="fas fa-file-pen mr-2" />Editar Contenido</button>
                   </div>
                 )}
-                {pestanaPrincipal === 'CONTRATO' && modoEdicionDocumento && !mostrarModalDatosVersion && (
+                {['CONTRATO', 'CODIGO_CONDUCTA', 'AUTORIZACION_DATOS_CEA'].includes(pestanaPrincipal) && modoEdicionDocumento && !mostrarModalDatosVersion && (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-semibold text-white">Edición de contenido habilitada</span>
                     <button type="button" onClick={cancelarEdicionVersionActual} className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100">Finalizar edición</button>
