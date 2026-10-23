@@ -120,7 +120,8 @@ function CampoDato({
     <div
       className={`
         border
-        border-gray-400
+        border-black
+        campo-dato-control
         px-2
         py-1.5
         min-h-[38px]
@@ -411,6 +412,7 @@ function EncabezadoDocumento({
         grid
         w-full
         bg-white
+        encabezado-control-clases
       "
       style={{
         gridTemplateColumns:
@@ -3122,7 +3124,7 @@ const streamRef =
                   mt-1
                   h-[28px]
                   border
-                  border-gray-500
+                  border-black
                 "
               ></div>
 
@@ -3217,6 +3219,35 @@ const streamRef =
 
       </section>
 
+
+      {/* Bordes homogéneos exclusivamente dentro de las páginas imprimibles.
+          Las caras sin borde configuradas en el diseñador siguen sin borde. */}
+      <style jsx global>{`
+        .hoja-control :is(
+          .border, .border-t, .border-b, .border-l, .border-r,
+          table th, table td
+        ) {
+          border-color: #000 !important;
+          border-width: 0.5px !important;
+        }
+        .hoja-control .encabezado-control-clases > div {
+          border-color: #000 !important;
+          border-width: 0.5px !important;
+        }
+        .hoja-control .campo-dato-control {
+          margin-right: -0.5px;
+          margin-bottom: -0.5px;
+        }
+        @media print {
+          .hoja-control :is(
+            .border, .border-t, .border-b, .border-l, .border-r,
+            table th, table td
+          ) {
+            border-color: #000 !important;
+            border-width: 0.5px !important;
+          }
+        }
+      `}</style>
 
       {/* ====================================================
           ESTILOS DE IMPRESIÓN
