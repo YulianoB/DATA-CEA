@@ -415,6 +415,8 @@ function EncabezadoDocumento({
         encabezado-control-clases
       "
       style={{
+        borderRight: '0.75px solid #000',
+        borderBottom: '0.75px solid #000',
         gridTemplateColumns:
           anchos
             .map(
@@ -524,33 +526,12 @@ function EncabezadoDocumento({
                 padding:
                   `${paddingCelda}px`,
 
-                borderTop:
-                  celda
-                    ?.borde_superior ===
-                  false
-                    ? 'none'
-                    : `${grosorBorde}px solid #000`,
-
-                borderBottom:
-                  celda
-                    ?.borde_inferior ===
-                  false
-                    ? 'none'
-                    : `${grosorBorde}px solid #000`,
-
-                borderLeft:
-                  celda
-                    ?.borde_izquierdo ===
-                  false
-                    ? 'none'
-                    : `${grosorBorde}px solid #000`,
-
-                borderRight:
-                  celda
-                    ?.borde_derecho ===
-                  false
-                    ? 'none'
-                    : `${grosorBorde}px solid #000`,
+                // Dibujar solamente las caras superior e izquierda,
+                // evitando el doble grosor entre celdas adyacentes.
+                borderTop: '0.75px solid #000',
+                borderLeft: '0.75px solid #000',
+                borderBottom: 'none',
+                borderRight: 'none',
               }}
             >
 
@@ -2518,6 +2499,7 @@ const streamRef =
             className="
               grid
               grid-cols-[1fr_112px_112px]
+              datos-control-clases
             "
           >
 
@@ -3223,28 +3205,33 @@ const streamRef =
       {/* Bordes homogéneos exclusivamente dentro de las páginas imprimibles.
           Las caras sin borde configuradas en el diseñador siguen sin borde. */}
       <style>{`
-        /* Líneas negras y finas, con sus lados originales preservados. */
-        .hoja-control .border,
-        .hoja-control .border-t,
-        .hoja-control .border-b,
-        .hoja-control .border-l,
-        .hoja-control .border-r,
-        .hoja-control table th,
-        .hoja-control table td {
-          border-color: #000 !important;
-        }
-        .hoja-control .border { border-width: 0.5px !important; }
-        .hoja-control .border-t { border-top-width: 0.5px !important; }
-        .hoja-control .border-b { border-bottom-width: 0.5px !important; }
-        .hoja-control .border-l { border-left-width: 0.5px !important; }
-        .hoja-control .border-r { border-right-width: 0.5px !important; }
+        /* Un único trazo negro delgado por borde compartido. */
+        .hoja-control { --linea-control: 0.75px solid #000; }
+        .hoja-control .border { border: var(--linea-control) !important; }
+        .hoja-control .border-t { border-top: var(--linea-control) !important; }
+        .hoja-control .border-b { border-bottom: var(--linea-control) !important; }
+        .hoja-control .border-l { border-left: var(--linea-control) !important; }
+        .hoja-control .border-r { border-right: var(--linea-control) !important; }
         .hoja-control .encabezado-control-clases > div {
-          border-color: #000 !important;
+          border-top: var(--linea-control) !important;
+          border-left: var(--linea-control) !important;
+          border-bottom: 0 !important;
+          border-right: 0 !important;
         }
         .hoja-control .campo-dato-control {
-          margin-right: -0.5px;
-          margin-bottom: -0.5px;
+          border: 0 !important;
+          border-right: var(--linea-control) !important;
+          border-bottom: var(--linea-control) !important;
+          margin: 0 !important;
         }
+        .hoja-control .datos-control-clases > div > div:last-child {
+          border-right: 0 !important;
+        }
+        .hoja-control .datos-control-clases > div:last-child > div {
+          border-bottom: 0 !important;
+        }
+        .hoja-control table { border-collapse: collapse !important; }
+        .hoja-control table th, .hoja-control table td { border-color: #000 !important; }
       `}</style>
 
       {/* ====================================================
