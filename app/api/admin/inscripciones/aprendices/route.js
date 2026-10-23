@@ -79,12 +79,11 @@ function normalizarCorreo(
 function limpiarBusqueda(
   valor
 ) {
-  return normalizarTexto(
-    valor
-  ).replace(
-    /[%_]/g,
-    ''
-  )
+  // Eliminar caracteres especiales de la sintaxis de filtros PostgREST.
+  return normalizarTexto(valor)
+    .replace(/[%_(),."'\\\\]/g, ' ')
+    .replace(/\\s+/g, ' ')
+    .trim()
 }
 
 function fechaValida(
@@ -923,17 +922,23 @@ async function consultarAprendices({
           ]
         )
     } else {
-      consulta =
-        consulta.or(
-          [
-            `documento.ilike.%${termino}%`,
-            `nombres.ilike.%${termino}%`,
-            `apellidos.ilike.%${termino}%`,
-            `consecutivo.ilike.%${termino}%`,
-          ].join(
-            ','
-          )
+      const palabras = termino.split(/\\s+/).filter(Boolean)
+      const alternativas = [
+        `documento.ilike.%${termino}%`,
+        `nombres.ilike.%${termino}%`,
+        `apellidos.ilike.%${termino}%`,
+        `consecutivo.ilike.%${termino}%`,
+      ]
+      // Permitir buscar por nombre y apellido juntos, en cualquier combinación.
+      if (palabras.length >= 2) {
+        const primero = palabras[0]
+        const resto = palabras.slice(1).join(' ')
+        alternativas.push(
+          `and(nombres.ilike.%${primero}%,apellidos.ilike.%${resto}%)`,
+          `and(nombres.ilike.%${resto}%,apellidos.ilike.%${primero}%)`
         )
+      }
+      consulta = consulta.or(alternativas.join(','))
     }
   }
 
