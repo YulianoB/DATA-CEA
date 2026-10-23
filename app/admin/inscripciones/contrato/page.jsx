@@ -304,7 +304,8 @@ function CampoDato({
     <div
       className={`
         border
-        border-gray-400
+        border-black
+        campo-dato-contrato
         px-1.5
         py-0.5
         min-h-[27px]
@@ -941,6 +942,7 @@ function InformacionAspirante({
         mt-2
         border
         border-black
+        bloque-aspirante-contrato
         break-inside-avoid
       "
     >
@@ -1950,6 +1952,19 @@ export default function ContratoPage() {
       : []
 
 
+  // El diálogo nativo «Guardar como PDF» utiliza el título del documento
+  // para sugerir el nombre del archivo (el usuario puede modificarlo).
+  useEffect(() => {
+    const tituloAnterior = document.title
+    const consecutivo = texto(matricula?.consecutivo)
+    if (consecutivo) {
+      document.title = `Contrato de Formación en Conducción - ${consecutivo}`
+    }
+    return () => {
+      document.title = tituloAnterior
+    }
+  }, [matricula?.consecutivo])
+
   // ==========================================================
   // RENDER
   // ==========================================================
@@ -2222,12 +2237,59 @@ export default function ContratoPage() {
       </section>
 
 
-      {/* ====================================================
-          NOTA:
-
-          Los estilos de impresión generales permanecen en
-          app/globals.css, igual que en Control de Clases.
-      ==================================================== */}
+      {/* Los bordes y márgenes del contrato se gestionan independientemente de otros documentos. */}
+      <style>{`
+        .hoja-contrato {
+          --borde-contrato: 1px solid #000;
+        }
+        .hoja-contrato .bloque-aspirante-contrato {
+          border: var(--borde-contrato) !important;
+        }
+        .hoja-contrato .bloque-aspirante-contrato > div:first-child {
+          border-bottom: var(--borde-contrato) !important;
+        }
+        .hoja-contrato .bloque-aspirante-contrato .campo-dato-contrato {
+          border: 0 !important;
+          border-right: var(--borde-contrato) !important;
+          border-bottom: var(--borde-contrato) !important;
+        }
+        .hoja-contrato .bloque-aspirante-contrato > div:nth-child(2) > div:first-child > div > .campo-dato-contrato:last-child {
+          border-right: 0 !important;
+        }
+        .hoja-contrato .bloque-aspirante-contrato > div:nth-child(2) > div:first-child > div:last-child > .campo-dato-contrato {
+          border-bottom: 0 !important;
+        }
+        .hoja-contrato .bloque-aspirante-contrato > div:nth-child(2) > div:not(:first-child) {
+          border-left: var(--borde-contrato) !important;
+        }
+        .hoja-contrato .bloque-aspirante-contrato > div:first-child > div:not(:first-child) {
+          border-left: var(--borde-contrato) !important;
+        }
+        @media print {
+          @page {
+            size: letter portrait;
+            margin: 9mm 8mm 11mm;
+          }
+          html:has(.hoja-contrato),
+          body:has(.hoja-contrato) {
+            width: auto !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .hoja-contrato {
+            width: 100% !important;
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+        }
+      `}</style>
 
     </div>
   )
