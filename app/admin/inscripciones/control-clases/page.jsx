@@ -694,6 +694,7 @@ function EncabezadoDocumento({
 function TablaModulo({
   modulo,
   numeroModulo,
+  tituloImpresion,
 }) {
   const clases =
     Array.isArray(
@@ -724,12 +725,7 @@ function TablaModulo({
           uppercase
         "
       >
-        {numeroModulo
-          ? `MÓDULO ${numeroModulo} – `
-          : ''}
-
-        {modulo?.nombre ||
-          'FORMACIÓN'}
+        {tituloImpresion || `${numeroModulo ? `MÓDULO ${numeroModulo} – ` : ''}${modulo?.nombre || 'FORMACIÓN'}`}
       </div>
 
       <table
@@ -2740,10 +2736,8 @@ const streamRef =
               modulo={
                 modulo
               }
-              numeroModulo={
-                index +
-                1
-              }
+              numeroModulo={index + 1}
+              tituloImpresion={index === 0 ? 'MÓDULO I – SABERES ESENCIALES OBLIGATORIOS TRANSVERSALES' : undefined}
             />
           )
         )}
@@ -2766,11 +2760,12 @@ const streamRef =
               modulo={
                 modulo
               }
-              numeroModulo={
-                modulosTeoria.length +
-                index +
-                1
-              }
+              numeroModulo={modulosTeoria.length + index + 1}
+              tituloImpresion={index === 0
+                ? 'MÓDULO I – SABERES ESENCIALES OBLIGATORIOS ESPECÍFICOS'
+                : index === 1
+                  ? 'MÓDULO II – FORMACIÓN BÁSICA APLICADA'
+                  : undefined}
             />
           )
         )}
@@ -3262,6 +3257,26 @@ const streamRef =
         .hoja-control .tabla-modulo-control table tbody tr:last-child > *,
         .hoja-control .tabla-practica-control table tbody tr:last-child > * {
           border-bottom: 0 !important;
+        }
+        /* Continuidad de franjas y encabezados al imprimir: un trazo
+           de separación y cierre en los cuatro extremos. */
+        .hoja-control .tabla-modulo-control > div:first-child {
+          border-bottom: 1px solid #000 !important;
+          box-shadow: inset -1px 0 0 #000;
+          box-sizing: border-box;
+        }
+        .hoja-control .tabla-modulo-control table {
+          box-sizing: border-box;
+          table-layout: fixed !important;
+        }
+        .hoja-control .tabla-modulo-control table thead th {
+          border-bottom: 1px solid #000 !important;
+        }
+        .hoja-control .tabla-modulo-control table thead th:first-child {
+          box-shadow: inset 1px 0 0 #000;
+        }
+        .hoja-control .tabla-modulo-control table thead th:last-child {
+          box-shadow: inset -1px 0 0 #000;
         }
       `}</style>
 
