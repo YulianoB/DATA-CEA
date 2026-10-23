@@ -803,6 +803,8 @@ export default function ConfiguracionDocumentosPage() {
       false
     )
 
+  const [mostrarModalDatosVersion, setMostrarModalDatosVersion] = useState(false)
+
   const [
     mostrandoNuevaVersion,
     setMostrandoNuevaVersion,
@@ -2980,6 +2982,7 @@ export default function ConfiguracionDocumentosPage() {
       setModoEdicionDocumento(
         false
       )
+      setMostrarModalDatosVersion(false)
 
       setMensaje(
         'Datos de la versión vigente guardados correctamente.'
@@ -3008,6 +3011,7 @@ export default function ConfiguracionDocumentosPage() {
   // =======================================================
 
   function editarVersionActual() {
+    setMostrarModalDatosVersion(true)
     setModoEdicionDocumento(
       true
     )
@@ -3035,6 +3039,7 @@ export default function ConfiguracionDocumentosPage() {
 
 
   async function cancelarEdicionVersionActual() {
+    setMostrarModalDatosVersion(false)
     setModoEdicionDocumento(
       false
     )
@@ -3390,6 +3395,7 @@ export default function ConfiguracionDocumentosPage() {
       setMostrandoNuevaVersion(
         false
       )
+      setMostrarModalDatosVersion(false)
 
       setModoEdicionDocumento(
         true
@@ -3867,6 +3873,7 @@ export default function ConfiguracionDocumentosPage() {
 
     // La revisión inicial corresponde exclusivamente a la pestaña Contrato.
     setMostrarRevisionContrato(pestana === 'CONTRATO' && borradorContrato)
+    setMostrarModalDatosVersion(false)
 
         setModoEdicionDocumento(
       false
@@ -7099,7 +7106,7 @@ export default function ConfiguracionDocumentosPage() {
         </div>
       )}
 
-        {['CONTRATO', 'CODIGO_CONDUCTA', 'AUTORIZACION_DATOS_CEA'].includes(pestanaPrincipal) && modoEdicionDocumento && documentoActivo && (
+        {['CONTRATO', 'CODIGO_CONDUCTA', 'AUTORIZACION_DATOS_CEA'].includes(pestanaPrincipal) && modoEdicionDocumento && mostrarModalDatosVersion && documentoActivo && (
           <div className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/60 p-3 sm:p-6">
             <div role="dialog" aria-modal="true" aria-label="Editar versión actual del documento" className="my-auto flex max-h-[calc(100vh-24px)] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[calc(100vh-48px)]">
               <FranjaSuperiorModal className="px-5 py-4">
@@ -7396,7 +7403,16 @@ export default function ConfiguracionDocumentosPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <button type="button" onClick={abrirHistorialVersiones} className="rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20"><i className="fas fa-clock-rotate-left mr-2" />Versiones anteriores{versionesDocumentoActivo.length > 0 ? ` (${versionesDocumentoActivo.length})` : ''}</button>
                     <button type="button" onClick={abrirNuevaVersion} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800"><i className="fas fa-code-branch mr-2" />Crear nueva versión</button>
-                    <button type="button" onClick={editarVersionActual} className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100"><i className="fas fa-pen-to-square mr-2" />Editar versión actual</button>
+                    <button type="button" onClick={editarVersionActual} className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100"><i className="fas fa-pen-to-square mr-2" />Editar datos de versión</button>
+                    {pestanaPrincipal === 'CONTRATO' && (
+                      <button type="button" onClick={() => { setMostrarModalDatosVersion(false); setModoEdicionDocumento(true); setError(''); setMensaje('Puede editar el texto introductorio, el texto final y cada cláusula. Guarde los cambios en sus respectivos botones.'); }} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100"><i className="fas fa-file-pen mr-2" />Editar contenido del contrato</button>
+                    )}
+                  </div>
+                )}
+                {pestanaPrincipal === 'CONTRATO' && modoEdicionDocumento && !mostrarModalDatosVersion && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold text-white">Edición de contenido habilitada</span>
+                    <button type="button" onClick={cancelarEdicionVersionActual} className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-sky-900 hover:bg-slate-100">Finalizar edición</button>
                   </div>
                 )}
               </div>
