@@ -1366,7 +1366,7 @@ function ClausulaContrato({
     <div
       className="
         mt-1.5
-        text-[8px]
+        text-[8.3px]
         leading-[1.18]
         text-justify
       "
@@ -2169,8 +2169,8 @@ export default function ContratoPage() {
                   }
                   className="
                     mt-2
-                    text-[8px]
-                    leading-[1.2]
+                    text-[8.3px]
+                    leading-[1.18]
                     text-justify
                   "
                 />
@@ -2212,8 +2212,8 @@ export default function ContratoPage() {
                       contrato.texto_final
                     }
                     className="
-                      text-[8px]
-                      leading-[1.2]
+                      text-[8.3px]
+                      leading-[1.18]
                       text-justify
                     "
                   />
