@@ -82,7 +82,7 @@ function limpiarBusqueda(
   // Eliminar caracteres especiales de la sintaxis de filtros PostgREST.
   return normalizarTexto(valor)
     .replace(/[%_(),."'\\\\]/g, ' ')
-    .replace(/\\s+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim()
 }
 
@@ -922,7 +922,7 @@ async function consultarAprendices({
           ]
         )
     } else {
-      const palabras = termino.split(/\\s+/).filter(Boolean)
+      const palabras = termino.split(/\s+/).filter(Boolean)
       const alternativas = [
         `documento.ilike.%${termino}%`,
         `nombres.ilike.%${termino}%`,
