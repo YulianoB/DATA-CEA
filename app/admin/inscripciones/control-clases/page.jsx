@@ -2737,7 +2737,11 @@ const streamRef =
                 modulo
               }
               numeroModulo={index + 1}
-              tituloImpresion={index === 0 ? 'MÓDULO I – SABERES ESENCIALES OBLIGATORIOS TRANSVERSALES' : undefined}
+              tituloImpresion={index === 0
+                ? 'MÓDULO I – SABERES ESENCIALES OBLIGATORIOS TRANSVERSALES'
+                : index === 1
+                  ? 'MÓDULO I – SABERES ESENCIALES OBLIGATORIOS ESPECÍFICOS'
+                  : undefined}
             />
           )
         )}
@@ -2762,10 +2766,8 @@ const streamRef =
               }
               numeroModulo={modulosTeoria.length + index + 1}
               tituloImpresion={index === 0
-                ? 'MÓDULO I – SABERES ESENCIALES OBLIGATORIOS ESPECÍFICOS'
-                : index === 1
-                  ? 'MÓDULO II – FORMACIÓN BÁSICA APLICADA'
-                  : undefined}
+                ? 'MÓDULO II – FORMACIÓN BÁSICA APLICADA'
+                : undefined}
             />
           )
         )}
@@ -3202,18 +3204,22 @@ const streamRef =
       {/* Bordes homogéneos exclusivamente dentro de las páginas imprimibles.
           Las caras sin borde configuradas en el diseñador siguen sin borde. */}
       <style>{`
-        /* Un único trazo negro delgado por borde compartido. */
-        .hoja-control { --linea-control: 0.75px solid #000; }
+        /* Un único grosor para el conjunto de la tarjeta; sin sombras que dupliquen líneas. */
+        .hoja-control { --linea-control: 0.65px solid #000; }
         .hoja-control .border { border: var(--linea-control) !important; }
         .hoja-control .border-t { border-top: var(--linea-control) !important; }
         .hoja-control .border-b { border-bottom: var(--linea-control) !important; }
         .hoja-control .border-l { border-left: var(--linea-control) !important; }
         .hoja-control .border-r { border-right: var(--linea-control) !important; }
+        .hoja-control .encabezado-control-clases {
+          border-right: var(--linea-control) !important;
+          border-bottom: var(--linea-control) !important;
+        }
         .hoja-control .encabezado-control-clases > div {
           border-top: var(--linea-control) !important;
           border-left: var(--linea-control) !important;
-          border-bottom: 0 !important;
           border-right: 0 !important;
+          border-bottom: 0 !important;
         }
         .hoja-control .campo-dato-control {
           border: 0 !important;
@@ -3221,63 +3227,33 @@ const streamRef =
           border-bottom: var(--linea-control) !important;
           margin: 0 !important;
         }
-        .hoja-control .datos-control-clases > div > div:last-child {
-          border-right: 0 !important;
-        }
-        .hoja-control .datos-control-clases > div:last-child > div {
-          border-bottom: 0 !important;
-        }
-        .hoja-control table { border-collapse: collapse !important; }
-        .hoja-control table th, .hoja-control table td { border-color: #000 !important; }
-        /* El marco, el título, el encabezado y las celdas comparten líneas únicas.
-           1px evita redondeos distintos de 0.75px en la impresión del navegador. */
+        .hoja-control .datos-control-clases > div > div:last-child { border-right: 0 !important; }
+        .hoja-control .datos-control-clases > div:last-child > div { border-bottom: 0 !important; }
         .hoja-control .tabla-modulo-control,
-        .hoja-control .tabla-practica-control {
-          border: 1px solid #000 !important;
-        }
-        .hoja-control .tabla-modulo-control > .border-b {
-          border-bottom: 1px solid #000 !important;
+        .hoja-control .tabla-practica-control { border: var(--linea-control) !important; }
+        .hoja-control .tabla-modulo-control > div:first-child {
+          border: 0 !important;
+          border-bottom: var(--linea-control) !important;
+          box-shadow: none !important;
         }
         .hoja-control .tabla-modulo-control table,
         .hoja-control .tabla-practica-control table {
           width: 100%;
+          table-layout: fixed !important;
           border-collapse: separate !important;
           border-spacing: 0 !important;
         }
         .hoja-control .tabla-modulo-control table :is(th, td),
         .hoja-control .tabla-practica-control table :is(th, td) {
           border: 0 !important;
-          border-right: 1px solid #000 !important;
-          border-bottom: 1px solid #000 !important;
+          border-right: var(--linea-control) !important;
+          border-bottom: var(--linea-control) !important;
+          box-shadow: none !important;
         }
         .hoja-control .tabla-modulo-control table tr > :last-child,
-        .hoja-control .tabla-practica-control table tr > :last-child {
-          border-right: 0 !important;
-        }
+        .hoja-control .tabla-practica-control table tr > :last-child { border-right: 0 !important; }
         .hoja-control .tabla-modulo-control table tbody tr:last-child > *,
-        .hoja-control .tabla-practica-control table tbody tr:last-child > * {
-          border-bottom: 0 !important;
-        }
-        /* Continuidad de franjas y encabezados al imprimir: un trazo
-           de separación y cierre en los cuatro extremos. */
-        .hoja-control .tabla-modulo-control > div:first-child {
-          border-bottom: 1px solid #000 !important;
-          box-shadow: inset -1px 0 0 #000;
-          box-sizing: border-box;
-        }
-        .hoja-control .tabla-modulo-control table {
-          box-sizing: border-box;
-          table-layout: fixed !important;
-        }
-        .hoja-control .tabla-modulo-control table thead th {
-          border-bottom: 1px solid #000 !important;
-        }
-        .hoja-control .tabla-modulo-control table thead th:first-child {
-          box-shadow: inset 1px 0 0 #000;
-        }
-        .hoja-control .tabla-modulo-control table thead th:last-child {
-          box-shadow: inset -1px 0 0 #000;
-        }
+        .hoja-control .tabla-practica-control table tbody tr:last-child > * { border-bottom: 0 !important; }
       `}</style>
 
       {/* ====================================================
