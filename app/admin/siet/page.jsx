@@ -1665,15 +1665,14 @@ export default function SietPage() {
 
           <div
             className="
-              bg-slate-800
-              text-white
+              
+              
               px-4
               py-3
               flex
               justify-between
               items-center
-            "
-          >
+            " style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto,borderRadius:ESTILO_SECCIONES.radioSuperior}}>
             <span
               className="
                 text-sm
@@ -2046,16 +2045,15 @@ export default function SietPage() {
 
           <div
             className="
-              bg-slate-800
-              text-white
+              
+              
               px-4
               py-3
               flex
               justify-between
               items-center
               gap-3
-            "
-          >
+            " style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto,borderRadius:ESTILO_SECCIONES.radioSuperior}}>
 
             <span
               className="
@@ -2089,7 +2087,7 @@ export default function SietPage() {
               "
             >
 
-              <thead className="bg-gray-100">
+              <thead style={{backgroundColor:ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}} className="text-[10px] font-extrabold uppercase">
 
                 <tr>
 
@@ -2099,7 +2097,7 @@ export default function SietPage() {
                       border
                       w-10
                     "
-                  >
+                   style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     <button
                       type="button"
                       onClick={
@@ -2124,31 +2122,31 @@ export default function SietPage() {
                     </button>
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Matrícula
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Aprendiz
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Documento
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Categoría
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Fecha Matrícula
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Estado SIET
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Acción
                   </th>
 
@@ -2168,7 +2166,7 @@ export default function SietPage() {
                         text-center
                         text-gray-500
                       "
-                    >
+                     style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       <i className="fas fa-spinner fa-spin mr-2"></i>
 
                       Consultando...
@@ -2186,7 +2184,7 @@ export default function SietPage() {
                         text-center
                         text-gray-500
                       "
-                    >
+                     style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       <i
                         className="
                           fas
@@ -2241,7 +2239,7 @@ export default function SietPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             <button
                               type="button"
                               onClick={() =>
@@ -2270,12 +2268,12 @@ export default function SietPage() {
                               text-center
                               font-semibold
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {registro.consecutivo ||
                               '-'}
                           </td>
 
-                          <td className="p-2 border">
+                          <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             <div className="font-semibold">
                               {obtenerNombreCompleto(
@@ -2309,7 +2307,7 @@ export default function SietPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {formatearDocumento(
                               registro.documento ||
                               registro
@@ -2324,7 +2322,7 @@ export default function SietPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             <span
                               className="
                                 bg-blue-50
@@ -2349,7 +2347,7 @@ export default function SietPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {formatearFecha(
                               registro
                                 ?.aprendiz
@@ -2363,7 +2361,7 @@ export default function SietPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             <BadgeEstado
                               estado={
                                 registro.estado
@@ -2377,7 +2375,7 @@ export default function SietPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             <button
                               type="button"
@@ -2577,14 +2575,13 @@ export default function SietPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Estado SIET
                   </div>
 
@@ -2666,14 +2663,13 @@ export default function SietPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Datos del Aprendiz
                   </div>
 
@@ -2783,14 +2779,13 @@ export default function SietPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Trazabilidad SIET
                   </div>
 
@@ -2868,14 +2863,13 @@ export default function SietPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Observaciones
                   </div>
 
@@ -2925,14 +2919,13 @@ export default function SietPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Gestión del Proceso
                   </div>
 
