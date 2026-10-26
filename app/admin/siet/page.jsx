@@ -1812,7 +1812,7 @@ export default function SietPage() {
                 />
 
                 {busqueda && (
-                  <button
+                  <BotonAccion tipo="cancelar"
                     type="button"
                     onClick={
                       limpiarBusqueda
@@ -1827,7 +1827,7 @@ export default function SietPage() {
                     "
                   >
                     <i className="fas fa-times"></i>
-                  </button>
+                  </BotonAccion>
                 )}
 
               </div>
@@ -1842,7 +1842,7 @@ export default function SietPage() {
               "
             >
 
-              <button
+              <BotonAccion tipo="consultar"
                 type="submit"
                 disabled={
                   cargando
@@ -1861,9 +1861,9 @@ export default function SietPage() {
                 <i className="fas fa-search mr-2"></i>
 
                 Buscar
-              </button>
+              </BotonAccion>
 
-              <button
+              <BotonAccion tipo="consultar"
                 type="button"
                 onClick={() =>
                   consultar()
@@ -1893,7 +1893,7 @@ export default function SietPage() {
                     }
                   `}
                 ></i>
-              </button>
+              </BotonAccion>
 
             </div>
 
@@ -1946,7 +1946,7 @@ export default function SietPage() {
 
               {estado ===
                 'PENDIENTE' && (
-                <button
+                <BotonAccion tipo="guardar"
                   type="button"
                   onClick={() =>
                     actualizarMasivo(
@@ -1971,12 +1971,12 @@ export default function SietPage() {
                   <i className="fas fa-upload mr-2"></i>
 
                   Marcar Registrados
-                </button>
+                </BotonAccion>
               )}
 
               {estado ===
                 'REGISTRADO' && (
-                <button
+                <BotonAccion tipo="guardar"
                   type="button"
                   onClick={() =>
                     actualizarMasivo(
@@ -2001,10 +2001,10 @@ export default function SietPage() {
                   <i className="fas fa-certificate mr-2"></i>
 
                   Marcar Certificados
-                </button>
+                </BotonAccion>
               )}
 
-              <button
+              <BotonAccion tipo="limpiar"
                 type="button"
                 onClick={() =>
                   setSeleccionados(
@@ -2023,7 +2023,7 @@ export default function SietPage() {
                 "
               >
                 Limpiar selección
-              </button>
+              </BotonAccion>
 
             </div>
 
@@ -2098,7 +2098,7 @@ export default function SietPage() {
                       w-10
                     "
                    style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    <button
+                    <BotonAccion tipo="secundario"
                       type="button"
                       onClick={
                         alternarTodos
@@ -2119,7 +2119,7 @@ export default function SietPage() {
                             : 'far fa-square'
                         }
                       ></i>
-                    </button>
+                    </BotonAccion>
                   </th>
 
                   <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
@@ -2240,7 +2240,7 @@ export default function SietPage() {
                               text-center
                             "
                            style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                            <button
+                            <BotonAccion tipo="secundario"
                               type="button"
                               onClick={() =>
                                 alternarSeleccion(
@@ -2258,7 +2258,7 @@ export default function SietPage() {
                                     : 'far fa-square text-gray-400'
                                 }
                               ></i>
-                            </button>
+                            </BotonAccion>
                           </td>
 
                           <td
@@ -2377,7 +2377,7 @@ export default function SietPage() {
                             "
                            style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
-                            <button
+                            <BotonAccion tipo="verDetalle"
                               type="button"
                               onClick={() =>
                                 abrirDetalle(
@@ -2397,7 +2397,7 @@ export default function SietPage() {
                               <i className="fas fa-eye mr-1"></i>
 
                               Gestionar
-                            </button>
+                            </BotonAccion>
 
                           </td>
 
@@ -2514,7 +2514,7 @@ export default function SietPage() {
 
               </div>
 
-              <button
+              <BotonAccion tipo="cancelar"
                 type="button"
                 onClick={
                   cerrarDrawer
@@ -2532,7 +2532,7 @@ export default function SietPage() {
                 "
               >
                 <i className="fas fa-times"></i>
-              </button>
+              </BotonAccion>
 
             </div>
 
@@ -2933,7 +2933,7 @@ export default function SietPage() {
 
                     {estadoDetalle ===
                       'PENDIENTE' && (
-                      <button
+                      <BotonAccion tipo="guardar"
                         type="button"
                         onClick={() =>
                           actualizarIndividual(
@@ -2960,12 +2960,12 @@ export default function SietPage() {
                         <i className="fas fa-upload mr-2"></i>
 
                         Marcar REGISTRADO en SIET
-                      </button>
+                      </BotonAccion>
                     )}
 
                     {estadoDetalle ===
                       'REGISTRADO' && (
-                      <button
+                      <BotonAccion tipo="guardar"
                         type="button"
                         onClick={() =>
                           actualizarIndividual(
@@ -2992,7 +2992,7 @@ export default function SietPage() {
                         <i className="fas fa-certificate mr-2"></i>
 
                         Marcar CERTIFICADO en SIET
-                      </button>
+                      </BotonAccion>
                     )}
 
                     {estadoDetalle ===
