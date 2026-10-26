@@ -5,6 +5,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -593,6 +594,8 @@ const [
     setClaseEditando,
   ] = useState(null)
   const [mostrarClasesInactivas, setMostrarClasesInactivas] = useState(false)
+  const [vistaPreviaImpresion, setVistaPreviaImpresion] = useState(null)
+  const marcoImpresionRef = useRef(null)
 
   const [
     nuevaClase,
@@ -1661,36 +1664,37 @@ async function restaurarLogoAnterior() {
     const pagina = '<!doctype html><html lang="es"><head><meta charset="utf-8">' +
       '<title>' + escaparHtmlImpresion(titulo + ' - ' + categoriaSeleccionada) + '</title>' +
       '<style>' +
-      '@page{size:letter landscape;margin:12mm}' +
-      '*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#162c40;margin:0;font-size:10px}' +
+      '@page{size:letter portrait;margin:12mm}' +
+      '*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#162c40;margin:0;font-size:9px}' +
+      '@media screen{body{padding:12mm;max-width:215.9mm;margin:auto;background:#fff}}' +
       '.cabecera{border-bottom:3px solid #194567;padding-bottom:10px;margin-bottom:16px}' +
-      'h1{font-size:18px;margin:0 0 6px;color:#194567}p{margin:3px 0;font-size:11px}' +
+      'h1{font-size:15px;margin:0 0 6px;color:#194567}p{margin:3px 0;font-size:10px}' +
       '.modulo{margin:18px 0 22px;break-inside:auto;page-break-inside:auto}' +
-      'h2{font-size:12px;color:#fff;background:#194567;padding:8px 10px;margin:0;break-after:avoid}' +
-      'h3{font-size:11px;color:#194567;background:#eaf4fa;padding:7px 10px;margin:0 0 5px;break-after:avoid}' +
+      'h2{font-size:11px;color:#fff;background:#194567;padding:7px 8px;margin:0;break-after:avoid}' +
+      'h3{font-size:10px;color:#194567;background:#eaf4fa;padding:6px 8px;margin:0 0 5px;break-after:avoid}' +
       'table{width:100%;border-collapse:collapse;table-layout:fixed}thead{display:table-header-group}' +
-      'th{background:#d9f5fa;color:#10283c;text-align:left;font-size:10px;padding:8px;border:1px solid #7c9cad}' +
-      'td{vertical-align:top;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45;padding:8px;border:1px solid #9caebc}' +
+      'th{background:#d9f5fa;color:#10283c;text-align:left;font-size:9px;padding:6px;border:1px solid #7c9cad}' +
+      'td{vertical-align:top;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.4;padding:6px;border:1px solid #9caebc}' +
       'tr{break-inside:avoid;page-break-inside:avoid}.horas{text-align:center;white-space:nowrap}' +
-      '.imprimir{background:#194567;color:white;border:0;border-radius:6px;padding:9px 15px;cursor:pointer;margin-bottom:14px}' +
-      '@media print{.imprimir{display:none!important}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}' +
+      '' +
+      '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}' +
       '</style></head><body>' +
-      '<button class="imprimir" onclick="window.print()">Imprimir / Guardar como PDF</button>' +
       '<header class="cabecera"><h1>' + escaparHtmlImpresion(titulo) + '</h1>' +
       '<p><strong>Categoría:</strong> ' + escaparHtmlImpresion(categoriaSeleccionada) +
       ' &nbsp; <strong>Plan:</strong> ' + escaparHtmlImpresion(planSeleccionado.nombre) +
       ' &nbsp; <strong>Versión:</strong> ' + escaparHtmlImpresion(planSeleccionado.version) +
       '</p></header>' + secciones + '</body></html>'
-    const ventana = window.open('', '_blank')
-    if (!ventana) {
-      setError('El navegador bloqueó la ventana de impresión. Permita las ventanas emergentes para DATA-CEA.')
+    setVistaPreviaImpresion({ titulo, html: pagina })
+  }
+
+  function imprimirVistaPrevia() {
+    const marco = marcoImpresionRef.current
+    if (!marco?.contentWindow) {
+      setError('No fue posible abrir la impresión. Cierre y vuelva a abrir la vista previa.')
       return
     }
-    ventana.document.open()
-    ventana.document.write(pagina)
-    ventana.document.close()
-    ventana.focus()
-    ventana.setTimeout(() => ventana.print(), 350)
+    marco.contentWindow.focus()
+    marco.contentWindow.print()
   }
 
   // ============================================================
@@ -3218,6 +3222,39 @@ async function restaurarLogoAnterior() {
           }}
         />
 
+        {vistaPreviaImpresion && (
+          <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/65 p-2 md:p-5"
+            role="dialog" aria-modal="true" aria-label="Vista previa de impresión">
+            <div className="flex h-[96vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-slate-100 shadow-2xl">
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-[#194567] px-4 py-3 text-white">
+                <div>
+                  <div className="text-sm font-bold">Vista previa · {vistaPreviaImpresion.titulo}</div>
+                  <p className="text-xs text-slate-200">Tamaño carta vertical · 21,59 × 27,94 cm · Márgenes de 12 mm</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <BotonAccion tipo="imprimir" onClick={imprimirVistaPrevia}>
+                    <i className="fas fa-print" aria-hidden="true" />
+                    Imprimir / Guardar PDF
+                  </BotonAccion>
+                  <BotonAccion tipo="cancelar" onClick={() => setVistaPreviaImpresion(null)}>
+                    <i className="fas fa-xmark" aria-hidden="true" />
+                    Cerrar
+                  </BotonAccion>
+                </div>
+              </div>
+              <div className="min-h-0 flex-1 overflow-auto bg-slate-300 p-2 md:p-5">
+                <iframe
+                  key={vistaPreviaImpresion.titulo}
+                  ref={marcoImpresionRef}
+                  title={vistaPreviaImpresion.titulo}
+                  srcDoc={vistaPreviaImpresion.html}
+                  className="mx-auto block h-full min-h-[550px] w-full max-w-[850px] border-0 bg-white shadow-lg"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ====================================================
             ENCABEZADO
         ==================================================== */}
@@ -3960,22 +3997,22 @@ async function restaurarLogoAnterior() {
                               </div>
                               {mayusculas(modulo.tipo_formacion) === 'TEORIA' &&
                                 Number(modulo.id) === Number(modulosPlan.find(item => mayusculas(item.tipo_formacion) === 'TEORIA')?.id) && (
-                                  <button type="button"
+                                  <BotonAccion tipo="imprimir"
                                     onClick={() => imprimirClasesCategoria('TEORIA')}
-                                    title="Imprimir teoría y talleres de la categoría seleccionada o guardar en PDF"
-                                    className="inline-flex items-center gap-2 self-start rounded-lg border border-white/40 bg-white px-4 py-2 text-xs font-bold text-[#194567] shadow-sm transition hover:bg-sky-100">
+                                    title="Vista previa de teoría y talleres de la categoría seleccionada"
+                                    className="self-start">
                                     <i className="fas fa-print" aria-hidden="true" />
                                     Imprimir teoría y talleres
-                                  </button>
+                                  </BotonAccion>
                                 )}
                               {mayusculas(modulo.tipo_formacion) === 'PRACTICA' && (
-                                <button type="button"
+                                <BotonAccion tipo="imprimir"
                                   onClick={() => imprimirClasesCategoria('PRACTICA')}
-                                  title="Imprimir las clases prácticas de la categoría seleccionada o guardar en PDF"
-                                  className="inline-flex items-center gap-2 self-start rounded-lg border border-white/40 bg-white px-4 py-2 text-xs font-bold text-[#194567] shadow-sm transition hover:bg-sky-100">
+                                  title="Vista previa de las clases prácticas de la categoría seleccionada"
+                                  className="self-start">
                                   <i className="fas fa-print" aria-hidden="true" />
                                   Imprimir clases prácticas
-                                </button>
+                                </BotonAccion>
                               )}
                             </div>
                           </div>
