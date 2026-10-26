@@ -14,9 +14,10 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
+import { BotonAccion, ESTILO_SECCIONES, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
+import { Route } from 'lucide-react'
 
 // ============================================================
 // CONSTANTES
@@ -2544,132 +2545,13 @@ export default function RuntPage() {
         "
       >
 
-        {/* ==================================================
-            ENCABEZADO
-        ================================================== */}
-
-        <div
-          className="
-            bg-white
-            border
-            border-gray-500
-            rounded-lg
-            shadow-sm
-            p-4
-            mb-4
-          "
-        >
-
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-4
-            "
-          >
-
-            <div>
-
-              <p
-                className="
-                  text-xs
-                  uppercase
-                  tracking-wide
-                  font-semibold
-                  text-gray-500
-                  mb-1
-                "
-              >
-                Administración
-              </p>
-
-              <h1
-                className="
-                  text-2xl
-                  font-bold
-                  text-[var(--primary)]
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-road"></i>
-
-                Control RUNT
-              </h1>
-
-              <p
-                className="
-                  text-sm
-                  text-gray-600
-                  mt-1
-                "
-              >
-                Controle inscripción, registro, vigencia, cargue de clases y certificación de aprendices en RUNT.
-              </p>
-
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin'
-                  )
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-arrow-left"></i>
-
-                Menú Administrativo
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  hover:bg-[var(--danger-dark)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-sign-out-alt"></i>
-
-                Cerrar Sesión
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
+        <EncabezadoModulo
+          titulo="Control RUNT"
+          subtitulo="Controle inscripción, registro, vigencia, cargue de clases y certificación de aprendices en RUNT."
+          icono={Route}
+          rutaRegreso="/admin"
+          textoRegreso="Menú Administrativo"
+        />
 
         {/* ==================================================
             USUARIO
