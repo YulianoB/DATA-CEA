@@ -74,6 +74,15 @@ function numero(valor) {
 }
 
 
+function escaparHtmlImpresion(valor) {
+  return String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function formatearHoras(
   valor
 ) {
@@ -1595,6 +1604,94 @@ async function restaurarLogoAnterior() {
       requisitoCategoria,
     ])
 
+
+
+  // Impresión independiente del plan: únicamente las clases activas
+  // de la categoría y versión seleccionadas. Permite guardar como PDF
+  // desde el diálogo de impresión del navegador, sin modificar datos.
+  function imprimirClasesCategoria(tipoDocumento) {
+    if (!planSeleccionado || !categoriaSeleccionada) {
+      setError('Seleccione una categoría y un plan de formación para imprimir.')
+      return
+    }
+    const soloPractica = tipoDocumento === 'PRACTICA'
+    const modulosIncluidos = modulosPlan.filter(modulo =>
+      soloPractica
+        ? mayusculas(modulo.tipo_formacion) === 'PRACTICA'
+        : ['TEORIA', 'TALLER'].includes(mayusculas(modulo.tipo_formacion))
+    )
+    const secciones = modulosIncluidos.map(modulo => {
+      const registros = clasesPlan.filter(clase =>
+        Number(clase.modulo_id) === Number(modulo.id) && clase.activo !== false
+      ).sort((a, b) =>
+        Number(a.orden || a.numero_clase || 0) - Number(b.orden || b.numero_clase || 0)
+      )
+      const columnas = soloPractica
+        ? '<colgroup><col style="width:23%"><col style="width:48%"><col style="width:29%"></colgroup>'
+        : '<colgroup><col style="width:22%"><col style="width:8%"><col style="width:44%"><col style="width:26%"></colgroup>'
+      const encabezados = soloPractica
+        ? '<th>Nombre de la clase</th><th>Competencias a desarrollar (contenido completo)</th><th>Competencia (versión corta de la tarjeta)</th>'
+        : '<th>Nombre de la clase</th><th>Duración</th><th>Competencias a desarrollar (contenido completo)</th><th>Competencia (versión corta de la tarjeta)</th>'
+      const filas = registros.map(clase => {
+        const nombre = escaparHtmlImpresion(clase.nombre)
+        const contenido = escaparHtmlImpresion(clase.contenido) || 'Sin configurar'
+        const tarjeta = escaparHtmlImpresion(clase.contenido_tarjeta) || 'Sin configurar'
+        const horas = clase.duracion_horas
+          ? escaparHtmlImpresion(formatearHoras(clase.duracion_horas) + ' h')
+          : 'Sin configurar'
+        return '<tr><td><strong>' + nombre + '</strong></td>' +
+          (soloPractica ? '' : '<td class="horas">' + horas + '</td>') +
+          '<td>' + contenido + '</td><td>' + tarjeta + '</td></tr>'
+      }).join('')
+      const codigo = texto(modulo.codigo).replace(/^MOD(?=[-_\s\d]|$)/i, 'MÓDULO') || 'MÓDULO'
+      return '<section class="modulo"><h2>' + escaparHtmlImpresion(codigo) +
+        ' · ' + escaparHtmlImpresion(modulo.tipo_formacion) +
+        '</h2><h3>' + escaparHtmlImpresion(modulo.nombre) +
+        '</h3><table>' + columnas + '<thead><tr>' + encabezados +
+        '</tr></thead><tbody>' +
+        (filas || '<tr><td colspan="' + (soloPractica ? '3' : '4') +
+          '">No hay clases activas configuradas.</td></tr>') +
+        '</tbody></table></section>'
+    }).join('')
+    if (!modulosIncluidos.length) {
+      setError('El plan seleccionado no tiene módulos del tipo solicitado.')
+      return
+    }
+    const titulo = soloPractica ? 'PLAN DE CLASES PRÁCTICAS' : 'PLAN DE CLASES TEÓRICAS Y TALLERES'
+    const pagina = '<!doctype html><html lang="es"><head><meta charset="utf-8">' +
+      '<title>' + escaparHtmlImpresion(titulo + ' - ' + categoriaSeleccionada) + '</title>' +
+      '<style>' +
+      '@page{size:letter landscape;margin:12mm}' +
+      '*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#162c40;margin:0;font-size:10px}' +
+      '.cabecera{border-bottom:3px solid #194567;padding-bottom:10px;margin-bottom:16px}' +
+      'h1{font-size:18px;margin:0 0 6px;color:#194567}p{margin:3px 0;font-size:11px}' +
+      '.modulo{margin:18px 0 22px;break-inside:auto;page-break-inside:auto}' +
+      'h2{font-size:12px;color:#fff;background:#194567;padding:8px 10px;margin:0;break-after:avoid}' +
+      'h3{font-size:11px;color:#194567;background:#eaf4fa;padding:7px 10px;margin:0 0 5px;break-after:avoid}' +
+      'table{width:100%;border-collapse:collapse;table-layout:fixed}thead{display:table-header-group}' +
+      'th{background:#d9f5fa;color:#10283c;text-align:left;font-size:10px;padding:8px;border:1px solid #7c9cad}' +
+      'td{vertical-align:top;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45;padding:8px;border:1px solid #9caebc}' +
+      'tr{break-inside:avoid;page-break-inside:avoid}.horas{text-align:center;white-space:nowrap}' +
+      '.imprimir{background:#194567;color:white;border:0;border-radius:6px;padding:9px 15px;cursor:pointer;margin-bottom:14px}' +
+      '@media print{.imprimir{display:none!important}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}' +
+      '</style></head><body>' +
+      '<button class="imprimir" onclick="window.print()">Imprimir / Guardar como PDF</button>' +
+      '<header class="cabecera"><h1>' + escaparHtmlImpresion(titulo) + '</h1>' +
+      '<p><strong>Categoría:</strong> ' + escaparHtmlImpresion(categoriaSeleccionada) +
+      ' &nbsp; <strong>Plan:</strong> ' + escaparHtmlImpresion(planSeleccionado.nombre) +
+      ' &nbsp; <strong>Versión:</strong> ' + escaparHtmlImpresion(planSeleccionado.version) +
+      '</p></header>' + secciones + '</body></html>'
+    const ventana = window.open('', '_blank')
+    if (!ventana) {
+      setError('El navegador bloqueó la ventana de impresión. Permita las ventanas emergentes para DATA-CEA.')
+      return
+    }
+    ventana.document.open()
+    ventana.document.write(pagina)
+    ventana.document.close()
+    ventana.focus()
+    ventana.setTimeout(() => ventana.print(), 350)
+  }
 
   // ============================================================
   // NAVEGACIÓN
