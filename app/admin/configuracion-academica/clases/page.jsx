@@ -582,6 +582,7 @@ const [
     claseEditando,
     setClaseEditando,
   ] = useState(null)
+  const [mostrarClasesInactivas, setMostrarClasesInactivas] = useState(false)
 
   const [
     nuevaClase,
@@ -1834,10 +1835,15 @@ async function restaurarLogoAnterior() {
       setError('El nombre de la clase es obligatorio.')
       return
     }
-    if (claseEditando.grupo_id && (claseEditando.categorias_asociadas || []).length < 2) {
-      setError('La clase compartida debe conservar al menos dos categorías. Para una única categoría primero debe desagruparse el conjunto.')
-      return
-    }
+    const categoriasActualizadas = claseEditando.categorias_asociadas || [claseEditando.categoria]
+    const originales = claseEditando.categorias_originales || [claseEditando.categoria]
+    const cambiaronCategorias = categoriasActualizadas.length !== originales.length ||
+      categoriasActualizadas.some(cat => !originales.includes(cat))
+    if (cambiaronCategorias && !window.confirm(
+      categoriasActualizadas.length
+        ? 'Se actualizarán las categorías de esta clase. Las retiradas desaparecerán del plan activo sin borrar su historial. ¿Continuar?'
+        : 'La clase dejará de estar disponible en el plan activo, conservando su historial. ¿Continuar?'
+    )) return
 
     try {
       setGuardando(
@@ -1876,12 +1882,9 @@ async function restaurarLogoAnterior() {
             body:
               JSON.stringify({
                 nit,
-                ...(claseEditando.grupo_id ? {
-                  recurso: 'EDITAR_CLASE_COMPARTIDA',
-                  grupo_id: claseEditando.grupo_id,
-                  clase_id: claseEditando.id,
-                  categorias_asociadas: claseEditando.categorias_asociadas,
-                } : {}),
+                recurso: 'REASIGNAR_CLASE_CATEGORIAS',
+                clase_id: claseEditando.id,
+                categorias: categoriasActualizadas,
 
                 id:
                   claseEditando.id,
@@ -3544,6 +3547,11 @@ async function restaurarLogoAnterior() {
                     )}
                   </div>
                 )}
+                  <label className="inline-flex items-center gap-2 text-xs font-semibold text-white">
+                    <input type="checkbox" checked={mostrarClasesInactivas}
+                      onChange={e => setMostrarClasesInactivas(e.target.checked)} className="h-4 w-4" />
+                    Mostrar inactivas
+                  </label>
                   <button type="button" onClick={abrirNuevaClase}
                     className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800">
                     <i className="fas fa-plus" aria-hidden="true"/> Nueva clase
@@ -4420,23 +4428,26 @@ async function restaurarLogoAnterior() {
                     const marcada = seleccionadas.includes(cat)
                     const moduloBase = modulos.find(m => Number(m.id) === Number(claseEditando.modulo_id))
                     const disponible = Boolean(moduloBase && moduloEquivalenteNueva(moduloBase,cat))
-                    // La edición de la asociación actual es segura: desvincular
-                    // no borra la clase individual ni sus registros académicos.
                     const asociadaAntes = (claseEditando.categorias_originales || []).includes(cat)
-                    const bloqueada = !claseEditando.grupo_id || !asociadaAntes ||
-                      (claseEditando.tipo_formacion === 'PRACTICA')
-                    return <label key={cat} title={!disponible ? 'No existe un módulo equivalente en esta categoría' : !asociadaAntes ? 'Incorporar una categoría nueva requiere crear y asociar su clase correspondiente' : ''}
+                    const bloqueada = !disponible && !asociadaAntes
+                    return <label key={cat} title={bloqueada ? 'No hay un módulo equivalente en el plan activo de esta categoría' : ''}
                       className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold ${bloqueada ? 'border-slate-200 bg-slate-100 text-slate-500' : 'border-slate-300 bg-white text-slate-800'}`}>
                       <input type="checkbox" checked={marcada} disabled={bloqueada}
-                        onChange={e => cambiarCampoEdicion('categorias_asociadas',
-                          e.target.checked ? [...seleccionadas,cat] : seleccionadas.filter(c => c !== cat))}/>
+                        onChange={e => {
+                          const siguientes = e.target.checked
+                            ? claseEditando.tipo_formacion === 'PRACTICA'
+                              ? [cat]
+                              : [...new Set([...seleccionadas,cat])]
+                            : seleccionadas.filter(c => c !== cat)
+                          cambiarCampoEdicion('categorias_asociadas', siguientes)
+                        }}/>
                       {cat}
                     </label>
                   })}
                 </div>
                 <p className="mt-2 text-xs text-slate-600">
-                  Edite directamente las categorías del grupo compartido. Las que desmarque quedarán como clases independientes, sin perder sus datos ni historial.
-                  {claseEditando.grupo_id ? ' Conserve al menos dos categorías en el grupo.' : ' Esta clase es individual; sus categorías no pueden reasignarse sin crear las clases correspondientes.'}
+                  Puede agregar o retirar categorías desde este formulario en clases individuales y compartidas. Las retiradas dejarán de aparecer en el plan activo sin perder sus registros históricos.
+                  {claseEditando.tipo_formacion === 'PRACTICA' ? ' En las prácticas se selecciona una sola categoría.' : ' Al seleccionar varias categorías se crea o actualiza su grupo compartido.'}
                 </p>
               </Campo>
               <Campo
