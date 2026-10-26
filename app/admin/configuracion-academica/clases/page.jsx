@@ -1658,6 +1658,7 @@ async function restaurarLogoAnterior() {
     ...clase,
     grupo_id: grupoAsociado?.id || null,
     categorias_asociadas: grupoAsociado?.categorias || [clase.categoria],
+    categorias_originales: grupoAsociado?.categorias || [clase.categoria],
     color_horario_efectivo: grupoAsociado ? texto(grupoAsociado.color_horario) : texto(clase.color_horario),
 
     duracion_horas:
@@ -1830,10 +1831,11 @@ async function restaurarLogoAnterior() {
       )
 
     if (!nombre) {
-      setError(
-        'El nombre de la clase es obligatorio.'
-      )
-
+      setError('El nombre de la clase es obligatorio.')
+      return
+    }
+    if (claseEditando.grupo_id && (claseEditando.categorias_asociadas || []).length < 2) {
+      setError('La clase compartida debe conservar al menos dos categorías. Para una única categoría primero debe desagruparse el conjunto.')
       return
     }
 
@@ -1878,6 +1880,7 @@ async function restaurarLogoAnterior() {
                   recurso: 'EDITAR_CLASE_COMPARTIDA',
                   grupo_id: claseEditando.grupo_id,
                   clase_id: claseEditando.id,
+                  categorias_asociadas: claseEditando.categorias_asociadas,
                 } : {}),
 
                 id:
@@ -4411,34 +4414,30 @@ async function restaurarLogoAnterior() {
                 </div>
               </Campo>
               <Campo etiqueta="Categorías habilitadas">
-                <div className="flex flex-wrap gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
-                  {(claseEditando.categorias_asociadas || [claseEditando.categoria]).map(cat => (
-                    <span key={cat} className="inline-flex items-center rounded border border-slate-200 bg-white px-3 py-1 font-bold">
+                <div className="flex flex-wrap gap-3">
+                  {categorias.map(cat => {
+                    const seleccionadas = claseEditando.categorias_asociadas || [claseEditando.categoria]
+                    const marcada = seleccionadas.includes(cat)
+                    const moduloBase = modulos.find(m => Number(m.id) === Number(claseEditando.modulo_id))
+                    const disponible = Boolean(moduloBase && moduloEquivalenteNueva(moduloBase,cat))
+                    // La edición de la asociación actual es segura: desvincular
+                    // no borra la clase individual ni sus registros académicos.
+                    const asociadaAntes = (claseEditando.categorias_originales || []).includes(cat)
+                    const bloqueada = !disponible || !asociadaAntes ||
+                      (claseEditando.tipo_formacion === 'PRACTICA')
+                    return <label key={cat} title={!disponible ? 'No existe un módulo equivalente en esta categoría' : !asociadaAntes ? 'Incorporar una categoría nueva requiere crear y asociar su clase correspondiente' : ''}
+                      className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold ${bloqueada ? 'border-slate-200 bg-slate-100 text-slate-500' : 'border-slate-300 bg-white text-slate-800'}`}>
+                      <input type="checkbox" checked={marcada} disabled={bloqueada}
+                        onChange={e => cambiarCampoEdicion('categorias_asociadas',
+                          e.target.checked ? [...seleccionadas,cat] : seleccionadas.filter(c => c !== cat))}/>
                       {cat}
-                    </span>
-                  ))}
+                    </label>
+                  })}
                 </div>
-                {claseEditando.grupo_id ? (
-                  <div className="mt-2 space-y-2">
-                    <p className="text-xs text-slate-600">
-                      Esta clase es compartida. Para retirar o incorporar categorías, modifique las clases asociadas al grupo. Las clases retiradas no se eliminan: quedan independientes para editar su duración y contenido.
-                    </p>
-                    <button type="button" disabled={guardando}
-                      onClick={() => {
-                        const grupo = gruposTransversales.find(item => Number(item.id) === Number(claseEditando.grupo_id))
-                        if (!grupo) { setError('No se encontró el grupo transversal para modificar las categorías.'); return }
-                        setClaseEditando(null)
-                        abrirEditarGrupo(grupo)
-                        setMostrarAlternativasGrupo(true)
-                      }}
-                      className="rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-xs font-bold text-sky-900 hover:bg-sky-100 disabled:opacity-50">
-                      <i className="fas fa-list-check mr-2" />Modificar categorías de la clase
-                    </button>
-                    <p className="text-[11px] text-slate-500">Ejemplo: retire C2 del Taller 3 y guarde el grupo B1–C1. Luego seleccione la clase C2 independiente para configurar sus horas.</p>
-                  </div>
-                ) : (
-                  <p className="mt-1 text-xs text-slate-500">Esta clase es individual y solo aplica a {claseEditando.categoria}. Para compartir clases entre categorías, utilice los grupos transversales.</p>
-                )}
+                <p className="mt-2 text-xs text-slate-600">
+                  Edite directamente las categorías del grupo compartido. Las que desmarque quedarán como clases independientes, sin perder sus datos ni historial.
+                  {claseEditando.grupo_id ? ' Conserve al menos dos categorías en el grupo.' : ' Esta clase es individual; sus categorías no pueden reasignarse sin crear las clases correspondientes.'}
+                </p>
               </Campo>
               <Campo
                 etiqueta="Nombre de la clase"
