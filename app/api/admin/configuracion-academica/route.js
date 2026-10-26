@@ -2499,6 +2499,19 @@ export async function PATCH(
           !categoriaHabilitadaEmpresa(empresa,c.categoria))) {
         return NextResponse.json({ok:false,error:'Las clases del grupo no pertenecen todas al CEA o son incompatibles.'},{status:400})
       }
+      // La categoría retirada conserva su clase (y sus referencias históricas);
+      // únicamente se elimina su pertenencia al grupo transversal.
+      const actuales = clasesGrupo.map(c => mayusculas(c.categoria))
+      const solicitadas = body?.categorias_asociadas === undefined
+        ? actuales
+        : Array.isArray(body.categorias_asociadas)
+          ? [...new Set(body.categorias_asociadas.map(mayusculas).filter(Boolean))]
+          : []
+      if (solicitadas.length < 2 || solicitadas.some(cat => !actuales.includes(cat))) {
+        return NextResponse.json({ok:false,error:'Seleccione al menos dos categorías existentes del grupo. No se permite agregar una categoría sin su clase equivalente.'},{status:400})
+      }
+      const idsRetirados = clasesGrupo.filter(c => !solicitadas.includes(mayusculas(c.categoria))).map(c => Number(c.id))
+      const idsSeleccionados = clasesGrupo.filter(c => solicitadas.includes(mayusculas(c.categoria))).map(c => Number(c.id))
       const duracion=numeroPositivoONull(body?.duracion_horas)
       if(!Number.isFinite(duracion) || duracion<=0) {
         return NextResponse.json({ok:false,error:'La duración de una clase compartida debe ser válida.'},{status:400})
@@ -2521,8 +2534,8 @@ export async function PATCH(
         if(errorColor) throw new Error('No fue posible actualizar el color del grupo.')
       }
       const {data:actualizadas,error:errorGuardar}=await supabase.from('clases_formacion')
-        .update(cambios).in('id',ids).select('id')
-      if(errorGuardar || (actualizadas||[]).length!==ids.length){
+        .update(cambios).in('id',idsSeleccionados).select('id')
+      if(errorGuardar || (actualizadas||[]).length!==idsSeleccionados.length){
         if(nuevoColor!==grupoColorAnterior){
           const {error:errorRestaurar}=await supabase.from('grupos_clases_formacion')
             .update({color_horario:grupoColorAnterior,updated_at:new Date().toISOString()}).eq('id',grupoId)
@@ -2530,7 +2543,18 @@ export async function PATCH(
         }
         throw new Error('No se pudo confirmar la actualización de todas las categorías.')
       }
-      return NextResponse.json({ok:true,mensaje:'Clase compartida actualizada en todas las categorías asociadas.',cantidad:ids.length})
+      if (idsRetirados.length > 0) {
+        const {data:retiradas,error:errorRetirar}=await supabase
+          .from('grupos_clases_formacion_detalle')
+          .delete().eq('grupo_id',grupoId).in('clase_formacion_id',idsRetirados)
+          .select('clase_formacion_id')
+        if (errorRetirar || (retiradas||[]).length !== idsRetirados.length) {
+          return NextResponse.json({ok:false,error:'Se actualizaron las clases seleccionadas, pero no fue posible confirmar todas las desvinculaciones. Recargue los datos antes de reintentar.',requiere_revision:true},{status:500})
+        }
+      }
+      return NextResponse.json({ok:true,
+        mensaje:idsRetirados.length ? 'Cambios guardados. Las categorías retiradas conservaron sus clases independientes.' : 'Clase compartida actualizada en todas las categorías asociadas.',
+        cantidad:idsSeleccionados.length,desvinculadas:idsRetirados.length})
     }
 
     // Edición compartida de textos sobre clases existentes.
