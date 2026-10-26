@@ -12,6 +12,7 @@ import {
   useRouter,
 } from 'next/navigation'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
 import { BookOpen } from 'lucide-react'
 import { BotonAccion, ESTILO_ENCABEZADO_TABLA } from '@/components/admin/EstiloModulo'
 
@@ -1957,10 +1958,7 @@ async function restaurarLogoAnterior() {
         ))
       }
 
-      setMensaje(
-        data?.mensaje ||
-          'Clase actualizada correctamente.'
-      )
+      setMensaje('Clase actualizada correctamente.')
 
       setClaseEditando(
         null
@@ -3111,18 +3109,17 @@ async function restaurarLogoAnterior() {
         "
       >
 
-        {(mensaje || error) && (
-          <div role={error ? 'alert' : 'status'} aria-live={error ? 'assertive' : 'polite'}
-            className={`fixed right-4 top-14 z-[70] flex max-w-[min(520px,calc(100vw-2rem))] items-start gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-xl ${error
-              ? 'border-red-300 bg-red-50 text-red-800'
-              : 'border-emerald-300 bg-emerald-50 text-emerald-800'}`}>
-            <i className={error ? 'fas fa-circle-exclamation mt-0.5' : 'fas fa-circle-check mt-0.5'} aria-hidden="true" />
-            <span className="min-w-0 flex-1">{error || mensaje}</span>
-            <button type="button" aria-label="Cerrar aviso" title="Cerrar aviso"
-              onClick={() => { setError(''); setMensaje('') }}
-              className="rounded px-1 text-lg leading-none hover:bg-black/5">×</button>
-          </div>
-        )}
+        <ModalResultado
+          abierto={Boolean(error || mensaje)}
+          tipo={error ? 'error' : 'exito'}
+          titulo={error ? 'No fue posible completar la operación' : 'Operación realizada satisfactoriamente'}
+          mensaje={error || mensaje}
+          textoBoton="ACEPTAR"
+          onCerrar={() => {
+            setError('')
+            setMensaje('')
+          }}
+        />
 
         {/* ====================================================
             ENCABEZADO
