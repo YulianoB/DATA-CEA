@@ -1464,8 +1464,8 @@ export default function SicovPage() {
 
           <div
             className="
-              bg-slate-800
-              text-white
+              
+              
               px-4
               py-3
               flex
@@ -1474,8 +1474,7 @@ export default function SicovPage() {
               sm:items-center
               sm:justify-between
               gap-2
-            "
-          >
+            " style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto,borderRadius:ESTILO_SECCIONES.radioSuperior}}>
 
             <span className="text-sm font-semibold">
               <i className="fas fa-filter mr-2"></i>
@@ -1774,16 +1773,15 @@ export default function SicovPage() {
 
           <div
             className="
-              bg-slate-800
-              text-white
+              
+              
               px-4
               py-3
               flex
               justify-between
               items-center
               gap-3
-            "
-          >
+            " style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto,borderRadius:ESTILO_SECCIONES.radioSuperior}}>
 
             <span
               className="
@@ -1817,35 +1815,35 @@ export default function SicovPage() {
               "
             >
 
-              <thead className="bg-gray-100">
+              <thead style={{backgroundColor:ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}} className="text-[10px] font-extrabold uppercase">
 
                 <tr>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Matrícula
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Aprendiz
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Documento
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Categoría
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Registro
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Certificación
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Acción
                   </th>
 
@@ -1865,7 +1863,7 @@ export default function SicovPage() {
                         text-center
                         text-gray-500
                       "
-                    >
+                     style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       <i className="fas fa-spinner fa-spin mr-2"></i>
 
                       Consultando...
@@ -1883,7 +1881,7 @@ export default function SicovPage() {
                         text-center
                         text-gray-500
                       "
-                    >
+                     style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       <i
                         className="
                           fas
@@ -1931,12 +1929,12 @@ export default function SicovPage() {
                               text-center
                               font-semibold
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {row.consecutivo ||
                               '-'}
                           </td>
 
-                          <td className="p-2 border">
+                          <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             <div className="font-semibold">
                               {row
@@ -1965,7 +1963,7 @@ export default function SicovPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {formatearDocumento(
                               row.documento
                             )}
@@ -1977,7 +1975,7 @@ export default function SicovPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             <Badge tipo="blue">
                               {row.categoria ||
                                 '-'}
@@ -1990,7 +1988,7 @@ export default function SicovPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             {estadoRegistro ===
                             'REGISTRADO' ? (
@@ -2011,7 +2009,7 @@ export default function SicovPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             {estadoCertificacion ===
                             'CERTIFICADO' ? (
@@ -2032,7 +2030,7 @@ export default function SicovPage() {
                               border
                               text-center
                             "
-                          >
+                           style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             <button
                               type="button"
@@ -2292,14 +2290,13 @@ export default function SicovPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Estado SICOV
                   </div>
 
@@ -2450,16 +2447,15 @@ export default function SicovPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       flex
                       justify-between
                       items-center
                       gap-2
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
 
                     <span
                       className="
@@ -2793,14 +2789,13 @@ export default function SicovPage() {
 
                     <div
                       className="
-                        bg-slate-800
-                        text-white
+                        
+                        
                         px-3
                         py-2
                         text-xs
                         font-semibold
-                      "
-                    >
+                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                       Datos del Acudiente
                     </div>
 
@@ -2882,14 +2877,13 @@ export default function SicovPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Observaciones SICOV
                   </div>
 
@@ -2940,14 +2934,13 @@ export default function SicovPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Gestión del Proceso
                   </div>
 
