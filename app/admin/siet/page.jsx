@@ -13,9 +13,10 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
+import { BotonAccion, ESTILO_SECCIONES, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
+import { GraduationCap } from 'lucide-react'
 
 // =========================================================
 // CONSTANTES
@@ -1480,159 +1481,20 @@ export default function SietPage() {
         "
       >
 
-        {/* ==================================================
-            ENCABEZADO
-        ================================================== */}
+        <EncabezadoModulo
+          titulo="Control SIET"
+          subtitulo="Controle el registro y certificación de los aprendices en SIET."
+          icono={GraduationCap}
+          rutaRegreso="/admin"
+          textoRegreso="Menú Administrativo"
+        />
 
-        <div
-          className="
-            bg-white
-            border
-            border-gray-500
-            rounded-lg
-            shadow-sm
-            p-4
-            mb-4
-          "
-        >
-
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-4
-            "
-          >
-
-            <div>
-
-              <p
-                className="
-                  text-xs
-                  uppercase
-                  tracking-wide
-                  font-semibold
-                  text-gray-500
-                  mb-1
-                "
-              >
-                Administración
-              </p>
-
-              <h1
-                className="
-                  text-2xl
-                  font-bold
-                  text-[var(--primary)]
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-graduation-cap"></i>
-
-                Control SIET
-              </h1>
-
-              <p
-                className="
-                  text-sm
-                  text-gray-600
-                  mt-1
-                "
-              >
-                Controle el registro y certificación de los aprendices en SIET.
-              </p>
-
-            </div>
-
-            <div
-              className="
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-
-              <button
-                type="button"
-                disabled
-                title="Disponible cuando integremos la plantilla oficial SIET"
-                className="
-                  bg-gray-200
-                  text-gray-500
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  cursor-not-allowed
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-file-excel"></i>
-
-                Exportar Plantilla SIET
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin'
-                  )
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-arrow-left"></i>
-
-                Menú Administrativo
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  hover:bg-[var(--danger-dark)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <i className="fas fa-sign-out-alt"></i>
-
-                Cerrar Sesión
-              </button>
-
-            </div>
-
-          </div>
-
+        <div className="mb-3 flex justify-end">
+          <BotonAccion tipo="excel" type="button" disabled
+            title="Disponible cuando integremos la plantilla oficial SIET">
+            <i className="fas fa-file-excel" aria-hidden="true" />
+            Exportar Plantilla SIET
+          </BotonAccion>
         </div>
 
         {/* ==================================================
