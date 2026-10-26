@@ -1954,11 +1954,11 @@ export default function VehiculosAdminPage() {
 
             {cargando ? (
             <div className="overflow-x-auto rounded-lg border" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
-                  <table className="w-full border-collapse text-sm">
+                  <table className="w-full border-collapse text-[11px] leading-snug">
                     <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                       <tr>
                         {['Placa','Tipo','Marca','Modelo','GPS','SOAT','RTM','Estado','Acciones'].map((titulo) => (
-                          <th key={titulo} className="border border-slate-300 p-2 text-center font-bold whitespace-nowrap">{titulo}</th>
+                          <th key={titulo} className="border border-slate-300 px-2 py-1.5 text-center text-[10px] font-bold uppercase whitespace-nowrap">{titulo}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1969,11 +1969,11 @@ export default function VehiculosAdminPage() {
                 </div>
             ) : vehiculosFiltrados.length === 0 ? (
             <div className="overflow-x-auto rounded-lg border" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
-                  <table className="w-full border-collapse text-sm">
+                  <table className="w-full border-collapse text-[11px] leading-snug">
                     <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                       <tr>
                         {['Placa','Tipo','Marca','Modelo','GPS','SOAT','RTM','Estado','Acciones'].map((titulo) => (
-                          <th key={titulo} className="border border-slate-300 p-2 text-center font-bold whitespace-nowrap">{titulo}</th>
+                          <th key={titulo} className="border border-slate-300 px-2 py-1.5 text-center text-[10px] font-bold uppercase whitespace-nowrap">{titulo}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1997,11 +1997,11 @@ export default function VehiculosAdminPage() {
                   {grupo.titulo} ({grupo.vehiculos.length})
                 </div>
                 <div className="overflow-x-auto rounded-lg border" style={{ borderColor: ESTILO_CELDAS_TABLA.borde }}>
-                  <table className="w-full border-collapse text-sm">
+                  <table className="w-full border-collapse text-[11px] leading-snug">
                     <thead style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                       <tr>
                         {['Placa','Tipo','Marca','Modelo','GPS','SOAT','RTM','Estado','Acciones'].map((titulo) => (
-                          <th key={titulo} className="border border-slate-300 p-2 text-center font-bold whitespace-nowrap">{titulo}</th>
+                          <th key={titulo} className="border border-slate-300 px-2 py-1.5 text-center text-[10px] font-bold uppercase whitespace-nowrap">{titulo}</th>
                         ))}
                       </tr>
                     </thead>
@@ -2011,27 +2011,27 @@ export default function VehiculosAdminPage() {
                     const estadoVigencia = (dato) => {
                       const estado = String(dato?.estado || 'SIN REGISTRO').toUpperCase()
                       if (!activo) {
-                        return <span className="text-[11px] font-semibold text-slate-400">{estado === 'VIGENTE' ? 'Vigente' : estado === 'VENCIDO' ? 'Vencido' : 'Sin registro'}</span>
+                        return <span className="text-[10px] font-semibold text-slate-400">{estado === 'VIGENTE' ? 'Vigente' : estado === 'VENCIDO' ? 'Vencido' : 'Sin registro'}</span>
                       }
-                      if (estado === 'VIGENTE') return <span className="text-[11px] font-semibold text-green-700">Vigente</span>
-                      if (estado === 'VENCIDO') return <span className="text-[11px] font-semibold text-red-600">Vencido</span>
-                      return <span className="text-[11px] text-slate-500">Sin registro</span>
+                      if (estado === 'VIGENTE') return <span className="text-[10px] font-semibold text-green-700">Vigente</span>
+                      if (estado === 'VENCIDO') return <span className="text-[10px] font-semibold text-red-600">Vencido</span>
+                      return <span className="text-[10px] text-slate-500">Sin registro</span>
                     }
                     return (
                       <tr key={vehiculo.id} className="hover:bg-slate-50">
-                        <td className={`border border-slate-300 p-2 text-center font-bold ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.placa}</td>
-                        <td className={`border border-slate-300 p-2 text-center ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.tipo_vehiculo || '-'}</td>
-                        <td className={`border border-slate-300 p-2 text-left ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.marca || '-'}</td>
-                        <td className={`border border-slate-300 p-2 text-center ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.modelo || '-'}</td>
-                        <td className={`border border-slate-300 p-2 text-center ${!activo ? 'text-slate-400' : ''}`}>{String(vehiculo.gps || '').toUpperCase() === 'SI' ? 'Sí' : String(vehiculo.gps || '').toUpperCase() === 'NO' ? 'No' : '-'}</td>
-                        <td className="border border-slate-300 p-2 text-center">{estadoVigencia(vehiculo.soat)}</td>
-                        <td className="border border-slate-300 p-2 text-center">{estadoVigencia(vehiculo.rtm)}</td>
-                        <td className="border border-slate-300 p-2 text-center">
-                          <span className={`text-[11px] font-semibold ${activo ? 'text-green-700' : 'text-red-600'}`}>
+                        <td className={`border border-slate-300 px-2 py-1.5 text-center font-bold ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.placa}</td>
+                        <td className={`border border-slate-300 px-2 py-1.5 text-center ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.tipo_vehiculo || '-'}</td>
+                        <td className={`border border-slate-300 px-2 py-1.5 text-left ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.marca || '-'}</td>
+                        <td className={`border border-slate-300 px-2 py-1.5 text-center ${!activo ? 'text-slate-400' : ''}`}>{vehiculo.modelo || '-'}</td>
+                        <td className={`border border-slate-300 px-2 py-1.5 text-center ${!activo ? 'text-slate-400' : ''}`}>{String(vehiculo.gps || '').toUpperCase() === 'SI' ? 'Sí' : String(vehiculo.gps || '').toUpperCase() === 'NO' ? 'No' : '-'}</td>
+                        <td className="border border-slate-300 px-2 py-1.5 text-center">{estadoVigencia(vehiculo.soat)}</td>
+                        <td className="border border-slate-300 px-2 py-1.5 text-center">{estadoVigencia(vehiculo.rtm)}</td>
+                        <td className="border border-slate-300 px-2 py-1.5 text-center">
+                          <span className={`text-[10px] font-semibold ${activo ? 'text-green-700' : 'text-red-600'}`}>
                             {activo ? 'Activo' : 'Inactivo'}
                           </span>
                         </td>
-                        <td className="border border-slate-300 p-2 text-center">
+                        <td className="border border-slate-300 px-2 py-1.5 text-center">
                           <div className="flex flex-wrap items-center justify-center gap-1.5">
                             <BotonAccion tipo="editarVehiculo" type="button" disabled={!activo} aria-label={!activo ? 'Edición no disponible para vehículos inactivos' : 'Editar vehículo'} title={!activo ? 'Active el vehículo para editar su información' : 'Editar vehículo'} className={`!px-2.5 !py-1.5 ${!activo ? 'opacity-40 cursor-not-allowed grayscale' : ''}`} onClick={() => { if (activo) editarVehiculo(vehiculo) }}>
                               <Pencil size={14} /> Editar
