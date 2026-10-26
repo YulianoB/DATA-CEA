@@ -3958,8 +3958,25 @@ async function restaurarLogoAnterior() {
                                   }
                                 </div>
                               </div>
-
-
+                              {mayusculas(modulo.tipo_formacion) === 'TEORIA' &&
+                                Number(modulo.id) === Number(modulosPlan.find(item => mayusculas(item.tipo_formacion) === 'TEORIA')?.id) && (
+                                  <button type="button"
+                                    onClick={() => imprimirClasesCategoria('TEORIA')}
+                                    title="Imprimir teoría y talleres de la categoría seleccionada o guardar en PDF"
+                                    className="inline-flex items-center gap-2 self-start rounded-lg border border-white/40 bg-white px-4 py-2 text-xs font-bold text-[#194567] shadow-sm transition hover:bg-sky-100">
+                                    <i className="fas fa-print" aria-hidden="true" />
+                                    Imprimir teoría y talleres
+                                  </button>
+                                )}
+                              {mayusculas(modulo.tipo_formacion) === 'PRACTICA' && (
+                                <button type="button"
+                                  onClick={() => imprimirClasesCategoria('PRACTICA')}
+                                  title="Imprimir las clases prácticas de la categoría seleccionada o guardar en PDF"
+                                  className="inline-flex items-center gap-2 self-start rounded-lg border border-white/40 bg-white px-4 py-2 text-xs font-bold text-[#194567] shadow-sm transition hover:bg-sky-100">
+                                  <i className="fas fa-print" aria-hidden="true" />
+                                  Imprimir clases prácticas
+                                </button>
+                              )}
                             </div>
                           </div>
 
