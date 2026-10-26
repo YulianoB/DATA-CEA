@@ -2585,7 +2585,11 @@ export async function PATCH(
       const cambios={nombre,contenido:texto(body?.contenido)||null,
         contenido_tarjeta:texto(body?.contenido_tarjeta)||null,
         observaciones:texto(body?.observaciones)||null,
-        duracion_horas:duracion,activo:body?.activo!==false,updated_at:ahora}
+        duracion_horas:duracion,activo:body?.activo!==false,
+        // El color de las clases individuales se almacena en clases_formacion;
+        // en las compartidas, el horario utiliza el color del grupo.
+        color_horario:texto(body?.color_horario)||null,
+        updated_at:ahora}
       const idsSeleccionados=miembros.filter(c=>categorias.includes(mayusculas(c.categoria))).map(c=>Number(c.id))
       const idsRetirados=miembros.filter(c=>!categorias.includes(mayusculas(c.categoria))).map(c=>Number(c.id))
       const idsNuevos=[]
