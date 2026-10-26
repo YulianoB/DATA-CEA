@@ -2610,25 +2610,16 @@ export default function RuntPage() {
 
         </div>
 
-        {!drawerOpen &&
-          error && (
-          <div
-            className="
-              bg-red-50
-              border
-              border-red-300
-              text-red-700
-              rounded-lg
-              p-3
-              mb-4
-              text-sm
-            "
-          >
-            <i className="fas fa-exclamation-triangle mr-2"></i>
-
-            {error}
-          </div>
-        )}
+        <ModalResultado
+          abierto={!drawerOpen && Boolean(error || mensaje)}
+          tipo={error ? 'error' : 'exito'}
+          mensaje={error || mensaje}
+          textoBoton="ACEPTAR"
+          onCerrar={() => {
+            setError('')
+            setMensaje('')
+          }}
+        />
 
         {/* ==================================================
             FILTROS
