@@ -4423,7 +4423,7 @@ async function restaurarLogoAnterior() {
                     // La edición de la asociación actual es segura: desvincular
                     // no borra la clase individual ni sus registros académicos.
                     const asociadaAntes = (claseEditando.categorias_originales || []).includes(cat)
-                    const bloqueada = !disponible || !asociadaAntes ||
+                    const bloqueada = !claseEditando.grupo_id || !asociadaAntes ||
                       (claseEditando.tipo_formacion === 'PRACTICA')
                     return <label key={cat} title={!disponible ? 'No existe un módulo equivalente en esta categoría' : !asociadaAntes ? 'Incorporar una categoría nueva requiere crear y asociar su clase correspondiente' : ''}
                       className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold ${bloqueada ? 'border-slate-200 bg-slate-100 text-slate-500' : 'border-slate-300 bg-white text-slate-800'}`}>
