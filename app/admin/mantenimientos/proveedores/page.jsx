@@ -572,9 +572,9 @@ export default function ProveedoresMantenimientoPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3">
           <form
             onSubmit={guardarProveedor}
-            className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-xl border border-slate-300 bg-white shadow-2xl"
+            className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-xl border bg-white shadow-2xl" style={{ borderColor: ESTILO_CONTENEDORES.borde }}
           >
-            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo }}>
+            <FranjaSuperiorModal className="sticky top-0 z-10 flex items-center justify-between px-4 py-3">
               <div>
                 <div className="text-base font-bold text-white">
                   {form.id ? 'Editar proveedor / taller' : 'Nuevo proveedor / taller'}
@@ -583,14 +583,14 @@ export default function ProveedoresMantenimientoPage() {
               <button type="button" onClick={() => setModalProveedor(false)}>
                 <X className="h-5 w-5" />
               </button>
-            </div>
+            </FranjaSuperiorModal>
 
             <div className="mx-4 mt-4 rounded-lg border-l-4 border-[#737B87] bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-700">
               Registre la información general del proveedor o taller y seleccione su ubicación. Las actividades pueden configurarse ahora o posteriormente; un proveedor sin actividades podrá utilizarse en mantenimientos correctivos, pero no en preventivos hasta completar su configuración. Los campos obligatorios deben completarse antes de guardar.
             </div>
 
-            <div className="mx-4 mt-4 rounded-xl border border-slate-300 bg-white shadow-sm">
-              <div className="rounded-t-xl border-b border-slate-300 px-4 py-2.5 text-xs font-bold text-white" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo }}>Datos del proveedor / taller</div>
+            <div className="mx-4 mt-4 overflow-hidden rounded-xl border bg-white shadow-sm" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
+              <FranjaSecundariaModal className="px-4 py-2.5 text-xs font-bold">Datos del proveedor / taller</FranjaSecundariaModal>
             <div className="grid gap-x-3 gap-y-3 p-4 md:grid-cols-12">
               <div className="md:col-span-3"><Campo label="Tipo de persona">
                 <select
@@ -727,10 +727,10 @@ export default function ProveedoresMantenimientoPage() {
 
             </div>
 
-              <div className="mx-4 mt-4 overflow-hidden rounded-xl border border-slate-300 bg-white">
-                <div className="border-b border-slate-300 px-4 py-2.5 text-xs font-bold text-white" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo }}>
+              <div className="mx-4 mt-4 overflow-hidden rounded-xl border bg-white" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
+                <FranjaSecundariaModal className="px-4 py-2.5 text-xs font-bold">
                   Actividades de mantenimiento
-                </div>
+                </FranjaSecundariaModal>
                 <div className="space-y-3 bg-white p-3">
                   <p className="text-[11px] font-medium text-slate-600">
                     Seleccione el tipo de vehículo y marque las actividades que este proveedor o taller puede realizar. Las selecciones se conservan al cambiar de tipo de vehículo.
@@ -841,13 +841,13 @@ export default function ProveedoresMantenimientoPage() {
               <BotonAccion tipo="cancelar"
                 type="button"
                 onClick={() => setModalProveedor(false)}
-                className="px-4 py-2 text-sm"
+                className="px-4 py-2"
               >
                 Cancelar
               </BotonAccion>
               <BotonAccion tipo="guardar"
                 disabled={guardando}
-                className="px-4 py-2 text-sm"
+                className="px-4 py-2"
               >
                 {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Guardar
@@ -859,8 +859,8 @@ export default function ProveedoresMantenimientoPage() {
 
       {modalTecnicos && proveedorTecnicos && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3">
-          <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-xl border border-slate-300 bg-white shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: ESTILO_FRANJA_SUPERIOR_MODAL.fondo }}>
+          <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-xl border bg-white shadow-2xl" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
+            <FranjaSuperiorModal className="sticky top-0 z-10 flex items-center justify-between px-4 py-3">
               <div>
                 <div className="font-extrabold">Técnicos</div>
                 <div className="text-[10px] text-slate-300">
@@ -870,7 +870,7 @@ export default function ProveedoresMantenimientoPage() {
               <button type="button" onClick={() => setModalTecnicos(false)}>
                 <X className="h-5 w-5" />
               </button>
-            </div>
+            </FranjaSuperiorModal>
 
             <div className="mx-4 mt-4 rounded-lg border-l-4 border-slate-600 bg-slate-100 px-4 py-3 text-xs font-semibold text-slate-700">
               Registre los datos del técnico vinculado a este proveedor. Verifique especialmente el número de documento y el teléfono antes de guardar; son datos diferentes y cada uno debe registrarse en su campo correspondiente.
@@ -940,7 +940,7 @@ export default function ProveedoresMantenimientoPage() {
                             proveedor_id: proveedorTecnicos.id,
                           })
                         }
-                        className="flex-1 rounded-lg border border-slate-300 py-2 text-xs font-bold"
+                        className="flex-1"
                       >
                         Nuevo
                       </BotonAccion>
@@ -955,10 +955,10 @@ export default function ProveedoresMantenimientoPage() {
                 </div>
               </form>
 
-              <div className="overflow-hidden rounded-xl border border-slate-200">
-                <div className="px-3 py-2 text-xs font-extrabold text-white" style={{ backgroundColor: ESTILO_SECCIONES_SECUNDARIAS.fondo }}>
+              <div className="overflow-hidden rounded-xl border bg-white" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
+                <FranjaSecundariaModal className="px-3 py-2 text-xs font-bold">
                   Técnicos registrados
-                </div>
+                </FranjaSecundariaModal>
                 {(proveedorTecnicos.tecnicos || []).length === 0 ? (
                   <div className="p-8 text-center text-sm text-slate-500">
                     No hay técnicos registrados para este proveedor.
@@ -983,13 +983,13 @@ export default function ProveedoresMantenimientoPage() {
                           </span>
                           <BotonAccion tipo="editar"
                             onClick={() => editarTecnico(t)}
-                            className="rounded border border-slate-300 p-2"
+                            className="!px-2 !py-1.5"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </BotonAccion>
                           <BotonAccion tipo={t.activo ? "eliminar" : "agregar"}
                             onClick={() => cambiarEstadoTecnico(t)}
-                            className="rounded border border-slate-300 px-2 py-1 text-[9px] font-bold"
+                            className="!px-2 !py-1.5"
                           >
                             {t.activo ? 'Inactivar' : 'Activar'}
                           </BotonAccion>
