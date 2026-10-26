@@ -1558,47 +1558,16 @@ export default function SietPage() {
 
         </div>
 
-        {/* ==================================================
-            MENSAJES
-        ================================================== */}
-
-        {error && (
-          <div
-            className="
-              bg-red-50
-              border
-              border-red-300
-              text-red-700
-              rounded-lg
-              p-3
-              mb-4
-              text-sm
-            "
-          >
-            <i className="fas fa-exclamation-triangle mr-2"></i>
-
-            {error}
-          </div>
-        )}
-
-        {mensaje && (
-          <div
-            className="
-              bg-emerald-50
-              border
-              border-emerald-300
-              text-emerald-700
-              rounded-lg
-              p-3
-              mb-4
-              text-sm
-            "
-          >
-            <i className="fas fa-check-circle mr-2"></i>
-
-            {mensaje}
-          </div>
-        )}
+        <ModalResultado
+          abierto={Boolean(error || mensaje)}
+          tipo={error ? 'error' : 'exito'}
+          mensaje={error || mensaje}
+          textoBoton="ACEPTAR"
+          onCerrar={() => {
+            setError('')
+            setMensaje('')
+          }}
+        />
 
         {/* ==================================================
             RESUMEN
