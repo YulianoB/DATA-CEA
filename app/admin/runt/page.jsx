@@ -2646,14 +2646,13 @@ export default function RuntPage() {
 
           <div
             className="
-              bg-slate-800
-              text-white
+              
+              
               px-4
               py-3
               text-sm
               font-semibold
-            "
-          >
+            " style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto,borderRadius:ESTILO_SECCIONES.radioSuperior}}>
             <i className="fas fa-filter mr-2"></i>
 
             Filtros de Control RUNT
@@ -2995,15 +2994,14 @@ export default function RuntPage() {
 
           <div
             className="
-              bg-slate-800
-              text-white
+              
+              
               px-4
               py-3
               flex
               justify-between
               items-center
-            "
-          >
+            " style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto,borderRadius:ESTILO_SECCIONES.radioSuperior}}>
 
             <span className="text-sm font-semibold">
               Cola de Trabajo RUNT
@@ -3019,51 +3017,51 @@ export default function RuntPage() {
 
             <table className="w-full text-[11px] border-collapse">
 
-              <thead className="bg-gray-100">
+              <thead style={{backgroundColor:ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}} className="text-[10px] font-extrabold uppercase">
 
                 <tr>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Matrícula
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Aprendiz
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Categoría
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Proceso
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Registro
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Vigencia
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Teoría
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Taller
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Práctica
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Certificación
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                     Acción
                   </th>
 
@@ -3079,7 +3077,7 @@ export default function RuntPage() {
                     <td
                       colSpan="11"
                       className="p-8 text-center text-gray-500"
-                    >
+                     style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       Consultando...
                     </td>
 
@@ -3091,7 +3089,7 @@ export default function RuntPage() {
                     <td
                       colSpan="11"
                       className="p-8 text-center text-gray-500"
-                    >
+                     style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       {consultado
                         ? 'No se encontraron registros.'
                         : 'No hay datos.'}
@@ -3117,12 +3115,12 @@ export default function RuntPage() {
                           "
                         >
 
-                          <td className="p-2 border text-center font-semibold">
+                          <td className="p-2 border text-center font-semibold" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {row.consecutivo ||
                               '-'}
                           </td>
 
-                          <td className="p-2 border">
+                          <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             <div className="font-semibold">
                               {row.aprendiz
@@ -3138,7 +3136,7 @@ export default function RuntPage() {
 
                           </td>
 
-                          <td className="p-2 border text-center">
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             <Badge tipo="blue">
                               {row.categoria ||
@@ -3147,12 +3145,12 @@ export default function RuntPage() {
 
                           </td>
 
-                          <td className="p-2 border text-center font-semibold">
+                          <td className="p-2 border text-center font-semibold" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             #{row.numero_proceso ||
                               1}
                           </td>
 
-                          <td className="p-2 border text-center">
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             {mayusculas(
                               row.estado_registro
@@ -3169,7 +3167,7 @@ export default function RuntPage() {
 
                           </td>
 
-                          <td className="p-2 border text-center">
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             <BadgeVigencia
                               vigencia={
@@ -3189,7 +3187,7 @@ export default function RuntPage() {
 
                           </td>
 
-                          <td className="p-2 border text-center">
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {numero(
                               av.teoria_cargadas
                             )}
@@ -3199,7 +3197,7 @@ export default function RuntPage() {
                             )}
                           </td>
 
-                          <td className="p-2 border text-center">
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {numero(
                               av.taller_cargadas
                             )}
@@ -3209,7 +3207,7 @@ export default function RuntPage() {
                             )}
                           </td>
 
-                          <td className="p-2 border text-center">
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {numero(
                               av.practica_cargadas
                             )}
@@ -3219,7 +3217,7 @@ export default function RuntPage() {
                             )}
                           </td>
 
-                          <td className="p-2 border text-center">
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             {mayusculas(
                               row.estado_certificacion
@@ -3236,7 +3234,7 @@ export default function RuntPage() {
 
                           </td>
 
-                          <td className="p-2 border text-center">
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             <button
                               type="button"
@@ -3458,8 +3456,8 @@ export default function RuntPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
@@ -3468,8 +3466,7 @@ export default function RuntPage() {
                       items-center
                       justify-between
                       gap-2
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
 
                     <span>
                       <i className="fas fa-history mr-2"></i>
@@ -3917,14 +3914,13 @@ export default function RuntPage() {
 
                     <div
                       className="
-                        bg-slate-800
-                        text-white
+                        
+                        
                         px-3
                         py-2
                         text-xs
                         font-semibold
-                      "
-                    >
+                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                       Vigencia del Proceso RUNT Actual
                     </div>
 
@@ -4067,14 +4063,13 @@ export default function RuntPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Datos de Matrícula
                   </div>
 
@@ -4187,14 +4182,13 @@ export default function RuntPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Verificación RUNT
                   </div>
 
@@ -4297,14 +4291,13 @@ export default function RuntPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Registro en RUNT
                   </div>
 
@@ -4394,14 +4387,13 @@ export default function RuntPage() {
 
                       <div
                         className="
-                          bg-slate-800
-                          text-white
+                          
+                          
                           px-3
                           py-2
                           text-xs
                           font-semibold
-                        "
-                      >
+                        " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                         Registrar Cargue de Clases
                       </div>
 
@@ -4798,14 +4790,13 @@ export default function RuntPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Historial de Cargues — Proceso Actual
                   </div>
 
@@ -4871,31 +4862,31 @@ export default function RuntPage() {
 
                     <table className="w-full text-[11px] border-collapse">
 
-                      <thead className="bg-gray-100">
+                      <thead style={{backgroundColor:ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}} className="text-[10px] font-extrabold uppercase">
 
                         <tr>
 
-                          <th className="p-2 border">
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             Fecha
                           </th>
 
-                          <th className="p-2 border">
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             Tipo
                           </th>
 
-                          <th className="p-2 border">
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             Cant.
                           </th>
 
-                          <th className="p-2 border">
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             Instructor
                           </th>
 
-                          <th className="p-2 border">
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             Horas
                           </th>
 
-                          <th className="p-2 border">
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             Usuario
                           </th>
 
@@ -4915,13 +4906,13 @@ export default function RuntPage() {
                                 }
                               >
 
-                                <td className="p-2 border text-center">
+                                <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                                   {formatearFecha(
                                     item.fecha_clase
                                   )}
                                 </td>
 
-                                <td className="p-2 border text-center">
+                                <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                                   {mayusculas(
                                     item.tipo_clase
@@ -4945,24 +4936,24 @@ export default function RuntPage() {
 
                                 </td>
 
-                                <td className="p-2 border text-center font-semibold">
+                                <td className="p-2 border text-center font-semibold" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                                   {numero(
                                     item.cantidad_clases
                                   )}
                                 </td>
 
-                                <td className="p-2 border">
+                                <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                                   {item.instructor_nombre ||
                                     '-'}
                                 </td>
 
-                                <td className="p-2 border text-center">
+                                <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                                   {numero(
                                     item.horas_consumidas
                                   )}
                                 </td>
 
-                                <td className="p-2 border">
+                                <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                                   {item.usuario_cargue ||
                                     '-'}
                                 </td>
@@ -4976,7 +4967,7 @@ export default function RuntPage() {
                             <td
                               colSpan="6"
                               className="p-5 text-center text-gray-500"
-                            >
+                             style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                               No hay cargues registrados en este proceso.
                             </td>
 
@@ -5008,14 +4999,13 @@ export default function RuntPage() {
 
                     <div
                       className="
-                        bg-slate-800
-                        text-white
+                        
+                        
                         px-3
                         py-2
                         text-xs
                         font-semibold
-                      "
-                    >
+                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                       Notificaciones de Vencimiento
                     </div>
 
@@ -5100,14 +5090,13 @@ export default function RuntPage() {
 
                   <div
                     className="
-                      bg-slate-800
-                      text-white
+                      
+                      
                       px-3
                       py-2
                       text-xs
                       font-semibold
-                    "
-                  >
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
                     Certificación RUNT
                   </div>
 
