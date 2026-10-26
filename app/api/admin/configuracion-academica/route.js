@@ -2471,6 +2471,216 @@ export async function PATCH(
 
 
 
+    // Reasignación de categorías desde el único formulario Editar clase.
+    // La exclusión es lógica: preserva ID, asistencias y demás referencias.
+    if (mayusculas(body?.recurso) === 'REASIGNAR_CLASE_CATEGORIAS') {
+      const idOrigen = Number(body?.clase_id)
+      const categorias = Array.isArray(body?.categorias)
+        ? [...new Set(body.categorias.map(mayusculas).filter(Boolean))] : []
+      if (!Number.isInteger(idOrigen) || idOrigen <= 0 || categorias.length > 8) {
+        return NextResponse.json({ok:false,error:'Verifique la clase y las categorías seleccionadas.'},{status:400})
+      }
+      if (categorias.some(c => !categoriaHabilitadaEmpresa(empresa,c))) {
+        return NextResponse.json({ok:false,error:'Una categoría seleccionada no está habilitada para este CEA.'},{status:403})
+      }
+      const {data:origen,error:errOrigen} = await supabase.from('clases_formacion')
+        .select('id,plan_formacion_id,modulo_id,categoria,tipo_formacion,nombre,activo')
+        .eq('id',idOrigen).maybeSingle()
+      if(errOrigen || !origen || !categoriaHabilitadaEmpresa(empresa,origen.categoria))
+        return NextResponse.json({ok:false,error:'No fue posible comprobar la clase de origen.'},{status:400})
+      const tipo = mayusculas(origen.tipo_formacion)
+      if(tipo==='PRACTICA' && categorias.length>1)
+        return NextResponse.json({ok:false,error:'La formación práctica debe configurarse por una sola categoría.'},{status:400})
+      const nombre=texto(body?.nombre)
+      if(!nombre && categorias.length)
+        return NextResponse.json({ok:false,error:'Indique el nombre de la clase.'},{status:400})
+      const duracion=tipo==='PRACTICA' ? null : numeroPositivoONull(body?.duracion_horas)
+      if(categorias.length && tipo!=='PRACTICA' && (!Number.isFinite(duracion) || duracion<=0))
+        return NextResponse.json({ok:false,error:'Indique una duración mayor que cero.'},{status:400})
+      const {data:planOrigen,error:errPlan}=await supabase.from('planes_formacion')
+        .select('id,categoria,version').eq('id',origen.plan_formacion_id).maybeSingle()
+      const {data:moduloOrigen,error:errModulo}=await supabase.from('modulos_formacion')
+        .select('id,codigo,nombre,tipo_formacion').eq('id',origen.modulo_id).maybeSingle()
+      if(errPlan || errModulo || !planOrigen || !moduloOrigen)
+        return NextResponse.json({ok:false,error:'No se pudo determinar la versión o el módulo de la clase.'},{status:400})
+      const {data:relacion,error:errRelacion}=await supabase.from('grupos_clases_formacion_detalle')
+        .select('grupo_id').eq('clase_formacion_id',idOrigen).maybeSingle()
+      if(errRelacion) throw new Error('No fue posible consultar la asociación actual.')
+      const grupoId=relacion?.grupo_id ? Number(relacion.grupo_id) : null
+      let miembros=[origen]
+      let grupo=null
+      if(grupoId){
+        const {data:g,error:eg}=await supabase.from('grupos_clases_formacion')
+          .select('id,nombre,tipo_formacion,activo').eq('id',grupoId).maybeSingle()
+        if(eg || !g || mayusculas(g.tipo_formacion)!==tipo)
+          return NextResponse.json({ok:false,error:'Grupo compartido inexistente o incompatible.'},{status:400})
+        grupo=g
+        const {data:detalles,error:ed}=await supabase.from('grupos_clases_formacion_detalle')
+          .select('clase_formacion_id').eq('grupo_id',grupoId)
+        if(ed)throw new Error('No fue posible consultar las clases del grupo.')
+        const ids=(detalles||[]).map(d=>Number(d.clase_formacion_id))
+        const {data:clases,error:ec}=await supabase.from('clases_formacion')
+          .select('id,plan_formacion_id,modulo_id,categoria,tipo_formacion,nombre,activo').in('id',ids)
+        if(ec || !clases || clases.length!==ids.length)throw new Error('No fue posible verificar las clases compartidas.')
+        miembros=clases
+      }
+      // No incluir clases ajenas al CEA ni cambiar módulos/versiones del plan.
+      if(miembros.some(c=>!categoriaHabilitadaEmpresa(empresa,c.categoria) || mayusculas(c.tipo_formacion)!==tipo))
+        return NextResponse.json({ok:false,error:'Las clases relacionadas no son compatibles con el CEA.'},{status:400})
+      const mapaActual=new Map(miembros.map(c=>[mayusculas(c.categoria),c]))
+      if(mapaActual.size!==miembros.length)
+        return NextResponse.json({ok:false,error:'El grupo contiene más de una clase de una misma categoría.'},{status:409})
+      const faltantes=categorias.filter(c=>!mapaActual.has(c))
+      const {data:planes,error:ep}=faltantes.length
+        ? await supabase.from('planes_formacion').select('id,categoria,version,estado').in('categoria',faltantes)
+        : {data:[],error:null}
+      if(ep)throw new Error('No fue posible consultar los planes de las nuevas categorías.')
+      const seleccionPlanes=faltantes.map(cat=>{
+        const opciones=(planes||[]).filter(p=>mayusculas(p.categoria)===cat &&
+          texto(p.version)===texto(planOrigen.version) && mayusculas(p.estado)==='ACTIVO')
+        return opciones.length===1?opciones[0]:null
+      })
+      if(seleccionPlanes.some(p=>!p))
+        return NextResponse.json({ok:false,error:'No existe un plan activo, único y de la misma versión para una categoría seleccionada.'},{status:400})
+      const {data:modulos,error:em}=faltantes.length
+        ? await supabase.from('modulos_formacion').select('id,plan_formacion_id,codigo,nombre,tipo_formacion,activo')
+            .in('plan_formacion_id',seleccionPlanes.map(p=>p.id))
+        : {data:[],error:null}
+      if(em)throw new Error('No fue posible consultar los módulos equivalentes.')
+      const mods=faltantes.map((cat,i)=>{
+        const opciones=(modulos||[]).filter(m=>Number(m.plan_formacion_id)===Number(seleccionPlanes[i].id) &&
+          m.activo!==false && mayusculas(m.tipo_formacion)===tipo &&
+          mayusculas(m.codigo)===mayusculas(moduloOrigen.codigo) &&
+          mayusculas(m.nombre)===mayusculas(moduloOrigen.nombre))
+        return opciones.length===1?opciones[0]:null
+      })
+      if(mods.some(m=>!m))
+        return NextResponse.json({ok:false,error:'No existe un módulo equivalente único para una categoría seleccionada.'},{status:400})
+      const {data:otras,error:eo}=mods.length
+        ? await supabase.from('clases_formacion')
+            .select('id,modulo_id,categoria,nombre,activo,numero_clase,orden')
+            .in('modulo_id',mods.map(m=>m.id))
+        : {data:[],error:null}
+      if(eo)throw new Error('No fue posible comprobar clases existentes.')
+      const reutilizadas=[]
+      const crear=[]
+      for(let i=0;i<faltantes.length;i++){
+        const modulo=mods[i]
+        const coincidencias=(otras||[]).filter(c=>Number(c.modulo_id)===Number(modulo.id) &&
+          mayusculas(c.nombre)===mayusculas(origen.nombre))
+        if(coincidencias.length>1)
+          return NextResponse.json({ok:false,error:'Hay clases duplicadas en '+faltantes[i]+'; resuelva la duplicidad antes de asignar.'},{status:409})
+        if(coincidencias.length)reutilizadas.push(coincidencias[0])
+        else crear.push({categoria:faltantes[i],modulo,plan:seleccionPlanes[i],
+          existentes:(otras||[]).filter(c=>Number(c.modulo_id)===Number(modulo.id))})
+      }
+      if(reutilizadas.length){
+        const {data:ocupaciones,error:ec}=await supabase.from('grupos_clases_formacion_detalle')
+          .select('clase_formacion_id').in('clase_formacion_id',reutilizadas.map(c=>c.id))
+        if(ec)throw new Error('No fue posible comprobar las asociaciones de las clases destino.')
+        if((ocupaciones||[]).length)
+          return NextResponse.json({ok:false,error:'Una clase destino ya pertenece a otro grupo. No se modificó ninguna asociación.'},{status:409})
+      }
+      const ahora=new Date().toISOString()
+      const cambios={nombre,contenido:texto(body?.contenido)||null,
+        contenido_tarjeta:texto(body?.contenido_tarjeta)||null,
+        observaciones:texto(body?.observaciones)||null,
+        duracion_horas:duracion,activo:body?.activo!==false,updated_at:ahora}
+      const idsSeleccionados=miembros.filter(c=>categorias.includes(mayusculas(c.categoria))).map(c=>Number(c.id))
+      const idsRetirados=miembros.filter(c=>!categorias.includes(mayusculas(c.categoria))).map(c=>Number(c.id))
+      const idsNuevos=[]
+      let nuevoGrupoId=null
+      // Las altas se compensan ante errores antes de actualizar clases antiguas.
+      try {
+        for(const c of crear){
+          const siguiente=1+Math.max(0,...c.existentes.map(x=>Number(x.numero_clase)||0))
+          const orden=1+Math.max(0,...c.existentes.map(x=>Number(x.orden)||0))
+          const {data:nueva,error:en}=await supabase.from('clases_formacion')
+            .insert({plan_formacion_id:c.plan.id,modulo_id:c.modulo.id,
+              categoria:c.categoria,tipo_formacion:tipo,numero_clase:siguiente,orden,
+              codigo:null,color_horario:null,created_at:ahora,...cambios})
+            .select('id').single()
+          if(en || !nueva)throw new Error('No fue posible crear la clase en '+c.categoria)
+          idsNuevos.push(Number(nueva.id))
+        }
+        const idsDestinos=[...idsSeleccionados,...reutilizadas.map(c=>Number(c.id)),...idsNuevos]
+        const detallesNuevos=[...reutilizadas.map(c=>Number(c.id)),...idsNuevos]
+        if(idsDestinos.length>1 && !grupoId){
+          const {data:g,error:eg}=await supabase.from('grupos_clases_formacion')
+            .insert({nombre, tipo_formacion:tipo,activo:true,
+              observaciones:texto(body?.observaciones)||null,
+              color_horario:texto(body?.color_horario)||null,
+              created_at:ahora,updated_at:ahora}).select('id').single()
+          if(eg || !g)throw new Error('No fue posible crear el grupo transversal.')
+          nuevoGrupoId=Number(g.id)
+        }
+        const grupoDestino=grupoId || nuevoGrupoId
+        // Primero vinculamos nuevas categorías para no dejar un grupo inválido
+        // antes de confirmar su guardado.
+        if(grupoDestino && idsDestinos.length>1){
+          const anexar=grupoId?detallesNuevos:idsDestinos
+          if(anexar.length){
+            const {error:ed}=await supabase.from('grupos_clases_formacion_detalle')
+              .insert(anexar.map(id=>({grupo_id:grupoDestino,clase_formacion_id:id,created_at:ahora})))
+            if(ed)throw new Error('No fue posible asociar las nuevas categorías.')
+          }
+        }
+        if(idsDestinos.length){
+          const idsActualizar=[...idsSeleccionados,...reutilizadas.map(c=>Number(c.id))]
+          if(idsActualizar.length){
+            const {data:actualizadas,error:ea}=await supabase.from('clases_formacion')
+              .update(cambios).in('id',idsActualizar).select('id')
+            if(ea || (actualizadas||[]).length!==idsActualizar.length)
+              throw new Error('No fue posible actualizar todas las clases seleccionadas.')
+          }
+        }
+        if(idsRetirados.length){
+          const {data:desactivadas,error:er}=await supabase.from('clases_formacion')
+            .update({activo:false,updated_at:ahora}).in('id',idsRetirados).select('id')
+          if(er || (desactivadas||[]).length!==idsRetirados.length)
+            throw new Error('No fue posible retirar las categorías de la clase.')
+        }
+        if(grupoId){
+          const quitar=idsRetirados.length
+            ? await supabase.from('grupos_clases_formacion_detalle').delete()
+                .eq('grupo_id',grupoId).in('clase_formacion_id',idsRetirados)
+            : {error:null}
+          if(quitar.error)throw new Error('No fue posible desvincular las categorías retiradas.')
+          if(idsDestinos.length<2){
+            const {error:eg}=await supabase.from('grupos_clases_formacion')
+              .update({activo:false,updated_at:ahora}).eq('id',grupoId)
+            if(eg)throw new Error('No fue posible desactivar el grupo sin categorías compartidas.')
+            if(idsDestinos.length){
+              const {error:es}=await supabase.from('grupos_clases_formacion_detalle')
+                .delete().eq('grupo_id',grupoId)
+              if(es)throw new Error('No fue posible independizar la categoría restante.')
+            }
+          } else {
+            const {error:eg}=await supabase.from('grupos_clases_formacion')
+              .update({nombre,observaciones:texto(body?.observaciones)||null,
+                color_horario:texto(body?.color_horario)||null,updated_at:ahora}).eq('id',grupoId)
+            if(eg)throw new Error('No fue posible actualizar el grupo transversal.')
+          }
+        }
+        return NextResponse.json({ok:true,
+          mensaje:categorias.length
+            ? 'Clase y categorías actualizadas. Las retiradas quedaron inactivas y no aparecerán en la vista normal del plan.'
+            : 'Clase retirada de la vista activa del plan. Se conservan sus referencias históricas.',
+          categorias,retiradas:idsRetirados.length,creadas:idsNuevos.length,
+          reutilizadas:reutilizadas.length})
+      }catch(errorOperacion){
+        // No borrar registros previos; confirmar explícitamente si hubo cambios parciales.
+        if(nuevoGrupoId){
+          await supabase.from('grupos_clases_formacion_detalle').delete().eq('grupo_id',nuevoGrupoId)
+          await supabase.from('grupos_clases_formacion').delete().eq('id',nuevoGrupoId)
+        }
+        if(idsNuevos.length)await supabase.from('clases_formacion').delete().in('id',idsNuevos)
+        return NextResponse.json({ok:false,error:errorOperacion.message+
+          ' Si hubo escrituras parciales, recargue y verifique las asociaciones antes de reintentar.',
+          requiere_revision:true},{status:500})
+      }
+    }
+
     // Edición de una clase compartida desde el Plan de Formación.
     // El grupo sigue existiendo para horarios, pero no se reconstruyen sus asociaciones.
     if (mayusculas(body?.recurso) === 'EDITAR_CLASE_COMPARTIDA') {
