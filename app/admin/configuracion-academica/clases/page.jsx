@@ -3835,8 +3835,12 @@ async function restaurarLogoAnterior() {
                                     tracking-wide
                                   "
                                 >
-                                  {modulo.codigo ||
-                                    'MÓDULO'}
+                                  {(() => {
+                                    const codigo = texto(modulo.codigo)
+                                    return codigo
+                                      ? codigo.replace(/^MOD(?=[-_\s\d]|$)/i, 'MÓDULO')
+                                      : 'MÓDULO'
+                                  })()}
 
                                   {' · '}
 
@@ -3865,8 +3869,13 @@ async function restaurarLogoAnterior() {
 
                           <div className="overflow-x-auto">
                             <div className="min-w-[1050px]">
-                              <div style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }} className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] gap-0 border-y border-slate-500 text-[10px] font-extrabold uppercase [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>span]:border-r [&>span]:border-slate-500 [&>span]:px-2 [&>span]:py-2 [&>span]:text-center">
-                                <span>Nombre de la clase</span><span>Color</span><span>Duración</span><span>Categorías</span><span>Competencias a desarrollar</span><span>Estado</span><span>Acciones</span>
+                              <div style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}
+                                className={`grid ${modulo.tipo_formacion === 'PRACTICA'
+                                  ? 'grid-cols-[minmax(190px,1.5fr)_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px]'
+                                  : 'grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px]'} gap-0 border-y border-slate-500 text-[10px] font-extrabold uppercase [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>span]:border-r [&>span]:border-slate-500 [&>span]:px-2 [&>span]:py-2 [&>span]:text-center`}>
+                                <span>Nombre de la clase</span>
+                                {modulo.tipo_formacion !== 'PRACTICA' && <span>Color</span>}
+                                <span>Duración</span><span>Categorías</span><span>Competencias a desarrollar</span><span>Estado</span><span>Acciones</span>
                               </div>
                             {clasesModulo.map(
                               (
@@ -3894,23 +3903,27 @@ async function restaurarLogoAnterior() {
                                   )
 
                                 return (
-                                  <div key={clase.id} className="grid grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px] items-stretch gap-0 border-b border-slate-500 text-[11px] text-slate-700 hover:bg-slate-50 [&>div]:border-r [&>div]:border-slate-500 [&>div]:px-2 [&>div]:py-2">
+                                  <div key={clase.id} className={`grid ${modulo.tipo_formacion === 'PRACTICA'
+                                    ? 'grid-cols-[minmax(190px,1.5fr)_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px]'
+                                    : 'grid-cols-[minmax(190px,1.5fr)_52px_70px_minmax(150px,1fr)_minmax(160px,1.2fr)_74px_116px]'} items-stretch gap-0 border-b border-slate-500 text-[11px] text-slate-700 hover:bg-slate-50 [&>div]:border-r [&>div]:border-slate-500 [&>div]:px-2 [&>div]:py-2`}>
                                     <div className="min-w-0">
                                       <span className="mr-2 text-slate-400">#{clase.numero_clase}</span>
                                       <span className="font-semibold text-slate-900">{clase.nombre}</span>
                                       {grupoClase && <div className="mt-0.5 truncate text-[10px] text-blue-700" title={grupoClase.nombre}>Grupo: {grupoClase.nombre}</div>}
                                     </div>
-                                    <div className="flex items-center justify-center">
-                                      <span title={grupoClase ? 'Color del grupo' : 'Color de la clase'} className="inline-block h-5 w-5 shrink-0 rounded border border-slate-400" style={{backgroundColor: grupoClase?.color_horario || clase.color_horario || '#F1F5F9'}}/>
-                                    </div>
+                                    {modulo.tipo_formacion !== 'PRACTICA' && (
+                                      <div className="flex items-center justify-center">
+                                        <span title={grupoClase ? 'Color del grupo' : 'Color de la clase'} className="inline-block h-5 w-5 shrink-0 rounded border border-slate-400" style={{backgroundColor: grupoClase?.color_horario || clase.color_horario || '#F1F5F9'}}/>
+                                      </div>
+                                    )}
                                     <div className="flex items-center justify-center text-center">{clase.tipo_formacion === 'PRACTICA' ? '—' : clase.duracion_horas ? formatearHoras(clase.duracion_horas) + ' h' : 'Pendiente'}</div>
                                     <div className="flex min-w-0 flex-wrap items-center justify-center gap-1">
                                       {(grupoClase?.categorias || [clase.categoria]).map(cat => (
                                         <span key={cat} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">{cat}</span>
                                       ))}
                                     </div>
-                                    <div className="flex min-w-0 items-center justify-center">
-                                      <span className="min-w-0 break-words text-center text-slate-600" title={texto(clase.contenido_tarjeta)}
+                                    <div className="flex min-w-0 items-center justify-start">
+                                      <span className="w-full min-w-0 break-words text-left text-slate-600" title={texto(clase.contenido_tarjeta)}
                                         style={{display:'-webkit-box',WebkitBoxOrient:'vertical',WebkitLineClamp:2,overflow:'hidden',lineHeight:'1.35'}}>
                                         {texto(clase.contenido_tarjeta) || 'Pendiente'}
                                       </span>
@@ -4566,17 +4579,17 @@ async function restaurarLogoAnterior() {
                   </p>              </Campo>
 
 
-              <Campo etiqueta="Color de la clase">
-                <SelectorColorHorario
-                  valor={claseEditando.color_horario}
-                  onChange={color => cambiarCampoEdicion('color_horario',color)}
-                />
-                <p className="mt-1 text-xs text-slate-500">
-                  {claseEditando.tipo_formacion === 'PRACTICA'
-                    ? 'Color opcional de identificación. Las prácticas no utilizan el bloque de horario teórico.'
-                    : 'Si esta clase se agrupa transversalmente, el horario mostrará el color del grupo.'}
-                </p>
-              </Campo>
+              {claseEditando.tipo_formacion !== 'PRACTICA' && (
+                <Campo etiqueta="Color de la clase">
+                  <SelectorColorHorario
+                    valor={claseEditando.color_horario}
+                    onChange={color => cambiarCampoEdicion('color_horario',color)}
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Si esta clase se agrupa transversalmente, el horario mostrará el color del grupo.
+                  </p>
+                </Campo>
+              )}
               <Campo
                 etiqueta="Observaciones"
               >
@@ -4953,17 +4966,17 @@ async function restaurarLogoAnterior() {
                   </p>              </Campo>
 
 
-              <Campo etiqueta="Color de la clase">
-                <SelectorColorHorario
-                  valor={nuevaClase.color_horario}
-                  onChange={color => cambiarCampoNueva('color_horario',color)}
-                />
-                <p className="mt-1 text-xs text-slate-500">
-                  {nuevaClase.tipo_formacion === 'PRACTICA'
-                    ? 'Color opcional de identificación. Las prácticas no utilizan el bloque de horario teórico.'
-                    : 'Si esta clase se agrupa transversalmente, el horario mostrará el color del grupo.'}
-                </p>
-              </Campo>
+              {nuevaClase.tipo_formacion !== 'PRACTICA' && (
+                <Campo etiqueta="Color de la clase">
+                  <SelectorColorHorario
+                    valor={nuevaClase.color_horario}
+                    onChange={color => cambiarCampoNueva('color_horario',color)}
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Si esta clase se agrupa transversalmente, el horario mostrará el color del grupo.
+                  </p>
+                </Campo>
+              )}
               <Campo
                 etiqueta="Observaciones"
               >
