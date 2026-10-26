@@ -2927,7 +2927,7 @@ export default function RuntPage() {
 
             <div className="mt-3 flex gap-2">
 
-              <button
+              <BotonAccion tipo="consultar"
                 type="button"
                 onClick={() =>
                   consultar()
@@ -2951,9 +2951,9 @@ export default function RuntPage() {
                 {loading
                   ? 'Consultando...'
                   : 'Consultar'}
-              </button>
+              </BotonAccion>
 
-              <button
+              <BotonAccion tipo="limpiar"
                 type="button"
                 onClick={
                   limpiarFiltros
@@ -2971,7 +2971,7 @@ export default function RuntPage() {
                 <i className="fas fa-eraser mr-2"></i>
 
                 Limpiar
-              </button>
+              </BotonAccion>
 
             </div>
 
@@ -3236,7 +3236,7 @@ export default function RuntPage() {
 
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
-                            <button
+                            <BotonAccion tipo="verDetalle"
                               type="button"
                               onClick={() =>
                                 abrirDetalle(
@@ -3256,7 +3256,7 @@ export default function RuntPage() {
                               <i className="fas fa-eye mr-1"></i>
 
                               Gestionar
-                            </button>
+                            </BotonAccion>
 
                           </td>
 
@@ -3368,7 +3368,7 @@ export default function RuntPage() {
 
               </div>
 
-              <button
+              <BotonAccion tipo="cancelar"
                 type="button"
                 onClick={
                   cerrarDetalle
@@ -3387,7 +3387,7 @@ export default function RuntPage() {
                 "
               >
                 <i className="fas fa-times"></i>
-              </button>
+              </BotonAccion>
 
             </div>
 
@@ -3543,7 +3543,7 @@ export default function RuntPage() {
                                 `}
                               >
 
-                                <button
+                                <BotonAccion tipo="verDetalle"
                                   type="button"
                                   onClick={() =>
                                     alternarProcesoHistorial(
@@ -3697,7 +3697,7 @@ export default function RuntPage() {
 
                                   </div>
 
-                                </button>
+                                </BotonAccion>
 
                                 {expandido && (
                                   <div
@@ -4014,7 +4014,7 @@ export default function RuntPage() {
                             El registro superó los 90 días calendario sin certificarse. No se permiten nuevos cargues ni certificación sobre este proceso.
                           </p>
 
-                          <button
+                          <BotonAccion tipo="secundario"
                             type="button"
                             onClick={
                               reiniciarProceso
@@ -4038,7 +4038,7 @@ export default function RuntPage() {
                             <i className="fas fa-rotate-right mr-2"></i>
 
                             Reiniciar Proceso RUNT
-                          </button>
+                          </BotonAccion>
 
                         </div>
                       )}
@@ -4247,7 +4247,7 @@ export default function RuntPage() {
 
                     {!inscrito &&
                       !vencido && (
-                      <button
+                      <BotonAccion tipo="secundario"
                         type="button"
                         onClick={
                           marcarInscrito
@@ -4269,7 +4269,7 @@ export default function RuntPage() {
                         <i className="fas fa-check mr-2"></i>
 
                         Marcar como INSCRITO
-                      </button>
+                      </BotonAccion>
                     )}
 
                   </div>
@@ -4340,7 +4340,7 @@ export default function RuntPage() {
                         Primero debe confirmar que el aprendiz aparece INSCRITO.
                       </div>
                     ) : (
-                      <button
+                      <BotonAccion tipo="guardar"
                         type="button"
                         onClick={
                           registrarRunt
@@ -4362,7 +4362,7 @@ export default function RuntPage() {
                         <i className="fas fa-user-check mr-2"></i>
 
                         Marcar REGISTRADO en RUNT
-                      </button>
+                      </BotonAccion>
                     )}
 
                   </div>
@@ -4745,7 +4745,7 @@ export default function RuntPage() {
                           "
                         />
 
-                        <button
+                        <BotonAccion tipo="guardar"
                           type="submit"
                           disabled={
                             procesando ||
@@ -4768,7 +4768,7 @@ export default function RuntPage() {
                           {procesando
                             ? 'Guardando...'
                             : 'Registrar Cargue'}
-                        </button>
+                        </BotonAccion>
 
                       </form>
 
@@ -5173,7 +5173,7 @@ export default function RuntPage() {
                         Todavía existen clases pendientes de cargar.
                       </div>
                     ) : (
-                      <button
+                      <BotonAccion tipo="guardar"
                         type="button"
                         onClick={
                           certificar
@@ -5195,7 +5195,7 @@ export default function RuntPage() {
                         <i className="fas fa-certificate mr-2"></i>
 
                         Marcar CERTIFICADO en RUNT
-                      </button>
+                      </BotonAccion>
                     )}
 
                   </div>
@@ -5204,7 +5204,7 @@ export default function RuntPage() {
 
                 <div className="flex justify-end">
 
-                  <button
+                  <BotonAccion tipo="cancelar"
                     type="button"
                     onClick={
                       cerrarDetalle
@@ -5224,7 +5224,7 @@ export default function RuntPage() {
                     "
                   >
                     Cerrar
-                  </button>
+                  </BotonAccion>
 
                 </div>
 
