@@ -3809,7 +3809,8 @@ async function restaurarLogoAnterior() {
                               ) ===
                               Number(
                                 modulo.id
-                              )
+                              ) &&
+                              (mostrarClasesInactivas || item.activo !== false)
                           )
                           .sort(
                             (
