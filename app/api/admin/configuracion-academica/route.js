@@ -2667,9 +2667,7 @@ export async function PATCH(
           }
         }
         return NextResponse.json({ok:true,
-          mensaje:categorias.length
-            ? 'Clase y categorías actualizadas. Las retiradas quedaron inactivas y no aparecerán en la vista normal del plan.'
-            : 'Clase retirada de la vista activa del plan. Se conservan sus referencias históricas.',
+          mensaje: 'Clase actualizada correctamente.',
           categorias,retiradas:idsRetirados.length,creadas:idsNuevos.length,
           reutilizadas:reutilizadas.length})
       }catch(errorOperacion){
