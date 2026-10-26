@@ -14,9 +14,10 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  cerrarSesion,
-} from '@/lib/auth/logout'
+import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
+import { BotonAccion, ESTILO_SECCIONES, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
+import { Fingerprint } from 'lucide-react'
 
 // ============================================================
 // CONSTANTES
@@ -1354,136 +1355,13 @@ export default function SicovPage() {
         "
       >
 
-        {/* ==================================================
-            ENCABEZADO
-        ================================================== */}
-
-        <div
-          className="
-            border
-            border-gray-500
-            rounded-xl
-            px-4
-            py-3
-            mb-3
-            bg-white
-          "
-        >
-
-          <div
-            className="
-              flex
-              flex-col
-              lg:flex-row
-              lg:items-center
-              lg:justify-between
-              gap-4
-            "
-          >
-
-            <div>
-
-              <p
-                className="
-                  text-[9px]
-                  uppercase
-                  tracking-wider
-                  font-bold
-                  text-gray-500
-                "
-              >
-                Administración
-              </p>
-
-              <h1
-                className="
-                  mt-0.5
-                  text-xl
-                  md:text-2xl
-                  font-black
-                  text-[var(--primary)]
-                  flex
-                  items-center
-                  gap-2
-
-                "
-              >
-                <i className="fas fa-fingerprint"></i>
-
-                Control SICOV
-              </h1>
-
-              <p
-                className="
-                  mt-0.5
-                  text-[10px]
-                  text-gray-500
-                "
-              >
-                Consulte la información del aprendiz y controle su registro y certificación en SICOV.
-              </p>
-
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    '/admin'
-                  )
-                }
-                className="
-                  bg-gray-600
-                  hover:bg-gray-800
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                  transition
-                "
-              >
-                <i className="fas fa-arrow-left"></i>
-
-                Menú Administrativo
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  cerrarSesion(
-                    router
-                  )
-                }
-                className="
-                  bg-[var(--danger)]
-                  hover:bg-[var(--danger-dark)]
-                  text-white
-                  px-3
-                  py-2
-                  rounded-lg
-                  text-xs
-                  flex
-                  items-center
-                  gap-2
-                  transition
-                "
-              >
-                <i className="fas fa-sign-out-alt"></i>
-
-                Cerrar Sesión
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
+        <EncabezadoModulo
+          titulo="Control SICOV"
+          subtitulo="Consulte la información del aprendiz y controle su registro y certificación en SICOV."
+          icono={Fingerprint}
+          rutaRegreso="/admin"
+          textoRegreso="Menú Administrativo"
+        />
 
         {/* ==================================================
             USUARIO
