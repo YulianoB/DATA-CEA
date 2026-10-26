@@ -374,7 +374,7 @@ function CampoCopiable({
         </div>
 
         {contenido && (
-          <button
+          <BotonAccion tipo="secundario"
             type="button"
             onClick={
               copiar
@@ -395,7 +395,7 @@ function CampoCopiable({
             "
           >
             <i className="fas fa-copy"></i>
-          </button>
+          </BotonAccion>
         )}
 
       </div>
@@ -1706,7 +1706,7 @@ export default function SicovPage() {
               "
             >
 
-              <button
+              <BotonAccion tipo="consultar"
                 type="button"
                 onClick={() =>
                   consultar()
@@ -1730,9 +1730,9 @@ export default function SicovPage() {
                 {loading
                   ? 'Consultando...'
                   : 'Consultar'}
-              </button>
+              </BotonAccion>
 
-              <button
+              <BotonAccion tipo="limpiar"
                 type="button"
                 onClick={
                   limpiarFiltros
@@ -1750,7 +1750,7 @@ export default function SicovPage() {
                 <i className="fas fa-rotate-left mr-2"></i>
 
                 Volver a Pendientes
-              </button>
+              </BotonAccion>
 
             </div>
 
@@ -2032,7 +2032,7 @@ export default function SicovPage() {
                             "
                            style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
-                            <button
+                            <BotonAccion tipo="verDetalle"
                               type="button"
                               onClick={() =>
                                 abrirDetalle(
@@ -2052,7 +2052,7 @@ export default function SicovPage() {
                               <i className="fas fa-eye mr-1"></i>
 
                               Gestionar
-                            </button>
+                            </BotonAccion>
 
                           </td>
 
@@ -2169,7 +2169,7 @@ export default function SicovPage() {
 
               </div>
 
-              <button
+              <BotonAccion tipo="cancelar"
                 type="button"
                 onClick={
                   cerrarDetalle
@@ -2188,7 +2188,7 @@ export default function SicovPage() {
                 "
               >
                 <i className="fas fa-times"></i>
-              </button>
+              </BotonAccion>
 
             </div>
 
@@ -2466,7 +2466,7 @@ export default function SicovPage() {
                       Datos para Registro en SICOV
                     </span>
 
-                    <button
+                    <BotonAccion tipo="secundario"
                       type="button"
                       onClick={
                         copiarNombreCompleto
@@ -2483,7 +2483,7 @@ export default function SicovPage() {
                       <i className="fas fa-copy mr-1"></i>
 
                       Copiar nombre
-                    </button>
+                    </BotonAccion>
 
                   </div>
 
@@ -2959,7 +2959,7 @@ export default function SicovPage() {
                           Una vez termine el registro del aprendiz en la plataforma SICOV, confirme el proceso aquí.
                         </p>
 
-                        <button
+                        <BotonAccion tipo="guardar"
                           type="button"
                           onClick={
                             registrarSicov
@@ -2984,7 +2984,7 @@ export default function SicovPage() {
                           {procesando
                             ? 'Procesando...'
                             : 'Marcar REGISTRADO en SICOV'}
-                        </button>
+                        </BotonAccion>
 
                       </div>
                     ) : !certificado ? (
@@ -3017,7 +3017,7 @@ export default function SicovPage() {
                           Cuando finalice el proceso en SICOV y quede certificado, confirme la certificación.
                         </p>
 
-                        <button
+                        <BotonAccion tipo="guardar"
                           type="button"
                           onClick={
                             certificarSicov
@@ -3042,7 +3042,7 @@ export default function SicovPage() {
                           {procesando
                             ? 'Procesando...'
                             : 'Marcar CERTIFICADO en SICOV'}
-                        </button>
+                        </BotonAccion>
 
                       </div>
                     ) : (
@@ -3079,7 +3079,7 @@ export default function SicovPage() {
 
                 <div className="flex justify-end">
 
-                  <button
+                  <BotonAccion tipo="cancelar"
                     type="button"
                     onClick={
                       cerrarDetalle
@@ -3099,7 +3099,7 @@ export default function SicovPage() {
                     "
                   >
                     Cerrar
-                  </button>
+                  </BotonAccion>
 
                 </div>
 
