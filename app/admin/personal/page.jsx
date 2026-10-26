@@ -12,6 +12,20 @@ import { FranjaSuperiorModal, FranjaSecundariaModal, MarcoTabla, BotonAgregar, B
 import { Toaster, toast } from 'sonner'
 import ModalResultado from '@/components/admin/ModalResultado'
 
+// Recuperar el NIT desde los formatos de sesión utilizados en DATA-CEA.
+// La ausencia de empresa no debe cerrar una sesión autenticada.
+function obtenerNitDeSesion(user) {
+  const nit = [
+    user?.nitEmpresa,
+    user?.nit_empresa,
+    user?.empresaNit,
+    user?.empresa_nit,
+    user?.empresa?.nit,
+    user?.nit,
+  ].find((valor) => String(valor ?? '').trim())
+  return String(nit ?? '').trim()
+}
+
 // ============================================================
 // ROLES
 // ============================================================
@@ -508,53 +522,42 @@ export default function PersonalAdminPage() {
   // ==========================================================
 
   useEffect(() => {
-    const storedUser =
-      localStorage.getItem(
-        'currentUser'
-      )
-
+    const storedUser = localStorage.getItem('currentUser')
     if (!storedUser) {
       router.push('/login')
       return
     }
 
-    const parsedUser =
-      JSON.parse(
-        storedUser
-      )
-
-    const nitSesion =
-      localStorage.getItem(
-        'currentEmpresaNit'
-      ) ||
-      parsedUser?.nitEmpresa ||
-      parsedUser?.empresa?.nit ||
-      ''
-
-    if (!nitSesion) {
-      mostrarResultado('error', 
-        'No se encontró el CEA de la sesión. Inicie sesión nuevamente.'
-      )
-
+    let parsedUser
+    try {
+      parsedUser = JSON.parse(storedUser)
+    } catch (error) {
+      console.error('No fue posible interpretar la sesión de Personal:', error)
+      mostrarResultado('error', 'No fue posible leer la información de la sesión. Inicie sesión nuevamente.')
       router.push('/login')
       return
     }
 
-    setUser(
-      parsedUser
-    )
+    if (!parsedUser || typeof parsedUser !== 'object') {
+      mostrarResultado('error', 'La información de la sesión no es válida. Inicie sesión nuevamente.')
+      router.push('/login')
+      return
+    }
 
-    setEmpresaNit(
-      nitSesion
-    )
+    setUser(parsedUser)
+    const nitSesion = String(localStorage.getItem('currentEmpresaNit') || '').trim() ||
+      obtenerNitDeSesion(parsedUser)
 
-    cargarEmpresa(
-      nitSesion
-    )
+    if (!nitSesion) {
+      // No cerrar la sesión por un problema de contexto de empresa.
+      mostrarResultado('error',
+        'No se encontró el NIT del CEA activo. Regrese al menú y seleccione nuevamente la empresa.')
+      return
+    }
 
-    cargarListado(
-      nitSesion
-    )
+    setEmpresaNit(nitSesion)
+    cargarEmpresa(nitSesion)
+    cargarListado(nitSesion)
   }, [router])
 
   // ==========================================================
@@ -633,14 +636,10 @@ export default function PersonalAdminPage() {
   // NIT
   // ==========================================================
 
-  const obtenerNitSesion =
-    () =>
-      empresaNit ||
-      localStorage.getItem(
-        'currentEmpresaNit'
-      ) ||
-      user?.nitEmpresa ||
-      ''
+  const obtenerNitSesion = () =>
+    empresaNit ||
+    String(localStorage.getItem('currentEmpresaNit') || '').trim() ||
+    obtenerNitDeSesion(user)
 
   // ==========================================================
   // CARGAR EMPRESA
