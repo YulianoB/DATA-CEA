@@ -2547,7 +2547,7 @@ return (
                       Tipo
                     </th>
                     <th className="border p-2 text-left">
-                      Conductor
+                      Responsable del vehículo
                     </th>
                     <th className="border p-2 text-left">
                       Estado
