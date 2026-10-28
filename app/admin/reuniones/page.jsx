@@ -842,9 +842,12 @@ export default function AdminReunionesPage() {
           json?.status ===
           'success'
         ) {
-          toast.success(
-            'Reunión creada y notificaciones enviadas.'
-          )
+          if (json?.correo_corporativo_enviado === true) {
+            toast.success('Reunión creada y aviso enviado al correo corporativo.')
+          } else {
+            toast.success('Reunión creada correctamente.')
+            toast.warning('No se confirmó el envío del aviso corporativo.')
+          }
 
           limpiarForm()
           setModalNuevaReunion(false)
