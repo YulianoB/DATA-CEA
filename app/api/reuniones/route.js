@@ -1129,9 +1129,10 @@ export async function POST(
     }
 
 
-    // Un solo aviso institucional; nunca se envía a correos individuales.
+    // Un solo aviso corporativo; no se envían mensajes individuales.
+    let correoCorporativoEnviado = false
     try {
-      await enviarAvisoCorporativo({
+      correoCorporativoEnviado = await enviarAvisoCorporativo({
         nit: sesion.nitEmpresa,
         asunto: 'Nueva citación a reunión: ' + payload.tipo_reunion,
         detalles: [
@@ -1157,6 +1158,8 @@ export async function POST(
 
         enlace_asistencia:
           enlaceAsistencia,
+
+        correo_corporativo_enviado: correoCorporativoEnviado,
 
         total_citados:
           participantes.length,
