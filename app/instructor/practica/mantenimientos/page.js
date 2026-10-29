@@ -94,6 +94,8 @@ export default function MantenimientosPage() {
 
   // Kilometraje
   const [kilometraje, setKilometraje] = useState('')
+  const [fechaEjecucion, setFechaEjecucion] = useState(() => ahoraBogota().fecha)
+  const [fechaRegistroVisible, setFechaRegistroVisible] = useState(() => ahoraBogota().timestamp)
   const [msgKm, setMsgKm] = useState('')
   const [forzarKm, setForzarKm] = useState(false)
   const [modalKm, setModalKm] = useState(null)
@@ -608,7 +610,8 @@ export default function MantenimientosPage() {
         await validarKilometraje(
           nitActual,
           placa,
-          kmNumero
+          kmNumero,
+          { fechaEjecucion }
         )
 
       if (!resultado) {
@@ -724,10 +727,11 @@ export default function MantenimientosPage() {
   // Validación del formulario
   // ============================================================
 
-  const tarjetasHabilitadas = Boolean(nitActual && placa && tipoMant && kilometraje !== '' && Number.isFinite(Number(kilometraje)) && Number(kilometraje) >= 0 && !modalKm && (forzarKm || (msgKm && !/menor|no fue posible|no se identificó|error/i.test(msgKm))))
+  const fechaEjecucionValida = /^\d{4}-\d{2}-\d{2}$/.test(fechaEjecucion) && fechaEjecucion <= ahoraBogota().fecha
+  const tarjetasHabilitadas = Boolean(fechaEjecucionValida && nitActual && placa && tipoMant && kilometraje !== '' && Number.isFinite(Number(kilometraje)) && Number(kilometraje) >= 0 && !modalKm && (forzarKm || (msgKm && !/menor|no fue posible|no se identificó|error/i.test(msgKm))))
 
   const puedeGuardar = useMemo(() => {
-    if (!nitActual || !placa) return false
+    if (!nitActual || !placa || !fechaEjecucionValida) return false
 
     const mensajeKm =
       String(msgKm || '').toLowerCase()
@@ -783,6 +787,7 @@ export default function MantenimientosPage() {
   }, [
     nitActual,
     placa,
+    fechaEjecucionValida,
     msgKm,
     forzarKm,
     kilometraje,
@@ -827,7 +832,7 @@ export default function MantenimientosPage() {
           timestamp,
 
         fecha_registro:
-          fecha,
+          fechaEjecucion,
 
         placa,
 
@@ -967,6 +972,8 @@ export default function MantenimientosPage() {
       setMsgKm('')
       setForzarKm(false)
       setModalKm(null)
+      setFechaEjecucion(ahoraBogota().fecha)
+      setFechaRegistroVisible(ahoraBogota().timestamp)
 
       setTipoMant('')
       setNivelSeleccionadoId('')
@@ -1201,6 +1208,31 @@ export default function MantenimientosPage() {
         <EncabezadoPractica titulo="Registro de Mantenimiento" usuario={user.nombreCompleto || user.usuario} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={() => cerrarSesion(router)} />
         <main className="px-3 py-4 sm:px-6 sm:py-6">
           <p className="mb-4 text-xs text-slate-600">Los campos marcados con <b>*</b> son obligatorios.</p>
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
+              <label htmlFor="fecha-ejecucion-mantenimiento" className="mb-1 block text-sm font-semibold">Fecha de ejecución *</label>
+              <input id="fecha-ejecucion-mantenimiento" type="date" required max={ahoraBogota().fecha}
+                value={fechaEjecucion} onChange={(e) => {
+                  setFechaEjecucion(e.target.value)
+                  setMsgKm('')
+                  setForzarKm(false)
+                  setModalKm(null)
+                  if (kilometraje && placa) {
+                    setKilometraje('')
+                    toast.info('Ingrese nuevamente el kilometraje para validarlo según la fecha de ejecución.')
+                  }
+                }}
+                className="min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm" />
+              <p className="mt-1 text-[11px] text-slate-600">Día en que realmente se realizó el servicio.</p>
+            </div>
+            <div className="min-w-0">
+              <label htmlFor="fecha-registro-mantenimiento" className="mb-1 block text-sm font-semibold">Fecha de registro (automática)</label>
+              <input id="fecha-registro-mantenimiento" type="text" readOnly disabled
+                value={fechaRegistroVisible.replace('T', ' ').replace('-05:00', '') + ' (Bogotá)'}
+                className="min-h-11 w-full rounded-lg border border-slate-300 bg-slate-100 p-2 text-sm text-slate-600" />
+              <p className="mt-1 text-[11px] text-slate-600">El sistema registra la fecha y hora exactas al guardar.</p>
+            </div>
+          </div>
           <div className="mb-4 grid grid-cols-2 gap-3">
             <div className="min-w-0">
               <label className="mb-1 block text-sm font-semibold">Placa *</label>
@@ -1743,7 +1775,7 @@ export default function MantenimientosPage() {
             </h3>
 
             <p className="text-sm mb-2">
-              El kilometraje ingresado presenta una diferencia superior al límite configurado.
+              {msgKm || 'Revise y confirme el kilometraje informado para la fecha de ejecución.'}
             </p>
 
             <p className="text-sm mb-1">
