@@ -305,14 +305,14 @@ export default function LoginPage() {
       </div>
 
       <div className="flex-1 flex items-start md:items-center justify-center bg-gray-100 px-4 py-5 md:p-8">
-        <div className="w-full max-w-md bg-white shadow-2xl rounded-lg px-5 py-6 md:p-8 border border-gray-200">
+        <div className="w-full max-w-md bg-white text-gray-800 shadow-2xl rounded-lg px-5 py-6 md:p-8 border border-gray-200" style={{ colorScheme: 'light' }}>
           <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
             Iniciar Sesión
           </h2>
 
-          <form className="space-y-4" onSubmit={handleLogin}>
+          <form className="space-y-4 text-gray-800" onSubmit={handleLogin}>
             <div>
-              <label htmlFor="nit" className="block text-sm font-medium mb-1">
+              <label htmlFor="nit" className="block text-sm font-medium mb-1 text-gray-800">
                 CEA
               </label>
               <select
@@ -323,7 +323,7 @@ export default function LoginPage() {
                   limpiarPerfiles()
                 }}
                 disabled={cargandoEmpresas}
-                className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className="w-full border border-slate-400 bg-white text-gray-900 placeholder:text-slate-500 p-2 rounded focus:outline-none focus:ring-2 focus:ring-[var(--primary)] disabled:bg-slate-100 disabled:text-slate-600"
                 required
               >
                 <option value="">
@@ -339,7 +339,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="usuario" className="block text-sm font-medium mb-1">
+              <label htmlFor="usuario" className="block text-sm font-medium mb-1 text-gray-800">
                 Usuario
               </label>
               <input
@@ -352,7 +352,7 @@ export default function LoginPage() {
                 }}
                 onBlur={consultarPerfiles}
                 placeholder="Ingrese su usuario"
-                className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className="w-full border border-slate-400 bg-white text-gray-900 placeholder:text-slate-500 p-2 rounded focus:outline-none focus:ring-2 focus:ring-[var(--primary)] disabled:bg-slate-100 disabled:text-slate-600"
                 required
               />
               {cargandoPerfiles && (
@@ -362,14 +362,14 @@ export default function LoginPage() {
 
             {perfiles.length > 1 && (
               <div>
-                <label htmlFor="perfil" className="block text-sm font-medium mb-1">
+                <label htmlFor="perfil" className="block text-sm font-medium mb-1 text-gray-800">
                   Perfil
                 </label>
                 <select
                   id="perfil"
                   value={perfilSeleccionado}
                   onChange={(e) => setPerfilSeleccionado(e.target.value)}
-                  className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  className="w-full border border-slate-400 bg-white text-gray-900 placeholder:text-slate-500 p-2 rounded focus:outline-none focus:ring-2 focus:ring-[var(--primary)] disabled:bg-slate-100 disabled:text-slate-600"
                   required
                 >
                   <option value="">Seleccione el perfil</option>
@@ -383,17 +383,17 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label htmlFor="contrasena" className="block text-sm font-medium mb-1">
+              <label htmlFor="contrasena" className="block text-sm font-medium mb-1 text-gray-800">
                 Contraseña
               </label>
-              <div className="flex items-center border rounded">
+              <div className="flex items-center border border-slate-400 rounded bg-white text-gray-900">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="contrasena"
                   value={contrasena}
                   onChange={(e) => setContrasena(e.target.value)}
                   placeholder="Ingrese su contraseña"
-                  className="w-full p-2 rounded focus:outline-none"
+                  className="w-full p-2 rounded bg-white text-gray-900 placeholder:text-slate-500 focus:outline-none"
                   required
                 />
                 <span
