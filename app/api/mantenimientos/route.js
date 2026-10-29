@@ -1430,14 +1430,24 @@ export async function POST(request) {
             )
           : null
 
-      const payload = {
-        timestamp_registro:
-          body.timestamp_registro ||
-          null,
+      const fechaEjecucion = String(body.fecha_registro || '').trim()
+      const fechaActual = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit',
+      }).format(new Date())
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaEjecucion) ||
+          !Number.isFinite(Date.parse(fechaEjecucion + 'T12:00:00Z')) ||
+          new Date(fechaEjecucion + 'T12:00:00Z').toISOString().slice(0, 10) !== fechaEjecucion ||
+          fechaEjecucion > fechaActual) {
+        return NextResponse.json({
+          status: 'failed',
+          message: 'La fecha de ejecución debe ser válida y no puede ser posterior a hoy.',
+        }, { status: 400 })
+      }
 
-        fecha_registro:
-          body.fecha_registro ||
-          null,
+      const payload = {
+        timestamp_registro: new Date().toISOString(),
+
+        fecha_registro: fechaEjecucion,
 
         placa,
 
