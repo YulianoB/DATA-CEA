@@ -96,6 +96,13 @@ export default function MantenimientosPage() {
   const [kilometraje, setKilometraje] = useState('')
   const [fechaEjecucion, setFechaEjecucion] = useState(() => ahoraBogota().fecha)
   const [fechaRegistroVisible, setFechaRegistroVisible] = useState(() => ahoraBogota().timestamp)
+
+  useEffect(() => {
+    const actualizar = () => setFechaRegistroVisible(ahoraBogota().timestamp)
+    actualizar()
+    const intervalo = setInterval(actualizar, 60000)
+    return () => clearInterval(intervalo)
+  }, [])
   const [msgKm, setMsgKm] = useState('')
   const [forzarKm, setForzarKm] = useState(false)
   const [modalKm, setModalKm] = useState(null)
@@ -819,18 +826,11 @@ export default function MantenimientosPage() {
     setGuardando(true)
 
     try {
-      const {
-        fecha,
-        timestamp,
-      } = ahoraBogota()
-
       const payload = {
         nit: nitActual,
         accion: 'registrar',
 
-        timestamp_registro:
-          timestamp,
-
+        // timestamp_registro se genera en la API al guardar.
         fecha_registro:
           fechaEjecucion,
 
