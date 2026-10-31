@@ -1,6 +1,8 @@
 // app/api/admin/consultas/horarios/route.js
 
 import { NextResponse } from 'next/server'
+import { sesionNotificaciones } from '@/lib/notificacionesCorporativasServer'
+import { fechaHoyHorariosBogota } from '@/lib/servicios/jornadasPendientesServer'
 
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
@@ -1419,5 +1421,44 @@ export async function GET(request) {
     return respuestaError(
       error
     )
+  }
+}
+ 
+// Gestión administrativa sencilla de jornadas anteriores que quedaron abiertas.
+export async function PATCH(request) {
+  try {
+    const sesion = await sesionNotificaciones(request, ['ADMINISTRATIVO'])
+    if (!sesion) return NextResponse.json({ status: 'failed', message: 'No autorizado.' }, { status: 403 })
+    const body = await request.json()
+    const id = Number(body?.id)
+    if (!Number.isSafeInteger(id) || id < 1) {
+      return NextResponse.json({ status: 'failed', message: 'Identificador de jornada inválido.' }, { status: 400 })
+    }
+    if (body?.nit && String(body.nit).trim() !== String(sesion.nitEmpresa).trim()) {
+      return NextResponse.json({ status: 'failed', message: 'Empresa no autorizada.' }, { status: 403 })
+    }
+    const { supabaseAdmin } = await obtenerSupabaseAdminEmpresaDesdeRequest(request, { nit: sesion.nitEmpresa })
+    const hoy = fechaHoyHorariosBogota()
+    const responsable = String(sesion.nombreCompleto || sesion.nombre_completo || sesion.nombre || sesion.usuario || 'Administración').trim()
+    const { data, error } = await supabaseAdmin.from('horarios')
+      .update({
+        estado_registro: 'No Cerrado',
+        cambio_estado_por: responsable,
+        cambio_estado_fecha: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .eq('estado_registro', 'Abierto')
+      .lt('fecha_entrada', hoy)
+      .select('id, estado_registro, cambio_estado_por, cambio_estado_fecha')
+      .maybeSingle()
+    if (error) throw error
+    if (!data) return NextResponse.json({
+      status: 'warning',
+      message: 'La jornada ya fue gestionada o corresponde al día actual. Actualice la consulta.',
+    }, { status: 409 })
+    return NextResponse.json({ status: 'success', jornada: data })
+  } catch (error) {
+    console.error('Error PATCH /api/admin/consultas/horarios:', error)
+    return respuestaError(error)
   }
 }
