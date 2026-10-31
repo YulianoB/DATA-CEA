@@ -289,6 +289,9 @@ export default function HorariosPracticaPage() {
       null
     )
 
+  const [jornadaPendiente, setJornadaPendiente] = useState(null)
+  const [validacionJornadaLista, setValidacionJornadaLista] = useState(false)
+
   // ==========================================================
   // Entrada
   // ==========================================================
@@ -605,6 +608,8 @@ export default function HorariosPracticaPage() {
 
             const json =
               await res.json()
+            setValidacionJornadaLista(true)
+            setJornadaPendiente(json?.jornada_pendiente || null)
 
             if (
               !res.ok ||
@@ -829,7 +834,7 @@ export default function HorariosPracticaPage() {
                 'Error consultando jornada:',
                 json
               )
-
+              setValidacionJornadaLista(false)
               return
             }
 
@@ -870,6 +875,7 @@ export default function HorariosPracticaPage() {
               'Error consultando jornada abierta:',
               error
             )
+            setValidacionJornadaLista(false)
           }
         }
 
@@ -1585,6 +1591,8 @@ export default function HorariosPracticaPage() {
     async () => {
       if (
         !puedeRegistrarEntrada ||
+        !validacionJornadaLista ||
+        jornadaPendiente ||
         guardando ||
         !user ||
         !nitActual
@@ -1711,6 +1719,9 @@ export default function HorariosPracticaPage() {
             )
           }
 
+          if (json?.codigo === 'JORNADA_ANTERIOR_ABIERTA') {
+            setJornadaPendiente(json.jornada_pendiente || null)
+          }
           toast.error(
             json
               ?.message ||
@@ -2011,9 +2022,22 @@ export default function HorariosPracticaPage() {
         <EncabezadoPractica titulo="Registro de Horarios" usuario={user.nombreCompleto} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={handleLogout} />
         <main className="px-3 py-4 sm:px-6 sm:py-6">
 
-        {!tengoAbierta && <TarjetaHorarioPractica tipo="entrada" onClick={() => setModalHorario('entrada')} />}
+        {!tengoAbierta && jornadaPendiente && (
+          <section role="alert" className="mb-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-slate-800">
+            <h3 className="font-bold text-red-800">No es posible registrar una nueva jornada</h3>
+            <p className="mt-2">Se identificó una jornada anterior que no fue cerrada.</p>
+            <div className="mt-3 rounded-lg bg-white p-3">
+              <p className="text-xs text-slate-500">Fecha de jornada pendiente</p>
+              <p className="font-bold">{String(jornadaPendiente.fecha_entrada || '').split('-').reverse().join('/')}</p>
+              <p className="mt-2 text-xs text-slate-500">Estado</p>
+              <p className="font-semibold text-amber-700">Abierto</p>
+            </div>
+            <p className="mt-3">Para habilitar un nuevo registro de entrada, comuníquese con el área administrativa del CEA. Allí revisarán la novedad y actualizarán el estado de la jornada pendiente.</p>
+          </section>
+        )}
+        {!tengoAbierta && validacionJornadaLista && !jornadaPendiente && <TarjetaHorarioPractica tipo="entrada" onClick={() => setModalHorario('entrada')} />}
 
-        {!tengoAbierta && modalHorario === 'entrada' && (
+        {!tengoAbierta && validacionJornadaLista && !jornadaPendiente && modalHorario === 'entrada' && (
           <ModalHorarioPractica tipo="entrada" onCerrar={() => setModalHorario(null)}>
           <div className="border rounded-lg shadow-sm">
 
