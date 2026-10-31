@@ -37,7 +37,7 @@ const control = 'mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 
 export default function ConsultaHorariosPage() {
   const [filtros, setFiltros] = useState(() => {
     const hoy = hoyBogota()
-    return { inicio: haceDias(hoy, 30), fin: hoy, rol: '', funcionario: '', estado: 'No Cerrado' }
+    return { inicio: '2020-01-01', fin: haceDias(hoy, 1), rol: '', funcionario: '', estado: 'Abierto' }
   })
   const [nit, setNit] = useState('')
   const [listo, setListo] = useState(false)
@@ -49,7 +49,9 @@ export default function ConsultaHorariosPage() {
   const [funcionarios, setFuncionarios] = useState([])
   const [cargandoFuncionarios, setCargandoFuncionarios] = useState(false)
   const [vista, setVista] = useState('jornadas')
-  const [periodo, setPeriodo] = useState('30')
+  const [periodo, setPeriodo] = useState('personalizado')
+  const [actualizacion, setActualizacion] = useState(0)
+  const [cambiandoId, setCambiandoId] = useState(null)
   const [empresaNombre, setEmpresaNombre] = useState('')
 
   useEffect(() => {
@@ -114,17 +116,39 @@ export default function ConsultaHorariosPage() {
     }
     consultar()
     return () => { activo = false; controller.abort() }
-  }, [listo, nit, filtros.inicio, filtros.fin, filtros.rol, filtros.funcionario, filtros.estado, vista])
+  }, [listo, nit, filtros.inicio, filtros.fin, filtros.rol, filtros.funcionario, filtros.estado, vista, actualizacion])
 
   const actualizar = (campo, valor) => setFiltros(p => ({
     ...p, [campo]: valor, ...(campo === 'rol' ? { funcionario: '' } : {}),
   }))
   const limpiar = () => {
     const hoy = hoyBogota()
-    setFiltros({ inicio: haceDias(hoy, 30), fin: hoy, rol: '', funcionario: '', estado: 'No Cerrado' })
+    setFiltros({ inicio: '2020-01-01', fin: haceDias(hoy, 1), rol: '', funcionario: '', estado: 'Abierto' })
     setVista('jornadas')
-    setPeriodo('30')
+    setPeriodo('personalizado')
   }
+  const cambiarEstado = async (jornada) => {
+    if (!jornada || jornada.estado_registro !== 'Abierto' || !jornada.fecha_entrada || jornada.fecha_entrada >= hoyBogota()) return
+    if (!window.confirm('¿Desea cambiar esta jornada de Abierto a No Cerrado?')) return
+    setCambiandoId(jornada.id)
+    try {
+      const res = await fetch('/api/admin/consultas/horarios', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nit, id: jornada.id }),
+      })
+      const json = await res.json()
+      if (!res.ok || json.status !== 'success') throw new Error(json.message || 'No fue posible cambiar el estado.')
+      toast.success('Jornada actualizada a No Cerrado.')
+      setDetalle(null)
+      setActualizacion(v => v + 1)
+    } catch (e) {
+      toast.error(e.message || 'No fue posible cambiar el estado.')
+    } finally {
+      setCambiandoId(null)
+    }
+  }
+
   const filas = datos?.jornadas || []
   const resumen = datos?.resumen || {}
   const totalPaginas = Math.max(1, Math.ceil(filas.length / PAGE_SIZE))
@@ -230,7 +254,7 @@ export default function ConsultaHorariosPage() {
             <MarcoTabla className="overflow-x-auto rounded-none border-0">
               <table className="w-full min-w-[850px] border-collapse text-left text-xs">
                 <thead ><tr>
-                  {['Fecha', 'Funcionario', 'Rol', 'Entrada', 'Salida', 'Placa', 'Estado', 'Detalle'].map(t => <th key={t} className="whitespace-nowrap border-b px-3 py-3 font-semibold" >{t}</th>)}
+                  {['Fecha', 'Funcionario', 'Rol', 'Entrada', 'Salida', 'Placa', 'Estado', 'Detalle', 'Acción'].map(t => <th key={t} className="whitespace-nowrap border-b px-3 py-3 font-semibold" >{t}</th>)}
                 </tr></thead>
                 <tbody>{visibles.map(j => (
                   <tr key={j.id} className="border-b border-slate-200 odd:bg-white even:bg-slate-50/70 transition-colors hover:bg-blue-50">
@@ -242,6 +266,15 @@ export default function ConsultaHorariosPage() {
                     <td className="px-3 py-2">{j.placa || '—'}</td>
                     <td className="px-3 py-2"><span className={`whitespace-nowrap rounded-full border px-2 py-1 font-semibold ${claseEstado(j.estado_registro)}`}>{j.estado_registro || '—'}</span></td>
                     <td className="px-3 py-2 print:hidden"><BotonAccion tipo="verDetalle" aria-label="Ver detalle" onClick={() => setDetalle(j)}><Eye size={15} /> Ver</BotonAccion></td>
+                    <td className="px-3 py-2 print:hidden">
+                      {j.estado_registro === 'Abierto' && j.fecha_entrada && j.fecha_entrada < hoyBogota() && (
+                        <button type="button" disabled={cambiandoId !== null}
+                          onClick={() => cambiarEstado(j)}
+                          className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50">
+                          {cambiandoId === j.id ? 'Actualizando...' : 'Cambiar a No Cerrado'}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -321,7 +354,16 @@ export default function ConsultaHorariosPage() {
               </section>)}
               <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600">Los datos y estados se muestran tal como están registrados en la base de datos.</p>
             </div>
-            <div className="flex shrink-0 justify-end border-t border-slate-200 bg-white px-6 py-4"><BotonAccion tipo="cancelar" onClick={() => setDetalle(null)}><X size={15} /> Cerrar</BotonAccion></div>
+            <div className="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
+              {detalle.estado_registro === 'Abierto' && detalle.fecha_entrada && detalle.fecha_entrada < hoyBogota() && (
+                <button type="button" disabled={cambiandoId !== null}
+                  onClick={() => cambiarEstado(detalle)}
+                  className="rounded-lg bg-amber-100 px-3 py-2 text-xs font-bold text-amber-900 hover:bg-amber-200 disabled:opacity-50">
+                  {cambiandoId === detalle.id ? 'Actualizando...' : 'Cambiar a No Cerrado'}
+                </button>
+              )}
+              <BotonAccion tipo="cancelar" onClick={() => setDetalle(null)}><X size={15} /> Cerrar</BotonAccion>
+            </div>
           </aside>
         </div>}
       </div>
