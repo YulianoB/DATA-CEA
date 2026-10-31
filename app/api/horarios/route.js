@@ -1088,14 +1088,12 @@ export async function GET(request) {
         )
       }
 
-      return NextResponse.json({
-        status:
-          'success',
+      const jornadaPendiente = await jornadaAnteriorPendiente(supabase, usuario)
 
-        jornada:
-          data?.length
-            ? data[0]
-            : null,
+      return NextResponse.json({
+        status: 'success',
+        jornada_pendiente: jornadaPendiente,
+        jornada: data?.length ? data[0] : null,
       })
     }
 
