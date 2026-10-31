@@ -1,6 +1,7 @@
 // app/api/horarios/simple/route.js
 
 import { NextResponse } from 'next/server'
+import { jornadaAnteriorPendiente, respuestaJornadaPendiente } from '@/lib/servicios/jornadasPendientesServer'
 
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
@@ -456,7 +457,10 @@ export async function GET(request) {
         ),
       ])
 
+    const jornadaPendiente = await jornadaAnteriorPendiente(supabase, usuario)
+
     return NextResponse.json({
+      jornada_pendiente: jornadaPendiente,
       status:
         'success',
 
@@ -615,6 +619,12 @@ export async function POST(request) {
             403,
         }
       )
+    }
+
+    // El control se aplica a nuevas entradas, no al cierre de hoy.
+    const anteriorPendiente = await jornadaAnteriorPendiente(supabase, usuario)
+    if (anteriorPendiente) {
+      return NextResponse.json(respuestaJornadaPendiente(anteriorPendiente), { status: 409 })
     }
 
     // =====================================================
