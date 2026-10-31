@@ -146,6 +146,9 @@ export default function RegistroHorariosPage() {
   ] =
     useState(true)
 
+  const [jornadaPendiente, setJornadaPendiente] = useState(null)
+  const [errorEstado, setErrorEstado] = useState(false)
+
   const [
     guardando,
     setGuardando,
@@ -296,6 +299,7 @@ export default function RegistroHorariosPage() {
             'No fue posible consultar el estado de la jornada.'
           )
 
+          setErrorEstado(true)
           setTengoAbierta(
             false
           )
@@ -321,6 +325,8 @@ export default function RegistroHorariosPage() {
           result?.jornada ||
           null
         )
+        setJornadaPendiente(result?.jornada_pendiente || null)
+        setErrorEstado(false)
       } catch (error) {
         console.error(
           'Error consultando jornada:',
@@ -330,6 +336,7 @@ export default function RegistroHorariosPage() {
         toast.error(
           'No fue posible consultar el estado de la jornada.'
         )
+        setErrorEstado(true)
 
         setTengoAbierta(
           false
@@ -671,12 +678,16 @@ export default function RegistroHorariosPage() {
           user.role
         ) &&
         !tengoAbierta &&
+        !jornadaPendiente &&
+        !errorEstado &&
         !guardando &&
         !cargandoEstado
       )
     }, [
       user,
       tengoAbierta,
+      jornadaPendiente,
+      errorEstado,
       guardando,
       cargandoEstado,
     ])
@@ -771,6 +782,9 @@ export default function RegistroHorariosPage() {
           result?.status ===
             'warning'
         ) {
+          if (result?.codigo === 'JORNADA_ANTERIOR_ABIERTA') {
+            setJornadaPendiente(result.jornada_pendiente || null)
+          }
           toast.warning(
             result?.message ||
             'Ya existe una jornada abierta.'
@@ -1230,6 +1244,20 @@ export default function RegistroHorariosPage() {
 
           </div>
 
+        )}
+
+        {jornadaPendiente && (
+          <section role="alert" className="mb-5 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-slate-800">
+            <h3 className="font-bold text-red-800">No es posible registrar una nueva jornada</h3>
+            <p className="mt-2">Se identificó una jornada anterior que no fue cerrada.</p>
+            <div className="mt-3 rounded-lg bg-white p-3">
+              <p className="text-xs text-slate-500">Fecha de jornada pendiente</p>
+              <p className="font-bold">{String(jornadaPendiente.fecha_entrada || '').split('-').reverse().join('/')}</p>
+              <p className="mt-2 text-xs text-slate-500">Estado</p>
+              <p className="font-semibold text-amber-700">Abierto</p>
+            </div>
+            <p className="mt-3">Para habilitar un nuevo registro de entrada, comuníquese con el área administrativa del CEA. Allí revisarán la novedad y actualizarán el estado de la jornada pendiente.</p>
+          </section>
         )}
 
         {/* ==================================================
