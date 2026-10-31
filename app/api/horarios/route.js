@@ -1,3 +1,4 @@
+import { jornadaAnteriorPendiente, respuestaJornadaPendiente } from '@/lib/servicios/jornadasPendientesServer'
 import { referenciaKilometraje, evaluarKilometraje } from '@/lib/servicios/referenciaKilometrajeServer'
 import { esVehiculoActivo } from '@/lib/vehiculosActivos'
 // app/api/horarios/route.js
@@ -1608,6 +1609,12 @@ export async function POST(request) {
               400,
           }
         )
+      }
+
+      // Bloquear solo entradas nuevas con jornadas anteriores abiertas.
+      const anteriorPendiente = await jornadaAnteriorPendiente(supabase, usuario)
+      if (anteriorPendiente) {
+        return NextResponse.json(respuestaJornadaPendiente(anteriorPendiente), { status: 409 })
       }
 
       // ===================================================
