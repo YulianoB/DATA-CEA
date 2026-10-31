@@ -450,6 +450,7 @@ async function consultarJornadas({
   fechaFin,
   rol = '',
   nombreCompleto = '',
+  estado = '',
   soloNoCerrados = false,
 }) {
   let consulta =
@@ -470,7 +471,9 @@ async function consultarJornadas({
         clases_programadas,
         clases_dictadas,
         num_aprendices,
-        estado_registro
+        estado_registro,
+        cambio_estado_por,
+        cambio_estado_fecha
       `)
       .gte(
         'fecha_entrada',
@@ -480,6 +483,9 @@ async function consultarJornadas({
         'fecha_entrada',
         fechaFin
       )
+
+  // Filtrar en Supabase antes del límite de filas de la consulta.
+  if (estado) consulta = consulta.eq('estado_registro', estado)
 
   if (
     soloNoCerrados
@@ -1141,7 +1147,7 @@ export async function GET(request) {
         return NextResponse.json({ status: 'failed', message: 'Estado no válido.' }, { status: 400 })
       }
       const jornadas = await consultarJornadas({
-        supabase, fechaInicio, fechaFin, rol, nombreCompleto,
+        supabase, fechaInicio, fechaFin, rol, nombreCompleto, estado,
       })
       const filtradas = estado
         ? jornadas.filter(item => normalizarTexto(item.estado_registro) === estado)
