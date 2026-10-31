@@ -37,7 +37,7 @@ const control = 'mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 
 export default function ConsultaHorariosPage() {
   const [filtros, setFiltros] = useState(() => {
     const hoy = hoyBogota()
-    return { inicio: '2020-01-01', fin: haceDias(hoy, 1), rol: '', funcionario: '', estado: 'Abierto' }
+    return { inicio: '1900-01-01', fin: haceDias(hoy, 1), rol: '', funcionario: '', estado: 'Abierto' }
   })
   const [nit, setNit] = useState('')
   const [listo, setListo] = useState(false)
@@ -123,7 +123,7 @@ export default function ConsultaHorariosPage() {
   }))
   const limpiar = () => {
     const hoy = hoyBogota()
-    setFiltros({ inicio: '2020-01-01', fin: haceDias(hoy, 1), rol: '', funcionario: '', estado: 'Abierto' })
+    setFiltros({ inicio: '1900-01-01', fin: haceDias(hoy, 1), rol: '', funcionario: '', estado: 'Abierto' })
     setVista('jornadas')
     setPeriodo('personalizado')
   }
@@ -352,6 +352,11 @@ export default function ConsultaHorariosPage() {
                   </div>)}
                 </div>
               </section>)}
+              {detalle.cambio_estado_fecha && (
+                <p className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-slate-700">
+                  Cambio administrativo: {detalle.cambio_estado_por || 'Administración'} · {new Date(detalle.cambio_estado_fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' })}
+                </p>
+              )}
               <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600">Los datos y estados se muestran tal como están registrados en la base de datos.</p>
             </div>
             <div className="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
