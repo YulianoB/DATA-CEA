@@ -1791,17 +1791,13 @@ async function construirExpediente(
   return {
     aprendiz,
 
+    // Compatibilidad de expediente: solo clasificar registros que tengan
+    // un estado legado EXPRESO; NULL histórico no implica activo.
     procesos_activos:
-      matriculas.filter(
-        matricula =>
-          !matricula.finalizada
-      ),
+      matriculas.filter(matricula => matricula.estado === 'ACTIVO'),
 
     historial_finalizado:
-      matriculas.filter(
-        matricula =>
-          matricula.finalizada
-      ),
+      matriculas.filter(matricula => matricula.estado === 'CERTIFICADO'),
 
     matriculas,
 
