@@ -168,17 +168,9 @@ function formatearDocumento(
 // ESTADO MATRÍCULA
 // ============================================================
 //
-// Desde ahora:
-//
-// ACTIVO
-// FINALIZADO
-//
-// Para registros de prueba anteriores que todavía tengan
-// PENDIENTE, se muestran visualmente como ACTIVO.
-//
-// ============================================================
-
-// Estado general de matrícula legado: no se interpreta como avance académico.
+// El estado general de matrícula no es una clasificación operativa
+// confiable para los datos históricos. Se conserva el campo en la
+// base únicamente por compatibilidad durante la transición.
 
 // ============================================================
 // ESTADO RUNT
@@ -1955,7 +1947,7 @@ export default function InscripcionesPage() {
                 ) : (
                   resultados.map(
                     row => {
-return (
+                      return (
                         <tr
                           key={
                             row.id
@@ -2072,7 +2064,7 @@ return (
                             "
                           >
 
-                            <span title="Estado académico no determinado en el historial">—</span>
+                            <span title="Estado general de matrícula retirado del uso operativo">—</span>
 
                           </td>
 
