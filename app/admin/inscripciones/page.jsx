@@ -178,23 +178,7 @@ function formatearDocumento(
 //
 // ============================================================
 
-function normalizarEstadoMatricula(
-  estado
-) {
-  const valor =
-    mayusculas(
-      estado
-    )
-
-  if (
-    valor ===
-    'FINALIZADO'
-  ) {
-    return 'FINALIZADO'
-  }
-
-  return 'ACTIVO'
-}
+// Estado general de matrícula legado: no se interpreta como avance académico.
 
 // ============================================================
 // ESTADO RUNT
@@ -1971,12 +1955,7 @@ export default function InscripcionesPage() {
                 ) : (
                   resultados.map(
                     row => {
-                      const estadoMatricula =
-                        normalizarEstadoMatricula(
-                          row.estado
-                        )
-
-                      return (
+return (
                         <tr
                           key={
                             row.id
@@ -2093,16 +2072,7 @@ export default function InscripcionesPage() {
                             "
                           >
 
-                            {estadoMatricula ===
-                            'FINALIZADO' ? (
-                              <Badge tipo="green">
-                                FINALIZADO
-                              </Badge>
-                            ) : (
-                              <Badge tipo="blue">
-                                ACTIVO
-                              </Badge>
-                            )}
+                            <span title="Estado académico no determinado en el historial">—</span>
 
                           </td>
 
