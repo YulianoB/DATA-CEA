@@ -4168,11 +4168,6 @@ const guardar =
                           : registro
                               .categoria ||
                             '—'}{' '}
-
-                        ·{' '}
-
-                        {registro.estado ||
-                          '—'}
                       </span>
                     )
                   )}
