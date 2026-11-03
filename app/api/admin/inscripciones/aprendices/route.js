@@ -823,11 +823,12 @@ async function obtenerHistorial(
         documentoNormalizado
       )
       .order(
-        'created_at',
-        {
-          ascending:
-            false,
-        }
+        'fecha_matricula',
+        { ascending: false }
+      )
+      .order(
+        'id',
+        { ascending: false }
       )
 
   if (
