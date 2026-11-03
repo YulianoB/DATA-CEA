@@ -3409,6 +3409,23 @@ export async function GET(
       ).toLowerCase()
 
     // =====================================================
+    // CONTINUACIONES DE LA MATRÍCULA ORIGINAL
+    // =====================================================
+    if (recurso === 'continuaciones') {
+      const matriculaId = Number(searchParams.get('matricula_id'))
+      if (!Number.isSafeInteger(matriculaId) || matriculaId <= 0) {
+        return NextResponse.json({status:'error',message:'Matrícula inválida.'},{status:400})
+      }
+      const { data, error } = await supabase.from('matriculas_continuaciones')
+        .select('id,matricula_id,fecha_continuacion,motivo,observaciones,registrado_por,created_at')
+        .eq('matricula_id', matriculaId)
+        .order('fecha_continuacion',{ascending:false})
+        .order('id',{ascending:false})
+      if (error) throw new Error('No fue posible consultar las continuaciones: ' + error.message)
+      return NextResponse.json({status:'success',data:data||[]})
+    }
+
+    // =====================================================
     // CONVENIOS
     // =====================================================
 
@@ -3924,6 +3941,47 @@ export async function POST(
       normalizarTexto(
         body?.accion
       ).toLowerCase()
+
+    // =====================================================
+    // REGISTRAR CONTINUACIÓN, SIN CREAR NUEVA MATRÍCULA
+    // =====================================================
+    if (accion === 'registrar_continuacion') {
+      const matriculaId = Number(body?.matricula_id)
+      const fecha = normalizarTexto(body?.fecha_continuacion)
+      const motivo = normalizarTexto(body?.motivo)
+      const observaciones = normalizarTexto(body?.observaciones) || null
+      const responsable = normalizarTexto(body?.usuario)
+      const esFecha = /^\d{4}-\d{2}-\d{2}$/.test(fecha)
+        && !Number.isNaN(Date.parse(fecha))
+        && new Date(fecha+'T12:00:00Z').toISOString().slice(0,10)===fecha
+      if (!Number.isSafeInteger(matriculaId) || matriculaId <= 0 ||
+          !esFecha || motivo.length < 8 || !responsable) {
+        return NextResponse.json({
+          status:'error',
+          message:'Indique matrícula, fecha válida, motivo de al menos ocho caracteres y responsable.'
+        },{status:400})
+      }
+      const {data: matricula,error: matriculaError} = await supabase
+        .from('aprendices').select('id,consecutivo,fecha_matricula')
+        .eq('id',matriculaId).maybeSingle()
+      if (matriculaError) throw new Error(matriculaError.message)
+      if (!matricula) {
+        return NextResponse.json({status:'error',message:'Matrícula original no encontrada.'},{status:404})
+      }
+      if (fecha < matricula.fecha_matricula) {
+        return NextResponse.json({status:'error',message:'La continuación no puede preceder a la matrícula original.'},{status:400})
+      }
+      const {data,error} = await supabase.from('matriculas_continuaciones')
+        .insert({matricula_id:matriculaId,fecha_continuacion:fecha,
+                 motivo,observaciones,registrado_por:responsable})
+        .select('id,matricula_id,fecha_continuacion,motivo,observaciones,registrado_por,created_at')
+        .single()
+      if (error) throw new Error('No fue posible guardar la continuación: '+error.message)
+      return NextResponse.json({
+        status:'success',message:'Continuación registrada sin cambiar el consecutivo de la matrícula.',
+        data,consecutivo_original:matricula.consecutivo
+      },{status:201})
+    }
 
     // =====================================================
     // CREAR CONVENIO
