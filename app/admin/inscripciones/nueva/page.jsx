@@ -1254,7 +1254,7 @@ export default function NuevaInscripcionPage() {
           )
         ) {
           msg =
-            'Esta categoría ya existe en el historial.'
+            'Esta categoría ya existe. Si el curso venció, utilice Continuación desde el expediente de Inscripciones.'
         } else if (
           histMaxRank >
             (
@@ -1545,7 +1545,7 @@ export default function NuevaInscripcionPage() {
           )
         ) {
           errs.categorias =
-            `La categoría ${cat} ya existe en el historial.`
+            `La categoría ${cat} ya existe. Para continuar un curso vencido, consulte la matrícula original.`
         }
 
         if (
@@ -4138,7 +4138,15 @@ const guardar =
                 >
                   <strong>
                     Historial de matrículas:
-                  </strong>{' '}
+                  </strong>
+                   <div className="my-2">
+                     <button type="button"
+                       onClick={() => router.push('/admin/inscripciones?documento=' + encodeURIComponent(form.documento || ''))}
+                       className="rounded border border-blue-500 bg-white text-blue-900 px-3 py-1 text-[11px] font-semibold">
+                       Abrir expediente para continuar matrícula existente
+                     </button>
+                   </div>
+{' '}
 
                   {prevMatriculas.map(
                     (
