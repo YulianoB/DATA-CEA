@@ -778,65 +778,6 @@ export default function InscripcionesPage() {
       false
     )
 
-  useEffect(() => {
-    const id = matriculaSeleccionada?.id
-    setContinuaciones([])
-    setContinuacionAbierta(false)
-    setErrorContinuacion('')
-    if (!drawerOpen || !id || !nit) return
-    let cancelled = false
-    const params = new URLSearchParams({
-      recurso: 'continuaciones',
-      matricula_id: String(id),
-      nit
-    })
-    fetchJsonSeguro(`${API_URL}?${params.toString()}`)
-      .then(json => {
-        if (!cancelled) setContinuaciones(Array.isArray(json?.data) ? json.data : [])
-      })
-      .catch(err => {
-        if (!cancelled) setErrorContinuacion(
-          'No fue posible consultar las continuaciones. Verifique la migración SQL: ' + (err.message || '')
-        )
-      })
-    return () => { cancelled = true }
-  }, [matriculaSeleccionada?.id, drawerOpen, nit])
-
-  async function guardarContinuacion() {
-    if (!matriculaSeleccionada?.id || guardandoContinuacion) return
-    const responsable = texto(user?.nombre_completo || user?.nombre ||
-      user?.usuario || user?.nombres || user?.email)
-    if (!responsable || formContinuacion.motivo.trim().length < 8) {
-      setErrorContinuacion('Indique un motivo de mínimo ocho caracteres y verifique el usuario de sesión.')
-      return
-    }
-    setGuardandoContinuacion(true)
-    setErrorContinuacion('')
-    try {
-      await fetchJsonSeguro(API_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          nit, accion: 'registrar_continuacion',
-          matricula_id: matriculaSeleccionada.id,
-          ...formContinuacion,
-          usuario: responsable
-        })
-      })
-      const params = new URLSearchParams({
-        recurso: 'continuaciones', matricula_id: String(matriculaSeleccionada.id), nit
-      })
-      const json = await fetchJsonSeguro(`${API_URL}?${params.toString()}`)
-      setContinuaciones(Array.isArray(json?.data) ? json.data : [])
-      setFormContinuacion({fecha_continuacion:fechaLocalHoy(),motivo:'',observaciones:''})
-      setContinuacionAbierta(false)
-    } catch (err) {
-      setErrorContinuacion(err.message || 'No se pudo registrar la continuación.')
-    } finally {
-      setGuardandoContinuacion(false)
-    }
-  }
-
   // ==========================================================
   // DRAWER EXPEDIENTE
   // ==========================================================
@@ -960,6 +901,65 @@ export default function InscripcionesPage() {
         user,
       ]
     )
+
+  useEffect(() => {
+    const id = matriculaSeleccionada?.id
+    setContinuaciones([])
+    setContinuacionAbierta(false)
+    setErrorContinuacion('')
+    if (!drawerOpen || !id || !nit) return
+    let cancelled = false
+    const params = new URLSearchParams({
+      recurso: 'continuaciones',
+      matricula_id: String(id),
+      nit
+    })
+    fetchJsonSeguro(`${API_URL}?${params.toString()}`)
+      .then(json => {
+        if (!cancelled) setContinuaciones(Array.isArray(json?.data) ? json.data : [])
+      })
+      .catch(err => {
+        if (!cancelled) setErrorContinuacion(
+          'No fue posible consultar las continuaciones. Verifique la migración SQL: ' + (err.message || '')
+        )
+      })
+    return () => { cancelled = true }
+  }, [matriculaSeleccionada?.id, drawerOpen, nit])
+
+  async function guardarContinuacion() {
+    if (!matriculaSeleccionada?.id || guardandoContinuacion) return
+    const responsable = texto(user?.nombre_completo || user?.nombre ||
+      user?.usuario || user?.nombres || user?.email)
+    if (!responsable || formContinuacion.motivo.trim().length < 8) {
+      setErrorContinuacion('Indique un motivo de mínimo ocho caracteres y verifique el usuario de sesión.')
+      return
+    }
+    setGuardandoContinuacion(true)
+    setErrorContinuacion('')
+    try {
+      await fetchJsonSeguro(API_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          nit, accion: 'registrar_continuacion',
+          matricula_id: matriculaSeleccionada.id,
+          ...formContinuacion,
+          usuario: responsable
+        })
+      })
+      const params = new URLSearchParams({
+        recurso: 'continuaciones', matricula_id: String(matriculaSeleccionada.id), nit
+      })
+      const json = await fetchJsonSeguro(`${API_URL}?${params.toString()}`)
+      setContinuaciones(Array.isArray(json?.data) ? json.data : [])
+      setFormContinuacion({fecha_continuacion:fechaLocalHoy(),motivo:'',observaciones:''})
+      setContinuacionAbierta(false)
+    } catch (err) {
+      setErrorContinuacion(err.message || 'No se pudo registrar la continuación.')
+    } finally {
+      setGuardandoContinuacion(false)
+    }
+  }
 
   // ==========================================================
   // RESUMEN POR CATEGORÍA
