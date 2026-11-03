@@ -8180,6 +8180,121 @@ if (
     }
 
     // =====================================================
+    // RECTIFICAR METADATOS DE RECIBO HISTÓRICO
+    // Nunca modificar valor ni distribución desde esta acción.
+    // =====================================================
+
+    if (accion === 'corregir_recibo_historico') {
+      const reciboId = toInt(body?.recibo_id)
+      const motivo = texto(body?.motivo)
+      const fecha = body?.fecha === null || body?.fecha === ''
+        ? null : texto(body?.fecha)
+      const medioPagoId = toInt(body?.medio_pago_id)
+      const referencia = texto(body?.referencia_pago) || null
+
+      if (!reciboId || !motivo || motivo.length < 8) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Identifique el recibo e indique un motivo de al menos 8 caracteres.'
+        }, { status: 400 })
+      }
+      if (fecha !== null) {
+        const valida = /^\d{4}-\d{2}-\d{2}$/.test(fecha)
+          && !Number.isNaN(Date.parse(fecha))
+          && new Date(fecha + 'T12:00:00Z').toISOString().slice(0, 10) === fecha
+        if (!valida) {
+          return NextResponse.json({
+            status: 'error', message: 'La fecha debe ser válida (AAAA-MM-DD).'
+          }, { status: 400 })
+        }
+      }
+      const { data: anterior, error: errorConsulta } = await supabase
+        .from('recibos_caja').select('*').eq('id', reciboId).maybeSingle()
+      if (errorConsulta) throw new Error(errorConsulta.message)
+      if (!anterior || mayusculas(anterior.recibido_por) !== 'MIGRACION') {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Esta corrección es exclusiva para recibos de la migración histórica.'
+        }, { status: 409 })
+      }
+      if (mayusculas(anterior.estado) !== 'ACTIVO') {
+        return NextResponse.json({
+          status: 'error', message: 'No puede corregir un recibo anulado.'
+        }, { status: 409 })
+      }
+      if (!medioPagoId) {
+        return NextResponse.json({
+          status: 'error', message: 'Seleccione un medio de pago válido.'
+        }, { status: 400 })
+      }
+      const medio = await obtenerMedioPago(supabase, medioPagoId)
+      if (!medio) {
+        return NextResponse.json({
+          status: 'error', message: 'Medio de pago no válido.'
+        }, { status: 400 })
+      }
+      // Actualización condicionada para evitar sobrescribir cambios simultáneos.
+      let consulta = supabase.from('recibos_caja')
+        .update({
+          fecha,
+          medio_pago_id: medio.id,
+          referencia_pago: referencia,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', reciboId)
+        .eq('recibido_por', 'MIGRACION')
+        .eq('estado', 'ACTIVO')
+      consulta = anterior.updated_at
+        ? consulta.eq('updated_at', anterior.updated_at)
+        : consulta.is('updated_at', null)
+      const { data: actualizado, error: errorUpdate } = await consulta
+        .select('*').maybeSingle()
+      if (errorUpdate) throw new Error(errorUpdate.message)
+      if (!actualizado) {
+        return NextResponse.json({
+          status: 'error', message: 'El recibo cambió durante la edición. Actualice el detalle.'
+        }, { status: 409 })
+      }
+
+      try {
+        await registrarAuditoria({
+          supabase, usuario, accion: 'RECTIFICAR_RECIBO_HISTORICO',
+          entidad: 'RECIBO_CAJA', entidadId: reciboId,
+          matriculaId: anterior.matricula_id,
+          documento: anterior.documento,
+          consecutivoReferencia: anterior.referencia_pago,
+          descripcion: 'Rectificación documental de fecha, medio o referencia de pago histórico.',
+          datosAnteriores: {
+            fecha: anterior.fecha, medio_pago_id: anterior.medio_pago_id,
+            referencia_pago: anterior.referencia_pago
+          },
+          datosNuevos: {
+            fecha: actualizado.fecha, medio_pago_id: actualizado.medio_pago_id,
+            referencia_pago: actualizado.referencia_pago
+          },
+          motivo, observaciones: motivo
+        })
+      } catch (auditError) {
+        // No dejar cambios sin trazabilidad si falló el registro de auditoría.
+        const { error: rollbackError } = await supabase.from('recibos_caja')
+          .update({
+            fecha: anterior.fecha, medio_pago_id: anterior.medio_pago_id,
+            referencia_pago: anterior.referencia_pago,
+            updated_at: anterior.updated_at
+          }).eq('id', reciboId).eq('updated_at', actualizado.updated_at)
+        if (rollbackError) {
+          throw new Error('ERROR CRÍTICO: se corrigió el recibo pero falló la auditoría y su reversión. Requiere revisión administrativa.')
+        }
+        throw auditError
+      }
+      return NextResponse.json({
+        status: 'success',
+        message: 'Datos históricos actualizados con trazabilidad.',
+        data: actualizado
+      })
+    }
+
+    // =====================================================
     // ANULAR RECIBO
     // =====================================================
 
