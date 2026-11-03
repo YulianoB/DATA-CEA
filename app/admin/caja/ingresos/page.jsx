@@ -4879,6 +4879,29 @@ const ingresosLibresFiltrados =
                 </div>
               </div>
 
+              {esCuentaConvenio(detalleFinanciero?.cuenta) &&
+                Number(detalleFinanciero?.cuenta?.valor_total) === 0 &&
+                mayusculas(detalleFinanciero?.cuenta?.estado) !== 'ANULADA' && (
+                <div className="border border-amber-300 rounded-lg bg-amber-50 p-3 space-y-2">
+                  <strong className="text-xs">Convenio pendiente de liquidación</strong>
+                  <p className="text-[11px]">El valor $0 no significa paz y salvo. Asigne el valor confirmado por el convenio antes de recibir pagos.</p>
+                  <label className="block text-[11px]">Valor de la obligación (CURSO)
+                    <input type="number" min="1" step="1" className="w-full border rounded p-2"
+                      value={liquidacionConvenio}
+                      onChange={e=>setLiquidacionConvenio(e.target.value)}/>
+                  </label>
+                  <label className="block text-[11px]">Soporte y justificación
+                    <textarea rows={2} className="w-full border rounded p-2"
+                      value={motivoLiquidacion}
+                      onChange={e=>setMotivoLiquidacion(e.target.value)}/>
+                  </label>
+                  <button type="button" disabled={procesando} onClick={guardarLiquidacionConvenio}
+                    className="rounded bg-slate-800 text-white px-3 py-2 text-xs">
+                    Liquidar obligación de convenio
+                  </button>
+                </div>
+              )}
+
               <div>
                 <div
                   className="
