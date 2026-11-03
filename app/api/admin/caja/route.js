@@ -8281,13 +8281,14 @@ if (
         })
       } catch (auditError) {
         // No dejar cambios sin trazabilidad si falló el registro de auditoría.
-        const { error: rollbackError } = await supabase.from('recibos_caja')
+        const { data: revertido, error: rollbackError } = await supabase.from('recibos_caja')
           .update({
             fecha: anterior.fecha, medio_pago_id: anterior.medio_pago_id,
             referencia_pago: anterior.referencia_pago,
             updated_at: anterior.updated_at
           }).eq('id', reciboId).eq('updated_at', actualizado.updated_at)
-        if (rollbackError) {
+          .select('id').maybeSingle()
+        if (rollbackError || !revertido) {
           throw new Error('ERROR CRÍTICO: se corrigió el recibo pero falló la auditoría y su reversión. Requiere revisión administrativa.')
         }
         throw auditError
