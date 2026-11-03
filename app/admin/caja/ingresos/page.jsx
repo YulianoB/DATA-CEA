@@ -828,6 +828,9 @@ const [
   ] =
     useState('PENDIENTE')
 
+  const [paginaCuentas, setPaginaCuentas] = useState(1)
+  const [hayMasCuentas, setHayMasCuentas] = useState(false)
+
   const [
     categoria,
     setCategoria,
@@ -1279,10 +1282,13 @@ const [
               {
                 q:
                   busqueda,
+                pagina: paginaCuentas,
+                estado,
               }
             )
           )
 
+        setHayMasCuentas(Boolean(data?.hay_mas))
         setCuentas(
           Array.isArray(
             data?.data
@@ -1295,6 +1301,8 @@ const [
         nit,
         construirUrl,
         busqueda,
+        paginaCuentas,
+        estado,
       ]
     )
     // =======================================================
@@ -1466,6 +1474,8 @@ const cargarIngresosLibres =
   // =======================================================
   // BÚSQUEDA AUTOMÁTICA CUENTAS
   // =======================================================
+
+  useEffect(() => { setPaginaCuentas(1) }, [busqueda, estado])
 
   useEffect(
     () => {
@@ -3427,8 +3437,12 @@ const ingresosLibresFiltrados =
 
       <div className="flex items-center gap-2">
         <span className="text-[10px]" style={{ color: ESTILO_SECCIONES.subtitulo }}>
-          {cuentasFiltradas.length} registro(s)
+          {cuentasFiltradas.length} registro(s) en página {paginaCuentas}
         </span>
+        <button type="button" disabled={paginaCuentas === 1} onClick={()=>setPaginaCuentas(p=>Math.max(1,p-1))}
+          className="border rounded px-2 py-1 text-[10px] disabled:opacity-40">Anterior</button>
+        <button type="button" disabled={!hayMasCuentas} onClick={()=>setPaginaCuentas(p=>p+1)}
+          className="border rounded px-2 py-1 text-[10px] disabled:opacity-40">Siguiente</button>
         <BotonAgregar
           type="button"
           onClick={() => setDrawerOtrosIngresos(true)}
