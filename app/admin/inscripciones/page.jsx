@@ -744,6 +744,19 @@ export default function InscripcionesPage() {
     fecha_fin: fechaLocalHoy(),
   }))
 
+  // Al regresar desde Nueva Inscripción con una matrícula ya existente,
+  // buscar por documento en todas las vigencias y no solo en el día actual.
+  useEffect(() => {
+    const documento = new URLSearchParams(window.location.search).get('documento')
+    if (documento && documento.trim()) {
+      setFiltros({
+        q: documento.trim(),
+        fecha_inicio: '',
+        fecha_fin: ''
+      })
+    }
+  }, [])
+
   // ==========================================================
   // RESULTADOS
   // ==========================================================
