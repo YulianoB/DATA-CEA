@@ -935,6 +935,7 @@ const [
       nombre_pagador: '',
       documento_pagador: '',
       referencia_pago: '',
+      fecha: '',
       observaciones: '',
     })
 
@@ -964,6 +965,13 @@ const [
     setCargandoDetalle,
   ] =
     useState(false)
+
+  const [reciboHistoricoEditando, setReciboHistoricoEditando] = useState(null)
+  const [correccionHistorica, setCorreccionHistorica] = useState({
+    fecha: '', medio_pago_id: '', referencia_pago: '', motivo: ''
+  })
+  const [liquidacionConvenio, setLiquidacionConvenio] = useState('')
+  const [motivoLiquidacion, setMotivoLiquidacion] = useState('')
 
   // =======================================================
   // UI
@@ -1991,6 +1999,9 @@ const ingresosLibresFiltrados =
               ''
             ),
       referencia_pago: '',
+      fecha: new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(new Date()),
       observaciones: '',
     })
 
@@ -2707,6 +2718,61 @@ const ingresosLibresFiltrados =
     ventana.focus()
   }
 
+  async function guardarCorreccionHistorica() {
+    if (!reciboHistoricoEditando) return
+    if (correccionHistorica.motivo.trim().length < 8) {
+      setError('Indique una justificación de al menos ocho caracteres.')
+      return
+    }
+    setProcesando(true)
+    setError('')
+    try {
+      await postCaja({
+        accion: 'corregir_recibo_historico',
+        recibo_id: reciboHistoricoEditando.id,
+        fecha: correccionHistorica.fecha || null,
+        medio_pago_id: correccionHistorica.medio_pago_id,
+        referencia_pago: correccionHistorica.referencia_pago,
+        motivo: correccionHistorica.motivo.trim()
+      })
+      setDetalleFinanciero(await consultarDetalleCuenta(detalleFinanciero.cuenta.id))
+      setReciboHistoricoEditando(null)
+      setMensaje('Recibo histórico corregido y auditado.')
+      await cargarCuentas()
+    } catch (err) {
+      setError(err.message || 'No fue posible corregir el recibo.')
+    } finally {
+      setProcesando(false)
+    }
+  }
+
+  async function guardarLiquidacionConvenio() {
+    const cuenta = detalleFinanciero?.cuenta
+    if (!cuenta?.id || !esCuentaConvenio(cuenta) || Number(cuenta.valor_total) !== 0) return
+    const valor = Number(liquidacionConvenio)
+    if (!Number.isFinite(valor) || valor <= 0 || motivoLiquidacion.trim().length < 8) {
+      setError('Indique el valor real y una justificación de mínimo 8 caracteres.')
+      return
+    }
+    setProcesando(true)
+    setError('')
+    try {
+      await postCaja({
+        accion: 'modificar_cuenta', cuenta_id: cuenta.id,
+        valor_total: valor, observaciones: motivoLiquidacion.trim()
+      })
+      setDetalleFinanciero(await consultarDetalleCuenta(cuenta.id))
+      setLiquidacionConvenio('')
+      setMotivoLiquidacion('')
+      await cargarCuentas()
+      setMensaje('Convenio liquidado. Puede registrar los pagos correspondientes.')
+    } catch (err) {
+      setError(err.message || 'No fue posible liquidar el convenio.')
+    } finally {
+      setProcesando(false)
+    }
+  }
+
   async function registrarPago() {
     if (!cuentaPago?.id) {
       return
@@ -2758,6 +2824,7 @@ const ingresosLibresFiltrados =
           nombre_pagador: formPago.nombre_pagador,
           documento_pagador: formPago.documento_pagador,
           referencia_pago: formPago.referencia_pago,
+          fecha: formPago.fecha,
           descripcion:
             cuentaPago?.descripcion ||
             cuentaPago?.concepto?.nombre ||
@@ -5000,6 +5067,12 @@ const ingresosLibresFiltrados =
                     />
                   </div>
 
+                  <div className="mb-2">
+                    <label className="block text-[11px] font-semibold mb-1">Fecha del pago</label>
+                    <input type="date" className="w-full border border-slate-300 rounded-md px-3 py-2 text-xs"
+                      value={formPago.fecha || ''}
+                      onChange={e=>setFormPago(actual=>({...actual,fecha:e.target.value}))}/>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <CampoSelect
                       label="Pagado por"
@@ -5419,6 +5492,39 @@ const ingresosLibresFiltrados =
                   </span>
                 </div>
 
+                {reciboHistoricoEditando && (
+                  <div className="p-3 my-2 border border-amber-300 rounded-lg bg-amber-50 space-y-2">
+                    <strong className="text-xs">Corregir recibo histórico {reciboHistoricoEditando.consecutivo}</strong>
+                    <p className="text-[10px]">Importes y aplicaciones no se modifican desde este formulario.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <label className="text-[11px]">Fecha verificada
+                        <input type="date" className="w-full border rounded p-2" value={correccionHistorica.fecha}
+                          onChange={e=>setCorreccionHistorica(a=>({...a,fecha:e.target.value}))}/>
+                      </label>
+                      <label className="text-[11px]">Medio de pago
+                        <select className="w-full border rounded p-2" value={correccionHistorica.medio_pago_id}
+                          onChange={e=>setCorreccionHistorica(a=>({...a,medio_pago_id:e.target.value}))}>
+                          {mediosPago.map(m=><option key={m.id} value={m.id}>{m.nombre}</option>)}
+                        </select>
+                      </label>
+                      <label className="text-[11px]">Recibo físico / referencia
+                        <input className="w-full border rounded p-2" value={correccionHistorica.referencia_pago}
+                          onChange={e=>setCorreccionHistorica(a=>({...a,referencia_pago:e.target.value}))}/>
+                      </label>
+                    </div>
+                    <label className="text-[11px] block">Justificación y soporte
+                      <textarea className="w-full border rounded p-2" rows={2} value={correccionHistorica.motivo}
+                        onChange={e=>setCorreccionHistorica(a=>({...a,motivo:e.target.value}))}/>
+                    </label>
+                    <div className="flex gap-2">
+                      <button type="button" disabled={procesando} onClick={guardarCorreccionHistorica}
+                        className="rounded bg-slate-800 text-white px-3 py-2 text-xs">Guardar corrección</button>
+                      <button type="button" disabled={procesando} onClick={()=>setReciboHistoricoEditando(null)}
+                        className="rounded border px-3 py-2 text-xs">Cancelar</button>
+                    </div>
+                  </div>
+                )}
+
                 {!Array.isArray(
                   detalleFinanciero?.recibos
                 ) ||
@@ -5502,6 +5608,21 @@ const ingresosLibresFiltrados =
                                   </td>
 
                                   <td className="px-3 py-2 border border-slate-300 text-center">
+                                    {mayusculas(recibo.recibido_por) === 'MIGRACION' &&
+                                      mayusculas(recibo.estado) === 'ACTIVO' && (
+                                      <button type="button" disabled={procesando}
+                                        onClick={()=>{
+                                          setReciboHistoricoEditando(recibo)
+                                          setCorreccionHistorica({
+                                            fecha: recibo.fecha || '',
+                                            medio_pago_id: String(recibo.medio_pago_id || 1),
+                                            referencia_pago: recibo.referencia_pago || '',
+                                            motivo: ''
+                                          })
+                                        }}
+                                        className="mr-2 rounded border border-amber-500 px-2 py-1 text-[9px]"
+                                      >Corregir</button>
+                                    )}
                                     <BotonImprimir
                                       type="button"
                                       onClick={() =>
