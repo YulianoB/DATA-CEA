@@ -3689,6 +3689,9 @@ const ingresosLibresFiltrados =
                     {formatearMoneda(
                       cuenta.valor_total
                     )}
+                    {esCuentaConvenio(cuenta) && Number(cuenta.valor_total) === 0 && (
+                      <div className="text-[9px] text-amber-700">Pendiente de liquidación</div>
+                    )}
                   </td>
 
                   <td
@@ -5613,6 +5616,11 @@ const ingresosLibresFiltrados =
                                         6,
                                         '0'
                                       )}`}
+                                    {mayusculas(recibo.recibido_por) === 'MIGRACION' && (
+                                      <div className="text-[9px] text-slate-500 font-normal">
+                                        Recibo físico: {recibo.referencia_pago || 'Sin referencia'}
+                                      </div>
+                                    )}
                                   </td>
 
                                   <td className="px-3 py-2 border border-slate-300 whitespace-nowrap">
