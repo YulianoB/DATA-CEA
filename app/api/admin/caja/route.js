@@ -2444,6 +2444,7 @@ async function consultarCuentas({
   busqueda = '',
   estado = '',
   convenioId = null,
+  pagina = 1,
 }) {
   const termino =
     limpiarBusqueda(
@@ -2679,8 +2680,9 @@ async function consultarCuentas({
             false,
         }
       )
-      .limit(
-        LIMITE_CONSULTA
+      .range(
+        (Math.max(1, Number(pagina) || 1) - 1) * LIMITE_CONSULTA,
+        Math.max(1, Number(pagina) || 1) * LIMITE_CONSULTA
       )
 
   if (
@@ -5217,16 +5219,19 @@ export async function GET(
                 'convenio_id'
               )
             ),
+
+          pagina:
+            Math.max(1, Math.min(10000, toInt(searchParams.get('pagina')) || 1)),
         })
 
       return NextResponse.json({
         status:
           'success',
 
-        data,
+        data: data.slice(0, LIMITE_CONSULTA),
 
-        total:
-          data.length,
+        total: data.length,
+        hay_mas: data.length > LIMITE_CONSULTA,
 
         empresa:
           empresaRespuesta(
@@ -9144,6 +9149,10 @@ if (
             .lte(
               'created_at',
               hasta.toISOString()
+            )
+            .neq(
+              'recibido_por',
+              'MIGRACION'
             ),
 
           supabase
