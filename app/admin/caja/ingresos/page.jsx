@@ -48,6 +48,7 @@ const CATEGORIAS = [
   '',
   'A2',
   'B1',
+  'B2',
   'C1',
   'RC1',
   'C2',
