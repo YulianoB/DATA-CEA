@@ -1180,10 +1180,34 @@ export async function POST(request) {
         const kmMaximoPermitido = kmObjetivo + toleranciaPunto
         const kmRegistro = Number(kilometraje)
 
+        // El P1 de normalización inicial no es un vencimiento acumulado:
+        // se ejecuta con el kilometraje real del vehículo, manteniendo
+        // las restantes validaciones de vehículo, proveedor y actividades.
+        const { data: estadoPlan, error: errorEstadoPlan } = await supabase
+          .from('vehiculo_mantenimiento_plan_estado')
+          .select('estado,km_referencia,fecha_referencia')
+          .eq('vehiculo_id', vehiculoId)
+          .maybeSingle()
+        if (errorEstadoPlan) {
+          return NextResponse.json({ status: 'failed', message: errorEstadoPlan.message }, { status: 500 })
+        }
+        const normalizacionP1 = ciclo === 1 &&
+          estadoPlan?.estado === 'FINALIZADO' &&
+          estadoPlan?.km_referencia != null &&
+          Boolean(estadoPlan?.fecha_referencia)
+        if (normalizacionP1 && kmRegistro < Number(estadoPlan.km_referencia)) {
+          return NextResponse.json({
+            status: 'failed',
+            message: 'El kilometraje del primer P1 no puede ser inferior al registrado al iniciar la normalización.',
+          }, { status: 409 })
+        }
+
         if (
           !Number.isFinite(kmRegistro) ||
-          kmRegistro < kmMinimoPermitido ||
-          kmRegistro > kmMaximoPermitido
+          (!normalizacionP1 && (
+            kmRegistro < kmMinimoPermitido ||
+            kmRegistro > kmMaximoPermitido
+          ))
         ) {
           return NextResponse.json(
             {
