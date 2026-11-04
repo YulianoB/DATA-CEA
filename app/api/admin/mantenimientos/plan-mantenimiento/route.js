@@ -1130,6 +1130,8 @@ function construirHistorialReconstruido2026({
             `HIST-M-${mantenimientoNivel.fila.id}`,
           materializado: true,
           historico_reconstruido: true,
+          antecedente_anterior_al_plan: true,
+          nivel_historico: punto,
           fuente_historica:
             'MANTENIMIENTOS',
           vehiculo_id:
@@ -1154,9 +1156,9 @@ function construirHistorialReconstruido2026({
             mantenimientoNivel.fila
               ?.actividad_realizada ||
             null,
-          actividades,
-          total_actividades:
-            actividades.length,
+          // No atribuir a mantenimientos antiguos las actividades del plan nuevo.
+          actividades: [],
+          total_actividades: 0,
         })
       }
 
@@ -1202,7 +1204,9 @@ function construirHistorialReconstruido2026({
     }
   }
 
-  return salida
+  // Los puntos vencidos reconstruidos de una época sin plan formal no
+  // representan obligaciones del ciclo nuevo y no se contabilizan.
+  return salida.filter((item) => item.fuente_historica === 'MANTENIMIENTOS')
 }
 
 function construirVistaVehiculo({
