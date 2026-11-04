@@ -1240,6 +1240,19 @@ export default function MantenimientosPage() {
       <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-lg">
         <EncabezadoPractica titulo="Registro de Mantenimiento" usuario={user.nombreCompleto || user.usuario} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={() => cerrarSesion(router)} />
         <main className="px-3 py-4 sm:px-6 sm:py-6">
+          {alertaFormulario && (
+            <div className="fixed inset-0 z-[220] flex items-center justify-center bg-slate-950/60 p-4" role="presentation">
+              <div role="alertdialog" aria-modal="true" aria-labelledby="alerta-mantenimiento-titulo" aria-describedby="alerta-mantenimiento-texto" className="w-full max-w-md rounded-2xl border border-slate-300 bg-white p-5 shadow-2xl">
+                <h3 id="alerta-mantenimiento-titulo" className={`text-base font-extrabold ${alertaFormulario.tipo === 'success' ? 'text-emerald-800' : alertaFormulario.tipo === 'info' ? 'text-blue-900' : 'text-amber-900'}`}>
+                  {alertaFormulario.tipo === 'success' ? 'Registro exitoso' : alertaFormulario.tipo === 'info' ? 'Información importante' : 'Revise el formulario'}
+                </h3>
+                <p id="alerta-mantenimiento-texto" className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{alertaFormulario.mensaje}</p>
+                <div className="mt-5 flex justify-end">
+                  <button type="button" autoFocus onClick={() => setAlertaFormulario(null)} className="min-h-10 rounded-lg bg-[#194567] px-5 py-2 text-sm font-semibold text-white">Entendido</button>
+                </div>
+              </div>
+            </div>
+          )}
           <p className="mb-4 text-xs text-slate-600">Los campos marcados con <b>*</b> son obligatorios.</p>
           <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="min-w-0">
@@ -1252,7 +1265,7 @@ export default function MantenimientosPage() {
                   setModalKm(null)
                   if (kilometraje && placa) {
                     setKilometraje('')
-                    toast.info('Ingrese nuevamente el kilometraje para validarlo según la fecha de ejecución.')
+                    avisar('Ingrese nuevamente el kilometraje para validarlo según la fecha de ejecución.', 'info')
                   }
                 }}
                 className="min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm" />
@@ -1371,15 +1384,8 @@ export default function MantenimientosPage() {
             <TarjetaSeccionMantenimiento numero={3} disabled={!tarjetasHabilitadas} titulo="Costos y datos complementarios" descripcion="Valor de repuestos, mano de obra, costo total y factura." completada={Boolean(valorRepuestosStr || valorManoObraStr || factura)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(3) }} />
             <TarjetaSeccionMantenimiento numero={4} disabled={!tarjetasHabilitadas} titulo="Tiempo de parada y observaciones" descripcion="Duración aproximada de la parada y observaciones del servicio." completada={Boolean(tpValor || observaciones)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(4) }} />
           </div>
-          {alertaFormulario && (
-            <div role="alert" aria-live="assertive" className={`mb-3 rounded-xl border px-4 py-3 text-sm font-semibold ${alertaFormulario.tipo === 'success' ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-amber-300 bg-amber-50 text-amber-900'}`}>
-              <div className="flex items-start justify-between gap-3">
-                <span>{alertaFormulario.mensaje}</span>
-                <button type="button" aria-label="Cerrar alerta" onClick={() => setAlertaFormulario(null)} className="shrink-0 rounded border px-2 py-0.5">×</button>
-              </div>
-            </div>
-          )}
           <AccionesModuloPractica onGuardar={registrar} puedeGuardar={!guardando} guardando={guardando} textoGuardar="Registrar Mantenimiento" />
+          <p className="mt-2 text-center text-[11px] text-slate-600">Si faltan datos obligatorios, al pulsar Registrar mantenimiento se mostrará una alerta con lo que debe completar.</p>
         {seccionAbierta === 1 && (
           <ModalSeccionMantenimiento numero={1} titulo="Proveedor y técnico" onCerrar={continuarSeccionProveedor} onCancelar={cancelarSeccionProveedor} onContinuar={continuarSeccionProveedor}>
             <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-700">
