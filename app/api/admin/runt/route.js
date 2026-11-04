@@ -1910,6 +1910,7 @@ async function consultarControles({
   estadoCertificacion = '',
   resultadoVerificacion = '',
   vigencia = '',
+  pagina = 1,
 }) {
   // =======================================================
   // CONSULTA BASE
@@ -2001,8 +2002,9 @@ async function consultarControles({
             false,
         }
       )
-      .limit(
-        LIMITE_CONSULTA
+      .range(
+        (Math.max(1, Number(pagina) || 1)-1) * LIMITE_CONSULTA,
+        Math.max(1, Number(pagina) || 1) * LIMITE_CONSULTA - 1
       )
 
   if (
@@ -3109,6 +3111,7 @@ export async function GET(
                 'vigencia'
               )
             ),
+          pagina: Math.max(1, Math.min(10000, toInt(searchParams.get('pagina')) || 1)),
         })
 
       return NextResponse.json({
@@ -3120,6 +3123,9 @@ export async function GET(
 
         total:
           controles.length,
+
+        pagina: Math.max(1, Math.min(10000, toInt(searchParams.get('pagina')) || 1)),
+        hay_mas: controles.length === LIMITE_CONSULTA,
 
         limite:
           LIMITE_CONSULTA,
