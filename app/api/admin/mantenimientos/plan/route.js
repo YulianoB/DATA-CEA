@@ -260,6 +260,55 @@ async function guardarEstadoPlan(supabaseAdmin, vehiculoId, payload) {
   return data
 }
 
+// Inicia una sola vez el nuevo ciclo P1 utilizando el último preoperacional.
+// Se prohíbe reiniciar la numeración si ya existen puntos materializados.
+async function iniciarNormalizacion(supabaseAdmin, vehiculoId, frecuenciaBase) {
+  const { data: estado, error: errorEstado } = await supabaseAdmin
+    .from('vehiculo_mantenimiento_plan_estado')
+    .select('estado,numero_punto_actual,km_referencia,fecha_referencia')
+    .eq('vehiculo_id', vehiculoId)
+    .maybeSingle()
+  if (errorEstado) throw errorEstado
+  if (estado?.km_referencia != null && estado?.fecha_referencia) {
+    return { iniciado: false, km_referencia: estado.km_referencia, fecha_referencia: estado.fecha_referencia }
+  }
+  const { count, error: errorPuntos } = await supabaseAdmin
+    .from('programacion_mantenimiento')
+    .select('id', { count: 'exact', head: true })
+    .eq('vehiculo_id', vehiculoId)
+  if (errorPuntos) throw errorPuntos
+  if (count > 0) {
+    throw Object.assign(new Error('Este vehículo ya tiene puntos materializados. Se requiere revisar su historial antes de iniciar un nuevo P1; no se modificaron los registros.'), { status: 409 })
+  }
+  const { data: vehiculo, error: errorVehiculo } = await supabaseAdmin
+    .from('vehiculos').select('placa').eq('id', vehiculoId).single()
+  if (errorVehiculo) throw errorVehiculo
+  const { data: lectura, error: errorLectura } = await supabaseAdmin
+    .from('preoperacionales')
+    .select('fecha_registro,km_registro')
+    .eq('placa', vehiculo.placa)
+    .not('km_registro', 'is', null)
+    .order('fecha_registro', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (errorLectura) throw errorLectura
+  const km = Number(lectura?.km_registro)
+  if (!lectura?.fecha_registro || lectura?.km_registro == null || !Number.isFinite(km) || km < 0) {
+    throw Object.assign(new Error('El vehículo necesita una lectura preoperacional válida antes de iniciar P1.'), { status: 409 })
+  }
+  const estadoGuardado = await guardarEstadoPlan(supabaseAdmin, vehiculoId, {
+    estado: 'FINALIZADO',
+    numero_punto_actual: 1,
+    km_referencia: km,
+    fecha_referencia: lectura.fecha_registro,
+    frecuencia_base_km: frecuenciaBase,
+    finalizado_at: new Date().toISOString(),
+    reabierto_at: null,
+  })
+  return { iniciado: true, km_referencia: km, fecha_referencia: lectura.fecha_registro, estado: estadoGuardado.estado }
+}
+
 export async function GET(request) {
   try {
     const { supabaseAdmin, nit } =
@@ -347,7 +396,7 @@ export async function GET(request) {
 
         supabaseAdmin
           .from('vehiculo_mantenimiento_plan_estado')
-          .select('estado,finalizado_at,reabierto_at')
+          .select('estado,finalizado_at,reabierto_at,numero_punto_actual,km_referencia,fecha_referencia,frecuencia_base_km')
           .eq('vehiculo_id', vehiculoId)
           .maybeSingle(),
       ])
@@ -435,6 +484,12 @@ export async function GET(request) {
         },
         ultimos_mantenimientos_preventivos: resultadoMantenimientos.data ?? [],
         actividades,
+        inicio_normalizacion: resultadoEstadoPlan.data ? {
+          numero_punto_actual: resultadoEstadoPlan.data.numero_punto_actual,
+          km_referencia: resultadoEstadoPlan.data.km_referencia,
+          fecha_referencia: resultadoEstadoPlan.data.fecha_referencia,
+          iniciado: resultadoEstadoPlan.data.km_referencia != null && Boolean(resultadoEstadoPlan.data.fecha_referencia),
+        } : null,
         estado_configuracion: resultadoEstadoPlan.data?.estado ||
           (configuraciones.some((x) => x.activo) ? 'BORRADOR' : 'SIN_CONFIGURAR'),
         resumen: {
@@ -455,7 +510,7 @@ export async function GET(request) {
         .select('id,vehiculo_id,actividad_id,activo'),
       supabaseAdmin
         .from('vehiculo_mantenimiento_plan_estado')
-        .select('vehiculo_id,estado,finalizado_at,reabierto_at'),
+        .select('vehiculo_id,estado,finalizado_at,reabierto_at,km_referencia,fecha_referencia'),
     ])
 
     if (resultadoVehiculos.error) throw resultadoVehiculos.error
@@ -514,6 +569,7 @@ export async function GET(request) {
         actividades_catalogo: totalCatalogoPorTipo[tipo] ?? 0,
         estado_plan: estadoPlan,
         plan_finalizado_at: estadoGuardado?.finalizado_at ?? null,
+        normalizacion_iniciada: estadoGuardado?.km_referencia != null && Boolean(estadoGuardado?.fecha_referencia),
       }
     })
 
@@ -550,6 +606,33 @@ export async function POST(request) {
       await obtenerSupabaseAdminEmpresaDesdeRequest(request, body)
 
     const accion = mayusculas(body?.accion)
+
+    if (accion === 'INICIAR_NORMALIZACION') {
+      const vehiculoId = Number(body?.vehiculo_id)
+      if (!Number.isInteger(vehiculoId) || vehiculoId <= 0) return errorJson('Vehículo no válido.')
+      const { data: estado, error: errEstado } = await supabaseAdmin
+        .from('vehiculo_mantenimiento_plan_estado')
+        .select('estado,frecuencia_base_km')
+        .eq('vehiculo_id', vehiculoId)
+        .maybeSingle()
+      if (errEstado) throw errEstado
+      if (estado?.estado !== 'FINALIZADO') return errorJson('Debe finalizar primero la configuración del vehículo.', 409)
+      const { data: configs, error: errConfig } = await supabaseAdmin
+        .from('vehiculo_mantenimiento_config')
+        .select('actividad_id,frecuencia_km,activo')
+        .eq('vehiculo_id', vehiculoId).eq('activo', true)
+      if (errConfig) throw errConfig
+      const { data: actividades, error: errActividades } = await supabaseAdmin
+        .from('mantenimiento_actividades_catalogo')
+        .select('id,nombre').in('id', (configs || []).map(x => x.actividad_id))
+      if (errActividades) throw errActividades
+      const nombrePorId = new Map((actividades || []).map(x => [Number(x.id), x.nombre]))
+      const configBase = (configs || []).find(x => esCambioAceite(nombrePorId.get(Number(x.actividad_id))))
+      const frecuencia = Number(configBase?.frecuencia_km)
+      if (!Number.isFinite(frecuencia) || frecuencia <= 0) return errorJson('No hay frecuencia base válida para iniciar P1.', 409)
+      const resultado = await iniciarNormalizacion(supabaseAdmin, vehiculoId, frecuencia)
+      return NextResponse.json({ ok: true, mensaje: resultado.iniciado ? 'P1 de normalización iniciado.' : 'P1 ya estaba iniciado; se conservó la referencia original.', inicio_normalizacion: resultado })
+    }
 
     if (accion === 'AGREGAR_ACTIVIDAD') {
       const tipoVehiculo = tipoValido(body?.tipo_vehiculo)
@@ -704,6 +787,15 @@ export async function POST(request) {
         finalizado_at: new Date().toISOString(),
         reabierto_at: null,
       })
+      // Primer alta: se ancla P1 solo si no hay puntos materializados.
+      // Ante registros previos, el plan se conserva y se informa el motivo.
+      let inicioNormalizacion = null
+      try {
+        inicioNormalizacion = await iniciarNormalizacion(supabaseAdmin, vehiculoId, frecuenciaBaseFinal)
+      } catch (errorInicio) {
+        if (errorInicio?.status !== 409) throw errorInicio
+        inicioNormalizacion = { iniciado: false, advertencia: errorInicio.message }
+      }
 
       return NextResponse.json({
         ok: true,
@@ -711,6 +803,7 @@ export async function POST(request) {
         actividades_configuradas: ids.length,
         estado_configuracion: estadoGuardado.estado,
         finalizado_at: estadoGuardado.finalizado_at,
+        inicio_normalizacion: inicioNormalizacion,
       })
     }
 
