@@ -515,9 +515,9 @@ export default function PlanMantenimientoPage() {
                   No hay vehículos con configuración de mantenimiento FINALIZADA.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-[1650px] w-full border-collapse">
-                    <thead>
+                <div className="max-h-[68vh] overflow-auto" role="region" aria-label="Matriz anual de mantenimiento, desplazamiento vertical y horizontal">
+                  <table className="w-full min-w-[1420px] table-fixed border-collapse">
+                    <thead className="sticky top-0 z-30">
                       <tr className="text-[10px] font-extrabold uppercase tracking-wide" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
                         <th className="sticky left-0 z-40 w-[212px] border-b border-r border-slate-300 px-2 py-2 text-left" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo }}>
                           Vehículo
