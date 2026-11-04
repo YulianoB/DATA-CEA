@@ -1651,6 +1651,47 @@ export async function POST(request) {
           }
         }
 
+        // Resolver las actividades pendientes de intervenciones anteriores
+        // sin borrar la causa ni la fecha original de su registro.
+        if (actividadesSeleccionadas.length) {
+          const idsConfigs = actividadesSeleccionadas.map(x => Number(x.id))
+          const { data: pendientesAbiertas, error: pendientesConsultaError } = await supabase
+            .from('mantenimiento_actividades_seguimiento')
+            .select('id')
+            .in('vehiculo_mantenimiento_config_id', idsConfigs)
+            .eq('estado', 'PENDIENTE')
+          if (pendientesConsultaError) {
+            return NextResponse.json({
+              status: 'failed',
+              code: 'MANTENIMIENTO_GUARDADO_PENDIENTES_NO_VERIFICADAS',
+              message: `Mantenimiento #${data.id} guardado, pero no se pudo consultar el seguimiento de pendientes. No vuelva a enviarlo; solicite revisión.`,
+              mantenimiento: data,
+            }, { status: 500 })
+          }
+          const idsPendientes = (pendientesAbiertas || []).map(x => Number(x.id))
+          if (idsPendientes.length) {
+            const { error: resolverError } = await supabase
+              .from('mantenimiento_actividades_seguimiento')
+              .update({
+                estado: 'EJECUTADA',
+                fecha_ejecucion: payload.fecha_registro,
+                km_ejecucion: kilometraje,
+                observaciones: `Pendiente resuelta mediante mantenimiento #${data.id}.`,
+                updated_at: new Date().toISOString(),
+              })
+              .in('id', idsPendientes)
+              .eq('estado', 'PENDIENTE')
+            if (resolverError) {
+              return NextResponse.json({
+                status: 'failed',
+                code: 'MANTENIMIENTO_GUARDADO_PENDIENTES_NO_RESUELTAS',
+                message: `Mantenimiento #${data.id} guardado, pero no se pudieron actualizar sus pendientes anteriores. No vuelva a enviarlo; solicite revisión.`,
+                mantenimiento: data,
+              }, { status: 500 })
+            }
+          }
+        }
+
         if (normalizacionP1) {
           // Registrar solo una vez la referencia del PRIMER servicio real.
           // Si P1 requiere varias intervenciones, las siguientes no desplazan
