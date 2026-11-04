@@ -22,6 +22,9 @@ const MESES = [
 ]
 
 const TOLERANCIA_KM_DEFAULT = 500
+// Límite preventivo para descartar saltos de odómetro incompatibles con un recorrido diario realista.
+// No cambia ni elimina las lecturas originales almacenadas.
+const MAX_RECORRIDO_DIARIO_PROMEDIO = 1500
 const HORIZONTE_ANIOS = 2
 // Se muestran el punto vigente y hasta tres siguientes; los posteriores se recalculan con las lecturas reales.
 const MAX_PUNTOS_PROYECCION = 4
@@ -236,38 +239,30 @@ function depurarLecturasPreoperacionales(filas) {
 }
 
 function calcularPromedioVentana(lecturas, diasVentana) {
-  if (!lecturas.length) return null
+  if (lecturas.length < 2) return null
 
   const ultima = lecturas[lecturas.length - 1]
   const desde = restarDias(ultima.fecha, diasVentana)
+  const ventana = lecturas.filter((x) => x.fecha >= desde && x.fecha <= ultima.fecha)
 
-  const ventana = lecturas.filter(
-    (x) =>
-      x.fecha >= desde &&
-      x.fecha <= ultima.fecha
-  )
-
-  // Evita que una lectura menor posterior distorsione
-  // el recorrido cuando existe un error de digitación.
-  const utiles = []
-  let maxKm = -Infinity
-
-  for (const x of ventana) {
-    if (x.km < maxKm) continue
-    utiles.push(x)
-    maxKm = x.km
+  // Se calcula a partir de tramos entre lecturas, no del salto neto entre
+  // extremos. Un error de digitación no debe proyectar miles de km por día.
+  let recorridoValido = 0
+  let diasValidos = 0
+  for (let i = 1; i < ventana.length; i += 1) {
+    const anterior = ventana[i - 1]
+    const actual = ventana[i]
+    const dias = diasEntre(anterior.fecha, actual.fecha)
+    const distancia = actual.km - anterior.km
+    if (!dias || dias <= 0 || distancia < 0) continue
+    const promedioDiario = distancia / dias
+    if (promedioDiario > MAX_RECORRIDO_DIARIO_PROMEDIO) continue
+    recorridoValido += distancia
+    diasValidos += dias
   }
 
-  if (utiles.length < 2) return null
-
-  const primera = utiles[0]
-  const final = utiles[utiles.length - 1]
-  const dias = diasEntre(primera.fecha, final.fecha)
-  const recorrido = final.km - primera.km
-
-  if (!dias || recorrido <= 0) return null
-
-  return (recorrido / dias) * 30.4375
+  if (!diasValidos || recorridoValido <= 0) return null
+  return (recorridoValido / diasValidos) * 30.4375
 }
 
 function calcularKilometraje(filas, hoyISO) {
