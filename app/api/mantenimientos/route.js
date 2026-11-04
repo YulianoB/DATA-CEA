@@ -1176,16 +1176,11 @@ export async function POST(request) {
           return Number.isFinite(f) && f >= frecuenciaBase && f % frecuenciaBase === 0 && kmCiclo % f === 0
         })
 
-        const toleranciasPunto = actividadesRequeridas
-          .map((cfg) => {
-            const valor = Number(cfg.tolerancia_km)
-            return Number.isFinite(valor) && valor >= 0
-              ? valor
-              : 500
-          })
-
-        const toleranciaPunto = toleranciasPunto.length
-          ? Math.min(...toleranciasPunto)
+        // El rango del punto base pertenece al CAMBIO DE ACEITE,
+        // no a la tolerancia más restrictiva de otras actividades-guía.
+        const toleranciaAceite = Number(configBase?.tolerancia_km)
+        const toleranciaPunto = Number.isFinite(toleranciaAceite) && toleranciaAceite > 0
+          ? toleranciaAceite
           : 500
 
         const kmMinimoPermitido = kmObjetivo - toleranciaPunto
