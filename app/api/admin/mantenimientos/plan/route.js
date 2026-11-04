@@ -787,15 +787,9 @@ export async function POST(request) {
         finalizado_at: new Date().toISOString(),
         reabierto_at: null,
       })
-      // Primer alta: se ancla P1 solo si no hay puntos materializados.
-      // Ante registros previos, el plan se conserva y se informa el motivo.
-      let inicioNormalizacion = null
-      try {
-        inicioNormalizacion = await iniciarNormalizacion(supabaseAdmin, vehiculoId, frecuenciaBaseFinal)
-      } catch (errorInicio) {
-        if (errorInicio?.status !== 409) throw errorInicio
-        inicioNormalizacion = { iniciado: false, advertencia: errorInicio.message }
-      }
+      // Finalizar configura frecuencias, pero NO acredita P1.
+      // El primer mantenimiento realmente ejecutado fija el anclaje oficial.
+      const inicioNormalizacion = { iniciado: false, pendiente_primera_ejecucion: true }
 
       return NextResponse.json({
         ok: true,
