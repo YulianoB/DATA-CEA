@@ -785,7 +785,7 @@ export default function MantenimientosPage() {
 
     if (
       tipoMant === 'CORRECTIVO' &&
-      (!actividad.trim() || !actividadCatalogoId)
+      !actividad.trim()
     ) {
       return false
     }
