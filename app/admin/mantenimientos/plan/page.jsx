@@ -102,6 +102,7 @@ export default function ConfiguracionPlanMantenimientoPage() {
   const [frecuenciasEditables, setFrecuenciasEditables] = useState({})
   const [estadoConfiguracion, setEstadoConfiguracion] = useState('SIN_CONFIGURAR')
   const [reglaFrecuencias, setReglaFrecuencias] = useState(null)
+  const [inicioNormalizacion, setInicioNormalizacion] = useState(null)
 
   const [modalNuevaActividad, setModalNuevaActividad] = useState(false)
   const [guardandoNueva, setGuardandoNueva] = useState(false)
@@ -150,6 +151,7 @@ export default function ConfiguracionPlanMantenimientoPage() {
     setVehiculoDetalle(data.vehiculo)
     setPromedios(data.promedios_recorrido ?? null)
     setReglaFrecuencias(data.regla_frecuencias ?? null)
+    setInicioNormalizacion(data.inicio_normalizacion ?? null)
     setMantenimientos(data.ultimos_mantenimientos_preventivos ?? [])
     setActividades((data.actividades ?? []).map((a) => ({
       ...a,
@@ -165,7 +167,7 @@ export default function ConfiguracionPlanMantenimientoPage() {
 
   async function abrirConfiguracion(id) {
     setModalAbierto(true); setCargandoDetalle(true); setError(''); setMensaje('')
-    setVehiculoDetalle(null); setPromedios(null); setReglaFrecuencias(null); setMantenimientos([]); setActividades([])
+    setVehiculoDetalle(null); setPromedios(null); setReglaFrecuencias(null); setInicioNormalizacion(null); setMantenimientos([]); setActividades([])
     try { await cargarDetalle(id) }
     catch (e) { setError(e?.message || 'No fue posible consultar la configuración.'); setModalAbierto(false) }
     finally { setCargandoDetalle(false) }
@@ -401,6 +403,26 @@ export default function ConfiguracionPlanMantenimientoPage() {
       setError(e?.message || 'No fue posible finalizar el plan.')
       await cargarDetalle(vehiculoDetalle.id).catch(() => {})
     } finally { setGuardando(false) }
+  }
+
+  async function activarNormalizacion() {
+    if (!vehiculoDetalle || estadoConfiguracion !== 'FINALIZADO' || inicioNormalizacion?.iniciado) return
+    if (!window.confirm(`¿Iniciar P1 para ${vehiculoDetalle.placa} desde el último kilometraje preoperacional? No se modificará el historial.`)) return
+    setGuardando(true); setError(''); setMensaje('')
+    try {
+      const nit = obtenerNitUsuario()
+      const res = await fetch('/api/admin/mantenimientos/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-cea-nit': nit },
+        body: JSON.stringify({ nit, accion: 'INICIAR_NORMALIZACION', vehiculo_id: vehiculoDetalle.id }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) throw new Error(mensajeError(data, 'No se pudo iniciar P1.'))
+      setMensaje(data.mensaje || 'P1 iniciado.')
+      await cargarDetalle(vehiculoDetalle.id)
+      await cargarVehiculos()
+    } catch (e) { setError(e?.message || 'No fue posible iniciar P1.') }
+    finally { setGuardando(false) }
   }
 
   async function reabrirConfiguracion() {
@@ -717,11 +739,16 @@ export default function ConfiguracionPlanMantenimientoPage() {
                 </div>
                 <div className="flex gap-2">
                   <BotonAccion tipo="cancelar" type="button" onClick={cerrarModal} disabled={guardando} className="rounded-md border px-3 py-1.5 text-xs">Cerrar</BotonAccion>
-                  {estadoConfiguracion === 'FINALIZADO' ? (
+                  {estadoConfiguracion === 'FINALIZADO' ? (<>
+                    {!inicioNormalizacion?.iniciado && (
+                      <BotonAccion tipo="guardar" type="button" onClick={activarNormalizacion} disabled={guardando} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
+                        {guardando ? 'Procesando...' : 'Iniciar P1 de normalización'}
+                      </BotonAccion>
+                    )}
                     <BotonAccion tipo="editar" type="button" onClick={reabrirConfiguracion} disabled={guardando} className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
                       {guardando ? 'Procesando...' : 'Reabrir configuración'}
                     </BotonAccion>
-                  ) : (<>
+                  </>) : (<>
                     <BotonAccion tipo="guardar" type="button" onClick={guardarConfiguracion} disabled={guardando} className="rounded-md border border-slate-400 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-60">
                       {guardando ? 'Guardando...' : 'Guardar borrador'}
                     </BotonAccion>
