@@ -4,7 +4,6 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { Toaster, toast } from 'sonner'
 import { validarKilometraje } from '@/lib/servicios/validaciones'
 import { cerrarSesion } from '@/lib/auth/logout'
 import { EncabezadoPractica, TarjetaSeccionMantenimiento, ModalSeccionMantenimiento, AccionesModuloPractica } from '@/components/instructor/practica/EstilosModuloPractica'
@@ -115,6 +114,10 @@ export default function MantenimientosPage() {
   const [programacionPreventiva, setProgramacionPreventiva] = useState(null)
   const [cargandoProgramacion, setCargandoProgramacion] = useState(false)
   const [actividadesSeleccionadas, setActividadesSeleccionadas] = useState([])
+  const [actividadesAdicionales, setActividadesAdicionales] = useState([])
+  const [nuevaActividadAdicional, setNuevaActividadAdicional] = useState('')
+  const [alertaFormulario, setAlertaFormulario] = useState(null)
+  const avisar = (mensaje, tipo = 'error') => setAlertaFormulario({ mensaje, tipo })
 
   // Repuestos
   const [repuestos, setRepuestos] = useState('')
@@ -190,7 +193,7 @@ export default function MantenimientosPage() {
         ''
 
       if (!nit) {
-        toast.error(
+        avisar(
           'No se encontró el CEA asociado a la sesión.'
         )
         return
@@ -251,7 +254,7 @@ export default function MantenimientosPage() {
               : []
           )
         } else {
-          toast.error(
+          avisar(
             jsonVehiculos?.message ||
               'No se pudieron cargar los vehículos.'
           )
@@ -267,7 +270,7 @@ export default function MantenimientosPage() {
               : []
           )
         } else {
-          toast.error(
+          avisar(
             jsonProveedores?.message ||
               'No se pudieron cargar los proveedores.'
           )
@@ -278,7 +281,7 @@ export default function MantenimientosPage() {
           error
         )
 
-        toast.error(
+        avisar(
           'No fue posible cargar la información del módulo.'
         )
       }
@@ -342,7 +345,7 @@ export default function MantenimientosPage() {
 
         if (!validas.length) {
           setProgramacionPreventiva(null)
-          toast.error(
+          avisar(
             respuestas.find((item) => item?.json?.message)?.json?.message ||
             'No fue posible consultar el Plan de Mantenimiento.'
           )
@@ -536,7 +539,7 @@ export default function MantenimientosPage() {
           )
         } else {
           setActividadesProveedor([])
-          toast.error(
+          avisar(
             jsonActividades?.message ||
             'No se pudieron cargar las actividades del proveedor.'
           )
@@ -632,7 +635,7 @@ export default function MantenimientosPage() {
       if (resultado.estado === 'error') {
         setMsgKm(resultado.mensaje)
 
-        toast.error(
+        avisar(
           resultado.mensaje
         )
 
@@ -778,7 +781,7 @@ export default function MantenimientosPage() {
         !programacionPreventiva ||
         !programacionPreventiva?.dentro_tolerancia ||
         !actividad ||
-        actividadesSeleccionadas.length === 0
+        (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0)
       )
     ) {
       return false
@@ -804,6 +807,7 @@ export default function MantenimientosPage() {
     nivelSeleccionadoId,
     programacionPreventiva,
     actividadesSeleccionadas,
+    actividadesAdicionales,
     proveedorId,
     tecnicoId,
     actividadCatalogoId,
@@ -815,15 +819,41 @@ export default function MantenimientosPage() {
   // ============================================================
 
   const registrar = async () => {
-    if (
-      !puedeGuardar ||
-      guardando ||
-      !user ||
-      !nitActual
-    ) {
+    if (guardando) return
+    setAlertaFormulario(null)
+    const faltantes = []
+    let seccion = null
+    if (!user || !nitActual) faltantes.push('Sesión de instructor o empresa no disponible.')
+    if (!placa) faltantes.push('Seleccione la placa del vehículo.')
+    if (!fechaEjecucionValida) faltantes.push('Seleccione una fecha de ejecución válida, no posterior a hoy.')
+    if (!['PREVENTIVO', 'CORRECTIVO'].includes(tipoMant)) faltantes.push('Seleccione el tipo de mantenimiento.')
+    if (kilometraje === '' || !Number.isFinite(Number(kilometraje)) || Number(kilometraje) < 0) faltantes.push('Ingrese un kilometraje válido.')
+    if (!forzarKm && (!msgKm || /menor|no fue posible|no se identificó|error/i.test(msgKm))) faltantes.push('Verifique o confirme el kilometraje.')
+    if (!proveedorId || !tecnicoId) {
+      faltantes.push('Seleccione proveedor y técnico.')
+      seccion = 1
+    }
+    if (tipoMant === 'PREVENTIVO') {
+      if (!programacionPreventiva) faltantes.push('No se encontró un punto preventivo disponible para el vehículo.')
+      else if (!programacionPreventiva.dentro_tolerancia) faltantes.push('El punto preventivo aún no está habilitado por kilometraje.')
+      if (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0) {
+        faltantes.push('Seleccione una actividad del plan o agregue al menos una actividad realmente realizada.')
+        if (!seccion) seccion = 2
+      }
+    }
+    if (tipoMant === 'CORRECTIVO' && !actividad.trim()) {
+      faltantes.push('Describa la actividad correctiva realizada.')
+      if (!seccion) seccion = 2
+    }
+    if (!repuestos.trim()) {
+      faltantes.push('Indique los repuestos utilizados o escriba NO APLICA.')
+      if (!seccion) seccion = 2
+    }
+    if (faltantes.length || !puedeGuardar) {
+      avisar(faltantes.length ? faltantes.join(' • ') : 'Revise los datos obligatorios del formulario.')
+      if (seccion) setSeccionAbierta(seccion)
       return
     }
-
     setGuardando(true)
 
     try {
@@ -870,6 +900,8 @@ export default function MantenimientosPage() {
           tipoMant === 'PREVENTIVO'
             ? actividadesSeleccionadas.map(Number)
             : [],
+        actividades_adicionales:
+          tipoMant === 'PREVENTIVO' ? actividadesAdicionales : [],
 
         repuestos_utilizados:
           repuestos.trim() ||
@@ -950,7 +982,7 @@ export default function MantenimientosPage() {
         !res.ok ||
         json?.status !== 'success'
       ) {
-        toast.error(
+        avisar(
           json?.message ||
             'No se pudo registrar el mantenimiento.'
         )
@@ -958,9 +990,7 @@ export default function MantenimientosPage() {
         return
       }
 
-      toast.success(
-        'Mantenimiento registrado correctamente.'
-      )
+      avisar('Mantenimiento registrado correctamente.', 'success')
 
       setPlaca('')
 
@@ -981,6 +1011,8 @@ export default function MantenimientosPage() {
       setActividad('')
       setActividadCatalogoId('')
       setActividadesPlan([])
+      setActividadesAdicionales([])
+      setNuevaActividadAdicional('')
 
       setRepuestos('')
 
@@ -1010,7 +1042,7 @@ export default function MantenimientosPage() {
         error
       )
 
-      toast.error(
+      avisar(
         'Error inesperado al registrar el mantenimiento.'
       )
     } finally {
@@ -1030,14 +1062,14 @@ export default function MantenimientosPage() {
     const telefono = onlyDigits(nuevoProveedor.telefono)
     const email = nuevoProveedor.email.trim()
 
-    if (!razonSocial) return toast.error('La razón social o nombre del proveedor es obligatoria.')
-    if (!nitProveedor) return toast.error('El NIT o documento es obligatorio.')
+    if (!razonSocial) return avisar('La razón social o nombre del proveedor es obligatoria.')
+    if (!nitProveedor) return avisar('El NIT o documento es obligatorio.')
     if (nuevoProveedor.digito_verificacion && !/^\d$/.test(nuevoProveedor.digito_verificacion)) {
-      return toast.error('El DV (dígito de verificación) debe ser un solo número.')
+      return avisar('El DV (dígito de verificación) debe ser un solo número.')
     }
-    if (!nuevoProveedor.direccion.trim()) return toast.error('La dirección es obligatoria.')
-    if (!/^\d{7,10}$/.test(telefono)) return toast.error('El teléfono debe contener entre 7 y 10 números.')
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error('Ingrese un correo electrónico válido.')
+    if (!nuevoProveedor.direccion.trim()) return avisar('La dirección es obligatoria.')
+    if (!/^\d{7,10}$/.test(telefono)) return avisar('El teléfono debe contener entre 7 y 10 números.')
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return avisar('Ingrese un correo electrónico válido.')
 
     setGuardandoProveedor(true)
     try {
@@ -1057,7 +1089,7 @@ export default function MantenimientosPage() {
       })
       const json = await res.json()
       if (!res.ok || json?.status !== 'success') {
-        toast.error(json?.message || 'No se pudo registrar el proveedor.')
+        avisar(json?.message || 'No se pudo registrar el proveedor.')
         return
       }
 
@@ -1078,10 +1110,10 @@ export default function MantenimientosPage() {
         telefono: '',
         email: '',
       })
-      toast.success('Proveedor registrado. Quedó disponible para este mantenimiento correctivo.')
+      avisar('Proveedor registrado. Quedó disponible para este mantenimiento correctivo.', 'success')
     } catch (error) {
       console.error('Error registrando proveedor:', error)
-      toast.error('Error inesperado al registrar el proveedor.')
+      avisar('Error inesperado al registrar el proveedor.')
     } finally {
       setGuardandoProveedor(false)
     }
@@ -1096,32 +1128,32 @@ export default function MantenimientosPage() {
     const email = nuevoTecnico.email.trim().toLowerCase()
 
     if (!nombres) {
-      toast.error('Los nombres del técnico son obligatorios.')
+      avisar('Los nombres del técnico son obligatorios.')
       return
     }
 
     if (!/^\d{5,12}$/.test(documento)) {
-      toast.error('El documento debe contener entre 5 y 12 números.')
+      avisar('El documento debe contener entre 5 y 12 números.')
       return
     }
 
     if (/^3\d{9}$/.test(documento)) {
-      toast.error('El documento ingresado tiene estructura de número celular. Verifique que no haya intercambiado el documento y el celular.')
+      avisar('El documento ingresado tiene estructura de número celular. Verifique que no haya intercambiado el documento y el celular.')
       return
     }
 
     if (!/^3\d{9}$/.test(telefono)) {
-      toast.error('El celular debe contener exactamente 10 dígitos y comenzar por 3.')
+      avisar('El celular debe contener exactamente 10 dígitos y comenzar por 3.')
       return
     }
 
     if (documento === telefono) {
-      toast.error('El documento y el celular no pueden ser iguales. Verifique que no haya intercambiado los datos.')
+      avisar('El documento y el celular no pueden ser iguales. Verifique que no haya intercambiado los datos.')
       return
     }
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error('Ingrese un correo electrónico válido.')
+      avisar('Ingrese un correo electrónico válido.')
       return
     }
 
@@ -1149,7 +1181,7 @@ export default function MantenimientosPage() {
       const json = await res.json()
 
       if (!res.ok || json?.status !== 'success') {
-        toast.error(json?.message || 'No fue posible registrar el técnico.')
+        avisar(json?.message || 'No fue posible registrar el técnico.')
         return
       }
 
@@ -1158,10 +1190,10 @@ export default function MantenimientosPage() {
       setTecnicoId(String(tecnicoCreado.id))
       setTecnicoInfo(tecnicoCreado)
       setModalTecnico(false)
-      toast.success('Técnico registrado correctamente.')
+      avisar('Técnico registrado correctamente.', 'success')
     } catch (error) {
       console.error('Error registrando técnico:', error)
-      toast.error('No fue posible registrar el técnico.')
+      avisar('No fue posible registrar el técnico.')
     } finally {
       setGuardandoTecnico(false)
     }
@@ -1183,7 +1215,7 @@ export default function MantenimientosPage() {
   const continuarSeccionProveedor = () => {
     setValidacionProveedor(true)
     if (!proveedorId || !tecnicoId) {
-      toast.error('Seleccione el proveedor o taller y el técnico que realizó el mantenimiento.')
+      avisar('Seleccione el proveedor o taller y el técnico que realizó el mantenimiento.')
       return
     }
     setValidacionProveedor(false)
@@ -1204,7 +1236,7 @@ export default function MantenimientosPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
-      <Toaster position="top-center" richColors />
+      
       <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-lg">
         <EncabezadoPractica titulo="Registro de Mantenimiento" usuario={user.nombreCompleto || user.usuario} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={() => cerrarSesion(router)} />
         <main className="px-3 py-4 sm:px-6 sm:py-6">
@@ -1339,7 +1371,15 @@ export default function MantenimientosPage() {
             <TarjetaSeccionMantenimiento numero={3} disabled={!tarjetasHabilitadas} titulo="Costos y datos complementarios" descripcion="Valor de repuestos, mano de obra, costo total y factura." completada={Boolean(valorRepuestosStr || valorManoObraStr || factura)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(3) }} />
             <TarjetaSeccionMantenimiento numero={4} disabled={!tarjetasHabilitadas} titulo="Tiempo de parada y observaciones" descripcion="Duración aproximada de la parada y observaciones del servicio." completada={Boolean(tpValor || observaciones)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(4) }} />
           </div>
-          <AccionesModuloPractica onGuardar={registrar} puedeGuardar={puedeGuardar} guardando={guardando} textoGuardar="Registrar Mantenimiento" />
+          {alertaFormulario && (
+            <div role="alert" aria-live="assertive" className={`mb-3 rounded-xl border px-4 py-3 text-sm font-semibold ${alertaFormulario.tipo === 'success' ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-amber-300 bg-amber-50 text-amber-900'}`}>
+              <div className="flex items-start justify-between gap-3">
+                <span>{alertaFormulario.mensaje}</span>
+                <button type="button" aria-label="Cerrar alerta" onClick={() => setAlertaFormulario(null)} className="shrink-0 rounded border px-2 py-0.5">×</button>
+              </div>
+            </div>
+          )}
+          <AccionesModuloPractica onGuardar={registrar} puedeGuardar={!guardando} guardando={guardando} textoGuardar="Registrar Mantenimiento" />
         {seccionAbierta === 1 && (
           <ModalSeccionMantenimiento numero={1} titulo="Proveedor y técnico" onCerrar={continuarSeccionProveedor} onCancelar={cancelarSeccionProveedor} onContinuar={continuarSeccionProveedor}>
             <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-700">
@@ -1497,6 +1537,39 @@ export default function MantenimientosPage() {
                     </div>
                   </>
                 )}
+                <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3">
+                  <label className="block text-sm font-bold text-blue-900">Otras actividades realmente realizadas</label>
+                  <p className="mb-2 text-xs text-blue-800">Puede agregar actividades que no estén en el punto P{programacionPreventiva?.ciclo || '1'}. No modificarán las frecuencias del plan maestro.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      className="min-h-10 min-w-[180px] flex-1 rounded-lg border border-blue-300 bg-white p-2 text-sm"
+                      value={nuevaActividadAdicional}
+                      maxLength={250}
+                      onChange={(e) => setNuevaActividadAdicional(e.target.value.toUpperCase())}
+                      placeholder="Ej. REVISIÓN DE BATERÍA"
+                    />
+                    <button type="button" className="rounded-lg bg-blue-800 px-3 py-2 text-xs font-bold text-white"
+                      onClick={() => {
+                        const nombre = nuevaActividadAdicional.trim()
+                        if (!nombre) return avisar('Escriba el nombre de la actividad adicional.')
+                        if (actividadesAdicionales.length >= 20) return avisar('Puede agregar hasta 20 actividades por mantenimiento.')
+                        if (actividadesAdicionales.some((x) => x === nombre)) return avisar('Esta actividad ya fue agregada.')
+                        setActividadesAdicionales((x) => [...x, nombre])
+                        setNuevaActividadAdicional('')
+                        setAlertaFormulario(null)
+                      }}>Agregar actividad</button>
+                  </div>
+                  {actividadesAdicionales.length > 0 && (
+                    <ul className="mt-3 space-y-2">
+                      {actividadesAdicionales.map((nombre) => (
+                        <li key={nombre} className="flex items-center justify-between gap-2 rounded-lg bg-white p-2 text-xs text-slate-800">
+                          <span>{nombre}</span>
+                          <button type="button" className="font-bold text-red-700" onClick={() => setActividadesAdicionales((x) => x.filter((y) => y !== nombre))}>Quitar</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             )}
 
