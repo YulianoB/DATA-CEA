@@ -904,6 +904,7 @@ async function cargarContexto(
     rprogramaciones,
     rmantenimientos,
     rejecutadas,
+    rpendientes,
   ] = await Promise.all([
     supabase
       .from('vehiculos')
@@ -956,6 +957,13 @@ async function cargarContexto(
       .select('id,vehiculo_mantenimiento_config_id,actividad_id,fecha_ejecucion,km_ejecucion')
       .order('id', { ascending: false })
       .limit(1000),
+
+    supabase
+      .from('mantenimiento_actividades_seguimiento')
+      .select('id,vehiculo_mantenimiento_config_id,actividad_nombre,motivo,mantenimiento_id')
+      .eq('estado', 'PENDIENTE')
+      .order('id', { ascending: false })
+      .limit(1000),
   ])
 
   for (const r of [
@@ -966,6 +974,7 @@ async function cargarContexto(
     rprogramaciones,
     rmantenimientos,
     rejecutadas,
+    rpendientes,
   ]) {
     if (r.error) throw r.error
   }
@@ -1027,6 +1036,7 @@ async function cargarContexto(
       rmantenimientos.data || [],
     preoperacionales,
     actividadesEjecutadas: rejecutadas.data || [],
+    actividadesPendientes: rpendientes.data || [],
   }
 }
 
@@ -1386,8 +1396,13 @@ function construirVistaVehiculo({
         .filter((ej) => Number(ej.vehiculo_mantenimiento_config_id) === Number(cfg.id) && numero(ej.km_ejecucion) !== null)
         .sort((a, b) => Number(b.id) - Number(a.id))[0]
       const frecuencia = numero(cfg.frecuencia_km)
+      const pendiente = (contexto.actividadesPendientes || [])
+        .find(item => Number(item.vehiculo_mantenimiento_config_id) === Number(cfg.id))
       return {
         ...describirActividad(cfg, catalogoPorId),
+        pendiente_abierta: Boolean(pendiente),
+        pendiente_motivo: pendiente?.motivo || null,
+        pendiente_mantenimiento_id: pendiente?.mantenimiento_id || null,
         ultima_ejecucion_km: ultima ? numero(ultima.km_ejecucion) : null,
         ultima_ejecucion_fecha: ultima ? fechaISO(ultima.fecha_ejecucion) : null,
         siguiente_km: ultima && frecuencia ? numero(ultima.km_ejecucion) + frecuencia : null,
