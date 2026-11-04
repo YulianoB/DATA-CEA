@@ -658,6 +658,8 @@ function construirProyeccionesFuturas({
   catalogoPorId,
   kilometraje,
   fechaHasta,
+  normalizacionP1 = false,
+  fechaInicioNormalizacion = null,
 }) {
   const salida = []
 
@@ -679,6 +681,17 @@ function construirProyeccionesFuturas({
         catalogoPorId,
         kilometraje,
       })
+
+    // El P1 de puesta en marcha se ejecuta con el odómetro real vigente,
+    // sin atribuir vencimientos anteriores a la activación del nuevo plan.
+    if (normalizacionP1 && punto === 1) {
+      proyectado.estado = 'PROGRAMADO'
+      proyectado.normalizacion_inicial = true
+      proyectado.fecha_proyectada = fechaInicioNormalizacion
+      proyectado.vigencia_proyectada = fechaInicioNormalizacion ? Number(fechaInicioNormalizacion.slice(0, 4)) : null
+      proyectado.mes_proyectado = fechaInicioNormalizacion ? Number(fechaInicioNormalizacion.slice(5, 7)) : null
+      proyectado.mes_nombre = fechaInicioNormalizacion ? MESES[Number(fechaInicioNormalizacion.slice(5, 7)) - 1] : null
+    }
 
     // El punto vigente siempre se devuelve,
     // incluso si ya excedió su rango.
@@ -1284,53 +1297,45 @@ function construirVistaVehiculo({
         )
       : 0
 
-  // =======================================================
-  // PUNTO INICIAL AUTOMÁTICO
-  // =======================================================
-  // Se busca el mantenimiento MÁS RECIENTE cuya
-  // actividad_realizada contenga en cualquier parte NIVEL N.
-  // Nivel 1 => P2, Nivel 2 => P3, etc.
-  // Si no existe un nivel reconocible => P1.
-  //
-  // El kilometraje de proyección SIEMPRE se toma del último
-  // preoperacional real del vehículo.
-  // =======================================================
+  // El historial anterior se conserva, pero no determina la numeración
+  // del ciclo nuevo cuando Administración ha iniciado la normalización.
+  const ultimoNivelHistorico = obtenerUltimoNivelHistorico(
+    mantenimientosPorPlaca.get(placaClave(vehiculo.placa)) || []
+  )
+  const inicioOficial = plan?.estado === 'FINALIZADO' &&
+    numero(plan?.km_referencia) !== null &&
+    Boolean(fechaISO(plan?.fecha_referencia))
 
-  const ultimoNivelHistorico =
-    obtenerUltimoNivelHistorico(
-      mantenimientosPorPlaca.get(
-        placaClave(
-          vehiculo.placa
-        )
-      ) || []
-    )
+  const ultimoEjecutado = (hechosPorVehiculo.get(Number(vehiculo.id)) || [])
+    .filter(x => clave(x.estado) === 'EJECUTADO' && numero(x.km_ejecucion) !== null)
+    .sort((a, b) => Number(b.ciclo || 0) - Number(a.ciclo || 0))[0] || null
 
-  const puntoHistorico =
-    ultimoNivelHistorico?.nivel
-      ? ultimoNivelHistorico.nivel + 1
-      : 1
+  const puntoHistorico = ultimoNivelHistorico?.nivel
+    ? ultimoNivelHistorico.nivel + 1 : 1
+  const puntoMaterializado = ultimoPuntoMaterializado > 0
+    ? ultimoPuntoMaterializado + 1 : 1
 
-  const puntoMaterializado =
-    ultimoPuntoMaterializado > 0
-      ? ultimoPuntoMaterializado + 1
-      : 1
+  const puntoActual = inicioOficial
+    ? Math.max(1, puntoMaterializado)
+    : Math.max(puntoHistorico, puntoMaterializado)
 
-  const puntoActual =
-    Math.max(
-      puntoHistorico,
-      puntoMaterializado
-    )
+  const esP1Normalizacion = Boolean(inicioOficial && puntoActual === 1)
+  // P1 se fija al km de inicio. Después de ejecutarlo, P2 y sucesivos
+  // se proyectan desde el kilometraje efectivamente registrado.
+  const kmReferencia = inicioOficial
+    ? (esP1Normalizacion
+      ? numero(plan.km_referencia) - frecuenciaBase
+      : (numero(ultimoEjecutado?.km_ejecucion) ?? numero(plan.km_referencia)))
+    : kilometraje.ultimo_km
 
-  const kmReferencia =
-    kilometraje.ultimo_km
-
-  const fechaReferencia =
-    kilometraje.ultima_fecha
-
-  const origenReferencia =
-    ultimoNivelHistorico
+  const fechaReferencia = inicioOficial
+    ? fechaISO(plan.fecha_referencia)
+    : kilometraje.ultima_fecha
+  const origenReferencia = inicioOficial
+    ? (esP1Normalizacion ? 'INICIO_NORMALIZACION_P1' : 'ULTIMA_EJECUCION_DEL_NUEVO_PLAN')
+    : (ultimoNivelHistorico
       ? `MANTENIMIENTO_HISTORICO_NIVEL_${ultimoNivelHistorico.nivel}`
-      : 'SIN_NIVEL_HISTORICO_P1'
+      : 'SIN_NIVEL_HISTORICO_P1')
 
   const historialReconstruido2026 =
     construirHistorialReconstruido2026({
@@ -1412,6 +1417,8 @@ function construirVistaVehiculo({
           catalogoPorId,
           kilometraje,
           fechaHasta,
+          normalizacionP1: esP1Normalizacion,
+          fechaInicioNormalizacion: inicioOficial ? fechaISO(plan.fecha_referencia) : null,
         })
       : []
 
