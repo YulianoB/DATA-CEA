@@ -545,8 +545,11 @@ function construirPuntoProyectado({
       )
     )
 
-  const toleranciaKm =
-    obtenerToleranciaPunto(actividades)
+  // Solo el cambio de aceite determina el intervalo de la base P.
+  const configuracionAceite = configs.find(cfg =>
+    esActividadBase(catalogoPorId.get(Number(cfg.actividad_id))?.nombre)
+  )
+  const toleranciaKm = toleranciaDeConfig(configuracionAceite)
 
   const kmObjetivo =
     Number(kmReferencia) + Number(frecuenciaBase)
