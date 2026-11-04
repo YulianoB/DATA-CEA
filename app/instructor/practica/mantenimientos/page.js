@@ -116,6 +116,8 @@ export default function MantenimientosPage() {
   const [cargandoProgramacion, setCargandoProgramacion] = useState(false)
   const [actividadesSeleccionadas, setActividadesSeleccionadas] = useState([])
   const [actividadesAdicionales, setActividadesAdicionales] = useState([])
+  const [actividadesConfiguradas, setActividadesConfiguradas] = useState([])
+  const [actividadesPendientes, setActividadesPendientes] = useState({})
   const [nuevaActividadAdicional, setNuevaActividadAdicional] = useState('')
   const [alertaFormulario, setAlertaFormulario] = useState(null)
   const avisar = (mensaje, tipo = 'error') => setAlertaFormulario({ mensaje, tipo })
@@ -303,6 +305,8 @@ export default function MantenimientosPage() {
     setActividadesSeleccionadas([])
     setActividadesAdicionales([])
     setNuevaActividadAdicional('')
+    setActividadesPendientes({})
+    setActividadesConfiguradas([])
     setNivelSeleccionadoId('')
     setActividad('')
 
@@ -463,6 +467,7 @@ export default function MantenimientosPage() {
         }
 
         setProgramacionPreventiva(normalizado)
+        setActividadesConfiguradas(Array.isArray(vista.actividades_configuradas) ? vista.actividades_configuradas : [])
         setActividadesPlan(normalizado.actividades)
         setNivelSeleccionadoId(String(normalizado.ciclo))
         setActividad(`MANTENIMIENTO PREVENTIVO P${normalizado.ciclo}`)
@@ -563,10 +568,16 @@ export default function MantenimientosPage() {
 
   // Las actividades del punto son independientes del taller seleccionado.
   // Un mismo punto puede recibir intervenciones de distintos proveedores.
-  const actividadesPreventivasDisponibles = useMemo(
-    () => programacionPreventiva?.actividades || [],
-    [programacionPreventiva]
-  )
+  const actividadesPreventivasDisponibles = useMemo(() => {
+    const sugeridas = programacionPreventiva?.actividades || []
+    const idsSugeridas = new Set(sugeridas.map(x => Number(x.configuracion_id)))
+    return [
+      ...sugeridas.map(x => ({ ...x, sugerida: true })),
+      ...actividadesConfiguradas
+        .filter(x => !idsSugeridas.has(Number(x.configuracion_id)))
+        .map(x => ({ ...x, sugerida: false })),
+    ]
+  }, [programacionPreventiva, actividadesConfiguradas])
 
   // ============================================================
   // Cambio de técnico
@@ -854,6 +865,10 @@ export default function MantenimientosPage() {
       faltantes.push('Indique los repuestos utilizados o escriba NO APLICA.')
       if (!seccion) seccion = 2
     }
+    if (tipoMant === 'PREVENTIVO' && Object.values(actividadesPendientes).some(x => !x.trim())) {
+      faltantes.push('Explique el motivo de cada actividad marcada como pendiente.')
+      if (!seccion) seccion = 2
+    }
     if (faltantes.length || !puedeGuardar) {
       avisar(faltantes.length ? faltantes.join(' • ') : 'Revise los datos obligatorios del formulario.')
       if (seccion) setSeccionAbierta(seccion)
@@ -909,6 +924,10 @@ export default function MantenimientosPage() {
             : [],
         actividades_adicionales:
           tipoMant === 'PREVENTIVO' ? actividadesAdicionales : [],
+        actividades_pendientes:
+          tipoMant === 'PREVENTIVO'
+            ? Object.entries(actividadesPendientes).map(([configuracion_id, motivo]) => ({ configuracion_id: Number(configuracion_id), motivo: motivo.trim() }))
+            : [],
 
         repuestos_utilizados:
           repuestos.trim() ||
@@ -1020,6 +1039,7 @@ export default function MantenimientosPage() {
       setActividadesPlan([])
       setActividadesAdicionales([])
       setNuevaActividadAdicional('')
+      setActividadesPendientes({})
 
       setRepuestos('')
 
@@ -1540,7 +1560,7 @@ export default function MantenimientosPage() {
             {tipoMant === 'PREVENTIVO' && (
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <label className="text-sm font-bold">Actividades realizadas en este servicio *</label>
+                  <label className="text-sm font-bold">Actividades ejecutadas · Guía del vehículo *</label>
                   <span className="text-xs font-semibold text-slate-600">{actividadesSeleccionadas.length}/{actividadesPreventivasDisponibles.length}</span>
                 </div>
 
@@ -1551,7 +1571,7 @@ export default function MantenimientosPage() {
                 ) : (
                   <>
                     <p className="text-[11px] text-slate-500 mb-3">
-                      Marque las actividades realizadas por el taller de este registro. Las demás pueden ejecutarse en otros servicios del mismo punto con otros proveedores.
+                      El cambio de aceite inicia y acredita el punto base. Puede incluir actividades de otras frecuencias aunque no estén sugeridas para este punto. Cada servicio identifica a su propio proveedor.
                     </p>
                     <div className="space-y-2">
                       {actividadesPreventivasDisponibles.map((act, index) => {
@@ -1564,12 +1584,37 @@ export default function MantenimientosPage() {
                               className="mt-1 h-5 w-5 shrink-0"
                               checked={checked}
                               disabled={!programacionPreventiva?.dentro_tolerancia}
-                              onChange={() => setActividadesSeleccionadas((actual) => checked ? actual.filter((x) => x !== id) : [...actual, id])}
+                              onChange={() => {
+                                setActividadesSeleccionadas((actual) => checked ? actual.filter((x) => x !== id) : [...actual, id])
+                                if (!checked) setActividadesPendientes(actual => {
+                                  const siguiente = { ...actual }; delete siguiente[id]; return siguiente
+                                })
+                              }}
                             />
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-slate-800">{act.actividad}</p>
+                              <p className="text-sm font-semibold text-slate-800">{act.actividad} {!act.sugerida && <span className="ml-1 text-[10px] font-bold text-blue-800">(OTRA FRECUENCIA)</span>}</p>
                               {act.accion && <p className="text-[11px] text-slate-600 mt-1">{act.accion}</p>}
-                              <p className="text-[11px] text-slate-500 mt-1">Cada {Number(act.frecuencia_km || 0).toLocaleString('es-CO')} km</p>
+                              <p className="text-[11px] text-slate-500 mt-1">Cada {Number(act.frecuencia_km || 0).toLocaleString('es-CO')} km {act.siguiente_km ? `· Próximo objetivo individual: ${Number(act.siguiente_km).toLocaleString('es-CO')} km` : '· Frecuencia guía, sin ejecución inicial acreditada'}</p>
+                              {!checked && (
+                                <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+                                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                                    <input type="checkbox" checked={Object.prototype.hasOwnProperty.call(actividadesPendientes, id)}
+                                      onChange={(e) => setActividadesPendientes(actual => {
+                                        const proximo = { ...actual }
+                                        if (e.target.checked) proximo[id] = ''
+                                        else delete proximo[id]
+                                        return proximo
+                                      })} />
+                                    Registrar como pendiente de este servicio
+                                  </label>
+                                  {Object.prototype.hasOwnProperty.call(actividadesPendientes, id) && (
+                                    <textarea rows={2} maxLength={500} value={actividadesPendientes[id]}
+                                      onChange={(e) => setActividadesPendientes(actual => ({ ...actual, [id]: e.target.value }))}
+                                      className="mt-2 w-full rounded-lg border border-slate-300 bg-white p-2 text-base text-slate-900"
+                                      placeholder="Motivo de no ejecución (obligatorio)" />
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </label>
                         )
