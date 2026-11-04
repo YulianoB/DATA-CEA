@@ -430,11 +430,12 @@ export default function MantenimientosPage() {
             : null
 
         const dentroTolerancia =
-          Number.isFinite(kmActual) &&
+          (punto?.normalizacion_inicial === true && Number.isFinite(kmActual)) ||
+          (Number.isFinite(kmActual) &&
           Number.isFinite(kmMinimo) &&
           Number.isFinite(kmMaximo) &&
           kmActual >= kmMinimo &&
-          kmActual <= kmMaximo
+          kmActual <= kmMaximo)
 
         const normalizado = {
           ...punto,
