@@ -1082,6 +1082,7 @@ export async function POST(request) {
       let normalizacionP1 = false
       let configuracionAceiteId = null
       let actividadesAdicionales = []
+      let actividadesPendientes = []
 
       if (tipoMantenimiento === 'PREVENTIVO') {
         const vehiculoId = Number(body.vehiculo_id)
@@ -1228,6 +1229,29 @@ export async function POST(request) {
         // Las actividades configuradas son guía. Se pueden ejecutar fuera
         // de la combinación sugerida para el punto y acreditar por separado.
         actividadesSeleccionadas = activas.filter((x) => idsSeleccionados.includes(Number(x.id)))
+        const pendientesEntrada = Array.isArray(body.actividades_pendientes) ? body.actividades_pendientes : []
+        if (pendientesEntrada.length > activas.length ||
+            pendientesEntrada.some((x) => !Number.isInteger(Number(x?.configuracion_id)) ||
+              typeof x?.motivo !== 'string' || !x.motivo.trim() || x.motivo.trim().length > 500)) {
+          return NextResponse.json({
+            status: 'failed',
+            message: 'Cada actividad pendiente debe identificar una configuración válida y un motivo de máximo 500 caracteres.',
+          }, { status: 400 })
+        }
+        const pendientesIds = new Set()
+        for (const item of pendientesEntrada) {
+          const cfg = activas.find(x => Number(x.id) === Number(item.configuracion_id))
+          if (!cfg || idsSeleccionados.includes(Number(cfg.id)) || pendientesIds.has(Number(cfg.id))) {
+            return NextResponse.json({ status: 'failed', message: 'Las pendientes deben corresponder a actividades activas, distintas y no ejecutadas en este servicio.' }, { status: 400 })
+          }
+          pendientesIds.add(Number(cfg.id))
+          actividadesPendientes.push({
+            vehiculo_mantenimiento_config_id: cfg.id,
+            actividad_id: cfg.actividad_id,
+            actividad_nombre: catalogoPorId.get(Number(cfg.actividad_id))?.nombre || 'Actividad de mantenimiento',
+            motivo: item.motivo.trim(),
+          })
+        }
         if (actividadesSeleccionadas.length !== idsSeleccionados.length) {
           return NextResponse.json({ status: 'failed', message: 'Hay actividades que no pertenecen a la configuración activa del vehículo.' }, { status: 409 })
         }
@@ -1652,6 +1676,29 @@ export async function POST(request) {
                 mantenimiento: data,
               }, { status: 500 })
             }
+          }
+        }
+
+        if (actividadesPendientes.length) {
+          const { error: pendientesError } = await supabase
+            .from('mantenimiento_actividades_seguimiento')
+            .insert(actividadesPendientes.map((item) => ({
+              mantenimiento_id: data.id,
+              vehiculo_mantenimiento_config_id: item.vehiculo_mantenimiento_config_id,
+              actividad_id: item.actividad_id,
+              actividad_nombre: item.actividad_nombre,
+              origen: 'PLAN',
+              estado: 'PENDIENTE',
+              motivo: item.motivo,
+              registrado_por: payload.responsable,
+            })))
+          if (pendientesError) {
+            return NextResponse.json({
+              status: 'failed',
+              code: 'MANTENIMIENTO_GUARDADO_PENDIENTES_NO_ACREDITADAS',
+              message: `El mantenimiento #${data.id} se guardó, pero las actividades pendientes no pudieron registrarse: ${pendientesError.message}. No repita el envío; solicite revisión administrativa.`,
+              mantenimiento: data,
+            }, { status: 500 })
           }
         }
 
