@@ -3412,6 +3412,12 @@ export async function GET(
     // CONTINUACIONES DE LA MATRÍCULA ORIGINAL
     // =====================================================
     if (recurso === 'continuaciones') {
+      if (process.env.ENABLE_CONTINUACIONES_MATRICULA !== 'true') {
+        return NextResponse.json({
+          status: 'error',
+          message: 'El registro de continuaciones está pendiente de validación administrativa y de habilitación en Supabase.'
+        }, { status: 409 })
+      }
       const matriculaId = Number(searchParams.get('matricula_id'))
       if (!Number.isSafeInteger(matriculaId) || matriculaId <= 0) {
         return NextResponse.json({status:'error',message:'Matrícula inválida.'},{status:400})
@@ -3946,6 +3952,12 @@ export async function POST(
     // REGISTRAR CONTINUACIÓN, SIN CREAR NUEVA MATRÍCULA
     // =====================================================
     if (accion === 'registrar_continuacion') {
+      if (process.env.ENABLE_CONTINUACIONES_MATRICULA !== 'true') {
+        return NextResponse.json({
+          status: 'error',
+          message: 'El registro de continuaciones está pendiente de validación administrativa y de habilitación en Supabase.'
+        }, { status: 409 })
+      }
       const matriculaId = Number(body?.matricula_id)
       const fecha = normalizarTexto(body?.fecha_continuacion)
       const motivo = normalizarTexto(body?.motivo)
