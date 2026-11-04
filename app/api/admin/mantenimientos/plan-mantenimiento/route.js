@@ -23,7 +23,8 @@ const MESES = [
 
 const TOLERANCIA_KM_DEFAULT = 500
 const HORIZONTE_ANIOS = 2
-const MAX_PUNTOS_PROYECCION = 120
+// Se muestran el punto vigente y hasta tres siguientes; los posteriores se recalculan con las lecturas reales.
+const MAX_PUNTOS_PROYECCION = 4
 
 const BUCKET_EMPRESA = 'empresa'
 const DURACION_URL_LOGO = 60 * 60
