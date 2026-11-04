@@ -604,6 +604,11 @@ export default function NuevaInscripcionPage() {
   ] =
     useState([])
 
+  // Las matrículas anteriores requieren una decisión explícita; nunca inferir vencimiento.
+  const [modalAntecedentes, setModalAntecedentes] = useState(false)
+  const [revisionAntecedentes, setRevisionAntecedentes] = useState('')
+  const ultimaConsultaModalRef = useRef('')
+
   // ==========================================================
   // ERRORES
   // ==========================================================
@@ -2749,6 +2754,14 @@ export default function NuevaInscripcionPage() {
         setPrevMatriculas(
           list
         )
+        if (list.length > 0 && ultimaConsultaModalRef.current !== documento) {
+          ultimaConsultaModalRef.current = documento
+          setRevisionAntecedentes('')
+          setModalAntecedentes(true)
+        } else if (list.length === 0) {
+          ultimaConsultaModalRef.current = documento
+          setModalAntecedentes(false)
+        }
 
         if (
           json?.latest
@@ -4141,9 +4154,9 @@ const guardar =
                   </strong>
                    <div className="my-2">
                      <button type="button"
-                       onClick={() => router.push('/admin/inscripciones?documento=' + encodeURIComponent(form.documento || ''))}
+                       onClick={() => {setRevisionAntecedentes('');setModalAntecedentes(true)}}
                        className="rounded border border-blue-500 bg-white text-blue-900 px-3 py-1 text-[11px] font-semibold">
-                       Abrir expediente para continuar matrícula existente
+                       Revisar matrículas anteriores
                      </button>
                    </div>
 {' '}
@@ -6138,6 +6151,70 @@ const guardar =
                   <><i className="fas fa-save" aria-hidden="true"></i> Guardar convenio</>
                 )}
               </BotonGuardar>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revisión previa de antecedentes: no solicita la tabla de continuaciones. */}
+      {modalAntecedentes && prevMatriculas.length > 0 && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4"
+          role="dialog" aria-modal="true" aria-label="Revisar matrículas anteriores">
+          <div className="w-full max-w-2xl rounded-xl bg-white shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between bg-[#173A57] text-white p-4">
+              <h3 className="font-bold text-sm">El aprendiz ya tiene matrículas registradas</h3>
+              <button type="button" onClick={()=>setModalAntecedentes(false)}
+                className="border border-white/40 rounded px-2 py-1" aria-label="Cerrar">✕</button>
+            </div>
+            <div className="space-y-3 p-4 text-xs max-h-[75vh] overflow-auto">
+              <p>Se encontraron antecedentes para el documento <strong>{form.documento}</strong>. Tener una matrícula anterior no significa que esté vencida.</p>
+              <div className="border rounded-lg overflow-hidden">
+                {prevMatriculas.map((item)=>(
+                  <div key={item.id} className="border-b last:border-0 p-3 flex flex-wrap gap-3 justify-between">
+                    <div>
+                      <strong>{item.consecutivo || 'Sin consecutivo'}</strong>
+                      <span className="ml-3">{Array.isArray(item.categorias) ? item.categorias.join(' / ') : item.categoria || 'Sin categoría'}</span>
+                    </div>
+                    <div className="text-slate-600">{item.fecha_matricula || 'Fecha sin verificar'}</div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                Estado de finalización: <strong>por verificar</strong>. El historial por sí solo no confirma certificación, licencia ni vencimiento del término.
+              </p>
+              <p className="font-semibold">¿Qué necesita realizar el CEA?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button type="button"
+                  className={`text-left rounded-lg border p-3 ${revisionAntecedentes==='otra'?'border-blue-600 bg-blue-50':'border-slate-300'}`}
+                  onClick={()=>setRevisionAntecedentes('otra')}>
+                  <strong>Inscribir otra categoría</strong>
+                  <p className="text-[11px] mt-1">Conservar el historial y aplicar las reglas de categorías, edad y nivel existentes.</p>
+                </button>
+                <button type="button"
+                  className={`text-left rounded-lg border p-3 ${revisionAntecedentes==='misma'?'border-blue-600 bg-blue-50':'border-slate-300'}`}
+                  onClick={()=>setRevisionAntecedentes('misma')}>
+                  <strong>Revisar un curso inconcluso</strong>
+                  <p className="text-[11px] mt-1">Determinar con soportes si procede una continuación, sin crear otra matrícula.</p>
+                </button>
+              </div>
+              {revisionAntecedentes==='otra' && (
+                <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p>Puede continuar el formulario de inscripción con <strong>una categoría nueva permitida</strong>. Las categorías anteriores permanecerán bloqueadas.</p>
+                  <button type="button" onClick={()=>setModalAntecedentes(false)}
+                    className="bg-[#173A57] text-white rounded-lg px-4 py-2">Continuar inscripción de otra categoría</button>
+                </div>
+              )}
+              {revisionAntecedentes==='misma' && (
+                <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <strong>Revisión administrativa necesaria</strong>
+                  <p>Antes de registrar una continuación debemos verificar que el curso no esté finalizado, comprobar el término aplicable y determinar si RUNT/SICOV/SIET permiten continuar el proceso original.</p>
+                  <p>No se habilitará una continuación mientras no exista la validación y la estructura de datos correspondiente en Supabase.</p>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <button type="button" className="border rounded-lg px-3 py-2"
+                  onClick={()=>setModalAntecedentes(false)}>Cerrar revisión</button>
+              </div>
             </div>
           </div>
         </div>
