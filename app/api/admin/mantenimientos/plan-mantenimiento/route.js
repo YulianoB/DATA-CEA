@@ -671,6 +671,10 @@ function construirProyeccionesFuturas({
       puntoInicial + MAX_PUNTOS_PROYECCION;
     punto += 1
   ) {
+    // Hasta acreditar el primer P1 real no existe un odómetro de inicio
+    // definitivo para programar P2 y los siguientes puntos.
+    if (normalizacionP1 && punto > 1) break
+
     const proyectado =
       construirPuntoProyectado({
         vehiculo,
@@ -1045,7 +1049,7 @@ function construirHistorialReconstruido2026({
         fecha.startsWith('2026-') &&
         fecha <= hoyISO &&
         !fila.programacion_mantenimiento_id &&
-        ['PREVENTIVO', 'CORRECTIVO'].includes(clave(fila.tipo_mantenimiento))
+        clave(fila.tipo_mantenimiento) === 'PREVENTIVO'
     })
     .map((fila) => ({
       id: `HIST-M-${fila.id}`,
