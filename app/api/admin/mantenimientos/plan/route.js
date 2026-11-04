@@ -973,6 +973,7 @@ export async function POST(request) {
     return errorJson('La acción solicitada no es válida.')
   } catch (error) {
     console.error('Error guardando configuración de mantenimiento:', error)
+    if (error?.status === 409) return errorJson(error.message, 409)
     const respuesta = respuestaErrorEmpresa(error)
     return NextResponse.json(
       {
