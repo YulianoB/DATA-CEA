@@ -3622,8 +3622,22 @@ export async function POST(
         )
       }
 
-      const fechaRegistro =
-        hoyBogota()
+      const fechaRegistro = normalizarTexto(body?.fecha_registro) || hoyBogota()
+      const fechaValidaReal = /^\d{4}-\d{2}-\d{2}$/.test(fechaRegistro) &&
+        !Number.isNaN(Date.parse(fechaRegistro)) &&
+        new Date(fechaRegistro + 'T12:00:00Z').toISOString().slice(0, 10) === fechaRegistro
+      if (!fechaValidaReal || fechaRegistro > hoyBogota()) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'La fecha de inscripción RUNT debe ser una fecha real válida, no futura.'
+        }, { status: 400 })
+      }
+      if (fechaRegistro !== hoyBogota() && normalizarTexto(body?.observaciones).length < 8) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Para registrar una fecha histórica se requiere indicar el soporte en observaciones (mínimo 8 caracteres).'
+        }, { status: 400 })
+      }
 
       const {
         data,
