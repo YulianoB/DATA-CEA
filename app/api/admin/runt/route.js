@@ -2041,7 +2041,7 @@ async function consultarControles({
     const matriculaId =
       String(
         control.matricula_id
-      )
+      ) + '|' + normalizarMayusculas(control.categoria)
 
     const numeroProceso =
       Number(
