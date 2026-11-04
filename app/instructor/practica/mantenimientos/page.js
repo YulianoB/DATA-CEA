@@ -483,8 +483,9 @@ export default function MantenimientosPage() {
   useEffect(() => {
     setActividadesSeleccionadas([])
     setActividadCatalogoId('')
-    if (tipoMant === 'CORRECTIVO') setActividad('')
-
+    // Conservar la descripción del correctivo al seleccionar o registrar taller.
+    // Solo el cambio explícito de tipo/vehículo limpia el servicio.
+    
     if (!proveedorId) {
       setProveedorInfo(null)
       setTecnicos([])
@@ -511,45 +512,39 @@ export default function MantenimientosPage() {
             ? `&tipo_vehiculo=${encodeURIComponent(vehiculoInfo.tipo)}`
             : ''
 
-        const [resTecnicos, resActividades] = await Promise.all([
-          fetch(
-            `/api/mantenimientos?nit=${encodeURIComponent(nitActual)}&recurso=tecnicos&proveedor_id=${encodeURIComponent(proveedorId)}`,
-            { cache: 'no-store' }
-          ),
-          fetch(
+        const resTecnicos = await fetch(
+          `/api/mantenimientos?nit=${encodeURIComponent(nitActual)}&recurso=tecnicos&proveedor_id=${encodeURIComponent(proveedorId)}`,
+          { cache: 'no-store' }
+        )
+        const jsonTecnicos = await resTecnicos.json()
+        if (!resTecnicos.ok || jsonTecnicos?.status !== 'success' || !Array.isArray(jsonTecnicos.tecnicos)) {
+          setTecnicos([])
+          avisar(jsonTecnicos?.message || 'No se pudieron consultar los técnicos de este proveedor. Intente nuevamente.')
+        } else {
+          setTecnicos(jsonTecnicos.tecnicos)
+        }
+
+        // Para correctivos NO se exige catálogo de actividades del proveedor.
+        if (tipoMant === 'PREVENTIVO') {
+          const resActividades = await fetch(
             `/api/mantenimientos?nit=${encodeURIComponent(nitActual)}&recurso=actividades_proveedor&proveedor_id=${encodeURIComponent(proveedorId)}${tipoVehiculo}`,
             { cache: 'no-store' }
-          ),
-        ])
-
-        const [jsonTecnicos, jsonActividades] = await Promise.all([
-          resTecnicos.json(),
-          resActividades.json(),
-        ])
-
-        setTecnicos(
-          resTecnicos.ok && jsonTecnicos?.status === 'success' && Array.isArray(jsonTecnicos.tecnicos)
-            ? jsonTecnicos.tecnicos
-            : []
-        )
-
-        if (resActividades.ok && jsonActividades?.status === 'success') {
-          setActividadesProveedor(
-            Array.isArray(jsonActividades.actividades)
-              ? jsonActividades.actividades
-              : []
           )
+          const jsonActividades = await resActividades.json()
+          if (resActividades.ok && jsonActividades?.status === 'success') {
+            setActividadesProveedor(Array.isArray(jsonActividades.actividades) ? jsonActividades.actividades : [])
+          } else {
+            setActividadesProveedor([])
+            avisar(jsonActividades?.message || 'No se pudieron cargar las actividades del proveedor.')
+          }
         } else {
           setActividadesProveedor([])
-          avisar(
-            jsonActividades?.message ||
-            'No se pudieron cargar las actividades del proveedor.'
-          )
         }
       } catch (error) {
         console.error('Error cargando información del proveedor:', error)
         setTecnicos([])
         setActividadesProveedor([])
+        avisar('No fue posible consultar los técnicos del proveedor. Verifique la conexión e intente nuevamente.')
       } finally {
         setCargandoActividadesProveedor(false)
       }
