@@ -1587,6 +1587,7 @@ export async function POST(request) {
         const filasActividades = actividadesSeleccionadas.map((cfg) => ({
           mantenimiento_id: data.id,
           vehiculo_mantenimiento_config_id: cfg.id,
+          actividad_id: cfg.actividad_id,
           fecha_ejecucion: payload.fecha_registro,
           km_ejecucion: kilometraje,
         }))
