@@ -1242,7 +1242,42 @@ export default function MantenimientosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
+    <div className="mantenimiento-movil min-h-screen bg-slate-100 px-2 py-3 text-slate-900 sm:px-4 sm:py-6" style={{ colorScheme: 'light' }}>
+      <style jsx global>{`
+        /* Aislar el formulario del modo oscuro del sistema operativo. */
+        .mantenimiento-movil { color-scheme: light; }
+        .mantenimiento-movil input:not([type="checkbox"]):not([type="radio"]),
+        .mantenimiento-movil select,
+        .mantenimiento-movil textarea {
+          color-scheme: light !important;
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+          -webkit-text-fill-color: #0f172a !important;
+          caret-color: #0f172a !important;
+          border-color: #94a3b8;
+          opacity: 1;
+        }
+        .mantenimiento-movil input::placeholder,
+        .mantenimiento-movil textarea::placeholder {
+          color: #64748b !important;
+          -webkit-text-fill-color: #64748b !important;
+          opacity: 1;
+        }
+        .mantenimiento-movil select option { color: #0f172a; background: white; }
+        .mantenimiento-movil input:disabled,
+        .mantenimiento-movil select:disabled,
+        .mantenimiento-movil textarea:disabled {
+          background: #e2e8f0 !important;
+          color: #475569 !important;
+          -webkit-text-fill-color: #475569 !important;
+        }
+        @media (max-width: 640px) {
+          .mantenimiento-movil input:not([type="checkbox"]):not([type="radio"]),
+          .mantenimiento-movil select,
+          .mantenimiento-movil textarea { font-size: 16px !important; line-height: 1.5 !important; }
+          .mantenimiento-movil label { font-size: 14px; }
+        }
+      `}</style>
       
       <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-lg">
         <EncabezadoPractica titulo="Registro de Mantenimiento" usuario={user.nombreCompleto || user.usuario} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={() => cerrarSesion(router)} />
