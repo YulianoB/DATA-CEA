@@ -608,30 +608,10 @@ export async function POST(request) {
     const accion = mayusculas(body?.accion)
 
     if (accion === 'INICIAR_NORMALIZACION') {
-      const vehiculoId = Number(body?.vehiculo_id)
-      if (!Number.isInteger(vehiculoId) || vehiculoId <= 0) return errorJson('Vehículo no válido.')
-      const { data: estado, error: errEstado } = await supabaseAdmin
-        .from('vehiculo_mantenimiento_plan_estado')
-        .select('estado,frecuencia_base_km')
-        .eq('vehiculo_id', vehiculoId)
-        .maybeSingle()
-      if (errEstado) throw errEstado
-      if (estado?.estado !== 'FINALIZADO') return errorJson('Debe finalizar primero la configuración del vehículo.', 409)
-      const { data: configs, error: errConfig } = await supabaseAdmin
-        .from('vehiculo_mantenimiento_config')
-        .select('actividad_id,frecuencia_km,activo')
-        .eq('vehiculo_id', vehiculoId).eq('activo', true)
-      if (errConfig) throw errConfig
-      const { data: actividades, error: errActividades } = await supabaseAdmin
-        .from('mantenimiento_actividades_catalogo')
-        .select('id,nombre').in('id', (configs || []).map(x => x.actividad_id))
-      if (errActividades) throw errActividades
-      const nombrePorId = new Map((actividades || []).map(x => [Number(x.id), x.nombre]))
-      const configBase = (configs || []).find(x => esCambioAceite(nombrePorId.get(Number(x.actividad_id))))
-      const frecuencia = Number(configBase?.frecuencia_km)
-      if (!Number.isFinite(frecuencia) || frecuencia <= 0) return errorJson('No hay frecuencia base válida para iniciar P1.', 409)
-      const resultado = await iniciarNormalizacion(supabaseAdmin, vehiculoId, frecuencia)
-      return NextResponse.json({ ok: true, mensaje: resultado.iniciado ? 'P1 de normalización iniciado.' : 'P1 ya estaba iniciado; se conservó la referencia original.', inicio_normalizacion: resultado })
+      return errorJson(
+        'P1 se inicia al registrar el primer mantenimiento preventivo real. No requiere activación anticipada.',
+        409
+      )
     }
 
     if (accion === 'AGREGAR_ACTIVIDAD') {
