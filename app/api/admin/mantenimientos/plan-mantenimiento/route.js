@@ -2065,7 +2065,7 @@ export async function GET(request) {
                   (p) =>
                     Number(
                       p.vigencia_proyectada
-                    ) === vigencia
+                    ) === vigencia && !p.normalizacion_inicial
                 ).length,
             0
           ),
