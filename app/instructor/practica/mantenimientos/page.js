@@ -303,6 +303,8 @@ export default function MantenimientosPage() {
     const vehiculo = vehiculos.find((item) => item.placa === placa)
 
     setProgramacionPreventiva(null)
+    setUltimoPuntoEjecutado(null)
+    setUsarUltimoPunto(false)
     setActividadesPlan([])
     setActividadesSeleccionadas([])
     setActividadesAdicionales([])
@@ -436,12 +438,12 @@ export default function MantenimientosPage() {
             : []
         )
 
-        if (!seleccionado && !ultimo) {
+        if (!seleccionado) {
           setProgramacionPreventiva(null)
           return
         }
 
-        const { punto, vista } = seleccionado || ultimo
+        const { punto, vista } = seleccionado
         const actividadesPunto = Array.isArray(punto.actividades)
           ? punto.actividades
           : []
@@ -746,6 +748,8 @@ export default function MantenimientosPage() {
     ).toUpperCase()
 
     setTipoMant(valor)
+    setUsarUltimoPunto(false)
+    setActividadesPendientes({})
     setNivelSeleccionadoId('')
     setActividad('')
     setActividadCatalogoId('')
