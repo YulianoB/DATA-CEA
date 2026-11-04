@@ -1223,11 +1223,20 @@ export async function POST(request) {
           )
         }
 
-        const requeridasIds = new Set(actividadesRequeridas.map((x) => Number(x.id)))
-        actividadesSeleccionadas = activas.filter((x) => idsSeleccionados.includes(Number(x.id)) && requeridasIds.has(Number(x.id)))
-
+        // Las actividades configuradas son guía. Se pueden ejecutar fuera
+        // de la combinación sugerida para el punto y acreditar por separado.
+        actividadesSeleccionadas = activas.filter((x) => idsSeleccionados.includes(Number(x.id)))
         if (actividadesSeleccionadas.length !== idsSeleccionados.length) {
-          return NextResponse.json({ status: 'failed', message: 'Una o más actividades seleccionadas no corresponden al punto preventivo.' }, { status: 409 })
+          return NextResponse.json({ status: 'failed', message: 'Hay actividades que no pertenecen a la configuración activa del vehículo.' }, { status: 409 })
+        }
+        // P1 y cada nuevo punto base se acreditan solo con cambio de aceite.
+        const cambioAceiteIncluido = actividadesSeleccionadas.some((x) => Number(x.id) === Number(configBase.id))
+        if (normalizacionP1 && !cambioAceiteIncluido) {
+          return NextResponse.json({
+            status: 'failed',
+            code: 'P1_REQUIERE_CAMBIO_ACEITE',
+            message: 'Para iniciar P1 seleccione «Aceite de motor y filtro de aceite». Puede registrar otras actividades en el mismo servicio.',
+          }, { status: 409 })
         }
 
         const { data: existente, error: existenteError } = await supabase
@@ -1695,7 +1704,9 @@ export async function POST(request) {
         }
 
         const ejecutadasIds = new Set(ejecutadas.map((x) => Number(x.vehiculo_mantenimiento_config_id)))
-        const completo = actividadesRequeridas.length > 0 && actividadesRequeridas.every((cfg) => ejecutadasIds.has(Number(cfg.id)))
+        // Solo el servicio base de aceite controla la secuencia P1/P2/...
+        // La falta de otras actividades de la guía no bloquea el siguiente punto.
+        const completo = ejecutadasIds.has(Number(configBase.id))
 
         if (completo) {
           const { error: actualizarProgramacionError } = await supabase
@@ -1719,7 +1730,7 @@ export async function POST(request) {
         {
           status: 'success',
           message:
-            tipoMantenimiento === 'PREVENTIVO' ? 'Mantenimiento preventivo registrado. El punto se cerrará automáticamente cuando estén acreditadas todas sus actividades.' : 'Mantenimiento registrado correctamente.',
+            tipoMantenimiento === 'PREVENTIVO' ? 'Mantenimiento preventivo registrado. El punto base se acredita con el cambio de aceite; las demás actividades se conservan individualmente.' : 'Mantenimiento registrado correctamente.',
           mantenimiento: data,
         },
         { status: 201 }
