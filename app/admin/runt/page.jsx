@@ -675,6 +675,8 @@ export default function RuntPage() {
   // ==========================================================
   // LISTADO
   // ==========================================================
+  const [paginaRunt, setPaginaRunt] = useState(1)
+  const [hayMasRunt, setHayMasRunt] = useState(false)
 
   const [
     controles,
@@ -943,6 +945,7 @@ export default function RuntPage() {
             'recurso',
             'consultar'
           )
+          params.set('pagina', String(paginaRunt))
 
           if (
             nit
@@ -981,6 +984,7 @@ export default function RuntPage() {
               `${API_URL}?${params.toString()}`
             )
 
+          setHayMasRunt(Boolean(json?.hay_mas))
           setControles(
             Array.isArray(
               json?.data
@@ -995,17 +999,9 @@ export default function RuntPage() {
             errorConsulta
           )
 
-          setControles(
-            []
-          )
-
-          if (
-            !silencioso
-          ) {
-            setError(
-              errorConsulta.message
-            )
-          }
+          setControles([])
+          setHayMasRunt(false)
+          setError(errorConsulta.message || 'Error al consultar Control RUNT.')
         } finally {
           setLoading(
             false
@@ -1016,6 +1012,7 @@ export default function RuntPage() {
         user,
         nit,
         filtros,
+        paginaRunt,
       ]
     )
 
@@ -1108,6 +1105,7 @@ export default function RuntPage() {
   function cambiarFiltro(
     event
   ) {
+    setPaginaRunt(1)
     const {
       name,
       value,
@@ -1125,6 +1123,7 @@ export default function RuntPage() {
   }
 
   function limpiarFiltros() {
+    setPaginaRunt(1)
     setFiltros({
       q:
         '',
@@ -2999,8 +2998,16 @@ export default function RuntPage() {
             </span>
 
             <span className="text-xs text-gray-300">
-              {controles.length} registro(s)
+              {controles.length} registro(s) · Página {paginaRunt}
             </span>
+            <div className="flex gap-2">
+              <button type="button" disabled={paginaRunt===1}
+                className="border border-white/40 rounded px-2 py-1 text-xs disabled:opacity-40"
+                onClick={()=>setPaginaRunt(n=>Math.max(1,n-1))}>Anterior</button>
+              <button type="button" disabled={!hayMasRunt}
+                className="border border-white/40 rounded px-2 py-1 text-xs disabled:opacity-40"
+                onClick={()=>setPaginaRunt(n=>n+1)}>Siguiente</button>
+            </div>
 
           </div>
 
@@ -3082,7 +3089,7 @@ export default function RuntPage() {
                       className="p-8 text-center text-gray-500"
                      style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       {consultado
-                        ? 'No se encontraron registros.'
+                        ? 'No se encontraron controles RUNT para este filtro. Si hay matrículas históricas, ejecute la conciliación de controles faltantes en Supabase.'
                         : 'No hay datos.'}
                     </td>
 
