@@ -104,6 +104,7 @@ export default function MantenimientosPage() {
   }, [])
   const [msgKm, setMsgKm] = useState('')
   const [forzarKm, setForzarKm] = useState(false)
+  const [advertenciaKmPendiente, setAdvertenciaKmPendiente] = useState(false)
   const [modalKm, setModalKm] = useState(null)
 
   // Tipo mantenimiento
@@ -593,6 +594,7 @@ export default function MantenimientosPage() {
     const valor = e.target.value
 
     setKilometraje(valor)
+    setAdvertenciaKmPendiente(false)
     setMsgKm('')
     setForzarKm(false)
     setModalKm(null)
@@ -643,6 +645,7 @@ export default function MantenimientosPage() {
         resultado.estado ===
         'advertencia'
       ) {
+        setAdvertenciaKmPendiente(true)
         setMsgKm(
           resultado.mensaje
         )
@@ -662,6 +665,7 @@ export default function MantenimientosPage() {
 
           onConfirm: () => {
             setForzarKm(true)
+            setAdvertenciaKmPendiente(false)
             setModalKm(null)
           },
         })
@@ -757,6 +761,7 @@ export default function MantenimientosPage() {
       forzarKm
 
     if (
+      advertenciaKmPendiente ||
       !kmOk ||
       !Number.isFinite(Number(kilometraje)) ||
       Number(kilometraje) < 0
@@ -800,6 +805,7 @@ export default function MantenimientosPage() {
     fechaEjecucionValida,
     msgKm,
     forzarKm,
+    advertenciaKmPendiente,
     kilometraje,
     tipoMant,
     actividad,
@@ -827,6 +833,7 @@ export default function MantenimientosPage() {
     if (!fechaEjecucionValida) faltantes.push('Seleccione una fecha de ejecución válida, no posterior a hoy.')
     if (!['PREVENTIVO', 'CORRECTIVO'].includes(tipoMant)) faltantes.push('Seleccione el tipo de mantenimiento.')
     if (kilometraje === '' || !Number.isFinite(Number(kilometraje)) || Number(kilometraje) < 0) faltantes.push('Ingrese un kilometraje válido.')
+    if (advertenciaKmPendiente) faltantes.push('Confirme o corrija la advertencia de kilometraje antes de continuar.')
     if (!forzarKm && (!msgKm || /menor|no fue posible|no se identificó|error/i.test(msgKm))) faltantes.push('Verifique o confirme el kilometraje.')
     if (!proveedorId || !tecnicoId) {
       faltantes.push('Seleccione proveedor y técnico.')
