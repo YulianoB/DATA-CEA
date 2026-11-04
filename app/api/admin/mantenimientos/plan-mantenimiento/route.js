@@ -1363,7 +1363,7 @@ function construirVistaVehiculo({
         contexto.hoyISO,
     }).filter(
       (historico) =>
-        !hechos.some(
+        inicioOficial || !hechos.some(
           (hecho) =>
             Number(
               hecho.punto ||
@@ -1653,7 +1653,8 @@ function construirMatrizAnual(
               true
         )
 
-      if (yaExiste) continue
+      // Los antecedentes tienen una identidad distinta de P1/P2... del ciclo nuevo.
+      if (yaExiste && !historico.antecedente_anterior_al_plan) continue
 
       if (
         historico.estado ===
