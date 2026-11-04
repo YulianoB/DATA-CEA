@@ -396,7 +396,9 @@ export default function ConfiguracionPlanMantenimientoPage() {
       }
 
       setEstadoConfiguracion('FINALIZADO')
-      setMensaje(data.mensaje || 'Plan finalizado correctamente.')
+      setMensaje(data.inicio_normalizacion?.advertencia
+        ? `${data.mensaje || 'Plan finalizado.'} P1 pendiente: ${data.inicio_normalizacion.advertencia}`
+        : (data.mensaje || 'Plan finalizado correctamente.'))
       setModalAbierto(false)
       await cargarVehiculos()
     } catch (e) {
