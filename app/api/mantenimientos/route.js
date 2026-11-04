@@ -1316,52 +1316,10 @@ export async function POST(request) {
         )
       }
 
-      const { data: relacionesProveedor, error: relacionesProveedorError } = await supabase
-        .from('proveedor_mantenimiento_actividades')
-        .select('actividad_id')
-        .eq('proveedor_id', proveedorId)
-        .eq('activo', true)
-
-      if (relacionesProveedorError) {
-        return NextResponse.json(
-          { status: 'failed', message: relacionesProveedorError.message },
-          { status: 500 }
-        )
-      }
-
-      const actividadesProveedorIds = new Set(
-        (relacionesProveedor || []).map((item) => Number(item.actividad_id))
-      )
-
-      if (
-        tipoMantenimiento === 'PREVENTIVO' &&
-        !actividadesProveedorIds.size && actividadesAdicionales.length === 0
-      ) {
-        return NextResponse.json(
-          {
-            status: 'failed',
-            message: 'El proveedor seleccionado no tiene actividades de mantenimiento configuradas para preventivo. Solicite a Administración completar su configuración.',
-          },
-          { status: 409 }
-        )
-      }
-
-      if (tipoMantenimiento === 'PREVENTIVO') {
-        const noHabilitadas = actividadesSeleccionadas.filter(
-          (cfg) => !actividadesProveedorIds.has(Number(cfg.actividad_id))
-        )
-
-        if (noHabilitadas.length) {
-          return NextResponse.json(
-            {
-              status: 'failed',
-              message: 'Una o más actividades seleccionadas no están habilitadas para el proveedor o taller escogido.',
-            },
-            { status: 409 }
-          )
-        }
-      }
-
+      // El proveedor identifica al ejecutor de este servicio, no limita
+      // qué actividades puede acreditar. Un punto preventivo puede
+      // acumular registros de varios proveedores.
+      
       // ===================================================
       // OBTENER TÉCNICO
       // ===================================================
