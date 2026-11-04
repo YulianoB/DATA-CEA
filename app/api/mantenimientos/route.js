@@ -1080,6 +1080,7 @@ export async function POST(request) {
       let actividadesRequeridas = []
       let actividadesSeleccionadas = []
       let normalizacionP1 = false
+      let actividadesAdicionales = []
 
       if (tipoMantenimiento === 'PREVENTIVO') {
         const vehiculoId = Number(body.vehiculo_id)
@@ -1088,6 +1089,11 @@ export async function POST(request) {
         const idsSeleccionados = Array.isArray(body.actividades_config_ids)
           ? [...new Set(body.actividades_config_ids.map(Number).filter(Number.isInteger))]
           : []
+        const extrasEntrada = Array.isArray(body.actividades_adicionales) ? body.actividades_adicionales : []
+        if (extrasEntrada.length > 20 || extrasEntrada.some((x) => typeof x !== 'string' || !x.trim() || x.trim().length > 250)) {
+          return NextResponse.json({ status: 'failed', message: 'Las actividades adicionales deben tener una descripción válida (máximo 20 actividades, 250 caracteres cada una).' }, { status: 400 })
+        }
+        actividadesAdicionales = [...new Set(extrasEntrada.map((x) => x.trim().toUpperCase()))]
 
         if (!Number.isInteger(vehiculoId) || vehiculoId <= 0 || !Number.isInteger(ciclo) || ciclo <= 0) {
           return NextResponse.json(
@@ -1103,9 +1109,9 @@ export async function POST(request) {
           )
         }
 
-        if (!idsSeleccionados.length) {
+        if (!idsSeleccionados.length && !actividadesAdicionales.length) {
           return NextResponse.json(
-            { status: 'failed', message: 'Seleccione al menos una actividad realmente ejecutada.' },
+            { status: 'failed', message: 'Seleccione una actividad del plan o agregue una actividad realmente realizada.' },
             { status: 400 }
           )
         }
@@ -1329,7 +1335,7 @@ export async function POST(request) {
 
       if (
         tipoMantenimiento === 'PREVENTIVO' &&
-        !actividadesProveedorIds.size
+        !actividadesProveedorIds.size && actividadesAdicionales.length === 0
       ) {
         return NextResponse.json(
           {
@@ -1484,7 +1490,9 @@ export async function POST(request) {
           tipoMantenimiento,
 
         actividad_realizada:
-          actividad,
+          tipoMantenimiento === 'PREVENTIVO' && actividadesAdicionales.length
+            ? [actividad, 'ACTIVIDADES ADICIONALES: ' + actividadesAdicionales.join(' / ')].filter(Boolean).join(' | ')
+            : actividad,
 
         plan_mantenimiento_id: null,
 
@@ -1675,6 +1683,32 @@ export async function POST(request) {
                 mantenimiento: data,
               }, { status: 500 })
             }
+          }
+        }
+
+        if (actividadesAdicionales.length) {
+          // La tabla de seguimiento almacena trabajos adicionales de la ejecución
+          // sin alterar las frecuencias del plan maestro.
+          const { error: seguimientoError } = await supabase
+            .from('mantenimiento_actividades_seguimiento')
+            .insert(actividadesAdicionales.map((nombre) => ({
+              mantenimiento_id: data.id,
+              actividad_nombre: nombre,
+              actividad_id: null,
+              vehiculo_mantenimiento_config_id: null,
+              origen: 'ADICIONAL',
+              estado: 'EJECUTADA',
+              fecha_ejecucion: payload.fecha_registro,
+              km_ejecucion: kilometraje,
+              registrado_por: payload.responsable,
+            })))
+          if (seguimientoError) {
+            return NextResponse.json({
+              status: 'failed',
+              code: 'MANTENIMIENTO_GUARDADO_SEGUIMIENTO_INCOMPLETO',
+              message: `El mantenimiento #${data.id} quedó registrado (incluidas las actividades adicionales en su descripción), pero falló el seguimiento individual: ${seguimientoError.message}. No repita el envío; solicite revisión administrativa.`,
+              mantenimiento: data,
+            }, { status: 500 })
           }
         }
 
