@@ -1079,6 +1079,7 @@ export async function POST(request) {
       let programacionPreventiva = null
       let actividadesRequeridas = []
       let actividadesSeleccionadas = []
+      let normalizacionP1 = false
 
       if (tipoMantenimiento === 'PREVENTIVO') {
         const vehiculoId = Number(body.vehiculo_id)
@@ -1191,7 +1192,7 @@ export async function POST(request) {
         if (errorEstadoPlan) {
           return NextResponse.json({ status: 'failed', message: errorEstadoPlan.message }, { status: 500 })
         }
-        const normalizacionP1 = ciclo === 1 && estadoPlan?.estado === 'FINALIZADO'
+        normalizacionP1 = ciclo === 1 && estadoPlan?.estado === 'FINALIZADO'
         // La referencia inicial se acredita al guardar el primer servicio real.
         // Un anclaje administrativo previo no debe impedir ese primer servicio.
 
