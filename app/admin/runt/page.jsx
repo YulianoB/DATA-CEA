@@ -2438,6 +2438,15 @@ export default function RuntPage() {
       return
     }
 
+    const soporteVerificacion = window.prompt(
+      'Antes de reiniciar, verifique en RUNT que este proceso NO fue certificado. Indique el soporte o la observación de la consulta:'
+    )
+    if (soporteVerificacion === null) return
+    if (soporteVerificacion.trim().length < 8) {
+      setError('Debe documentar la comprobación en RUNT con al menos ocho caracteres.')
+      return
+    }
+
     setProcesando(
       true
     )
@@ -2455,6 +2464,8 @@ export default function RuntPage() {
         await ejecutarAccion({
           accion:
             'reiniciar_proceso',
+          confirma_no_certificado: true,
+          soporte_verificacion: soporteVerificacion.trim(),
 
           control_runt_id:
             controlActual.id,
@@ -4022,7 +4033,7 @@ export default function RuntPage() {
                           </div>
 
                           <p className="mt-1">
-                            El registro superó los 90 días calendario sin certificarse. No se permiten nuevos cargues ni certificación sobre este proceso.
+                            El registro superó los 90 días según la fecha anotada y no tiene certificación registrada en DATA-CEA. Antes de reiniciar, verifique el estado real en RUNT; podría estar certificado y pendiente de actualizar aquí.
                           </p>
 
                           <BotonAccion tipo="secundario"
