@@ -789,6 +789,8 @@ export default function RuntPage() {
   // ==========================================================
   // CARGUE
   // ==========================================================
+  const [fechaInscripcionRunt, setFechaInscripcionRunt] = useState(hoyBogota())
+  const [soporteInscripcionRunt, setSoporteInscripcionRunt] = useState('')
 
   const [
     cargue,
@@ -1424,6 +1426,8 @@ export default function RuntPage() {
       []
     )
 
+    setFechaInscripcionRunt(hoyBogota())
+    setSoporteInscripcionRunt('')
     setCargue({
       tipo_clase:
         'TEORIA',
@@ -2087,9 +2091,17 @@ export default function RuntPage() {
       return
     }
 
+    if (!fechaInscripcionRunt) {
+      setError('Debe indicar la fecha real de inscripción en RUNT.')
+      return
+    }
+    if (fechaInscripcionRunt !== hoyBogota() && soporteInscripcionRunt.trim().length < 8) {
+      setError('Indique el soporte de la fecha histórica de inscripción RUNT.')
+      return
+    }
     if (
       !window.confirm(
-        '¿Confirma que el aprendiz ya fue REGISTRADO en la plataforma RUNT?'
+        '¿Confirma que el aprendiz fue INSCRITO realmente en RUNT en la fecha indicada y cuenta con soporte verificable?'
       )
     ) {
       return
@@ -2115,9 +2127,8 @@ export default function RuntPage() {
 
           control_runt_id:
             controlActual.id,
-
-          observaciones:
-            '',
+          fecha_registro: fechaInscripcionRunt,
+          observaciones: soporteInscripcionRunt,
         })
 
       setMensaje(
@@ -4338,6 +4349,26 @@ export default function RuntPage() {
                         Primero debe confirmar que el aprendiz aparece INSCRITO.
                       </div>
                     ) : (
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-semibold block">
+                          Fecha real de inscripción del aprendiz en RUNT
+                          <input type="date" max={hoyBogota()}
+                            className="block w-full border border-slate-300 rounded p-2 mt-1"
+                            value={fechaInscripcionRunt}
+                            onChange={e => setFechaInscripcionRunt(e.target.value)}/>
+                        </label>
+                        <label className="text-[11px] font-semibold block">
+                          Soporte / observaciones de la verificación
+                          <textarea rows={2}
+                            className="block w-full border border-slate-300 rounded p-2 mt-1"
+                            placeholder="Obligatorio cuando la fecha de RUNT es anterior a hoy"
+                            value={soporteInscripcionRunt}
+                            onChange={e => setSoporteInscripcionRunt(e.target.value)}/>
+                        </label>
+                        <p className="text-[10px] text-amber-800">
+                          Los 90 días se calculan desde esta fecha, no desde la matrícula del CEA.
+                          No confirme una fecha que no esté verificada en RUNT.
+                        </p>
                       <BotonAccion tipo="guardar"
                         type="button"
                         onClick={
@@ -4361,6 +4392,7 @@ export default function RuntPage() {
 
                         Marcar REGISTRADO en RUNT
                       </BotonAccion>
+                      </div>
                     )}
 
                   </div>
