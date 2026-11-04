@@ -429,13 +429,19 @@ export default function MantenimientosPage() {
           })
 
         const seleccionado = candidatos[0] || null
+        const vistaDeVehiculo = seleccionado?.vista || ultimo?.vista || vistas[0]?.vista
+        setActividadesConfiguradas(
+          Array.isArray(vistaDeVehiculo?.actividades_configuradas)
+            ? vistaDeVehiculo.actividades_configuradas
+            : []
+        )
 
-        if (!seleccionado) {
+        if (!seleccionado && !ultimo) {
           setProgramacionPreventiva(null)
           return
         }
 
-        const { punto, vista } = seleccionado
+        const { punto, vista } = seleccionado || ultimo
         const actividadesPunto = Array.isArray(punto.actividades)
           ? punto.actividades
           : []
@@ -509,7 +515,7 @@ export default function MantenimientosPage() {
   // ============================================================
 
   useEffect(() => {
-    setActividadesSeleccionadas([])
+    // La selección de actividades no depende del proveedor.
     setActividadCatalogoId('')
     // Conservar la descripción del correctivo al seleccionar o registrar taller.
     // Solo el cambio explícito de tipo/vehículo limpia el servicio.
