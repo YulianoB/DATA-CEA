@@ -936,7 +936,7 @@ async function cargarContexto(
     supabase
       .from('mantenimientos')
       .select(
-        'id,fecha_registro,placa,kilometraje,tipo_mantenimiento,actividad_realizada,programacion_mantenimiento_id,origen_registro'
+        'id,fecha_registro,placa,kilometraje,tipo_mantenimiento,actividad_realizada,repuestos_utilizados,observaciones,programacion_mantenimiento_id,origen_registro'
       )
       .order('fecha_registro')
       .order('id'),
@@ -1032,185 +1032,46 @@ function primeraLecturaQueAlcanza(lecturas, kmObjetivo, fechaMaxima = null) {
 function construirHistorialReconstruido2026({
   vehiculo,
   mantenimientos,
-  preoperacionales,
-  frecuenciaBase,
-  configs,
-  catalogoPorId,
   hoyISO,
 }) {
-  if (!frecuenciaBase) return []
-
-  const niveles =
-    (mantenimientos || [])
-      .map((fila) => ({
-        fila,
-        nivel: obtenerNivelHistorico(fila),
-        fecha: fechaISO(fila.fecha_registro),
-        km: numero(fila.kilometraje),
-      }))
-      .filter(
-        (x) =>
-          x.nivel !== null &&
-          x.fecha &&
-          x.fecha <= hoyISO
-      )
-      .sort(
-        (a, b) =>
-          a.fecha.localeCompare(b.fecha) ||
-          Number(a.fila?.id || 0) -
-            Number(b.fila?.id || 0)
-      )
-
-  if (!niveles.length) return []
-
-  const ancla = niveles[niveles.length - 1]
-  let kmAncla = ancla.km
-
-  if (kmAncla === null) {
-    const lecturas =
-      depurarLecturasPreoperacionales(
-        preoperacionales || []
-      ).filter(
-        (x) => x.fecha <= ancla.fecha
-      )
-
-    kmAncla =
-      lecturas.length
-        ? lecturas[lecturas.length - 1].km
-        : null
-  }
-
-  if (kmAncla === null) return []
-
-  const porNivel = new Map()
-  for (const item of niveles) {
-    porNivel.set(item.nivel, item)
-  }
-
-  const salida = []
-
-  for (
-    let punto = 1;
-    punto <= ancla.nivel;
-    punto += 1
-  ) {
-    const kmObjetivo =
-      kmAncla -
-      (ancla.nivel - punto) *
-        Number(frecuenciaBase)
-
-    const lecturaVencimiento =
-      primeraLecturaQueAlcanza(
-        preoperacionales,
-        kmObjetivo,
-        hoyISO
-      )
-
-    const mantenimientoNivel =
-      porNivel.get(punto) || null
-
-    const actividades =
-      actividadesDelPuntoMaestro({
-        configs,
-        frecuenciaBase,
-        puntoMaestro: punto,
-      }).map((config) =>
-        describirActividad(
-          config,
-          catalogoPorId
-        )
-      )
-
-    if (mantenimientoNivel) {
-      const fechaEjecucion =
-        mantenimientoNivel.fecha
-
-      if (
-        fechaEjecucion.slice(0, 4) ===
-        '2026'
-      ) {
-        salida.push({
-          id:
-            `HIST-M-${mantenimientoNivel.fila.id}`,
-          materializado: true,
-          historico_reconstruido: true,
-          antecedente_anterior_al_plan: true,
-          nivel_historico: punto,
-          fuente_historica:
-            'MANTENIMIENTOS',
-          vehiculo_id:
-            vehiculo.id,
-          placa:
-            vehiculo.placa,
-          punto,
-          ciclo: punto,
-          estado: 'EJECUTADO',
-          fecha_ejecucion:
-            fechaEjecucion,
-          km_ejecucion:
-            mantenimientoNivel.km,
-          km_objetivo:
-            kmObjetivo,
-          fecha_debio_realizarse:
-            lecturaVencimiento?.fecha ||
-            null,
-          km_debio_realizarse:
-            kmObjetivo,
-          actividad_historica:
-            mantenimientoNivel.fila
-              ?.actividad_realizada ||
-            null,
-          // No atribuir a mantenimientos antiguos las actividades del plan nuevo.
-          actividades: [],
-          total_actividades: 0,
-        })
-      }
-
-      continue
-    }
-
-    if (
-      lecturaVencimiento &&
-      lecturaVencimiento.fecha.slice(0, 4) ===
-        '2026' &&
-      lecturaVencimiento.fecha <= hoyISO
-    ) {
-      salida.push({
-        id:
-          `HIST-V-${vehiculo.id}-${punto}`,
-        materializado: true,
-        historico_reconstruido: true,
-        fuente_historica:
-          'PREOPERACIONALES',
-        vehiculo_id:
-          vehiculo.id,
-        placa:
-          vehiculo.placa,
-        punto,
-        ciclo: punto,
-        estado: 'VENCIDO',
-        fecha_vencimiento:
-          lecturaVencimiento.fecha,
-        km_vencimiento:
-          lecturaVencimiento.km,
-        km_objetivo:
-          kmObjetivo,
-        fecha_debio_realizarse:
-          lecturaVencimiento.fecha,
-        km_debio_realizarse:
-          kmObjetivo,
-        justificacion_vencimiento:
-          null,
-        actividades,
-        total_actividades:
-          actividades.length,
-      })
-    }
-  }
-
-  // Los puntos vencidos reconstruidos de una época sin plan formal no
-  // representan obligaciones del ciclo nuevo y no se contabilizan.
-  return salida.filter((item) => item.fuente_historica === 'MANTENIMIENTOS')
+  // Registros reales del año de puesta en marcha. Sin inferir obligaciones,
+  // niveles, actividades de catálogo o kilometrajes que no se registraron.
+  // Los mantenimientos vinculados a puntos del plan nuevo se visualizan
+  // exclusivamente como ejecuciones del plan, para no duplicarlos.
+  return (mantenimientos || [])
+    .filter((fila) => {
+      const fecha = fechaISO(fila.fecha_registro)
+      return fecha &&
+        fecha.startsWith('2026-') &&
+        fecha <= hoyISO &&
+        !fila.programacion_mantenimiento_id &&
+        clave(fila.tipo_mantenimiento) === 'PREVENTIVO'
+    })
+    .map((fila) => ({
+      id: `HIST-M-${fila.id}`,
+      mantenimiento_historico_id: fila.id,
+      materializado: true,
+      historico_reconstruido: true,
+      antecedente_anterior_al_plan: true,
+      fuente_historica: 'MANTENIMIENTOS',
+      vehiculo_id: vehiculo.id,
+      placa: vehiculo.placa,
+      punto: null,
+      ciclo: null,
+      estado: 'EJECUTADO',
+      tipo_mantenimiento: fila.tipo_mantenimiento,
+      fecha_ejecucion: fechaISO(fila.fecha_registro),
+      km_ejecucion: numero(fila.kilometraje),
+      actividad_historica: fila.actividad_realizada || null,
+      repuestos_historicos: fila.repuestos_utilizados || null,
+      observaciones_historicas: fila.observaciones || null,
+      actividades: [],
+      total_actividades: 0,
+    }))
+    .sort((a, b) =>
+      String(a.fecha_ejecucion).localeCompare(String(b.fecha_ejecucion)) ||
+      Number(a.mantenimiento_historico_id) - Number(b.mantenimiento_historico_id)
+    )
 }
 
 function construirVistaVehiculo({
@@ -1330,40 +1191,11 @@ function construirVistaVehiculo({
     ? 'P1_PENDIENTE_PRIMER_MANTENIMIENTO_REAL'
     : 'ULTIMA_EJECUCION_DEL_NUEVO_PLAN'
 
-  const historialReconstruido2026 =
-    construirHistorialReconstruido2026({
-      vehiculo,
-      mantenimientos:
-        mantenimientosPorPlaca.get(
-          placaClave(
-            vehiculo.placa
-          )
-        ) || [],
-      preoperacionales:
-        preopPorPlaca.get(
-          placaClave(
-            vehiculo.placa
-          )
-        ) || [],
-      frecuenciaBase,
-      configs,
-      catalogoPorId,
-      hoyISO:
-        contexto.hoyISO,
-    }).filter(
-      (historico) =>
-        !hechos.some(
-          (hecho) =>
-            Number(
-              hecho.punto ||
-              hecho.ciclo
-            ) ===
-            Number(
-              historico.punto ||
-              historico.ciclo
-            )
-        )
-    )
+  const historialReconstruido2026 = construirHistorialReconstruido2026({
+    vehiculo,
+    mantenimientos: mantenimientosPorPlaca.get(placaClave(vehiculo.placa)) || [],
+    hoyISO: contexto.hoyISO,
+  })
 
   const errores = []
 
@@ -2213,13 +2045,13 @@ export async function GET(request) {
           true,
         tolerancia_km_default:
           TOLERANCIA_KM_DEFAULT,
-        get_solo_lectura: false,
+        get_solo_lectura: true,
         vencimiento_materializado_automaticamente:
-          true,
+          false,
         referencia_automatica:
           'ULTIMO_PREOPERACIONAL',
         punto_inicial_automatico:
-          'ULTIMO_NIVEL_EN_ACTIVIDAD_REALIZADA_MAS_UNO',
+          'P1_PRIMER_SERVICIO_PREVENTIVO_REAL',
       },
 
       resumen: {
