@@ -105,37 +105,37 @@ function PuntoChip({ punto, tipo, onClick }) {
     <button
       type="button"
       onClick={() => onClick(punto, tipo)}
-      className={`w-full rounded-lg border px-2 py-2 text-left shadow-sm transition hover:shadow ${claseEstado(tipo)}`}
+      className={`w-full rounded-md border px-1.5 py-1.5 text-left shadow-sm transition hover:shadow ${claseEstado(tipo)}`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-extrabold">
+      <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5">
+        <span className="text-[10px] font-extrabold">
           P{punto?.punto || punto?.ciclo || '—'}
         </span>
-        <span className="text-[9px] font-bold uppercase">
+        <span className="text-[8px] font-bold uppercase">
           {etiquetaEstado(tipo)}
         </span>
       </div>
 
       {frecuencias.length > 0 && (
-        <div className="mt-1 text-[9px] font-semibold">
+        <div className="mt-0.5 break-words text-[9px] font-semibold">
           {frecuencias.map((f) => `${formatoNumero(f / 1000)}k`).join(' + ')}
         </div>
       )}
 
       {punto?.historico_reconstruido && (
-        <div className="mt-1 text-[8px] font-extrabold uppercase tracking-wide text-slate-600">
+        <div className="mt-0.5 text-[8px] font-extrabold uppercase tracking-wide text-slate-600">
           Historial 2026
         </div>
       )}
 
       {punto?.fecha_debio_realizarse && (
-        <div className="mt-1 text-[9px] text-slate-700">
+        <div className="mt-0.5 text-[9px] text-slate-700">
           Debió: {formatoFecha(punto.fecha_debio_realizarse)}
         </div>
       )}
 
       {tipo === 'PROGRAMADO' && punto?.km_objetivo != null && (
-        <div className="mt-1 text-[9px]">
+        <div className="mt-0.5 text-[9px]">
           Objetivo {formatoKm(punto.km_objetivo)}
         </div>
       )}
@@ -519,13 +519,13 @@ export default function PlanMantenimientoPage() {
                   <table className="min-w-[1650px] w-full border-collapse">
                     <thead>
                       <tr className="text-[10px] font-extrabold uppercase tracking-wide" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, color: ESTILO_ENCABEZADO_TABLA.texto }}>
-                        <th className="sticky left-0 z-20 min-w-[250px] border-b border-r border-slate-300 px-3 py-3 text-left" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo }}>
+                        <th className="sticky left-0 z-40 w-[212px] border-b border-r border-slate-300 px-2 py-2 text-left" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo }}>
                           Vehículo
                         </th>
                         {MESES.map((mes) => (
                           <th
                             key={mes}
-                            className="min-w-[112px] border-b border-r border-slate-300 px-2 py-3 text-center"
+                            className="border-b border-r border-slate-300 px-1 py-2 text-center"
                           >
                             {mes}
                           </th>
@@ -668,7 +668,7 @@ function FilaVehiculo({ vista, abrirPunto }) {
 
   return (
     <tr className="align-top">
-      <td className="sticky left-0 z-10 border-b border-r border-slate-300 bg-white px-3 py-3">
+      <td className="sticky left-0 z-10 border-b border-r border-slate-300 bg-white px-2 py-2">
         <div className="font-extrabold text-slate-900">
           {v.placa}
         </div>
@@ -676,7 +676,7 @@ function FilaVehiculo({ vista, abrirPunto }) {
           {[v.marca, v.linea].filter(Boolean).join(' · ')}
         </div>
 
-        <div className="mt-2 space-y-1 text-[10px] text-slate-600">
+        <div className="mt-1 space-y-0.5 text-[10px] text-slate-600">
           <div className="flex items-center gap-1.5">
             <Gauge size={12} />
             <span>
@@ -714,9 +714,9 @@ function FilaVehiculo({ vista, abrirPunto }) {
         return (
           <td
             key={mes}
-            className="border-b border-r border-slate-300 bg-slate-50/40 px-1.5 py-2"
+            className="border-b border-r border-slate-300 bg-slate-50/40 px-1 py-1.5"
           >
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {celda.vencidos.map((p) => (
                 <PuntoChip
                   key={`v-${p.id || p.punto}`}
