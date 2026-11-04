@@ -109,14 +109,14 @@ function PuntoChip({ punto, tipo, onClick }) {
     >
       <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5">
         <span className="text-[10px] font-extrabold">
-          P{punto?.punto || punto?.ciclo || '—'}
+          {punto?.historico_reconstruido ? 'HISTÓRICO' : `P${punto?.punto || punto?.ciclo || '—'}`}
         </span>
         <span className="text-[8px] font-bold uppercase">
-          {etiquetaEstado(tipo)}
+          {punto?.historico_reconstruido ? 'ANTECEDENTE' : etiquetaEstado(tipo)}
         </span>
       </div>
 
-      {frecuencias.length > 0 && (
+      {!punto?.historico_reconstruido && frecuencias.length > 0 && (
         <div className="mt-0.5 break-words text-[9px] font-semibold">
           {frecuencias.map((f) => `${formatoNumero(f / 1000)}k`).join(' + ')}
         </div>
@@ -124,11 +124,11 @@ function PuntoChip({ punto, tipo, onClick }) {
 
       {punto?.historico_reconstruido && (
         <div className="mt-0.5 text-[8px] font-extrabold uppercase tracking-wide text-slate-600">
-          Historial 2026
+          Anterior al plan
         </div>
       )}
 
-      {punto?.fecha_debio_realizarse && (
+      {!punto?.historico_reconstruido && punto?.fecha_debio_realizarse && (
         <div className="mt-0.5 text-[9px] text-slate-700">
           Debió: {formatoFecha(punto.fecha_debio_realizarse)}
         </div>
@@ -148,9 +148,9 @@ function contarMes(mes) {
   const pendientes =
     (mes?.programados || []).length
   const ejecutados =
-    (mes?.ejecutados || []).length
+    (mes?.ejecutados || []).filter((p) => !p.historico_reconstruido).length
   const vencidos =
-    (mes?.vencidos || []).length
+    (mes?.vencidos || []).filter((p) => !p.historico_reconstruido).length
 
   return {
     programados:
@@ -804,10 +804,10 @@ function ModalPunto({
             <div className="flex min-w-[92px] items-center rounded-lg border border-slate-300 bg-white px-3 py-2">
               <div>
                 <div className="text-[9px] font-extrabold uppercase tracking-wide text-slate-500">
-                  Punto
+                  {punto?.historico_reconstruido ? 'Antecedente' : 'Punto'}
                 </div>
                 <div className="text-sm font-extrabold text-slate-900">
-                  P{punto?.punto || punto?.ciclo}
+                  {punto?.historico_reconstruido ? 'HISTÓRICO' : `P${punto?.punto || punto?.ciclo}`}
                 </div>
               </div>
             </div>
@@ -818,7 +818,7 @@ function ModalPunto({
                   Estado
                 </div>
                 <div className="text-xs font-extrabold">
-                  {etiquetaEstado(tipo)}
+                  {punto?.historico_reconstruido ? 'ANTECEDENTE' : etiquetaEstado(tipo)}
                 </div>
               </div>
             </div>
@@ -880,7 +880,7 @@ function ModalPunto({
           {punto?.historico_reconstruido && (
             <div className="mt-4 rounded-xl border border-slate-300 bg-slate-50 p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wide text-slate-600">
-                Reconstrucción histórica 2026
+                Mantenimiento anterior al plan
               </div>
 
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -912,7 +912,7 @@ function ModalPunto({
             </div>
           )}
 
-          <div className="mt-5">
+          {!punto?.historico_reconstruido && <div className="mt-5">
             <div className="mb-2 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wide text-slate-700">
               <Wrench size={14} />
               Actividades del punto
@@ -959,7 +959,7 @@ function ModalPunto({
                 ))}
               </div>
             )}
-          </div>
+          </div>}
 
           {tipo === 'VENCIDO' &&
             punto?.justificacion_vencimiento && (
