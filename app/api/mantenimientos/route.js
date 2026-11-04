@@ -1080,6 +1080,7 @@ export async function POST(request) {
       let actividadesRequeridas = []
       let actividadesSeleccionadas = []
       let normalizacionP1 = false
+      let configuracionAceiteId = null
       let actividadesAdicionales = []
 
       if (tipoMantenimiento === 'PREVENTIVO') {
@@ -1159,6 +1160,7 @@ export async function POST(request) {
           const nombre = normalizar(catalogoPorId.get(Number(cfg.actividad_id))?.nombre)
           return nombre === 'ACEITE DE MOTOR Y FILTRO DE ACEITE' || nombre === 'ACEITE DE MOTOR' || nombre.includes('CAMBIO DE ACEITE')
         })
+        configuracionAceiteId = Number(configBase?.id)
         const frecuenciaBase = Number(configBase?.frecuencia_km)
 
         if (!Number.isFinite(frecuenciaBase) || frecuenciaBase <= 0) {
@@ -1706,7 +1708,7 @@ export async function POST(request) {
         const ejecutadasIds = new Set(ejecutadas.map((x) => Number(x.vehiculo_mantenimiento_config_id)))
         // Solo el servicio base de aceite controla la secuencia P1/P2/...
         // La falta de otras actividades de la guía no bloquea el siguiente punto.
-        const completo = ejecutadasIds.has(Number(configBase.id))
+        const completo = ejecutadasIds.has(configuracionAceiteId)
 
         if (completo) {
           const { error: actualizarProgramacionError } = await supabase
