@@ -1191,16 +1191,9 @@ export async function POST(request) {
         if (errorEstadoPlan) {
           return NextResponse.json({ status: 'failed', message: errorEstadoPlan.message }, { status: 500 })
         }
-        const normalizacionP1 = ciclo === 1 &&
-          estadoPlan?.estado === 'FINALIZADO' &&
-          estadoPlan?.km_referencia != null &&
-          Boolean(estadoPlan?.fecha_referencia)
-        if (normalizacionP1 && kmRegistro < Number(estadoPlan.km_referencia)) {
-          return NextResponse.json({
-            status: 'failed',
-            message: 'El kilometraje del primer P1 no puede ser inferior al registrado al iniciar la normalización.',
-          }, { status: 409 })
-        }
+        const normalizacionP1 = ciclo === 1 && estadoPlan?.estado === 'FINALIZADO'
+        // La referencia inicial se acredita al guardar el primer servicio real.
+        // Un anclaje administrativo previo no debe impedir ese primer servicio.
 
         if (
           !Number.isFinite(kmRegistro) ||
@@ -1245,6 +1238,15 @@ export async function POST(request) {
           return NextResponse.json({ status: 'failed', message: 'Este punto preventivo ya se encuentra completamente ejecutado.' }, { status: 409 })
         }
 
+        if (existente && normalizacionP1 &&
+            String(existente.estado || '').toUpperCase() === 'VENCIDO' &&
+            !existente.mantenimiento_id) {
+          return NextResponse.json({
+            status: 'failed',
+            code: 'P1_PROGRAMACION_ANTERIOR_REQUIERE_REVISION',
+            message: 'Existe un vencimiento automático anterior al inicio del plan que ocupa P1. Administración debe revisar esta programación antes de registrar el primer servicio; no se modificó el histórico.',
+          }, { status: 409 })
+        }
         if (existente) {
           programacionPreventiva = existente
         } else {
@@ -1631,6 +1633,30 @@ export async function POST(request) {
               },
               { status: 500 }
             )
+          }
+        }
+
+        if (normalizacionP1) {
+          // La primera referencia oficial corresponde al servicio registrado,
+          // no a la fecha de configuración ni a un mantenimiento histórico.
+          const { error: anclajeError } = await supabase
+            .from('vehiculo_mantenimiento_plan_estado')
+            .update({
+              numero_punto_actual: 1,
+              km_referencia: kilometraje,
+              fecha_referencia: payload.fecha_registro,
+              frecuencia_base_km: frecuenciaBase,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('vehiculo_id', Number(body.vehiculo_id))
+            .eq('estado', 'FINALIZADO')
+          if (anclajeError) {
+            return NextResponse.json({
+              status: 'failed',
+              code: 'MANTENIMIENTO_GUARDADO_INICIO_NO_ACTUALIZADO',
+              message: `Mantenimiento guardado, pero no se pudo fijar la referencia inicial: ${anclajeError.message}. No registre de nuevo sin revisar el mantenimiento guardado.`,
+              mantenimiento: data,
+            }, { status: 500 })
           }
         }
 
