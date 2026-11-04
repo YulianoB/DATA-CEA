@@ -448,13 +448,9 @@ export default function MantenimientosPage() {
           ? punto.actividades
           : []
 
-        const tolerancias = actividadesPunto
-          .map((act) => Number(act?.tolerancia_km))
-          .filter((valor) => Number.isFinite(valor) && valor >= 0)
-
-        const toleranciaKm = tolerancias.length
-          ? Math.min(...tolerancias)
-          : Number(punto?.tolerancia_km ?? 500)
+        // La tolerancia de la base depende del cambio de aceite,
+        // no de otras actividades con frecuencias diferentes.
+        const toleranciaKm = Number(punto?.tolerancia_km ?? 500)
 
         const kmObjetivo = Number(punto?.km_objetivo)
         const kmActual = Number(vista?.kilometraje?.ultimo_km)
