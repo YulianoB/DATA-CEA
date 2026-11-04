@@ -407,26 +407,6 @@ export default function ConfiguracionPlanMantenimientoPage() {
     } finally { setGuardando(false) }
   }
 
-  async function activarNormalizacion() {
-    if (!vehiculoDetalle || estadoConfiguracion !== 'FINALIZADO' || inicioNormalizacion?.iniciado) return
-    if (!window.confirm(`¿Iniciar P1 para ${vehiculoDetalle.placa} desde el último kilometraje preoperacional? No se modificará el historial.`)) return
-    setGuardando(true); setError(''); setMensaje('')
-    try {
-      const nit = obtenerNitUsuario()
-      const res = await fetch('/api/admin/mantenimientos/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-cea-nit': nit },
-        body: JSON.stringify({ nit, accion: 'INICIAR_NORMALIZACION', vehiculo_id: vehiculoDetalle.id }),
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok || !data?.ok) throw new Error(mensajeError(data, 'No se pudo iniciar P1.'))
-      setMensaje(data.mensaje || 'P1 iniciado.')
-      await cargarDetalle(vehiculoDetalle.id)
-      await cargarVehiculos()
-    } catch (e) { setError(e?.message || 'No fue posible iniciar P1.') }
-    finally { setGuardando(false) }
-  }
-
   async function reabrirConfiguracion() {
     if (!vehiculoDetalle || estadoConfiguracion !== 'FINALIZADO') return
     setGuardando(true); setError(''); setMensaje('')
@@ -742,11 +722,6 @@ export default function ConfiguracionPlanMantenimientoPage() {
                 <div className="flex gap-2">
                   <BotonAccion tipo="cancelar" type="button" onClick={cerrarModal} disabled={guardando} className="rounded-md border px-3 py-1.5 text-xs">Cerrar</BotonAccion>
                   {estadoConfiguracion === 'FINALIZADO' ? (<>
-                    {!inicioNormalizacion?.iniciado && (
-                      <BotonAccion tipo="guardar" type="button" onClick={activarNormalizacion} disabled={guardando} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
-                        {guardando ? 'Procesando...' : 'Iniciar P1 de normalización'}
-                      </BotonAccion>
-                    )}
                     <BotonAccion tipo="editar" type="button" onClick={reabrirConfiguracion} disabled={guardando} className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
                       {guardando ? 'Procesando...' : 'Reabrir configuración'}
                     </BotonAccion>
