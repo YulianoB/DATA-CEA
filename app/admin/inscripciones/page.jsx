@@ -827,18 +827,6 @@ export default function InscripcionesPage() {
       null
     )
 
-  // Historial de continuación asociado a una matrícula existente.
-  const [continuaciones, setContinuaciones] = useState([])
-  const [continuacionAbierta, setContinuacionAbierta] = useState(false)
-  const [guardandoContinuacion, setGuardandoContinuacion] = useState(false)
-  const [errorContinuacion, setErrorContinuacion] = useState('')
-  const [formContinuacion, setFormContinuacion] = useState({
-    fecha_continuacion: fechaLocalHoy(),
-    motivo: '',
-    observaciones: ''
-  })
-
-
   // ==========================================================
   // MENSAJES
   // ==========================================================
@@ -914,65 +902,6 @@ export default function InscripcionesPage() {
         user,
       ]
     )
-
-  useEffect(() => {
-    const id = matriculaSeleccionada?.id
-    setContinuaciones([])
-    setContinuacionAbierta(false)
-    setErrorContinuacion('')
-    if (!drawerOpen || !id || !nit) return
-    let cancelled = false
-    const params = new URLSearchParams({
-      recurso: 'continuaciones',
-      matricula_id: String(id),
-      nit
-    })
-    fetchJsonSeguro(`${API_URL}?${params.toString()}`)
-      .then(json => {
-        if (!cancelled) setContinuaciones(Array.isArray(json?.data) ? json.data : [])
-      })
-      .catch(err => {
-        if (!cancelled) setErrorContinuacion(
-          'No fue posible consultar las continuaciones. Verifique la migración SQL: ' + (err.message || '')
-        )
-      })
-    return () => { cancelled = true }
-  }, [matriculaSeleccionada?.id, drawerOpen, nit])
-
-  async function guardarContinuacion() {
-    if (!matriculaSeleccionada?.id || guardandoContinuacion) return
-    const responsable = texto(user?.nombre_completo || user?.nombre ||
-      user?.usuario || user?.nombres || user?.email)
-    if (!responsable || formContinuacion.motivo.trim().length < 8) {
-      setErrorContinuacion('Indique un motivo de mínimo ocho caracteres y verifique el usuario de sesión.')
-      return
-    }
-    setGuardandoContinuacion(true)
-    setErrorContinuacion('')
-    try {
-      await fetchJsonSeguro(API_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          nit, accion: 'registrar_continuacion',
-          matricula_id: matriculaSeleccionada.id,
-          ...formContinuacion,
-          usuario: responsable
-        })
-      })
-      const params = new URLSearchParams({
-        recurso: 'continuaciones', matricula_id: String(matriculaSeleccionada.id), nit
-      })
-      const json = await fetchJsonSeguro(`${API_URL}?${params.toString()}`)
-      setContinuaciones(Array.isArray(json?.data) ? json.data : [])
-      setFormContinuacion({fecha_continuacion:fechaLocalHoy(),motivo:'',observaciones:''})
-      setContinuacionAbierta(false)
-    } catch (err) {
-      setErrorContinuacion(err.message || 'No se pudo registrar la continuación.')
-    } finally {
-      setGuardandoContinuacion(false)
-    }
-  }
 
   // ==========================================================
   // RESUMEN POR CATEGORÍA
@@ -2271,59 +2200,6 @@ export default function InscripcionesPage() {
                     <i className="fas fa-exclamation-triangle mr-2"></i>
                     {error}
                   </div>
-                )}
-
-                {matriculaSeleccionada && (
-                  <section className="border border-slate-300 rounded-lg p-3 mb-3 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <strong className="text-xs">Continuaciones de matrícula</strong>
-                        <p className="text-[11px] text-slate-600">Matrícula original {matriculaSeleccionada.consecutivo}. No se generará otro consecutivo.</p>
-                      </div>
-                      <button type="button"
-                        onClick={()=>setContinuacionAbierta(a=>!a)}
-                        className="border rounded px-3 py-2 text-[11px]">
-                        {continuacionAbierta ? 'Cancelar' : 'Registrar continuación'}
-                      </button>
-                    </div>
-                    {errorContinuacion && <p className="text-red-700 text-[11px]">{errorContinuacion}</p>}
-                    {continuacionAbierta && (
-                      <div className="bg-slate-50 border rounded-lg p-3 space-y-2">
-                        <label className="block text-[11px]">Fecha de continuación
-                          <input type="date" value={formContinuacion.fecha_continuacion}
-                            className="w-full border rounded p-2"
-                            onChange={e=>setFormContinuacion(a=>({...a,fecha_continuacion:e.target.value}))}/>
-                        </label>
-                        <label className="block text-[11px]">Motivo / vencimiento de términos
-                          <textarea rows={2} className="w-full border rounded p-2"
-                            value={formContinuacion.motivo}
-                            onChange={e=>setFormContinuacion(a=>({...a,motivo:e.target.value}))}/>
-                        </label>
-                        <label className="block text-[11px]">Observaciones y controles externos verificados
-                          <textarea rows={2} className="w-full border rounded p-2"
-                            value={formContinuacion.observaciones}
-                            onChange={e=>setFormContinuacion(a=>({...a,observaciones:e.target.value}))}/>
-                        </label>
-                        <p className="text-[10px]">El registro no activa automáticamente PIN SICOV, RUNT, SIET ni nuevas obligaciones en Caja.</p>
-                        <button type="button" disabled={guardandoContinuacion}
-                          onClick={guardarContinuacion}
-                          className="rounded bg-[#173A57] text-white px-3 py-2 text-[11px]">
-                          Guardar continuación
-                        </button>
-                      </div>
-                    )}
-                    {continuaciones.length > 0 ? (
-                      <div className="space-y-1">
-                        {continuaciones.map(item=>(
-                          <div key={item.id} className="border-t py-2 text-[11px]">
-                            <strong>{formatearFecha(item.fecha_continuacion)}</strong> · {item.motivo}
-                            {item.observaciones && <p>{item.observaciones}</p>}
-                            <p className="text-slate-500">Registró: {item.registrado_por}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : <p className="text-[11px] text-slate-500">Sin continuaciones registradas.</p>}
-                  </section>
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-3">
