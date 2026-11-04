@@ -113,6 +113,8 @@ export default function MantenimientosPage() {
   const [actividadesPlan, setActividadesPlan] = useState([])
   const [nivelSeleccionadoId, setNivelSeleccionadoId] = useState('')
   const [programacionPreventiva, setProgramacionPreventiva] = useState(null)
+  const [ultimoPuntoEjecutado, setUltimoPuntoEjecutado] = useState(null)
+  const [usarUltimoPunto, setUsarUltimoPunto] = useState(false)
   const [cargandoProgramacion, setCargandoProgramacion] = useState(false)
   const [actividadesSeleccionadas, setActividadesSeleccionadas] = useState([])
   const [actividadesAdicionales, setActividadesAdicionales] = useState([])
@@ -376,6 +378,26 @@ export default function MantenimientosPage() {
           return
         }
 
+        const puntosEjecutados = vistas.flatMap(({ vista }) =>
+          (vista.hechos || [])
+            .filter(p => String(p?.estado || '').toUpperCase() === 'EJECUTADO' && p.mantenimiento_id && p.km_ejecucion != null)
+            .map(p => ({ punto: p, vista }))
+        ).sort((a, b) => Number(b.punto.ciclo || 0) - Number(a.punto.ciclo || 0))
+        const ultimo = puntosEjecutados[0]
+        setUltimoPuntoEjecutado(ultimo ? {
+          ...ultimo.punto,
+          vehiculo_id: Number(ultimo.vista.vehiculo?.id),
+          frecuencia_base_km: Number(ultimo.vista.frecuencia_base_km),
+          km_objetivo: Number(ultimo.punto.km_ejecucion),
+          tolerancia_km: 500,
+          km_minimo: Number(ultimo.punto.km_ejecucion) - 500,
+          km_maximo: Number(ultimo.punto.km_ejecucion) + 500,
+          dentro_tolerancia: true,
+          actividades: ultimo.vista.actividades_configuradas || [],
+          servicio_adicional_punto: true,
+        } : null)
+        setUsarUltimoPunto(false)
+
         const candidatos = vistas
           .flatMap(({ vigencia, vista }) => {
             const puntos = [
@@ -568,8 +590,16 @@ export default function MantenimientosPage() {
 
   // Las actividades del punto son independientes del taller seleccionado.
   // Un mismo punto puede recibir intervenciones de distintos proveedores.
+  const kilometrajeServicio = kilometraje === '' ? null : Number(kilometraje)
+  const puedeAsociarUltimo = ultimoPuntoEjecutado &&
+    kilometrajeServicio !== null && Number.isFinite(kilometrajeServicio) &&
+    Math.abs(kilometrajeServicio - Number(ultimoPuntoEjecutado.km_ejecucion)) <= 500
+  const programacionParaRegistro = tipoMant === 'PREVENTIVO' && usarUltimoPunto && puedeAsociarUltimo
+    ? ultimoPuntoEjecutado
+    : programacionPreventiva
+
   const actividadesPreventivasDisponibles = useMemo(() => {
-    const sugeridas = programacionPreventiva?.actividades || []
+    const sugeridas = programacionParaRegistro?.actividades || []
     const idsSugeridas = new Set(sugeridas.map(x => Number(x.configuracion_id)))
     return [
       ...sugeridas.map(x => ({ ...x, sugerida: true })),
@@ -577,7 +607,7 @@ export default function MantenimientosPage() {
         .filter(x => !idsSugeridas.has(Number(x.configuracion_id)))
         .map(x => ({ ...x, sugerida: false })),
     ]
-  }, [programacionPreventiva, actividadesConfiguradas])
+  }, [programacionParaRegistro, actividadesConfiguradas])
 
   // ============================================================
   // Cambio de técnico
@@ -793,8 +823,8 @@ export default function MantenimientosPage() {
     if (
       tipoMant === 'PREVENTIVO' &&
       (
-        !programacionPreventiva ||
-        !programacionPreventiva?.dentro_tolerancia ||
+        !programacionParaRegistro ||
+        !programacionParaRegistro?.dentro_tolerancia ||
         (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0)
       )
     ) {
@@ -820,7 +850,7 @@ export default function MantenimientosPage() {
     tipoMant,
     actividad,
     nivelSeleccionadoId,
-    programacionPreventiva,
+    programacionParaRegistro,
     actividadesSeleccionadas,
     actividadesAdicionales,
     proveedorId,
@@ -850,8 +880,8 @@ export default function MantenimientosPage() {
       seccion = 1
     }
     if (tipoMant === 'PREVENTIVO') {
-      if (!programacionPreventiva) faltantes.push('No se encontró un punto preventivo disponible para el vehículo.')
-      else if (!programacionPreventiva.dentro_tolerancia) faltantes.push('El punto preventivo aún no está habilitado por kilometraje.')
+      if (!programacionParaRegistro) faltantes.push('No se encontró un punto preventivo disponible para el vehículo.')
+      else if (!programacionParaRegistro.dentro_tolerancia) faltantes.push('El punto preventivo aún no está habilitado por kilometraje.')
       if (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0) {
         faltantes.push('Seleccione una actividad del plan o agregue al menos una actividad realmente realizada.')
         if (!seccion) seccion = 2
@@ -895,7 +925,7 @@ export default function MantenimientosPage() {
 
         actividad_realizada:
           tipoMant === 'PREVENTIVO'
-            ? `MANTENIMIENTO PREVENTIVO P${programacionPreventiva?.ciclo || 1}`
+            ? `MANTENIMIENTO PREVENTIVO P${programacionParaRegistro?.ciclo || 1}`
             : actividad.trim(),
 
         actividad_catalogo_id:
@@ -905,23 +935,25 @@ export default function MantenimientosPage() {
 
         vehiculo_id:
           tipoMant === 'PREVENTIVO'
-            ? Number(programacionPreventiva?.vehiculo_id)
+            ? Number(programacionParaRegistro?.vehiculo_id)
             : null,
 
         ciclo:
           tipoMant === 'PREVENTIVO'
-            ? Number(programacionPreventiva?.ciclo)
+            ? Number(programacionParaRegistro?.ciclo)
             : null,
 
         km_objetivo:
           tipoMant === 'PREVENTIVO'
-            ? Number(programacionPreventiva?.km_objetivo)
+            ? Number(programacionParaRegistro?.km_objetivo)
             : null,
 
         actividades_config_ids:
           tipoMant === 'PREVENTIVO'
             ? actividadesSeleccionadas.map(Number)
             : [],
+        servicio_adicional_punto:
+          tipoMant === 'PREVENTIVO' && Boolean(programacionParaRegistro?.servicio_adicional_punto),
         actividades_adicionales:
           tipoMant === 'PREVENTIVO' ? actividadesAdicionales : [],
         actividades_pendientes:
@@ -1367,6 +1399,25 @@ export default function MantenimientosPage() {
               <option value="CORRECTIVO">Correctivo</option>
             </select>
           </div>
+          {tipoMant === 'PREVENTIVO' && ultimoPuntoEjecutado && (
+            <div className="mb-4 rounded-xl border border-blue-300 bg-blue-50 p-3">
+              <label className="flex items-start gap-2 text-sm font-semibold text-blue-950">
+                <input type="checkbox" className="mt-1 h-5 w-5" checked={usarUltimoPunto}
+                  disabled={!puedeAsociarUltimo}
+                  onChange={(e) => {
+                    setUsarUltimoPunto(e.target.checked)
+                    setActividadesSeleccionadas([])
+                    setActividadesPendientes({})
+                  }} />
+                Asociar este servicio al P{ultimoPuntoEjecutado.ciclo} ya ejecutado (otro proveedor o actividad)
+              </label>
+              <p className="mt-1 text-xs text-blue-900">
+                Cambio de aceite: {Number(ultimoPuntoEjecutado.km_ejecucion).toLocaleString('es-CO')} km.
+                Rango admitido: ±500 km. El aceite y la fecha base no se modificarán.
+              </p>
+              {!puedeAsociarUltimo && <p className="mt-1 text-xs text-amber-800">Ingrese un kilometraje dentro del rango para habilitar esta opción.</p>}
+            </div>
+          )}
           {tipoMant === 'PREVENTIVO' && (
             <div className="mb-4">
               <div className="space-y-3">
@@ -1378,7 +1429,7 @@ export default function MantenimientosPage() {
                   <div className="border rounded-xl p-4 bg-slate-50 text-sm text-slate-600">
                     Seleccione primero la placa del vehículo.
                   </div>
-                ) : !programacionPreventiva ? (
+                ) : !programacionParaRegistro ? (
                   <div className="border border-orange-200 rounded-xl p-4 bg-orange-50">
                     <p className="text-sm font-bold text-orange-800">Sin punto preventivo disponible</p>
                     <p className="text-xs text-orange-700 mt-1">
@@ -1391,10 +1442,10 @@ export default function MantenimientosPage() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-[11px] text-slate-300">Punto preventivo</p>
-                          <p className="text-xl font-bold">P{programacionPreventiva.ciclo}</p>
+                          <p className="text-xl font-bold">P{programacionParaRegistro.ciclo}</p>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${String(programacionPreventiva.estado).toUpperCase() === 'VENCIDO' ? 'bg-orange-200 text-orange-900' : 'bg-blue-200 text-blue-900'}`}>
-                          {programacionPreventiva.estado}
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${String(programacionParaRegistro.estado).toUpperCase() === 'VENCIDO' ? 'bg-orange-200 text-orange-900' : 'bg-blue-200 text-blue-900'}`}>
+                          {programacionParaRegistro.estado}
                         </span>
                       </div>
                     </div>
@@ -1402,35 +1453,35 @@ export default function MantenimientosPage() {
                     <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 text-xs">
                       <div className="bg-white border rounded-lg p-2">
                         <span className="text-slate-500">Km objetivo</span>
-                        <p className="font-bold">{Number(programacionPreventiva.km_objetivo || 0).toLocaleString('es-CO')} km</p>
+                        <p className="font-bold">{Number(programacionParaRegistro.km_objetivo || 0).toLocaleString('es-CO')} km</p>
                       </div>
                       <div className="bg-white border rounded-lg p-2">
                         <span className="text-slate-500">Frecuencia base</span>
-                        <p className="font-bold">{Number(programacionPreventiva.frecuencia_base_km || 0).toLocaleString('es-CO')} km</p>
+                        <p className="font-bold">{Number(programacionParaRegistro.frecuencia_base_km || 0).toLocaleString('es-CO')} km</p>
                       </div>
                       <div className="bg-white border rounded-lg p-2">
                         <span className="text-slate-500">Tolerancia</span>
-                        <p className="font-bold">± {Number(programacionPreventiva.tolerancia_km || 500).toLocaleString('es-CO')} km</p>
+                        <p className="font-bold">± {Number(programacionParaRegistro.tolerancia_km || 500).toLocaleString('es-CO')} km</p>
                       </div>
                       <div className="bg-white border rounded-lg p-2">
                         <span className="text-slate-500">Rango habilitado</span>
                         <p className="font-bold">
-                          {Number(programacionPreventiva.km_minimo || 0).toLocaleString('es-CO')} - {Number(programacionPreventiva.km_maximo || 0).toLocaleString('es-CO')} km
+                          {Number(programacionParaRegistro.km_minimo || 0).toLocaleString('es-CO')} - {Number(programacionParaRegistro.km_maximo || 0).toLocaleString('es-CO')} km
                         </p>
                       </div>
                     </div>
 
-                    {!programacionPreventiva.dentro_tolerancia && (
+                    {!programacionParaRegistro.dentro_tolerancia && (
                       <div className="mx-3 mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
                         <p className="text-xs font-bold text-blue-900">
                           Mantenimiento programado aún no habilitado
                         </p>
                         <p className="mt-1 text-[11px] leading-4 text-blue-800">
-                          El punto P{programacionPreventiva.ciclo} puede registrarse cuando el kilometraje del vehículo se encuentre entre{' '}
-                          <b>{Number(programacionPreventiva.km_minimo || 0).toLocaleString('es-CO')} km</b> y{' '}
-                          <b>{Number(programacionPreventiva.km_maximo || 0).toLocaleString('es-CO')} km</b>.
+                          El punto P{programacionParaRegistro.ciclo} puede registrarse cuando el kilometraje del vehículo se encuentre entre{' '}
+                          <b>{Number(programacionParaRegistro.km_minimo || 0).toLocaleString('es-CO')} km</b> y{' '}
+                          <b>{Number(programacionParaRegistro.km_maximo || 0).toLocaleString('es-CO')} km</b>.
                           El último kilometraje preoperacional es{' '}
-                          <b>{Number(programacionPreventiva.ultimo_km_preoperacional || 0).toLocaleString('es-CO')} km</b>.
+                          <b>{Number(programacionParaRegistro.ultimo_km_preoperacional || 0).toLocaleString('es-CO')} km</b>.
                         </p>
                       </div>
                     )}
@@ -1583,7 +1634,7 @@ export default function MantenimientosPage() {
                               type="checkbox"
                               className="mt-1 h-5 w-5 shrink-0"
                               checked={checked}
-                              disabled={!programacionPreventiva?.dentro_tolerancia}
+                              disabled={!programacionParaRegistro?.dentro_tolerancia}
                               onChange={() => {
                                 setActividadesSeleccionadas((actual) => checked ? actual.filter((x) => x !== id) : [...actual, id])
                                 if (!checked) setActividadesPendientes(actual => {
@@ -1624,7 +1675,7 @@ export default function MantenimientosPage() {
                 )}
                 <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3">
                   <label className="block text-sm font-bold text-blue-900">Otras actividades realmente realizadas</label>
-                  <p className="mb-2 text-xs text-blue-800">Puede agregar actividades que no estén en el punto P{programacionPreventiva?.ciclo || '1'}. No modificarán las frecuencias del plan maestro.</p>
+                  <p className="mb-2 text-xs text-blue-800">Puede agregar actividades que no estén en el punto P{programacionParaRegistro?.ciclo || '1'}. No modificarán las frecuencias del plan maestro.</p>
                   <div className="flex flex-wrap gap-2">
                     <input
                       className="min-h-10 min-w-[180px] flex-1 rounded-lg border border-blue-300 bg-white p-2 text-sm"
