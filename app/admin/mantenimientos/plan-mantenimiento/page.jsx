@@ -835,7 +835,7 @@ function ModalPunto({
         </div>
 
         <div className="max-h-[calc(92vh-58px)] overflow-y-auto p-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {!punto?.historico_reconstruido && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Dato titulo="Km referencia" valor={formatoKm(punto?.km_referencia)} />
             <Dato titulo="Km objetivo" valor={formatoKm(punto?.km_objetivo)} />
             <Dato titulo="Tolerancia" valor={formatoKm(punto?.tolerancia_km)} />
@@ -849,7 +849,7 @@ function ModalPunto({
                     : null)
               )}
             />
-          </div>
+          </div>}
 
           {tipo === 'PROGRAMADO' && (
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -883,24 +883,9 @@ function ModalPunto({
                 Mantenimiento anterior al plan
               </div>
 
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                <div className="rounded-lg border border-slate-200 bg-white p-2">
-                  <div className="text-[9px] font-bold uppercase text-slate-500">
-                    Fecha en que debió realizarse
-                  </div>
-                  <div className="mt-1 text-xs font-extrabold text-slate-800">
-                    {formatoFecha(punto?.fecha_debio_realizarse)}
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-slate-200 bg-white p-2">
-                  <div className="text-[9px] font-bold uppercase text-slate-500">
-                    Km estimado de obligación
-                  </div>
-                  <div className="mt-1 text-xs font-extrabold text-slate-800">
-                    {formatoKm(punto?.km_debio_realizarse || punto?.km_objetivo)}
-                  </div>
-                </div>
+              <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-[10px] text-slate-700">
+                Antecedente registrado antes de comenzar el nuevo plan DATA-CEA. No representa un punto P ni una obligación de este ciclo.
+                {punto?.nivel_historico ? ` El registro original menciona nivel ${punto.nivel_historico}.` : ''}
               </div>
 
               {punto?.actividad_historica && (
