@@ -112,7 +112,7 @@ function PuntoChip({ punto, tipo, onClick }) {
           {punto?.historico_reconstruido ? 'HISTÓRICO' : `P${punto?.punto || punto?.ciclo || '—'}`}
         </span>
         <span className="text-[8px] font-bold uppercase">
-          {punto?.historico_reconstruido ? 'ANTECEDENTE' : etiquetaEstado(tipo)}
+          {punto?.historico_reconstruido ? 'EJECUTADO' : etiquetaEstado(tipo)}
         </span>
       </div>
 
@@ -124,7 +124,7 @@ function PuntoChip({ punto, tipo, onClick }) {
 
       {punto?.historico_reconstruido && (
         <div className="mt-0.5 text-[8px] font-extrabold uppercase tracking-wide text-slate-600">
-          Anterior al plan
+          Anterior al plan · {formatoFecha(punto?.fecha_ejecucion)}
         </div>
       )}
 
@@ -818,7 +818,7 @@ function ModalPunto({
                   Estado
                 </div>
                 <div className="text-xs font-extrabold">
-                  {punto?.historico_reconstruido ? 'ANTECEDENTE' : etiquetaEstado(tipo)}
+                  {punto?.historico_reconstruido ? 'EJECUTADO' : etiquetaEstado(tipo)}
                 </div>
               </div>
             </div>
@@ -880,18 +880,28 @@ function ModalPunto({
           {punto?.historico_reconstruido && (
             <div className="mt-4 rounded-xl border border-slate-300 bg-slate-50 p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wide text-slate-600">
-                Mantenimiento anterior al plan
+                Histórico ejecutado · Mantenimiento anterior al plan
               </div>
 
               <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-[10px] text-slate-700">
                 Antecedente registrado antes de comenzar el nuevo plan DATA-CEA. No representa un punto P ni una obligación de este ciclo.
-                {punto?.nivel_historico ? ` El registro original menciona nivel ${punto.nivel_historico}.` : ''}
+                {punto?.tipo_mantenimiento ? ` Tipo registrado: ${punto.tipo_mantenimiento}.` : ''}
               </div>
 
               {punto?.actividad_historica && (
                 <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-[10px] text-slate-600">
-                  <span className="font-extrabold">Registro histórico:</span>{' '}
+                  <span className="font-extrabold">Actividades realizadas:</span>{' '}
                   {punto.actividad_historica}
+                </div>
+              )}
+              <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-[10px] text-slate-600">
+                <span className="font-extrabold">Repuestos utilizados:</span>{' '}
+                {punto?.repuestos_historicos || 'No registrados'}
+              </div>
+              {punto?.observaciones_historicas && (
+                <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-[10px] text-slate-600">
+                  <span className="font-extrabold">Observaciones:</span>{' '}
+                  {punto.observaciones_historicas}
                 </div>
               )}
             </div>
