@@ -687,6 +687,10 @@ function construirProyeccionesFuturas({
     if (normalizacionP1 && punto === 1) {
       proyectado.estado = 'PROGRAMADO'
       proyectado.normalizacion_inicial = true
+      proyectado.km_referencia = numero(kilometraje.ultimo_km)
+      proyectado.km_objetivo = numero(kilometraje.ultimo_km)
+      proyectado.km_maximo = null
+      proyectado.km_faltantes = 0
       proyectado.fecha_proyectada = fechaInicioNormalizacion
       proyectado.vigencia_proyectada = fechaInicioNormalizacion ? Number(fechaInicioNormalizacion.slice(0, 4)) : null
       proyectado.mes_proyectado = fechaInicioNormalizacion ? Number(fechaInicioNormalizacion.slice(5, 7)) : null
