@@ -560,12 +560,12 @@ export default function MantenimientosPage() {
     [actividadesProveedor]
   )
 
-  const actividadesPreventivasDisponibles = useMemo(() => {
-    if (!programacionPreventiva || !proveedorId) return []
-    return (programacionPreventiva.actividades || []).filter((act) =>
-      actividadesProveedorIds.has(Number(act.actividad_id))
-    )
-  }, [programacionPreventiva, proveedorId, actividadesProveedorIds])
+  // Las actividades del punto son independientes del taller seleccionado.
+  // Un mismo punto puede recibir intervenciones de distintos proveedores.
+  const actividadesPreventivasDisponibles = useMemo(
+    () => programacionPreventiva?.actividades || [],
+    [programacionPreventiva]
+  )
 
   // ============================================================
   // Cambio de técnico
@@ -1501,22 +1501,14 @@ export default function MantenimientosPage() {
                   <span className="text-xs font-semibold text-slate-600">{actividadesSeleccionadas.length}/{actividadesPreventivasDisponibles.length}</span>
                 </div>
 
-                {!proveedorId ? (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                    Seleccione primero el proveedor o taller. Solo se mostrarán las actividades que ese proveedor tiene configuradas por Administración.
-                  </div>
-                ) : cargandoActividadesProveedor ? (
-                  <div className="rounded-xl border bg-slate-50 p-3 text-xs text-slate-600">
-                    Consultando actividades habilitadas para el proveedor...
-                  </div>
-                ) : actividadesPreventivasDisponibles.length === 0 ? (
-                  <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs text-orange-800">
-                    Este proveedor no tiene configuradas actividades compatibles con el punto preventivo y el tipo de vehículo seleccionado. Solicite a Administración revisar su configuración.
+                {actividadesPreventivasDisponibles.length === 0 ? (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
+                    Este punto no tiene actividades sugeridas en el plan. Puede añadir las que realmente se realizaron.
                   </div>
                 ) : (
                   <>
                     <p className="text-[11px] text-slate-500 mb-3">
-                      Marque únicamente las actividades realmente ejecutadas durante este servicio.
+                      Marque las actividades realizadas por el taller de este registro. Las demás pueden ejecutarse en otros servicios del mismo punto con otros proveedores.
                     </p>
                     <div className="space-y-2">
                       {actividadesPreventivasDisponibles.map((act, index) => {
