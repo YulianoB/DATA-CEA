@@ -1536,7 +1536,11 @@ function construirVistaVehiculo({
 
     proyecciones,
 
-    hechos,
+    // Vencimientos automáticos anteriores a la primera ejecución del nuevo
+    // plan no son obligaciones del ciclo P1. Permanecen en la base para auditoría.
+    hechos: esP1Normalizacion
+      ? hechos.filter(x => !(x.estado === 'VENCIDO' && !x.mantenimiento_id))
+      : hechos,
 
     historial_reconstruido_2026:
       historialReconstruido2026,
