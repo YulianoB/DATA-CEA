@@ -4249,6 +4249,15 @@ export async function POST(
         )
       }
 
+      // El cálculo de 90 días no prueba por sí solo ausencia de certificación.
+      const soporteVerificacion = normalizarTexto(body?.soporte_verificacion)
+      if (body?.confirma_no_certificado !== true || soporteVerificacion.length < 8) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Verifique en RUNT que el proceso continúa sin certificar e indique el soporte o motivo de la comprobación (mínimo 8 caracteres).'
+        }, { status: 400 })
+      }
+
       const controlAnterior =
         await obtenerControlRunt(
           supabase,
@@ -4472,7 +4481,7 @@ export async function POST(
               null,
 
             observaciones:
-              `Reproceso RUNT creado por vencimiento del proceso #${controlAnterior.numero_proceso || 1}. Usuario: ${usuario}.`,
+              `Reproceso RUNT creado tras verificar ausencia de certificación del proceso #${controlAnterior.numero_proceso || 1}. Usuario: ${usuario}. Soporte: ${soporteVerificacion}.`,
 
             updated_at:
               new Date()
