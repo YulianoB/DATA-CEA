@@ -1638,26 +1638,43 @@ export async function POST(request) {
         }
 
         if (normalizacionP1) {
-          // La primera referencia oficial corresponde al servicio registrado,
-          // no a la fecha de configuración ni a un mantenimiento histórico.
-          const { error: anclajeError } = await supabase
-            .from('vehiculo_mantenimiento_plan_estado')
-            .update({
-              numero_punto_actual: 1,
-              km_referencia: kilometraje,
-              fecha_referencia: payload.fecha_registro,
-              frecuencia_base_km: frecuenciaBase,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('vehiculo_id', Number(body.vehiculo_id))
-            .eq('estado', 'FINALIZADO')
-          if (anclajeError) {
+          // Registrar solo una vez la referencia del PRIMER servicio real.
+          // Si P1 requiere varias intervenciones, las siguientes no desplazan
+          // el origen del ciclo ni la programación de P2.
+          const { data: otrosP1, error: errorOtrosP1 } = await supabase
+            .from('mantenimientos')
+            .select('id')
+            .eq('programacion_mantenimiento_id', programacionPreventiva.id)
+            .neq('id', data.id)
+            .limit(1)
+          if (errorOtrosP1) {
             return NextResponse.json({
               status: 'failed',
-              code: 'MANTENIMIENTO_GUARDADO_INICIO_NO_ACTUALIZADO',
-              message: `Mantenimiento guardado, pero no se pudo fijar la referencia inicial: ${anclajeError.message}. No registre de nuevo sin revisar el mantenimiento guardado.`,
+              code: 'MANTENIMIENTO_GUARDADO_ANCLAJE_NO_VERIFICADO',
+              message: 'Mantenimiento registrado, pero no se pudo verificar el primer P1. Consulte el registro antes de repetir el envío.',
               mantenimiento: data,
             }, { status: 500 })
+          }
+          if (!otrosP1?.length) {
+            const { error: anclajeError } = await supabase
+              .from('vehiculo_mantenimiento_plan_estado')
+              .update({
+                numero_punto_actual: 1,
+                km_referencia: kilometraje,
+                fecha_referencia: payload.fecha_registro,
+                frecuencia_base_km: frecuenciaBase,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('vehiculo_id', Number(body.vehiculo_id))
+              .eq('estado', 'FINALIZADO')
+            if (anclajeError) {
+              return NextResponse.json({
+                status: 'failed',
+                code: 'MANTENIMIENTO_GUARDADO_INICIO_NO_ACTUALIZADO',
+                message: `Mantenimiento guardado, pero no se pudo fijar la referencia inicial: ${anclajeError.message}. No registre de nuevo sin revisar el mantenimiento guardado.`,
+                mantenimiento: data,
+              }, { status: 500 })
+            }
           }
         }
 
