@@ -109,10 +109,10 @@ function PuntoChip({ punto, tipo, onClick }) {
     >
       <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5">
         <span className="text-[10px] font-extrabold">
-          {punto?.historico_reconstruido ? 'HISTÓRICO' : `P${punto?.punto || punto?.ciclo || '—'}`}
+          {punto?.historico_reconstruido ? 'HISTÓRICO' : punto?.normalizacion_inicial ? 'P1 INICIAL' : `P${punto?.punto || punto?.ciclo || '—'}`}
         </span>
         <span className="text-[8px] font-bold uppercase">
-          {punto?.historico_reconstruido ? 'EJECUTADO' : etiquetaEstado(tipo)}
+          {punto?.historico_reconstruido ? 'EJECUTADO' : punto?.normalizacion_inicial ? 'DISPONIBLE' : etiquetaEstado(tipo)}
         </span>
       </div>
 
@@ -120,6 +120,10 @@ function PuntoChip({ punto, tipo, onClick }) {
         <div className="mt-0.5 break-words text-[9px] font-semibold">
           {frecuencias.map((f) => `${formatoNumero(f / 1000)}k`).join(' + ')}
         </div>
+      )}
+
+      {punto?.normalizacion_inicial && (
+        <div className="mt-0.5 text-[9px] font-medium">Primer servicio · km real al registrar</div>
       )}
 
       {punto?.historico_reconstruido && (
@@ -134,7 +138,7 @@ function PuntoChip({ punto, tipo, onClick }) {
         </div>
       )}
 
-      {tipo === 'PROGRAMADO' && punto?.km_objetivo != null && (
+      {tipo === 'PROGRAMADO' && !punto?.normalizacion_inicial && punto?.km_objetivo != null && (
         <div className="mt-0.5 text-[9px]">
           Objetivo {formatoKm(punto.km_objetivo)}
         </div>
@@ -146,7 +150,7 @@ function PuntoChip({ punto, tipo, onClick }) {
 
 function contarMes(mes) {
   const pendientes =
-    (mes?.programados || []).length
+    (mes?.programados || []).filter((p) => !p.normalizacion_inicial).length
   const ejecutados =
     (mes?.ejecutados || []).filter((p) => !p.historico_reconstruido).length
   const vencidos =
@@ -818,7 +822,7 @@ function ModalPunto({
                   Estado
                 </div>
                 <div className="text-xs font-extrabold">
-                  {punto?.historico_reconstruido ? 'EJECUTADO' : etiquetaEstado(tipo)}
+                  {punto?.historico_reconstruido ? 'EJECUTADO' : punto?.normalizacion_inicial ? 'DISPONIBLE' : etiquetaEstado(tipo)}
                 </div>
               </div>
             </div>
