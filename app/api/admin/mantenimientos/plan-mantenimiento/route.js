@@ -900,6 +900,7 @@ async function cargarContexto(
     rcat,
     rprogramaciones,
     rmantenimientos,
+    rejecutadas,
   ] = await Promise.all([
     supabase
       .from('vehiculos')
@@ -944,6 +945,14 @@ async function cargarContexto(
       )
       .order('fecha_registro')
       .order('id'),
+
+    // Última ejecución real de cada actividad: base para su frecuencia
+    // individual, independiente del número de punto P1, P2...
+    supabase
+      .from('mantenimiento_actividades_ejecutadas')
+      .select('id,vehiculo_mantenimiento_config_id,actividad_id,fecha_ejecucion,km_ejecucion')
+      .order('id', { ascending: false })
+      .limit(1000),
   ])
 
   for (const r of [
@@ -953,6 +962,7 @@ async function cargarContexto(
     rcat,
     rprogramaciones,
     rmantenimientos,
+    rejecutadas,
   ]) {
     if (r.error) throw r.error
   }
@@ -1013,6 +1023,7 @@ async function cargarContexto(
     mantenimientos:
       rmantenimientos.data || [],
     preoperacionales,
+    actividadesEjecutadas: rejecutadas.data || [],
   }
 }
 
@@ -1364,6 +1375,21 @@ function construirVistaVehiculo({
 
     configuraciones_activas:
       configs.length,
+
+    // Catálogo completo del vehículo como guía técnica, con frecuencia
+    // independiente basada en la última ejecución registrada.
+    actividades_configuradas: configs.map((cfg) => {
+      const ultima = (contexto.actividadesEjecutadas || [])
+        .filter((ej) => Number(ej.vehiculo_mantenimiento_config_id) === Number(cfg.id) && numero(ej.km_ejecucion) !== null)
+        .sort((a, b) => Number(b.id) - Number(a.id))[0]
+      const frecuencia = numero(cfg.frecuencia_km)
+      return {
+        ...describirActividad(cfg, catalogoPorId),
+        ultima_ejecucion_km: ultima ? numero(ultima.km_ejecucion) : null,
+        ultima_ejecucion_fecha: ultima ? fechaISO(ultima.fecha_ejecucion) : null,
+        siguiente_km: ultima && frecuencia ? numero(ultima.km_ejecucion) + frecuencia : null,
+      }
+    }),
 
     errores,
 
