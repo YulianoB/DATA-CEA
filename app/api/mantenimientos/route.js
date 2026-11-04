@@ -1080,6 +1080,7 @@ export async function POST(request) {
       let actividadesRequeridas = []
       let actividadesSeleccionadas = []
       let normalizacionP1 = false
+      let servicioAdicionalPunto = false
       let configuracionAceiteId = null
       let actividadesAdicionales = []
       let actividadesPendientes = []
@@ -1088,6 +1089,7 @@ export async function POST(request) {
         const vehiculoId = Number(body.vehiculo_id)
         const ciclo = Number(body.ciclo)
         const kmObjetivo = Number(body.km_objetivo)
+        servicioAdicionalPunto = body.servicio_adicional_punto === true
         const idsSeleccionados = Array.isArray(body.actividades_config_ids)
           ? [...new Set(body.actividades_config_ids.map(Number).filter(Number.isInteger))]
           : []
@@ -1201,13 +1203,13 @@ export async function POST(request) {
         if (errorEstadoPlan) {
           return NextResponse.json({ status: 'failed', message: errorEstadoPlan.message }, { status: 500 })
         }
-        normalizacionP1 = ciclo === 1 && estadoPlan?.estado === 'FINALIZADO'
+        normalizacionP1 = ciclo === 1 && !servicioAdicionalPunto && estadoPlan?.estado === 'FINALIZADO'
         // La referencia inicial se acredita al guardar el primer servicio real.
         // Un anclaje administrativo previo no debe impedir ese primer servicio.
 
         if (
           !Number.isFinite(kmRegistro) ||
-          (!normalizacionP1 && (
+          (!normalizacionP1 && !servicioAdicionalPunto && (
             kmRegistro < kmMinimoPermitido ||
             kmRegistro > kmMaximoPermitido
           ))
@@ -1276,8 +1278,24 @@ export async function POST(request) {
           return NextResponse.json({ status: 'failed', message: existenteError.message }, { status: 500 })
         }
 
-        if (existente && String(existente.estado || '').toUpperCase() === 'EJECUTADO') {
-          return NextResponse.json({ status: 'failed', message: 'Este punto preventivo ya se encuentra completamente ejecutado.' }, { status: 409 })
+        if (servicioAdicionalPunto) {
+          const kmBaseEjecutado = Number(existente?.km_ejecucion)
+          if (!existente || String(existente.estado || '').toUpperCase() !== 'EJECUTADO' ||
+              !existente.mantenimiento_id || !Number.isFinite(kmBaseEjecutado) ||
+              Math.abs(kmRegistro - kmBaseEjecutado) > 500) {
+            return NextResponse.json({
+              status: 'failed', code: 'FUERA_RANGO_SERVICIO_ADICIONAL',
+              message: 'El servicio adicional requiere un punto con cambio de aceite ya ejecutado y un kilometraje a ±500 km del aceite registrado.',
+            }, { status: 409 })
+          }
+          if (actividadesSeleccionadas.some(cfg => Number(cfg.id) === configuracionAceiteId)) {
+            return NextResponse.json({
+              status: 'failed',
+              message: 'El cambio de aceite ya acredita este punto. Registre solo otras actividades o seleccione el siguiente punto base.',
+            }, { status: 409 })
+          }
+        } else if (existente && String(existente.estado || '').toUpperCase() === 'EJECUTADO') {
+          return NextResponse.json({ status: 'failed', message: 'Este cambio de aceite ya está ejecutado. Para agregar otros trabajos use «Servicio adicional al último punto».' }, { status: 409 })
         }
 
         if (existente && normalizacionP1 &&
@@ -1757,7 +1775,7 @@ export async function POST(request) {
         // La falta de otras actividades de la guía no bloquea el siguiente punto.
         const completo = ejecutadasIds.has(configuracionAceiteId)
 
-        if (completo) {
+        if (completo && !servicioAdicionalPunto) {
           const { error: actualizarProgramacionError } = await supabase
             .from('programacion_mantenimiento')
             .update({
