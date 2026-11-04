@@ -3170,7 +3170,8 @@ export default function RuntPage() {
                               </Badge>
                             ) : (
                               <Badge tipo="yellow">
-                                Pendiente
+                                {texto(row.observaciones).includes('CONTROL ADMINISTRATIVO CREADO EN CONCILIACION HISTORICA')
+                                  ? 'Por verificar' : 'Pendiente'}
                               </Badge>
                             )}
 
@@ -3237,7 +3238,8 @@ export default function RuntPage() {
                               </Badge>
                             ) : (
                               <Badge tipo="gray">
-                                Pendiente
+                                {texto(row.observaciones).includes('CONTROL ADMINISTRATIVO CREADO EN CONCILIACION HISTORICA')
+                                  ? 'Por verificar' : 'Pendiente'}
                               </Badge>
                             )}
 
