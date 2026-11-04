@@ -1045,7 +1045,7 @@ function construirHistorialReconstruido2026({
         fecha.startsWith('2026-') &&
         fecha <= hoyISO &&
         !fila.programacion_mantenimiento_id &&
-        clave(fila.tipo_mantenimiento) === 'PREVENTIVO'
+        ['PREVENTIVO', 'CORRECTIVO'].includes(clave(fila.tipo_mantenimiento))
     })
     .map((fila) => ({
       id: `HIST-M-${fila.id}`,
