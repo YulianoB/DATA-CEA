@@ -784,7 +784,6 @@ export default function MantenimientosPage() {
       (
         !programacionPreventiva ||
         !programacionPreventiva?.dentro_tolerancia ||
-        !actividad ||
         (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0)
       )
     ) {
@@ -880,7 +879,9 @@ export default function MantenimientosPage() {
           tipoMant,
 
         actividad_realizada:
-          actividad.trim(),
+          tipoMant === 'PREVENTIVO'
+            ? `MANTENIMIENTO PREVENTIVO P${programacionPreventiva?.ciclo || 1}`
+            : actividad.trim(),
 
         actividad_catalogo_id:
           tipoMant === 'CORRECTIVO' && actividadCatalogoId
