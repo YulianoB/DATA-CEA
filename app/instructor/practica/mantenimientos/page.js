@@ -300,6 +300,8 @@ export default function MantenimientosPage() {
     setProgramacionPreventiva(null)
     setActividadesPlan([])
     setActividadesSeleccionadas([])
+    setActividadesAdicionales([])
+    setNuevaActividadAdicional('')
     setNivelSeleccionadoId('')
     setActividad('')
 
@@ -702,6 +704,8 @@ export default function MantenimientosPage() {
     setActividad('')
     setActividadCatalogoId('')
     setActividadesSeleccionadas([])
+    setActividadesAdicionales([])
+    setNuevaActividadAdicional('')
   }
 
   // ============================================================
