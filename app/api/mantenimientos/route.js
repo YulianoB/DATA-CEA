@@ -995,6 +995,9 @@ export async function POST(request) {
       }
 
       if (
+        body.kilometraje === null ||
+        body.kilometraje === undefined ||
+        body.kilometraje === '' ||
         !Number.isFinite(kilometraje) ||
         kilometraje < 0
       ) {
@@ -1087,6 +1090,28 @@ export async function POST(request) {
         )
       }
 
+
+      // Los correctivos son independientes de P1/P2, pero deben pertenecer
+      // a un vehículo activo del CEA. Rechazar antes de cualquier INSERT.
+      if (tipoMantenimiento === 'CORRECTIVO') {
+        const { data: vehiculoCorrectivo, error: errorVehiculoCorrectivo } = await supabase
+          .from('vehiculos')
+          .select('id,estado')
+          .eq('placa', placa)
+          .maybeSingle()
+        if (errorVehiculoCorrectivo) {
+          return NextResponse.json({
+            status: 'failed',
+            message: `No se pudo verificar el vehículo: ${errorVehiculoCorrectivo.message}`,
+          }, { status: 500 })
+        }
+        if (!vehiculoCorrectivo || !esVehiculoActivo(vehiculoCorrectivo.estado)) {
+          return NextResponse.json({
+            status: 'failed',
+            message: 'El vehículo del mantenimiento correctivo no existe o no está activo en este CEA.',
+          }, { status: 400 })
+        }
+      }
 
       // ===================================================
       // VALIDAR PUNTO PREVENTIVO DEL NUEVO PLAN
@@ -1449,6 +1474,13 @@ export async function POST(request) {
         tecnico = data
       }
 
+      if (!tecnico) {
+        return NextResponse.json({
+          status: 'failed',
+          message: 'Seleccione un técnico activo perteneciente al proveedor antes de registrar el mantenimiento.',
+        }, { status: 400 })
+      }
+
       // ===================================================
       // COSTOS
       // ===================================================
@@ -1471,13 +1503,11 @@ export async function POST(request) {
             )
           : null
 
+      // Recalcular en el servidor: no confiar en un total enviado
+      // manualmente por el navegador.
       const costoTotal =
-        body.costo_total !== null &&
-        body.costo_total !== undefined &&
-        body.costo_total !== ''
-          ? Number(
-              body.costo_total
-            )
+        Number.isFinite(valorRepuestos) && Number.isFinite(valorManoObra)
+          ? valorRepuestos + valorManoObra
           : null
 
       const fechaEjecucion = String(body.fecha_registro || '').trim()
