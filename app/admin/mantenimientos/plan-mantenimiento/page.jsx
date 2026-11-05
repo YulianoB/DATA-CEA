@@ -118,7 +118,7 @@ function PuntoChip({ punto, tipo, onClick }) {
 
       {!punto?.historico_reconstruido && frecuencias.length > 0 && (
         <div className="mt-0.5 break-words text-[9px] font-semibold">
-          {frecuencias.map((f) => `${formatoNumero(f / 1000)}k`).join(' + ')}
+          {frecuencias.map((f) => `${formatoNumero(f / 1000, f % 1000 === 0 ? 0 : 1)}k`).join(' + ')}
         </div>
       )}
 
