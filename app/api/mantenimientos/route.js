@@ -1053,11 +1053,27 @@ export async function POST(request) {
         )
       }
 
-      if (tiempoParadaHoras !== null && !tiemposPermitidos.has(tiempoParadaHoras)) {
+      if (tiempoParadaHoras === null || !tiemposPermitidos.has(tiempoParadaHoras)) {
         return NextResponse.json(
           { status: 'failed', message: 'El tiempo de parada aproximado debe seleccionarse de la lista de horas permitidas.' },
           { status: 400 }
         )
+      }
+
+      // Verificar antes del primer INSERT. El 0 es un valor explícito válido.
+      const facturaRegistro = normalizarTexto(body.factura)
+      const observacionesRegistro = normalizarTexto(body.observaciones)
+      const importeRepuestos = Number(body.valor_repuestos)
+      const importeManoObra = Number(body.valor_mano_obra)
+      if (!facturaRegistro || !observacionesRegistro ||
+          body.valor_repuestos === null || body.valor_repuestos === undefined || body.valor_repuestos === '' ||
+          body.valor_mano_obra === null || body.valor_mano_obra === undefined || body.valor_mano_obra === '' ||
+          !Number.isFinite(importeRepuestos) || importeRepuestos < 0 ||
+          !Number.isFinite(importeManoObra) || importeManoObra < 0) {
+        return NextResponse.json({
+          status: 'failed',
+          message: 'Complete factura (o NO APLICA), observaciones (o NINGUNA), valores de repuestos y mano de obra (0 si no aplica) y tiempo de parada.',
+        }, { status: 400 })
       }
 
       if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
@@ -1078,6 +1094,7 @@ export async function POST(request) {
 
       let programacionPreventiva = null
       let actividadesRequeridas = []
+      let catalogoPorId = new Map()
       let actividadesSeleccionadas = []
       let normalizacionP1 = false
       let servicioAdicionalPunto = false
@@ -1157,7 +1174,7 @@ export async function POST(request) {
           return NextResponse.json({ status: 'failed', message: catalogoError.message }, { status: 500 })
         }
 
-        const catalogoPorId = new Map((catalogo || []).map((x) => [Number(x.id), x]))
+        catalogoPorId = new Map((catalogo || []).map((x) => [Number(x.id), x]))
         const normalizar = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase()
         const configBase = activas.find((cfg) => {
           const nombre = normalizar(catalogoPorId.get(Number(cfg.actividad_id))?.nombre)
@@ -1495,9 +1512,14 @@ export async function POST(request) {
         tipo_mantenimiento:
           tipoMantenimiento,
 
+        // La referencia del punto se guarda en programacion_mantenimiento_id.
+        // Aquí se registran únicamente los trabajos realmente seleccionados.
         actividad_realizada:
-          tipoMantenimiento === 'PREVENTIVO' && actividadesAdicionales.length
-            ? [actividad, 'ACTIVIDADES ADICIONALES: ' + actividadesAdicionales.join(' / ')].filter(Boolean).join(' | ')
+          tipoMantenimiento === 'PREVENTIVO'
+            ? [
+                ...actividadesSeleccionadas.map(cfg => catalogoPorId.get(Number(cfg.actividad_id))?.nombre).filter(Boolean),
+                ...actividadesAdicionales,
+              ].join('; ')
             : actividad,
 
         plan_mantenimiento_id: null,
@@ -1557,10 +1579,7 @@ export async function POST(request) {
             ? String(tiempoParadaHoras)
             : null,
 
-        factura:
-          normalizarTexto(
-            body.factura
-          ) || null,
+        factura: facturaRegistro,
 
         valor_repuestos:
           Number.isFinite(
@@ -1598,10 +1617,7 @@ export async function POST(request) {
             body.cargo
           ) || null,
 
-        observaciones:
-          normalizarTexto(
-            body.observaciones
-          ) || null,
+        observaciones: observacionesRegistro,
       }
 
       const {
