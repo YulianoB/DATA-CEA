@@ -3,7 +3,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { validarKilometraje } from '@/lib/servicios/validaciones'
 import { cerrarSesion } from '@/lib/auth/logout'
 import { EncabezadoPractica, TarjetaSeccionMantenimiento, ModalSeccionMantenimiento, AccionesModuloPractica } from '@/components/instructor/practica/EstilosModuloPractica'
@@ -106,6 +106,10 @@ export default function MantenimientosPage() {
   const [forzarKm, setForzarKm] = useState(false)
   const [advertenciaKmPendiente, setAdvertenciaKmPendiente] = useState(false)
   const [modalKm, setModalKm] = useState(null)
+  const [kmValidado, setKmValidado] = useState(false)
+  const [validandoKm, setValidandoKm] = useState(false)
+  const [estadoKm, setEstadoKm] = useState('')
+  const peticionKmRef = useRef(0)
 
   // Tipo mantenimiento
   const [tipoMant, setTipoMant] = useState('')
@@ -317,6 +321,7 @@ export default function MantenimientosPage() {
     setActividadesConfiguradas([])
     setNivelSeleccionadoId('')
     setActividad('')
+    peticionKmRef.current += 1
 
     if (!vehiculo) {
       setVehiculoInfo({ tipo: '-', marca: '-' })
@@ -644,102 +649,48 @@ export default function MantenimientosPage() {
   // Kilometraje
   // ============================================================
 
-  const onKmChange = async (e) => {
-    const valor = e.target.value
-
-    setKilometraje(valor)
-    setAdvertenciaKmPendiente(false)
+  const onKmChange = (e) => {
+    peticionKmRef.current += 1
+    setKilometraje(e.target.value)
     setMsgKm('')
+    setEstadoKm('')
+    setKmValidado(false)
+    setValidandoKm(false)
     setForzarKm(false)
+    setAdvertenciaKmPendiente(false)
     setModalKm(null)
+  }
 
-    if (!placa || valor === '' || !nitActual) {
+  const verificarKm = async () => {
+    const actual = kilometraje
+    const solicitud = ++peticionKmRef.current
+    setKmValidado(false)
+    setForzarKm(false)
+    setAdvertenciaKmPendiente(false)
+    setEstadoKm('')
+    if (!placa || !nitActual || actual === '' || !Number.isFinite(Number(actual)) || Number(actual) < 0) {
+      setMsgKm('Indique un kilometraje válido para verificar.')
       return
     }
-
-    const kmNumero = Number(valor)
-
-    if (
-      !Number.isFinite(kmNumero) ||
-      kmNumero < 0
-    ) {
-      setMsgKm(
-        'El kilometraje no es válido.'
-      )
-      return
-    }
-
+    setValidandoKm(true)
+    setMsgKm('Verificando contra lecturas cercanas a la fecha del servicio...')
     try {
-      const resultado =
-        await validarKilometraje(
-          nitActual,
-          placa,
-          kmNumero,
-          { fechaEjecucion }
-        )
-
-      if (!resultado) {
-        setMsgKm(
-          'No fue posible validar el kilometraje.'
-        )
+      const resultado = await validarKilometraje(nitActual, placa, Number(actual), { fechaEjecucion })
+      if (solicitud !== peticionKmRef.current) return
+      if (!resultado || !['ok', 'advertencia', 'error'].includes(resultado.estado)) {
+        setMsgKm('No fue posible verificar el kilometraje. Intente nuevamente.')
         return
       }
-
-      if (resultado.estado === 'error') {
-        setMsgKm(resultado.mensaje)
-
-        avisar(
-          resultado.mensaje
-        )
-
-        return
-      }
-
-      if (
-        resultado.estado ===
-        'advertencia'
-      ) {
-        setAdvertenciaKmPendiente(true)
-        setMsgKm(
-          resultado.mensaje
-        )
-
-        setModalKm({
-          maxKm:
-            resultado.maxKm,
-
-          diferencia:
-            resultado.diferencia,
-
-          fuente:
-            resultado.fuente,
-
-          campo:
-            resultado.campo,
-
-          onConfirm: () => {
-            setForzarKm(true)
-            setAdvertenciaKmPendiente(false)
-            setModalKm(null)
-          },
-        })
-
-        return
-      }
-
-      setMsgKm(
-        resultado.mensaje ||
-          'Kilometraje válido.'
-      )
+      setEstadoKm(resultado.estado)
+      setMsgKm(resultado.mensaje || 'Verificación completada.')
+      if (resultado.estado === 'ok') setKmValidado(true)
+      if (resultado.estado === 'advertencia') setAdvertenciaKmPendiente(true)
     } catch (error) {
-      console.error(
-        'Error validando kilometraje:',
-        error
-      )
-
-      setMsgKm(
-        'No fue posible validar el kilometraje.'
-      )
+      if (solicitud !== peticionKmRef.current) return
+      console.error('Error validando kilometraje:', error)
+      setMsgKm('No fue posible verificar el kilometraje. Revise la conexión.')
+    } finally {
+      if (solicitud === peticionKmRef.current) setValidandoKm(false)
     }
   }
 
@@ -773,7 +724,7 @@ export default function MantenimientosPage() {
     const num = parseCOP(e.target.value)
 
     setValorRepuestosStr(
-      num ? toCOP(num) : ''
+      e.target.value.trim() === '' ? '' : toCOP(num)
     )
   }
 
@@ -781,7 +732,7 @@ export default function MantenimientosPage() {
     const num = parseCOP(e.target.value)
 
     setValorManoObraStr(
-      num ? toCOP(num) : ''
+      e.target.value.trim() === '' ? '' : toCOP(num)
     )
   }
 
@@ -800,32 +751,14 @@ export default function MantenimientosPage() {
   // ============================================================
 
   const fechaEjecucionValida = /^\d{4}-\d{2}-\d{2}$/.test(fechaEjecucion) && fechaEjecucion <= ahoraBogota().fecha
-  const tarjetasHabilitadas = Boolean(fechaEjecucionValida && nitActual && placa && tipoMant && kilometraje !== '' && Number.isFinite(Number(kilometraje)) && Number(kilometraje) >= 0 && !modalKm && (forzarKm || (msgKm && !/menor|no fue posible|no se identificó|error/i.test(msgKm))))
+  const tarjetasHabilitadas = Boolean(fechaEjecucionValida && nitActual && placa && tipoMant && kilometraje !== '' && Number.isFinite(Number(kilometraje)) && Number(kilometraje) >= 0 && (kmValidado || forzarKm))
 
   const puedeGuardar = useMemo(() => {
     if (!nitActual || !placa || !fechaEjecucionValida) return false
 
-    const mensajeKm =
-      String(msgKm || '').toLowerCase()
-
-    const kmOk =
-      (
-        msgKm &&
-        !mensajeKm.includes('menor') &&
-        !mensajeKm.includes('no fue posible') &&
-        !mensajeKm.includes('no se identificó') &&
-        !mensajeKm.includes('error')
-      ) ||
-      forzarKm
-
-    if (
-      advertenciaKmPendiente ||
-      !kmOk ||
-      !Number.isFinite(Number(kilometraje)) ||
-      Number(kilometraje) < 0
-    ) {
-      return false
-    }
+    if (!kmValidado && !forzarKm) return false
+    if (validandoKm || advertenciaKmPendiente) return false
+    if (kilometraje === '' || !Number.isFinite(Number(kilometraje)) || Number(kilometraje) < 0) return false
 
     if (
       tipoMant !== 'PREVENTIVO' &&
@@ -836,6 +769,10 @@ export default function MantenimientosPage() {
 
     if (!proveedorId || !tecnicoId) return false
     if (!repuestos.trim()) return false
+    if (!tpValor || !OPCIONES_TIEMPO_PARADA.includes(Number(tpValor))) return false
+    if (!factura.trim() || !observaciones.trim()) return false
+    if (valorRepuestosStr === '' || valorManoObraStr === '') return false
+    if (tipoMant === 'PREVENTIVO' && Object.values(actividadesPendientes).some(m => !m.trim())) return false
 
     if (
       tipoMant === 'PREVENTIVO' &&
@@ -861,6 +798,8 @@ export default function MantenimientosPage() {
     placa,
     fechaEjecucionValida,
     msgKm,
+    kmValidado,
+    validandoKm,
     forzarKm,
     advertenciaKmPendiente,
     kilometraje,
@@ -874,6 +813,12 @@ export default function MantenimientosPage() {
     tecnicoId,
     actividadCatalogoId,
     repuestos,
+    tpValor,
+    factura,
+    observaciones,
+    valorRepuestosStr,
+    valorManoObraStr,
+    actividadesPendientes,
   ])
 
   // ============================================================
@@ -891,7 +836,7 @@ export default function MantenimientosPage() {
     if (!['PREVENTIVO', 'CORRECTIVO'].includes(tipoMant)) faltantes.push('Seleccione el tipo de mantenimiento.')
     if (kilometraje === '' || !Number.isFinite(Number(kilometraje)) || Number(kilometraje) < 0) faltantes.push('Ingrese un kilometraje válido.')
     if (advertenciaKmPendiente) faltantes.push('Confirme o corrija la advertencia de kilometraje antes de continuar.')
-    if (!forzarKm && (!msgKm || /menor|no fue posible|no se identificó|error/i.test(msgKm))) faltantes.push('Verifique o confirme el kilometraje.')
+    if (!kmValidado && !forzarKm) faltantes.push('Verifique el kilometraje usando el botón debajo del campo.')
     if (!proveedorId || !tecnicoId) {
       faltantes.push('Seleccione proveedor y técnico.')
       seccion = 1
@@ -916,6 +861,10 @@ export default function MantenimientosPage() {
       faltantes.push('Explique el motivo de cada actividad marcada como pendiente.')
       if (!seccion) seccion = 2
     }
+    if (!tpValor) { faltantes.push('Seleccione el tiempo de parada en horas.'); if (!seccion) seccion = 4 }
+    if (!observaciones.trim()) { faltantes.push('Registre las observaciones o escriba NINGUNA.'); if (!seccion) seccion = 4 }
+    if (!factura.trim()) { faltantes.push('Indique la factura o escriba NO APLICA.'); if (!seccion) seccion = 3 }
+    if (valorRepuestosStr === '' || valorManoObraStr === '') { faltantes.push('Complete los valores de repuestos y mano de obra (escriba 0 si no aplica).'); if (!seccion) seccion = 3 }
     if (faltantes.length || !puedeGuardar) {
       avisar(faltantes.length ? faltantes.join(' • ') : 'Revise los datos obligatorios del formulario.')
       if (seccion) setSeccionAbierta(seccion)
@@ -1003,16 +952,10 @@ export default function MantenimientosPage() {
           null,
 
         valor_repuestos:
-          parseCOP(
-            valorRepuestosStr
-          ) ||
-          null,
+          valorRepuestosStr !== '' ? parseCOP(valorRepuestosStr) : null,
 
         valor_mano_obra:
-          parseCOP(
-            valorManoObraStr
-          ) ||
-          null,
+          valorManoObraStr !== '' ? parseCOP(valorManoObraStr) : null,
 
         costo_total:
           costoTotal ||
@@ -1511,11 +1454,11 @@ export default function MantenimientosPage() {
           <div className="mb-5 grid grid-cols-2 items-stretch gap-3">
             <TarjetaSeccionMantenimiento numero={1} disabled={!tarjetasHabilitadas} titulo="Proveedor y técnico" descripcion="Datos del taller, proveedor y técnico que realizó el servicio." completada={Boolean(proveedorId && tecnicoId)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(1) }} />
             <TarjetaSeccionMantenimiento numero={2} disabled={!tarjetasHabilitadas} titulo="Actividades y repuestos del servicio" descripcion="Actividades realizadas y repuestos utilizados (obligatorios)." completada={Boolean(repuestos.trim()) && (tipoMant === 'PREVENTIVO' ? actividadesSeleccionadas.length > 0 : Boolean(actividad.trim()))} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(2) }} />
-            <TarjetaSeccionMantenimiento numero={3} disabled={!tarjetasHabilitadas} titulo="Costos y datos complementarios" descripcion="Valor de repuestos, mano de obra, costo total y factura." completada={Boolean(valorRepuestosStr || valorManoObraStr || factura)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(3) }} />
-            <TarjetaSeccionMantenimiento numero={4} disabled={!tarjetasHabilitadas} titulo="Tiempo de parada y observaciones" descripcion="Duración aproximada de la parada y observaciones del servicio." completada={Boolean(tpValor || observaciones)} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(4) }} />
+            <TarjetaSeccionMantenimiento numero={3} disabled={!tarjetasHabilitadas} titulo="Costos y datos complementarios" descripcion="Valor de repuestos, mano de obra, costo total y factura." completada={Boolean(valorRepuestosStr !== '' && valorManoObraStr !== '' && factura.trim())} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(3) }} />
+            <TarjetaSeccionMantenimiento numero={4} disabled={!tarjetasHabilitadas} titulo="Tiempo de parada y observaciones" descripcion="Duración aproximada de la parada y observaciones del servicio." completada={Boolean(tpValor && observaciones.trim())} onClick={() => { if (tarjetasHabilitadas) setSeccionAbierta(4) }} />
           </div>
-          <AccionesModuloPractica onGuardar={registrar} puedeGuardar={!guardando} guardando={guardando} textoGuardar="Registrar Mantenimiento" />
-          <p className="mt-2 text-center text-[11px] text-slate-600">Si faltan datos obligatorios, al pulsar Registrar mantenimiento se mostrará una alerta con lo que debe completar.</p>
+          <AccionesModuloPractica onGuardar={registrar} puedeGuardar={puedeGuardar && !guardando} guardando={guardando} textoGuardar="Registrar Mantenimiento" />
+          <p className="mt-2 text-center text-[11px] text-slate-600">El botón se habilitará cuando estén diligenciados y validados todos los campos obligatorios. Si no utiliza factura, escriba NO APLICA; para valores sin costo, escriba 0.</p>
         {seccionAbierta === 1 && (
           <ModalSeccionMantenimiento numero={1} titulo="Proveedor y técnico" onCerrar={continuarSeccionProveedor} onCancelar={cancelarSeccionProveedor} onContinuar={continuarSeccionProveedor}>
             <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-700">
