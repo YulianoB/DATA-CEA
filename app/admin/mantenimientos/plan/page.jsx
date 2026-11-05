@@ -361,9 +361,28 @@ export default function ConfiguracionPlanMantenimientoPage() {
           !(detalle.actividades || []).some(actividad => actividad.seleccionada)) {
         throw new Error('Guarde primero el borrador o finalice el plan antes de imprimir.')
       }
-      // Consulta nueva de solo lectura: no incluye cambios no guardados en pantalla.
+      // Para planes finalizados, tomar P1 y promedio del MISMO motor de
+      // proyección utilizado por la matriz anual (no de cálculos antiguos).
+      let vistaDinamica = null
+      if (estado === 'FINALIZADO') {
+        const respuestaMatriz = await fetch(
+          `/api/admin/mantenimientos/plan-mantenimiento?vehiculo_id=${encodeURIComponent(vehiculoDetalle.id)}`,
+          { headers: { 'x-cea-nit': nit }, cache: 'no-store' }
+        )
+        const matriz = await respuestaMatriz.json().catch(() => null)
+        if (!respuestaMatriz.ok || matriz?.status !== 'success') {
+          throw new Error(mensajeError(matriz, 'No fue posible verificar la referencia real de P1 ni el promedio del plan dinámico.'))
+        }
+        vistaDinamica = (matriz.vehiculos || []).find(
+          (item) => Number(item.vehiculo?.id) === Number(vehiculoDetalle.id)
+        )
+        if (!vistaDinamica) {
+          throw new Error('El vehículo no aparece en el plan dinámico. No se generará un PDF con referencias incompletas.')
+        }
+      }
+      // Ambas consultas son de solo lectura; no incluyen cambios sin guardar.
       const { generarRevisionPlanMantenimientoPdf } = await import('@/lib/planMantenimientoRevisionPdf')
-      generarRevisionPlanMantenimientoPdf(detalle)
+      generarRevisionPlanMantenimientoPdf(detalle, vistaDinamica)
     } catch (err) {
       setError(err?.message || 'No fue posible generar el informe de revisión.')
     } finally {
