@@ -123,7 +123,15 @@ function PuntoChip({ punto, tipo, onClick }) {
       )}
 
       {punto?.normalizacion_inicial && (
-        <div className="mt-0.5 text-[9px] font-medium">Primer servicio · km real al registrar</div>
+        <div className="mt-0.5 space-y-0.5 text-[9px] font-medium">
+          <div>Primer servicio · km real al registrar</div>
+          {punto?.referencia_historica_aceite ? (
+            <>
+              <div>Objetivo estimado: {formatoKm(punto.km_objetivo)}</div>
+              <div>Fecha aproximada: {formatoFecha(punto.fecha_proyectada)}</div>
+            </>
+          ) : <div>Sin cambio de aceite histórico identificable</div>}
+        </div>
       )}
 
       {punto?.historico_reconstruido && (
@@ -285,12 +293,13 @@ export default function PlanMantenimientoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vigencia, nit])
 
-  function abrirPunto(punto, tipo, vehiculo) {
+  function abrirPunto(punto, tipo, vehiculo, vista) {
     setJustificacion(punto?.justificacion_vencimiento || '')
     setModal({
       punto,
       tipo,
       vehiculo,
+      vista,
     })
   }
 
@@ -730,7 +739,7 @@ function FilaVehiculo({ vista, abrirPunto }) {
                   punto={p}
                   tipo="VENCIDO"
                   onClick={(punto, tipo) =>
-                    abrirPunto(punto, tipo, v)
+                    abrirPunto(punto, tipo, v, vista)
                   }
                 />
               ))}
@@ -741,7 +750,7 @@ function FilaVehiculo({ vista, abrirPunto }) {
                   punto={p}
                   tipo="EJECUTADO"
                   onClick={(punto, tipo) =>
-                    abrirPunto(punto, tipo, v)
+                    abrirPunto(punto, tipo, v, vista)
                   }
                 />
               ))}
@@ -752,7 +761,7 @@ function FilaVehiculo({ vista, abrirPunto }) {
                   punto={p}
                   tipo={p.estado}
                   onClick={(punto, tipo) =>
-                    abrirPunto(punto, tipo, v)
+                    abrirPunto(punto, tipo, v, vista)
                   }
                 />
               ))}
@@ -772,8 +781,11 @@ function ModalPunto({
   guardando,
   cerrar,
 }) {
-  const { punto, tipo, vehiculo } = modal
+  const { punto, tipo, vehiculo, vista } = modal
   const actividades = punto?.actividades || []
+  const promedio = vista?.kilometraje?.promedio_km_mes
+  const mesesEstimados = punto?.km_faltantes != null && Number(promedio) > 0
+    ? Number(punto.km_faltantes) / Number(promedio) : null
 
   const actividadesPorFrecuencia =
     actividades.reduce((mapa, actividad) => {
@@ -863,6 +875,23 @@ function ModalPunto({
               <Dato titulo="Km actual" valor={formatoKm(punto?.km_actual)} />
               <Dato titulo="Km faltantes" valor={formatoKm(punto?.km_faltantes)} />
               <Dato titulo="Fecha estimada" valor={formatoFecha(punto?.fecha_proyectada)} />
+            </div>
+          )}
+
+          {punto?.normalizacion_inicial && (
+            <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-slate-800">
+              <p className="font-extrabold">Proyección del primer cambio de aceite del plan</p>
+              <p className="mt-1">Promedio de recorrido: <strong>{promedio != null ? `${formatoKm(promedio)}/mes` : 'No disponible'}</strong></p>
+              {punto?.referencia_historica_aceite ? (
+                <>
+                  <p className="mt-1">Antecedente preventivo: <strong>{formatoFecha(punto.referencia_historica_aceite.fecha)}</strong> a los <strong>{formatoKm(punto.referencia_historica_aceite.km)}</strong>.</p>
+                  <p className="mt-1">Próximo objetivo de aceite: <strong>{formatoKm(punto.km_objetivo)}</strong>.</p>
+                  <p className="mt-1">Kilómetros restantes: <strong>{formatoKm(punto.km_faltantes)}</strong>.</p>
+                  <p className="mt-1">Tiempo aproximado: <strong>{mesesEstimados !== null ? `${formatoNumero(mesesEstimados, 1)} meses` : 'No disponible'}</strong>.</p>
+                  <p className="mt-1">Fecha aproximada: <strong>{formatoFecha(punto.fecha_proyectada)}</strong>.</p>
+                </>
+              ) : <p className="mt-1">No se identificó un cambio de aceite histórico confiable. P1 permanece disponible para registrar el primer servicio real.</p>}
+              <p className="mt-2 text-[10px] text-slate-600">La referencia histórica solo sirve para proyectar; P1 todavía no está ejecutado. La fecha puede variar según el uso.</p>
             </div>
           )}
 
