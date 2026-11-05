@@ -661,6 +661,47 @@ const validarDocumentacionVehiculo =
           return
         }
 
+        // Para el P1 inicial, la fecha de aprobación del plan NO constituye
+        // proximidad de mantenimiento. Usar únicamente la última referencia
+        // histórica de cambio de aceite preventivo reconocida por el motor.
+        const p1 = vista?.punto_vigente
+        if (p1?.normalizacion_inicial === true) {
+          const historial = vista?.ultimo_aceite_historico
+          const objetivo = p1?.km_objetivo == null ? null : Number(p1.km_objetivo)
+          const kmActual = vista?.kilometraje?.ultimo_km == null
+            ? null : Number(vista.kilometraje.ultimo_km)
+          if (!historial || !Number.isFinite(objetivo) ||
+              !Number.isFinite(kmActual)) return
+
+          const tolerancia = Number.isFinite(Number(p1.tolerancia_km))
+            ? Math.max(0, Number(p1.tolerancia_km)) : 500
+          const kmRestantes = objetivo - kmActual
+          // Proximidad basada en kilometraje; no generar alertas tempranas
+          // por una fecha estimada que puede variar con los preoperacionales.
+          if (kmRestantes > tolerancia) return
+          const vencido = kmActual > objetivo + tolerancia
+          const fecha = p1.fecha_proyectada || null
+          const hoyTexto = formatearBogota(new Date(), 'fecha')
+          const dias = fecha
+            ? Math.max(0, Math.ceil((
+                new Date(`${fecha}T00:00:00-05:00`) -
+                new Date(`${hoyTexto}T00:00:00-05:00`)
+              ) / 86400000))
+            : null
+          setAlertaMantenimiento({
+            tipo: vencido ? 'VENCIDO' : 'PROXIMO',
+            placa,
+            punto: 1,
+            fecha,
+            dias,
+            kmObjetivo: objetivo,
+            kmRestantes: Math.max(0, kmRestantes),
+            referenciaHistorica: historial,
+          })
+          setMostrarAlertaMantenimiento(true)
+          return
+        }
+
         const vencidos =
           Object.values(
             vista?.meses || {}
@@ -1932,16 +1973,31 @@ const puedeGuardar =
                   </p>
                 )}
 
-                {alertaMantenimiento.tipo === 'PROXIMO' && (
+                {alertaMantenimiento.kmRestantes != null && (
+                  <p className="mt-1 font-bold text-amber-800">
+                    {alertaMantenimiento.kmRestantes > 0
+                      ? `Faltan aproximadamente ${Number(alertaMantenimiento.kmRestantes).toLocaleString('es-CO')} km para el objetivo.`
+                      : 'El vehículo alcanzó o superó el kilometraje objetivo.'}
+                  </p>
+                )}
+                {alertaMantenimiento.tipo === 'PROXIMO' &&
+                 alertaMantenimiento.kmRestantes == null &&
+                 alertaMantenimiento.dias != null && (
                   <p className="mt-1 font-bold text-amber-800">
                     Faltan aproximadamente{' '}
                     {alertaMantenimiento.dias === 0
                       ? 'menos de un día'
                       : `${alertaMantenimiento.dias} día${
-                          alertaMantenimiento.dias === 1
-                            ? ''
-                            : 's'
+                          alertaMantenimiento.dias === 1 ? '' : 's'
                         }`}.
+                  </p>
+                )}
+                {alertaMantenimiento.referenciaHistorica && (
+                  <p className="mt-2 text-[11px] text-amber-900">
+                    Proyección basada en el último cambio de aceite histórico
+                    del {alertaMantenimiento.referenciaHistorica.fecha}, a los{' '}
+                    {Number(alertaMantenimiento.referenciaHistorica.km).toLocaleString('es-CO')} km.
+                    P1 aún no está ejecutado.
                   </p>
                 )}
               </div>
