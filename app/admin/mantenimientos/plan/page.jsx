@@ -271,20 +271,30 @@ export default function ConfiguracionPlanMantenimientoPage() {
     setError('')
   }
 
+  // Priorizar la frecuencia realmente guardada o editada. Para actividades
+  // aún no seleccionadas, usar la sugerencia del plan solamente como guía.
+  function frecuenciaParaOrden(a) {
+    const configurada = a?.seleccionada
+      ? Number(soloDigitos(a.frecuencia_km))
+      : null
+    if (Number.isFinite(configurada) && configurada > 0) return configurada
+    const sugerida = Number(sugerenciaOperativa(a))
+    return Number.isFinite(sugerida) && sugerida > 0
+      ? sugerida
+      : Number.MAX_SAFE_INTEGER
+  }
+
   const actividadesVisibles = useMemo(() => {
     const t = busquedaActividad.trim().toLocaleLowerCase('es')
     return actividades
       .filter((a) => !t || [a.nombre, a.accion, a.descripcion, a.motivo_criterio].some((x) =>
         String(x ?? '').toLocaleLowerCase('es').includes(t)))
       .sort((a, b) => {
+        const diferencia = frecuenciaParaOrden(a) - frecuenciaParaOrden(b)
+        if (diferencia !== 0) return diferencia
         if (Boolean(a.es_frecuencia_base) !== Boolean(b.es_frecuencia_base)) {
           return a.es_frecuencia_base ? -1 : 1
         }
-        const fa = Number(a.frecuencia_recomendada_km)
-        const fb = Number(b.frecuencia_recomendada_km)
-        const va = Number.isFinite(fa) && fa > 0 ? fa : Number.MAX_SAFE_INTEGER
-        const vb = Number.isFinite(fb) && fb > 0 ? fb : Number.MAX_SAFE_INTEGER
-        if (va !== vb) return va - vb
         return String(a.nombre ?? '').localeCompare(String(b.nombre ?? ''), 'es', { sensitivity: 'base' })
       })
   }, [actividades, busquedaActividad])
@@ -302,12 +312,11 @@ export default function ConfiguracionPlanMantenimientoPage() {
     }
 
     const ordenadas = [...actividadesVisibles].sort((a, b) => {
+      const diferencia = frecuenciaParaOrden(a) - frecuenciaParaOrden(b)
+      if (diferencia !== 0) return diferencia
       if (Boolean(a.es_frecuencia_base) !== Boolean(b.es_frecuencia_base)) {
         return a.es_frecuencia_base ? -1 : 1
       }
-      const sa = Number(sugerenciaOperativa(a)) || Number.MAX_SAFE_INTEGER
-      const sb = Number(sugerenciaOperativa(b)) || Number.MAX_SAFE_INTEGER
-      if (sa !== sb) return sa - sb
       return String(a.nombre ?? '').localeCompare(
         String(b.nombre ?? ''),
         'es',
@@ -317,8 +326,8 @@ export default function ConfiguracionPlanMantenimientoPage() {
 
     let frecuenciaAnterior = null
     for (const actividad of ordenadas) {
-      const frecuencia = Number(sugerenciaOperativa(actividad))
-      const clave = Number.isFinite(frecuencia) && frecuencia > 0
+      const frecuencia = frecuenciaParaOrden(actividad)
+      const clave = Number.isFinite(frecuencia) && frecuencia < Number.MAX_SAFE_INTEGER
         ? frecuencia
         : 'SIN_FRECUENCIA'
 
