@@ -1494,6 +1494,23 @@ export async function POST(request) {
         }, { status: 400 })
       }
 
+      // Verificar que ambas tablas de detalles estén disponibles en la base
+      // de la empresa ANTES de crear un mantenimiento o un punto P.
+      // Esto previene registros parciales por instalaciones incompletas,
+      // sin crear funciones SQL ni triggers.
+      if (tipoMantenimiento === 'PREVENTIVO') {
+        const [comprobacionActividades, comprobacionSeguimiento] = await Promise.all([
+          supabase.from('mantenimiento_actividades_ejecutadas').select('id').limit(1),
+          supabase.from('mantenimiento_actividades_seguimiento').select('id').limit(1),
+        ])
+        if (comprobacionActividades.error || comprobacionSeguimiento.error) {
+          return NextResponse.json({
+            status: 'failed',
+            message: 'No fue posible verificar las tablas de ejecución y seguimiento del mantenimiento. No se guardó ningún registro. Administración debe revisar la configuración de la base.',
+          }, { status: 503 })
+        }
+      }
+
       // Solo después de validar TODO el formulario se materializa el punto.
       // Las operaciones siguen siendo independientes (sin funciones SQL ni
       // triggers), pero un formulario rechazado ya no deja un punto vacío.
@@ -1748,7 +1765,7 @@ export async function POST(request) {
             }, { status: 500 })
           }
           if (!otrosP1?.length) {
-            const { error: anclajeError } = await supabase
+            const { data: anclajeActualizado, error: anclajeError } = await supabase
               .from('vehiculo_mantenimiento_plan_estado')
               .update({
                 numero_punto_actual: 1,
@@ -1759,11 +1776,13 @@ export async function POST(request) {
               })
               .eq('vehiculo_id', Number(body.vehiculo_id))
               .eq('estado', 'FINALIZADO')
-            if (anclajeError) {
+              .select('vehiculo_id')
+              .maybeSingle()
+            if (anclajeError || !anclajeActualizado) {
               return NextResponse.json({
                 status: 'failed',
                 code: 'MANTENIMIENTO_GUARDADO_INICIO_NO_ACTUALIZADO',
-                message: `Mantenimiento guardado, pero no se pudo fijar la referencia inicial: ${anclajeError.message}. No registre de nuevo sin revisar el mantenimiento guardado.`,
+                message: `Mantenimiento guardado, pero no se pudo fijar la referencia inicial: ${anclajeError?.message || 'No se actualizó el estado del plan'}. No registre de nuevo sin revisar el mantenimiento guardado.`,
                 mantenimiento: data,
               }, { status: 500 })
             }
@@ -1849,7 +1868,7 @@ export async function POST(request) {
         const completo = ejecutadasIds.has(configuracionAceiteId)
 
         if (completo && !servicioAdicionalPunto) {
-          const { error: actualizarProgramacionError } = await supabase
+          const { data: programacionActualizada, error: actualizarProgramacionError } = await supabase
             .from('programacion_mantenimiento')
             .update({
               estado: 'EJECUTADO',
@@ -1859,9 +1878,11 @@ export async function POST(request) {
               updated_at: new Date().toISOString(),
             })
             .eq('id', programacionPreventiva.id)
+            .select('id')
+            .maybeSingle()
 
-          if (actualizarProgramacionError) {
-            return NextResponse.json({ status: 'failed', message: `El mantenimiento fue guardado, pero no se pudo cerrar P${programacionPreventiva.ciclo}: ${actualizarProgramacionError.message}` }, { status: 500 })
+          if (actualizarProgramacionError || !programacionActualizada) {
+            return NextResponse.json({ status: 'failed', message: `El mantenimiento fue guardado, pero no se pudo cerrar P${programacionPreventiva.ciclo}: ${actualizarProgramacionError?.message || 'no se actualizó el punto'}` }, { status: 500 })
           }
         }
       }
