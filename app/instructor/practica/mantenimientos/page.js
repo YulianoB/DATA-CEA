@@ -589,7 +589,7 @@ export default function MantenimientosPage() {
   const puedeAsociarUltimo = ultimoPuntoEjecutado &&
     kilometrajeServicio !== null && Number.isFinite(kilometrajeServicio) &&
     Math.abs(kilometrajeServicio - Number(ultimoPuntoEjecutado.km_ejecucion)) <= 500
-  const puntoSeleccionado = tipoMant === 'PREVENTIVO' && usarUltimoPunto && puedeAsociarUltimo
+  const puntoSeleccionado = tipoMant === 'PREVENTIVO' && usarUltimoPunto
     ? ultimoPuntoEjecutado
     : programacionPreventiva
   // Comprobar el odómetro EFECTIVO de esta intervención. El preoperacional
@@ -968,8 +968,7 @@ export default function MantenimientosPage() {
           valorManoObraStr !== '' ? parseCOP(valorManoObraStr) : null,
 
         costo_total:
-          costoTotal ||
-          null,
+          costoTotal,
 
         responsable:
           user?.nombreCompleto ||
