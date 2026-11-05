@@ -23,9 +23,23 @@ const TAMANO_PAGINA_INTERNA = 1000
 // SELECTS
 // =========================================================
 
+// Conversión para consultas históricas: antes del registro 152 de IAM640
+// el tiempo se expresaba en minutos; desde ese registro, en horas.
+// No se altera el valor original almacenado.
+const INICIO_REGISTROS_HORAS = '2026-11-04T15:54:29.351Z'
+function minutosParada(registro) {
+  const valor = Number(registro?.tiempoparada)
+  if (!Number.isFinite(valor) || valor < 0) return 0
+  const fecha = registro?.timestamp_registro
+  return fecha && Date.parse(fecha) >= Date.parse(INICIO_REGISTROS_HORAS)
+    ? valor * 60
+    : valor
+}
+
 const SELECT_MANTENIMIENTO = `
   id,
   fecha_registro,
+  timestamp_registro,
   placa,
   kilometraje,
   tipo_mantenimiento,
@@ -629,11 +643,7 @@ function construirResumen(
           ?.costo_total
       )
 
-    tiempoParada +=
-      numeroSeguro(
-        registro
-          ?.tiempoparada
-      )
+    tiempoParada += minutosParada(registro)
 
     const placa =
       normalizarMayusculas(
@@ -798,11 +808,7 @@ function construirResumenPorVehiculo(
           ?.costo_total
       )
 
-    item.tiempo_parada_minutos +=
-      numeroSeguro(
-        registro
-          ?.tiempoparada
-      )
+    item.tiempo_parada_minutos += minutosParada(registro)
   }
 
   return Array.from(
