@@ -911,6 +911,16 @@ function PlanMantenimientoInstructorPage() {
                 </div>
               </section>
 
+              {Number(vista?.frecuencia_base_km ?? vista?.ciclo?.frecuencia_base_km) > 0 &&
+                Number(vista?.kilometraje?.promedio_km_mes) > 0 && (
+                <p className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[10px] leading-5 text-blue-950">
+                  <strong>Intervalo estimado entre cambios de aceite: </strong>
+                  {(Number(vista?.frecuencia_base_km ?? vista?.ciclo?.frecuencia_base_km) /
+                    Number(vista.kilometraje.promedio_km_mes)).toLocaleString('es-CO', { maximumFractionDigits: 1 })} meses.
+                  Es una referencia de uso, no una fecha fija de servicio.
+                </p>
+              )}
+
               <section className="mt-4">
                 <div className="mb-2 flex items-end justify-between gap-3">
                   <div>
