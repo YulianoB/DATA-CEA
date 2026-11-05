@@ -508,7 +508,6 @@ export default function MantenimientosPage() {
         setActividadesConfiguradas(Array.isArray(vista.actividades_configuradas) ? vista.actividades_configuradas : [])
         setActividadesPlan(normalizado.actividades)
         setNivelSeleccionadoId(String(normalizado.ciclo))
-        setActividad(`MANTENIMIENTO PREVENTIVO P${normalizado.ciclo}`)
       } catch (error) {
         if (cancelado) return
         console.error('Error consultando el Plan de Mantenimiento:', error)
@@ -548,6 +547,7 @@ export default function MantenimientosPage() {
 
     setProveedorInfo(proveedor || null)
 
+    let cancelado = false
     const cargarDatosProveedor = async () => {
       if (!nitActual) return
 
@@ -559,6 +559,7 @@ export default function MantenimientosPage() {
           { cache: 'no-store' }
         )
         const jsonTecnicos = await resTecnicos.json()
+        if (cancelado) return
         if (!resTecnicos.ok || jsonTecnicos?.status !== 'success' || !Array.isArray(jsonTecnicos.tecnicos)) {
           setTecnicos([])
           avisar(jsonTecnicos?.message || 'No se pudieron consultar los técnicos de este proveedor. Intente nuevamente.')
@@ -570,19 +571,21 @@ export default function MantenimientosPage() {
         // nunca de las relaciones de catálogo del taller.
         setActividadesProveedor([])
       } catch (error) {
+        if (cancelado) return
         console.error('Error cargando información del proveedor:', error)
         setTecnicos([])
         setActividadesProveedor([])
         avisar('No fue posible consultar los técnicos del proveedor. Verifique la conexión e intente nuevamente.')
       } finally {
-        setCargandoActividadesProveedor(false)
+        if (!cancelado) setCargandoActividadesProveedor(false)
       }
     }
 
     setTecnicoId('')
     setTecnicoInfo(null)
     cargarDatosProveedor()
-  }, [proveedorId, proveedores, nitActual, vehiculoInfo.tipo, tipoMant])
+    return () => { cancelado = true }
+  }, [proveedorId, nitActual])
 
   const actividadesProveedorIds = useMemo(
     () => new Set(actividadesProveedor.map((item) => Number(item.id))),
@@ -1493,7 +1496,7 @@ export default function MantenimientosPage() {
         {seccionAbierta === 1 && (
           <ModalSeccionMantenimiento numero={1} titulo="Proveedor y técnico" onCerrar={continuarSeccionProveedor} onCancelar={cancelarSeccionProveedor} onContinuar={continuarSeccionProveedor}>
             <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-700">
-              Los proveedores, talleres, técnicos y actividades que atienden son configurados por Administración. Si el proveedor de la factura aún no aparece, solicite su registro antes de guardar el mantenimiento.
+              Seleccione el proveedor o taller que realizó este servicio y su técnico. En correctivos puede registrar aquí un proveedor nuevo; no necesita asociarle actividades del plan de mantenimiento.
             </div>
 
             <div>
