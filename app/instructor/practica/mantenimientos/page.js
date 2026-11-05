@@ -1461,7 +1461,7 @@ export default function MantenimientosPage() {
               </div>
               <span id="estado-kilometraje-servicio" className="sr-only" role="status">
                 {validandoKm ? 'Verificando kilometraje.' : kmValidado ? 'Kilometraje verificado.' : forzarKm ? 'Kilometraje confirmado con advertencia.' : 'Toque el ícono dentro del campo para verificar el kilometraje.'}
-              </span>}
+              </span>
             </div>
           </div>
           <div className="mb-4">
