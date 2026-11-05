@@ -153,6 +153,7 @@ function TarjetaMantenimiento({
   mes,
   abierta,
   onToggle,
+  promedioMensual,
 }) {
   const clases = claseEstado(tipo)
   const actividades = obtenerActividades(punto)
@@ -191,6 +192,8 @@ function TarjetaMantenimiento({
     punto?.km_objetivo ??
     punto?.km_vencimiento ??
     punto?.km_debio_realizarse
+  const tiempoMeses = punto?.km_faltantes != null && Number(promedioMensual) > 0
+    ? Number(punto.km_faltantes) / Number(promedioMensual) : null
 
   return (
     <article
@@ -241,6 +244,13 @@ function TarjetaMantenimiento({
               </div>
             </div>
 
+            {punto?.normalizacion_inicial && (
+              <p className="mt-2 text-[10px] font-semibold text-blue-900">
+                {punto?.referencia_historica_aceite
+                  ? `Proyección desde el último aceite histórico · ${formatoKm(punto.km_faltantes)} restantes`
+                  : 'P1 disponible · sin fecha histórica confiable'}
+              </p>
+            )}
             <div className="mt-3 flex items-center justify-between border-t border-slate-300/70 pt-2">
               <span className="text-[10px] font-bold text-slate-600">
                 {actividades.length > 0
@@ -267,6 +277,22 @@ function TarjetaMantenimiento({
 
       {abierta && (
         <div className="border-t border-slate-300 bg-white px-4 py-4">
+          <div className="mb-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-[11px] leading-5 text-slate-800">
+            <p><strong>Promedio mensual de recorrido:</strong> {promedioMensual != null ? `${formatoKm(promedioMensual)}/mes` : 'No disponible'}</p>
+            {punto?.normalizacion_inicial && (
+              <>
+                <p><strong>Objetivo estimado de P1:</strong> {punto?.referencia_historica_aceite ? formatoKm(punto.km_objetivo) : 'Sin referencia histórica'}</p>
+                {punto?.referencia_historica_aceite && (
+                  <>
+                    <p><strong>Último aceite del historial:</strong> {formatoFecha(punto.referencia_historica_aceite.fecha)} · {formatoKm(punto.referencia_historica_aceite.km)}</p>
+                    <p><strong>Kilómetros restantes:</strong> {formatoKm(punto.km_faltantes)}</p>
+                    <p><strong>Tiempo aproximado:</strong> {tiempoMeses !== null ? `${tiempoMeses.toLocaleString('es-CO', {maximumFractionDigits: 1})} meses` : 'No disponible'}</p>
+                  </>
+                )}
+                <p className="mt-1 text-[10px] text-blue-900">Este P1 es una proyección, no un mantenimiento ejecutado. Su fecha cambia según el recorrido real.</p>
+              </>
+            )}
+          </div>
           <div className="mb-3">
             <h3 className="text-xs font-black uppercase text-slate-800">
               Actividades del punto P{punto?.punto || punto?.ciclo || '—'}
@@ -849,11 +875,9 @@ function PlanMantenimientoInstructorPage() {
                   </div>
 
                   <div className="mt-1 text-[11px] font-black text-slate-900">
-                    {formatoKm(
-                      vista
-                        ?.kilometraje
-                        ?.promedio_km_mes
-                    )}
+                    {vista?.kilometraje?.promedio_km_mes != null
+                      ? `${formatoKm(vista.kilometraje.promedio_km_mes)}/mes`
+                      : '—'}
                   </div>
                 </div>
 
@@ -925,6 +949,7 @@ function PlanMantenimientoInstructorPage() {
                             punto={punto}
                             tipo={tipo}
                             mes={mes}
+                            promedioMensual={vista?.kilometraje?.promedio_km_mes}
                             abierta={
                               tarjetaAbierta ===
                               clave
