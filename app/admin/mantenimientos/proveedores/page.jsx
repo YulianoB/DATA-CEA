@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Building2,
-  Check,
   Loader2,
   Pencil,
   Plus,
@@ -38,7 +37,6 @@ const PROVEEDOR_VACIO = {
   municipio_id: '',
   activo: true,
   observaciones: '',
-  actividad_ids: [],
 }
 
 const TECNICO_VACIO = {
@@ -67,10 +65,6 @@ function obtenerNit(user) {
 
 function mensajeError(data, defecto) {
   return data?.message || data?.error || defecto
-}
-
-function nombreActividad(a) {
-  return a?.nombre || a?.actividad || a?.descripcion || `Actividad ${a?.id ?? ''}`
 }
 
 function aMayusculas(valor) {
@@ -118,12 +112,9 @@ export default function ProveedoresMantenimientoPage() {
   const [proveedores, setProveedores] = useState([])
   const [departamentos, setDepartamentos] = useState([])
   const [municipios, setMunicipios] = useState([])
-  const [actividades, setActividades] = useState([])
 
   const [modalProveedor, setModalProveedor] = useState(false)
   const [form, setForm] = useState(PROVEEDOR_VACIO)
-  const [busquedaActividad, setBusquedaActividad] = useState('')
-  const [tipoVehiculoActividad, setTipoVehiculoActividad] = useState('TODOS')
 
   const [modalTecnicos, setModalTecnicos] = useState(false)
   const [proveedorTecnicos, setProveedorTecnicos] = useState(null)
@@ -157,7 +148,6 @@ export default function ProveedoresMantenimientoPage() {
       setProveedores(Array.isArray(data.proveedores) ? data.proveedores : [])
       setDepartamentos(Array.isArray(data.departamentos) ? data.departamentos : [])
       setMunicipios(Array.isArray(data.municipios) ? data.municipios : [])
-      setActividades(Array.isArray(data.actividades) ? data.actividades : [])
     } catch (e) {
       console.error(e)
       setError(e?.message || 'Error consultando proveedores.')
@@ -194,34 +184,9 @@ export default function ProveedoresMantenimientoPage() {
     )
   }, [municipios, form.departamento_id])
 
-  const actividadesFiltradas = useMemo(() => {
-    const q = busquedaActividad.trim().toUpperCase()
-
-    return actividades.filter((a) => {
-      const tipo = String(a?.tipo_vehiculo || '').toUpperCase()
-      const coincideTipo =
-        tipoVehiculoActividad === 'TODOS' || tipo === tipoVehiculoActividad
-
-      const texto = [
-        nombreActividad(a),
-        a?.accion,
-        a?.tipo_vehiculo,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toUpperCase()
-
-      const coincideBusqueda = !q || texto.includes(q)
-
-      return coincideTipo && coincideBusqueda
-    })
-  }, [actividades, busquedaActividad, tipoVehiculoActividad])
-
   function abrirNuevo() {
     setError('')
     setMensaje('')
-    setBusquedaActividad('')
-    setTipoVehiculoActividad('TODOS')
     setForm(PROVEEDOR_VACIO)
     setModalProveedor(true)
   }
@@ -229,8 +194,6 @@ export default function ProveedoresMantenimientoPage() {
   function editarProveedor(p) {
     setError('')
     setMensaje('')
-    setBusquedaActividad('')
-    setTipoVehiculoActividad('TODOS')
     setForm({
       id: p.id,
       tipo_persona: p.tipo_persona || 'JURIDICA',
@@ -245,19 +208,8 @@ export default function ProveedoresMantenimientoPage() {
       municipio_id: p.municipio_id || '',
       activo: p.activo !== false,
       observaciones: p.observaciones || '',
-      actividad_ids: Array.isArray(p.actividad_ids) ? p.actividad_ids : [],
     })
     setModalProveedor(true)
-  }
-
-  function seleccionarActividad(id) {
-    const actividadId = Number(id)
-    setForm((actual) => ({
-      ...actual,
-      actividad_ids: actual.actividad_ids.includes(actividadId)
-        ? actual.actividad_ids.filter((x) => x !== actividadId)
-        : [...actual.actividad_ids, actividadId],
-    }))
   }
 
   async function enviar(body) {
@@ -419,7 +371,7 @@ export default function ProveedoresMantenimientoPage() {
       <div className="mx-auto max-w-7xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
         <EncabezadoModulo
           titulo="Proveedores y Talleres"
-          subtitulo="Administración de proveedores, actividades autorizadas y técnicos"
+          subtitulo="Administración de proveedores, talleres y técnicos"
           icono={Wrench}
           rutaRegreso="/admin/mantenimientos"
           textoRegreso="Mantenimiento Vehicular"
@@ -488,7 +440,6 @@ export default function ProveedoresMantenimientoPage() {
                     <th className="border px-2 py-2">NIT</th>
                     <th className="border px-2 py-2">Ubicación</th>
                     <th className="border px-2 py-2">Contacto</th>
-                    <th className="border px-2 py-2 text-center">Actividades</th>
                     <th className="border px-2 py-2 text-center">Técnicos</th>
                     <th className="border px-2 py-2 text-center">Estado</th>
                     <th className="border px-2 py-2 text-center">Acciones</th>
@@ -518,9 +469,6 @@ export default function ProveedoresMantenimientoPage() {
                       <td className="border px-2 py-2 text-slate-600">
                         <div>{p.telefono || '—'}</div>
                         <div className="text-[10px]">{p.email || ''}</div>
-                      </td>
-                      <td className="border px-2 py-2 text-center font-bold">
-                        {(p.actividad_ids || []).length}
                       </td>
                       <td className="border px-2 py-2 text-center font-bold">
                         {(p.tecnicos || []).length}
@@ -586,7 +534,7 @@ export default function ProveedoresMantenimientoPage() {
             </FranjaSuperiorModal>
 
             <div className="mx-4 mt-4 rounded-lg border-l-4 border-[#737B87] bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-700">
-              Registre la información general del proveedor o taller y seleccione su ubicación. Las actividades pueden configurarse ahora o posteriormente; un proveedor sin actividades podrá utilizarse en mantenimientos correctivos, pero no en preventivos hasta completar su configuración. Los campos obligatorios deben completarse antes de guardar.
+              Registre los datos generales y la ubicación del proveedor o taller. Las actividades se seleccionan al registrar cada servicio, sin restringirlas al taller. Los campos obligatorios deben completarse antes de guardar.
             </div>
 
             <div className="mx-4 mt-4 overflow-hidden rounded-xl border bg-white shadow-sm" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
@@ -727,117 +675,7 @@ export default function ProveedoresMantenimientoPage() {
 
             </div>
 
-              <div className="mx-4 mt-4 overflow-hidden rounded-xl border bg-white" style={{ borderColor: ESTILO_CONTENEDORES.borde }}>
-                <FranjaSecundariaModal className="px-4 py-2.5 text-xs font-bold">
-                  Actividades de mantenimiento
-                </FranjaSecundariaModal>
-                <div className="space-y-3 bg-white p-3">
-                  <p className="text-[11px] font-medium text-slate-600">
-                    Seleccione el tipo de vehículo y marque las actividades que este proveedor o taller puede realizar. Las selecciones se conservan al cambiar de tipo de vehículo.
-                  </p>
-                  <div className="flex flex-col gap-3">
-
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        ['TODOS', 'TODOS'],
-                        ['AUTOMOVIL', 'AUTOMÓVIL'],
-                        ['CAMIONETA', 'CAMIONETA'],
-                        ['CAMION', 'CAMIÓN'],
-                        ['MOTOCICLETA', 'MOTOCICLETA'],
-                      ].map(([valor, etiqueta]) => {
-                        const activo = tipoVehiculoActividad === valor
-                        const cantidad = valor === 'TODOS'
-                          ? actividades.length
-                          : actividades.filter(
-                              (a) => String(a?.tipo_vehiculo || '').toUpperCase() === valor
-                            ).length
-
-                        return (
-                          <button
-                            key={valor}
-                            type="button"
-                            onClick={() => setTipoVehiculoActividad(valor)}
-                            className={`rounded-lg border px-3 py-2 text-[10px] font-extrabold transition ${
-                              activo
-                                ? 'border-[#194567] bg-[#194567] text-white'
-                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                            }`}
-                          >
-                            {etiqueta} ({cantidad})
-                          </button>
-                        )
-                      })}
-                    </div>
-
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="text-[10px] font-semibold text-slate-600">
-                        Seleccionadas: {form.actividad_ids.length}
-                      </div>
-                      <input
-                        value={busquedaActividad}
-                        onChange={(e) => setBusquedaActividad(e.target.value)}
-                        placeholder="Buscar actividad o acción..."
-                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 outline-none sm:max-w-xs"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid max-h-72 gap-2 overflow-y-auto p-3 md:grid-cols-2">
-                  {actividadesFiltradas.length === 0 ? (
-                    <div className="col-span-full rounded-lg border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500">
-                      No se encontraron actividades para este filtro.
-                    </div>
-                  ) : (
-                    actividadesFiltradas.map((a) => {
-                      const marcada = form.actividad_ids.includes(Number(a.id))
-                      const tipo = String(a?.tipo_vehiculo || '').toUpperCase()
-                      const tipoVisible =
-                        tipo === 'AUTOMOVIL'
-                          ? 'AUTOMÓVIL'
-                          : tipo === 'CAMION'
-                            ? 'CAMIÓN'
-                            : tipo
-
-                      return (
-                        <button
-                          type="button"
-                          key={a.id}
-                          onClick={() => seleccionarActividad(a.id)}
-                          className={`flex items-start gap-2 rounded-lg border p-2.5 text-left text-xs ${
-                            marcada
-                              ? 'border-slate-600 bg-slate-100'
-                              : 'border-slate-300 bg-white hover:bg-slate-50'
-                          }`}
-                        >
-                          <span
-                            className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
-                              marcada
-                                ? 'border-slate-800 bg-slate-800 text-white'
-                                : 'border-slate-400 bg-white'
-                            }`}
-                          >
-                            {marcada && <Check className="h-3 w-3" />}
-                          </span>
-
-                          <span className="min-w-0">
-                            <span className="block font-extrabold text-slate-800">
-                              {nombreActividad(a)}
-                            </span>
-                            <span className="mt-1 block text-[10px] font-semibold text-slate-600">
-                              {tipoVisible || 'SIN TIPO'}
-                              {a?.accion ? ` · ${String(a.accion).toUpperCase()}` : ''}
-                            </span>
-                          </span>
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-300 bg-white p-4">
+              <div className="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-300 bg-white p-4">
               <BotonAccion tipo="cancelar"
                 type="button"
                 onClick={() => setModalProveedor(false)}
