@@ -713,13 +713,15 @@ function construirProyeccionesFuturas({
           promedioKmMes: kilometraje.promedio_km_mes,
         })
       } else {
-        // Sin aceite histórico verificable, mostrar P1 sin fecha/objetivo
-        // preventivo inventado y esperar el primer servicio real.
-        proyectado.km_referencia = null
-        proyectado.km_objetivo = null
+        // Conservar el odómetro vigente como referencia provisional para
+        // permitir registrar P1 cuando ocurra el servicio. NO se proyecta
+        // una fecha ni se genera una alerta sin antecedente de aceite.
+        proyectado.km_referencia = numero(kilometraje.ultimo_km)
+        proyectado.km_objetivo = numero(kilometraje.ultimo_km)
         proyectado.km_maximo = null
         proyectado.km_faltantes = null
         proyectado.fecha_proyectada = null
+        proyectado.sin_referencia_historica = true
       }
       const fecha = proyectado.fecha_proyectada
       proyectado.vigencia_proyectada = fecha ? Number(fecha.slice(0, 4)) : null
