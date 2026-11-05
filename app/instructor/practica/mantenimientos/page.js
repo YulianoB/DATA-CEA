@@ -548,11 +548,6 @@ export default function MantenimientosPage() {
       setCargandoActividadesProveedor(true)
 
       try {
-        const tipoVehiculo =
-          vehiculoInfo?.tipo && vehiculoInfo.tipo !== '-'
-            ? `&tipo_vehiculo=${encodeURIComponent(vehiculoInfo.tipo)}`
-            : ''
-
         const resTecnicos = await fetch(
           `/api/mantenimientos?nit=${encodeURIComponent(nitActual)}&recurso=tecnicos&proveedor_id=${encodeURIComponent(proveedorId)}`,
           { cache: 'no-store' }
@@ -565,22 +560,9 @@ export default function MantenimientosPage() {
           setTecnicos(jsonTecnicos.tecnicos)
         }
 
-        // Para correctivos NO se exige catálogo de actividades del proveedor.
-        if (tipoMant === 'PREVENTIVO') {
-          const resActividades = await fetch(
-            `/api/mantenimientos?nit=${encodeURIComponent(nitActual)}&recurso=actividades_proveedor&proveedor_id=${encodeURIComponent(proveedorId)}${tipoVehiculo}`,
-            { cache: 'no-store' }
-          )
-          const jsonActividades = await resActividades.json()
-          if (resActividades.ok && jsonActividades?.status === 'success') {
-            setActividadesProveedor(Array.isArray(jsonActividades.actividades) ? jsonActividades.actividades : [])
-          } else {
-            setActividadesProveedor([])
-            avisar(jsonActividades?.message || 'No se pudieron cargar las actividades del proveedor.')
-          }
-        } else {
-          setActividadesProveedor([])
-        }
+        // La selección de actividades depende del vehículo y del servicio,
+        // nunca de las relaciones de catálogo del taller.
+        setActividadesProveedor([])
       } catch (error) {
         console.error('Error cargando información del proveedor:', error)
         setTecnicos([])
