@@ -1388,7 +1388,7 @@ export default function MantenimientosPage() {
             <div className="mb-4 rounded-xl border border-blue-300 bg-blue-50 p-3">
               <label className="flex items-start gap-2 text-sm font-semibold text-blue-950">
                 <input type="checkbox" className="mt-1 h-5 w-5" checked={usarUltimoPunto}
-                  disabled={!puedeAsociarUltimo}
+                  disabled={!puedeAsociarUltimo && !usarUltimoPunto}
                   onChange={(e) => {
                     setUsarUltimoPunto(e.target.checked)
                     setActividadesSeleccionadas([])
