@@ -513,7 +513,7 @@ export default function PlanMantenimientoPage() {
                   Matriz de programación dinámica · {vigencia}
                 </div>
                 <div className="mt-1 text-[11px] font-medium text-white/85">
-                  Los meses futuros se calculan automáticamente con la configuración, los mantenimientos reales y el kilometraje de los preoperacionales.
+                  Los meses futuros se calculan automáticamente con la configuración, los mantenimientos reales y los preoperacionales. Los preventivos históricos del año se contabilizan como ejecutados y se incluyen en el total programado, sin crear puntos ni vencimientos retroactivos.
                 </div>
               </div>
 
