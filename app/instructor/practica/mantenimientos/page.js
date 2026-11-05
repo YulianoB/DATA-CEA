@@ -110,6 +110,7 @@ export default function MantenimientosPage() {
   const [validandoKm, setValidandoKm] = useState(false)
   const [estadoKm, setEstadoKm] = useState('')
   const peticionKmRef = useRef(0)
+  const envioMantenimientoRef = useRef(false)
 
   // Tipo mantenimiento
   const [tipoMant, setTipoMant] = useState('')
@@ -848,7 +849,8 @@ export default function MantenimientosPage() {
   // ============================================================
 
   const registrar = async () => {
-    if (guardando) return
+    // Bloqueo inmediato contra dos pulsaciones en el mismo render.
+    if (guardando || envioMantenimientoRef.current) return
     setAlertaFormulario(null)
     const faltantes = []
     let seccion = null
@@ -896,6 +898,7 @@ export default function MantenimientosPage() {
       if (seccion) setSeccionAbierta(seccion)
       return
     }
+    envioMantenimientoRef.current = true
     setGuardando(true)
 
     try {
@@ -1090,6 +1093,7 @@ export default function MantenimientosPage() {
         'Error inesperado al registrar el mantenimiento.'
       )
     } finally {
+      envioMantenimientoRef.current = false
       setGuardando(false)
     }
   }
