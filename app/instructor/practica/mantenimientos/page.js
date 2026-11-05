@@ -121,6 +121,8 @@ export default function MantenimientosPage() {
   const [actividadesConfiguradas, setActividadesConfiguradas] = useState([])
   const [actividadesPendientes, setActividadesPendientes] = useState({})
   const [nuevaActividadAdicional, setNuevaActividadAdicional] = useState('')
+  const [mostrarOtrasFrecuencias, setMostrarOtrasFrecuencias] = useState(false)
+  const [mostrarActividadLibre, setMostrarActividadLibre] = useState(false)
   const [alertaFormulario, setAlertaFormulario] = useState(null)
   const avisar = (mensaje, tipo = 'error') => setAlertaFormulario({ mensaje, tipo })
 
@@ -309,6 +311,8 @@ export default function MantenimientosPage() {
     setActividadesSeleccionadas([])
     setActividadesAdicionales([])
     setNuevaActividadAdicional('')
+    setMostrarOtrasFrecuencias(false)
+    setMostrarActividadLibre(false)
     setActividadesPendientes({})
     setActividadesConfiguradas([])
     setNivelSeleccionadoId('')
@@ -613,6 +617,11 @@ export default function MantenimientosPage() {
     ]
   }, [programacionParaRegistro, actividadesConfiguradas])
 
+  const actividadesDelPunto = actividadesPreventivasDisponibles.filter((act) => act.sugerida)
+  const actividadesOtrasFrecuencias = actividadesPreventivasDisponibles.filter((act) => !act.sugerida)
+  const idsOtrasFrecuencias = new Set(actividadesOtrasFrecuencias.map((act) => Number(act.configuracion_id)))
+  const otrasSeleccionadas = actividadesSeleccionadas.filter((id) => idsOtrasFrecuencias.has(Number(id))).length
+
   // ============================================================
   // Cambio de técnico
   // ============================================================
@@ -752,6 +761,8 @@ export default function MantenimientosPage() {
     setActividadesSeleccionadas([])
     setActividadesAdicionales([])
     setNuevaActividadAdicional('')
+    setMostrarOtrasFrecuencias(false)
+    setMostrarActividadLibre(false)
   }
 
   // ============================================================
@@ -1618,7 +1629,7 @@ export default function MantenimientosPage() {
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <label className="text-sm font-bold">Actividades ejecutadas · Guía del vehículo *</label>
-                  <span className="text-xs font-semibold text-slate-600">{actividadesSeleccionadas.length}/{actividadesPreventivasDisponibles.length}</span>
+                  <span className="text-xs font-semibold text-slate-600">{actividadesSeleccionadas.length} ejecutada(s)</span>
                 </div>
 
                 {actividadesPreventivasDisponibles.length === 0 ? (
@@ -1630,8 +1641,17 @@ export default function MantenimientosPage() {
                     <p className="text-[11px] text-slate-500 mb-3">
                       El cambio de aceite inicia y acredita el punto base. Puede incluir actividades de otras frecuencias aunque no estén sugeridas para este punto. Cada servicio identifica a su propio proveedor.
                     </p>
+                    {actividadesOtrasFrecuencias.length > 0 && (
+                      <button type="button"
+                        aria-expanded={mostrarOtrasFrecuencias}
+                        onClick={() => setMostrarOtrasFrecuencias(v => !v)}
+                        className="mb-3 flex w-full items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 text-left text-sm font-semibold text-blue-900">
+                        <span>{mostrarOtrasFrecuencias ? 'Ocultar' : 'Ver'} otras actividades del vehículo ({actividadesOtrasFrecuencias.length}){otrasSeleccionadas > 0 ? ` · ${otrasSeleccionadas} seleccionada(s)` : ''}</span>
+                        <span aria-hidden="true">{mostrarOtrasFrecuencias ? '−' : '+'}</span>
+                      </button>
+                    )}
                     <div className="space-y-2">
-                      {actividadesPreventivasDisponibles.map((act, index) => {
+                      {actividadesPreventivasDisponibles.filter((act) => act.sugerida || mostrarOtrasFrecuencias).map((act, index) => {
                         const id = Number(act.configuracion_id)
                         const checked = actividadesSeleccionadas.includes(id)
                         return (
@@ -1681,7 +1701,13 @@ export default function MantenimientosPage() {
                   </>
                 )}
                 <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3">
-                  <label className="block text-sm font-bold text-blue-900">Otras actividades realmente realizadas</label>
+                  <button type="button" aria-expanded={mostrarActividadLibre}
+                    onClick={() => setMostrarActividadLibre(v => !v)}
+                    className="flex w-full items-center justify-between gap-2 text-left text-sm font-bold text-blue-900">
+                    <span>{mostrarActividadLibre ? 'Ocultar' : 'Agregar'} actividad que no aparece en el catálogo{actividadesAdicionales.length ? ` · ${actividadesAdicionales.length} agregada(s)` : ''}</span>
+                    <span aria-hidden="true">{mostrarActividadLibre ? '−' : '+'}</span>
+                  </button>
+                  {mostrarActividadLibre && (<>
                   <p className="mb-2 text-xs text-blue-800">Puede agregar actividades que no estén en el punto P{programacionParaRegistro?.ciclo || '1'}. No modificarán las frecuencias del plan maestro.</p>
                   <div className="flex flex-wrap gap-2">
                     <input
@@ -1702,6 +1728,7 @@ export default function MantenimientosPage() {
                         setAlertaFormulario(null)
                       }}>Agregar actividad</button>
                   </div>
+                  </>)}
                   {actividadesAdicionales.length > 0 && (
                     <ul className="mt-3 space-y-2">
                       {actividadesAdicionales.map((nombre) => (
