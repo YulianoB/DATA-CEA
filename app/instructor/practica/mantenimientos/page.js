@@ -335,6 +335,13 @@ export default function MantenimientosPage() {
       marca: vehiculo.marca || '-',
     })
 
+    // Correctivo: no depende de la programación ni de que exista un plan
+    // preventivo finalizado. Tampoco debe abrir alertas de ese plan.
+    if (tipoMant === 'CORRECTIVO') {
+      setCargandoProgramacion(false)
+      return
+    }
+
     const cargarProgramacion = async () => {
       if (!nitActual) return
       setCargandoProgramacion(true)
@@ -520,7 +527,7 @@ export default function MantenimientosPage() {
 
     cargarProgramacion()
     return () => { cancelado = true }
-  }, [placa, vehiculos, nitActual])
+  }, [placa, vehiculos, nitActual, tipoMant])
 
   // ============================================================
   // Cambio de proveedor: técnicos + actividades habilitadas
