@@ -151,8 +151,11 @@ function PuntoChip({ punto, tipo, onClick }) {
 function contarMes(mes) {
   const pendientes =
     (mes?.programados || []).filter((p) => !p.normalizacion_inicial).length
+  // Cada mantenimiento preventivo histórico real se contabiliza una sola vez
+  // como ejecutado y, por definición del total, también como programado.
+  // El historial no crea puntos P1/P2 ni vencimientos retrospectivos.
   const ejecutados =
-    (mes?.ejecutados || []).filter((p) => !p.historico_reconstruido).length
+    (mes?.ejecutados || []).length
   const vencidos =
     (mes?.vencidos || []).filter((p) => !p.historico_reconstruido).length
 
