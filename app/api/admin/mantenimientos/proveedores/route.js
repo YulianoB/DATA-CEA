@@ -134,34 +134,6 @@ async function validarUbicacion(supabaseAdmin, departamentoId, municipioId) {
   }
 }
 
-async function guardarActividades(supabaseAdmin, proveedorId, actividadIds) {
-  const ids = [...new Set(
-    (Array.isArray(actividadIds) ? actividadIds : [])
-      .map(entero)
-      .filter(Boolean)
-  )]
-
-  const { error: errorEliminar } = await supabaseAdmin
-    .from('proveedor_mantenimiento_actividades')
-    .delete()
-    .eq('proveedor_id', proveedorId)
-
-  if (errorEliminar) throw errorEliminar
-  if (!ids.length) return
-
-  const { error } = await supabaseAdmin
-    .from('proveedor_mantenimiento_actividades')
-    .insert(
-      ids.map((actividad_id) => ({
-        proveedor_id: proveedorId,
-        actividad_id,
-        activo: true,
-      }))
-    )
-
-  if (error) throw error
-}
-
 async function guardarProveedor(supabaseAdmin, body) {
   const id = entero(body?.id)
   const tipoPersona = mayusculas(body?.tipo_persona)
@@ -227,7 +199,8 @@ async function guardarProveedor(supabaseAdmin, body) {
   const { data, error } = await consulta
   if (error) throw error
 
-  await guardarActividades(supabaseAdmin, data.id, body?.actividad_ids)
+  // La asignación de actividades a proveedores fue retirada.
+  // Se conservan las asociaciones históricas sin modificarlas.
 
   return data
 }
