@@ -1101,6 +1101,7 @@ export async function POST(request) {
       let configuracionAceiteId = null
       let actividadesAdicionales = []
       let actividadesPendientes = []
+      let programacionPorMaterializar = null
 
       if (tipoMantenimiento === 'PREVENTIVO') {
         const vehiculoId = Number(body.vehiculo_id)
@@ -1332,26 +1333,9 @@ export async function POST(request) {
         if (existente) {
           programacionPreventiva = existente
         } else {
-          const estadoInicial = 'PROGRAMADO'
-          const fecha = body.fecha_registro || null
-          const { data: creada, error: crearError } = await supabase
-            .from('programacion_mantenimiento')
-            .insert({
-              vehiculo_id: vehiculoId,
-              ciclo,
-              km_limite: kmObjetivo,
-              estado: estadoInicial,
-              vigencia: fecha ? Number(String(fecha).slice(0, 4)) : null,
-              mes_programado: fecha ? Number(String(fecha).slice(5, 7)) : null,
-              observaciones: `P${ciclo} materializado al registrar mantenimiento preventivo.`,
-            })
-            .select()
-            .single()
-
-          if (crearError) {
-            return NextResponse.json({ status: 'failed', message: `No se pudo materializar P${ciclo}: ${crearError.message}` }, { status: 500 })
-          }
-          programacionPreventiva = creada
+          // NO crear el punto mientras falten proveedor, técnico, fecha o costos.
+          // Su materialización se pospone hasta terminar todas las validaciones.
+          programacionPorMaterializar = { vehiculoId, ciclo, kmObjetivo }
         }
       }
 
@@ -1508,6 +1492,33 @@ export async function POST(request) {
           status: 'failed',
           message: 'La fecha de ejecución debe ser válida y no puede ser posterior a hoy.',
         }, { status: 400 })
+      }
+
+      // Solo después de validar TODO el formulario se materializa el punto.
+      // Las operaciones siguen siendo independientes (sin funciones SQL ni
+      // triggers), pero un formulario rechazado ya no deja un punto vacío.
+      if (tipoMantenimiento === 'PREVENTIVO' && programacionPorMaterializar) {
+        const { vehiculoId, ciclo, kmObjetivo } = programacionPorMaterializar
+        const { data: creada, error: crearError } = await supabase
+          .from('programacion_mantenimiento')
+          .insert({
+            vehiculo_id: vehiculoId,
+            ciclo,
+            km_limite: kmObjetivo,
+            estado: 'PROGRAMADO',
+            vigencia: Number(fechaEjecucion.slice(0, 4)),
+            mes_programado: Number(fechaEjecucion.slice(5, 7)),
+            observaciones: `P${ciclo} materializado al registrar mantenimiento preventivo.`,
+          })
+          .select()
+          .single()
+        if (crearError || !creada) {
+          return NextResponse.json({
+            status: 'failed',
+            message: `No se pudo preparar P${ciclo}: ${crearError?.message || 'sin respuesta'}`,
+          }, { status: 500 })
+        }
+        programacionPreventiva = creada
       }
 
       const payload = {
