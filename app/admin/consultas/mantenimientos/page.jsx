@@ -107,6 +107,17 @@ function fmtCOP(
   )}`
 }
 
+// Los históricos anteriores al primer registro en horas se almacenaban
+// como minutos. Convertimos solo para mostrar/exportar, sin editar DB.
+const INICIO_REGISTROS_HORAS = Date.parse('2026-11-04T15:54:29.351Z')
+function minutosParadaConsulta(registro) {
+  const valor = Number(registro?.tiempoparada)
+  if (!Number.isFinite(valor) || valor < 0) return 0
+  return registro?.timestamp_registro &&
+    Date.parse(registro.timestamp_registro) >= INICIO_REGISTROS_HORAS
+    ? valor * 60 : valor
+}
+
 function minutosALabel(
   min
 ) {
@@ -1275,10 +1286,7 @@ const params =
             r?.empresa ||
             '',
 
-            Number(
-              r?.tiempoparada ||
-              0
-            ),
+            minutosParadaConsulta(r),
 
             r?.factura ||
             '',
@@ -1654,12 +1662,7 @@ const params =
               r?.empresa ||
               '',
 
-              Number(
-                r?.tiempoparada ||
-                0
-              ).toLocaleString(
-                'es-CO'
-              ),
+              minutosParadaConsulta(r).toLocaleString('es-CO'),
 
               r?.factura ||
               '',
@@ -2099,7 +2102,7 @@ const params =
           </div>
           <div className="p-4 sm:p-5 space-y-4">
             <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm"><h3 className="text-sm font-bold text-[#194567] mb-3">Información del mantenimiento</h3><div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-              { [['Fecha',detalle.fecha_registro],['Placa',detalle.placa],['Kilometraje',Number(detalle.kilometraje || 0).toLocaleString('es-CO')],['Tipo',detalle.tipo_mantenimiento],['Empresa / taller',detalle.empresa],['Tiempo de parada',minutosALabel(detalle.tiempoparada)],['Factura',detalle.factura],['Responsable',detalle.responsable]].map(([k,v]) => <div key={k}><p className="text-slate-500">{k}</p><p className="font-semibold break-words">{v || '-'}</p></div>)}
+              { [['Fecha',detalle.fecha_registro],['Placa',detalle.placa],['Kilometraje',Number(detalle.kilometraje || 0).toLocaleString('es-CO')],['Tipo',detalle.tipo_mantenimiento],['Empresa / taller',detalle.empresa],['Tiempo de parada',minutosALabel(minutosParadaConsulta(detalle))],['Factura',detalle.factura],['Responsable',detalle.responsable]].map(([k,v]) => <div key={k}><p className="text-slate-500">{k}</p><p className="font-semibold break-words">{v || '-'}</p></div>)}
             </div></section>
             <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm space-y-3"><h3 className="text-sm font-bold text-[#194567]">Trabajos realizados</h3>{[['Actividad realizada',detalle.actividad_realizada],['Repuestos utilizados',detalle.repuestos_utilizados],['Observaciones',detalle.observaciones]].map(([k,v]) => <div key={k} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs"><p className="font-semibold text-[#194567]">{k}</p><p className="mt-2 whitespace-pre-wrap break-words">{v || 'Sin información registrada.'}</p></div>)}</section>
             <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm space-y-3"><h3 className="text-sm font-bold text-[#194567]">Costos registrados</h3><div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">{[['Repuestos',detalle.valor_repuestos],['Mano de obra',detalle.valor_mano_obra],['Costo total',detalle.costo_total]].map(([k,v]) => <div key={k}><p className="text-slate-500">{k}</p><p className="font-bold">{fmtCOP(v)}</p></div>)}</div></section>
