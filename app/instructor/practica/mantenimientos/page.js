@@ -325,9 +325,11 @@ export default function MantenimientosPage() {
 
     if (!vehiculo) {
       setVehiculoInfo({ tipo: '-', marca: '-' })
+      setCargandoProgramacion(false)
       return
     }
 
+    let cancelado = false
     setVehiculoInfo({
       tipo: vehiculo.tipo_vehiculo || '-',
       marca: vehiculo.marca || '-',
@@ -361,6 +363,7 @@ export default function MantenimientosPage() {
           })
         )
 
+        if (cancelado) return
         const validas = respuestas.filter((item) => item.ok)
 
         if (!validas.length) {
@@ -507,14 +510,17 @@ export default function MantenimientosPage() {
         setNivelSeleccionadoId(String(normalizado.ciclo))
         setActividad(`MANTENIMIENTO PREVENTIVO P${normalizado.ciclo}`)
       } catch (error) {
+        if (cancelado) return
         console.error('Error consultando el Plan de Mantenimiento:', error)
         setProgramacionPreventiva(null)
+        avisar('No fue posible consultar la programación del vehículo. Intente nuevamente.')
       } finally {
-        setCargandoProgramacion(false)
+        if (!cancelado) setCargandoProgramacion(false)
       }
     }
 
     cargarProgramacion()
+    return () => { cancelado = true }
   }, [placa, vehiculos, nitActual])
 
   // ============================================================
