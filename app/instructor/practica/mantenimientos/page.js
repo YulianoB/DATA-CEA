@@ -618,9 +618,11 @@ export default function MantenimientosPage() {
     kilometrajeServicio !== null && Number.isFinite(kilometrajeServicio) &&
     (puntoSeleccionado.servicio_adicional_punto
       ? Math.abs(kilometrajeServicio - Number(puntoSeleccionado.km_ejecucion)) <= 500
-      : puntoSeleccionado.normalizacion_inicial === true
+      : puntoSeleccionado.normalizacion_inicial === true &&
+        !puntoSeleccionado.referencia_historica_aceite
         ? kilometrajeServicio >= 0
-        : Number.isFinite(Number(puntoSeleccionado.km_objetivo)) &&
+        : puntoSeleccionado.km_objetivo != null &&
+          Number.isFinite(Number(puntoSeleccionado.km_objetivo)) &&
           Math.abs(kilometrajeServicio - Number(puntoSeleccionado.km_objetivo)) <=
             Number(puntoSeleccionado.tolerancia_km ?? 500))
   )
@@ -785,7 +787,19 @@ export default function MantenimientosPage() {
   // ============================================================
 
   const fechaEjecucionValida = /^\d{4}-\d{2}-\d{2}$/.test(fechaEjecucion) && fechaEjecucion <= ahoraBogota().fecha
-  const tarjetasHabilitadas = Boolean(fechaEjecucionValida && nitActual && placa && tipoMant && kilometraje !== '' && Number.isFinite(Number(kilometraje)) && Number(kilometraje) >= 0 && (kmValidado || forzarKm))
+  const planPreventivoDisponible = Boolean(
+    !cargandoProgramacion &&
+    programacionParaRegistro &&
+    programacionParaRegistro.vehiculo_id === Number(vehiculos.find(v => v.placa === placa)?.id)
+  )
+  // Correctivos no requieren configuración de plan. Para preventivos no
+  // habilitar secciones hasta conocer el punto real del vehículo.
+  const tarjetasHabilitadas = Boolean(
+    fechaEjecucionValida && nitActual && placa && tipoMant &&
+    kilometraje !== '' && Number.isFinite(Number(kilometraje)) &&
+    Number(kilometraje) >= 0 && (kmValidado || forzarKm) &&
+    (tipoMant !== 'PREVENTIVO' || planPreventivoDisponible)
+  )
 
   const puedeGuardar = useMemo(() => {
     if (!nitActual || !placa || !fechaEjecucionValida) return false
@@ -811,6 +825,7 @@ export default function MantenimientosPage() {
     if (
       tipoMant === 'PREVENTIVO' &&
       (
+        !planPreventivoDisponible ||
         !programacionParaRegistro ||
         !programacionParaRegistro?.dentro_tolerancia ||
         (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0) ||
@@ -855,6 +870,7 @@ export default function MantenimientosPage() {
     valorManoObraStr,
     actividadesPendientes,
     aceiteSeleccionado,
+    planPreventivoDisponible,
   ])
 
   // ============================================================
@@ -879,7 +895,7 @@ export default function MantenimientosPage() {
       seccion = 1
     }
     if (tipoMant === 'PREVENTIVO') {
-      if (!programacionParaRegistro) faltantes.push('No se encontró un punto preventivo disponible para el vehículo.')
+      if (!planPreventivoDisponible) faltantes.push('El vehículo requiere un plan de mantenimiento FINALIZADO y un punto preventivo disponible antes de registrar servicios preventivos.')
       else if (!programacionParaRegistro.dentro_tolerancia) faltantes.push('El punto preventivo aún no está habilitado por kilometraje.')
       if (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0) {
         faltantes.push('Seleccione una actividad del plan o agregue al menos una actividad realmente realizada.')
@@ -1504,9 +1520,9 @@ export default function MantenimientosPage() {
                   </div>
                 ) : !programacionParaRegistro ? (
                   <div className="border border-orange-200 rounded-xl p-4 bg-orange-50">
-                    <p className="text-sm font-bold text-orange-800">Sin punto preventivo disponible</p>
+                    <p className="text-sm font-bold text-orange-800">Mantenimiento preventivo bloqueado</p>
                     <p className="text-xs text-orange-700 mt-1">
-                      Revise que el vehículo tenga su configuración finalizada y un punto PROGRAMADO en el Plan de Mantenimiento.
+                      Este vehículo necesita un plan de mantenimiento FINALIZADO y un punto disponible. Puede registrar mantenimientos correctivos sin configurar el plan.
                     </p>
                   </div>
                 ) : (
@@ -1553,8 +1569,8 @@ export default function MantenimientosPage() {
                           El punto P{programacionParaRegistro.ciclo} puede registrarse cuando el kilometraje del vehículo se encuentre entre{' '}
                           <b>{Number(programacionParaRegistro.km_minimo || 0).toLocaleString('es-CO')} km</b> y{' '}
                           <b>{Number(programacionParaRegistro.km_maximo || 0).toLocaleString('es-CO')} km</b>.
-                          El último kilometraje preoperacional es{' '}
-                          <b>{Number(programacionParaRegistro.ultimo_km_preoperacional || 0).toLocaleString('es-CO')} km</b>.
+                          El kilometraje ingresado para este servicio es{' '}
+                          <b>{kilometraje !== '' ? Number(kilometraje).toLocaleString('es-CO') : 'pendiente de ingresar'} km</b>.
                         </p>
                       </div>
                     )}
