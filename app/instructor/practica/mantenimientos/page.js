@@ -589,9 +589,26 @@ export default function MantenimientosPage() {
   const puedeAsociarUltimo = ultimoPuntoEjecutado &&
     kilometrajeServicio !== null && Number.isFinite(kilometrajeServicio) &&
     Math.abs(kilometrajeServicio - Number(ultimoPuntoEjecutado.km_ejecucion)) <= 500
-  const programacionParaRegistro = tipoMant === 'PREVENTIVO' && usarUltimoPunto && puedeAsociarUltimo
+  const puntoSeleccionado = tipoMant === 'PREVENTIVO' && usarUltimoPunto && puedeAsociarUltimo
     ? ultimoPuntoEjecutado
     : programacionPreventiva
+  // Comprobar el odómetro EFECTIVO de esta intervención. El preoperacional
+  // más reciente únicamente sirve para proyectar, no para bloquear una
+  // intervención retrospectiva válida dentro del rango del punto.
+  const dentroToleranciaRegistro = Boolean(
+    puntoSeleccionado &&
+    kilometrajeServicio !== null && Number.isFinite(kilometrajeServicio) &&
+    (puntoSeleccionado.servicio_adicional_punto
+      ? Math.abs(kilometrajeServicio - Number(puntoSeleccionado.km_ejecucion)) <= 500
+      : puntoSeleccionado.normalizacion_inicial === true
+        ? kilometrajeServicio >= 0
+        : Number.isFinite(Number(puntoSeleccionado.km_objetivo)) &&
+          Math.abs(kilometrajeServicio - Number(puntoSeleccionado.km_objetivo)) <=
+            Number(puntoSeleccionado.tolerancia_km ?? 500))
+  )
+  const programacionParaRegistro = puntoSeleccionado
+    ? { ...puntoSeleccionado, dentro_tolerancia: dentroToleranciaRegistro }
+    : null
 
   const actividadesPreventivasDisponibles = useMemo(() => {
     const sugeridas = programacionParaRegistro?.actividades || []
@@ -608,6 +625,11 @@ export default function MantenimientosPage() {
   const actividadesOtrasFrecuencias = actividadesPreventivasDisponibles.filter((act) => !act.sugerida)
   const idsOtrasFrecuencias = new Set(actividadesOtrasFrecuencias.map((act) => Number(act.configuracion_id)))
   const otrasSeleccionadas = actividadesSeleccionadas.filter((id) => idsOtrasFrecuencias.has(Number(id))).length
+  const aceiteConfiguracion = actividadesConfiguradas.find(a => /^(ACEITE DE MOTOR( Y FILTRO DE ACEITE)?|CAMBIO DE ACEITE)/i.test(
+    String(a.actividad || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  ))
+  const aceiteSeleccionado = aceiteConfiguracion &&
+    actividadesSeleccionadas.includes(Number(aceiteConfiguracion.configuracion_id))
 
   // ============================================================
   // Cambio de técnico
@@ -761,7 +783,8 @@ export default function MantenimientosPage() {
       (
         !programacionParaRegistro ||
         !programacionParaRegistro?.dentro_tolerancia ||
-        (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0)
+        (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0) ||
+        (!programacionParaRegistro?.servicio_adicional_punto && !aceiteSeleccionado)
       )
     ) {
       return false
@@ -801,6 +824,7 @@ export default function MantenimientosPage() {
     valorRepuestosStr,
     valorManoObraStr,
     actividadesPendientes,
+    aceiteSeleccionado,
   ])
 
   // ============================================================
@@ -828,6 +852,10 @@ export default function MantenimientosPage() {
       else if (!programacionParaRegistro.dentro_tolerancia) faltantes.push('El punto preventivo aún no está habilitado por kilometraje.')
       if (actividadesSeleccionadas.length === 0 && actividadesAdicionales.length === 0) {
         faltantes.push('Seleccione una actividad del plan o agregue al menos una actividad realmente realizada.')
+        if (!seccion) seccion = 2
+      }
+      if (programacionParaRegistro && !programacionParaRegistro.servicio_adicional_punto && !aceiteSeleccionado) {
+        faltantes.push('Para acreditar un nuevo punto P debe marcar el cambio de aceite. Otras intervenciones se asocian al punto de aceite ya ejecutado.')
         if (!seccion) seccion = 2
       }
     }
@@ -1596,9 +1624,10 @@ export default function MantenimientosPage() {
                         const id = Number(act.configuracion_id)
                         const checked = actividadesSeleccionadas.includes(id)
                         return (
-                          <label key={`${id}-${index}`} className={`flex items-start gap-3 border rounded-xl p-3 cursor-pointer ${checked ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200'}`}>
+                          <div key={`${id}-${index}`} className={`flex items-start gap-3 border rounded-xl p-3 ${checked ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200'}`}>
                             <input
                               type="checkbox"
+                              aria-label={`Actividad ejecutada: ${act.actividad}`}
                               className="mt-1 h-5 w-5 shrink-0"
                               checked={checked}
                               disabled={!programacionParaRegistro?.dentro_tolerancia}
@@ -1635,7 +1664,7 @@ export default function MantenimientosPage() {
                                 </div>
                               )}
                             </div>
-                          </label>
+                          </div>
                         )
                       })}
                     </div>
