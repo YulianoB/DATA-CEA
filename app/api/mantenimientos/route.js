@@ -1241,29 +1241,80 @@ export async function POST(request) {
         if (errorEstadoPlan) {
           return NextResponse.json({ status: 'failed', message: errorEstadoPlan.message }, { status: 500 })
         }
-        normalizacionP1 = ciclo === 1 && !servicioAdicionalPunto && estadoPlan?.estado === 'FINALIZADO'
+        if (normalizarClave(estadoPlan?.estado) !== 'FINALIZADO') {
+          return NextResponse.json({
+            status: 'failed',
+            code: 'PLAN_PREVENTIVO_NO_FINALIZADO',
+            message: 'El vehículo no tiene un plan de mantenimiento FINALIZADO. Administración debe finalizar la configuración antes de registrar un mantenimiento preventivo.',
+          }, { status: 409 })
+        }
+        normalizacionP1 = ciclo === 1 && !servicioAdicionalPunto
         // La referencia inicial se acredita al guardar el primer servicio real.
-        // Un anclaje administrativo previo no debe impedir ese primer servicio.
+        // El aceite anterior al plan SOLO sirve para determinar el rango de
+        // kilometraje de P1; jamás se acredita como punto ejecutado.
+        let objetivoVerificado = kmObjetivo
+        let referenciaHistoricaAceite = null
 
-        if (
-          !Number.isFinite(kmRegistro) ||
-          (!normalizacionP1 && !servicioAdicionalPunto && (
-            kmRegistro < kmMinimoPermitido ||
-            kmRegistro > kmMaximoPermitido
-          ))
-        ) {
-          return NextResponse.json(
-            {
+        if (normalizacionP1) {
+          const { data: anteriores, error: errorAnteriores } = await supabase
+            .from('mantenimientos')
+            .select('id,fecha_registro,kilometraje,tipo_mantenimiento,repuestos_utilizados,programacion_mantenimiento_id')
+            .eq('placa', placa)
+            .order('fecha_registro', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(1000)
+
+          if (errorAnteriores) {
+            return NextResponse.json({
               status: 'failed',
-              code: 'FUERA_TOLERANCIA_PREVENTIVO',
-              message:
-                `El mantenimiento preventivo P${ciclo} solo puede acreditarse entre ` +
-                `${kmMinimoPermitido.toLocaleString('es-CO')} km y ` +
-                `${kmMaximoPermitido.toLocaleString('es-CO')} km. ` +
-                `Kilometraje registrado: ${kmRegistro.toLocaleString('es-CO')} km.`,
-            },
-            { status: 409 }
-          )
+              message: `No fue posible verificar la referencia histórica del aceite: ${errorAnteriores.message}`,
+            }, { status: 500 })
+          }
+
+          const esAceiteHistorico = (fila) => {
+            if (normalizarClave(fila.tipo_mantenimiento) !== 'PREVENTIVO' ||
+                fila.programacion_mantenimiento_id) return false
+            const repuestos = normalizarClave(fila.repuestos_utilizados)
+            if (!/\\bACEITES?\\b/.test(repuestos)) return false
+            const explicitoMotor = /\\b(?:ACEITE\\s+(?:DE\\s+)?MOTOR|ACEITE\\s+(?:\\d{1,2}\\s*W\\s*-?\\s*\\d{2}|MOTUL|MOBIL|GULF|YAMALUBE|ELF|KING))\\b/.test(repuestos)
+            const soloOtroSistema = /\\b(?:ACEITE\\s+(?:DE\\s+)?(?:CAJA|TRANSMISION|DIFERENCIAL|HORQUILLA|SUSPENSION|DIRECCION)|LUBRICANTE\\s+(?:DE\\s+)?CADENA)\\b/.test(repuestos)
+            const filtroAceite = /\\bFILTRO\\s+(?:DE\\s+)?ACEITE\\b/.test(repuestos)
+            return explicitoMotor || filtroAceite || !soloOtroSistema
+          }
+
+          referenciaHistoricaAceite = (anteriores || []).find((fila) => {
+            const fecha = String(fila.fecha_registro || '').slice(0, 10)
+            const km = fila.kilometraje == null ? NaN : Number(fila.kilometraje)
+            return esAceiteHistorico(fila) &&
+              /^\\d{4}-\\d{2}-\\d{2}$/.test(fecha) &&
+              fecha <= fechaEjecucion &&
+              Number.isFinite(km) && km >= 0 && km <= kmRegistro
+          }) || null
+
+          if (referenciaHistoricaAceite) {
+            objetivoVerificado = Number(referenciaHistoricaAceite.kilometraje) + frecuenciaBase
+            // No aceptar objetivos forzados por el navegador.
+            if (Math.abs(kmObjetivo - objetivoVerificado) > 0.01) {
+              return NextResponse.json({
+                status: 'failed',
+                code: 'OBJETIVO_P1_DESACTUALIZADO',
+                message: `La proyección P1 cambió según el último aceite histórico. El objetivo válido es ${objetivoVerificado.toLocaleString('es-CO')} km. Actualice el plan y vuelva a verificar el kilometraje.`,
+              }, { status: 409 })
+            }
+          }
+        }
+
+        const rangoAplica = !servicioAdicionalPunto &&
+          (!normalizacionP1 || Boolean(referenciaHistoricaAceite))
+        const limiteMinimo = objetivoVerificado - toleranciaPunto
+        const limiteMaximo = objetivoVerificado + toleranciaPunto
+        if (!Number.isFinite(kmRegistro) ||
+            (rangoAplica && (kmRegistro < limiteMinimo || kmRegistro > limiteMaximo))) {
+          return NextResponse.json({
+            status: 'failed',
+            code: 'FUERA_TOLERANCIA_PREVENTIVO',
+            message: `El mantenimiento preventivo P${ciclo} solo puede acreditarse entre ${limiteMinimo.toLocaleString('es-CO')} km y ${limiteMaximo.toLocaleString('es-CO')} km. Kilometraje registrado: ${kmRegistro.toLocaleString('es-CO')} km.`,
+          }, { status: 409 })
         }
 
         // Las actividades configuradas son guía. Se pueden ejecutar fuera
