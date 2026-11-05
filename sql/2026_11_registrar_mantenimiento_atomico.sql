@@ -125,7 +125,7 @@ BEGIN
     IF NOT servicio_adicional AND ciclo_num = 1 THEN
       IF NOT EXISTS (
         SELECT 1 FROM jsonb_array_elements(p_actividades) x
-        WHERE (x->>'vehiculo_mantenimiento_config_id')::bigint = config_aceite_id
+        WHERE (x.value->>'vehiculo_mantenimiento_config_id')::bigint = config_aceite_id
       ) THEN
         RAISE EXCEPTION 'P1 requiere acreditar realmente el cambio de aceite.';
       END IF;
@@ -133,7 +133,7 @@ BEGIN
 
     IF servicio_adicional AND EXISTS (
       SELECT 1 FROM jsonb_array_elements(p_actividades) x
-      WHERE (x->>'vehiculo_mantenimiento_config_id')::bigint = config_aceite_id
+      WHERE (x.value->>'vehiculo_mantenimiento_config_id')::bigint = config_aceite_id
     ) THEN
       RAISE EXCEPTION 'No se puede volver a acreditar el aceite del punto ejecutado.';
     END IF;
@@ -142,9 +142,9 @@ BEGIN
     IF EXISTS (
       SELECT 1 FROM jsonb_array_elements(p_actividades) x
       LEFT JOIN public.vehiculo_mantenimiento_config cfg
-        ON cfg.id = (x->>'vehiculo_mantenimiento_config_id')::bigint
+        ON cfg.id = (x.value->>'vehiculo_mantenimiento_config_id')::bigint
       WHERE cfg.id IS NULL OR cfg.vehiculo_id <> vehiculo_id
-        OR cfg.actividad_id <> (x->>'actividad_id')::bigint
+        OR cfg.actividad_id <> (x.value->>'actividad_id')::bigint
     ) THEN
       RAISE EXCEPTION 'Una actividad no pertenece a la configuración del vehículo.';
     END IF;
@@ -195,7 +195,7 @@ BEGIN
            updated_at = ahora
      WHERE s.estado = 'PENDIENTE'
        AND s.vehiculo_mantenimiento_config_id IN (
-         SELECT (x->>'vehiculo_mantenimiento_config_id')::bigint
+         SELECT (x.value->>'vehiculo_mantenimiento_config_id')::bigint
          FROM jsonb_array_elements(p_actividades) x
        );
 
@@ -236,7 +236,7 @@ BEGIN
 
     IF NOT servicio_adicional AND EXISTS (
       SELECT 1 FROM jsonb_array_elements(p_actividades) x
-      WHERE (x->>'vehiculo_mantenimiento_config_id')::bigint = config_aceite_id
+      WHERE (x.value->>'vehiculo_mantenimiento_config_id')::bigint = config_aceite_id
     ) THEN
       UPDATE public.programacion_mantenimiento
       SET estado='EJECUTADO',mantenimiento_id=nuevo_id,
