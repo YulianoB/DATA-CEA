@@ -1269,13 +1269,23 @@ export async function POST(request) {
         if (actividadesSeleccionadas.length !== idsSeleccionados.length) {
           return NextResponse.json({ status: 'failed', message: 'Hay actividades que no pertenecen a la configuración activa del vehículo.' }, { status: 409 })
         }
-        // P1 y cada nuevo punto base se acreditan solo con cambio de aceite.
-        const cambioAceiteIncluido = actividadesSeleccionadas.some((x) => Number(x.id) === Number(configBase.id))
-        if (normalizacionP1 && !cambioAceiteIncluido) {
+        // Nunca acreditar una actividad sin un nombre de catálogo activo.
+        if (actividadesSeleccionadas.some(cfg =>
+          !catalogoPorId.get(Number(cfg.actividad_id))?.nombre
+        )) {
           return NextResponse.json({
             status: 'failed',
-            code: 'P1_REQUIERE_CAMBIO_ACEITE',
-            message: 'Para iniciar P1 seleccione «Aceite de motor y filtro de aceite». Puede registrar otras actividades en el mismo servicio.',
+            message: 'Una de las actividades seleccionadas no tiene un nombre válido en el catálogo activo. Revise la configuración antes de guardar.',
+          }, { status: 409 })
+        }
+
+        // P1 y cada nuevo punto base se acreditan solo con cambio de aceite.
+        const cambioAceiteIncluido = actividadesSeleccionadas.some((x) => Number(x.id) === Number(configBase.id))
+        if (!servicioAdicionalPunto && !cambioAceiteIncluido) {
+          return NextResponse.json({
+            status: 'failed',
+            code: 'PUNTO_REQUIERE_CAMBIO_ACEITE',
+            message: `Para acreditar P${ciclo} seleccione el cambio de aceite del vehículo. Las demás actividades pueden acompañarlo o registrarse por separado como servicio adicional del punto ya ejecutado.`,
           }, { status: 409 })
         }
 
