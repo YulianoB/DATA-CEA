@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AlertTriangle,
   Car, Check, ChevronDown, ChevronRight, ClipboardList, Plus,
-  Pencil, RefreshCw, Search, Settings2, X
+  Pencil, Printer, RefreshCw, Search, Settings2, X
 } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import ModalResultado from '@/components/admin/ModalResultado'
@@ -94,6 +94,7 @@ export default function ConfiguracionPlanMantenimientoPage() {
   const [modalAbierto, setModalAbierto] = useState(false)
   const [cargandoDetalle, setCargandoDetalle] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [imprimiendo, setImprimiendo] = useState(false)
   const [vehiculoDetalle, setVehiculoDetalle] = useState(null)
   const [promedios, setPromedios] = useState(null)
   const [mantenimientos, setMantenimientos] = useState([])
@@ -340,6 +341,35 @@ export default function ConfiguracionPlanMantenimientoPage() {
 
     return filas
   }, [actividadesVisibles, frecuenciaBaseKm])
+
+  async function imprimirPlanGuardado() {
+    if (!vehiculoDetalle?.id || imprimiendo || guardando) return
+    setImprimiendo(true)
+    setError('')
+    try {
+      const nit = obtenerNitUsuario()
+      const response = await fetch(
+        `/api/admin/mantenimientos/plan?vehiculo_id=${encodeURIComponent(vehiculoDetalle.id)}`,
+        { headers: { 'x-cea-nit': nit }, cache: 'no-store' }
+      )
+      const detalle = await response.json().catch(() => null)
+      if (!response.ok || !detalle?.ok) {
+        throw new Error(mensajeError(detalle, 'No fue posible consultar el plan guardado para imprimir.'))
+      }
+      const estado = String(detalle.estado_configuracion || '').toUpperCase()
+      if (!['BORRADOR', 'FINALIZADO'].includes(estado) ||
+          !(detalle.actividades || []).some(actividad => actividad.seleccionada)) {
+        throw new Error('Guarde primero el borrador o finalice el plan antes de imprimir.')
+      }
+      // Consulta nueva de solo lectura: no incluye cambios no guardados en pantalla.
+      const { generarRevisionPlanMantenimientoPdf } = await import('@/lib/planMantenimientoRevisionPdf')
+      generarRevisionPlanMantenimientoPdf(detalle)
+    } catch (err) {
+      setError(err?.message || 'No fue posible generar el informe de revisión.')
+    } finally {
+      setImprimiendo(false)
+    }
+  }
 
   async function guardarConfiguracion() {
     if (!vehiculoDetalle) return
@@ -728,7 +758,14 @@ export default function ConfiguracionPlanMantenimientoPage() {
                   Seleccionadas: <strong>{actividades.filter((a)=>a.seleccionada).length}</strong>
                   <span className="ml-2">Estado: <strong>{estadoConfiguracion === 'FINALIZADO' ? 'FINALIZADO' : estadoConfiguracion === 'BORRADOR' ? 'EN CONFIGURACIÓN' : 'SIN CONFIGURAR'}</strong></span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <BotonAccion tipo="consultar" type="button"
+                    onClick={imprimirPlanGuardado}
+                    disabled={guardando || imprimiendo || !['BORRADOR', 'FINALIZADO'].includes(estadoConfiguracion)}
+                    title="Generar el informe de revisión técnica con la última configuración guardada"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-blue-400 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-900 disabled:cursor-not-allowed disabled:opacity-50">
+                    <Printer size={13}/>{imprimiendo ? 'Generando PDF...' : 'Imprimir plan'}
+                  </BotonAccion>
                   <BotonAccion tipo="cancelar" type="button" onClick={cerrarModal} disabled={guardando} className="rounded-md border px-3 py-1.5 text-xs">Cerrar</BotonAccion>
                   {estadoConfiguracion === 'FINALIZADO' ? (<>
                     <BotonAccion tipo="editar" type="button" onClick={reabrirConfiguracion} disabled={guardando} className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
