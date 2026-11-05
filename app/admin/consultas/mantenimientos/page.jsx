@@ -144,13 +144,13 @@ function minutosALabel(
     h > 0 &&
     r > 0
   ) {
-    return `${m} min (${h} h ${r} m)`
+    return `${h} ${h === 1 ? 'hora' : 'horas'} y ${r} ${r === 1 ? 'minuto' : 'minutos'}`
   }
 
   if (
     h > 0
   ) {
-    return `${m} min (${h} h)`
+    return `${h} ${h === 1 ? 'hora' : 'horas'}`
   }
 
   return `${m} min`
