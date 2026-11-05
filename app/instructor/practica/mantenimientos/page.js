@@ -1314,6 +1314,11 @@ export default function MantenimientosPage() {
               <input id="fecha-ejecucion-mantenimiento" type="date" required max={ahoraBogota().fecha}
                 value={fechaEjecucion} onChange={(e) => {
                   setFechaEjecucion(e.target.value)
+                   peticionKmRef.current += 1
+                   setKmValidado(false)
+                   setEstadoKm('')
+                   setAdvertenciaKmPendiente(false)
+                   setValidandoKm(false)
                   setMsgKm('')
                   setForzarKm(false)
                   setModalKm(null)
@@ -1337,7 +1342,7 @@ export default function MantenimientosPage() {
             <div className="min-w-0">
               <label className="mb-1 block text-sm font-semibold">Placa *</label>
               <select className="min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm" value={placa} onChange={(e) => {
-                setPlaca(e.target.value); setKilometraje(''); setMsgKm(''); setForzarKm(false); setModalKm(null)
+                setPlaca(e.target.value); peticionKmRef.current += 1; setKilometraje(''); setKmValidado(false); setEstadoKm(''); setValidandoKm(false); setAdvertenciaKmPendiente(false); setMsgKm(''); setForzarKm(false); setModalKm(null)
               }}>
                 <option value="">-- Seleccione una placa --</option>
                 {vehiculos.map((vehiculo) => <option key={vehiculo.id || vehiculo.placa} value={vehiculo.placa}>{vehiculo.placa}</option>)}
@@ -1346,8 +1351,19 @@ export default function MantenimientosPage() {
             </div>
             <div className="min-w-0">
               <label className="mb-1 block text-sm font-semibold">Kilometraje *</label>
-              <input type="number" min="0" className={`min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm ${!placa ? 'cursor-not-allowed bg-gray-100' : ''}`} value={kilometraje} disabled={!placa} onChange={onKmChange} placeholder="Kilometraje actual" />
-              {msgKm && <p className={`mt-1 text-xs ${String(msgKm).toLowerCase().includes('menor') ? 'text-red-600' : String(msgKm).toLowerCase().includes('supera') ? 'text-orange-600' : 'text-green-600'}`}>{msgKm}</p>}
+              <input type="number" min="0" className={`min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm ${!placa ? 'cursor-not-allowed bg-gray-100' : ''}`} value={kilometraje} disabled={!placa} onChange={onKmChange} onBlur={() => { if (kilometraje !== '' && !kmValidado && !validandoKm && !advertenciaKmPendiente && !forzarKm) verificarKm() }} placeholder="Kilometraje del servicio" />
+              <button type="button" onClick={verificarKm} disabled={!placa || kilometraje === '' || validandoKm}
+                className="mt-2 min-h-10 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-900 disabled:opacity-50">
+                {validandoKm ? 'Verificando...' : 'Verificar kilometraje'}
+              </button>
+              {msgKm && <p role="status" className={`mt-2 rounded-lg border px-2 py-2 text-xs ${estadoKm === 'error' ? 'border-red-300 bg-red-50 text-red-900' : estadoKm === 'advertencia' ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-slate-200 bg-slate-50 text-slate-800'}`}>{msgKm}</p>}
+              {estadoKm === 'advertencia' && advertenciaKmPendiente && (
+                <label className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-950">
+                  <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" checked={forzarKm}
+                    onChange={(e) => { setForzarKm(e.target.checked); setAdvertenciaKmPendiente(!e.target.checked) }} />
+                  He comprobado el kilometraje contra el soporte del servicio y confirmo la diferencia.
+                </label>
+              )}
               {forzarKm && <p className="mt-1 text-xs font-semibold text-orange-600">Kilometraje confirmado manualmente.</p>}
             </div>
           </div>
@@ -1948,63 +1964,6 @@ export default function MantenimientosPage() {
         </div>
       )}
 
-      {/* =====================================================
-          MODAL KILOMETRAJE
-      ====================================================== */}
-
-      {modalKm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-
-          <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
-
-            <h3 className="text-lg font-bold mb-3 text-orange-600">
-              Advertencia de Kilometraje
-            </h3>
-
-            <p className="text-sm mb-2">
-              {msgKm || 'Revise y confirme el kilometraje informado para la fecha de ejecución.'}
-            </p>
-
-            <p className="text-sm mb-1">
-              <b>Último registro:</b>{' '}
-              {modalKm.maxKm} km
-            </p>
-
-            <p className="text-sm mb-1">
-              <b>Fuente:</b>{' '}
-              {modalKm.fuente}{' '}
-              ({modalKm.campo})
-            </p>
-
-            <p className="text-sm mb-4">
-              <b>Diferencia:</b>{' '}
-              {modalKm.diferencia} km
-            </p>
-
-            <div className="flex justify-end gap-3">
-
-              <button
-                className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded"
-                onClick={() =>
-                  setModalKm(null)
-                }
-              >
-                Cancelar
-              </button>
-
-              <button
-                className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-4 py-2 rounded"
-                onClick={() =>
-                  modalKm.onConfirm &&
-                  modalKm.onConfirm()
-                }
-              >
-                Confirmar y Continuar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   )
