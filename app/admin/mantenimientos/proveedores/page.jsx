@@ -674,8 +674,9 @@ export default function ProveedoresMantenimientoPage() {
               </div>
 
             </div>
+            </div>
 
-              <div className="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-300 bg-white p-4">
+            <div className="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-300 bg-white p-4">
               <BotonAccion tipo="cancelar"
                 type="button"
                 onClick={() => setModalProveedor(false)}
