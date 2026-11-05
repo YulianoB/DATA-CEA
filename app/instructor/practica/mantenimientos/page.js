@@ -1652,6 +1652,7 @@ export default function MantenimientosPage() {
                               <p className="text-sm font-semibold text-slate-800">{act.actividad} {!act.sugerida && <span className="ml-1 text-[10px] font-bold text-blue-800">(OTRA FRECUENCIA)</span>}</p>
                               {act.accion && <p className="text-[11px] text-slate-600 mt-1">{act.accion}</p>}
                               <p className="text-[11px] text-slate-500 mt-1">Cada {Number(act.frecuencia_km || 0).toLocaleString('es-CO')} km {act.siguiente_km ? `· Próximo objetivo individual: ${Number(act.siguiente_km).toLocaleString('es-CO')} km` : '· Frecuencia guía, sin ejecución inicial acreditada'}</p>
+                              {act.pendiente_abierta && <p className="mt-1 rounded-md bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-950">Pendiente anterior: {act.pendiente_motivo || 'Requiere atención'}. Si la realiza ahora, márquela como ejecutada.</p>}
                               {!checked && (
                                 <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
                                   <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
