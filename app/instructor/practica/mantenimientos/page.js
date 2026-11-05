@@ -1615,15 +1615,6 @@ export default function MantenimientosPage() {
                     <p className="text-[11px] text-slate-500 mb-3">
                       El cambio de aceite inicia y acredita el punto base. Puede incluir actividades de otras frecuencias aunque no estén sugeridas para este punto. Cada servicio identifica a su propio proveedor.
                     </p>
-                    {actividadesOtrasFrecuencias.length > 0 && (
-                      <button type="button"
-                        aria-expanded={mostrarOtrasFrecuencias}
-                        onClick={() => setMostrarOtrasFrecuencias(v => !v)}
-                        className="mb-3 flex w-full items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 text-left text-sm font-semibold text-blue-900">
-                        <span>{mostrarOtrasFrecuencias ? 'Ocultar' : 'Ver'} otras actividades del vehículo ({actividadesOtrasFrecuencias.length}){otrasSeleccionadas > 0 ? ` · ${otrasSeleccionadas} seleccionada(s)` : ''}</span>
-                        <span aria-hidden="true">{mostrarOtrasFrecuencias ? '−' : '+'}</span>
-                      </button>
-                    )}
                     <div className="space-y-2">
                       {actividadesPreventivasDisponibles.filter((act) => act.sugerida || mostrarOtrasFrecuencias).map((act, index) => {
                         const id = Number(act.configuracion_id)
@@ -1673,6 +1664,15 @@ export default function MantenimientosPage() {
                         )
                       })}
                     </div>
+                    {actividadesOtrasFrecuencias.length > 0 && (
+                      <button type="button"
+                        aria-expanded={mostrarOtrasFrecuencias}
+                        onClick={() => setMostrarOtrasFrecuencias(v => !v)}
+                        className="mt-3 flex w-full items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 text-left text-sm font-semibold text-blue-900">
+                        <span>{mostrarOtrasFrecuencias ? 'Ocultar' : 'Ver'} otras actividades del vehículo ({actividadesOtrasFrecuencias.length}){otrasSeleccionadas > 0 ? ` · ${otrasSeleccionadas} seleccionada(s)` : ''}</span>
+                        <span aria-hidden="true">{mostrarOtrasFrecuencias ? '−' : '+'}</span>
+                      </button>
+                    )}
                   </>
                 )}
                 <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3">
