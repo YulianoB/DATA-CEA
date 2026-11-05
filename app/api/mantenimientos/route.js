@@ -1275,10 +1275,10 @@ export async function POST(request) {
             if (normalizarClave(fila.tipo_mantenimiento) !== 'PREVENTIVO' ||
                 fila.programacion_mantenimiento_id) return false
             const repuestos = normalizarClave(fila.repuestos_utilizados)
-            if (!/\\bACEITES?\\b/.test(repuestos)) return false
-            const explicitoMotor = /\\b(?:ACEITE\\s+(?:DE\\s+)?MOTOR|ACEITE\\s+(?:\\d{1,2}\\s*W\\s*-?\\s*\\d{2}|MOTUL|MOBIL|GULF|YAMALUBE|ELF|KING))\\b/.test(repuestos)
-            const soloOtroSistema = /\\b(?:ACEITE\\s+(?:DE\\s+)?(?:CAJA|TRANSMISION|DIFERENCIAL|HORQUILLA|SUSPENSION|DIRECCION)|LUBRICANTE\\s+(?:DE\\s+)?CADENA)\\b/.test(repuestos)
-            const filtroAceite = /\\bFILTRO\\s+(?:DE\\s+)?ACEITE\\b/.test(repuestos)
+            if (!/\bACEITES?\b/.test(repuestos)) return false
+            const explicitoMotor = /\b(?:ACEITE\s+(?:DE\s+)?MOTOR|ACEITE\s+(?:\d{1,2}\s*W\s*-?\s*\d{2}|MOTUL|MOBIL|GULF|YAMALUBE|ELF|KING))\b/.test(repuestos)
+            const soloOtroSistema = /\b(?:ACEITE\s+(?:DE\s+)?(?:CAJA|TRANSMISION|DIFERENCIAL|HORQUILLA|SUSPENSION|DIRECCION)|LUBRICANTE\s+(?:DE\s+)?CADENA)\b/.test(repuestos)
+            const filtroAceite = /\bFILTRO\s+(?:DE\s+)?ACEITE\b/.test(repuestos)
             return explicitoMotor || filtroAceite || !soloOtroSistema
           }
 
@@ -1286,8 +1286,8 @@ export async function POST(request) {
             const fecha = String(fila.fecha_registro || '').slice(0, 10)
             const km = fila.kilometraje == null ? NaN : Number(fila.kilometraje)
             return esAceiteHistorico(fila) &&
-              /^\\d{4}-\\d{2}-\\d{2}$/.test(fecha) &&
-              fecha <= fechaEjecucion &&
+              /^\d{4}-\d{2}-\d{2}$/.test(fecha) &&
+              fecha <= String(body.fecha_registro || '').slice(0, 10) &&
               Number.isFinite(km) && km >= 0 && km <= kmRegistro
           }) || null
 
