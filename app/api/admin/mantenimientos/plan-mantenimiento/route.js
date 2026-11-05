@@ -663,6 +663,7 @@ function construirProyeccionesFuturas({
   fechaHasta,
   normalizacionP1 = false,
   fechaInicioNormalizacion = null,
+  referenciaAceiteHistorico = null,
 }) {
   const salida = []
 
@@ -689,19 +690,41 @@ function construirProyeccionesFuturas({
         kilometraje,
       })
 
-    // El P1 de puesta en marcha se ejecuta con el odómetro real vigente,
-    // sin atribuir vencimientos anteriores a la activación del nuevo plan.
+    // P1 todavía NO está ejecutado. El último cambio de aceite del historial
+    // solo sirve para proyectar cuándo se acercaría el PRIMER PUNTO NUEVO.
+    // No crear vencimientos automáticos antes de ejecutar P1.
     if (normalizacionP1 && punto === 1) {
       proyectado.estado = 'PROGRAMADO'
       proyectado.normalizacion_inicial = true
-      proyectado.km_referencia = numero(kilometraje.ultimo_km)
-      proyectado.km_objetivo = numero(kilometraje.ultimo_km)
-      proyectado.km_maximo = null
-      proyectado.km_faltantes = 0
-      proyectado.fecha_proyectada = fechaInicioNormalizacion
-      proyectado.vigencia_proyectada = fechaInicioNormalizacion ? Number(fechaInicioNormalizacion.slice(0, 4)) : null
-      proyectado.mes_proyectado = fechaInicioNormalizacion ? Number(fechaInicioNormalizacion.slice(5, 7)) : null
-      proyectado.mes_nombre = fechaInicioNormalizacion ? MESES[Number(fechaInicioNormalizacion.slice(5, 7)) - 1] : null
+      proyectado.referencia_historica_aceite = referenciaAceiteHistorico
+      if (referenciaAceiteHistorico) {
+        const objetivo = referenciaAceiteHistorico.km + frecuenciaBase
+        const tolerancia = numero(proyectado.tolerancia_km) ?? TOLERANCIA_KM_DEFAULT
+        const actual = numero(kilometraje.ultimo_km)
+        proyectado.km_referencia = referenciaAceiteHistorico.km
+        proyectado.km_objetivo = objetivo
+        proyectado.km_maximo = objetivo + tolerancia
+        proyectado.km_faltantes = actual === null ? null : Math.max(0, objetivo - actual)
+        // No presentar la fecha de configuración como si fuera la fecha del servicio.
+        proyectado.fecha_proyectada = proyectarFecha({
+          fechaReferencia: kilometraje.ultima_fecha,
+          kmActual: actual,
+          kmObjetivo: objetivo,
+          promedioKmMes: kilometraje.promedio_km_mes,
+        })
+      } else {
+        // Sin aceite histórico verificable, mostrar P1 sin fecha/objetivo
+        // preventivo inventado y esperar el primer servicio real.
+        proyectado.km_referencia = null
+        proyectado.km_objetivo = null
+        proyectado.km_maximo = null
+        proyectado.km_faltantes = null
+        proyectado.fecha_proyectada = null
+      }
+      const fecha = proyectado.fecha_proyectada
+      proyectado.vigencia_proyectada = fecha ? Number(fecha.slice(0, 4)) : null
+      proyectado.mes_proyectado = fecha ? Number(fecha.slice(5, 7)) : null
+      proyectado.mes_nombre = fecha ? MESES[Number(fecha.slice(5, 7)) - 1] : null
     }
 
     // El punto vigente siempre se devuelve,
@@ -820,6 +843,48 @@ function ordenarPuntos(a, b) {
     Number(a.punto || 0) -
     Number(b.punto || 0)
   )
+}
+
+// El historial anterior utilizaba niveles generales. Para detectar el último
+// cambio de aceite solo se consulta repuestos_utilizados de PREVENTIVOS;
+// actividad_realizada NO demuestra qué repuesto se instaló.
+function esCambioAceiteEnRepuestosHistoricos(fila) {
+  if (clave(fila?.tipo_mantenimiento) !== 'PREVENTIVO') return false
+  const repuestos = clave(fila?.repuestos_utilizados)
+  if (!/\bACEITES?\b/.test(repuestos)) return false
+
+  // Cuando solo se habla del aceite de otro sistema, no corresponde al
+  // cambio de aceite de motor. Si se menciona explícitamente aceite motor,
+  // sí se admite aunque el servicio incluya otros lubricantes.
+  const diceMotor = /\b(?:ACEITE\s+(?:DE\s+)?MOTOR|ACEITE\s+(?:\d{1,2}\s*W\s*-?\s*\d{2}|MOTUL|MOBIL|GULF|YAMALUBE|ELF|KING))\b/.test(repuestos)
+  const soloOtroSistema = /\b(?:ACEITE\s+(?:DE\s+)?(?:CAJA|TRANSMISION|DIFERENCIAL|HORQUILLA|SUSPENSION|DIRECCION)|LUBRICANTE\s+(?:DE\s+)?CADENA)\b/.test(repuestos)
+  const mencionaAceiteGenerico = /\bACEITES?\b/.test(repuestos)
+  const mencionaFiltroAceite = /\bFILTRO\s+(?:DE\s+)?ACEITE\b/.test(repuestos)
+
+  return diceMotor || mencionaFiltroAceite || (mencionaAceiteGenerico && !soloOtroSistema)
+}
+
+function buscarUltimoAceiteHistorico(mantenimientos, hoyISO, ultimoKm) {
+  return (mantenimientos || [])
+    .filter(fila =>
+      !fila.programacion_mantenimiento_id &&
+      esCambioAceiteEnRepuestosHistoricos(fila)
+    )
+    .map(fila => ({
+      id: Number(fila.id),
+      fecha: fechaISO(fila.fecha_registro),
+      km: numero(fila.kilometraje),
+      repuestos: texto(fila.repuestos_utilizados),
+    }))
+    .filter(fila =>
+      fila.fecha && fila.fecha <= hoyISO &&
+      fila.km !== null && fila.km >= 0 &&
+      (ultimoKm === null || fila.km <= ultimoKm)
+    )
+    .sort((a, b) =>
+      b.fecha.localeCompare(a.fecha) ||
+      b.id - a.id
+    )[0] || null
 }
 
 function obtenerNivelHistorico(fila) {
@@ -1206,6 +1271,13 @@ function construirVistaVehiculo({
   // Un VENCIDO materializado antes del inicio oficial no acredita P1.
   const puntoActual = ultimoEjecutado ? Number(ultimoEjecutado.ciclo) + 1 : 1
   const esP1Normalizacion = puntoActual === 1
+  const ultimoAceiteHistorico = esP1Normalizacion
+    ? buscarUltimoAceiteHistorico(
+        mantenimientosPorPlaca.get(placaClave(vehiculo.placa)) || [],
+        contexto.hoyISO,
+        numero(kilometraje.ultimo_km)
+      )
+    : null
 
   // P1 utiliza el kilometraje preoperacional actual. La base de P2
   // es el odómetro del primer mantenimiento realmente ejecutado.
@@ -1272,6 +1344,7 @@ function construirVistaVehiculo({
           fechaHasta,
           normalizacionP1: esP1Normalizacion,
           fechaInicioNormalizacion: contexto.hoyISO,
+          referenciaAceiteHistorico: ultimoAceiteHistorico,
         })
       : []
 
@@ -1385,6 +1458,9 @@ function construirVistaVehiculo({
     },
 
     kilometraje,
+
+    // Evidencia histórica, exclusivamente informativa; nunca acredita P1.
+    ultimo_aceite_historico: ultimoAceiteHistorico,
 
     configuraciones_activas:
       configs.length,
