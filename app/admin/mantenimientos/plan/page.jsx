@@ -592,7 +592,7 @@ export default function ConfiguracionPlanMantenimientoPage() {
                           </td>
                           <td className="px-2 py-1.5 text-center"><BotonAccion tipo="consultar" onClick={() => abrirConfiguracion(v.id)}
                             className="inline-flex items-center gap-1 rounded-md bg-slate-800 px-2 py-1 text-[10px] font-semibold text-white">
-                            <Settings2 size={14}/>Configurar</BotonAccion></td>
+                            <Settings2 size={14}/>{v.estado_plan === 'FINALIZADO' ? 'Editar' : 'Configurar'}</BotonAccion></td>
                         </tr>)}
                       </tbody>
                     </table>
