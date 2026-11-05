@@ -711,6 +711,12 @@ function FilaVehiculo({ vista, abrirPunto }) {
             Base:{' '}
             <b>{formatoKm(ciclo.frecuencia_base_km)}</b>
           </div>
+          {Number(ciclo.frecuencia_base_km) > 0 && Number(km.promedio_km_mes) > 0 && (
+            <div>
+              Intervalo estimado de aceite:{' '}
+              <b>{formatoNumero(Number(ciclo.frecuencia_base_km) / Number(km.promedio_km_mes), 1)} meses</b>
+            </div>
+          )}
         </div>
 
         {vista.errores?.length > 0 && (
