@@ -2117,39 +2117,31 @@ export async function GET(request) {
                 ).length,
             0
           ),
-        ejecutados:
-          matriz.reduce(
-            (acc, v) =>
-              acc +
-              (v.hechos || [])
-                .filter(
-                  (p) =>
-                    p.estado ===
-                    'EJECUTADO'
-                ).length,
+        // Totales limitados a la vigencia consultada, incluyendo
+        // preventivos históricos que figuran en las celdas de ese año.
+        // Cada ejecutado suma también al total programado.
+        ejecutados: matriz.reduce(
+          (acc, v) => acc + MESES.reduce(
+            (mesAcc, mes) => mesAcc + (v.meses?.[mes]?.ejecutados || []).length,
             0
-          ),
-        vencidos:
-          matriz.reduce(
-            (acc, v) =>
-              acc +
-              (v.hechos || [])
-                .filter(
-                  (p) =>
-                    p.estado ===
-                    'VENCIDO'
-                ).length +
-              (v.proyecciones || [])
-                .filter(
-                  (p) =>
-                    p.estado ===
-                    'VENCIDO' &&
-                    Number(
-                      p.vigencia_proyectada
-                    ) === vigencia
-                ).length,
+          ), 0
+        ),
+        vencidos: matriz.reduce(
+          (acc, v) => acc + MESES.reduce(
+            (mesAcc, mes) => mesAcc +
+              (v.meses?.[mes]?.vencidos || []).filter(p => !p.historico_reconstruido).length,
             0
-          ),
+          ), 0
+        ),
+        programados: matriz.reduce(
+          (acc, v) => acc + MESES.reduce((mesAcc, mes) => {
+            const celda = v.meses?.[mes] || {}
+            return mesAcc +
+              (celda.programados || []).filter(p => !p.normalizacion_inicial).length +
+              (celda.ejecutados || []).length +
+              (celda.vencidos || []).filter(p => !p.historico_reconstruido).length
+          }, 0), 0
+        ),
       },
 
       vehiculos: matriz,
