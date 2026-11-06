@@ -1275,11 +1275,15 @@ export async function POST(request) {
             if (normalizarClave(fila.tipo_mantenimiento) !== 'PREVENTIVO' ||
                 fila.programacion_mantenimiento_id) return false
             const repuestos = normalizarClave(fila.repuestos_utilizados)
-            if (!/\bACEITES?\b/.test(repuestos)) return false
+            // Reconocer «Lubricantes Mobil 3000-5W30» y «Mobil 5W30».
+            // Se usa la misma evidencia que el motor de proyección.
+            const marcaConViscosidad = /\b(?:MOBIL|MOVIL|MOTUL|GULF|YAMALUBE|ELF|KING)\b[\s\S]{0,50}\b\d{1,2}\s*W\s*-?\s*\d{2}\b/.test(repuestos)
+            const lubricanteMarca = /\bLUBRICANTES?\b[\s\S]{0,35}\b(?:MOBIL|MOVIL|MOTUL|GULF|YAMALUBE|ELF|KING)\b/.test(repuestos)
+            if (!/\bACEITES?\b/.test(repuestos) && !marcaConViscosidad && !lubricanteMarca) return false
             const explicitoMotor = /\b(?:ACEITE\s+(?:DE\s+)?MOTOR|ACEITE\s+(?:\d{1,2}\s*W\s*-?\s*\d{2}|MOTUL|MOBIL|GULF|YAMALUBE|ELF|KING))\b/.test(repuestos)
             const soloOtroSistema = /\b(?:ACEITE\s+(?:DE\s+)?(?:CAJA|TRANSMISION|DIFERENCIAL|HORQUILLA|SUSPENSION|DIRECCION)|LUBRICANTE\s+(?:DE\s+)?CADENA)\b/.test(repuestos)
             const filtroAceite = /\bFILTRO\s+(?:DE\s+)?ACEITE\b/.test(repuestos)
-            return explicitoMotor || filtroAceite || !soloOtroSistema
+            return marcaConViscosidad || lubricanteMarca || explicitoMotor || filtroAceite || !soloOtroSistema
           }
 
           referenciaHistoricaAceite = (anteriores || []).find((fila) => {
