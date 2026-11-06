@@ -1312,7 +1312,7 @@ export default function MantenimientosPage() {
   }
 
   return (
-    <div className="mantenimiento-movil min-h-screen bg-slate-100 px-2 py-3 text-slate-900 sm:px-4 sm:py-6" style={{ colorScheme: 'light' }}>
+    <div className="instructor-form-surface mantenimiento-movil min-h-screen bg-slate-100 px-2 py-3 text-slate-900 sm:px-4 sm:py-6" style={{ colorScheme: 'light' }}>
       <style jsx global>{`
         /* Aislar el formulario del modo oscuro del sistema operativo. */
         .mantenimiento-movil { color-scheme: light; }
