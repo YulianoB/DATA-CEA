@@ -1119,7 +1119,7 @@ export default function RegistroHorariosPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA] p-4">
+    <div className="instructor-form-surface min-h-screen flex items-center justify-center bg-[#F5F7FA] p-4">
 
       <Toaster
         position="top-center"
