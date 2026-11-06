@@ -711,7 +711,7 @@ function PlanMantenimientoInstructorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] p-2 sm:p-4">
+    <div className="instructor-form-surface min-h-screen bg-[#F5F7FA] p-2 sm:p-4">
       <Toaster
         position="top-center"
         richColors
