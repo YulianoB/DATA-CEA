@@ -718,7 +718,7 @@ export default function SiniestrosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
+    <div className="instructor-form-surface min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
       <Toaster position="top-center" richColors />
       <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-lg">
         <EncabezadoPractica titulo="Registro de Siniestros Viales" usuario={user.nombreCompleto} cea={user.nombreEmpresa} onRegresar={() => router.push('/instructor/practica')} onCerrarSesion={handleLogout} />
