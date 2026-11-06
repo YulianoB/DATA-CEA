@@ -853,7 +853,11 @@ function ordenarPuntos(a, b) {
 function esCambioAceiteEnRepuestosHistoricos(fila) {
   if (clave(fila?.tipo_mantenimiento) !== 'PREVENTIVO') return false
   const repuestos = clave(fila?.repuestos_utilizados)
-  if (!/\bACEITES?\b/.test(repuestos)) return false
+  // Algunos históricos registran «Lubricantes Mobil 3000-5W30» o
+  // «Mobil 5W30», sin escribir la palabra ACEITE.
+  const marcaConViscosidad = /\b(?:MOBIL|MOVIL|MOTUL|GULF|YAMALUBE|ELF|KING)\b[\s\S]{0,50}\b\d{1,2}\s*W\s*-?\s*\d{2}\b/.test(repuestos)
+  const lubricanteMarca = /\bLUBRICANTES?\b[\s\S]{0,35}\b(?:MOBIL|MOVIL|MOTUL|GULF|YAMALUBE|ELF|KING)\b/.test(repuestos)
+  if (!/\bACEITES?\b/.test(repuestos) && !marcaConViscosidad && !lubricanteMarca) return false
 
   // Cuando solo se habla del aceite de otro sistema, no corresponde al
   // cambio de aceite de motor. Si se menciona explícitamente aceite motor,
@@ -863,7 +867,7 @@ function esCambioAceiteEnRepuestosHistoricos(fila) {
   const mencionaAceiteGenerico = /\bACEITES?\b/.test(repuestos)
   const mencionaFiltroAceite = /\bFILTRO\s+(?:DE\s+)?ACEITE\b/.test(repuestos)
 
-  return diceMotor || mencionaFiltroAceite || (mencionaAceiteGenerico && !soloOtroSistema)
+  return marcaConViscosidad || lubricanteMarca || diceMotor || mencionaFiltroAceite || (mencionaAceiteGenerico && !soloOtroSistema)
 }
 
 function buscarUltimoAceiteHistorico(mantenimientos, hoyISO, ultimoKm) {
