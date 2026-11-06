@@ -1278,3 +1278,64 @@ button {
     print-color-adjust: exact !important;
   }
 }
+
+
+/* ============================================================
+   INSTRUCTOR TEORÍA / PRÁCTICA — CAMPOS LEGIBLES EN AMBOS TEMAS
+   Acotado a estas páginas: no altera interfaces administrativas
+   ni estilos de impresión de documentos.
+============================================================ */
+@media screen {
+  .instructor-form-surface {
+    color-scheme: light;
+    color: #0f172a;
+  }
+
+  .instructor-form-surface input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not([type="button"]):not([type="submit"]),
+  .instructor-form-surface select,
+  .instructor-form-surface textarea {
+    color-scheme: light !important;
+    background-color: #fff !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    caret-color: #0f172a;
+    border-color: #94a3b8;
+    opacity: 1;
+  }
+
+  .instructor-form-surface input::placeholder,
+  .instructor-form-surface textarea::placeholder {
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    opacity: 1;
+  }
+
+  .instructor-form-surface select option {
+    color: #0f172a;
+    background: #fff;
+  }
+
+  .instructor-form-surface input:disabled:not([type="checkbox"]):not([type="radio"]),
+  .instructor-form-surface input[readonly]:not([type="checkbox"]):not([type="radio"]),
+  .instructor-form-surface select:disabled,
+  .instructor-form-surface textarea:disabled,
+  .instructor-form-surface textarea[readonly] {
+    background-color: #e2e8f0 !important;
+    color: #475569 !important;
+    -webkit-text-fill-color: #475569 !important;
+  }
+
+  .instructor-form-surface input[type="checkbox"],
+  .instructor-form-surface input[type="radio"] {
+    color-scheme: light;
+    accent-color: #194567;
+  }
+
+  @media (max-width: 640px) {
+    .instructor-form-surface input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+    .instructor-form-surface select,
+    .instructor-form-surface textarea {
+      font-size: 16px !important;
+    }
+  }
+}
