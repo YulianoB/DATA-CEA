@@ -56,6 +56,20 @@ function formatoFecha(fecha) {
   return `${dia}/${mes}/${anio}`
 }
 
+// Orden visual de la matriz: automóviles, camionetas, motocicletas y camiones.
+// El segundo criterio es la placa dentro de cada tipo.
+const ORDEN_TIPOS_VEHICULO = ['AUTOMOVIL', 'CAMIONETA', 'MOTOCICLETA', 'CAMION']
+
+function ordenTipoVehiculo(tipo) {
+  const normalizado = String(tipo || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase()
+  const indice = ORDEN_TIPOS_VEHICULO.indexOf(normalizado)
+  return indice === -1 ? ORDEN_TIPOS_VEHICULO.length : indice
+}
+
 function obtenerCurrentUser() {
   if (typeof window === 'undefined') return null
 
@@ -399,7 +413,17 @@ export default function PlanMantenimientoPage() {
     }
   }
 
-  const vehiculos = data?.vehiculos || []
+  const vehiculos = useMemo(
+    () => [...(data?.vehiculos || [])].sort((a, b) => {
+      const tipoA = ordenTipoVehiculo(a?.vehiculo?.tipo_vehiculo)
+      const tipoB = ordenTipoVehiculo(b?.vehiculo?.tipo_vehiculo)
+      if (tipoA !== tipoB) return tipoA - tipoB
+      return String(a?.vehiculo?.placa || '').localeCompare(
+        String(b?.vehiculo?.placa || ''), 'es', { numeric: true }
+      )
+    }),
+    [data?.vehiculos]
+  )
   const vigencias = data?.vigencias_disponibles || [vigencia]
 
   const totalizado = useMemo(
