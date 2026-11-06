@@ -1402,7 +1402,7 @@ const puedeGuardar =
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
+    <div className="instructor-form-surface min-h-screen bg-slate-100 px-2 py-3 sm:px-4 sm:py-6">
 
       <Toaster
         position="top-center"
