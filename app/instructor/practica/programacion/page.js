@@ -1332,6 +1332,7 @@ export default function InstructorProgramacionPage() {
   return (
     <div
       className="
+        instructor-form-surface
         min-h-screen
         bg-[#F5F7FA]
         p-2
