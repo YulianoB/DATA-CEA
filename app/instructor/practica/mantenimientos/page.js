@@ -1441,6 +1441,8 @@ export default function MantenimientosPage() {
                 value={fechaEjecucion} onChange={(e) => {
                   setFechaEjecucion(e.target.value)
                    peticionKmRef.current += 1
+                   clavePeticionKmRef.current = ''
+                   clearTimeout(temporizadorKmRef.current)
                    setKmValidado(false)
                    setEstadoKm('')
                    setAdvertenciaKmPendiente(false)
@@ -1468,7 +1470,7 @@ export default function MantenimientosPage() {
             <div className="min-w-0">
               <label className="mb-1 block text-sm font-semibold">Placa *</label>
               <select className="min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm" value={placa} onChange={(e) => {
-                setPlaca(e.target.value); peticionKmRef.current += 1; setKilometraje(''); setKmValidado(false); setEstadoKm(''); setValidandoKm(false); setAdvertenciaKmPendiente(false); setMsgKm(''); setForzarKm(false); setModalKm(null)
+                setPlaca(e.target.value); peticionKmRef.current += 1; clavePeticionKmRef.current = ''; clearTimeout(temporizadorKmRef.current); setKilometraje(''); setKmValidado(false); setEstadoKm(''); setValidandoKm(false); setAdvertenciaKmPendiente(false); setMsgKm(''); setForzarKm(false); setModalKm(null)
               }}>
                 <option value="">-- Seleccione una placa --</option>
                 {vehiculos.map((vehiculo) => <option key={vehiculo.id || vehiculo.placa} value={vehiculo.placa}>{vehiculo.placa}</option>)}
