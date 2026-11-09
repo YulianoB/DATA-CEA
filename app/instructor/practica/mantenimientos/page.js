@@ -4,7 +4,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CheckCircle2, AlertTriangle, LoaderCircle, X } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, LoaderCircle, X, Check, Ban } from 'lucide-react'
 import { validarKilometraje } from '@/lib/servicios/validaciones'
 import { cerrarSesion } from '@/lib/auth/logout'
 import { EncabezadoPractica, TarjetaSeccionMantenimiento, ModalSeccionMantenimiento, AccionesModuloPractica } from '@/components/instructor/practica/EstilosModuloPractica'
@@ -74,6 +74,32 @@ const OPCIONES_TIEMPO_PARADA = [
   0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 12, 24, 48, 72,
 ]
 
+// Texto claro de inconsistencias, construido solo con la referencia real
+// que devuelve la validación de kilometraje.
+function mensajeInconsistenciaKm(resultado, kmIngresado) {
+  const referencia = Number(resultado?.maxKm)
+  const diferencia = Number(resultado?.diferencia)
+  if (resultado?.sinReferencia || !Number.isFinite(referencia) || !Number.isFinite(diferencia)) {
+    return resultado?.mensaje || 'No se encontró una referencia suficiente para comparar el kilometraje. Compruebe el odómetro y confirme el valor registrado.'
+  }
+  const fuentes = {
+    preoperacionales: 'una inspección preoperacional',
+    horarios: resultado.campo === 'km_inicial' ? 'la entrada de un horario' : 'la salida de un horario',
+    mantenimientos: 'un mantenimiento anterior',
+    reporte_fallas: 'un reporte de falla',
+  }
+  const fuente = fuentes[resultado.fuente] || 'el registro de referencia'
+  const fecha = resultado.fecha
+    ? ` del ${String(resultado.fecha).slice(0, 10).split('-').reverse().join('/')}`
+    : ''
+  const diferenciaTexto = diferencia > 0
+    ? `supera en ${Math.abs(diferencia).toLocaleString('es-CO')} km`
+    : diferencia < 0
+      ? `está por debajo en ${Math.abs(diferencia).toLocaleString('es-CO')} km`
+      : 'presenta una inconsistencia'
+  return `El kilometraje que está tratando de registrar (${Number(kmIngresado).toLocaleString('es-CO')} km) ${diferenciaTexto} al registrado en ${fuente}${fecha} (${referencia.toLocaleString('es-CO')} km).`
+}
+
 // ============================================================
 // Página
 // ============================================================
@@ -114,6 +140,8 @@ export default function MantenimientosPage() {
   const temporizadorKmRef = useRef(null)
   const clavePeticionKmRef = useRef('')
   const focoKmRef = useRef(false)
+  const inputKmRef = useRef(null)
+  const selectTipoMantRef = useRef(null)
   const envioMantenimientoRef = useRef(false)
 
   // Tipo mantenimiento
@@ -721,12 +749,17 @@ export default function MantenimientosPage() {
       setMsgKm(mensaje)
       if (resultado.estado === 'ok') {
         setKmValidado(true)
-      } else if (resultado.estado === 'advertencia') {
+      } else if (resultado.estado === 'advertencia' ||
+                 (resultado.estado === 'error' && resultado.fuente && resultado.maxKm != null)) {
+        // Mostrar inmediatamente la inconsistencia, incluso con el teclado
+        // móvil abierto. La aprobación definitiva requiere dos confirmaciones.
         setAdvertenciaKmPendiente(true)
-        // No interrumpir al instructor mientras escribe en el celular.
-        if (!focoKmRef.current) setModalKm({ estado: 'advertencia', mensaje })
+        const mensajeClaro = mensajeInconsistenciaKm(resultado, actual)
+        setMsgKm(mensajeClaro)
+        setModalKm({ paso: 1, estado: resultado.estado, mensaje: mensajeClaro, km: actual })
+        inputKmRef.current?.blur()
       }
-      // Errores de validación visibles bajo el campo, no en una ventana modal.
+      // Fallos técnicos permanecen como error con reintento; no se aprueban.
     } catch (error) {
       if (solicitud !== peticionKmRef.current) return
       console.error('Error validando kilometraje:', error)
@@ -753,10 +786,35 @@ export default function MantenimientosPage() {
   const alSalirDeKilometraje = () => {
     focoKmRef.current = false
     clearTimeout(temporizadorKmRef.current)
-    verificarKm()
-    if (estadoKm === 'advertencia' && advertenciaKmPendiente && !forzarKm) {
-      setModalKm({ estado: 'advertencia', mensaje: msgKm })
+    // No repetir consultas ni abrir una segunda ventana por onBlur.
+    if (!modalKm) verificarKm()
+  }
+
+  const enfocarKilometraje = () => {
+    setModalKm(null)
+    // Usar el siguiente fotograma permite cerrar el modal antes de
+    // devolver el foco y seleccionar el valor completo en móviles.
+    requestAnimationFrame(() => {
+      inputKmRef.current?.focus()
+      inputKmRef.current?.select()
+    })
+  }
+
+  const cancelarConfirmacionKm = () => {
+    setForzarKm(false)
+    setAdvertenciaKmPendiente(true)
+    enfocarKilometraje()
+  }
+
+  const completarConfirmacionKm = () => {
+    if (!modalKm || String(modalKm.km) !== String(kilometraje)) {
+      cancelarConfirmacionKm()
+      return
     }
+    setForzarKm(true)
+    setAdvertenciaKmPendiente(false)
+    setModalKm(null)
+    requestAnimationFrame(() => selectTipoMantRef.current?.focus())
   }
 
   // ============================================================
@@ -1396,38 +1454,44 @@ export default function MantenimientosPage() {
           )}
           {modalKm && (
             <div className="fixed inset-0 z-[225] flex items-center justify-center bg-slate-950/65 p-3 sm:p-4">
-              <div role="alertdialog" aria-modal="true" aria-labelledby="validacion-km-titulo" aria-describedby="validacion-km-mensaje"
-                className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 shadow-2xl">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    {modalKm.estado === 'ok' ? <CheckCircle2 size={23} className="shrink-0 text-emerald-700" aria-hidden="true" />
-                      : <AlertTriangle size={23} className={`shrink-0 ${modalKm.estado === 'advertencia' ? 'text-amber-700' : 'text-red-700'}`} aria-hidden="true" />}
-                    <h3 id="validacion-km-titulo" className="text-base font-bold">
-                      {modalKm.estado === 'ok' ? 'Kilometraje verificado' : modalKm.estado === 'advertencia' ? 'Confirme el kilometraje' : 'Revise el kilometraje'}
-                    </h3>
-                  </div>
-                  <button type="button" aria-label="Cerrar verificación" onClick={() => setModalKm(null)}
-                    className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100"><X size={19} aria-hidden="true" /></button>
+              <div role="alertdialog" aria-modal="true" aria-labelledby="validacion-km-titulo"
+                aria-describedby="validacion-km-mensaje"
+                className="w-full max-w-sm rounded-2xl border border-amber-300 bg-white p-5 text-slate-900 shadow-2xl">
+                <div className="flex items-center gap-2">
+                  {modalKm.paso === 2
+                    ? <CheckCircle2 size={23} className="shrink-0 text-emerald-700" aria-hidden="true" />
+                    : <AlertTriangle size={23} className="shrink-0 text-amber-700" aria-hidden="true" />}
+                  <h3 id="validacion-km-titulo" className="text-base font-bold">
+                    {modalKm.paso === 2 ? 'Confirmación de kilometraje' : 'Alerta de kilometraje'}
+                  </h3>
                 </div>
-                <p id="validacion-km-mensaje" className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{modalKm.mensaje}</p>
-                {modalKm.estado === 'advertencia' && (
-                  <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-950">
-                    Si el valor corresponde al comprobante del mantenimiento, puede confirmarlo. Esta confirmación no cambia los preoperacionales ni la programación.
-                  </p>
+                {modalKm.paso === 2 ? (
+                  <div id="validacion-km-mensaje" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center text-emerald-950">
+                    <p className="text-sm font-medium">¿Confirma que el kilometraje correcto es?</p>
+                    <p className="mt-2 text-2xl font-extrabold tabular-nums">{Number(modalKm.km).toLocaleString('es-CO')} km</p>
+                    <p className="mt-2 text-xs">Al aceptar se permitirá continuar con el registro.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p id="validacion-km-mensaje" className="mt-3 text-sm leading-6 text-slate-800">
+                      {modalKm.mensaje}
+                    </p>
+                    <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm leading-5 text-amber-950">
+                      Si el kilometraje que está tratando de registrar es correcto, confirme. Si no es correcto, seleccione Cancelar para corregirlo.
+                    </div>
+                  </>
                 )}
-                <div className="mt-5 flex flex-wrap justify-end gap-2">
-                  {modalKm.estado === 'advertencia' && (
-                    <button type="button" onClick={() => {
-                      setForzarKm(true)
-                      setAdvertenciaKmPendiente(false)
-                      setModalKm(null)
-                    }} className="min-h-11 rounded-lg bg-[#194567] px-4 py-2 text-sm font-semibold text-white">
-                      Confirmar diferencia
-                    </button>
-                  )}
-                  <button type="button" autoFocus onClick={() => setModalKm(null)}
-                    className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800">
-                    {modalKm.estado === 'advertencia' ? 'Corregir kilometraje' : 'Entendido'}
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <button type="button" onClick={cancelarConfirmacionKm}
+                    className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm font-semibold text-slate-800">
+                    <Ban size={16} aria-hidden="true" /> Cancelar
+                  </button>
+                  <button type="button"
+                    onClick={() => modalKm.paso === 2
+                      ? completarConfirmacionKm()
+                      : setModalKm((actual) => actual ? { ...actual, paso: 2 } : null)}
+                    className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-[#194567] px-2 py-2 text-sm font-semibold text-white">
+                    <Check size={16} aria-hidden="true" /> Aceptar
                   </button>
                 </div>
               </div>
@@ -1482,6 +1546,7 @@ export default function MantenimientosPage() {
               <div>
                 <input
                   id="kilometraje-servicio"
+                  ref={inputKmRef}
                   type="number"
                   min="0"
                   inputMode="numeric"
@@ -1505,7 +1570,7 @@ export default function MantenimientosPage() {
                 ) : forzarKm ? (
                   <><CheckCircle2 size={13} className="shrink-0 text-amber-700" aria-hidden="true" /><span className="text-amber-800">Diferencia confirmada. Puede continuar.</span></>
                 ) : estadoKm === 'advertencia' ? (
-                  <><AlertTriangle size={13} className="shrink-0 text-amber-700" aria-hidden="true" /><button type="button" className="text-left font-semibold text-amber-800 underline" onClick={() => setModalKm({ estado: 'advertencia', mensaje: msgKm })}>Kilometraje por confirmar. Ver detalle.</button></>
+                  <><AlertTriangle size={13} className="shrink-0 text-amber-700" aria-hidden="true" /><button type="button" className="text-left font-semibold text-amber-800 underline" onClick={() => setModalKm({ paso: 1, estado: estadoKm, mensaje: msgKm, km: kilometraje })}>Kilometraje por confirmar. Ver detalle.</button></>
                 ) : estadoKm === 'error' ? (
                   <><AlertTriangle size={13} className="shrink-0 text-red-700" aria-hidden="true" /><button type="button" className="text-left font-semibold text-red-800 underline" onClick={() => verificarKm({ reintentar: true })}>{msgKm || 'No fue posible verificar.'} Reintentar</button></>
                 ) : (
@@ -1516,7 +1581,7 @@ export default function MantenimientosPage() {
           </div>
           <div className="mb-4">
             <label className="mb-1 block text-sm font-semibold">Tipo de mantenimiento *</label>
-            <select className="min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm" value={tipoMant} onChange={onTipoMantChange}>
+            <select ref={selectTipoMantRef} className="min-h-11 w-full rounded-lg border border-slate-300 p-2 text-sm" value={tipoMant} onChange={onTipoMantChange}>
               <option value="">-- Seleccione --</option>
               <option value="PREVENTIVO">Preventivo</option>
               <option value="CORRECTIVO">Correctivo</option>
