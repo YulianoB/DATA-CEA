@@ -1709,18 +1709,21 @@ export default function MantenimientosPage() {
               </label>
 
               <select
-                className="w-full border p-2 min-h-11 rounded-lg text-sm"
+                className="w-full min-h-10 rounded-lg border border-slate-400 bg-white px-2 py-1.5 text-sm text-slate-900"
                 value={proveedorId}
                 onChange={(e) => setProveedorId(e.target.value)}
               >
                 <option value="">-- Seleccione proveedor --</option>
-                {proveedores.map((proveedor) => (
-                  <option key={proveedor.id} value={proveedor.id}>
-                    {proveedor.razon_social || proveedor.empresa}
-                    {proveedor.nombre_comercial ? ` / ${proveedor.nombre_comercial}` : ''}
-                    {proveedor.nit ? ` - NIT ${proveedor.nit}` : ''}
-                  </option>
-                ))}
+                {[...proveedores]
+                  .sort((a, b) => String(a.nombre_comercial || '').localeCompare(
+                    String(b.nombre_comercial || ''), 'es', { sensitivity: 'base' }
+                  ))
+                  .map((proveedor) => (
+                    <option key={proveedor.id} value={proveedor.id}>
+                      {proveedor.nombre_comercial?.trim() || 'Sin nombre comercial'}
+                      {proveedor.nit ? ` · NIT ${proveedor.nit}` : ''}
+                    </option>
+                  ))}
               </select>
               {validacionProveedor && !proveedorId && <p role="alert" className="mt-1 text-xs font-semibold text-red-600">Seleccione un proveedor o taller.</p>}
               {tipoMant === 'CORRECTIVO' && (
