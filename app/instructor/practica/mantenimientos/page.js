@@ -749,6 +749,14 @@ export default function MantenimientosPage() {
       setMsgKm(mensaje)
       if (resultado.estado === 'ok') {
         setKmValidado(true)
+        // Avanzar al siguiente campo cuando la validación real termina bien.
+        // Las solicitudes antiguas ya fueron descartadas por peticionKmRef.
+        requestAnimationFrame(() => {
+          if (solicitud === peticionKmRef.current) {
+            focoKmRef.current = false
+            selectTipoMantRef.current?.focus()
+          }
+        })
       } else if (resultado.estado === 'advertencia' ||
                  (resultado.estado === 'error' && resultado.fuente && resultado.maxKm != null)) {
         setEstadoKm('advertencia')
