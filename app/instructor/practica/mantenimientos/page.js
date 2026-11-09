@@ -751,6 +751,7 @@ export default function MantenimientosPage() {
         setKmValidado(true)
       } else if (resultado.estado === 'advertencia' ||
                  (resultado.estado === 'error' && resultado.fuente && resultado.maxKm != null)) {
+        setEstadoKm('advertencia')
         // Mostrar inmediatamente la inconsistencia, incluso con el teclado
         // móvil abierto. La aprobación definitiva requiere dos confirmaciones.
         setAdvertenciaKmPendiente(true)
@@ -1467,9 +1468,9 @@ export default function MantenimientosPage() {
                 </div>
                 {modalKm.paso === 2 ? (
                   <div id="validacion-km-mensaje" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center text-emerald-950">
-                    <p className="text-sm font-medium">¿Confirma que el kilometraje correcto es?</p>
+                    <p className="text-sm font-medium">Kilometraje por aprobar</p>
                     <p className="mt-2 text-2xl font-extrabold tabular-nums">{Number(modalKm.km).toLocaleString('es-CO')} km</p>
-                    <p className="mt-2 text-xs">Al aceptar se permitirá continuar con el registro.</p>
+                    <p className="mt-2 text-xs">Al pulsar Aceptar, este kilometraje quedará aprobado para continuar con el registro.</p>
                   </div>
                 ) : (
                   <>
@@ -1547,9 +1548,10 @@ export default function MantenimientosPage() {
                 <input
                   id="kilometraje-servicio"
                   ref={inputKmRef}
-                  type="number"
-                  min="0"
+                  type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
                   className={`min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base ${!placa ? 'cursor-not-allowed bg-gray-100' : ''}`}
                   value={kilometraje}
                   disabled={!placa}
