@@ -568,22 +568,19 @@ function EstadoMatriculaRunt({ estado }) {
   const actual = estado || { estado: 'SIN_CONTROL', etiqueta: 'SIN CONTROL' }
   const tipos = {
     CERTIFICADO: 'green',
-    ACTIVO: 'green',
-    PREVENTIVO: 'yellow',
+    EN_PROCESO: 'green',
     POR_VENCER: 'yellow',
-    VENCE_HOY: 'red',
     VENCIDO: 'red',
     PENDIENTE_RUNT: 'gray',
-    CONTINUACION_PENDIENTE: 'purple',
-    SIN_CONTROL: 'gray',
+    SIN_CONTROL: 'red',
   }
   const dias = actual.dias_restantes
   const progreso = actual.progreso
   const mostrarBarra = Number.isFinite(progreso) &&
-    !['CERTIFICADO', 'PENDIENTE_RUNT', 'SIN_CONTROL', 'CONTINUACION_PENDIENTE'].includes(actual.estado)
-  const colorBarra = actual.estado === 'VENCIDO' || actual.estado === 'VENCE_HOY'
+    !['CERTIFICADO', 'PENDIENTE_RUNT', 'SIN_CONTROL'].includes(actual.estado)
+  const colorBarra = actual.estado === 'VENCIDO'
     ? 'bg-red-500'
-    : actual.estado === 'POR_VENCER' || actual.estado === 'PREVENTIVO'
+    : actual.estado === 'POR_VENCER'
       ? 'bg-amber-500'
       : 'bg-emerald-500'
 
@@ -601,8 +598,8 @@ function EstadoMatriculaRunt({ estado }) {
       )}
       {actual.estado === 'CERTIFICADO' ? (
         <span className="text-[10px] text-gray-600">{actual.fecha_certificacion ? `Certificado: ${formatearFecha(actual.fecha_certificacion)}` : 'Fecha de certificación no registrada'}</span>
-      ) : actual.estado === 'CONTINUACION_PENDIENTE' ? (
-        <span className="text-[10px] text-purple-700">Pendiente de reproceso RUNT</span>
+      ) : actual.continuacion_pendiente ? (
+        <span className="text-[10px] text-red-700">Continuación: pendiente de reproceso</span>
       ) : Number.isFinite(dias) ? (
         <span className="text-[10px] text-gray-600">
           {dias < 0
@@ -1819,12 +1816,9 @@ export default function InscripcionesPage() {
               className="h-9 w-full rounded-lg border border-[#A9BDCC] bg-white px-2 text-xs">
               <option value="">Todos los estados</option>
               <option value="PENDIENTE_RUNT">Pendiente RUNT</option>
-              <option value="ACTIVO">Activo</option>
-              <option value="PREVENTIVO">Preventivo</option>
+              <option value="EN_PROCESO">En proceso</option>
               <option value="POR_VENCER">Por vencer</option>
-              <option value="VENCE_HOY">Vence hoy</option>
               <option value="VENCIDO">Vencido</option>
-              <option value="CONTINUACION_PENDIENTE">Continuación pendiente</option>
               <option value="CERTIFICADO">Certificado</option>
               <option value="SIN_CONTROL">Sin control</option>
             </select>
@@ -1923,34 +1917,7 @@ export default function InscripcionesPage() {
             Limpiar
           </button>
 
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                '/admin/inscripciones/nueva'
-              )
-            }
-            className="
-              h-9
-              bg-emerald-600
-              hover:bg-emerald-700
-              hover:-translate-y-0.5
-              text-white
-              px-3
-              rounded-lg
-              text-xs
-              flex
-              items-center
-              justify-center
-              gap-1.5
-              transition-all
-              whitespace-nowrap
-            "
-          >
-            <i className="fas fa-user-plus"></i>
 
-            Nueva Matrícula
-          </button>
 
 
 
@@ -1985,23 +1952,41 @@ export default function InscripcionesPage() {
             }}
           >
 
-            <span
-              className="
-                text-sm
-                font-semibold
-              "
-            >
-              Resultados
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm font-semibold">Resultados</span>
+              <span className="text-xs" style={{ color: ESTILO_SECCIONES.subtitulo }}>
+                {resultados.length} registro(s)
+              </span>
+            </div>
 
-            <span
-              className="
-                text-xs
-              "
-              style={{ color: ESTILO_SECCIONES.subtitulo }}
-            >
-              {resultados.length} registro(s)
-            </span>
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                '/admin/inscripciones/nueva'
+              )
+            }
+            className="
+              h-9
+              bg-emerald-600
+              hover:bg-emerald-700
+              hover:-translate-y-0.5
+              text-white
+              px-3
+              rounded-lg
+              text-xs
+              flex
+              items-center
+              justify-center
+              gap-1.5
+              transition-all
+              whitespace-nowrap
+            "
+          >
+            <i className="fas fa-user-plus"></i>
+
+            Nueva Matrícula
+          </button>
 
           </div>
 
@@ -2430,12 +2415,12 @@ export default function InscripcionesPage() {
                         {mensajeContinuacion}
                       </div>
                     )}
-                    {matriculaSeleccionada?.estado_runt?.estado === 'CONTINUACION_PENDIENTE' && (
+                    {matriculaSeleccionada?.estado_runt?.continuacion_pendiente && (
                       <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-xs text-purple-900">
                         <strong>Continuación registrada.</strong> Se conserva el consecutivo original. Verifique la ausencia de certificación en RUNT y cree el nuevo proceso desde el módulo Control RUNT; el plazo de 90 días no se reinicia hasta que quede registrada la nueva fecha RUNT.
                       </div>
                     )}
-                    {matriculaSeleccionada?.estado_runt?.estado === 'VENCIDO' && (
+                    {matriculaSeleccionada?.estado_runt?.estado === 'VENCIDO' && !matriculaSeleccionada?.estado_runt?.continuacion_pendiente && (
                       <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-slate-800">
                         <p className="font-bold">Proceso RUNT vencido · Matrícula {matriculaSeleccionada.consecutivo}</p>
                         <p className="mt-1">Puede registrar la continuación administrativa sin modificar la matrícula ni su consecutivo. Después deberá verificar en RUNT la ausencia de certificación e iniciar un nuevo proceso desde Control RUNT.</p>
