@@ -873,7 +873,7 @@ function diasEntreFechasRunt(desde, hasta) {
 function calcularEstadoOperativoRunt(control) {
   if (!control) {
     return { estado: 'SIN_CONTROL', etiqueta: 'SIN CONTROL', dias_restantes: null,
-      dias_transcurridos: null, progreso: null, fecha_registro: null, fecha_limite: null, numero_proceso: null }
+      dias_transcurridos: null, progreso: null, fecha_registro: null, fecha_certificacion: null, fecha_limite: null, numero_proceso: null }
   }
 
   const numeroProceso = control.numero_proceso || 1
@@ -889,6 +889,7 @@ function calcularEstadoOperativoRunt(control) {
   const base = {
     numero_proceso: numeroProceso,
     fecha_registro: fechaRegistro,
+    fecha_certificacion: normalizarTexto(control.fecha_certificacion).slice(0, 10) || null,
     fecha_limite: fechaLimite,
     dias_transcurridos: diasTranscurridos,
     dias_restantes: null,
