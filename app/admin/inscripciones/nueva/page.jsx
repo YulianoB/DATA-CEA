@@ -41,9 +41,9 @@ const API_URL =
 const CATS_TODAS = [
   'A2',
   'B1',
-  'B2',
   'C1',
   'RC1',
+  'B2',
   'C2',
   'C3',
 ]
@@ -52,26 +52,26 @@ const CATEGORIAS_POR_NIVEL = {
   'NIVEL I': [
     'A2',
     'B1',
-    'B2',
     'C1',
     'RC1',
+    'B2',
   ],
 
   'NIVEL II': [
     'A2',
     'B1',
-    'B2',
     'C1',
     'RC1',
+    'B2',
     'C2',
   ],
 
   'NIVEL III': [
     'A2',
     'B1',
-    'B2',
     'C1',
     'RC1',
+    'B2',
     'C2',
     'C3',
   ],
@@ -4713,7 +4713,9 @@ const guardar =
                     ) : (
                     <div className="flex flex-wrap gap-2">
 
-                      {categoriasHabilitadas.map(
+                      {[...categoriasHabilitadas].sort(
+                        (a, b) => CATS_TODAS.indexOf(a) - CATS_TODAS.indexOf(b)
+                      ).map(
                         cat => {
                           const active =
                             form
