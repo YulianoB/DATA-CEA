@@ -945,6 +945,9 @@ async function consultarAprendices({
   fechaFin = '',
   estadoRunt = '',
   origen = '',
+  categoriaFiltro = '',
+  pagina = 1,
+  porPagina = 25,
 }) {
   let consulta =
     supabase
@@ -987,6 +990,10 @@ async function consultarAprendices({
         'fecha_matricula',
         fechaFin
       )
+  }
+
+  if (categoriaFiltro) {
+    consulta = consulta.overlaps('categorias', [categoriaFiltro])
   }
 
   if (origen === 'DIRECTO' || origen === 'CONVENIO') {
@@ -1043,26 +1050,46 @@ async function consultarAprendices({
     }
   }
 
-  // Buscar por lotes: los estados se filtran antes de devolver 100 filas.
   const filtroEstado = normalizarMayusculas(estadoRunt)
+  const offset = (pagina - 1) * porPagina
+  const consultasPorLote = filtroEstado ? 200 : porPagina
   const resultados = []
-  const tamanoLote = LIMITE_CONSULTA
-  let desde = 0
+  let desde = filtroEstado ? 0 : offset
+  let coincidencias = 0
+  let hayMas = false
+  let total = null
+  if (!filtroEstado) {
+    // Count all rows matching SQL filters, not just the requested page.
+    const conteo = await supabase.from('aprendices').select('id', { count: 'exact', head: true })
+    // A separate count of all matrículas is only accurate without additional SQL filters,
+    // so use has_more when filters exist. A precise filtered count requires a dedicated RPC.
+    if (!busqueda && !fechaInicio && !fechaFin && !origen && !categoriaFiltro && !conteo.error) {
+      total = conteo.count
+    }
+  }
   const consultaOrdenada = consulta
     .order('fecha_matricula', { ascending: false })
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
-  while (resultados.length < LIMITE_CONSULTA) {
-    const { data, error } = await consultaOrdenada.range(desde, desde + tamanoLote - 1)
+
+  // Sin filtro de estado, PostgREST pagina directamente en el servidor.
+  // Con estado derivado, se recorren lotes hasta hallar la página
+  // solicitada y un resultado adicional para comprobar "Siguiente".
+  while (true) {
+    const { data, error, count } = await (filtroEstado
+      ? consultaOrdenada.range(desde, desde + consultasPorLote - 1)
+      : consultaOrdenada.range(desde, desde + consultasPorLote - 1))
     if (error) throw new Error('No fue posible consultar las matrículas: ' + error.message)
     const registros = Array.isArray(data) ? data : []
     if (!registros.length) break
+
     const ids = registros.map(registro => registro.id)
     const controlesRunt = await obtenerControlesRuntExpediente(supabase, ids)
     const mapaRunt = construirMapaRuntActual(controlesRunt)
     const { data: continuaciones, error: errorContinuaciones } = await supabase
       .from('matriculas_continuaciones')
-      .select('matricula_id,created_at').in('matricula_id', ids)
+      .select('matricula_id,created_at')
+      .in('matricula_id', ids)
     if (errorContinuaciones) {
       throw new Error('No fue posible consultar continuaciones: ' + errorContinuaciones.message)
     }
@@ -1079,17 +1106,26 @@ async function consultarAprendices({
         mapaContinuaciones.get(String(registro.id)) || []
       )
       if (filtroEstado && estado.estado !== filtroEstado) continue
+      if (filtroEstado && coincidencias++ < offset) continue
+      if (resultados.length === porPagina) {
+        hayMas = true
+        break
+      }
       resultados.push({
-        ...registro, estado_runt: estado,
+        ...registro,
+        estado_runt: estado,
         nombre_completo: [registro.nombres, registro.apellidos].filter(Boolean).join(' ').trim(),
         categoria: obtenerCategoriaRegistro(registro),
       })
-      if (resultados.length >= LIMITE_CONSULTA) break
+    }
+    if (hayMas || !filtroEstado) {
+      if (!filtroEstado) hayMas = registros.length === porPagina
+      break
     }
     desde += registros.length
-    if (registros.length < tamanoLote) break
+    if (registros.length < consultasPorLote) break
   }
-  return resultados
+  return { registros: resultados, hayMas, total }
 }
 
 // =========================================================
@@ -3879,13 +3915,18 @@ export async function GET(
           )
         )
 
+      const pagina = Math.max(1, Math.min(10000, Number(searchParams.get('pagina')) || 1))
+      const porPagina = [25, 50, 100].includes(Number(searchParams.get('por_pagina')))
+        ? Number(searchParams.get('por_pagina')) : 25
+      const categoriaFiltro = normalizarMayusculas(searchParams.get('categoria'))
       const estadoRunt = normalizarMayusculas(searchParams.get('estado_runt'))
       const origen = normalizarMayusculas(searchParams.get('origen'))
       const estadosPermitidos = new Set([
         '', 'SIN_CONTROL', 'PENDIENTE_RUNT', 'EN_PROCESO',
         'POR_VENCER', 'VENCIDO', 'CERTIFICADO'
       ])
-      if (!estadosPermitidos.has(estadoRunt) ||
+      if ((categoriaFiltro && !CATS_VALIDAS_GENERALES.has(categoriaFiltro)) ||
+          !estadosPermitidos.has(estadoRunt) ||
           (origen && origen !== 'DIRECTO' && origen !== 'CONVENIO' &&
            !/^CONVENIO:[1-9][0-9]*$/.test(origen))) {
         return NextResponse.json({
@@ -3956,29 +3997,7 @@ export async function GET(
         )
       }
 
-      if (
-        !q &&
-        !fechaInicio &&
-        !fechaFin &&
-        !estadoRunt &&
-        !origen
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              'Ingrese un criterio de búsqueda o seleccione un rango de fechas.',
-          },
-          {
-            status:
-              400,
-          }
-        )
-      }
-
-      const registros =
+      const consultaPaginada =
         await consultarAprendices({
           supabase,
 
@@ -3990,6 +4009,9 @@ export async function GET(
           fechaFin,
           estadoRunt,
           origen,
+          categoriaFiltro,
+          pagina,
+          porPagina,
         })
 
       return NextResponse.json({
@@ -3997,13 +4019,19 @@ export async function GET(
           'success',
 
         data:
-          registros,
+          consultaPaginada.registros,
 
         total:
-          registros.length,
+          consultaPaginada.total,
+
+        hay_mas:
+          consultaPaginada.hayMas,
+
+        pagina,
+        por_pagina: porPagina,
 
         limite:
-          LIMITE_CONSULTA,
+          porPagina,
 
         filtros: {
           q,
@@ -4015,6 +4043,7 @@ export async function GET(
             fechaFin,
           estado_runt: estadoRunt,
           origen,
+          categoria: categoriaFiltro,
         },
 
         empresa:
