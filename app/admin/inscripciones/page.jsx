@@ -36,9 +36,9 @@ const API_URL =
 const CATEGORIAS = [
   'A2',
   'B1',
-  'B2',
   'C1',
   'RC1',
+  'B2',
   'C2',
   'C3',
 ]
@@ -798,6 +798,9 @@ export default function InscripcionesPage() {
   // Cargar las matriculas recientes de todas las fechas (primera pagina).
   // ==========================================================
 
+  // La API de la empresa es la fuente de verdad para las categorías autorizadas.
+  const [categoriasHabilitadas, setCategoriasHabilitadas] = useState([])
+
   const [filtros, setFiltros] = useState(() => ({
     q: '',
     fecha_inicio: '',
@@ -1206,6 +1209,12 @@ export default function InscripcionesPage() {
               ? json.data
               : []
           )
+          if (Array.isArray(json?.empresa?.categorias_habilitadas)) {
+            const habilitadas = new Set(
+              json.empresa.categorias_habilitadas.map(cat => String(cat || '').trim().toUpperCase())
+            )
+            setCategoriasHabilitadas(CATEGORIAS.filter(cat => habilitadas.has(cat)))
+          }
           setTotalRegistros(Number.isFinite(json?.total) ? json.total : null)
           setHayMas(json?.hay_mas === true)
         } catch (
@@ -1815,7 +1824,7 @@ export default function InscripcionesPage() {
               onChange={cambiarFiltro} aria-label="Categoría" title="Categoría"
               className="h-9 w-full rounded-lg border border-[#A9BDCC] bg-white px-2 text-xs">
               <option value="">Categorías</option>
-              {CATEGORIAS.map(categoria => (
+              {categoriasHabilitadas.map(categoria => (
                 <option key={categoria} value={categoria}>{categoria}</option>
               ))}
             </select>
