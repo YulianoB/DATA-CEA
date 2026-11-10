@@ -944,6 +944,8 @@ async function consultarAprendices({
   busqueda = '',
   fechaInicio = '',
   fechaFin = '',
+  estadoRunt = '',
+  origen = '',
 }) {
   let consulta =
     supabase
@@ -986,6 +988,16 @@ async function consultarAprendices({
         'fecha_matricula',
         fechaFin
       )
+  }
+
+  if (origen === 'DIRECTO' || origen === 'CONVENIO') {
+    consulta = consulta.eq('origen_matricula', origen)
+  } else if (origen.startsWith('CONVENIO:')) {
+    const convenioId = Number(origen.slice('CONVENIO:'.length))
+    if (!Number.isSafeInteger(convenioId) || convenioId <= 0) {
+      throw new Error('El convenio seleccionado no es válido.')
+    }
+    consulta = consulta.eq('origen_matricula', 'CONVENIO').eq('convenio_id', convenioId)
   }
 
   const termino =
@@ -1032,94 +1044,53 @@ async function consultarAprendices({
     }
   }
 
-  const {
-    data,
-    error,
-  } =
-    await consulta
-      .order(
-        'fecha_matricula',
-        {
-          ascending:
-            false,
-        }
-      )
-      .order(
-        'created_at',
-        {
-          ascending:
-            false,
-        }
-      )
-      .limit(
-        LIMITE_CONSULTA
-      )
-
-  if (
-    error
-  ) {
-    throw new Error(
-      `No fue posible consultar las matrículas: ${error.message}`
-    )
-  }
-
-  const registros =
-    Array.isArray(
-      data
-    )
-      ? data
-      : []
-
-  // Obtener el proceso RUNT mas reciente de cada matricula listada.
-  // No usar el estado legado de aprendices como indicador operativo.
-  const controlesRunt = await obtenerControlesRuntExpediente(
-    supabase, registros.map(registro => registro.id).filter(Boolean)
-  )
-  const mapaRunt = construirMapaRuntActual(controlesRunt)
-  const { data: continuaciones, error: errorContinuaciones } = registros.length
-    ? await supabase
-    .from('matriculas_continuaciones')
-    .select('matricula_id,created_at')
-    .in('matricula_id', registros.map(registro => registro.id))
-    : { data: [], error: null }
-  if (errorContinuaciones) {
-    throw new Error('No fue posible consultar continuaciones: ' + errorContinuaciones.message)
-  }
-  const mapaContinuaciones = new Map()
-  for (const item of continuaciones || []) {
-    const key = String(item.matricula_id)
-    if (!mapaContinuaciones.has(key)) mapaContinuaciones.set(key, [])
-    mapaContinuaciones.get(key).push(item)
-  }
-
-  return registros.map(
-    registro => ({
-      ...registro,
-      estado_runt: estadoConContinuacionPendiente(
-        calcularEstadoOperativoRunt(mapaRunt.get(String(registro.id)) || null),
-        mapaRunt.get(String(registro.id)) || null,
+  // Buscar por lotes: los estados se filtran antes de devolver 100 filas.
+  const filtroEstado = normalizarMayusculas(estadoRunt)
+  const resultados = []
+  const tamanoLote = LIMITE_CONSULTA
+  let desde = 0
+  while (resultados.length < LIMITE_CONSULTA) {
+    const { data, error } = await consulta
+      .order('fecha_matricula', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(desde, desde + tamanoLote - 1)
+    if (error) throw new Error('No fue posible consultar las matrículas: ' + error.message)
+    const registros = Array.isArray(data) ? data : []
+    if (!registros.length) break
+    const ids = registros.map(registro => registro.id)
+    const controlesRunt = await obtenerControlesRuntExpediente(supabase, ids)
+    const mapaRunt = construirMapaRuntActual(controlesRunt)
+    const { data: continuaciones, error: errorContinuaciones } = await supabase
+      .from('matriculas_continuaciones')
+      .select('matricula_id,created_at').in('matricula_id', ids)
+    if (errorContinuaciones) {
+      throw new Error('No fue posible consultar continuaciones: ' + errorContinuaciones.message)
+    }
+    const mapaContinuaciones = new Map()
+    for (const item of continuaciones || []) {
+      const key = String(item.matricula_id)
+      if (!mapaContinuaciones.has(key)) mapaContinuaciones.set(key, [])
+      mapaContinuaciones.get(key).push(item)
+    }
+    for (const registro of registros) {
+      const runt = mapaRunt.get(String(registro.id)) || null
+      const estado = estadoConContinuacionPendiente(
+        calcularEstadoOperativoRunt(runt), runt,
         mapaContinuaciones.get(String(registro.id)) || []
-      ),
-
-      nombre_completo:
-        [
-          registro.nombres,
-          registro.apellidos,
-        ]
-          .filter(
-            Boolean
-          )
-          .join(
-            ' '
-          )
-          .trim(),
-
-      categoria:
-        obtenerCategoriaRegistro(
-          registro
-        ),
-    })
-  )
+      )
+      if (filtroEstado && estado.estado !== filtroEstado) continue
+      resultados.push({
+        ...registro, estado_runt: estado,
+        nombre_completo: [registro.nombres, registro.apellidos].filter(Boolean).join(' ').trim(),
+        categoria: obtenerCategoriaRegistro(registro),
+      })
+      if (resultados.length >= LIMITE_CONSULTA) break
+    }
+    desde += registros.length
+    if (registros.length < tamanoLote) break
+  }
+  return resultados
 }
 
 // =========================================================
@@ -3584,6 +3555,13 @@ export async function GET(
     // =====================================================
     // CONVENIOS
     // =====================================================
+
+    if (recurso === 'origenes') {
+      const { data, error } = await supabase.from('convenios')
+        .select('id,nombre').order('nombre', { ascending: true })
+      if (error) throw new Error('No fue posible consultar los orígenes: ' + error.message)
+      return NextResponse.json({ status: 'success', data: data || [] })
+    }
 
     if (
       recurso ===
