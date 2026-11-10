@@ -847,6 +847,82 @@ async function obtenerHistorial(
 }
 
 // =========================================================
+// ESTADO OPERATIVO RUNT (NO ALTERA aprendices.estado)
+// Debe conservar la regla de 90 dias de /api/admin/runt.
+// =========================================================
+
+const DIAS_VIGENCIA_RUNT_INSCRIPCIONES = 90
+
+function fechaBogotaInscripciones() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Bogota',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
+function diasEntreFechasRunt(desde, hasta) {
+  const a = Date.parse(`${desde}T00:00:00Z`)
+  const b = Date.parse(`${hasta}T00:00:00Z`)
+  return Number.isFinite(a) && Number.isFinite(b)
+    ? Math.round((b - a) / 86400000)
+    : null
+}
+
+function calcularEstadoOperativoRunt(control) {
+  if (!control) {
+    return { estado: 'SIN_CONTROL', etiqueta: 'SIN CONTROL', dias_restantes: null,
+      dias_transcurridos: null, progreso: null, fecha_registro: null, fecha_limite: null, numero_proceso: null }
+  }
+
+  const numeroProceso = control.numero_proceso || 1
+  const fechaRegistro = normalizarTexto(control.fecha_registro).slice(0, 10) || null
+  const diasTranscurridos = fechaRegistro
+    ? diasEntreFechasRunt(fechaRegistro, fechaBogotaInscripciones())
+    : null
+  const fechaLimite = fechaRegistro
+    ? new Date(Date.parse(`${fechaRegistro}T00:00:00Z`) + DIAS_VIGENCIA_RUNT_INSCRIPCIONES * 86400000)
+        .toISOString().slice(0, 10)
+    : null
+
+  const base = {
+    numero_proceso: numeroProceso,
+    fecha_registro: fechaRegistro,
+    fecha_limite: fechaLimite,
+    dias_transcurridos: diasTranscurridos,
+    dias_restantes: null,
+    progreso: diasTranscurridos === null ? null
+      : Math.max(0, Math.min(100, Math.round(diasTranscurridos / DIAS_VIGENCIA_RUNT_INSCRIPCIONES * 100))),
+  }
+
+  if (normalizarMayusculas(control.estado_certificacion) === 'CERTIFICADO') {
+    return { ...base, estado: 'CERTIFICADO', etiqueta: 'CERTIFICADO' }
+  }
+
+  if (normalizarMayusculas(control.estado_registro) !== 'REGISTRADO' ||
+      !fechaRegistro || !fechaLimite) {
+    return { ...base, estado: 'PENDIENTE_RUNT', etiqueta: 'PENDIENTE RUNT',
+      dias_transcurridos: null, progreso: null }
+  }
+
+  const restantes = diasEntreFechasRunt(fechaBogotaInscripciones(), fechaLimite)
+  if (restantes === null) {
+    return { ...base, estado: 'PENDIENTE_RUNT', etiqueta: 'PENDIENTE RUNT',
+      dias_transcurridos: null, progreso: null }
+  }
+
+  let estado = 'ACTIVO'
+  let etiqueta = 'ACTIVO'
+  if (restantes < 0) { estado = 'VENCIDO'; etiqueta = 'VENCIDO' }
+  else if (restantes === 0) { estado = 'VENCE_HOY'; etiqueta = 'VENCE HOY' }
+  else if (restantes <= 15) { estado = 'POR_VENCER'; etiqueta = 'POR VENCER' }
+  else if (restantes <= 30) { estado = 'PREVENTIVO'; etiqueta = 'PREVENTIVO' }
+
+  return { ...base, estado, etiqueta, dias_restantes: restantes }
+}
+
+// =========================================================
 // CONSULTA GENERAL
 // =========================================================
 
@@ -981,9 +1057,19 @@ async function consultarAprendices({
       ? data
       : []
 
+  // Obtener el proceso RUNT mas reciente de cada matricula listada.
+  // No usar el estado legado de aprendices como indicador operativo.
+  const controlesRunt = await obtenerControlesRuntExpediente(
+    supabase, registros.map(registro => registro.id).filter(Boolean)
+  )
+  const mapaRunt = construirMapaRuntActual(controlesRunt)
+
   return registros.map(
     registro => ({
       ...registro,
+      estado_runt: calcularEstadoOperativoRunt(
+        mapaRunt.get(String(registro.id)) || null
+      ),
 
       nombre_completo:
         [
@@ -1153,12 +1239,9 @@ async function obtenerControlesRuntExpediente(
   if (
     error
   ) {
-    console.error(
-      'Error consultando Control RUNT para expediente:',
-      error
+    throw new Error(
+      `No fue posible consultar los controles RUNT: ${error.message}`
     )
-
-    return []
   }
 
   return Array.isArray(
@@ -1677,6 +1760,25 @@ async function construirExpediente(
             esMatriculaFinalizada(
               registro.estado
             ),
+
+          estado_runt:
+            calcularEstadoOperativoRunt(runt),
+
+          procesos_runt:
+            controlesRunt
+              .filter(control => String(control.matricula_id) === String(registro.id))
+              .map(control => ({
+                id: control.id,
+                numero_proceso: control.numero_proceso || 1,
+                fecha_verificacion: control.fecha_verificacion || null,
+                resultado_verificacion: control.resultado_verificacion || null,
+                estado_registro: control.estado_registro || 'PENDIENTE',
+                fecha_registro: control.fecha_registro || null,
+                estado_certificacion: control.estado_certificacion || 'PENDIENTE',
+                fecha_certificacion: control.fecha_certificacion || null,
+                vigencia: calcularEstadoOperativoRunt(control),
+              }))
+              .sort((a, b) => b.numero_proceso - a.numero_proceso),
 
           control_runt:
             runt
