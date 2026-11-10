@@ -970,7 +970,7 @@ async function consultarAprendices({
         categorias,
         estado,
         created_at
-      `)
+      `, { count: 'exact' })
 
   if (
     fechaInicio
@@ -1052,21 +1052,12 @@ async function consultarAprendices({
 
   const filtroEstado = normalizarMayusculas(estadoRunt)
   const offset = (pagina - 1) * porPagina
-  const consultasPorLote = filtroEstado ? 200 : porPagina
+  const consultasPorLote = filtroEstado ? 200 : porPagina + 1
   const resultados = []
   let desde = filtroEstado ? 0 : offset
   let coincidencias = 0
   let hayMas = false
   let total = null
-  if (!filtroEstado) {
-    // Count all rows matching SQL filters, not just the requested page.
-    const conteo = await supabase.from('aprendices').select('id', { count: 'exact', head: true })
-    // A separate count of all matrículas is only accurate without additional SQL filters,
-    // so use has_more when filters exist. A precise filtered count requires a dedicated RPC.
-    if (!busqueda && !fechaInicio && !fechaFin && !origen && !categoriaFiltro && !conteo.error) {
-      total = conteo.count
-    }
-  }
   const consultaOrdenada = consulta
     .order('fecha_matricula', { ascending: false })
     .order('created_at', { ascending: false })
@@ -1080,6 +1071,7 @@ async function consultarAprendices({
       ? consultaOrdenada.range(desde, desde + consultasPorLote - 1)
       : consultaOrdenada.range(desde, desde + consultasPorLote - 1))
     if (error) throw new Error('No fue posible consultar las matrículas: ' + error.message)
+    if (!filtroEstado) total = count
     const registros = Array.isArray(data) ? data : []
     if (!registros.length) break
 
@@ -1119,7 +1111,7 @@ async function consultarAprendices({
       })
     }
     if (hayMas || !filtroEstado) {
-      if (!filtroEstado) hayMas = registros.length === porPagina
+      if (!filtroEstado) hayMas = total != null ? offset + resultados.length < total : registros.length > porPagina
       break
     }
     desde += registros.length
