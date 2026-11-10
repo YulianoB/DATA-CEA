@@ -1049,12 +1049,12 @@ async function consultarAprendices({
   const resultados = []
   const tamanoLote = LIMITE_CONSULTA
   let desde = 0
+  const consultaOrdenada = consulta
+    .order('fecha_matricula', { ascending: false })
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
   while (resultados.length < LIMITE_CONSULTA) {
-    const { data, error } = await consulta
-      .order('fecha_matricula', { ascending: false })
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .range(desde, desde + tamanoLote - 1)
+    const { data, error } = await consultaOrdenada.range(desde, desde + tamanoLote - 1)
     if (error) throw new Error('No fue posible consultar las matrículas: ' + error.message)
     const registros = Array.isArray(data) ? data : []
     if (!registros.length) break
