@@ -1673,6 +1673,22 @@ async function construirExpediente(
       controlesRunt
     )
 
+  // Historial administrativo de continuaciones, sin crear nuevas matriculas.
+  const { data: continuaciones, error: errorContinuaciones } = await supabase
+    .from('matriculas_continuaciones')
+    .select('id,matricula_id,fecha_continuacion,motivo,observaciones,registrado_por,created_at')
+    .in('matricula_id', matriculaIds)
+    .order('fecha_continuacion', { ascending: false })
+  if (errorContinuaciones) {
+    throw new Error('No fue posible consultar las continuaciones: ' + errorContinuaciones.message)
+  }
+  const continuacionesPorMatricula = new Map()
+  for (const continuacion of continuaciones || []) {
+    const id = String(continuacion.matricula_id)
+    if (!continuacionesPorMatricula.has(id)) continuacionesPorMatricula.set(id, [])
+    continuacionesPorMatricula.get(id).push(continuacion)
+  }
+
   const mapaSicov =
     construirMapaSicov(
       controlesSicov
@@ -1763,6 +1779,9 @@ async function construirExpediente(
 
           estado_runt:
             calcularEstadoOperativoRunt(runt),
+
+          continuaciones:
+            continuacionesPorMatricula.get(String(registro.id)) || [],
 
           procesos_runt:
             controlesRunt
@@ -3514,12 +3533,6 @@ export async function GET(
     // CONTINUACIONES DE LA MATRÍCULA ORIGINAL
     // =====================================================
     if (recurso === 'continuaciones') {
-      if (process.env.ENABLE_CONTINUACIONES_MATRICULA !== 'true') {
-        return NextResponse.json({
-          status: 'error',
-          message: 'El registro de continuaciones está pendiente de validación administrativa y de habilitación en Supabase.'
-        }, { status: 409 })
-      }
       const matriculaId = Number(searchParams.get('matricula_id'))
       if (!Number.isSafeInteger(matriculaId) || matriculaId <= 0) {
         return NextResponse.json({status:'error',message:'Matrícula inválida.'},{status:400})
@@ -4054,12 +4067,6 @@ export async function POST(
     // REGISTRAR CONTINUACIÓN, SIN CREAR NUEVA MATRÍCULA
     // =====================================================
     if (accion === 'registrar_continuacion') {
-      if (process.env.ENABLE_CONTINUACIONES_MATRICULA !== 'true') {
-        return NextResponse.json({
-          status: 'error',
-          message: 'El registro de continuaciones está pendiente de validación administrativa y de habilitación en Supabase.'
-        }, { status: 409 })
-      }
       const matriculaId = Number(body?.matricula_id)
       const fecha = normalizarTexto(body?.fecha_continuacion)
       const motivo = normalizarTexto(body?.motivo)
@@ -4084,6 +4091,38 @@ export async function POST(
       }
       if (fecha < matricula.fecha_matricula) {
         return NextResponse.json({status:'error',message:'La continuación no puede preceder a la matrícula original.'},{status:400})
+      }
+      if (fecha < matricula.fecha_matricula || fecha > fechaBogotaInscripciones()) {
+        return NextResponse.json({
+          status:'error',message:'La continuación debe tener una fecha entre la matrícula original y hoy.'
+        },{status:400})
+      }
+
+      // Solo permitir continuacion si el ultimo proceso RUNT realmente vencio
+      // sin certificacion. Un nuevo proceso se crea exclusivamente desde Control RUNT.
+      const controles = await obtenerControlesRuntExpediente(supabase, [matriculaId])
+      const ultimoControl = construirMapaRuntActual(controles).get(String(matriculaId))
+      const estadoActual = calcularEstadoOperativoRunt(ultimoControl)
+      if (estadoActual.estado !== 'VENCIDO') {
+        return NextResponse.json({
+          status:'error',
+          message:'Solo se puede registrar continuación cuando el último proceso RUNT está vencido y no certificado.'
+        },{status:409})
+      }
+
+      const { data: continuacionesPrevias, error: errorContinuaciones } = await supabase
+        .from('matriculas_continuaciones')
+        .select('id,created_at')
+        .eq('matricula_id', matriculaId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (errorContinuaciones) throw new Error('No fue posible validar las continuaciones: ' + errorContinuaciones.message)
+      if (continuacionesPrevias?.[0] && new Date(continuacionesPrevias[0].created_at).getTime() >
+          new Date(ultimoControl.created_at).getTime()) {
+        return NextResponse.json({
+          status:'error',
+          message:'Ya existe una continuación registrada para este proceso RUNT. Continúe con el reproceso desde Control RUNT.'
+        },{status:409})
       }
       const {data,error} = await supabase.from('matriculas_continuaciones')
         .insert({matricula_id:matriculaId,fecha_continuacion:fecha,
