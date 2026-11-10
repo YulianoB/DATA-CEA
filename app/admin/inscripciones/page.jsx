@@ -566,13 +566,14 @@ function Badge({
 
 function EstadoMatriculaRunt({ estado }) {
   const actual = estado || { estado: 'SIN_CONTROL', etiqueta: 'SIN CONTROL' }
-  const tipos = {
-    CERTIFICADO: 'green',
-    EN_PROCESO: 'green',
-    POR_VENCER: 'yellow',
-    VENCIDO: 'red',
-    PENDIENTE_RUNT: 'gray',
-    SIN_CONTROL: 'red',
+  // Colores sólidos exclusivos de los estados operativos de matrícula.
+  const coloresEstado = {
+    PENDIENTE_RUNT: 'bg-slate-600 text-white border-slate-600',
+    EN_PROCESO: 'bg-emerald-600 text-white border-emerald-600',
+    POR_VENCER: 'bg-amber-500 text-amber-950 border-amber-600',
+    VENCIDO: 'bg-red-600 text-white border-red-600',
+    CERTIFICADO: 'bg-green-600 text-white border-green-600',
+    SIN_CONTROL: 'bg-red-600 text-white border-red-600',
   }
   const dias = actual.dias_restantes
   const progreso = actual.progreso
@@ -589,7 +590,9 @@ function EstadoMatriculaRunt({ estado }) {
       title={actual.fecha_registro
         ? `Registro RUNT: ${formatearFecha(actual.fecha_registro)} · Límite: ${formatearFecha(actual.fecha_limite)} · Proceso #${actual.numero_proceso || 1}`
         : 'El plazo empieza con la fecha de registro formal en RUNT'}>
-      <Badge tipo={tipos[actual.estado] || 'gray'}>{actual.etiqueta || 'PENDIENTE RUNT'}</Badge>
+      <span className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-[10px] font-bold tracking-wide shadow-sm ${coloresEstado[actual.estado] || coloresEstado.PENDIENTE_RUNT}`}>
+        {actual.etiqueta || 'PENDIENTE RUNT'}
+      </span>
       {mostrarBarra && (
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
           <div className={`h-full rounded-full ${colorBarra}`}
