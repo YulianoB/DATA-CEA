@@ -922,6 +922,18 @@ function calcularEstadoOperativoRunt(control) {
   return { ...base, estado, etiqueta, dias_restantes: restantes }
 }
 
+function estadoConContinuacionPendiente(estado, control, continuaciones) {
+  if (estado?.estado !== 'VENCIDO' || !control || !Array.isArray(continuaciones)) {
+    return estado
+  }
+  const fechaControl = Date.parse(control.created_at || '')
+  const existeContinuacion = Number.isFinite(fechaControl) &&
+    continuaciones.some(item => Date.parse(item.created_at || '') > fechaControl)
+  return existeContinuacion
+    ? { ...estado, estado: 'CONTINUACION_PENDIENTE', etiqueta: 'CONTINUACIÓN PENDIENTE' }
+    : estado
+}
+
 // =========================================================
 // CONSULTA GENERAL
 // =========================================================
@@ -1063,12 +1075,29 @@ async function consultarAprendices({
     supabase, registros.map(registro => registro.id).filter(Boolean)
   )
   const mapaRunt = construirMapaRuntActual(controlesRunt)
+  const { data: continuaciones, error: errorContinuaciones } = registros.length
+    ? await supabase
+    .from('matriculas_continuaciones')
+    .select('matricula_id,created_at')
+    .in('matricula_id', registros.map(registro => registro.id))
+    : { data: [], error: null }
+  if (errorContinuaciones) {
+    throw new Error('No fue posible consultar continuaciones: ' + errorContinuaciones.message)
+  }
+  const mapaContinuaciones = new Map()
+  for (const item of continuaciones || []) {
+    const key = String(item.matricula_id)
+    if (!mapaContinuaciones.has(key)) mapaContinuaciones.set(key, [])
+    mapaContinuaciones.get(key).push(item)
+  }
 
   return registros.map(
     registro => ({
       ...registro,
-      estado_runt: calcularEstadoOperativoRunt(
-        mapaRunt.get(String(registro.id)) || null
+      estado_runt: estadoConContinuacionPendiente(
+        calcularEstadoOperativoRunt(mapaRunt.get(String(registro.id)) || null),
+        mapaRunt.get(String(registro.id)) || null,
+        mapaContinuaciones.get(String(registro.id)) || []
       ),
 
       nombre_completo:
@@ -1778,7 +1807,11 @@ async function construirExpediente(
             ),
 
           estado_runt:
-            calcularEstadoOperativoRunt(runt),
+            estadoConContinuacionPendiente(
+              calcularEstadoOperativoRunt(runt),
+              runt,
+              continuacionesPorMatricula.get(String(registro.id)) || []
+            ),
 
           continuaciones:
             continuacionesPorMatricula.get(String(registro.id)) || [],
@@ -1788,6 +1821,7 @@ async function construirExpediente(
               .filter(control => String(control.matricula_id) === String(registro.id))
               .map(control => ({
                 id: control.id,
+                created_at: control.created_at,
                 numero_proceso: control.numero_proceso || 1,
                 fecha_verificacion: control.fecha_verificacion || null,
                 resultado_verificacion: control.resultado_verificacion || null,
