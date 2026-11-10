@@ -914,12 +914,10 @@ function calcularEstadoOperativoRunt(control) {
       dias_transcurridos: null, progreso: null }
   }
 
-  let estado = 'ACTIVO'
-  let etiqueta = 'ACTIVO'
+  let estado = 'EN_PROCESO'
+  let etiqueta = 'EN PROCESO'
   if (restantes < 0) { estado = 'VENCIDO'; etiqueta = 'VENCIDO' }
-  else if (restantes === 0) { estado = 'VENCE_HOY'; etiqueta = 'VENCE HOY' }
   else if (restantes <= 15) { estado = 'POR_VENCER'; etiqueta = 'POR VENCER' }
-  else if (restantes <= 30) { estado = 'PREVENTIVO'; etiqueta = 'PREVENTIVO' }
 
   return { ...base, estado, etiqueta, dias_restantes: restantes }
 }
@@ -932,7 +930,7 @@ function estadoConContinuacionPendiente(estado, control, continuaciones) {
   const existeContinuacion = Number.isFinite(fechaControl) &&
     continuaciones.some(item => Date.parse(item.created_at || '') > fechaControl)
   return existeContinuacion
-    ? { ...estado, estado: 'CONTINUACION_PENDIENTE', etiqueta: 'CONTINUACIÓN PENDIENTE' }
+    ? { ...estado, continuacion_pendiente: true }
     : estado
 }
 
@@ -3884,9 +3882,8 @@ export async function GET(
       const estadoRunt = normalizarMayusculas(searchParams.get('estado_runt'))
       const origen = normalizarMayusculas(searchParams.get('origen'))
       const estadosPermitidos = new Set([
-        '', 'SIN_CONTROL', 'PENDIENTE_RUNT', 'ACTIVO',
-        'PREVENTIVO', 'POR_VENCER', 'VENCE_HOY', 'VENCIDO',
-        'CONTINUACION_PENDIENTE', 'CERTIFICADO'
+        '', 'SIN_CONTROL', 'PENDIENTE_RUNT', 'EN_PROCESO',
+        'POR_VENCER', 'VENCIDO', 'CERTIFICADO'
       ])
       if (!estadosPermitidos.has(estadoRunt) ||
           (origen && origen !== 'DIRECTO' && origen !== 'CONVENIO' &&
