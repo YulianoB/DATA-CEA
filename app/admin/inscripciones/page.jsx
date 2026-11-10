@@ -561,6 +561,63 @@ function Badge({
 }
 
 // ============================================================
+// ESTADO OPERATIVO DE MATRICULA: fuente control_runt
+// ============================================================
+
+function EstadoMatriculaRunt({ estado }) {
+  const actual = estado || { estado: 'SIN_CONTROL', etiqueta: 'SIN CONTROL' }
+  const tipos = {
+    CERTIFICADO: 'green',
+    ACTIVO: 'green',
+    PREVENTIVO: 'yellow',
+    POR_VENCER: 'yellow',
+    VENCE_HOY: 'red',
+    VENCIDO: 'red',
+    PENDIENTE_RUNT: 'gray',
+    SIN_CONTROL: 'gray',
+  }
+  const dias = actual.dias_restantes
+  const progreso = actual.progreso
+  const mostrarBarra = Number.isFinite(progreso) &&
+    !['CERTIFICADO', 'PENDIENTE_RUNT', 'SIN_CONTROL'].includes(actual.estado)
+  const colorBarra = actual.estado === 'VENCIDO' || actual.estado === 'VENCE_HOY'
+    ? 'bg-red-500'
+    : actual.estado === 'POR_VENCER' || actual.estado === 'PREVENTIVO'
+      ? 'bg-amber-500'
+      : 'bg-emerald-500'
+
+  return (
+    <div className="flex min-w-[120px] flex-col items-center gap-1"
+      title={actual.fecha_registro
+        ? `Registro RUNT: ${formatearFecha(actual.fecha_registro)} · Límite: ${formatearFecha(actual.fecha_limite)} · Proceso #${actual.numero_proceso || 1}`
+        : 'El plazo empieza con la fecha de registro formal en RUNT'}>
+      <Badge tipo={tipos[actual.estado] || 'gray'}>{actual.etiqueta || 'PENDIENTE RUNT'}</Badge>
+      {mostrarBarra && (
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+          <div className={`h-full rounded-full ${colorBarra}`}
+            style={{ width: `${progreso}%` }} />
+        </div>
+      )}
+      {actual.estado === 'CERTIFICADO' ? (
+        <span className="text-[10px] text-gray-600">Proceso finalizado</span>
+      ) : Number.isFinite(dias) ? (
+        <span className="text-[10px] text-gray-600">
+          {dias < 0
+            ? `Venció hace ${Math.abs(dias)} día(s)`
+            : dias === 0
+              ? 'Último día del plazo'
+              : `${dias} día(s) restantes`}
+        </span>
+      ) : (
+        <span className="text-[10px] text-gray-500">
+          {actual.estado === 'SIN_CONTROL' ? 'Revisar control' : 'Sin plazo iniciado'}
+        </span>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
 // CAMPO
 // ============================================================
 
@@ -2078,7 +2135,7 @@ export default function InscripcionesPage() {
                             "
                           >
 
-                            <span title="Estado general de matrícula retirado del uso operativo">—</span>
+                            <EstadoMatriculaRunt estado={row.estado_runt} />
 
                           </td>
 
@@ -2255,7 +2312,27 @@ export default function InscripcionesPage() {
                           <Campo label="Verificación" valor={matriculaSeleccionada.control_runt.resultado_verificacion || 'PENDIENTE'} />
                           <Campo label="Registro" valor={matriculaSeleccionada.control_runt.estado_registro || 'PENDIENTE'} />
                           <Campo label="Certificación" valor={matriculaSeleccionada.control_runt.estado_certificacion || 'PENDIENTE'} />
+                          <Campo label="Inicio plazo RUNT" valor={formatearFecha(matriculaSeleccionada.estado_runt?.fecha_registro)} />
+                          <Campo label="Límite RUNT (90 días)" valor={formatearFecha(matriculaSeleccionada.estado_runt?.fecha_limite)} />
+                          <div className="col-span-2 flex items-center justify-center">
+                            <EstadoMatriculaRunt estado={matriculaSeleccionada.estado_runt} />
+                          </div>
                         </div>
+                        {Array.isArray(matriculaSeleccionada.procesos_runt) && matriculaSeleccionada.procesos_runt.length > 1 && (
+                          <div className="border-t border-gray-200 p-2">
+                            <p className="mb-2 text-xs font-semibold text-slate-700">Historial de procesos RUNT</p>
+                            <div className="space-y-2">
+                              {matriculaSeleccionada.procesos_runt.map(proceso => (
+                                <div key={proceso.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+                                  <span className="font-semibold">Proceso #{proceso.numero_proceso}</span>
+                                  <EstadoMatriculaRunt estado={proceso.vigencia} />
+                                  <span>Registrado: {formatearFecha(proceso.fecha_registro)}</span>
+                                  <span>Certificado: {formatearFecha(proceso.fecha_certificacion)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
