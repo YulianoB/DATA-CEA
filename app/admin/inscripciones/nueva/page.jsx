@@ -54,7 +54,6 @@ const CATEGORIAS_POR_NIVEL = {
     'B1',
     'C1',
     'RC1',
-    'B2',
   ],
 
   'NIVEL II': [
