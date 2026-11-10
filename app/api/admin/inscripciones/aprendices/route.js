@@ -14,6 +14,7 @@ import {
 const CATS_VALIDAS_GENERALES = new Set([
   'A2',
   'B1',
+  'B2',
   'C1',
   'RC1',
   'C2',
