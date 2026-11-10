@@ -600,7 +600,7 @@ function EstadoMatriculaRunt({ estado }) {
         </div>
       )}
       {actual.estado === 'CERTIFICADO' ? (
-        <span className="text-[10px] text-gray-600">Proceso finalizado</span>
+        <span className="text-[10px] text-gray-600">{actual.fecha_certificacion ? `Certificado: ${formatearFecha(actual.fecha_certificacion)}` : 'Fecha de certificación no registrada'}</span>
       ) : actual.estado === 'CONTINUACION_PENDIENTE' ? (
         <span className="text-[10px] text-purple-700">Pendiente de reproceso RUNT</span>
       ) : Number.isFinite(dias) ? (
@@ -1989,7 +1989,7 @@ export default function InscripcionesPage() {
                   </th>
 
                   <th className="p-2 border">
-                    Convenio
+                    Origen
                   </th>
 
                   <th className="p-2 border">
@@ -2179,8 +2179,17 @@ export default function InscripcionesPage() {
                               text-center
                             "
                           >
-                            {row.convenio ||
-                              '-'}
+                            {String(row.origen_matricula || (row.convenio ? 'CONVENIO' : 'DIRECTO')).toUpperCase() === 'CONVENIO' ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span>{row.convenio || 'Convenio no registrado'}</span>
+                                <span className="text-[10px] font-semibold uppercase text-slate-500">CONVENIO</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-1">
+                                <span>{user?.nombreEmpresa || 'CEA no identificado'}</span>
+                                <span className="text-[10px] font-semibold uppercase text-slate-500">DIRECTO</span>
+                              </div>
+                            )}
                           </td>
 
                           <td
