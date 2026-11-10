@@ -574,12 +574,13 @@ function EstadoMatriculaRunt({ estado }) {
     VENCE_HOY: 'red',
     VENCIDO: 'red',
     PENDIENTE_RUNT: 'gray',
+    CONTINUACION_PENDIENTE: 'purple',
     SIN_CONTROL: 'gray',
   }
   const dias = actual.dias_restantes
   const progreso = actual.progreso
   const mostrarBarra = Number.isFinite(progreso) &&
-    !['CERTIFICADO', 'PENDIENTE_RUNT', 'SIN_CONTROL'].includes(actual.estado)
+    !['CERTIFICADO', 'PENDIENTE_RUNT', 'SIN_CONTROL', 'CONTINUACION_PENDIENTE'].includes(actual.estado)
   const colorBarra = actual.estado === 'VENCIDO' || actual.estado === 'VENCE_HOY'
     ? 'bg-red-500'
     : actual.estado === 'POR_VENCER' || actual.estado === 'PREVENTIVO'
@@ -600,6 +601,8 @@ function EstadoMatriculaRunt({ estado }) {
       )}
       {actual.estado === 'CERTIFICADO' ? (
         <span className="text-[10px] text-gray-600">Proceso finalizado</span>
+      ) : actual.estado === 'CONTINUACION_PENDIENTE' ? (
+        <span className="text-[10px] text-purple-700">Pendiente de reproceso RUNT</span>
       ) : Number.isFinite(dias) ? (
         <span className="text-[10px] text-gray-600">
           {dias < 0
@@ -2360,6 +2363,11 @@ export default function InscripcionesPage() {
                     {mensajeContinuacion && (
                       <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
                         {mensajeContinuacion}
+                      </div>
+                    )}
+                    {matriculaSeleccionada?.estado_runt?.estado === 'CONTINUACION_PENDIENTE' && (
+                      <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-xs text-purple-900">
+                        <strong>Continuación registrada.</strong> Se conserva el consecutivo original. Verifique la ausencia de certificación en RUNT y cree el nuevo proceso desde el módulo Control RUNT; el plazo de 90 días no se reinicia hasta que quede registrada la nueva fecha RUNT.
                       </div>
                     )}
                     {matriculaSeleccionada?.estado_runt?.estado === 'VENCIDO' && (
