@@ -14,6 +14,7 @@ import {
 const CATEGORIAS_VALIDAS = new Set([
   'A2',
   'B1',
+  'B2',
   'C1',
   'RC1',
   'C2',
