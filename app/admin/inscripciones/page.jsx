@@ -792,15 +792,16 @@ export default function InscripcionesPage() {
 
   // ==========================================================
   // FILTROS
-  // Cargar inicialmente las inscripciones del día actual.
+  // Cargar las matriculas recientes de todas las fechas (primera pagina).
   // ==========================================================
 
   const [filtros, setFiltros] = useState(() => ({
     q: '',
-    fecha_inicio: fechaLocalHoy(),
-    fecha_fin: fechaLocalHoy(),
+    fecha_inicio: '',
+    fecha_fin: '',
     estado_runt: '',
     origen: '',
+    categoria: '',
   }))
 
   // Al regresar desde Nueva Inscripción con una matrícula ya existente,
@@ -814,6 +815,7 @@ export default function InscripcionesPage() {
         fecha_fin: '',
         estado_runt: '',
         origen: '',
+        categoria: '',
       })
     }
   }, [])
@@ -829,6 +831,11 @@ export default function InscripcionesPage() {
     useState(
       []
     )
+
+  const [pagina, setPagina] = useState(1)
+  const [porPagina, setPorPagina] = useState(25)
+  const [totalRegistros, setTotalRegistros] = useState(null)
+  const [hayMas, setHayMas] = useState(false)
 
   const [
     resumenCategorias,
@@ -1128,31 +1135,6 @@ export default function InscripcionesPage() {
           )
 
         // ====================================================
-        // SI NO HAY FILTRO
-        // ====================================================
-
-        if (
-          !q &&
-          !fechaInicio &&
-          !fechaFin &&
-          !filtros.estado_runt &&
-          !filtros.origen
-        ) {
-          setResultados(
-            []
-          )
-
-          setConsultado(
-            false
-          )
-
-          setLoading(
-            false
-          )
-
-          return
-        }
-
         setLoading(
           true
         )
@@ -1205,6 +1187,9 @@ export default function InscripcionesPage() {
           }
           if (filtros.estado_runt) params.set('estado_runt', filtros.estado_runt)
           if (filtros.origen) params.set('origen', filtros.origen)
+          if (filtros.categoria) params.set('categoria', filtros.categoria)
+          params.set('pagina', String(pagina))
+          params.set('por_pagina', String(porPagina))
 
           const json =
             await fetchJsonSeguro(
@@ -1218,6 +1203,8 @@ export default function InscripcionesPage() {
               ? json.data
               : []
           )
+          setTotalRegistros(Number.isFinite(json?.total) ? json.total : null)
+          setHayMas(json?.hay_mas === true)
         } catch (
           errorConsulta
         ) {
@@ -1246,6 +1233,8 @@ export default function InscripcionesPage() {
         user,
         nit,
         filtros,
+        pagina,
+        porPagina,
       ]
     )
 
@@ -1267,34 +1256,6 @@ export default function InscripcionesPage() {
         clearTimeout(
           debounceRef.current
         )
-      }
-
-      const q =
-        texto(
-          filtros.q
-        )
-
-      const hayFechas =
-        Boolean(
-          filtros.fecha_inicio ||
-          filtros.fecha_fin ||
-          filtros.estado_runt ||
-          filtros.origen
-        )
-
-      if (
-        !q &&
-        !hayFechas
-      ) {
-        setResultados(
-          []
-        )
-
-        setConsultado(
-          false
-        )
-
-        return
       }
 
       debounceRef.current =
@@ -1338,6 +1299,7 @@ export default function InscripcionesPage() {
     } =
       event.target
 
+    setPagina(1)
     setFiltros(
       prev => ({
         ...prev,
@@ -1353,12 +1315,16 @@ export default function InscripcionesPage() {
   // ==========================================================
 
   function limpiarFiltros() {
+    setPagina(1)
+    setTotalRegistros(null)
+    setHayMas(false)
     setFiltros({
       q: '',
-      fecha_inicio: fechaLocalHoy(),
-      fecha_fin: fechaLocalHoy(),
+      fecha_inicio: '',
+      fecha_fin: '',
       estado_runt: '',
       origen: '',
+      categoria: '',
     })
 
     setResultados(
@@ -1840,6 +1806,18 @@ export default function InscripcionesPage() {
             </select>
           </div>
 
+          {/* CATEGORÍA */}
+          <div className="w-full xl:w-[115px]">
+            <select name="categoria" value={filtros.categoria}
+              onChange={cambiarFiltro} aria-label="Categoría" title="Categoría"
+              className="h-9 w-full rounded-lg border border-[#A9BDCC] bg-white px-2 text-xs">
+              <option value="">Categorías</option>
+              {CATEGORIAS.map(categoria => (
+                <option key={categoria} value={categoria}>{categoria}</option>
+              ))}
+            </select>
+          </div>
+
           {/* FECHA INICIO */}
 
           <div className="w-full xl:w-[145px]">
@@ -1955,7 +1933,9 @@ export default function InscripcionesPage() {
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm font-semibold">Resultados</span>
               <span className="text-xs" style={{ color: ESTILO_SECCIONES.subtitulo }}>
-                {resultados.length} registro(s)
+                {totalRegistros !== null
+                  ? `${totalRegistros} registro(s)`
+                  : `${resultados.length} en esta página`}
               </span>
             </div>
 
@@ -1988,6 +1968,22 @@ export default function InscripcionesPage() {
             Nueva Matrícula
           </button>
 
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2 border-b border-slate-200 px-4 py-2 text-xs">
+            <label htmlFor="tamanoPaginaInscripciones" className="text-slate-600">Por página</label>
+            <select id="tamanoPaginaInscripciones" value={porPagina}
+              onChange={e => { setPorPagina(Number(e.target.value)); setPagina(1) }}
+              className="rounded border border-slate-300 bg-white px-2 py-1">
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="text-slate-600">Página {pagina}{totalRegistros !== null ? ` de ${Math.max(1, Math.ceil(totalRegistros / porPagina))}` : ''}</span>
+            <button type="button" disabled={pagina <= 1 || loading} onClick={() => setPagina(p => Math.max(1, p - 1))}
+              className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40">Anterior</button>
+            <button type="button" disabled={!hayMas || loading} onClick={() => setPagina(p => p + 1)}
+              className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40">Siguiente</button>
           </div>
 
           <div className="overflow-x-auto">
