@@ -41,6 +41,7 @@ const API_URL =
 const CATS_TODAS = [
   'A2',
   'B1',
+  'B2',
   'C1',
   'RC1',
   'C2',
@@ -51,6 +52,7 @@ const CATEGORIAS_POR_NIVEL = {
   'NIVEL I': [
     'A2',
     'B1',
+    'B2',
     'C1',
     'RC1',
   ],
@@ -58,6 +60,7 @@ const CATEGORIAS_POR_NIVEL = {
   'NIVEL II': [
     'A2',
     'B1',
+    'B2',
     'C1',
     'RC1',
     'C2',
@@ -66,6 +69,7 @@ const CATEGORIAS_POR_NIVEL = {
   'NIVEL III': [
     'A2',
     'B1',
+    'B2',
     'C1',
     'RC1',
     'C2',
@@ -141,6 +145,7 @@ const RANK = {
 const ALLOW_WITH_A2 =
   new Set([
     'B1',
+    'B2',
     'C1',
     'RC1',
     'C2',
