@@ -3880,6 +3880,21 @@ export async function GET(
           )
         )
 
+      const estadoRunt = normalizarMayusculas(searchParams.get('estado_runt'))
+      const origen = normalizarMayusculas(searchParams.get('origen'))
+      const estadosPermitidos = new Set([
+        '', 'SIN_CONTROL', 'PENDIENTE_RUNT', 'ACTIVO',
+        'PREVENTIVO', 'POR_VENCER', 'VENCE_HOY', 'VENCIDO',
+        'CONTINUACION_PENDIENTE', 'CERTIFICADO'
+      ])
+      if (!estadosPermitidos.has(estadoRunt) ||
+          (origen && origen !== 'DIRECTO' && origen !== 'CONVENIO' &&
+           !/^CONVENIO:[1-9][0-9]*$/.test(origen))) {
+        return NextResponse.json({
+          status:'error', message:'Estado u origen de matrícula no válido.'
+        },{status:400})
+      }
+
       if (
         fechaInicio &&
         !fechaValida(
@@ -3946,7 +3961,9 @@ export async function GET(
       if (
         !q &&
         !fechaInicio &&
-        !fechaFin
+        !fechaFin &&
+        !estadoRunt &&
+        !origen
       ) {
         return NextResponse.json(
           {
@@ -3973,6 +3990,8 @@ export async function GET(
           fechaInicio,
 
           fechaFin,
+          estadoRunt,
+          origen,
         })
 
       return NextResponse.json({
@@ -3996,6 +4015,8 @@ export async function GET(
 
           fecha_fin:
             fechaFin,
+          estado_runt: estadoRunt,
+          origen,
         },
 
         empresa:
