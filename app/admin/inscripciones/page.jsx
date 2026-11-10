@@ -896,6 +896,14 @@ export default function InscripcionesPage() {
       ''
     )
 
+  // Continuación administrativa: nunca crea otro consecutivo.
+  const [continuacionAbierta, setContinuacionAbierta] = useState(false)
+  const [guardandoContinuacion, setGuardandoContinuacion] = useState(false)
+  const [continuacionFecha, setContinuacionFecha] = useState(fechaLocalHoy())
+  const [continuacionMotivo, setContinuacionMotivo] = useState('')
+  const [continuacionObservaciones, setContinuacionObservaciones] = useState('')
+  const [mensajeContinuacion, setMensajeContinuacion] = useState('')
+
   // ==========================================================
   // SESIÓN
   // ==========================================================
@@ -1460,6 +1468,49 @@ export default function InscripcionesPage() {
     }
   }
 
+  async function registrarContinuacion() {
+    if (!matriculaSeleccionada?.id || guardandoContinuacion) return
+    if (!continuacionFecha || continuacionMotivo.trim().length < 8) {
+      setError('Indique una fecha y un motivo de al menos ocho caracteres.')
+      return
+    }
+    if (!window.confirm(
+      `¿Registrar continuación para la matrícula ${matriculaSeleccionada.consecutivo} sin crear un consecutivo nuevo?`
+    )) return
+
+    setGuardandoContinuacion(true)
+    setError('')
+    setMensajeContinuacion('')
+    try {
+      const respuesta = await fetchJsonSeguro(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accion: 'registrar_continuacion',
+          nit,
+          matricula_id: matriculaSeleccionada.id,
+          fecha_continuacion: continuacionFecha,
+          motivo: continuacionMotivo.trim(),
+          observaciones: continuacionObservaciones.trim(),
+          usuario: obtenerNombreUsuario(user),
+        }),
+      })
+      const documento = matriculaSeleccionada?.documento || expediente?.aprendiz?.documento
+      const id = matriculaSeleccionada.id
+      setContinuacionAbierta(false)
+      setContinuacionMotivo('')
+      setContinuacionObservaciones('')
+      setMensajeContinuacion(respuesta.message || 'Continuación registrada correctamente.')
+      if (documento) await consultarExpediente(documento, id)
+      await consultar({ silencioso: true })
+      setMensajeContinuacion(respuesta.message || 'Continuación registrada correctamente.')
+    } catch (err) {
+      setError(err.message || 'No fue posible registrar la continuación.')
+    } finally {
+      setGuardandoContinuacion(false)
+    }
+  }
+
   // ==========================================================
   // CERRAR EXPEDIENTE
   // ==========================================================
@@ -1480,6 +1531,8 @@ export default function InscripcionesPage() {
     setError(
       ''
     )
+    setContinuacionAbierta(false)
+    setMensajeContinuacion('')
   }
 
   // ==========================================================
@@ -2303,6 +2356,63 @@ export default function InscripcionesPage() {
                         <TarjetaProcesoExterno titulo="SIET" icono="fa-graduation-cap" estado={estadoSiet} />
                       </div>
                     </div>
+
+                    {mensajeContinuacion && (
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+                        {mensajeContinuacion}
+                      </div>
+                    )}
+                    {matriculaSeleccionada?.estado_runt?.estado === 'VENCIDO' && (
+                      <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-slate-800">
+                        <p className="font-bold">Proceso RUNT vencido · Matrícula {matriculaSeleccionada.consecutivo}</p>
+                        <p className="mt-1">Puede registrar la continuación administrativa sin modificar la matrícula ni su consecutivo. Después deberá verificar en RUNT la ausencia de certificación e iniciar un nuevo proceso desde Control RUNT.</p>
+                        {!(matriculaSeleccionada.continuaciones || []).some(item =>
+                          new Date(item.created_at).getTime() >
+                          new Date(matriculaSeleccionada.procesos_runt?.[0]?.created_at || 0).getTime()
+                        ) && (
+                          <button type="button" onClick={() => setContinuacionAbierta(!continuacionAbierta)}
+                            className="mt-2 rounded bg-[#226184] px-3 py-2 font-semibold text-white">
+                            {continuacionAbierta ? 'Cancelar continuación' : 'Registrar continuación'}
+                          </button>
+                        )}
+                        {continuacionAbierta && (
+                          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <label className="flex flex-col gap-1">Fecha de continuación
+                              <input type="date" value={continuacionFecha}
+                                max={fechaLocalHoy()} min={matriculaSeleccionada.fecha_matricula || undefined}
+                                onChange={e => setContinuacionFecha(e.target.value)}
+                                className="rounded border border-slate-300 bg-white p-2" />
+                            </label>
+                            <label className="flex flex-col gap-1">Motivo (mínimo 8 caracteres)
+                              <input value={continuacionMotivo} maxLength={500}
+                                onChange={e => setContinuacionMotivo(e.target.value)}
+                                className="rounded border border-slate-300 bg-white p-2" />
+                            </label>
+                            <label className="flex flex-col gap-1 sm:col-span-2">Observaciones
+                              <textarea value={continuacionObservaciones} maxLength={2000}
+                                onChange={e => setContinuacionObservaciones(e.target.value)}
+                                className="rounded border border-slate-300 bg-white p-2" rows={2} />
+                            </label>
+                            <button type="button" disabled={guardandoContinuacion}
+                              onClick={registrarContinuacion}
+                              className="rounded bg-emerald-700 px-3 py-2 font-semibold text-white disabled:opacity-50">
+                              {guardandoContinuacion ? 'Guardando...' : 'Guardar continuación'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!!matriculaSeleccionada?.continuaciones?.length && (
+                      <div className="rounded-lg border border-slate-200 p-3">
+                        <p className="mb-2 text-xs font-bold">Historial de continuaciones</p>
+                        {matriculaSeleccionada.continuaciones.map(item => (
+                          <div key={item.id} className="mb-1 rounded bg-slate-50 p-2 text-[11px]">
+                            <strong>{formatearFecha(item.fecha_continuacion)}</strong> · {item.motivo}
+                            <div className="text-slate-500">Responsable: {item.registrado_por}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     {matriculaSeleccionada?.control_runt && (
                       <div className="border border-gray-300 rounded-lg overflow-hidden">
