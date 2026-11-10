@@ -802,6 +802,8 @@ export default function InscripcionesPage() {
     q: '',
     fecha_inicio: fechaLocalHoy(),
     fecha_fin: fechaLocalHoy(),
+    estado_runt: '',
+    origen: '',
   }))
 
   // Al regresar desde Nueva Inscripción con una matrícula ya existente,
@@ -812,7 +814,9 @@ export default function InscripcionesPage() {
       setFiltros({
         q: documento.trim(),
         fecha_inicio: '',
-        fecha_fin: ''
+        fecha_fin: '',
+        estado_runt: '',
+        origen: '',
       })
     }
   }, [])
@@ -971,6 +975,22 @@ export default function InscripcionesPage() {
       ]
     )
 
+  // Opciones de origen: se incluyen convenios históricos inactivos.
+  const [conveniosOrigen, setConveniosOrigen] = useState([])
+  useEffect(() => {
+    if (!user) return
+    const params = new URLSearchParams({ recurso: 'origenes' })
+    if (nit) params.set('nit', nit)
+    let activo = true
+    fetchJsonSeguro(`${API_URL}?${params.toString()}`)
+      .then(json => { if (activo) setConveniosOrigen(Array.isArray(json?.data) ? json.data : []) })
+      .catch(errorOpciones => {
+        console.error('No fue posible cargar los convenios para el filtro:', errorOpciones)
+        if (activo) setConveniosOrigen([])
+      })
+    return () => { activo = false }
+  }, [user, nit])
+
   // ==========================================================
   // RESUMEN POR CATEGORÍA
   // ==========================================================
@@ -1117,7 +1137,9 @@ export default function InscripcionesPage() {
         if (
           !q &&
           !fechaInicio &&
-          !fechaFin
+          !fechaFin &&
+          !filtros.estado_runt &&
+          !filtros.origen
         ) {
           setResultados(
             []
@@ -1184,6 +1206,8 @@ export default function InscripcionesPage() {
           if (!q && fechaFin) {
             params.set('fecha_fin', fechaFin)
           }
+          if (filtros.estado_runt) params.set('estado_runt', filtros.estado_runt)
+          if (filtros.origen) params.set('origen', filtros.origen)
 
           const json =
             await fetchJsonSeguro(
@@ -1256,7 +1280,9 @@ export default function InscripcionesPage() {
       const hayFechas =
         Boolean(
           filtros.fecha_inicio ||
-          filtros.fecha_fin
+          filtros.fecha_fin ||
+          filtros.estado_runt ||
+          filtros.origen
         )
 
       if (
@@ -1334,6 +1360,8 @@ export default function InscripcionesPage() {
       q: '',
       fecha_inicio: fechaLocalHoy(),
       fecha_fin: fechaLocalHoy(),
+      estado_runt: '',
+      origen: '',
     })
 
     setResultados(
@@ -1782,12 +1810,40 @@ export default function InscripcionesPage() {
                 focus:border-[var(--primary)]
               "
             />
-            {filtros.q.trim() && (
-              <div className="mt-1 text-[10px] text-slate-600">
-                Búsqueda en todas las matrículas del CEA, sin limitar por fechas.
-              </div>
-            )}
+          </div>
 
+          {/* ESTADO MATRÍCULA */}
+          <div className="w-full xl:w-[160px]">
+            <select name="estado_runt" value={filtros.estado_runt}
+              onChange={cambiarFiltro} aria-label="Estado Matrícula" title="Estado Matrícula"
+              className="h-9 w-full rounded-lg border border-[#A9BDCC] bg-white px-2 text-xs">
+              <option value="">Todos los estados</option>
+              <option value="PENDIENTE_RUNT">Pendiente RUNT</option>
+              <option value="ACTIVO">Activo</option>
+              <option value="PREVENTIVO">Preventivo</option>
+              <option value="POR_VENCER">Por vencer</option>
+              <option value="VENCE_HOY">Vence hoy</option>
+              <option value="VENCIDO">Vencido</option>
+              <option value="CONTINUACION_PENDIENTE">Continuación pendiente</option>
+              <option value="CERTIFICADO">Certificado</option>
+              <option value="SIN_CONTROL">Sin control</option>
+            </select>
+          </div>
+
+          {/* ORIGEN */}
+          <div className="w-full xl:w-[175px]">
+            <select name="origen" value={filtros.origen}
+              onChange={cambiarFiltro} aria-label="Origen de matrícula" title="Origen de matrícula"
+              className="h-9 w-full rounded-lg border border-[#A9BDCC] bg-white px-2 text-xs">
+              <option value="">Todos los orígenes</option>
+              <option value="DIRECTO">Directo</option>
+              <option value="CONVENIO">Convenio</option>
+              {conveniosOrigen.map(convenio => (
+                <option key={convenio.id} value={`CONVENIO:${convenio.id}`}>
+                  {convenio.nombre}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* FECHA INICIO */}
