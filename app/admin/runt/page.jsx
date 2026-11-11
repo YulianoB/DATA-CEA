@@ -2689,8 +2689,6 @@ export default function RuntPage() {
                               )}
                             </td>
                           )}
-                            </td>
-                          )}
 
                           {pestana === 'pendientes' && (
                             <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
