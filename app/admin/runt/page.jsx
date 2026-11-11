@@ -31,6 +31,7 @@ const CATEGORIAS = [
   'B1',
   'C1',
   'RC1',
+  'B2',
   'C2',
   'C3',
 ]
@@ -648,29 +649,18 @@ export default function RuntPage() {
   // FILTROS
   // ==========================================================
 
-  const [
-    filtros,
-    setFiltros,
-  ] =
-    useState({
-      q:
-        '',
-
-      categoria:
-        '',
-
-      resultado_verificacion:
-        '',
-
-      estado_registro:
-        '',
-
-      estado_certificacion:
-        '',
-
-      vigencia:
-        '',
-    })
+  const [pestana, setPestana] = useState('pendientes')
+  const [porPagina, setPorPagina] = useState(25)
+  const [confirmarRegistroOpen, setConfirmarRegistroOpen] = useState(false)
+  const [filtros, setFiltros] = useState({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
+  const categoriasCea = useMemo(() => {
+    const nivel=String(user?.nivel_cea||user?.nivelCea||user?.empresa?.nivel_cea||'').toUpperCase()
+    const porNivel={'NIVEL I':['A2','B1','C1','RC1'],'NIVEL II':['A2','B1','C1','RC1','B2','C2'],'NIVEL III':CATEGORIAS}
+    const lista=user?.categorias_habilitadas||user?.empresa?.categorias_habilitadas
+    return Array.isArray(lista)&&lista.length
+      ? CATEGORIAS.filter(cat=>lista.map(c=>String(c).toUpperCase()).includes(cat))
+      : porNivel[nivel]||CATEGORIAS
+  },[user])
 
   // ==========================================================
   // LISTADO
@@ -948,6 +938,8 @@ export default function RuntPage() {
             'consultar'
           )
           params.set('pagina', String(paginaRunt))
+          params.set('pestana', pestana)
+          params.set('por_pagina', String(porPagina))
 
           if (
             nit
@@ -1015,6 +1007,8 @@ export default function RuntPage() {
         nit,
         filtros,
         paginaRunt,
+        pestana,
+        porPagina,
       ]
     )
 
@@ -1034,67 +1028,6 @@ export default function RuntPage() {
       }
     },
     [
-      user,
-      consultar,
-    ]
-  )
-
-  // ==========================================================
-  // BÚSQUEDA AUTOMÁTICA
-  // ==========================================================
-
-  useEffect(
-    () => {
-      if (
-        !user
-      ) {
-        return
-      }
-
-      if (
-        debounceRef.current
-      ) {
-        clearTimeout(
-          debounceRef.current
-        )
-      }
-
-      const q =
-        texto(
-          filtros.q
-        )
-
-      if (
-        q &&
-        q.length <
-          3
-      ) {
-        return
-      }
-
-      debounceRef.current =
-        setTimeout(
-          () => {
-            consultar({
-              silencioso:
-                true,
-            })
-          },
-          450
-        )
-
-      return () => {
-        if (
-          debounceRef.current
-        ) {
-          clearTimeout(
-            debounceRef.current
-          )
-        }
-      }
-    },
-    [
-      filtros,
       user,
       consultar,
     ]
@@ -1126,25 +1059,12 @@ export default function RuntPage() {
 
   function limpiarFiltros() {
     setPaginaRunt(1)
-    setFiltros({
-      q:
-        '',
-
-      categoria:
-        '',
-
-      resultado_verificacion:
-        '',
-
-      estado_registro:
-        '',
-
-      estado_certificacion:
-        '',
-
-      vigencia:
-        '',
-    })
+    setFiltros({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
+  }
+  function cambiarPestana(nueva) {
+    setPestana(nueva)
+    setPaginaRunt(1)
+    setFiltros({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
   }
 
   // ==========================================================
@@ -2099,14 +2019,8 @@ export default function RuntPage() {
       setError('Indique el soporte de la fecha histórica de inscripción RUNT.')
       return
     }
-    if (
-      !window.confirm(
-        '¿Confirma que el CEA realizó el registro formal del proceso en RUNT en la fecha indicada? Esta fecha inicia el plazo de 90 días.'
-      )
-    ) {
-      return
-    }
-
+    if (!confirmarRegistroOpen) { setConfirmarRegistroOpen(true); return }
+    setConfirmarRegistroOpen(false)
     setProcesando(
       true
     )
@@ -2574,63 +2488,6 @@ export default function RuntPage() {
           textoRegreso="Menú Administrativo"
         />
 
-        {/* ==================================================
-            USUARIO
-        ================================================== */}
-
-        <div
-          className="
-            bg-white
-            border
-            border-gray-500
-            rounded-lg
-            p-3
-            mb-4
-            text-sm
-          "
-        >
-
-          <div
-            className="
-              flex
-              flex-wrap
-              justify-between
-              gap-2
-            "
-          >
-
-            <span>
-              Usuario:{' '}
-
-              <strong>
-                {usuarioActual ||
-                  '-'}
-              </strong>
-
-              {user?.rol && (
-                <>
-                  {' '}
-                  ({user.rol})
-                </>
-              )}
-            </span>
-
-            {(user?.nombreEmpresa ||
-              user?.nombre_empresa) && (
-              <span>
-                CEA:{' '}
-
-                <strong>
-                  {user.nombreEmpresa ||
-                    user.nombre_empresa}
-                </strong>
-              </span>
-            )}
-
-          </div>
-
-        </div>
-
         <ModalResultado
           abierto={!drawerOpen && Boolean(error || mensaje)}
           tipo={error ? 'error' : 'exito'}
@@ -2641,354 +2498,43 @@ export default function RuntPage() {
             setMensaje('')
           }}
         />
+        <ModalResultado abierto={confirmarRegistroOpen} tipo="confirmacion"
+          titulo="Confirmar registro formal RUNT"
+          mensaje={`¿Confirma que el ciudadano fue registrado como aprendiz del CEA ${user?.nombreEmpresa||user?.nombre_empresa||'correspondiente'} en RUNT con fecha ${fechaInscripcionRunt}? Esta fecha inicia la vigencia de 90 días.`}
+          textoBoton="CONFIRMAR REGISTRO" textoCancelar="CANCELAR"
+          onCerrar={()=>setConfirmarRegistroOpen(false)}
+          onConfirmar={()=>registrarRunt()} />
 
-        {/* ==================================================
-            FILTROS
-        ================================================== */}
 
-        <div
-          className="
-            border
-            border-gray-300
-            rounded-lg
-            overflow-hidden
-            mb-4
-          "
-        >
-
-          <div
-            className="
-              
-              
-              px-4
-              py-3
-              text-sm
-              font-semibold
-            " style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto,borderRadius:ESTILO_SECCIONES.radioSuperior}}>
-            <i className="fas fa-filter mr-2"></i>
-
-            Filtros de Control RUNT
-          </div>
-
-          <div className="p-4">
-
-            <div
-              className="
-                grid
-                grid-cols-1
-                md:grid-cols-2
-                xl:grid-cols-7
-                gap-3
-              "
-            >
-
-              <div className="xl:col-span-2">
-
-                <label className="block text-[11px] font-semibold mb-1">
-                  Buscar
-                </label>
-
-                <input
-                  type="text"
-                  name="q"
-                  value={
-                    filtros.q
-                  }
-                  onChange={
-                    cambiarFiltro
-                  }
-                  placeholder="Documento, matrícula o categoría..."
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                  "
-                />
-
-              </div>
-
-              <div>
-
-                <label className="block text-[11px] font-semibold mb-1">
-                  Categoría
-                </label>
-
-                <select
-                  name="categoria"
-                  value={
-                    filtros.categoria
-                  }
-                  onChange={
-                    cambiarFiltro
-                  }
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                  "
-                >
-
-                  <option value="">
-                    Todas
-                  </option>
-
-                  {CATEGORIAS.map(
-                    categoria => (
-                      <option
-                        key={
-                          categoria
-                        }
-                        value={
-                          categoria
-                        }
-                      >
-                        {categoria}
-                      </option>
-                    )
-                  )}
-
-                </select>
-
-              </div>
-
-              <div>
-
-                <label className="block text-[11px] font-semibold mb-1">
-                  Verificación
-                </label>
-
-                <select
-                  name="resultado_verificacion"
-                  value={
-                    filtros.resultado_verificacion
-                  }
-                  onChange={
-                    cambiarFiltro
-                  }
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                  "
-                >
-
-                  <option value="">
-                    Todas
-                  </option>
-
-                  <option value="REGISTRADO">
-                    Registrado
-                  </option>
-
-                  <option value="NO REGISTRADO">
-                    No registrado
-                  </option>
-
-                  <option value="PENDIENTE">
-                    Pendiente
-                  </option>
-
-                </select>
-
-              </div>
-
-              <div>
-
-                <label className="block text-[11px] font-semibold mb-1">
-                  Registro
-                </label>
-
-                <select
-                  name="estado_registro"
-                  value={
-                    filtros.estado_registro
-                  }
-                  onChange={
-                    cambiarFiltro
-                  }
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                  "
-                >
-
-                  <option value="">
-                    Todos
-                  </option>
-
-                  <option value="PENDIENTE">
-                    Pendiente
-                  </option>
-
-                  <option value="REGISTRADO">
-                    Registrado
-                  </option>
-
-                </select>
-
-              </div>
-
-              <div>
-
-                <label className="block text-[11px] font-semibold mb-1">
-                  Vigencia
-                </label>
-
-                <select
-                  name="vigencia"
-                  value={
-                    filtros.vigencia
-                  }
-                  onChange={
-                    cambiarFiltro
-                  }
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                  "
-                >
-
-                  <option value="">
-                    Todas
-                  </option>
-
-                  <option value="VIGENTE">
-                    Vigentes
-                  </option>
-
-                  <option value="PROXIMO">
-                    Próximos a vencer
-                  </option>
-
-                  <option value="VENCIDO">
-                    Vencidos
-                  </option>
-
-                  <option value="CERTIFICADO">
-                    Certificados
-                  </option>
-
-                </select>
-
-              </div>
-
-              <div>
-
-                <label className="block text-[11px] font-semibold mb-1">
-                  Certificación
-                </label>
-
-                <select
-                  name="estado_certificacion"
-                  value={
-                    filtros.estado_certificacion
-                  }
-                  onChange={
-                    cambiarFiltro
-                  }
-                  className="
-                    w-full
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-3
-                    py-2
-                    text-xs
-                  "
-                >
-
-                  <option value="">
-                    Todas
-                  </option>
-
-                  <option value="PENDIENTE">
-                    Pendiente
-                  </option>
-
-                  <option value="CERTIFICADO">
-                    Certificado
-                  </option>
-
-                </select>
-
-              </div>
-
-            </div>
-
-            <div className="mt-3 flex gap-2">
-
-              <BotonAccion tipo="consultar"
-                type="button"
-                onClick={() =>
-                  consultar()
-                }
-                disabled={
-                  loading
-                }
-                className="
-                  bg-[var(--primary)]
-                  hover:bg-[var(--primary-dark)]
-                  text-white
-                  px-4
-                  py-2
-                  rounded-lg
-                  text-xs
-                  disabled:opacity-50
-                "
-              >
-                <i className="fas fa-search mr-2"></i>
-
-                {loading
-                  ? 'Consultando...'
-                  : 'Consultar'}
-              </BotonAccion>
-
-              <BotonAccion tipo="limpiar"
-                type="button"
-                onClick={
-                  limpiarFiltros
-                }
-                className="
-                  bg-gray-500
-                  hover:bg-gray-700
-                  text-white
-                  px-4
-                  py-2
-                  rounded-lg
-                  text-xs
-                "
-              >
-                <i className="fas fa-eraser mr-2"></i>
-
-                Limpiar
-              </BotonAccion>
-
-            </div>
-
-          </div>
-
+        <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(180px,2fr)_minmax(95px,1fr)_minmax(170px,1.5fr)_minmax(120px,1fr)_minmax(120px,1fr)_auto] md:items-center">
+          <input type="text" name="q" aria-label="Buscar matrícula o documento" value={filtros.q}
+            onChange={cambiarFiltro} placeholder="Matrícula o documento..."
+            className="h-10 min-w-0 w-full rounded-lg border border-slate-300 px-3 text-xs" />
+          <select name="categoria" aria-label="Categoría" value={filtros.categoria} onChange={cambiarFiltro}
+            className="h-10 min-w-0 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs">
+            <option value="">Categorías</option>
+            {categoriasCea.map(cat=><option key={cat} value={cat}>{cat}</option>)}
+          </select>
+          <select name="estado_gestion" aria-label="Estado de gestión" value={filtros.estado_gestion} onChange={cambiarFiltro}
+            className="h-10 min-w-0 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs">
+            <option value="">{pestana==='pendientes'?'Todos pendientes y vencidos':'Todos registrados'}</option>
+            {pestana==='pendientes'?<>
+              <option value="no_registrado">No registrado</option>
+              <option value="vencido">Vencido</option>
+            </>:<>
+              <option value="en_proceso">En proceso</option>
+              <option value="por_vencer">Por vencer</option>
+              <option value="certificado">Certificado</option>
+            </>}
+          </select>
+          <input type="date" name="fecha_inicio" title="Fecha inicial de matrícula" aria-label="Fecha inicial"
+            value={filtros.fecha_inicio} onChange={cambiarFiltro}
+            className="h-10 min-w-0 w-full rounded-lg border border-slate-300 px-2 text-xs" />
+          <input type="date" name="fecha_fin" title="Fecha final de matrícula" aria-label="Fecha final"
+            min={filtros.fecha_inicio||undefined} value={filtros.fecha_fin} onChange={cambiarFiltro}
+            className="h-10 min-w-0 w-full rounded-lg border border-slate-300 px-2 text-xs" />
+          <BotonAccion tipo="limpiar" type="button" onClick={limpiarFiltros}
+            className="h-10 whitespace-nowrap rounded-lg px-3 text-xs">Limpiar</BotonAccion>
         </div>
 
         {/* ==================================================
@@ -3004,40 +2550,33 @@ export default function RuntPage() {
           "
         >
 
-          <div
-            className="
-              
-              
-              px-4
-              py-3
-              flex
-              justify-between
-              items-center
-            " style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto,borderRadius:ESTILO_SECCIONES.radioSuperior}}>
-
-            <span className="text-sm font-semibold">
-              Cola de Trabajo RUNT
-            </span>
-
-            <span className="text-xs text-gray-300">
-              {controles.length} registro(s) · Página {paginaRunt}
-            </span>
-            <div className="flex gap-2">
-              <button type="button" disabled={paginaRunt===1}
-                className="border border-white/40 rounded px-2 py-1 text-xs disabled:opacity-40"
-                onClick={()=>setPaginaRunt(n=>Math.max(1,n-1))}>Anterior</button>
-              <button type="button" disabled={!hayMasRunt}
-                className="border border-white/40 rounded px-2 py-1 text-xs disabled:opacity-40"
-                onClick={()=>setPaginaRunt(n=>n+1)}>Siguiente</button>
+          <div className="flex flex-wrap items-end justify-between gap-2 px-3 pt-2"
+            style={{backgroundColor:ESTILO_SECCIONES.fondo,color:ESTILO_SECCIONES.texto}}>
+            <div role="tablist" aria-label="Fases de Control RUNT" className="flex flex-wrap items-end gap-1">
+              {[{id:'pendientes',label:'Pendientes y vencidos'},{id:'registrados',label:'Registrados RUNT'}].map(tab=>(
+                <button key={tab.id} type="button" role="tab" aria-selected={pestana===tab.id}
+                  onClick={()=>cambiarPestana(tab.id)}
+                  className={`rounded-t-lg border-t-2 px-4 py-2 text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${pestana===tab.id?'border-emerald-300 bg-white text-[#194567]':'border-transparent bg-[#194567] text-white hover:bg-[#326F98]'}`}>{tab.label}</button>
+              ))}
             </div>
-
+            <div className="flex items-center gap-2 pb-2 text-xs">
+              <span>{controles.length} registros · Página {paginaRunt}</span>
+              <select aria-label="Registros por página" value={porPagina} onChange={e=>{setPaginaRunt(1);setPorPagina(Number(e.target.value))}}
+                className="rounded border border-white/30 bg-[#194567] px-1 py-1 text-white">
+                <option value={25}>25</option><option value={50}>50</option><option value={100}>100</option>
+              </select>
+              <button type="button" disabled={paginaRunt===1} onClick={()=>setPaginaRunt(n=>Math.max(1,n-1))}
+                className="rounded border border-white/40 px-2 py-1 disabled:opacity-40 hover:bg-white/20">Anterior</button>
+              <button type="button" disabled={!hayMasRunt} onClick={()=>setPaginaRunt(n=>n+1)}
+                className="rounded border border-white/40 px-2 py-1 disabled:opacity-40 hover:bg-white/20">Siguiente</button>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="max-h-[65vh] overflow-auto">
 
             <table className="w-full text-[11px] border-collapse">
 
-              <thead style={{backgroundColor:ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}} className="text-[10px] font-extrabold uppercase">
+              <thead style={{backgroundColor:ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}} className="sticky top-0 z-10 text-[10px] font-extrabold uppercase">
 
                 <tr>
 
