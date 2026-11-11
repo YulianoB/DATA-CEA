@@ -3554,7 +3554,12 @@ export default function RuntPage() {
                     </div>
                   )}
 
-                {/* ==========================================
+                                <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
+                  <summary className="cursor-pointer list-none bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
+                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>Historial de cargues
+                  </summary>
+                  <div className="space-y-4 p-3">
+{/* ==========================================
                     HISTORIAL CARGUES ACTUALES
                 ========================================== */}
 
@@ -3761,7 +3766,14 @@ export default function RuntPage() {
 
                 </div>
 
-                {/* ==========================================
+                                  </div>
+                </details>
+                <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
+                  <summary className="cursor-pointer list-none bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
+                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>Historial y expediente
+                  </summary>
+                  <div className="space-y-4 p-3">
+{/* ==========================================
                     HISTORIAL DE PROCESOS RUNT
                 ========================================== */}
 
@@ -4628,7 +4640,14 @@ export default function RuntPage() {
                   </div>
                 )}
 
-                {/* ==========================================
+                                  </div>
+                </details>
+                <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
+                  <summary className="cursor-pointer list-none bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
+                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>Certificación RUNT
+                  </summary>
+                  <div className="space-y-4 p-3">
+{/* ==========================================
                     CERTIFICACIÓN
                 ========================================== */}
 
@@ -4755,6 +4774,8 @@ export default function RuntPage() {
 
                 </div>
 
+                  </div>
+                </details>
                 <div className="flex justify-end">
 
                   <BotonAccion tipo="cancelar"
