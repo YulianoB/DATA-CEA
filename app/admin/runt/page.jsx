@@ -627,6 +627,8 @@ export default function RuntPage() {
   const [pestana, setPestana] = useState('pendientes')
   const [porPagina, setPorPagina] = useState(25)
   const [confirmarRegistroOpen, setConfirmarRegistroOpen] = useState(false)
+  const [confirmarCargueOpen, setConfirmarCargueOpen] = useState(false)
+  const [confirmarCertificacionOpen, setConfirmarCertificacionOpen] = useState(false)
   const [fechaRegistroCola, setFechaRegistroCola] = useState(hoyBogota())
   const [observacionesRegistroCola, setObservacionesRegistroCola] = useState('')
   const [accionCola, setAccionCola] = useState(null)
@@ -1431,6 +1433,8 @@ export default function RuntPage() {
     detalle?.vigencia ||
     {}
 
+  const sicovCertificado = detalle?.sicov_certificado === true
+
   const notificaciones =
     Array.isArray(
       detalle?.notificaciones
@@ -2047,10 +2051,8 @@ export default function RuntPage() {
   // REGISTRAR CARGUE
   // ==========================================================
 
-  async function registrarCargue(
-    event
-  ) {
-    event.preventDefault()
+  async function registrarCargue(event, confirmado = false) {
+    event?.preventDefault?.()
 
     if (
       !controlActual?.id
@@ -2127,13 +2129,11 @@ export default function RuntPage() {
       return
     }
 
-    if (
-      !window.confirm(
-        `¿Confirma registrar ${cantidad} clase(s) de ${cargue.tipo_clase}?`
-      )
-    ) {
+    if (!confirmado) {
+      setConfirmarCargueOpen(true)
       return
     }
+    setConfirmarCargueOpen(false)
 
     setProcesando(
       true
@@ -2216,7 +2216,7 @@ export default function RuntPage() {
   // CERTIFICAR
   // ==========================================================
 
-  async function certificar() {
+  async function certificar(confirmado = false) {
     if (
       !controlActual?.id
     ) {
@@ -2243,13 +2243,15 @@ export default function RuntPage() {
       return
     }
 
-    if (
-      !window.confirm(
-        '¿Confirma que esta matrícula ya puede marcarse como CERTIFICADA en RUNT?'
-      )
-    ) {
+    if (!sicovCertificado) {
+      setError('Debe constar SICOV certificado para esta matrícula y categoría.')
       return
     }
+    if (!confirmado) {
+      setConfirmarCertificacionOpen(true)
+      return
+    }
+    setConfirmarCertificacionOpen(false)
 
     setProcesando(
       true
@@ -2479,6 +2481,26 @@ export default function RuntPage() {
               textoBoton="CONFIRMAR REGISTRO" textoCancelar="CANCELAR"
               onCerrar={()=>setConfirmarRegistroOpen(false)}
               onConfirmar={()=>registrarRunt()}
+            />
+            <ModalResultado
+              abierto={confirmarCargueOpen}
+              tipo="confirmacion"
+              titulo="Confirmar cargue de clases en RUNT"
+              mensaje={`¿Confirma el cargue de ${cargue.cantidad_clases} clase(s) de ${cargue.tipo_clase} del ${formatearFecha(cargue.fecha_clase)} con el instructor ${instructorSeleccionado?.nombre_completo || 'seleccionado'} para la matrícula ${controlActual?.consecutivo || ''}?`}
+              textoBoton={procesando ? 'GUARDANDO...' : 'CONFIRMAR CARGUE'}
+              textoCancelar="CANCELAR"
+              onCerrar={() => { if (!procesando) setConfirmarCargueOpen(false) }}
+              onConfirmar={() => registrarCargue({ preventDefault: () => {} }, true)}
+            />
+            <ModalResultado
+              abierto={confirmarCertificacionOpen}
+              tipo="confirmacion"
+              titulo="Confirmar certificación RUNT"
+              mensaje="¿Confirma que esta matrícula tiene todos los cargues requeridos y que SICOV ya está certificado? Esta acción marcará el proceso como CERTIFICADO en RUNT."
+              textoBoton={procesando ? 'GUARDANDO...' : 'CONFIRMAR CERTIFICACIÓN'}
+              textoCancelar="CANCELAR"
+              onCerrar={() => { if (!procesando) setConfirmarCertificacionOpen(false) }}
+              onConfirmar={() => certificar(true)}
             />
             <ModalResultado
               abierto={Boolean(accionCola)}
@@ -3247,66 +3269,23 @@ export default function RuntPage() {
                               Tipo
                             </label>
 
-                            <select
-                              name="tipo_clase"
-                              value={
-                                cargue.tipo_clase
-                              }
-                              onChange={
-                                cambiarCargue
-                              }
-                              className="
-                                w-full
-                                border
-                                border-gray-300
-                                rounded-lg
-                                px-2
-                                py-2
-                                text-xs
-                              "
-                            >
-
-                              {TIPOS_CLASE.map(
-                                item => {
-                                  const tallerNoAplica =
-                                    item.value ===
-                                      'TALLER' &&
-                                    tallerRequeridas ===
-                                      0
-
-                                  const practicaBloqueada =
-                                    item.value ===
-                                      'PRACTICA' &&
-                                    !practicaHabilitadaUI
-
-                                  return (
-                                    <option
-                                      key={
-                                        item.value
-                                      }
-                                      value={
-                                        item.value
-                                      }
-                                      disabled={
-                                        tallerNoAplica ||
-                                        practicaBloqueada
-                                      }
-                                    >
-                                      {item.label}
-
-                                      {tallerNoAplica
-                                        ? ' — No aplica'
-                                        : ''}
-
-                                      {practicaBloqueada
-                                        ? ' — Bloqueada'
-                                        : ''}
-                                    </option>
-                                  )
-                                }
-                              )}
-
-                            </select>
+                            <div role="group" aria-label="Tipo de clase" className="flex flex-wrap gap-1">
+                              {TIPOS_CLASE.map(item => {
+                                const noAplica = item.value === 'TALLER' && tallerRequeridas === 0
+                                const bloqueada = item.value === 'PRACTICA' && !practicaHabilitadaUI
+                                const disabled = noAplica || bloqueada
+                                const active = cargue.tipo_clase === item.value
+                                return (
+                                  <button key={item.value} type="button" disabled={disabled}
+                                    aria-pressed={active}
+                                    title={noAplica ? 'No aplica a esta categoría' : bloqueada ? 'Complete teoría y taller primero' : undefined}
+                                    onClick={() => cambiarCargue({ target: { name: 'tipo_clase', value: item.value } })}
+                                    className={`rounded-lg border px-3 py-2 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'border-blue-700 bg-blue-700 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-blue-50'}`}>
+                                    {item.label}{disabled ? ' · Bloqueada' : ''}
+                                  </button>
+                                )
+                              })}
+                            </div>
 
                           </div>
 
@@ -4760,6 +4739,11 @@ export default function RuntPage() {
                         "
                       >
                         Primero debe registrar al aprendiz en RUNT.
+                      </div>
+                    ) : !sicovCertificado ? (
+                      <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+                        SICOV pendiente de certificación. Debe figurar CERTIFICADO en SICOV
+                        antes de habilitar la certificación RUNT.
                       </div>
                     ) : !procesoCompleto ? (
                       <div
