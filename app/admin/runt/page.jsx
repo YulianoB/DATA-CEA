@@ -2674,22 +2674,7 @@ export default function RuntPage() {
                             </td>
                           )}
 
-                          {pestana === 'registrados' && (
-                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
-                            {mayusculas(
-                              row.estado_registro
-                            ) ===
-                            'REGISTRADO' ? (
-                              <Badge tipo="green">
-                                Registrado
-                              </Badge>
-                            ) : (
-                              <Badge tipo="yellow">
-                                {texto(row.observaciones).includes('CONTROL ADMINISTRATIVO CREADO EN CONCILIACION HISTORICA')
-                                  ? 'Por verificar' : 'Pendiente'}
-                              </Badge>
-                            )}
 
                           </td>
                           )}
