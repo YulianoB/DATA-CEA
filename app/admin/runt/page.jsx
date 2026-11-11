@@ -3148,7 +3148,74 @@ export default function RuntPage() {
                   </div>
                 )}
 
-                {/* ==========================================
+                                <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
+                  <div className="mb-2 text-xs font-bold text-slate-700">Avance de clases en RUNT</div>
+                  <div
+                    className="
+                      grid
+                      grid-cols-2 sm:grid-cols-4
+                      gap-3
+                      p-3
+                      bg-gray-50
+                      border-b
+                      border-gray-300
+                    "
+                  >
+
+                    <TarjetaResumen
+                      titulo="Teoría"
+                      icono="fa-book-open"
+                      cargadas={
+                        teoriaCargadas
+                      }
+                      requeridas={
+                        teoriaRequeridas
+                      }
+                    />
+
+                    <TarjetaResumen
+                      titulo="Taller"
+                      icono="fa-tools"
+                      cargadas={
+                        tallerCargadas
+                      }
+                      requeridas={
+                        tallerRequeridas
+                      }
+                    />
+
+                    <TarjetaResumen
+                      titulo="Práctica"
+                      icono="fa-car"
+                      cargadas={
+                        practicaCargadas
+                      }
+                      requeridas={
+                        practicaRequeridas
+                      }
+                    />
+
+                    <TarjetaResumen
+                      titulo="Total General"
+                      icono="fa-chart-line"
+                      cargadas={
+                        totalCargadas
+                      }
+                      requeridas={
+                        totalRequeridas
+                      }
+                    />
+
+                  </div>
+                  {certificado && cargues.length === 0 && (
+                    <p className="mt-2 text-[11px] text-slate-600">
+                      Certificado histórico sin cargues detallados en DATA-CEA.
+                      Esto no indica que no se hayan cursado las clases.
+                    </p>
+                  )}
+                </div>
+
+{/* ==========================================
                     CARGUE
                 ========================================== */}
 
@@ -3584,63 +3651,7 @@ export default function RuntPage() {
                     Historial de Cargues — Proceso Actual
                   </div>
 
-                  <div
-                    className="
-                      grid
-                      grid-cols-2
-                      gap-3
-                      p-3
-                      bg-gray-50
-                      border-b
-                      border-gray-300
-                    "
-                  >
 
-                    <TarjetaResumen
-                      titulo="Teoría"
-                      icono="fa-book-open"
-                      cargadas={
-                        teoriaCargadas
-                      }
-                      requeridas={
-                        teoriaRequeridas
-                      }
-                    />
-
-                    <TarjetaResumen
-                      titulo="Taller"
-                      icono="fa-tools"
-                      cargadas={
-                        tallerCargadas
-                      }
-                      requeridas={
-                        tallerRequeridas
-                      }
-                    />
-
-                    <TarjetaResumen
-                      titulo="Práctica"
-                      icono="fa-car"
-                      cargadas={
-                        practicaCargadas
-                      }
-                      requeridas={
-                        practicaRequeridas
-                      }
-                    />
-
-                    <TarjetaResumen
-                      titulo="Total General"
-                      icono="fa-chart-line"
-                      cargadas={
-                        totalCargadas
-                      }
-                      requeridas={
-                        totalRequeridas
-                      }
-                    />
-
-                  </div>
 
                   <div className="overflow-x-auto">
 
