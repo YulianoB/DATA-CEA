@@ -2999,463 +2999,6 @@ export default function RuntPage() {
                 )}
 
                 {/* ==========================================
-                    HISTORIAL DE PROCESOS RUNT
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                      flex
-                      items-center
-                      justify-between
-                      gap-2
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-
-                    <span>
-                      <i className="fas fa-history mr-2"></i>
-
-                      Historial de Procesos RUNT
-                    </span>
-
-                    {!loadingHistorial && (
-                      <span className="text-[10px] text-gray-300">
-                        {historialProcesos.length} proceso(s)
-                      </span>
-                    )}
-
-                  </div>
-
-                  <div className="p-3">
-
-                    {loadingHistorial ? (
-                      <div className="text-center py-4 text-xs text-gray-500">
-
-                        <i className="fas fa-spinner fa-spin mr-2"></i>
-
-                        Consultando historial...
-
-                      </div>
-                    ) : historialProcesos.length ===
-                      0 ? (
-                      <div className="text-xs text-gray-500 text-center py-3">
-                        No hay historial disponible.
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-
-                        {historialProcesos.map(
-                          proceso => {
-                            const control =
-                              proceso
-                                ?.control ||
-                              {}
-
-                            const vigencia =
-                              proceso
-                                ?.vigencia ||
-                              {}
-
-                            const avance =
-                              proceso
-                                ?.avance ||
-                              {}
-
-                            const actual =
-                              proceso
-                                ?.es_actual ===
-                              true
-
-                            const expandido =
-                              procesoHistorialExpandido ===
-                              control.id
-
-                            return (
-                              <div
-                                key={
-                                  control.id
-                                }
-                                className={`
-                                  border
-                                  rounded-lg
-                                  overflow-hidden
-                                  ${
-                                    actual
-                                      ? 'border-blue-300 bg-blue-50/40'
-                                      : 'border-gray-300 bg-white'
-                                  }
-                                `}
-                              >
-
-                                <BotonAccion tipo="verDetalle"
-                                  type="button"
-                                  onClick={() =>
-                                    alternarProcesoHistorial(
-                                      control.id
-                                    )
-                                  }
-                                  className="
-                                    w-full
-                                    p-3
-                                    text-left
-                                    hover:bg-gray-50
-                                    transition
-                                  "
-                                >
-
-                                  <div
-                                    className="
-                                      flex
-                                      items-center
-                                      justify-between
-                                      gap-3
-                                    "
-                                  >
-
-                                    <div
-                                      className="
-                                        flex
-                                        items-center
-                                        gap-3
-                                        min-w-0
-                                      "
-                                    >
-
-                                      <div
-                                        className={`
-                                          w-9
-                                          h-9
-                                          rounded-lg
-                                          flex
-                                          items-center
-                                          justify-center
-                                          shrink-0
-                                          ${
-                                            actual
-                                              ? 'bg-blue-100 text-blue-700'
-                                              : vigencia?.vencido
-                                                ? 'bg-red-100 text-red-700'
-                                                : 'bg-gray-100 text-gray-600'
-                                          }
-                                        `}
-                                      >
-                                        <i
-                                          className={
-                                            actual
-                                              ? 'fas fa-play'
-                                              : vigencia?.vencido
-                                                ? 'fas fa-clock-rotate-left'
-                                                : 'fas fa-folder'
-                                          }
-                                        ></i>
-                                      </div>
-
-                                      <div className="min-w-0">
-
-                                        <div
-                                          className="
-                                            flex
-                                            flex-wrap
-                                            items-center
-                                            gap-2
-                                          "
-                                        >
-
-                                          <span className="text-xs font-bold text-gray-800">
-                                            Proceso #{control.numero_proceso ||
-                                              1}
-                                          </span>
-
-                                          {actual && (
-                                            <Badge tipo="blue">
-                                              ACTUAL
-                                            </Badge>
-                                          )}
-
-                                          {!actual &&
-                                            vigencia?.vencido && (
-                                            <Badge tipo="red">
-                                              VENCIDO
-                                            </Badge>
-                                          )}
-
-                                          {!actual &&
-                                            mayusculas(
-                                              vigencia?.estado
-                                            ) ===
-                                              'CERTIFICADO' && (
-                                            <Badge tipo="green">
-                                              CERTIFICADO
-                                            </Badge>
-                                          )}
-
-                                        </div>
-
-                                        <div
-                                          className="
-                                            mt-1
-                                            text-[10px]
-                                            text-gray-500
-                                          "
-                                        >
-
-                                          Registro:{' '}
-
-                                          <strong>
-                                            {formatearFecha(
-                                              control.fecha_registro
-                                            )}
-                                          </strong>
-
-                                          {vigencia
-                                            ?.fecha_limite && (
-                                            <>
-                                              {' · '}
-                                              Límite:{' '}
-
-                                              <strong>
-                                                {formatearFecha(
-                                                  vigencia.fecha_limite
-                                                )}
-                                              </strong>
-                                            </>
-                                          )}
-
-                                        </div>
-
-                                      </div>
-
-                                    </div>
-
-                                    <i
-                                      className={`
-                                        fas
-                                        ${
-                                          expandido
-                                            ? 'fa-chevron-up'
-                                            : 'fa-chevron-down'
-                                        }
-                                        text-gray-400
-                                      `}
-                                    ></i>
-
-                                  </div>
-
-                                </BotonAccion>
-
-                                {expandido && (
-                                  <div
-                                    className="
-                                      border-t
-                                      border-gray-200
-                                      p-3
-                                      bg-white
-                                    "
-                                  >
-
-                                    <div
-                                      className="
-                                        grid
-                                        grid-cols-2
-                                        sm:grid-cols-4
-                                        gap-3
-                                        text-[11px]
-                                      "
-                                    >
-
-                                      <div>
-
-                                        <span className="text-gray-500">
-                                          Verificación
-                                        </span>
-
-                                        <div className="font-semibold mt-1">
-                                          {control.resultado_verificacion ||
-                                            '-'}
-                                        </div>
-
-                                      </div>
-
-                                      <div>
-
-                                        <span className="text-gray-500">
-                                          Registro
-                                        </span>
-
-                                        <div className="font-semibold mt-1">
-                                          {control.estado_registro ||
-                                            '-'}
-                                        </div>
-
-                                      </div>
-
-                                      <div>
-
-                                        <span className="text-gray-500">
-                                          Certificación
-                                        </span>
-
-                                        <div className="font-semibold mt-1">
-                                          {control.estado_certificacion ||
-                                            '-'}
-                                        </div>
-
-                                      </div>
-
-                                      <div>
-
-                                        <span className="text-gray-500">
-                                          Estado
-                                        </span>
-
-                                        <div className="mt-1">
-                                          <BadgeVigencia
-                                            vigencia={
-                                              vigencia
-                                            }
-                                          />
-                                        </div>
-
-                                      </div>
-
-                                    </div>
-
-                                    <div
-                                      className="
-                                        grid
-                                        grid-cols-3
-                                        gap-2
-                                        mt-3
-                                      "
-                                    >
-
-                                      <div
-                                        className="
-                                          bg-blue-50
-                                          border
-                                          border-blue-200
-                                          rounded-lg
-                                          p-2
-                                          text-center
-                                        "
-                                      >
-                                        <div className="text-[9px] uppercase text-gray-500">
-                                          Teoría
-                                        </div>
-
-                                        <div className="text-xs font-bold mt-1">
-                                          {numero(
-                                            avance.teoria_cargadas
-                                          )}
-                                          {' / '}
-                                          {numero(
-                                            avance.teoria_requeridas
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      <div
-                                        className="
-                                          bg-amber-50
-                                          border
-                                          border-amber-200
-                                          rounded-lg
-                                          p-2
-                                          text-center
-                                        "
-                                      >
-                                        <div className="text-[9px] uppercase text-gray-500">
-                                          Taller
-                                        </div>
-
-                                        <div className="text-xs font-bold mt-1">
-                                          {numero(
-                                            avance.taller_cargadas
-                                          )}
-                                          {' / '}
-                                          {numero(
-                                            avance.taller_requeridas
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      <div
-                                        className="
-                                          bg-emerald-50
-                                          border
-                                          border-emerald-200
-                                          rounded-lg
-                                          p-2
-                                          text-center
-                                        "
-                                      >
-                                        <div className="text-[9px] uppercase text-gray-500">
-                                          Práctica
-                                        </div>
-
-                                        <div className="text-xs font-bold mt-1">
-                                          {numero(
-                                            avance.practica_cargadas
-                                          )}
-                                          {' / '}
-                                          {numero(
-                                            avance.practica_requeridas
-                                          )}
-                                        </div>
-                                      </div>
-
-                                    </div>
-
-                                    {control.motivo_reproceso && (
-                                      <div
-                                        className="
-                                          mt-3
-                                          bg-gray-50
-                                          border
-                                          border-gray-200
-                                          rounded-lg
-                                          p-2
-                                          text-[10px]
-                                          text-gray-600
-                                        "
-                                      >
-                                        <strong>
-                                          Motivo:
-                                        </strong>{' '}
-
-                                        {control.motivo_reproceso}
-                                      </div>
-                                    )}
-
-                                  </div>
-                                )}
-
-                              </div>
-                            )
-                          }
-                        )}
-
-                      </div>
-                    )}
-
-                  </div>
-
-                </div>
-
-                {/* ==========================================
                     VIGENCIA
                 ========================================== */}
 
@@ -3604,323 +3147,6 @@ export default function RuntPage() {
 
                   </div>
                 )}
-
-                {/* ==========================================
-                    DATOS MATRÍCULA
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                    Datos de Matrícula
-                  </div>
-
-                  <div
-                    className="
-                      p-3
-                      grid
-                      grid-cols-2
-                      gap-3
-                      text-xs
-                    "
-                  >
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Aprendiz
-                      </span>
-
-                      <div className="font-semibold">
-                        {matriculaActual
-                          ?.nombre_completo ||
-                          '-'}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Documento
-                      </span>
-
-                      <div className="font-semibold">
-                        {formatearDocumento(
-                          controlActual.documento
-                        )}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Matrícula
-                      </span>
-
-                      <div className="font-semibold">
-                        {controlActual.consecutivo ||
-                          '-'}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Categoría
-                      </span>
-
-                      <div className="font-bold text-[var(--primary)]">
-                        {controlActual.categoria ||
-                          '-'}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Proceso RUNT
-                      </span>
-
-                      <div className="font-semibold">
-                        #{controlActual.numero_proceso ||
-                          1}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Motivo reproceso
-                      </span>
-
-                      <div className="font-semibold">
-                        {controlActual.motivo_reproceso ||
-                          '-'}
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-                {/* ==========================================
-                    VERIFICACIÓN
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                    Verificación RUNT
-                  </div>
-
-                  <div className="p-3 space-y-3">
-
-                    <div
-                      className="
-                        grid
-                        grid-cols-2
-                        gap-3
-                        text-xs
-                      "
-                    >
-
-                      <div>
-
-                        <span className="text-gray-500">
-                          Resultado
-                        </span>
-
-                        <div className="mt-1">
-
-                          {inscrito ? (
-                            <Badge tipo="green">
-                              REGISTRADO
-                            </Badge>
-                          ) : noInscrito ? (
-                            <Badge tipo="red">
-                              NO REGISTRADO
-                            </Badge>
-                          ) : (
-                            <Badge tipo="yellow">
-                              PENDIENTE
-                            </Badge>
-                          )}
-
-                        </div>
-
-                      </div>
-
-                      <div>
-
-                        <span className="text-gray-500">
-                          Usuario
-                        </span>
-
-                        <div className="font-semibold mt-1">
-                          {controlActual
-                            .usuario_verificacion ||
-                            '-'}
-                        </div>
-
-                      </div>
-
-                    </div>
-
-
-
-                  </div>
-
-                </div>
-
-                {/* ==========================================
-                    REGISTRO
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                    Registro en RUNT
-                  </div>
-
-                  <div className="p-3">
-
-                    {registrado ? (
-                      <div
-                        className="
-                          flex
-                          items-center
-                          justify-between
-                          gap-3
-                        "
-                      >
-
-                        <Badge tipo="green">
-                          REGISTRADO
-                        </Badge>
-
-                        <div className="text-xs text-gray-500 text-right">
-
-                          <div>
-                            {formatearFecha(
-                              controlActual
-                                .fecha_registro
-                            )}
-                          </div>
-
-                          <div>
-                            {controlActual
-                              .usuario_registro ||
-                              '-'}
-                          </div>
-
-                        </div>
-
-                      </div>
-                    ) : noInscrito ? (
-                      <div className="text-xs text-amber-700">
-                        La matrícula tiene resultado ciudadano NO REGISTRADO. No se puede confirmar el registro formal del CEA mientras exista ese resultado.
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-semibold block">
-                          Fecha real de inscripción del aprendiz en RUNT
-                          <input type="date" max={hoyBogota()}
-                            className="block w-full border border-slate-300 rounded p-2 mt-1"
-                            value={fechaInscripcionRunt}
-                            onChange={e => setFechaInscripcionRunt(e.target.value)}/>
-                        </label>
-                        <label className="text-[11px] font-semibold block">
-                          Observaciones del registro formal RUNT
-                          <textarea rows={2}
-                            className="block w-full border border-slate-300 rounded p-2 mt-1"
-                            placeholder="Obligatorio cuando la fecha de RUNT es anterior a hoy"
-                            value={soporteInscripcionRunt}
-                            onChange={e => setSoporteInscripcionRunt(e.target.value)}/>
-                        </label>
-                        <p className="text-[10px] text-amber-800">
-                          Los 90 días se calculan desde esta fecha, no desde la matrícula del CEA.
-                          No confirme una fecha que no esté verificada en RUNT.
-                        </p>
-                      <BotonAccion tipo="guardar"
-                        type="button"
-                        onClick={
-                          registrarRunt
-                        }
-                        disabled={
-                          procesando
-                        }
-                        className="
-                          bg-blue-600
-                          hover:bg-blue-700
-                          text-white
-                          px-3
-                          py-2
-                          rounded-lg
-                          text-xs
-                          disabled:opacity-50
-                        "
-                      >
-                        <i className="fas fa-user-check mr-2"></i>
-
-                        Marcar REGISTRADO en RUNT
-                      </BotonAccion>
-                      </div>
-                    )}
-
-                  </div>
-
-                </div>
 
                 {/* ==========================================
                     CARGUE
@@ -4530,6 +3756,780 @@ export default function RuntPage() {
                       </tbody>
 
                     </table>
+
+                  </div>
+
+                </div>
+
+                {/* ==========================================
+                    HISTORIAL DE PROCESOS RUNT
+                ========================================== */}
+
+                <div
+                  className="
+                    border
+                    border-gray-300
+                    rounded-lg
+                    overflow-hidden
+                  "
+                >
+
+                  <div
+                    className="
+                      
+                      
+                      px-3
+                      py-2
+                      text-xs
+                      font-semibold
+                      flex
+                      items-center
+                      justify-between
+                      gap-2
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
+
+                    <span>
+                      <i className="fas fa-history mr-2"></i>
+
+                      Historial de Procesos RUNT
+                    </span>
+
+                    {!loadingHistorial && (
+                      <span className="text-[10px] text-gray-300">
+                        {historialProcesos.length} proceso(s)
+                      </span>
+                    )}
+
+                  </div>
+
+                  <div className="p-3">
+
+                    {loadingHistorial ? (
+                      <div className="text-center py-4 text-xs text-gray-500">
+
+                        <i className="fas fa-spinner fa-spin mr-2"></i>
+
+                        Consultando historial...
+
+                      </div>
+                    ) : historialProcesos.length ===
+                      0 ? (
+                      <div className="text-xs text-gray-500 text-center py-3">
+                        No hay historial disponible.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+
+                        {historialProcesos.map(
+                          proceso => {
+                            const control =
+                              proceso
+                                ?.control ||
+                              {}
+
+                            const vigencia =
+                              proceso
+                                ?.vigencia ||
+                              {}
+
+                            const avance =
+                              proceso
+                                ?.avance ||
+                              {}
+
+                            const actual =
+                              proceso
+                                ?.es_actual ===
+                              true
+
+                            const expandido =
+                              procesoHistorialExpandido ===
+                              control.id
+
+                            return (
+                              <div
+                                key={
+                                  control.id
+                                }
+                                className={`
+                                  border
+                                  rounded-lg
+                                  overflow-hidden
+                                  ${
+                                    actual
+                                      ? 'border-blue-300 bg-blue-50/40'
+                                      : 'border-gray-300 bg-white'
+                                  }
+                                `}
+                              >
+
+                                <BotonAccion tipo="verDetalle"
+                                  type="button"
+                                  onClick={() =>
+                                    alternarProcesoHistorial(
+                                      control.id
+                                    )
+                                  }
+                                  className="
+                                    w-full
+                                    p-3
+                                    text-left
+                                    hover:bg-gray-50
+                                    transition
+                                  "
+                                >
+
+                                  <div
+                                    className="
+                                      flex
+                                      items-center
+                                      justify-between
+                                      gap-3
+                                    "
+                                  >
+
+                                    <div
+                                      className="
+                                        flex
+                                        items-center
+                                        gap-3
+                                        min-w-0
+                                      "
+                                    >
+
+                                      <div
+                                        className={`
+                                          w-9
+                                          h-9
+                                          rounded-lg
+                                          flex
+                                          items-center
+                                          justify-center
+                                          shrink-0
+                                          ${
+                                            actual
+                                              ? 'bg-blue-100 text-blue-700'
+                                              : vigencia?.vencido
+                                                ? 'bg-red-100 text-red-700'
+                                                : 'bg-gray-100 text-gray-600'
+                                          }
+                                        `}
+                                      >
+                                        <i
+                                          className={
+                                            actual
+                                              ? 'fas fa-play'
+                                              : vigencia?.vencido
+                                                ? 'fas fa-clock-rotate-left'
+                                                : 'fas fa-folder'
+                                          }
+                                        ></i>
+                                      </div>
+
+                                      <div className="min-w-0">
+
+                                        <div
+                                          className="
+                                            flex
+                                            flex-wrap
+                                            items-center
+                                            gap-2
+                                          "
+                                        >
+
+                                          <span className="text-xs font-bold text-gray-800">
+                                            Proceso #{control.numero_proceso ||
+                                              1}
+                                          </span>
+
+                                          {actual && (
+                                            <Badge tipo="blue">
+                                              ACTUAL
+                                            </Badge>
+                                          )}
+
+                                          {!actual &&
+                                            vigencia?.vencido && (
+                                            <Badge tipo="red">
+                                              VENCIDO
+                                            </Badge>
+                                          )}
+
+                                          {!actual &&
+                                            mayusculas(
+                                              vigencia?.estado
+                                            ) ===
+                                              'CERTIFICADO' && (
+                                            <Badge tipo="green">
+                                              CERTIFICADO
+                                            </Badge>
+                                          )}
+
+                                        </div>
+
+                                        <div
+                                          className="
+                                            mt-1
+                                            text-[10px]
+                                            text-gray-500
+                                          "
+                                        >
+
+                                          Registro:{' '}
+
+                                          <strong>
+                                            {formatearFecha(
+                                              control.fecha_registro
+                                            )}
+                                          </strong>
+
+                                          {vigencia
+                                            ?.fecha_limite && (
+                                            <>
+                                              {' · '}
+                                              Límite:{' '}
+
+                                              <strong>
+                                                {formatearFecha(
+                                                  vigencia.fecha_limite
+                                                )}
+                                              </strong>
+                                            </>
+                                          )}
+
+                                        </div>
+
+                                      </div>
+
+                                    </div>
+
+                                    <i
+                                      className={`
+                                        fas
+                                        ${
+                                          expandido
+                                            ? 'fa-chevron-up'
+                                            : 'fa-chevron-down'
+                                        }
+                                        text-gray-400
+                                      `}
+                                    ></i>
+
+                                  </div>
+
+                                </BotonAccion>
+
+                                {expandido && (
+                                  <div
+                                    className="
+                                      border-t
+                                      border-gray-200
+                                      p-3
+                                      bg-white
+                                    "
+                                  >
+
+                                    <div
+                                      className="
+                                        grid
+                                        grid-cols-2
+                                        sm:grid-cols-4
+                                        gap-3
+                                        text-[11px]
+                                      "
+                                    >
+
+                                      <div>
+
+                                        <span className="text-gray-500">
+                                          Verificación
+                                        </span>
+
+                                        <div className="font-semibold mt-1">
+                                          {control.resultado_verificacion ||
+                                            '-'}
+                                        </div>
+
+                                      </div>
+
+                                      <div>
+
+                                        <span className="text-gray-500">
+                                          Registro
+                                        </span>
+
+                                        <div className="font-semibold mt-1">
+                                          {control.estado_registro ||
+                                            '-'}
+                                        </div>
+
+                                      </div>
+
+                                      <div>
+
+                                        <span className="text-gray-500">
+                                          Certificación
+                                        </span>
+
+                                        <div className="font-semibold mt-1">
+                                          {control.estado_certificacion ||
+                                            '-'}
+                                        </div>
+
+                                      </div>
+
+                                      <div>
+
+                                        <span className="text-gray-500">
+                                          Estado
+                                        </span>
+
+                                        <div className="mt-1">
+                                          <BadgeVigencia
+                                            vigencia={
+                                              vigencia
+                                            }
+                                          />
+                                        </div>
+
+                                      </div>
+
+                                    </div>
+
+                                    <div
+                                      className="
+                                        grid
+                                        grid-cols-3
+                                        gap-2
+                                        mt-3
+                                      "
+                                    >
+
+                                      <div
+                                        className="
+                                          bg-blue-50
+                                          border
+                                          border-blue-200
+                                          rounded-lg
+                                          p-2
+                                          text-center
+                                        "
+                                      >
+                                        <div className="text-[9px] uppercase text-gray-500">
+                                          Teoría
+                                        </div>
+
+                                        <div className="text-xs font-bold mt-1">
+                                          {numero(
+                                            avance.teoria_cargadas
+                                          )}
+                                          {' / '}
+                                          {numero(
+                                            avance.teoria_requeridas
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      <div
+                                        className="
+                                          bg-amber-50
+                                          border
+                                          border-amber-200
+                                          rounded-lg
+                                          p-2
+                                          text-center
+                                        "
+                                      >
+                                        <div className="text-[9px] uppercase text-gray-500">
+                                          Taller
+                                        </div>
+
+                                        <div className="text-xs font-bold mt-1">
+                                          {numero(
+                                            avance.taller_cargadas
+                                          )}
+                                          {' / '}
+                                          {numero(
+                                            avance.taller_requeridas
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      <div
+                                        className="
+                                          bg-emerald-50
+                                          border
+                                          border-emerald-200
+                                          rounded-lg
+                                          p-2
+                                          text-center
+                                        "
+                                      >
+                                        <div className="text-[9px] uppercase text-gray-500">
+                                          Práctica
+                                        </div>
+
+                                        <div className="text-xs font-bold mt-1">
+                                          {numero(
+                                            avance.practica_cargadas
+                                          )}
+                                          {' / '}
+                                          {numero(
+                                            avance.practica_requeridas
+                                          )}
+                                        </div>
+                                      </div>
+
+                                    </div>
+
+                                    {control.motivo_reproceso && (
+                                      <div
+                                        className="
+                                          mt-3
+                                          bg-gray-50
+                                          border
+                                          border-gray-200
+                                          rounded-lg
+                                          p-2
+                                          text-[10px]
+                                          text-gray-600
+                                        "
+                                      >
+                                        <strong>
+                                          Motivo:
+                                        </strong>{' '}
+
+                                        {control.motivo_reproceso}
+                                      </div>
+                                    )}
+
+                                  </div>
+                                )}
+
+                              </div>
+                            )
+                          }
+                        )}
+
+                      </div>
+                    )}
+
+                  </div>
+
+                </div>
+
+                {/* ==========================================
+                    DATOS MATRÍCULA
+                ========================================== */}
+
+                <div
+                  className="
+                    border
+                    border-gray-300
+                    rounded-lg
+                    overflow-hidden
+                  "
+                >
+
+                  <div
+                    className="
+                      
+                      
+                      px-3
+                      py-2
+                      text-xs
+                      font-semibold
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
+                    Datos de Matrícula
+                  </div>
+
+                  <div
+                    className="
+                      p-3
+                      grid
+                      grid-cols-2
+                      gap-3
+                      text-xs
+                    "
+                  >
+
+                    <div>
+
+                      <span className="text-gray-500">
+                        Aprendiz
+                      </span>
+
+                      <div className="font-semibold">
+                        {matriculaActual
+                          ?.nombre_completo ||
+                          '-'}
+                      </div>
+
+                    </div>
+
+                    <div>
+
+                      <span className="text-gray-500">
+                        Documento
+                      </span>
+
+                      <div className="font-semibold">
+                        {formatearDocumento(
+                          controlActual.documento
+                        )}
+                      </div>
+
+                    </div>
+
+                    <div>
+
+                      <span className="text-gray-500">
+                        Matrícula
+                      </span>
+
+                      <div className="font-semibold">
+                        {controlActual.consecutivo ||
+                          '-'}
+                      </div>
+
+                    </div>
+
+                    <div>
+
+                      <span className="text-gray-500">
+                        Categoría
+                      </span>
+
+                      <div className="font-bold text-[var(--primary)]">
+                        {controlActual.categoria ||
+                          '-'}
+                      </div>
+
+                    </div>
+
+                    <div>
+
+                      <span className="text-gray-500">
+                        Proceso RUNT
+                      </span>
+
+                      <div className="font-semibold">
+                        #{controlActual.numero_proceso ||
+                          1}
+                      </div>
+
+                    </div>
+
+                    <div>
+
+                      <span className="text-gray-500">
+                        Motivo reproceso
+                      </span>
+
+                      <div className="font-semibold">
+                        {controlActual.motivo_reproceso ||
+                          '-'}
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* ==========================================
+                    VERIFICACIÓN
+                ========================================== */}
+
+                <div
+                  className="
+                    border
+                    border-gray-300
+                    rounded-lg
+                    overflow-hidden
+                  "
+                >
+
+                  <div
+                    className="
+                      
+                      
+                      px-3
+                      py-2
+                      text-xs
+                      font-semibold
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
+                    Verificación RUNT
+                  </div>
+
+                  <div className="p-3 space-y-3">
+
+                    <div
+                      className="
+                        grid
+                        grid-cols-2
+                        gap-3
+                        text-xs
+                      "
+                    >
+
+                      <div>
+
+                        <span className="text-gray-500">
+                          Resultado
+                        </span>
+
+                        <div className="mt-1">
+
+                          {inscrito ? (
+                            <Badge tipo="green">
+                              REGISTRADO
+                            </Badge>
+                          ) : noInscrito ? (
+                            <Badge tipo="red">
+                              NO REGISTRADO
+                            </Badge>
+                          ) : (
+                            <Badge tipo="yellow">
+                              PENDIENTE
+                            </Badge>
+                          )}
+
+                        </div>
+
+                      </div>
+
+                      <div>
+
+                        <span className="text-gray-500">
+                          Usuario
+                        </span>
+
+                        <div className="font-semibold mt-1">
+                          {controlActual
+                            .usuario_verificacion ||
+                            '-'}
+                        </div>
+
+                      </div>
+
+                    </div>
+
+
+
+                  </div>
+
+                </div>
+
+                {/* ==========================================
+                    REGISTRO
+                ========================================== */}
+
+                <div
+                  className="
+                    border
+                    border-gray-300
+                    rounded-lg
+                    overflow-hidden
+                  "
+                >
+
+                  <div
+                    className="
+                      
+                      
+                      px-3
+                      py-2
+                      text-xs
+                      font-semibold
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
+                    Registro en RUNT
+                  </div>
+
+                  <div className="p-3">
+
+                    {registrado ? (
+                      <div
+                        className="
+                          flex
+                          items-center
+                          justify-between
+                          gap-3
+                        "
+                      >
+
+                        <Badge tipo="green">
+                          REGISTRADO
+                        </Badge>
+
+                        <div className="text-xs text-gray-500 text-right">
+
+                          <div>
+                            {formatearFecha(
+                              controlActual
+                                .fecha_registro
+                            )}
+                          </div>
+
+                          <div>
+                            {controlActual
+                              .usuario_registro ||
+                              '-'}
+                          </div>
+
+                        </div>
+
+                      </div>
+                    ) : noInscrito ? (
+                      <div className="text-xs text-amber-700">
+                        La matrícula tiene resultado ciudadano NO REGISTRADO. No se puede confirmar el registro formal del CEA mientras exista ese resultado.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-semibold block">
+                          Fecha real de inscripción del aprendiz en RUNT
+                          <input type="date" max={hoyBogota()}
+                            className="block w-full border border-slate-300 rounded p-2 mt-1"
+                            value={fechaInscripcionRunt}
+                            onChange={e => setFechaInscripcionRunt(e.target.value)}/>
+                        </label>
+                        <label className="text-[11px] font-semibold block">
+                          Observaciones del registro formal RUNT
+                          <textarea rows={2}
+                            className="block w-full border border-slate-300 rounded p-2 mt-1"
+                            placeholder="Obligatorio cuando la fecha de RUNT es anterior a hoy"
+                            value={soporteInscripcionRunt}
+                            onChange={e => setSoporteInscripcionRunt(e.target.value)}/>
+                        </label>
+                        <p className="text-[10px] text-amber-800">
+                          Los 90 días se calculan desde esta fecha, no desde la matrícula del CEA.
+                          No confirme una fecha que no esté verificada en RUNT.
+                        </p>
+                      <BotonAccion tipo="guardar"
+                        type="button"
+                        onClick={
+                          registrarRunt
+                        }
+                        disabled={
+                          procesando
+                        }
+                        className="
+                          bg-blue-600
+                          hover:bg-blue-700
+                          text-white
+                          px-3
+                          py-2
+                          rounded-lg
+                          text-xs
+                          disabled:opacity-50
+                        "
+                      >
+                        <i className="fas fa-user-check mr-2"></i>
+
+                        Marcar REGISTRADO en RUNT
+                      </BotonAccion>
+                      </div>
+                    )}
 
                   </div>
 
