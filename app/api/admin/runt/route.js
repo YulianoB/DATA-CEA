@@ -1917,6 +1917,7 @@ async function consultarControles({
   estadoGestion = '',
   fechaInicio = '',
   fechaFin = '',
+  nombreCea = '',
 }) {
   // Leer el catálogo de la empresa por lotes, sin el límite implícito de
   // 1000 filas de PostgREST, para contar y seleccionar correctamente.
@@ -1959,9 +1960,21 @@ async function consultarControles({
     `),
     leerTablaCompleta('aprendices', `
       id,nombres,apellidos,tipo_doc,documento,fecha_matricula,
-      celular,correo,convenio,estado
+      celular,correo,convenio,convenio_id,origen_matricula,estado
     `)
   ])
+
+  const idsConvenios = [...new Set(matriculas.map(m => m.convenio_id).filter(Boolean))]
+  let catalogoConvenios = []
+  if (idsConvenios.length) {
+    const { data: convenios, error: errorConvenios } = await supabase
+      .from('convenios')
+      .select('id,nombre')
+      .in('id', idsConvenios)
+    if (errorConvenios) throw new Error('No fue posible consultar los convenios: ' + errorConvenios.message)
+    catalogoConvenios = convenios || []
+  }
+  const mapaConvenios = new Map(catalogoConvenios.map(c => [String(c.id), c.nombre]))
 
   const mapaMatriculas = new Map(matriculas.map(m => [String(m.id), m]))
   const mapaUltimoProceso = new Map()
@@ -2286,6 +2299,11 @@ async function consultarControles({
                         ' '
                       )
                       .trim(),
+                  nombre_origen: normalizarMayusculas(matricula.origen_matricula) === 'CONVENIO' || matricula.convenio_id
+                    ? (mapaConvenios.get(String(matricula.convenio_id)) || matricula.convenio || 'CONVENIO')
+                    : (nombreCea || 'CEA'),
+                  tipo_origen: normalizarMayusculas(matricula.origen_matricula) === 'CONVENIO' || matricula.convenio_id
+                    ? 'CONVENIO' : 'DIRECTO',
                 }
               : null,
 
@@ -2687,6 +2705,7 @@ export async function GET(
       const resultadoConsulta =
         await consultarControles({
           supabase,
+          nombreCea: nombreEmpresa(empresa),
 
           busqueda:
             normalizarTexto(
