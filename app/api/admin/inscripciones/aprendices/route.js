@@ -4465,6 +4465,13 @@ export async function POST(
       ) ===
         'VERIFICADO'
 
+    if (!runtVerificado) {
+      return NextResponse.json({
+        status: 'error',
+        message: 'Debe realizar y registrar la consulta ciudadana RUNT antes de guardar la matrícula.'
+      }, { status: 400 })
+    }
+
     if (
       runtVerificado
     ) {
