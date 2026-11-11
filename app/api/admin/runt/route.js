@@ -1912,6 +1912,11 @@ async function consultarControles({
   resultadoVerificacion = '',
   vigencia = '',
   pagina = 1,
+  porPagina = 25,
+  pestana = 'pendientes',
+  estadoGestion = '',
+  fechaInicio = '',
+  fechaFin = '',
 }) {
   // =======================================================
   // CONSULTA BASE
@@ -1963,6 +1968,53 @@ async function consultarControles({
       )
   }
 
+  // Filtrar los estados de trabajo ANTES de paginar para no ocultar
+  // pendientes tras páginas históricas de otros estados.
+  const hoy = hoyBogota()
+  const limite90 = sumarDiasFecha(hoy, -DIAS_VIGENCIA_RUNT)
+  if (pestana === 'pendientes') {
+    if (estadoGestion === 'no_registrado') {
+      consulta = consulta.eq('estado_registro', 'PENDIENTE')
+        .eq('resultado_verificacion', 'NO REGISTRADO')
+    } else if (estadoGestion === 'vencido') {
+      consulta = consulta.eq('estado_registro', 'REGISTRADO')
+        .neq('estado_certificacion', 'CERTIFICADO')
+        .lt('fecha_registro', limite90)
+    } else {
+      consulta = consulta.or(
+        `estado_registro.eq.PENDIENTE,and(estado_registro.eq.REGISTRADO,estado_certificacion.neq.CERTIFICADO,fecha_registro.lt.${limite90})`
+      )
+    }
+  } else if (pestana === 'registrados') {
+    consulta = consulta.eq('estado_registro', 'REGISTRADO')
+    if (estadoGestion === 'certificado') {
+      consulta = consulta.eq('estado_certificacion', 'CERTIFICADO')
+    } else if (estadoGestion === 'por_vencer') {
+      consulta = consulta.neq('estado_certificacion', 'CERTIFICADO')
+        .gte('fecha_registro', limite90)
+        .lte('fecha_registro', sumarDiasFecha(hoy, -(DIAS_VIGENCIA_RUNT - 15)))
+    } else if (estadoGestion === 'en_proceso') {
+      consulta = consulta.neq('estado_certificacion', 'CERTIFICADO')
+        .gt('fecha_registro', sumarDiasFecha(hoy, -(DIAS_VIGENCIA_RUNT - 15)))
+    } else {
+      consulta = consulta.or(
+        `estado_certificacion.eq.CERTIFICADO,fecha_registro.gte.${limite90}`
+      )
+    }
+  }
+
+  // Intervalo por fecha de matrícula, no por inicio de vigencia RUNT.
+  if (fechaInicio || fechaFin) {
+    let matriculasFecha = supabase.from('aprendices').select('id')
+    if (fechaInicio) matriculasFecha = matriculasFecha.gte('fecha_matricula', fechaInicio)
+    if (fechaFin) matriculasFecha = matriculasFecha.lte('fecha_matricula', fechaFin)
+    const { data: idsFecha, error: errorFecha } = await matriculasFecha.range(0, 9999)
+    if (errorFecha) throw new Error('No fue posible aplicar el filtro de fechas: ' + errorFecha.message)
+    const ids = (idsFecha || []).map(item => item.id)
+    if (!ids.length) return []
+    consulta = consulta.in('matricula_id', ids)
+  }
+
   // =======================================================
   // BÚSQUEDA
   // =======================================================
@@ -2004,8 +2056,8 @@ async function consultarControles({
         }
       )
       .range(
-        (Math.max(1, Number(pagina) || 1)-1) * LIMITE_CONSULTA,
-        Math.max(1, Number(pagina) || 1) * LIMITE_CONSULTA - 1
+        (Math.max(1, Number(pagina) || 1)-1) * Math.min(100, Math.max(25, Number(porPagina) || 25)),
+        Math.max(1, Number(pagina) || 1) * Math.min(100, Math.max(25, Number(porPagina) || 25)) - 1
       )
 
   if (
@@ -3112,6 +3164,11 @@ export async function GET(
                 'vigencia'
               )
             ),
+          pestana: normalizarTexto(searchParams.get('pestana')) || 'pendientes',
+          estadoGestion: normalizarTexto(searchParams.get('estado_gestion')),
+          fechaInicio: normalizarTexto(searchParams.get('fecha_inicio')),
+          fechaFin: normalizarTexto(searchParams.get('fecha_fin')),
+          porPagina: Math.min(100, Math.max(25, toInt(searchParams.get('por_pagina')) || 25)),
           pagina: Math.max(1, Math.min(10000, toInt(searchParams.get('pagina')) || 1)),
         })
 
@@ -3126,10 +3183,10 @@ export async function GET(
           controles.length,
 
         pagina: Math.max(1, Math.min(10000, toInt(searchParams.get('pagina')) || 1)),
-        hay_mas: controles.length === LIMITE_CONSULTA,
+        hay_mas: controles.length === Math.min(100, Math.max(25, toInt(searchParams.get('por_pagina')) || 25)),
 
         limite:
-          LIMITE_CONSULTA,
+          Math.min(100, Math.max(25, toInt(searchParams.get('por_pagina')) || 25)),
 
         empresa: {
           nit:
