@@ -4475,8 +4475,8 @@ export async function POST(
 
       if (
         ![
-          'INSCRITO',
-          'NO INSCRITO',
+          'REGISTRADO',
+          'NO REGISTRADO',
         ].includes(
           resultadoRunt
         )
