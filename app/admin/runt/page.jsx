@@ -2999,6 +2999,809 @@ export default function RuntPage() {
                 )}
 
                 {/* ==========================================
+                    VIGENCIA
+                ========================================== */}
+
+                {registrado && (
+                  <div
+                    className="
+                      border
+                      border-gray-300
+                      rounded-lg
+                      overflow-hidden
+                    "
+                  >
+
+                    <div
+                      className="
+                        
+                        
+                        px-3
+                        py-2
+                        text-xs
+                        font-semibold
+                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
+                      Vigencia del Proceso RUNT Actual
+                    </div>
+
+                    <div className="p-3">
+
+                      <div
+                        className="
+                          grid
+                          grid-cols-2
+                          sm:grid-cols-4
+                          gap-3
+                          text-xs
+                        "
+                      >
+
+                        <div>
+                          <span className="text-gray-500">
+                            Registro
+                          </span>
+
+                          <div className="font-semibold">
+                            {formatearFecha(
+                              vigenciaActual
+                                ?.fecha_registro
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-gray-500">
+                            Fecha límite
+                          </span>
+
+                          <div className="font-semibold">
+                            {formatearFecha(
+                              vigenciaActual
+                                ?.fecha_limite
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-gray-500">
+                            Días restantes
+                          </span>
+
+                          <div className="font-bold">
+                            {vigenciaActual
+                              ?.dias_restantes ??
+                              '-'}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-gray-500">
+                            Estado
+                          </span>
+
+                          <div className="mt-1">
+                            <BadgeVigencia
+                              vigencia={
+                                vigenciaActual
+                              }
+                            />
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {vencido && (
+                        <div
+                          className="
+                            mt-3
+                            bg-red-50
+                            border
+                            border-red-300
+                            rounded-lg
+                            p-3
+                            text-xs
+                            text-red-700
+                          "
+                        >
+
+                          <div className="font-bold">
+                            <i className="fas fa-exclamation-triangle mr-2"></i>
+
+                            PROCESO RUNT VENCIDO
+                          </div>
+
+                          <p className="mt-1">
+                            El registro superó los 90 días según la fecha anotada y no tiene certificación registrada en DATA-CEA. Antes de reiniciar, verifique el estado real en RUNT; podría estar certificado y pendiente de actualizar aquí.
+                          </p>
+
+                          <BotonAccion tipo="secundario"
+                            type="button"
+                            onClick={
+                              reiniciarProceso
+                            }
+                            disabled={
+                              procesando
+                            }
+                            className="
+                              mt-3
+                              bg-red-600
+                              hover:bg-red-700
+                              text-white
+                              px-4
+                              py-2
+                              rounded-lg
+                              text-xs
+                              font-semibold
+                              disabled:opacity-50
+                            "
+                          >
+                            <i className="fas fa-rotate-right mr-2"></i>
+
+                            Reiniciar Proceso RUNT
+                          </BotonAccion>
+
+                        </div>
+                      )}
+
+                    </div>
+
+                  </div>
+                )}
+
+                                <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-bold text-slate-700">Avance de clases en RUNT</span>
+                    <span className="font-semibold text-blue-800">Total: {totalCargadas} / {totalRequeridas}</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <TarjetaResumen titulo="Teoría" icono="fa-book-open" cargadas={teoriaCargadas} requeridas={teoriaRequeridas} />
+                    <TarjetaResumen titulo="Taller" icono="fa-tools" cargadas={tallerCargadas} requeridas={tallerRequeridas} />
+                    <TarjetaResumen titulo="Práctica" icono="fa-car" cargadas={practicaCargadas} requeridas={practicaRequeridas} />
+                  </div>
+                  {!practicaHabilitadaUI && !certificado && !vencido && (
+                    <p className="text-[11px] text-amber-800"><i className="fas fa-lock mr-1"></i>
+                      Práctica disponible después de completar teoría y taller.
+                    </p>
+                  )}
+                  {certificado && cargues.length === 0 && (
+                    <p className="text-[11px] text-slate-600">
+                      Certificación histórica: no hay cargues detallados en DATA-CEA para este proceso.
+                      No significa que las clases no se hayan realizado.
+                    </p>
+                  )}
+                </div>
+
+{/* ==========================================
+                    CARGUE
+                ========================================== */}
+
+                {registrado &&
+                  !certificado &&
+                  !vencido && (
+                    <div
+                      className="
+                        border
+                        border-gray-300
+                        rounded-lg
+                        overflow-hidden
+                      "
+                    >
+
+                      <div
+                        className="
+                          
+                          
+                          px-3
+                          py-2
+                          text-xs
+                          font-semibold
+                        " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
+                        Registrar Cargue de Clases
+                      </div>
+
+                      <form
+                        onSubmit={
+                          registrarCargue
+                        }
+                        className="
+                          p-3
+                          space-y-3
+                        "
+                      >
+
+                        {!practicaHabilitadaUI && (
+                          <div
+                            className="
+                              bg-amber-50
+                              border
+                              border-amber-300
+                              rounded-lg
+                              p-3
+                              text-[11px]
+                              text-amber-800
+                            "
+                          >
+                            <i className="fas fa-lock mr-2"></i>
+
+                            Práctica bloqueada hasta completar teoría
+                            {tallerRequeridas >
+                              0
+                              ? ' y taller'
+                              : ''}
+                            .
+                          </div>
+                        )}
+
+                        <div
+                          className="
+                            grid
+                            grid-cols-1
+                            sm:grid-cols-3
+                            gap-3
+                          "
+                        >
+
+                          <div>
+
+                            <label className="block text-[11px] font-semibold mb-1">
+                              Tipo
+                            </label>
+
+                            <select
+                              name="tipo_clase"
+                              value={
+                                cargue.tipo_clase
+                              }
+                              onChange={
+                                cambiarCargue
+                              }
+                              className="
+                                w-full
+                                border
+                                border-gray-300
+                                rounded-lg
+                                px-2
+                                py-2
+                                text-xs
+                              "
+                            >
+
+                              {TIPOS_CLASE.map(
+                                item => {
+                                  const tallerNoAplica =
+                                    item.value ===
+                                      'TALLER' &&
+                                    tallerRequeridas ===
+                                      0
+
+                                  const practicaBloqueada =
+                                    item.value ===
+                                      'PRACTICA' &&
+                                    !practicaHabilitadaUI
+
+                                  return (
+                                    <option
+                                      key={
+                                        item.value
+                                      }
+                                      value={
+                                        item.value
+                                      }
+                                      disabled={
+                                        tallerNoAplica ||
+                                        practicaBloqueada
+                                      }
+                                    >
+                                      {item.label}
+
+                                      {tallerNoAplica
+                                        ? ' — No aplica'
+                                        : ''}
+
+                                      {practicaBloqueada
+                                        ? ' — Bloqueada'
+                                        : ''}
+                                    </option>
+                                  )
+                                }
+                              )}
+
+                            </select>
+
+                          </div>
+
+                          <div>
+
+                            <label className="block text-[11px] font-semibold mb-1">
+                              Cantidad
+                            </label>
+
+                            <input
+                              type="number"
+                              min="1"
+                              max="8"
+                              name="cantidad_clases"
+                              value={
+                                cargue.cantidad_clases
+                              }
+                              onChange={
+                                cambiarCargue
+                              }
+                              className="
+                                w-full
+                                border
+                                border-gray-300
+                                rounded-lg
+                                px-2
+                                py-2
+                                text-xs
+                              "
+                            />
+
+                          </div>
+
+                          <div>
+
+                            <label className="block text-[11px] font-semibold mb-1">
+                              Fecha
+                            </label>
+
+                            <input
+                              type="date"
+                              name="fecha_clase"
+                              value={
+                                cargue.fecha_clase
+                              }
+                              min={
+                                cargue.tipo_clase ===
+                                  'PRACTICA' &&
+                                ultimaFechaTeoriaTaller
+                                  ? ultimaFechaTeoriaTaller
+                                  : undefined
+                              }
+                              onChange={
+                                cambiarCargue
+                              }
+                              className="
+                                w-full
+                                border
+                                border-gray-300
+                                rounded-lg
+                                px-2
+                                py-2
+                                text-xs
+                              "
+                            />
+
+                          </div>
+
+                        </div>
+
+                        <div>
+
+                          <label className="block text-[11px] font-semibold mb-1">
+                            Nombre Instructor
+                          </label>
+
+                          <select
+                            name="instructor_documento"
+                            value={
+                              cargue.instructor_documento
+                            }
+                            onChange={
+                              cambiarCargue
+                            }
+                            disabled={
+                              loadingInstructores
+                            }
+                            className="
+                              w-full
+                              border
+                              border-gray-300
+                              rounded-lg
+                              px-3
+                              py-2
+                              text-xs
+                              disabled:bg-gray-100
+                            "
+                          >
+
+                            <option value="">
+                              {loadingInstructores
+                                ? 'Consultando instructores...'
+                                : 'Seleccione instructor'}
+                            </option>
+
+                            {instructores.map(
+                              instructor => (
+                                <option
+                                  key={
+                                    instructor.documento
+                                  }
+                                  value={
+                                    instructor.documento
+                                  }
+                                >
+                                  {instructor.nombre_completo}
+
+                                  {cargue.tipo_clase ===
+                                    'PRACTICA'
+                                    ? ` · ${numero(
+                                        instructor.horas_disponibles
+                                      )} h disponibles`
+                                    : ''}
+                                </option>
+                              )
+                            )}
+
+                          </select>
+
+                        </div>
+
+                        {instructorSeleccionado && (
+                          <div
+                            className="
+                              bg-blue-50
+                              border
+                              border-blue-200
+                              rounded-lg
+                              p-3
+                              text-xs
+                            "
+                          >
+
+                            <div
+                              className="
+                                grid
+                                grid-cols-1
+                                sm:grid-cols-3
+                                gap-3
+                              "
+                            >
+
+                              <div>
+
+                                <span className="text-gray-500">
+                                  Instructor
+                                </span>
+
+                                <div className="font-semibold">
+                                  {instructorSeleccionado.nombre_completo}
+                                </div>
+
+                              </div>
+
+                              <div>
+
+                                <span className="text-gray-500">
+                                  Certificados
+                                </span>
+
+                                <div className="font-semibold">
+
+                                  {Array.isArray(
+                                    instructorSeleccionado.certificados_bd
+                                  ) &&
+                                  instructorSeleccionado.certificados_bd.length >
+                                    0
+                                    ? instructorSeleccionado.certificados_bd.join(
+                                        ' · '
+                                      )
+                                    : Array.isArray(
+                                          instructorSeleccionado.certificados
+                                        )
+                                      ? instructorSeleccionado.certificados.join(
+                                          ' · '
+                                        )
+                                      : '-'}
+
+                                </div>
+
+                              </div>
+
+                              <div>
+
+                                <span className="text-gray-500">
+                                  Horas disponibles
+                                </span>
+
+                                <div className="font-bold">
+                                  {numero(
+                                    instructorSeleccionado.horas_disponibles
+                                  )}
+                                  {' / '}
+                                  {numero(
+                                    instructorSeleccionado.horas_asignadas
+                                  ) ||
+                                    240}
+                                </div>
+
+                                <div className="text-[10px] text-gray-500 mt-1">
+                                  Solo práctica consume horas.
+                                </div>
+
+                              </div>
+
+                            </div>
+
+                          </div>
+                        )}
+
+                        <textarea
+                          rows={2}
+                          name="observaciones"
+                          value={
+                            cargue.observaciones
+                          }
+                          onChange={
+                            cambiarCargue
+                          }
+                          placeholder="Observaciones opcionales"
+                          className="
+                            w-full
+                            border
+                            border-gray-300
+                            rounded-lg
+                            p-2
+                            text-xs
+                          "
+                        />
+
+                        <BotonAccion tipo="guardar"
+                          type="submit"
+                          disabled={
+                            procesando ||
+                            loadingInstructores ||
+                            !cargue.instructor_documento
+                          }
+                          className="
+                            bg-[var(--primary)]
+                            hover:bg-[var(--primary-dark)]
+                            text-white
+                            px-4
+                            py-2
+                            rounded-lg
+                            text-xs
+                            disabled:opacity-50
+                          "
+                        >
+                          <i className="fas fa-save mr-2"></i>
+
+                          {procesando
+                            ? 'Guardando...'
+                            : 'Registrar Cargue'}
+                        </BotonAccion>
+
+                      </form>
+
+                    </div>
+                  )}
+
+                                <details className="group rounded-lg border border-slate-300 bg-white">
+                  <summary className="cursor-pointer select-none rounded-lg bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors">
+                    <i className="fas fa-chevron-right mr-2 text-[10px] transition-transform group-open:rotate-90"></i>
+                    Historial de cargues
+                    <span className="ml-2 font-normal text-slate-500">Consulte los cargues registrados</span>
+                  </summary>
+                  <div className="space-y-4 p-3">
+{/* ==========================================
+                    HISTORIAL CARGUES ACTUALES
+                ========================================== */}
+
+                <div
+                  className="
+                    border
+                    border-gray-300
+                    rounded-lg
+                    overflow-hidden
+                  "
+                >
+
+                  <div
+                    className="
+                      
+                      
+                      px-3
+                      py-2
+                      text-xs
+                      font-semibold
+                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
+                    Historial de Cargues — Proceso Actual
+                  </div>
+
+                  <div
+                    className="
+                      grid
+                      grid-cols-2
+                      gap-3
+                      p-3
+                      bg-gray-50
+                      border-b
+                      border-gray-300
+                    "
+                  >
+
+                    <TarjetaResumen
+                      titulo="Teoría"
+                      icono="fa-book-open"
+                      cargadas={
+                        teoriaCargadas
+                      }
+                      requeridas={
+                        teoriaRequeridas
+                      }
+                    />
+
+                    <TarjetaResumen
+                      titulo="Taller"
+                      icono="fa-tools"
+                      cargadas={
+                        tallerCargadas
+                      }
+                      requeridas={
+                        tallerRequeridas
+                      }
+                    />
+
+                    <TarjetaResumen
+                      titulo="Práctica"
+                      icono="fa-car"
+                      cargadas={
+                        practicaCargadas
+                      }
+                      requeridas={
+                        practicaRequeridas
+                      }
+                    />
+
+                    <TarjetaResumen
+                      titulo="Total General"
+                      icono="fa-chart-line"
+                      cargadas={
+                        totalCargadas
+                      }
+                      requeridas={
+                        totalRequeridas
+                      }
+                    />
+
+                  </div>
+
+                  <div className="overflow-x-auto">
+
+                    <table className="w-full text-[11px] border-collapse">
+
+                      <thead style={{backgroundColor:ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}} className="text-[10px] font-extrabold uppercase">
+
+                        <tr>
+
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                            Fecha
+                          </th>
+
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                            Tipo
+                          </th>
+
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                            Cant.
+                          </th>
+
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                            Instructor
+                          </th>
+
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                            Horas
+                          </th>
+
+                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                            Usuario
+                          </th>
+
+                        </tr>
+
+                      </thead>
+
+                      <tbody>
+
+                        {cargues.length >
+                        0 ? (
+                          cargues.map(
+                            item => (
+                              <tr
+                                key={
+                                  item.id
+                                }
+                              >
+
+                                <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                                  {formatearFecha(
+                                    item.fecha_clase
+                                  )}
+                                </td>
+
+                                <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+
+                                  {mayusculas(
+                                    item.tipo_clase
+                                  ) ===
+                                  'PRACTICA' ? (
+                                    <Badge tipo="green">
+                                      PRÁCTICA
+                                    </Badge>
+                                  ) : mayusculas(
+                                      item.tipo_clase
+                                    ) ===
+                                    'TALLER' ? (
+                                    <Badge tipo="yellow">
+                                      TALLER
+                                    </Badge>
+                                  ) : (
+                                    <Badge tipo="blue">
+                                      TEORÍA
+                                    </Badge>
+                                  )}
+
+                                </td>
+
+                                <td className="p-2 border text-center font-semibold" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                                  {numero(
+                                    item.cantidad_clases
+                                  )}
+                                </td>
+
+                                <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                                  {item.instructor_nombre ||
+                                    '-'}
+                                </td>
+
+                                <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                                  {numero(
+                                    item.horas_consumidas
+                                  )}
+                                </td>
+
+                                <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                                  {item.usuario_cargue ||
+                                    '-'}
+                                </td>
+
+                              </tr>
+                            )
+                          )
+                        ) : (
+                          <tr>
+
+                            <td
+                              colSpan="6"
+                              className="p-5 text-center text-gray-500"
+                             style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                              No hay cargues registrados en este proceso.
+                            </td>
+
+                          </tr>
+                        )}
+
+                      </tbody>
+
+                    </table>
+
+                  </div>
+
+                </div>
+
+                                  </div>
+                </details>
+
+                <details className="group rounded-lg border border-slate-300 bg-white">
+                  <summary className="cursor-pointer select-none rounded-lg bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors">
+                    <i className="fas fa-chevron-right mr-2 text-[10px] transition-transform group-open:rotate-90"></i>
+                    Historial y expediente
+                    <span className="ml-2 font-normal text-slate-500">Matrícula, verificación, procesos y notificaciones</span>
+                  </summary>
+                  <div className="space-y-4 p-3">
+{/* ==========================================
                     HISTORIAL DE PROCESOS RUNT
                 ========================================== */}
 
@@ -3456,156 +4259,6 @@ export default function RuntPage() {
                 </div>
 
                 {/* ==========================================
-                    VIGENCIA
-                ========================================== */}
-
-                {registrado && (
-                  <div
-                    className="
-                      border
-                      border-gray-300
-                      rounded-lg
-                      overflow-hidden
-                    "
-                  >
-
-                    <div
-                      className="
-                        
-                        
-                        px-3
-                        py-2
-                        text-xs
-                        font-semibold
-                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                      Vigencia del Proceso RUNT Actual
-                    </div>
-
-                    <div className="p-3">
-
-                      <div
-                        className="
-                          grid
-                          grid-cols-2
-                          sm:grid-cols-4
-                          gap-3
-                          text-xs
-                        "
-                      >
-
-                        <div>
-                          <span className="text-gray-500">
-                            Registro
-                          </span>
-
-                          <div className="font-semibold">
-                            {formatearFecha(
-                              vigenciaActual
-                                ?.fecha_registro
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-500">
-                            Fecha límite
-                          </span>
-
-                          <div className="font-semibold">
-                            {formatearFecha(
-                              vigenciaActual
-                                ?.fecha_limite
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-500">
-                            Días restantes
-                          </span>
-
-                          <div className="font-bold">
-                            {vigenciaActual
-                              ?.dias_restantes ??
-                              '-'}
-                          </div>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-500">
-                            Estado
-                          </span>
-
-                          <div className="mt-1">
-                            <BadgeVigencia
-                              vigencia={
-                                vigenciaActual
-                              }
-                            />
-                          </div>
-                        </div>
-
-                      </div>
-
-                      {vencido && (
-                        <div
-                          className="
-                            mt-3
-                            bg-red-50
-                            border
-                            border-red-300
-                            rounded-lg
-                            p-3
-                            text-xs
-                            text-red-700
-                          "
-                        >
-
-                          <div className="font-bold">
-                            <i className="fas fa-exclamation-triangle mr-2"></i>
-
-                            PROCESO RUNT VENCIDO
-                          </div>
-
-                          <p className="mt-1">
-                            El registro superó los 90 días según la fecha anotada y no tiene certificación registrada en DATA-CEA. Antes de reiniciar, verifique el estado real en RUNT; podría estar certificado y pendiente de actualizar aquí.
-                          </p>
-
-                          <BotonAccion tipo="secundario"
-                            type="button"
-                            onClick={
-                              reiniciarProceso
-                            }
-                            disabled={
-                              procesando
-                            }
-                            className="
-                              mt-3
-                              bg-red-600
-                              hover:bg-red-700
-                              text-white
-                              px-4
-                              py-2
-                              rounded-lg
-                              text-xs
-                              font-semibold
-                              disabled:opacity-50
-                            "
-                          >
-                            <i className="fas fa-rotate-right mr-2"></i>
-
-                            Reiniciar Proceso RUNT
-                          </BotonAccion>
-
-                        </div>
-                      )}
-
-                    </div>
-
-                  </div>
-                )}
-
-                {/* ==========================================
                     DATOS MATRÍCULA
                 ========================================== */}
 
@@ -3923,619 +4576,6 @@ export default function RuntPage() {
                 </div>
 
                 {/* ==========================================
-                    CARGUE
-                ========================================== */}
-
-                {registrado &&
-                  !certificado &&
-                  !vencido && (
-                    <div
-                      className="
-                        border
-                        border-gray-300
-                        rounded-lg
-                        overflow-hidden
-                      "
-                    >
-
-                      <div
-                        className="
-                          
-                          
-                          px-3
-                          py-2
-                          text-xs
-                          font-semibold
-                        " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                        Registrar Cargue de Clases
-                      </div>
-
-                      <form
-                        onSubmit={
-                          registrarCargue
-                        }
-                        className="
-                          p-3
-                          space-y-3
-                        "
-                      >
-
-                        {!practicaHabilitadaUI && (
-                          <div
-                            className="
-                              bg-amber-50
-                              border
-                              border-amber-300
-                              rounded-lg
-                              p-3
-                              text-[11px]
-                              text-amber-800
-                            "
-                          >
-                            <i className="fas fa-lock mr-2"></i>
-
-                            Práctica bloqueada hasta completar teoría
-                            {tallerRequeridas >
-                              0
-                              ? ' y taller'
-                              : ''}
-                            .
-                          </div>
-                        )}
-
-                        <div
-                          className="
-                            grid
-                            grid-cols-1
-                            sm:grid-cols-3
-                            gap-3
-                          "
-                        >
-
-                          <div>
-
-                            <label className="block text-[11px] font-semibold mb-1">
-                              Tipo
-                            </label>
-
-                            <select
-                              name="tipo_clase"
-                              value={
-                                cargue.tipo_clase
-                              }
-                              onChange={
-                                cambiarCargue
-                              }
-                              className="
-                                w-full
-                                border
-                                border-gray-300
-                                rounded-lg
-                                px-2
-                                py-2
-                                text-xs
-                              "
-                            >
-
-                              {TIPOS_CLASE.map(
-                                item => {
-                                  const tallerNoAplica =
-                                    item.value ===
-                                      'TALLER' &&
-                                    tallerRequeridas ===
-                                      0
-
-                                  const practicaBloqueada =
-                                    item.value ===
-                                      'PRACTICA' &&
-                                    !practicaHabilitadaUI
-
-                                  return (
-                                    <option
-                                      key={
-                                        item.value
-                                      }
-                                      value={
-                                        item.value
-                                      }
-                                      disabled={
-                                        tallerNoAplica ||
-                                        practicaBloqueada
-                                      }
-                                    >
-                                      {item.label}
-
-                                      {tallerNoAplica
-                                        ? ' — No aplica'
-                                        : ''}
-
-                                      {practicaBloqueada
-                                        ? ' — Bloqueada'
-                                        : ''}
-                                    </option>
-                                  )
-                                }
-                              )}
-
-                            </select>
-
-                          </div>
-
-                          <div>
-
-                            <label className="block text-[11px] font-semibold mb-1">
-                              Cantidad
-                            </label>
-
-                            <input
-                              type="number"
-                              min="1"
-                              max="8"
-                              name="cantidad_clases"
-                              value={
-                                cargue.cantidad_clases
-                              }
-                              onChange={
-                                cambiarCargue
-                              }
-                              className="
-                                w-full
-                                border
-                                border-gray-300
-                                rounded-lg
-                                px-2
-                                py-2
-                                text-xs
-                              "
-                            />
-
-                          </div>
-
-                          <div>
-
-                            <label className="block text-[11px] font-semibold mb-1">
-                              Fecha
-                            </label>
-
-                            <input
-                              type="date"
-                              name="fecha_clase"
-                              value={
-                                cargue.fecha_clase
-                              }
-                              min={
-                                cargue.tipo_clase ===
-                                  'PRACTICA' &&
-                                ultimaFechaTeoriaTaller
-                                  ? ultimaFechaTeoriaTaller
-                                  : undefined
-                              }
-                              onChange={
-                                cambiarCargue
-                              }
-                              className="
-                                w-full
-                                border
-                                border-gray-300
-                                rounded-lg
-                                px-2
-                                py-2
-                                text-xs
-                              "
-                            />
-
-                          </div>
-
-                        </div>
-
-                        <div>
-
-                          <label className="block text-[11px] font-semibold mb-1">
-                            Nombre Instructor
-                          </label>
-
-                          <select
-                            name="instructor_documento"
-                            value={
-                              cargue.instructor_documento
-                            }
-                            onChange={
-                              cambiarCargue
-                            }
-                            disabled={
-                              loadingInstructores
-                            }
-                            className="
-                              w-full
-                              border
-                              border-gray-300
-                              rounded-lg
-                              px-3
-                              py-2
-                              text-xs
-                              disabled:bg-gray-100
-                            "
-                          >
-
-                            <option value="">
-                              {loadingInstructores
-                                ? 'Consultando instructores...'
-                                : 'Seleccione instructor'}
-                            </option>
-
-                            {instructores.map(
-                              instructor => (
-                                <option
-                                  key={
-                                    instructor.documento
-                                  }
-                                  value={
-                                    instructor.documento
-                                  }
-                                >
-                                  {instructor.nombre_completo}
-
-                                  {cargue.tipo_clase ===
-                                    'PRACTICA'
-                                    ? ` · ${numero(
-                                        instructor.horas_disponibles
-                                      )} h disponibles`
-                                    : ''}
-                                </option>
-                              )
-                            )}
-
-                          </select>
-
-                        </div>
-
-                        {instructorSeleccionado && (
-                          <div
-                            className="
-                              bg-blue-50
-                              border
-                              border-blue-200
-                              rounded-lg
-                              p-3
-                              text-xs
-                            "
-                          >
-
-                            <div
-                              className="
-                                grid
-                                grid-cols-1
-                                sm:grid-cols-3
-                                gap-3
-                              "
-                            >
-
-                              <div>
-
-                                <span className="text-gray-500">
-                                  Instructor
-                                </span>
-
-                                <div className="font-semibold">
-                                  {instructorSeleccionado.nombre_completo}
-                                </div>
-
-                              </div>
-
-                              <div>
-
-                                <span className="text-gray-500">
-                                  Certificados
-                                </span>
-
-                                <div className="font-semibold">
-
-                                  {Array.isArray(
-                                    instructorSeleccionado.certificados_bd
-                                  ) &&
-                                  instructorSeleccionado.certificados_bd.length >
-                                    0
-                                    ? instructorSeleccionado.certificados_bd.join(
-                                        ' · '
-                                      )
-                                    : Array.isArray(
-                                          instructorSeleccionado.certificados
-                                        )
-                                      ? instructorSeleccionado.certificados.join(
-                                          ' · '
-                                        )
-                                      : '-'}
-
-                                </div>
-
-                              </div>
-
-                              <div>
-
-                                <span className="text-gray-500">
-                                  Horas disponibles
-                                </span>
-
-                                <div className="font-bold">
-                                  {numero(
-                                    instructorSeleccionado.horas_disponibles
-                                  )}
-                                  {' / '}
-                                  {numero(
-                                    instructorSeleccionado.horas_asignadas
-                                  ) ||
-                                    240}
-                                </div>
-
-                                <div className="text-[10px] text-gray-500 mt-1">
-                                  Solo práctica consume horas.
-                                </div>
-
-                              </div>
-
-                            </div>
-
-                          </div>
-                        )}
-
-                        <textarea
-                          rows={2}
-                          name="observaciones"
-                          value={
-                            cargue.observaciones
-                          }
-                          onChange={
-                            cambiarCargue
-                          }
-                          placeholder="Observaciones opcionales"
-                          className="
-                            w-full
-                            border
-                            border-gray-300
-                            rounded-lg
-                            p-2
-                            text-xs
-                          "
-                        />
-
-                        <BotonAccion tipo="guardar"
-                          type="submit"
-                          disabled={
-                            procesando ||
-                            loadingInstructores ||
-                            !cargue.instructor_documento
-                          }
-                          className="
-                            bg-[var(--primary)]
-                            hover:bg-[var(--primary-dark)]
-                            text-white
-                            px-4
-                            py-2
-                            rounded-lg
-                            text-xs
-                            disabled:opacity-50
-                          "
-                        >
-                          <i className="fas fa-save mr-2"></i>
-
-                          {procesando
-                            ? 'Guardando...'
-                            : 'Registrar Cargue'}
-                        </BotonAccion>
-
-                      </form>
-
-                    </div>
-                  )}
-
-                {/* ==========================================
-                    HISTORIAL CARGUES ACTUALES
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                    Historial de Cargues — Proceso Actual
-                  </div>
-
-                  <div
-                    className="
-                      grid
-                      grid-cols-2
-                      gap-3
-                      p-3
-                      bg-gray-50
-                      border-b
-                      border-gray-300
-                    "
-                  >
-
-                    <TarjetaResumen
-                      titulo="Teoría"
-                      icono="fa-book-open"
-                      cargadas={
-                        teoriaCargadas
-                      }
-                      requeridas={
-                        teoriaRequeridas
-                      }
-                    />
-
-                    <TarjetaResumen
-                      titulo="Taller"
-                      icono="fa-tools"
-                      cargadas={
-                        tallerCargadas
-                      }
-                      requeridas={
-                        tallerRequeridas
-                      }
-                    />
-
-                    <TarjetaResumen
-                      titulo="Práctica"
-                      icono="fa-car"
-                      cargadas={
-                        practicaCargadas
-                      }
-                      requeridas={
-                        practicaRequeridas
-                      }
-                    />
-
-                    <TarjetaResumen
-                      titulo="Total General"
-                      icono="fa-chart-line"
-                      cargadas={
-                        totalCargadas
-                      }
-                      requeridas={
-                        totalRequeridas
-                      }
-                    />
-
-                  </div>
-
-                  <div className="overflow-x-auto">
-
-                    <table className="w-full text-[11px] border-collapse">
-
-                      <thead style={{backgroundColor:ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}} className="text-[10px] font-extrabold uppercase">
-
-                        <tr>
-
-                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                            Fecha
-                          </th>
-
-                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                            Tipo
-                          </th>
-
-                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                            Cant.
-                          </th>
-
-                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                            Instructor
-                          </th>
-
-                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                            Horas
-                          </th>
-
-                          <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                            Usuario
-                          </th>
-
-                        </tr>
-
-                      </thead>
-
-                      <tbody>
-
-                        {cargues.length >
-                        0 ? (
-                          cargues.map(
-                            item => (
-                              <tr
-                                key={
-                                  item.id
-                                }
-                              >
-
-                                <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                                  {formatearFecha(
-                                    item.fecha_clase
-                                  )}
-                                </td>
-
-                                <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-
-                                  {mayusculas(
-                                    item.tipo_clase
-                                  ) ===
-                                  'PRACTICA' ? (
-                                    <Badge tipo="green">
-                                      PRÁCTICA
-                                    </Badge>
-                                  ) : mayusculas(
-                                      item.tipo_clase
-                                    ) ===
-                                    'TALLER' ? (
-                                    <Badge tipo="yellow">
-                                      TALLER
-                                    </Badge>
-                                  ) : (
-                                    <Badge tipo="blue">
-                                      TEORÍA
-                                    </Badge>
-                                  )}
-
-                                </td>
-
-                                <td className="p-2 border text-center font-semibold" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                                  {numero(
-                                    item.cantidad_clases
-                                  )}
-                                </td>
-
-                                <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                                  {item.instructor_nombre ||
-                                    '-'}
-                                </td>
-
-                                <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                                  {numero(
-                                    item.horas_consumidas
-                                  )}
-                                </td>
-
-                                <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                                  {item.usuario_cargue ||
-                                    '-'}
-                                </td>
-
-                              </tr>
-                            )
-                          )
-                        ) : (
-                          <tr>
-
-                            <td
-                              colSpan="6"
-                              className="p-5 text-center text-gray-500"
-                             style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                              No hay cargues registrados en este proceso.
-                            </td>
-
-                          </tr>
-                        )}
-
-                      </tbody>
-
-                    </table>
-
-                  </div>
-
-                </div>
-
-                {/* ==========================================
                     NOTIFICACIONES
                 ========================================== */}
 
@@ -4628,7 +4668,17 @@ export default function RuntPage() {
                   </div>
                 )}
 
-                {/* ==========================================
+                                  </div>
+                </details>
+
+                <details className="group rounded-lg border border-slate-300 bg-white">
+                  <summary className="cursor-pointer select-none rounded-lg bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors">
+                    <i className="fas fa-chevron-right mr-2 text-[10px] transition-transform group-open:rotate-90"></i>
+                    Certificación RUNT
+                    <span className="ml-2 font-normal text-slate-500">Cargues completos y SICOV certificado</span>
+                  </summary>
+                  <div className="space-y-4 p-3">
+{/* ==========================================
                     CERTIFICACIÓN
                 ========================================== */}
 
@@ -4754,6 +4804,9 @@ export default function RuntPage() {
                   </div>
 
                 </div>
+
+                  </div>
+                </details>
 
                 <div className="flex justify-end">
 
