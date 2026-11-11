@@ -4682,7 +4682,17 @@ export default function RuntPage() {
                     Certificación RUNT
                   </div>
 
-                  <div className="p-3">
+                  <div className="p-3 space-y-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 text-[11px]">
+                      <div className={`rounded-lg border p-2 ${procesoCompleto ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
+                        <i className={`fas ${procesoCompleto ? 'fa-check-circle' : 'fa-clock'} mr-1`}></i>
+                        Cargues de clases: {procesoCompleto ? 'Completos' : 'Pendientes'}
+                      </div>
+                      <div className={`rounded-lg border p-2 ${sicovCertificado ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
+                        <i className={`fas ${sicovCertificado ? 'fa-check-circle' : 'fa-clock'} mr-1`}></i>
+                        SICOV: {sicovCertificado ? 'Certificado' : 'Pendiente de certificación'}
+                      </div>
+                    </div>
 
                     {certificado ? (
                       <div
