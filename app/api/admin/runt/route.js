@@ -1918,399 +1918,144 @@ async function consultarControles({
   fechaInicio = '',
   fechaFin = '',
 }) {
-  // =======================================================
-  // CONSULTA BASE
-  // =======================================================
-
-  let consulta =
-    supabase
-      .from(
-        'control_runt'
-      )
-      .select(`
-        id,
-        matricula_id,
-        consecutivo,
-        documento,
-        categoria,
-        numero_proceso,
-        control_runt_anterior_id,
-        motivo_reproceso,
-        fecha_reinicio,
-        estado_verificacion,
-        resultado_verificacion,
-        fecha_verificacion,
-        usuario_verificacion,
-        estado_registro,
-        fecha_registro,
-        usuario_registro,
-        estado_certificacion,
-        fecha_certificacion,
-        usuario_certificacion,
-        observaciones,
-        created_at,
-        updated_at
-      `)
-
-  // =======================================================
-  // CATEGORÍA
-  // =======================================================
-
-  if (
-    categoria
-  ) {
-    consulta =
-      consulta.eq(
-        'categoria',
-        normalizarMayusculas(
-          categoria
+  // Leer el catálogo de la empresa por lotes, sin el límite implícito de
+  // 1000 filas de PostgREST, para contar y seleccionar correctamente.
+  async function leerTablaCompleta(tabla, columnas) {
+    const { count, error: errorConteo } = await supabase
+      .from(tabla).select('id', { count: 'exact', head: true })
+    if (errorConteo) throw new Error(`No fue posible contar ${tabla}: ${errorConteo.message}`)
+    const total = Number(count || 0)
+    if (!total) return []
+    const lotes = []
+    for (let desde = 0; desde < total; desde += 1000) {
+      lotes.push([desde, Math.min(total - 1, desde + 999)])
+    }
+    const todos = []
+    for (let i = 0; i < lotes.length; i += 5) {
+      const respuestas = await Promise.all(
+        lotes.slice(i, i + 5).map(([desde, hasta]) =>
+          supabase.from(tabla).select(columnas)
+            .order('id', { ascending: true }).range(desde, hasta)
         )
       )
-  }
-
-  // Filtrar los estados de trabajo ANTES de paginar para no ocultar
-  // pendientes tras páginas históricas de otros estados.
-  const hoy = hoyBogota()
-  const limite90 = sumarDiasFecha(hoy, -DIAS_VIGENCIA_RUNT)
-  if (pestana === 'pendientes') {
-    if (estadoGestion === 'no_registrado') {
-      consulta = consulta.eq('estado_registro', 'PENDIENTE')
-        .eq('resultado_verificacion', 'NO REGISTRADO')
-    } else if (estadoGestion === 'vencido') {
-      consulta = consulta.eq('estado_registro', 'REGISTRADO')
-        .neq('estado_certificacion', 'CERTIFICADO')
-        .lt('fecha_registro', limite90)
-    } else {
-      consulta = consulta.or(
-        `estado_registro.eq.PENDIENTE,and(estado_registro.eq.REGISTRADO,estado_certificacion.neq.CERTIFICADO,fecha_registro.lt.${limite90})`
-      )
-    }
-  } else if (pestana === 'registrados') {
-    consulta = consulta.eq('estado_registro', 'REGISTRADO')
-    if (estadoGestion === 'certificado') {
-      consulta = consulta.eq('estado_certificacion', 'CERTIFICADO')
-    } else if (estadoGestion === 'por_vencer') {
-      consulta = consulta.neq('estado_certificacion', 'CERTIFICADO')
-        .gte('fecha_registro', limite90)
-        .lte('fecha_registro', sumarDiasFecha(hoy, -(DIAS_VIGENCIA_RUNT - 15)))
-    } else if (estadoGestion === 'en_proceso') {
-      consulta = consulta.neq('estado_certificacion', 'CERTIFICADO')
-        .gt('fecha_registro', sumarDiasFecha(hoy, -(DIAS_VIGENCIA_RUNT - 15)))
-    } else {
-      consulta = consulta.or(
-        `estado_certificacion.eq.CERTIFICADO,fecha_registro.gte.${limite90}`
-      )
-    }
-  }
-
-  // Intervalo por fecha de matrícula, no por inicio de vigencia RUNT.
-  if (fechaInicio || fechaFin) {
-    let matriculasFecha = supabase.from('aprendices').select('id')
-    if (fechaInicio) matriculasFecha = matriculasFecha.gte('fecha_matricula', fechaInicio)
-    if (fechaFin) matriculasFecha = matriculasFecha.lte('fecha_matricula', fechaFin)
-    const { data: idsFecha, error: errorFecha } = await matriculasFecha.range(0, 9999)
-    if (errorFecha) throw new Error('No fue posible aplicar el filtro de fechas: ' + errorFecha.message)
-    const ids = (idsFecha || []).map(item => item.id)
-    if (!ids.length) return []
-    consulta = consulta.in('matricula_id', ids)
-  }
-
-  // =======================================================
-  // BÚSQUEDA
-  // =======================================================
-
-  const termino =
-    limpiarBusqueda(
-      busqueda
-    )
-
-  if (
-    termino
-  ) {
-    consulta =
-      consulta.or(
-        [
-          `documento.ilike.%${termino}%`,
-          `consecutivo.ilike.%${termino}%`,
-          `categoria.ilike.%${termino}%`,
-        ].join(
-          ','
+      for (const respuesta of respuestas) {
+        if (respuesta.error) throw new Error(
+          `No fue posible consultar ${tabla}: ${respuesta.error.message}`
         )
-      )
-  }
-
-  // =======================================================
-  // CONSULTAR TODOS LOS POSIBLES PROCESOS
-  // =======================================================
-
-  const {
-    data,
-    error,
-  } =
-    await consulta
-      .order('matricula_id', { ascending: false })
-      .order('numero_proceso', { ascending: false })
-      .range(
-        (Math.max(1, Number(pagina) || 1)-1) * Math.min(100, Math.max(25, Number(porPagina) || 25)),
-        Math.max(1, Number(pagina) || 1) * Math.min(100, Math.max(25, Number(porPagina) || 25)) - 1
-      )
-
-  if (
-    error
-  ) {
-    throw new Error(
-      `No fue posible consultar Control RUNT: ${error.message}`
-    )
-  }
-
-  const todosControles =
-    Array.isArray(
-      data
-    )
-      ? data
-      : []
-
-  if (
-    todosControles.length ===
-    0
-  ) {
-    return []
-  }
-
-  // =======================================================
-  // SOLO PROCESO MÁS RECIENTE POR MATRÍCULA
-  // =======================================================
-
-  const mapaUltimoProceso =
-    new Map()
-
-  for (
-    const control of
-      todosControles
-  ) {
-    const matriculaId =
-      String(
-        control.matricula_id
-      ) + '|' + normalizarMayusculas(control.categoria)
-
-    const numeroProceso =
-      Number(
-        control.numero_proceso ||
-        1
-      )
-
-    const existente =
-      mapaUltimoProceso.get(
-        matriculaId
-      )
-
-    if (
-      !existente
-    ) {
-      mapaUltimoProceso.set(
-        matriculaId,
-        control
-      )
-
-      continue
-    }
-
-    const numeroExistente =
-      Number(
-        existente.numero_proceso ||
-        1
-      )
-
-    if (
-      numeroProceso >
-      numeroExistente
-    ) {
-      mapaUltimoProceso.set(
-        matriculaId,
-        control
-      )
-
-      continue
-    }
-
-    if (
-      numeroProceso ===
-      numeroExistente
-    ) {
-      const fechaControl =
-        new Date(
-          control.created_at ||
-          0
-        ).getTime()
-
-      const fechaExistente =
-        new Date(
-          existente.created_at ||
-          0
-        ).getTime()
-
-      if (
-        fechaControl >
-        fechaExistente
-      ) {
-        mapaUltimoProceso.set(
-          matriculaId,
-          control
-        )
+        todos.push(...(respuesta.data || []))
       }
     }
+    return todos
   }
 
-  let controles =
-    Array.from(
-      mapaUltimoProceso.values()
-    )
+  const [procesos, matriculas] = await Promise.all([
+    leerTablaCompleta('control_runt', `
+      id,matricula_id,consecutivo,documento,categoria,numero_proceso,
+      control_runt_anterior_id,motivo_reproceso,fecha_reinicio,
+      estado_verificacion,resultado_verificacion,fecha_verificacion,
+      usuario_verificacion,estado_registro,fecha_registro,usuario_registro,
+      estado_certificacion,fecha_certificacion,usuario_certificacion,
+      observaciones,created_at,updated_at
+    `),
+    leerTablaCompleta('aprendices', `
+      id,nombres,apellidos,tipo_doc,documento,fecha_matricula,
+      celular,correo,convenio,estado
+    `)
+  ])
 
-  // =======================================================
-  // FILTRAR SOLO SOBRE PROCESO ACTUAL
-  // =======================================================
-
-  if (
-    estadoRegistro
-  ) {
-    const filtro =
-      normalizarMayusculas(
-        estadoRegistro
-      )
-
-    controles =
-      controles.filter(
-        control =>
-          normalizarMayusculas(
-            control.estado_registro
-          ) ===
-          filtro
-      )
+  const mapaMatriculas = new Map(matriculas.map(m => [String(m.id), m]))
+  const mapaUltimoProceso = new Map()
+  // No filtrar estados antes de elegir el último proceso: un reproceso
+  // posterior debe prevalecer sobre cualquier estado del proceso antiguo.
+  for (const control of procesos) {
+    const clave = String(control.matricula_id) + '|' +
+      normalizarMayusculas(control.categoria)
+    const previo = mapaUltimoProceso.get(clave)
+    const proceso = Number(control.numero_proceso || 1)
+    if (!previo || proceso > Number(previo.numero_proceso || 1) ||
+        (proceso === Number(previo.numero_proceso || 1) &&
+          Number(control.id) > Number(previo.id))) {
+      mapaUltimoProceso.set(clave, control)
+    }
   }
 
-  if (
-    estadoCertificacion
-  ) {
-    const filtro =
-      normalizarMayusculas(
-        estadoCertificacion
-      )
-
-    controles =
-      controles.filter(
-        control =>
-          normalizarMayusculas(
-            control.estado_certificacion
-          ) ===
-          filtro
-      )
+  if (fechaInicio && !/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio)) {
+    throw new Error('La fecha inicial no es válida.')
+  }
+  if (fechaFin && !/^\d{4}-\d{2}-\d{2}$/.test(fechaFin)) {
+    throw new Error('La fecha final no es válida.')
+  }
+  if (fechaInicio && fechaFin && fechaInicio > fechaFin) {
+    throw new Error('La fecha inicial no puede superar la fecha final.')
   }
 
-  if (
-    resultadoVerificacion
-  ) {
-    const filtro =
-      normalizarMayusculas(
-        resultadoVerificacion
-      )
-
-    controles =
-      controles.filter(
-        control =>
-          normalizarMayusculas(
-            control.resultado_verificacion
-          ) ===
-          filtro
-      )
-  }
-
-  if (
-    controles.length ===
-    0
-  ) {
-    return []
-  }
-
-  // =======================================================
-  // MATRÍCULAS
-  // =======================================================
-
-  const matriculaIds =
-    [
-      ...new Set(
-        controles
-          .map(
-            control =>
-              control.matricula_id
-          )
-          .filter(
-            Boolean
-          )
-      ),
-    ]
-
-  let matriculas =
-    []
-
-  if (
-    matriculaIds.length >
-    0
-  ) {
-    const {
-      data:
-        dataMatriculas,
-
-      error:
-        errorMatriculas,
-    } =
-      await supabase
-        .from(
-          'aprendices'
-        )
-        .select(`
-          id,
-          nombres,
-          apellidos,
-          tipo_doc,
-          documento,
-          fecha_matricula,
-          celular,
-          correo,
-          convenio,
-          estado
-        `)
-        .in(
-          'id',
-          matriculaIds
-        )
-
-    if (
-      errorMatriculas
-    ) {
-      throw new Error(
-        `No fue posible consultar los aprendices del Control RUNT: ${errorMatriculas.message}`
-      )
+  const categoriaFiltro = normalizarMayusculas(categoria)
+  const termino = limpiarBusqueda(busqueda).toUpperCase()
+  let seleccionados = Array.from(mapaUltimoProceso.values()).filter(control => {
+    const matricula = mapaMatriculas.get(String(control.matricula_id))
+    if (categoriaFiltro && normalizarMayusculas(control.categoria) !== categoriaFiltro) return false
+    const fechaMatricula = String(matricula?.fecha_matricula || '').slice(0, 10)
+    if (fechaInicio && (!fechaMatricula || fechaMatricula < fechaInicio)) return false
+    if (fechaFin && (!fechaMatricula || fechaMatricula > fechaFin)) return false
+    if (termino) {
+      const campos = [
+        control.consecutivo, control.documento, control.categoria,
+        matricula?.nombres, matricula?.apellidos,
+        [matricula?.nombres, matricula?.apellidos].filter(Boolean).join(' ')
+      ].map(x => String(x || '').toUpperCase())
+      if (!campos.some(x => x.includes(termino))) return false
     }
 
-    matriculas =
-      Array.isArray(
-        dataMatriculas
-      )
-        ? dataMatriculas
-        : []
-  }
+    const registro = normalizarMayusculas(control.estado_registro)
+    const certificacion = normalizarMayusculas(control.estado_certificacion)
+    const resultado = normalizarMayusculas(control.resultado_verificacion)
+    if (estadoRegistro && registro !== normalizarMayusculas(estadoRegistro)) return false
+    if (estadoCertificacion && certificacion !== normalizarMayusculas(estadoCertificacion)) return false
+    if (resultadoVerificacion && resultado !== normalizarMayusculas(resultadoVerificacion)) return false
 
-  const mapaMatriculas =
-    new Map(
-      matriculas.map(
-        matricula => [
-          String(
-            matricula.id
-          ),
-          matricula,
-        ]
-      )
-    )
+    const registrado = registro === 'REGISTRADO'
+    const certificado = certificacion === 'CERTIFICADO'
+    const vigenciaActual = calcularVigenciaRunt(control)
+    const vencido = registrado && !certificado && vigenciaActual.vencido
+    const dias = vigenciaActual.dias_restantes
+    if (vigencia && normalizarMayusculas(vigencia) !== normalizarMayusculas(vigenciaActual.estado)) return false
+
+    if (pestana === 'pendientes') {
+      if (certificado || (registrado && !vencido)) return false
+      if (estadoGestion === 'no_registrado') return !registrado && resultado === 'NO REGISTRADO'
+      if (estadoGestion === 'vencido') return vencido
+      return true
+    }
+
+    if (!certificado && (!registrado || vencido)) return false
+    if (estadoGestion === 'certificado') return certificado
+    if (estadoGestion === 'por_vencer') {
+      return !certificado && Number.isFinite(dias) && dias >= 0 && dias <= 15
+    }
+    if (estadoGestion === 'en_proceso') {
+      return !certificado && registrado && !vencido &&
+        (!Number.isFinite(dias) || dias > 15)
+    }
+    return true
+  })
+
+  // Orden cronológico por fecha de matrícula, desempate por ID.
+  seleccionados.sort((a, b) => {
+    const ma = mapaMatriculas.get(String(a.matricula_id))
+    const mb = mapaMatriculas.get(String(b.matricula_id))
+    return String(mb?.fecha_matricula || '').localeCompare(String(ma?.fecha_matricula || '')) ||
+      Number(b.matricula_id || 0) - Number(a.matricula_id || 0) ||
+      Number(b.id || 0) - Number(a.id || 0)
+  })
+
+  const total = seleccionados.length
+  const paginaSegura = Math.max(1, Number(pagina) || 1)
+  const cantidad = Math.min(100, Math.max(25, Number(porPagina) || 25))
+  const offset = (paginaSegura - 1) * cantidad
+  const controles = seleccionados.slice(offset, offset + cantidad)
+  if (!controles.length) {
+    return { data: [], total, hay_mas: false }
+  }
 
   // =======================================================
   // CARGUES DEL PROCESO ACTUAL
@@ -2507,6 +2252,10 @@ async function consultarControles({
           es_proceso_actual:
             true,
 
+          historico_certificado:
+            normalizarMayusculas(control.estado_certificacion) === 'CERTIFICADO' &&
+            normalizarMayusculas(control.estado_registro) !== 'REGISTRADO',
+
           puede_gestionar:
             normalizarMayusculas(
               control.resultado_verificacion
@@ -2545,194 +2294,7 @@ async function consultarControles({
       }
     )
 
-  // =======================================================
-  // FILTRO VIGENCIA
-  // =======================================================
-
-  const filtroVigencia =
-    normalizarMayusculas(
-      vigencia
-    )
-
-  if (
-    filtroVigencia
-  ) {
-    resultado =
-      resultado.filter(
-        item => {
-          const estado =
-            normalizarMayusculas(
-              item
-                ?.vigencia
-                ?.estado
-            )
-
-          const dias =
-            item
-              ?.vigencia
-              ?.dias_restantes
-
-          if (
-            filtroVigencia ===
-            'VENCIDO'
-          ) {
-            return (
-              item
-                ?.vigencia
-                ?.vencido ===
-              true
-            )
-          }
-
-          if (
-            filtroVigencia ===
-            'CERTIFICADO'
-          ) {
-            return (
-              estado ===
-              'CERTIFICADO'
-            )
-          }
-
-          if (
-            filtroVigencia ===
-            'VIGENTE'
-          ) {
-            return (
-              item
-                ?.vigencia
-                ?.vigente ===
-              true
-            )
-          }
-
-          if (
-            filtroVigencia ===
-            'PROXIMO'
-          ) {
-            return (
-              Number.isFinite(
-                dias
-              ) &&
-              dias >=
-                0 &&
-              dias <=
-                15
-            )
-          }
-
-          return true
-        }
-      )
-  }
-
-  // =======================================================
-  // ORDEN DE PRIORIDAD
-  // =======================================================
-
-  resultado.sort(
-    (
-      a,
-      b
-    ) => {
-      const diasA =
-        a
-          ?.vigencia
-          ?.dias_restantes
-
-      const diasB =
-        b
-          ?.vigencia
-          ?.dias_restantes
-
-      const certificadoA =
-        normalizarMayusculas(
-          a
-            ?.vigencia
-            ?.estado
-        ) ===
-        'CERTIFICADO'
-
-      const certificadoB =
-        normalizarMayusculas(
-          b
-            ?.vigencia
-            ?.estado
-        ) ===
-        'CERTIFICADO'
-
-      if (
-        certificadoA &&
-        !certificadoB
-      ) {
-        return 1
-      }
-
-      if (
-        !certificadoA &&
-        certificadoB
-      ) {
-        return -1
-      }
-
-      const tieneDiasA =
-        Number.isFinite(
-          diasA
-        )
-
-      const tieneDiasB =
-        Number.isFinite(
-          diasB
-        )
-
-      if (
-        tieneDiasA &&
-        !tieneDiasB
-      ) {
-        return -1
-      }
-
-      if (
-        !tieneDiasA &&
-        tieneDiasB
-      ) {
-        return 1
-      }
-
-      if (
-        tieneDiasA &&
-        tieneDiasB &&
-        diasA !==
-          diasB
-      ) {
-        return (
-          diasA -
-          diasB
-        )
-      }
-
-      return (
-        new Date(
-          b.created_at ||
-          0
-        ).getTime() -
-        new Date(
-          a.created_at ||
-          0
-        ).getTime()
-      )
-    }
-  )
-
-  // El orden de consulta prioriza las matrículas nuevas y no la fecha de
-  // creación de un reproceso posterior. Dentro de cada página se comprueba
-  // además la fecha de matrícula real.
-  resultado.sort((a, b) =>
-    String(b.aprendiz?.fecha_matricula || '').localeCompare(String(a.aprendiz?.fecha_matricula || '')) ||
-    Number(b.matricula_id || 0) - Number(a.matricula_id || 0)
-  )
-
-  return resultado
+  return { data: resultado, total, hay_mas: offset + cantidad < total }
 }
 
 // =========================================================
@@ -3122,7 +2684,7 @@ export async function GET(
       recurso ===
       'consultar'
     ) {
-      const controles =
+      const resultadoConsulta =
         await consultarControles({
           supabase,
 
@@ -3180,13 +2742,13 @@ export async function GET(
           'success',
 
         data:
-          controles,
+          resultadoConsulta.data,
 
         total:
-          controles.length,
+          resultadoConsulta.total,
 
         pagina: Math.max(1, Math.min(10000, toInt(searchParams.get('pagina')) || 1)),
-        hay_mas: controles.length === Math.min(100, Math.max(25, toInt(searchParams.get('por_pagina')) || 25)),
+        hay_mas: resultadoConsulta.hay_mas,
 
         limite:
           Math.min(100, Math.max(25, toInt(searchParams.get('por_pagina')) || 25)),
