@@ -985,7 +985,7 @@ export default function InscripcionesPage() {
       ]
     )
 
-  // Opciones de origen: se incluyen convenios históricos inactivos.
+  // Opciones de origen: la API devuelve solo convenios activos (normalizados).
   const [conveniosOrigen, setConveniosOrigen] = useState([])
   useEffect(() => {
     if (!user) return
