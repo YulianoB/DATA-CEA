@@ -238,6 +238,10 @@ async function consultarConvenios(
         created_at,
         updated_at
       `)
+      .eq(
+        'activo',
+        true
+      )
       .order(
         'nombre',
         {
