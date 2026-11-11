@@ -2865,6 +2865,19 @@ export async function GET(
           control.id
         )
 
+      // Estado SICOV para interfaz; la acción certificar valida de nuevo.
+      const { data: controlesSicov, error: errorSicov } = await supabase
+        .from('control_sicov')
+        .select('estado_certificacion')
+        .eq('matricula_id', control.matricula_id)
+        .eq('categoria', control.categoria)
+      if (errorSicov) {
+        throw new Error('No fue posible consultar SICOV: ' + errorSicov.message)
+      }
+      const sicovCertificado = (controlesSicov || []).some(item =>
+        normalizarMayusculas(item.estado_certificacion) === 'CERTIFICADO'
+      )
+
       return NextResponse.json({
         status:
           'success',
@@ -2893,6 +2906,8 @@ export async function GET(
               : null,
 
           requisitos,
+
+          sicov_certificado: sicovCertificado,
 
           avance,
 
