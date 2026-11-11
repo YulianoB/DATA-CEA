@@ -807,8 +807,8 @@ export default function NuevaInscripcionPage() {
   //
   // resultado:
   //
-  // INSCRITO
-  // NO INSCRITO
+  // REGISTRADO
+  // NO REGISTRADO
   //
   // ==========================================================
 
@@ -5286,7 +5286,7 @@ const guardar =
                           type="button"
                           onClick={() => {
                             setRuntResultado(
-                              'INSCRITO'
+                              'REGISTRADO'
                             )
 
                             clrErr(
@@ -5301,7 +5301,7 @@ const guardar =
                             transition
                             ${
                               runtResultado ===
-                              'INSCRITO'
+                              'REGISTRADO'
                                 ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
                                 : 'border-gray-300 bg-white hover:bg-gray-50'
                             }
@@ -5319,7 +5319,7 @@ const guardar =
                                 justify-center
                                 ${
                                   runtResultado ===
-                                  'INSCRITO'
+                                  'REGISTRADO'
                                     ? 'bg-green-600 text-white'
                                     : 'bg-gray-100 text-gray-500'
                                 }
@@ -5345,7 +5345,7 @@ const guardar =
                           type="button"
                           onClick={() => {
                             setRuntResultado(
-                              'NO INSCRITO'
+                              'NO REGISTRADO'
                             )
 
                             clrErr(
@@ -5360,7 +5360,7 @@ const guardar =
                             transition
                             ${
                               runtResultado ===
-                              'NO INSCRITO'
+                              'NO REGISTRADO'
                                 ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500'
                                 : 'border-gray-300 bg-white hover:bg-gray-50'
                             }
@@ -5378,7 +5378,7 @@ const guardar =
                                 justify-center
                                 ${
                                   runtResultado ===
-                                  'NO INSCRITO'
+                                  'NO REGISTRADO'
                                     ? 'bg-amber-500 text-white'
                                     : 'bg-gray-100 text-gray-500'
                                 }
@@ -5885,7 +5885,7 @@ const guardar =
                         p-2
                         ${
                           runtResultado ===
-                          'INSCRITO'
+                          'REGISTRADO'
                             ? 'bg-green-50 border-green-300'
                             : 'bg-amber-50 border-amber-300'
                         }
@@ -5910,16 +5910,16 @@ const guardar =
                           mt-0.5
                           ${
                             runtResultado ===
-                            'INSCRITO'
+                            'REGISTRADO'
                               ? 'text-green-700'
                               : 'text-amber-700'
                           }
                         `}
                       >
                         {runtResultado ===
-                        'INSCRITO'
-                          ? 'APARECE INSCRITO EN RUNT'
-                          : 'NO APARECE INSCRITO EN RUNT'}
+                        'REGISTRADO'
+                          ? 'APARECE REGISTRADO EN RUNT'
+                          : 'NO APARECE REGISTRADO EN RUNT'}
                       </div>
 
                       <div className="text-[11px] text-gray-600 mt-0.5">
