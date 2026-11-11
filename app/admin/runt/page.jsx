@@ -627,7 +627,8 @@ export default function RuntPage() {
   const [pestana, setPestana] = useState('pendientes')
   const [porPagina, setPorPagina] = useState(25)
   const [confirmarRegistroOpen, setConfirmarRegistroOpen] = useState(false)
-  const [confirmarVerificacionOpen, setConfirmarVerificacionOpen] = useState(false)
+  const [fechaRegistroCola, setFechaRegistroCola] = useState(hoyBogota())
+  const [observacionesRegistroCola, setObservacionesRegistroCola] = useState('')
   const [accionCola, setAccionCola] = useState(null)
   const [filtros, setFiltros] = useState({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
   const categoriasCea = useMemo(() => {
@@ -1894,47 +1895,59 @@ export default function RuntPage() {
     )
   }
 
-  // Acciones rápidas de la primera pestaña, sin abrir el panel de cargues.
+  // Pendientes: únicamente confirmar el registro formal del aprendiz del CEA.
+  // No modificar resultado_verificacion ni marcar consultas ciudadanas aquí.
   function abrirAccionCola(row) {
     if (procesando) return
     if (row.vigencia?.vencido) {
-      abrirDetalle(row) // Reproceso: conserva el historial y las validaciones existentes.
+      abrirDetalle(row) // Conserva el flujo de reprocesos y su historial.
       return
     }
     if (mayusculas(row.estado_certificacion) === 'CERTIFICADO') return
-    const verificado = mayusculas(row.resultado_verificacion) === 'REGISTRADO'
+    if (mayusculas(row.resultado_verificacion) === 'NO REGISTRADO') {
+      setError('El resultado de la matrícula indica NO REGISTRADO en RUNT. No se puede confirmar el registro formal del CEA con ese resultado.')
+      return
+    }
     setError('')
     setMensaje('')
+    setFechaRegistroCola(hoyBogota())
+    setObservacionesRegistroCola('')
     setAccionCola({
       controlId: row.id,
       consecutivo: row.consecutivo,
       aprendiz: row.aprendiz?.nombre_completo || row.documento,
-      tipo: verificado ? 'registro' : 'verificacion',
     })
   }
 
   async function confirmarAccionCola() {
     if (!accionCola || procesando) return
+    if (!fechaRegistroCola || fechaRegistroCola > hoyBogota()) {
+      setAccionCola(null)
+      setError('Indique una fecha de registro RUNT válida y no futura.')
+      return
+    }
+    if (fechaRegistroCola !== hoyBogota() && observacionesRegistroCola.trim().length < 8) {
+      setAccionCola(null)
+      setError('Para una fecha de registro anterior a hoy, indique una observación de al menos 8 caracteres.')
+      return
+    }
     const accion = accionCola
     setProcesando(true)
     setError('')
     setMensaje('')
     try {
       const json = await ejecutarAccion({
-        accion: accion.tipo === 'registro' ? 'registrar_runt' : 'marcar_inscrito',
+        accion: 'registrar_runt',
         control_runt_id: accion.controlId,
-        ...(accion.tipo === 'registro'
-          ? { fecha_registro: hoyBogota() }
-          : {}),
+        fecha_registro: fechaRegistroCola,
+        observaciones: observacionesRegistroCola.trim(),
       })
       setAccionCola(null)
-      setMensaje(json?.message || (accion.tipo === 'registro'
-        ? 'Registro del aprendiz en RUNT confirmado.'
-        : 'Verificación ciudadana actualizada. Ahora puede confirmar el registro del aprendiz en el CEA.'))
+      setMensaje(json?.message || 'Registro formal del aprendiz del CEA en RUNT confirmado.')
       await consultar({ silencioso: true })
     } catch (err) {
       setAccionCola(null)
-      setError(err.message || 'No fue posible completar la operación.')
+      setError(err.message || 'No fue posible confirmar el registro.')
     } finally {
       setProcesando(false)
     }
@@ -1957,68 +1970,6 @@ export default function RuntPage() {
     )
 
     return nuevoDetalle
-  }
-
-  // ==========================================================
-  // MARCAR REGISTRADO
-  // ==========================================================
-
-  async function marcarInscrito() {
-    if (
-      !controlActual?.id
-    ) {
-      return
-    }
-
-    if (!confirmarVerificacionOpen) { setConfirmarVerificacionOpen(true); return }
-    setConfirmarVerificacionOpen(false)
-
-    setProcesando(
-      true
-    )
-
-    setError(
-      ''
-    )
-
-    setMensaje(
-      ''
-    )
-
-    try {
-      const json =
-        await ejecutarAccion({
-          accion:
-            'marcar_inscrito',
-
-          control_runt_id:
-            controlActual.id,
-        })
-
-      setMensaje(
-        json?.message ||
-        'Estado actualizado.'
-      )
-
-      await refrescarDetalle(
-        controlActual.id
-      )
-
-      await consultar({
-        silencioso:
-          true,
-      })
-    } catch (
-      errorAccion
-    ) {
-      setError(
-        errorAccion.message
-      )
-    } finally {
-      setProcesando(
-        false
-      )
-    }
   }
 
   // ==========================================================
@@ -2530,21 +2481,42 @@ export default function RuntPage() {
               onConfirmar={()=>registrarRunt()}
             />
             <ModalResultado
-              abierto={confirmarVerificacionOpen} tipo="confirmacion"
-              titulo="Confirmar verificación ciudadana RUNT"
-              mensaje="¿Confirma que consultó el documento y el ciudadano aparece REGISTRADO en RUNT? Esta verificación no inicia los 90 días."
-              textoBoton="CONFIRMAR VERIFICACIÓN" textoCancelar="CANCELAR"
-              onCerrar={()=>setConfirmarVerificacionOpen(false)}
-              onConfirmar={()=>marcarInscrito()}
-            />
-            <ModalResultado
               abierto={Boolean(accionCola)}
               tipo="confirmacion"
-              titulo={accionCola?.tipo === 'registro' ? 'Confirmar registro del aprendiz en RUNT' : 'Confirmar consulta ciudadana RUNT'}
-              mensaje={accionCola?.tipo === 'registro'
-                ? `¿Confirma que ${accionCola.aprendiz}, matrícula ${accionCola.consecutivo}, fue registrado como aprendiz del CEA ${user?.nombreEmpresa || user?.nombre_empresa || 'correspondiente'} en RUNT el día de hoy? Esta fecha inicia el plazo de 90 días.`
-                : `¿Confirma que consultó nuevamente en RUNT el documento de ${accionCola?.aprendiz || 'este ciudadano'} y que ahora aparece REGISTRADO? Esta operación solo actualiza la verificación ciudadana; NO inicia los 90 días.`}
-              textoBoton={procesando ? 'GUARDANDO...' : (accionCola?.tipo === 'registro' ? 'CONFIRMAR REGISTRO' : 'CONFIRMAR VERIFICACIÓN')}
+              titulo="Confirmar registro en RUNT"
+              mensaje={
+                <div className="space-y-3 text-left">
+                  <p className="text-center text-xs">
+                    ¿Confirma que el ciudadano fue registrado como aprendiz del
+                    {' '}<strong>CEA {user?.nombreEmpresa || user?.nombre_empresa || 'correspondiente'}</strong>{' '}
+                    en la plataforma RUNT?
+                  </p>
+                  <p className="text-center text-xs">
+                    Esta operación iniciará la vigencia de 90 días desde la fecha real del registro indicada.
+                  </p>
+                  <div className="rounded-lg border border-slate-200 p-3 space-y-2">
+                    <p className="text-[11px] font-semibold">
+                      {accionCola?.aprendiz} · Matrícula {accionCola?.consecutivo}
+                    </p>
+                    <label className="block text-[11px] font-semibold">
+                      Fecha real del registro en RUNT
+                      <input type="date" max={hoyBogota()} value={fechaRegistroCola}
+                        onChange={e=>setFechaRegistroCola(e.target.value)}
+                        className="mt-1 block w-full rounded-lg border border-slate-300 p-2 text-xs" />
+                    </label>
+                    {fechaRegistroCola !== hoyBogota() && (
+                      <label className="block text-[11px] font-semibold">
+                        Observaciones de la fecha anterior (obligatorio)
+                        <textarea rows={2} value={observacionesRegistroCola}
+                          onChange={e=>setObservacionesRegistroCola(e.target.value)}
+                          placeholder="Explique el registro efectuado en una fecha anterior"
+                          className="mt-1 block w-full rounded-lg border border-slate-300 p-2 text-xs" />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              }
+              textoBoton={procesando ? 'GUARDANDO...' : 'CONFIRMAR REGISTRO'}
               textoCancelar="CANCELAR"
               onCerrar={()=>{ if (!procesando) setAccionCola(null) }}
               onConfirmar={confirmarAccionCola}
@@ -2838,13 +2810,14 @@ export default function RuntPage() {
 
                             <BotonAccion tipo="verDetalle"
                               type="button"
-                              disabled={procesando}
+                              disabled={procesando || (pestana === 'pendientes' && !row.vigencia?.vencido && mayusculas(row.resultado_verificacion) === 'NO REGISTRADO')}
+                              title={pestana === 'pendientes' && mayusculas(row.resultado_verificacion) === 'NO REGISTRADO' ? 'Resultado ciudadano NO REGISTRADO: no procede el registro formal del CEA' : undefined}
                               onClick={() => pestana === 'pendientes' ? abrirAccionCola(row) : abrirDetalle(row)}
                               className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-3 py-1.5 rounded text-[11px] disabled:opacity-50"
                             >
-                              <i className={`fas ${pestana === 'pendientes' ? (row.vigencia?.vencido ? 'fa-rotate' : mayusculas(row.resultado_verificacion) === 'REGISTRADO' ? 'fa-user-check' : 'fa-check-circle') : 'fa-eye'} mr-1`}></i>
+                              <i className={`fas ${pestana === 'pendientes' ? (row.vigencia?.vencido ? 'fa-rotate' : 'fa-user-check') : 'fa-eye'} mr-1`}></i>
                               {pestana === 'pendientes'
-                                ? (row.vigencia?.vencido ? 'Reproceso' : mayusculas(row.resultado_verificacion) === 'REGISTRADO' ? 'Confirmar registro' : 'Verificar RUNT')
+                                ? (row.vigencia?.vencido ? 'Reproceso' : 'Confirmar registro')
                                 : 'Gestionar'}
                             </BotonAccion>
 
@@ -3835,32 +3808,7 @@ export default function RuntPage() {
 
                     </div>
 
-                    {!inscrito &&
-                      !vencido && (
-                      <BotonAccion tipo="secundario"
-                        type="button"
-                        onClick={
-                          marcarInscrito
-                        }
-                        disabled={
-                          procesando
-                        }
-                        className="
-                          bg-emerald-600
-                          hover:bg-emerald-700
-                          text-white
-                          px-3
-                          py-2
-                          rounded-lg
-                          text-xs
-                          disabled:opacity-50
-                        "
-                      >
-                        <i className="fas fa-check mr-2"></i>
 
-                        Confirmar consulta: REGISTRADO
-                      </BotonAccion>
-                    )}
 
                   </div>
 
@@ -3925,9 +3873,9 @@ export default function RuntPage() {
                         </div>
 
                       </div>
-                    ) : !inscrito ? (
+                    ) : noInscrito ? (
                       <div className="text-xs text-amber-700">
-                        Primero debe confirmar que la consulta ciudadana al RUNT muestra REGISTRADO.
+                        La matrícula tiene resultado ciudadano NO REGISTRADO. No se puede confirmar el registro formal del CEA mientras exista ese resultado.
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -3939,7 +3887,7 @@ export default function RuntPage() {
                             onChange={e => setFechaInscripcionRunt(e.target.value)}/>
                         </label>
                         <label className="text-[11px] font-semibold block">
-                          Soporte / observaciones de la verificación
+                          Observaciones del registro formal RUNT
                           <textarea rows={2}
                             className="block w-full border border-slate-300 rounded p-2 mt-1"
                             placeholder="Obligatorio cuando la fecha de RUNT es anterior a hoy"
