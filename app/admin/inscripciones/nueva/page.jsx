@@ -1794,7 +1794,7 @@ export default function NuevaInscripcionPage() {
         )
 
         toast.warning(
-          'Indique si el aprendiz aparece inscrito o no inscrito en RUNT.'
+          'Indique si la consulta ciudadana del RUNT muestra REGISTRADO o NO REGISTRADO.'
         )
 
         return false
@@ -5330,11 +5330,11 @@ const guardar =
 
                             <div>
                               <div className="text-xs font-bold text-gray-800">
-                                Aparece inscrito
+                                Aparece registrado
                               </div>
 
                               <div className="text-[11px] text-gray-500 mt-1">
-                                El aprendiz figura inscrito en RUNT.
+                                El aprendiz figura registrado en RUNT.
                               </div>
                             </div>
 
@@ -5389,7 +5389,7 @@ const guardar =
 
                             <div>
                               <div className="text-xs font-bold text-gray-800">
-                                No aparece inscrito
+                                No aparece registrado
                               </div>
 
                               <div className="text-[11px] text-gray-500 mt-1">
