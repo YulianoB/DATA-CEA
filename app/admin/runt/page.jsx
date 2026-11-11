@@ -627,6 +627,8 @@ export default function RuntPage() {
   const [pestana, setPestana] = useState('pendientes')
   const [porPagina, setPorPagina] = useState(25)
   const [confirmarRegistroOpen, setConfirmarRegistroOpen] = useState(false)
+  const [confirmarCargueOpen, setConfirmarCargueOpen] = useState(false)
+  const [confirmarCertificacionOpen, setConfirmarCertificacionOpen] = useState(false)
   const [fechaRegistroCola, setFechaRegistroCola] = useState(hoyBogota())
   const [observacionesRegistroCola, setObservacionesRegistroCola] = useState('')
   const [accionCola, setAccionCola] = useState(null)
@@ -2049,10 +2051,8 @@ export default function RuntPage() {
   // REGISTRAR CARGUE
   // ==========================================================
 
-  async function registrarCargue(
-    event
-  ) {
-    event.preventDefault()
+  async function registrarCargue(event, confirmado = false) {
+    event?.preventDefault?.()
 
     if (
       !controlActual?.id
@@ -2129,13 +2129,11 @@ export default function RuntPage() {
       return
     }
 
-    if (
-      !window.confirm(
-        `¿Confirma registrar ${cantidad} clase(s) de ${cargue.tipo_clase}?`
-      )
-    ) {
+    if (!confirmado) {
+      setConfirmarCargueOpen(true)
       return
     }
+    setConfirmarCargueOpen(false)
 
     setProcesando(
       true
@@ -2218,7 +2216,7 @@ export default function RuntPage() {
   // CERTIFICAR
   // ==========================================================
 
-  async function certificar() {
+  async function certificar(confirmado = false) {
     if (
       !controlActual?.id
     ) {
@@ -2245,13 +2243,15 @@ export default function RuntPage() {
       return
     }
 
-    if (
-      !window.confirm(
-        '¿Confirma que esta matrícula ya puede marcarse como CERTIFICADA en RUNT?'
-      )
-    ) {
+    if (!sicovCertificado) {
+      setError('Debe constar SICOV certificado para esta matrícula y categoría.')
       return
     }
+    if (!confirmado) {
+      setConfirmarCertificacionOpen(true)
+      return
+    }
+    setConfirmarCertificacionOpen(false)
 
     setProcesando(
       true
@@ -2481,6 +2481,24 @@ export default function RuntPage() {
               textoBoton="CONFIRMAR REGISTRO" textoCancelar="CANCELAR"
               onCerrar={()=>setConfirmarRegistroOpen(false)}
               onConfirmar={()=>registrarRunt()}
+            />
+            <ModalResultado
+              abierto={confirmarCargueOpen}
+              tipo="confirmacion"
+              titulo="Confirmar cargue de clases en RUNT"
+              mensaje={`¿Confirma el cargue de ${cargue.cantidad_clases} clase(s) de ${cargue.tipo_clase} del ${formatearFecha(cargue.fecha_clase)} con el instructor ${instructorSeleccionado?.nombre_completo || 'seleccionado'} para la matrícula ${controlActual?.consecutivo || ''}?`}
+              textoBoton="CONFIRMAR CARGUE" textoCancelar="CANCELAR"
+              onCerrar={() => { if (!procesando) setConfirmarCargueOpen(false) }}
+              onConfirmar={() => registrarCargue({ preventDefault: () => {} }, true)}
+            />
+            <ModalResultado
+              abierto={confirmarCertificacionOpen}
+              tipo="confirmacion"
+              titulo="Confirmar certificación RUNT"
+              mensaje="¿Confirma que esta matrícula tiene todos los cargues requeridos y que SICOV ya está certificado? Esta acción marcará el proceso como CERTIFICADO en RUNT."
+              textoBoton="CONFIRMAR CERTIFICACIÓN" textoCancelar="CANCELAR"
+              onCerrar={() => { if (!procesando) setConfirmarCertificacionOpen(false) }}
+              onConfirmar={() => certificar(true)}
             />
             <ModalResultado
               abierto={Boolean(accionCola)}
