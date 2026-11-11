@@ -3585,7 +3585,9 @@ export async function GET(
 
     if (recurso === 'origenes') {
       const { data, error } = await supabase.from('convenios')
-        .select('id,nombre').order('nombre', { ascending: true })
+        .select('id,nombre')
+        .eq('activo', true)
+        .order('nombre', { ascending: true })
       if (error) throw new Error('No fue posible consultar los orígenes: ' + error.message)
       return NextResponse.json({ status: 'success', data: data || [] })
     }
