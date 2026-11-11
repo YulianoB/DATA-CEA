@@ -18,6 +18,7 @@ import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import ModalResultado from '@/components/admin/ModalResultado'
 import { BotonAccion, ESTILO_SECCIONES, ESTILO_SECCIONES_SECUNDARIAS, ESTILO_ENCABEZADO_TABLA, ESTILO_CELDAS_TABLA } from '@/components/admin/EstiloModulo'
 import { Route } from 'lucide-react'
+import { createPortal } from 'react-dom'
 
 // ============================================================
 // CONSTANTES
@@ -626,6 +627,7 @@ export default function RuntPage() {
   const [pestana, setPestana] = useState('pendientes')
   const [porPagina, setPorPagina] = useState(25)
   const [confirmarRegistroOpen, setConfirmarRegistroOpen] = useState(false)
+  const [confirmarVerificacionOpen, setConfirmarVerificacionOpen] = useState(false)
   const [filtros, setFiltros] = useState({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
   const categoriasCea = useMemo(() => {
     const nivel=String(user?.nivel_cea||user?.nivelCea||user?.empresa?.nivel_cea||'').toUpperCase()
@@ -1921,13 +1923,8 @@ export default function RuntPage() {
       return
     }
 
-    if (
-      !window.confirm(
-        '¿Confirma que la consulta ciudadana al RUNT muestra REGISTRADO? Esta acción no inicia los 90 días.'
-      )
-    ) {
-      return
-    }
+    if (!confirmarVerificacionOpen) { setConfirmarVerificacionOpen(true); return }
+    setConfirmarVerificacionOpen(false)
 
     setProcesando(
       true
@@ -2475,12 +2472,27 @@ export default function RuntPage() {
             setMensaje('')
           }}
         />
-        <ModalResultado abierto={confirmarRegistroOpen} tipo="confirmacion"
-          titulo="Confirmar registro formal RUNT"
-          mensaje={`¿Confirma que el ciudadano fue registrado como aprendiz del CEA ${user?.nombreEmpresa||user?.nombre_empresa||'correspondiente'} en RUNT con fecha ${fechaInscripcionRunt}? Esta fecha inicia la vigencia de 90 días.`}
-          textoBoton="CONFIRMAR REGISTRO" textoCancelar="CANCELAR"
-          onCerrar={()=>setConfirmarRegistroOpen(false)}
-          onConfirmar={()=>registrarRunt()} />
+        {typeof document !== 'undefined' && createPortal(
+          <>
+            <ModalResultado
+              abierto={confirmarRegistroOpen} tipo="confirmacion"
+              titulo="Confirmar registro formal RUNT"
+              mensaje={`¿Confirma que el ciudadano fue registrado como aprendiz del CEA ${user?.nombreEmpresa || user?.nombre_empresa || 'correspondiente'} en RUNT con fecha ${formatearFecha(fechaInscripcionRunt)}? Esta fecha inicia los 90 días de vigencia.`}
+              textoBoton="CONFIRMAR REGISTRO" textoCancelar="CANCELAR"
+              onCerrar={()=>setConfirmarRegistroOpen(false)}
+              onConfirmar={()=>registrarRunt()}
+            />
+            <ModalResultado
+              abierto={confirmarVerificacionOpen} tipo="confirmacion"
+              titulo="Confirmar verificación ciudadana RUNT"
+              mensaje="¿Confirma que consultó el documento y el ciudadano aparece REGISTRADO en RUNT? Esta verificación no inicia los 90 días."
+              textoBoton="CONFIRMAR VERIFICACIÓN" textoCancelar="CANCELAR"
+              onCerrar={()=>setConfirmarVerificacionOpen(false)}
+              onConfirmar={()=>marcarInscrito()}
+            />
+          </>,
+          document.body
+        )}
 
 
         <div className="mt-4 mb-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(180px,2fr)_minmax(95px,1fr)_minmax(170px,1.5fr)_minmax(120px,1fr)_minmax(120px,1fr)_auto] md:items-center">
@@ -2559,7 +2571,7 @@ export default function RuntPage() {
 
                 <tr>
                   {(pestana === 'pendientes'
-                    ? ['MATRÍCULA','FECHA MATRÍCULA','APRENDIZ','CATEGORÍA','ESTADO','FECHA LÍMITE RUNT','ACCIÓN']
+                    ? ['MATRÍCULA','FECHA MATRÍCULA','APRENDIZ','DOCUMENTO','CATEGORÍA','RESULTADO RUNT','ORIGEN','ACCIÓN']
                     : ['MATRÍCULA','APRENDIZ','CATEGORÍA','PROCESO','VIGENCIA','TEORÍA','TALLER','PRÁCTICA','CERTIFICACIÓN','ACCIÓN']
                   ).map(titulo => (
                     <th key={titulo} className="border p-2 bg-[#CEFAFE] text-[#263746]"
@@ -2577,7 +2589,7 @@ export default function RuntPage() {
                   <tr>
 
                     <td
-                      colSpan={pestana === "pendientes" ? 7 : 10}
+                      colSpan={pestana === "pendientes" ? 8 : 10}
                       className="p-8 text-center text-gray-500"
                      style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       Consultando...
@@ -2589,7 +2601,7 @@ export default function RuntPage() {
                   <tr>
 
                     <td
-                      colSpan={pestana === "pendientes" ? 7 : 10}
+                      colSpan={pestana === "pendientes" ? 8 : 10}
                       className="p-8 text-center text-gray-500"
                      style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       {consultado
@@ -2636,13 +2648,16 @@ export default function RuntPage() {
                                 '-'}
                             </div>
 
-                            <div className="text-[10px] text-gray-500">
-                              {formatearDocumento(
-                                row.documento
-                              )}
-                            </div>
+
 
                           </td>
+
+                          {pestana === 'pendientes' && (
+                            <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
+                              <span className="font-semibold">{row.aprendiz?.tipo_doc || '-'}</span>
+                              {' '}{formatearDocumento(row.documento)}
+                            </td>
+                          )}
 
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
@@ -2662,21 +2677,25 @@ export default function RuntPage() {
 
                           {pestana === 'pendientes' && (
                             <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
-                              {row.vigencia?.vencido ? (
-                                <Badge tipo="red">VENCIDO</Badge>
+                              {mayusculas(row.resultado_verificacion) === 'REGISTRADO' ? (
+                                <Badge tipo="green">REGISTRADO</Badge>
                               ) : mayusculas(row.resultado_verificacion) === 'NO REGISTRADO' ? (
                                 <Badge tipo="red">NO REGISTRADO</Badge>
-                              ) : mayusculas(row.resultado_verificacion) === 'REGISTRADO' ? (
-                                <Badge tipo="yellow">PENDIENTE</Badge>
                               ) : (
                                 <Badge tipo="yellow">SIN VERIFICAR</Badge>
                               )}
+                              {row.vigencia?.vencido && (
+                                <div className="mt-1"><Badge tipo="red">VENCIDO</Badge></div>
+                              )}
+                            </td>
+                          )}
                             </td>
                           )}
 
                           {pestana === 'pendientes' && (
                             <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
-                              {row.vigencia?.fecha_limite ? formatearFecha(row.vigencia.fecha_limite) : '—'}
+                              <div className="font-semibold">{row.aprendiz?.nombre_origen || '-'}</div>
+                              <div className="text-[10px] text-slate-500">{row.aprendiz?.tipo_origen || '-'}</div>
                             </td>
                           )}
 
