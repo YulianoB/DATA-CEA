@@ -628,6 +628,7 @@ export default function RuntPage() {
   const [porPagina, setPorPagina] = useState(25)
   const [confirmarRegistroOpen, setConfirmarRegistroOpen] = useState(false)
   const [confirmarVerificacionOpen, setConfirmarVerificacionOpen] = useState(false)
+  const [accionCola, setAccionCola] = useState(null)
   const [filtros, setFiltros] = useState({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
   const categoriasCea = useMemo(() => {
     const nivel=String(user?.nivel_cea||user?.nivelCea||user?.empresa?.nivel_cea||'').toUpperCase()
@@ -1893,6 +1894,52 @@ export default function RuntPage() {
     )
   }
 
+  // Acciones rápidas de la primera pestaña, sin abrir el panel de cargues.
+  function abrirAccionCola(row) {
+    if (procesando) return
+    if (row.vigencia?.vencido) {
+      abrirDetalle(row) // Reproceso: conserva el historial y las validaciones existentes.
+      return
+    }
+    if (mayusculas(row.estado_certificacion) === 'CERTIFICADO') return
+    const verificado = mayusculas(row.resultado_verificacion) === 'REGISTRADO'
+    setError('')
+    setMensaje('')
+    setAccionCola({
+      controlId: row.id,
+      consecutivo: row.consecutivo,
+      aprendiz: row.aprendiz?.nombre_completo || row.documento,
+      tipo: verificado ? 'registro' : 'verificacion',
+    })
+  }
+
+  async function confirmarAccionCola() {
+    if (!accionCola || procesando) return
+    const accion = accionCola
+    setProcesando(true)
+    setError('')
+    setMensaje('')
+    try {
+      const json = await ejecutarAccion({
+        accion: accion.tipo === 'registro' ? 'registrar_runt' : 'marcar_inscrito',
+        control_runt_id: accion.controlId,
+        ...(accion.tipo === 'registro'
+          ? { fecha_registro: hoyBogota() }
+          : {}),
+      })
+      setAccionCola(null)
+      setMensaje(json?.message || (accion.tipo === 'registro'
+        ? 'Registro del aprendiz en RUNT confirmado.'
+        : 'Verificación ciudadana actualizada. Ahora puede confirmar el registro del aprendiz en el CEA.'))
+      await consultar({ silencioso: true })
+    } catch (err) {
+      setAccionCola(null)
+      setError(err.message || 'No fue posible completar la operación.')
+    } finally {
+      setProcesando(false)
+    }
+  }
+
   // ==========================================================
   // REFRESCAR DETALLE + HISTORIAL
   // ==========================================================
@@ -2490,6 +2537,18 @@ export default function RuntPage() {
               onCerrar={()=>setConfirmarVerificacionOpen(false)}
               onConfirmar={()=>marcarInscrito()}
             />
+            <ModalResultado
+              abierto={Boolean(accionCola)}
+              tipo="confirmacion"
+              titulo={accionCola?.tipo === 'registro' ? 'Confirmar registro del aprendiz en RUNT' : 'Confirmar consulta ciudadana RUNT'}
+              mensaje={accionCola?.tipo === 'registro'
+                ? `¿Confirma que ${accionCola.aprendiz}, matrícula ${accionCola.consecutivo}, fue registrado como aprendiz del CEA ${user?.nombreEmpresa || user?.nombre_empresa || 'correspondiente'} en RUNT el día de hoy? Esta fecha inicia el plazo de 90 días.`
+                : `¿Confirma que consultó nuevamente en RUNT el documento de ${accionCola?.aprendiz || 'este ciudadano'} y que ahora aparece REGISTRADO? Esta operación solo actualiza la verificación ciudadana; NO inicia los 90 días.`}
+              textoBoton={procesando ? 'GUARDANDO...' : (accionCola?.tipo === 'registro' ? 'CONFIRMAR REGISTRO' : 'CONFIRMAR VERIFICACIÓN')}
+              textoCancelar="CANCELAR"
+              onCerrar={()=>{ if (!procesando) setAccionCola(null) }}
+              onConfirmar={confirmarAccionCola}
+            />
           </>,
           document.body
         )}
@@ -2779,24 +2838,14 @@ export default function RuntPage() {
 
                             <BotonAccion tipo="verDetalle"
                               type="button"
-                              onClick={() =>
-                                abrirDetalle(
-                                  row
-                                )
-                              }
-                              className="
-                                bg-[var(--primary)]
-                                hover:bg-[var(--primary-dark)]
-                                text-white
-                                px-3
-                                py-1.5
-                                rounded
-                                text-[11px]
-                              "
+                              disabled={procesando}
+                              onClick={() => pestana === 'pendientes' ? abrirAccionCola(row) : abrirDetalle(row)}
+                              className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-3 py-1.5 rounded text-[11px] disabled:opacity-50"
                             >
-                              <i className="fas fa-eye mr-1"></i>
-
-                              Gestionar
+                              <i className={`fas ${pestana === 'pendientes' ? (row.vigencia?.vencido ? 'fa-rotate' : mayusculas(row.resultado_verificacion) === 'REGISTRADO' ? 'fa-user-check' : 'fa-check-circle') : 'fa-eye'} mr-1`}></i>
+                              {pestana === 'pendientes'
+                                ? (row.vigencia?.vencido ? 'Reproceso' : mayusculas(row.resultado_verificacion) === 'REGISTRADO' ? 'Confirmar registro' : 'Verificar RUNT')
+                                : 'Gestionar'}
                             </BotonAccion>
 
                           </td>
