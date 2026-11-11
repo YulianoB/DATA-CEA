@@ -2026,7 +2026,7 @@ export default function RuntPage() {
 
     if (
       !window.confirm(
-        '¿Confirma que el aprendiz ya aparece REGISTRADO en RUNT?'
+        '¿Confirma que la consulta ciudadana al RUNT muestra REGISTRADO? Esta acción no inicia los 90 días.'
       )
     ) {
       return
@@ -2101,7 +2101,7 @@ export default function RuntPage() {
     }
     if (
       !window.confirm(
-        '¿Confirma que el aprendiz fue REGISTRADO realmente en RUNT en la fecha indicada y cuenta con soporte verificable?'
+        '¿Confirma que el CEA realizó el registro formal del proceso en RUNT en la fecha indicada? Esta fecha inicia el plazo de 90 días.'
       )
     ) {
       return
@@ -2789,11 +2789,11 @@ export default function RuntPage() {
                   </option>
 
                   <option value="REGISTRADO">
-                    Inscrito
+                    Registrado
                   </option>
 
                   <option value="NO REGISTRADO">
-                    No inscrito
+                    No registrado
                   </option>
 
                   <option value="PENDIENTE">
@@ -4290,7 +4290,7 @@ export default function RuntPage() {
                       >
                         <i className="fas fa-check mr-2"></i>
 
-                        Marcar como REGISTRADO
+                        Confirmar consulta: REGISTRADO
                       </BotonAccion>
                     )}
 
