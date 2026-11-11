@@ -1782,30 +1782,15 @@ export default function NuevaInscripcionPage() {
   // VALIDAR RUNT
   // ==========================================================
 
-  const validarRunt =
-    () => {
-      if (
-        runtConsultado &&
-        !runtResultado
-      ) {
-        setErr(
-          'runtResultado',
-          'Seleccione el resultado de la consulta RUNT.'
-        )
-
-        toast.warning(
-          'Indique si la consulta ciudadana del RUNT muestra REGISTRADO o NO REGISTRADO.'
-        )
-
-        return false
-      }
-
-      clrErr(
-        'runtResultado'
-      )
-
-      return true
+  const validarRunt = () => {
+    if (!['REGISTRADO', 'NO REGISTRADO'].includes(runtResultado)) {
+      setErr('runtResultado', 'Debe consultar el RUNT y seleccionar un resultado.')
+      toast.warning('La consulta ciudadana del RUNT es obligatoria.')
+      return false
     }
+    clrErr('runtResultado')
+    return true
+  }
 
   // ==========================================================
   // NORMALIZAR PARA GUARDAR
@@ -3187,24 +3172,16 @@ const guardar =
           // =================================================
 
           runt_estado_verificacion:
-            runtConsultado
-              ? 'VERIFICADO'
-              : 'PENDIENTE',
+            runtResultado ? 'VERIFICADO' : 'PENDIENTE',
 
           runt_resultado_verificacion:
-            runtConsultado
-              ? runtResultado
-              : null,
+            runtResultado || null,
 
           runt_usuario_verificacion:
-            runtConsultado
-              ? nombreUsuario(
-                  user
-                )
-              : '',
+            runtResultado ? nombreUsuario(user) : '',
 
           runt_verificado:
-            runtConsultado,
+            Boolean(runtResultado),
 
           // =================================================
           // INFORMACIÓN FINANCIERA
@@ -5208,77 +5185,10 @@ const guardar =
                     encargado del Control RUNT.
                   </div>
 
-                  <label
-                    className="
-                      flex
-                      items-center
-                      gap-2
-                      text-xs
-                      font-semibold
-                      cursor-pointer
-                    "
-                  >
-                    <input
-                      type="checkbox"
-                      checked={
-                        runtConsultado
-                      }
-                      onChange={
-                        event => {
-                          const checked =
-                            event
-                              .target
-                              .checked
-
-                          setRuntConsultado(
-                            checked
-                          )
-
-                          if (
-                            !checked
-                          ) {
-                            setRuntResultado(
-                              ''
-                            )
-
-                            clrErr(
-                              'runtResultado'
-                            )
-                          }
-                        }
-                      }
-                      className="w-4 h-4"
-                    />
-
-                    Ya realicé la consulta del aprendiz en RUNT
-                  </label>
-
-                  {!runtConsultado && (
-                    <div
-                      className="
-                        mt-3
-                        bg-amber-50
-                        border
-                        border-amber-200
-                        rounded-lg
-                        p-3
-                        text-xs
-                        text-amber-800
-                      "
-                    >
-                      <i className="fas fa-exclamation-triangle mr-2"></i>
-
-                      Si continúa sin realizar la consulta, el Control RUNT quedará en estado
-                      <strong> PENDIENTE</strong>.
-                    </div>
-                  )}
-
-                  {runtConsultado && (
-                    <div className="mt-4">
-
-                      <label className="block text-[11px] font-semibold mb-2">
-                        Resultado de la consulta
-                      </label>
+                  <div className="mt-3">
+                    <label className="block text-[11px] font-semibold mb-2">
+                      Resultado de la consulta RUNT (obligatorio)
+                    </label>
 
                       <div className="grid grid-cols-1 gap-3">
 
@@ -5403,13 +5313,10 @@ const guardar =
                       </div>
 
                       <FieldError
-                        msg={
-                          errors.runtResultado
-                        }
+                        msg={errors.runtResultado}
                       />
 
                     </div>
-                  )}
 
                 </div>
               </div>
@@ -5877,7 +5784,7 @@ const guardar =
 
                 <div className="p-2">
 
-                  {runtConsultado ? (
+                  {runtResultado ? (
                     <div
                       className={`
                         border
