@@ -3291,66 +3291,23 @@ export default function RuntPage() {
                               Tipo
                             </label>
 
-                            <select
-                              name="tipo_clase"
-                              value={
-                                cargue.tipo_clase
-                              }
-                              onChange={
-                                cambiarCargue
-                              }
-                              className="
-                                w-full
-                                border
-                                border-gray-300
-                                rounded-lg
-                                px-2
-                                py-2
-                                text-xs
-                              "
-                            >
-
-                              {TIPOS_CLASE.map(
-                                item => {
-                                  const tallerNoAplica =
-                                    item.value ===
-                                      'TALLER' &&
-                                    tallerRequeridas ===
-                                      0
-
-                                  const practicaBloqueada =
-                                    item.value ===
-                                      'PRACTICA' &&
-                                    !practicaHabilitadaUI
-
-                                  return (
-                                    <option
-                                      key={
-                                        item.value
-                                      }
-                                      value={
-                                        item.value
-                                      }
-                                      disabled={
-                                        tallerNoAplica ||
-                                        practicaBloqueada
-                                      }
-                                    >
-                                      {item.label}
-
-                                      {tallerNoAplica
-                                        ? ' — No aplica'
-                                        : ''}
-
-                                      {practicaBloqueada
-                                        ? ' — Bloqueada'
-                                        : ''}
-                                    </option>
-                                  )
-                                }
-                              )}
-
-                            </select>
+                            <div role="group" aria-label="Tipo de clase" className="flex flex-wrap gap-1">
+                              {TIPOS_CLASE.map(item => {
+                                const noAplica = item.value === 'TALLER' && tallerRequeridas === 0
+                                const bloqueada = item.value === 'PRACTICA' && !practicaHabilitadaUI
+                                const activo = cargue.tipo_clase === item.value
+                                return (
+                                  <button key={item.value} type="button"
+                                    disabled={noAplica || bloqueada}
+                                    aria-pressed={activo}
+                                    onClick={() => cambiarCargue({ target: { name: 'tipo_clase', value: item.value } })}
+                                    className={`rounded-lg border px-3 py-2 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${activo ? 'border-blue-700 bg-blue-700 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-blue-50'}`}>
+                                    {item.label}
+                                    {noAplica ? ' · No aplica' : bloqueada ? ' · Bloqueada' : ''}
+                                  </button>
+                                )
+                              })}
+                            </div>
 
                           </div>
 
