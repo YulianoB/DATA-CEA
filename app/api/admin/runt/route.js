@@ -2865,6 +2865,20 @@ export async function GET(
           control.id
         )
 
+      // Solo para la interfaz: la API de certificación vuelve a comprobar
+      // SICOV antes de efectuar cualquier cambio en RUNT.
+      const { data: estadosSicov, error: errorSicov } = await supabase
+        .from('control_sicov')
+        .select('estado_certificacion')
+        .eq('matricula_id', control.matricula_id)
+        .eq('categoria', control.categoria)
+      if (errorSicov) {
+        throw new Error('No fue posible consultar SICOV: ' + errorSicov.message)
+      }
+      const sicovCertificado = (estadosSicov || []).some(item =>
+        normalizarMayusculas(item.estado_certificacion) === 'CERTIFICADO'
+      )
+
       return NextResponse.json({
         status:
           'success',
@@ -2893,6 +2907,8 @@ export async function GET(
               : null,
 
           requisitos,
+
+          sicov_certificado: sicovCertificado,
 
           avance,
 
