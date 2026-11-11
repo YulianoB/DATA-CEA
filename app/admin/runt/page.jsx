@@ -1668,14 +1668,14 @@ export default function RuntPage() {
       controlActual
         ?.resultado_verificacion
     ) ===
-    'INSCRITO'
+    'REGISTRADO'
 
   const noInscrito =
     mayusculas(
       controlActual
         ?.resultado_verificacion
     ) ===
-    'NO INSCRITO'
+    'NO REGISTRADO'
 
   const registrado =
     mayusculas(
@@ -2014,7 +2014,7 @@ export default function RuntPage() {
   }
 
   // ==========================================================
-  // MARCAR INSCRITO
+  // MARCAR REGISTRADO
   // ==========================================================
 
   async function marcarInscrito() {
@@ -2026,7 +2026,7 @@ export default function RuntPage() {
 
     if (
       !window.confirm(
-        '¿Confirma que el aprendiz ya aparece INSCRITO en RUNT?'
+        '¿Confirma que el aprendiz ya aparece REGISTRADO en RUNT?'
       )
     ) {
       return
@@ -2101,7 +2101,7 @@ export default function RuntPage() {
     }
     if (
       !window.confirm(
-        '¿Confirma que el aprendiz fue INSCRITO realmente en RUNT en la fecha indicada y cuenta con soporte verificable?'
+        '¿Confirma que el aprendiz fue REGISTRADO realmente en RUNT en la fecha indicada y cuenta con soporte verificable?'
       )
     ) {
       return
@@ -2788,11 +2788,11 @@ export default function RuntPage() {
                     Todas
                   </option>
 
-                  <option value="INSCRITO">
+                  <option value="REGISTRADO">
                     Inscrito
                   </option>
 
-                  <option value="NO INSCRITO">
+                  <option value="NO REGISTRADO">
                     No inscrito
                   </option>
 
@@ -4235,11 +4235,11 @@ export default function RuntPage() {
 
                           {inscrito ? (
                             <Badge tipo="green">
-                              INSCRITO
+                              REGISTRADO
                             </Badge>
                           ) : noInscrito ? (
                             <Badge tipo="red">
-                              NO INSCRITO
+                              NO REGISTRADO
                             </Badge>
                           ) : (
                             <Badge tipo="yellow">
@@ -4290,7 +4290,7 @@ export default function RuntPage() {
                       >
                         <i className="fas fa-check mr-2"></i>
 
-                        Marcar como INSCRITO
+                        Marcar como REGISTRADO
                       </BotonAccion>
                     )}
 
@@ -4359,7 +4359,7 @@ export default function RuntPage() {
                       </div>
                     ) : !inscrito ? (
                       <div className="text-xs text-amber-700">
-                        Primero debe confirmar que el aprendiz aparece INSCRITO.
+                        Primero debe confirmar que el aprendiz aparece REGISTRADO.
                       </div>
                     ) : (
                       <div className="space-y-2">
