@@ -3113,6 +3113,15 @@ export async function POST(
           supabase,
           controlRuntId
         )
+      // Los certificados históricos son solo de consulta. No se debe
+      // inventar retroactivamente un registro o verificación oficial.
+      if (normalizarMayusculas(control.estado_certificacion) === 'CERTIFICADO') {
+        return NextResponse.json({
+          status: 'error',
+          message: 'El proceso ya está certificado. Su historial se conserva sin modificar.'
+        }, { status: 409 })
+      }
+
 
       const {
         data,
@@ -3202,6 +3211,15 @@ export async function POST(
           supabase,
           controlRuntId
         )
+      // Los certificados históricos son solo de consulta. No se debe
+      // inventar retroactivamente un registro o verificación oficial.
+      if (normalizarMayusculas(control.estado_certificacion) === 'CERTIFICADO') {
+        return NextResponse.json({
+          status: 'error',
+          message: 'El proceso ya está certificado. Su historial se conserva sin modificar.'
+        }, { status: 409 })
+      }
+
 
       if (
         normalizarMayusculas(
