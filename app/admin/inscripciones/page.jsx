@@ -252,11 +252,11 @@ function obtenerEstadoRunt(
 
   if (
     verificacion ===
-    'NO INSCRITO'
+    'NO REGISTRADO'
   ) {
     return {
       estado:
-        'NO INSCRITO',
+        'NO REGISTRADO',
 
       tipo:
         'red',
@@ -268,11 +268,11 @@ function obtenerEstadoRunt(
 
   if (
     verificacion ===
-    'INSCRITO'
+    'REGISTRADO'
   ) {
     return {
       estado:
-        'INSCRITO',
+        'REGISTRADO',
 
       tipo:
         'yellow',
