@@ -2603,7 +2603,7 @@ export default function RuntPage() {
                 <tr>
                   {(pestana === 'pendientes'
                     ? ['MATRÍCULA','FECHA MATRÍCULA','APRENDIZ','DOCUMENTO','CATEGORÍA','RESULTADO RUNT','ORIGEN','ACCIÓN']
-                    : ['MATRÍCULA','APRENDIZ','CATEGORÍA','PROCESO','VIGENCIA','TEORÍA','TALLER','PRÁCTICA','CERTIFICACIÓN','ACCIÓN']
+                    : ['MATRÍCULA','FECHA MATRÍCULA','APRENDIZ','DOCUMENTO','CATEGORÍA','ORIGEN','VIGENCIA','TEORÍA','TALLER','PRÁCTICA','CERTIFICACIÓN','ACCIÓN']
                   ).map(titulo => (
                     <th key={titulo} className="border p-2 bg-[#CEFAFE] text-[#263746]"
                       style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
@@ -2620,7 +2620,7 @@ export default function RuntPage() {
                   <tr>
 
                     <td
-                      colSpan={pestana === "pendientes" ? 8 : 10}
+                      colSpan={pestana === "pendientes" ? 8 : 12}
                       className="p-8 text-center text-gray-500"
                      style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       Consultando...
@@ -2632,7 +2632,7 @@ export default function RuntPage() {
                   <tr>
 
                     <td
-                      colSpan={pestana === "pendientes" ? 8 : 10}
+                      colSpan={pestana === "pendientes" ? 8 : 12}
                       className="p-8 text-center text-gray-500"
                      style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       {consultado
@@ -2665,11 +2665,9 @@ export default function RuntPage() {
                               '-'}
                           </td>
 
-                          {pestana === 'pendientes' && (
-                            <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
-                              {formatearFecha(row.aprendiz?.fecha_matricula)}
-                            </td>
-                          )}
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
+                            {formatearFecha(row.aprendiz?.fecha_matricula)}
+                          </td>
 
                           <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
@@ -2678,17 +2676,20 @@ export default function RuntPage() {
                                 ?.nombre_completo ||
                                 '-'}
                             </div>
+                            {pestana === 'registrados' && Number(row.numero_proceso || 1) > 1 && (
+                              <div className="mt-1 text-[10px] font-semibold text-blue-700">
+                                Proceso #{row.numero_proceso}
+                              </div>
+                            )}
 
 
 
                           </td>
 
-                          {pestana === 'pendientes' && (
-                            <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
-                              <span className="font-semibold">{row.aprendiz?.tipo_doc || '-'}</span>
-                              {' '}{formatearDocumento(row.documento)}
-                            </td>
-                          )}
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
+                            <span className="font-semibold">{row.aprendiz?.tipo_doc || '-'}</span>
+                            {' '}{formatearDocumento(row.documento)}
+                          </td>
 
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
@@ -2699,12 +2700,7 @@ export default function RuntPage() {
 
                           </td>
 
-                          {pestana === 'registrados' && (
-                          <td className="p-2 border text-center font-semibold" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                            #{row.numero_proceso ||
-                              1}
-                          </td>
-                          )}
+
 
                           {pestana === 'pendientes' && (
                             <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
@@ -2721,12 +2717,10 @@ export default function RuntPage() {
                             </td>
                           )}
 
-                          {pestana === 'pendientes' && (
-                            <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
-                              <div className="font-semibold">{row.aprendiz?.nombre_origen || '-'}</div>
-                              <div className="text-[10px] text-slate-500">{row.aprendiz?.tipo_origen || '-'}</div>
-                            </td>
-                          )}
+                          <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
+                            <div className="font-semibold">{row.aprendiz?.nombre_origen || '-'}</div>
+                            <div className="text-[10px] text-slate-500">{row.aprendiz?.tipo_origen || '-'}</div>
+                          </td>
 
                           {pestana === 'registrados' && (
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
