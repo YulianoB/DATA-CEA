@@ -1431,6 +1431,8 @@ export default function RuntPage() {
     detalle?.vigencia ||
     {}
 
+  const sicovCertificado = detalle?.sicov_certificado === true
+
   const notificaciones =
     Array.isArray(
       detalle?.notificaciones
@@ -4642,6 +4644,16 @@ export default function RuntPage() {
 
                   <div className="p-3">
 
+                    <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2 text-[11px]">
+                      <div className={`rounded-lg border p-2 ${procesoCompleto ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
+                        <i className={`fas ${procesoCompleto ? 'fa-check-circle' : 'fa-clock'} mr-1`}></i>
+                        Cargues: {procesoCompleto ? 'Completos' : 'Pendientes'}
+                      </div>
+                      <div className={`rounded-lg border p-2 ${sicovCertificado ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
+                        <i className={`fas ${sicovCertificado ? 'fa-check-circle' : 'fa-clock'} mr-1`}></i>
+                        SICOV: {sicovCertificado ? 'Certificado' : 'Pendiente de certificación'}
+                      </div>
+                    </div>
                     {certificado ? (
                       <div
                         className="
@@ -4697,6 +4709,10 @@ export default function RuntPage() {
                         "
                       >
                         Primero debe registrar al aprendiz en RUNT.
+                      </div>
+                    ) : !sicovCertificado ? (
+                      <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+                        Primero debe figurar CERTIFICADO en SICOV para esta matrícula y categoría.
                       </div>
                     ) : !procesoCompleto ? (
                       <div
