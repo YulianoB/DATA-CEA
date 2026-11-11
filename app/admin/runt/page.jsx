@@ -4359,7 +4359,7 @@ export default function RuntPage() {
                       </div>
                     ) : !inscrito ? (
                       <div className="text-xs text-amber-700">
-                        Primero debe confirmar que el aprendiz aparece REGISTRADO.
+                        Primero debe confirmar que la consulta ciudadana al RUNT muestra REGISTRADO.
                       </div>
                     ) : (
                       <div className="space-y-2">
