@@ -1601,6 +1601,18 @@ export default function RuntPage() {
       ?.vencido ===
     true
 
+  // Vigencia operativa de 90 días: cálculo desde el saldo que entrega
+  // la API, sin volver a interpretar fechas ni cambiar sus reglas.
+  const diasRestantesRunt = Number(vigenciaActual?.dias_restantes)
+  const vigenciaConPlazo = vigenciaActual?.dias_restantes != null &&
+    Number.isFinite(diasRestantesRunt)
+  const diasTranscurridosRunt = vigenciaConPlazo
+    ? Math.max(0, Math.min(90, 90 - diasRestantesRunt))
+    : null
+  const porcentajeVigenciaRunt = diasTranscurridosRunt == null
+    ? 0
+    : Math.round(diasTranscurridosRunt * 100 / 90)
+
   // ==========================================================
   // INSTRUCTORES
   // ==========================================================
@@ -3046,68 +3058,50 @@ export default function RuntPage() {
 
                     <div className="p-3">
 
-                      <div
-                        className="
-                          grid
-                          grid-cols-2
-                          sm:grid-cols-4
-                          gap-3
-                          text-xs
-                        "
-                      >
-
+                      <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
                         <div>
-                          <span className="text-gray-500">
-                            Registro
-                          </span>
-
+                          <span className="text-gray-500">Registro</span>
                           <div className="font-semibold">
-                            {formatearFecha(
-                              vigenciaActual
-                                ?.fecha_registro
-                            )}
+                            {formatearFecha(vigenciaActual?.fecha_registro)}
                           </div>
                         </div>
-
                         <div>
-                          <span className="text-gray-500">
-                            Fecha límite
-                          </span>
-
+                          <span className="text-gray-500">Fecha límite</span>
                           <div className="font-semibold">
-                            {formatearFecha(
-                              vigenciaActual
-                                ?.fecha_limite
-                            )}
+                            {formatearFecha(vigenciaActual?.fecha_limite)}
                           </div>
                         </div>
+                      </div>
 
-                        <div>
-                          <span className="text-gray-500">
-                            Días restantes
-                          </span>
-
-                          <div className="font-bold">
-                            {vigenciaActual
-                              ?.dias_restantes ??
-                              '-'}
-                          </div>
+                      <div className="mt-4 space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <span className="font-semibold text-slate-700">Tiempo transcurrido</span>
+                          {vigenciaConPlazo ? (
+                            <span className={`font-bold ${vencido ? 'text-red-700' : diasRestantesRunt <= 15 ? 'text-amber-700' : 'text-blue-700'}`}>
+                              {diasTranscurridosRunt} de 90 días
+                              <span className="ml-2 font-normal text-slate-500">
+                                {vencido ? '· Plazo vencido' : `· ${Math.max(0, diasRestantesRunt)} restantes`}
+                              </span>
+                            </span>
+                          ) : (
+                            <BadgeVigencia vigencia={vigenciaActual} />
+                          )}
                         </div>
-
-                        <div>
-                          <span className="text-gray-500">
-                            Estado
-                          </span>
-
-                          <div className="mt-1">
-                            <BadgeVigencia
-                              vigencia={
-                                vigenciaActual
-                              }
+                        {vigenciaConPlazo ? (
+                          <div role="progressbar" aria-label="Tiempo transcurrido de la vigencia RUNT"
+                            aria-valuemin={0} aria-valuemax={90}
+                            aria-valuenow={diasTranscurridosRunt}
+                            className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${vencido ? 'bg-red-600' : diasRestantesRunt <= 15 ? 'bg-amber-500' : 'bg-blue-600'}`}
+                              style={{ width: `${porcentajeVigenciaRunt}%` }}
                             />
                           </div>
-                        </div>
-
+                        ) : (
+                          <p className="text-[11px] text-slate-500">
+                            {certificado ? 'Proceso certificado. Seguimiento de vigencia finalizado.' : 'Sin plazo de vigencia disponible.'}
+                          </p>
+                        )}
                       </div>
 
                       {vencido && (
