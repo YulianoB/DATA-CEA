@@ -179,35 +179,9 @@ function formatearFecha(
   return `${day}/${month}/${year}`
 }
 
-function formatearDocumento(
-  valor
-) {
-  const limpio =
-    String(
-      valor ||
-      ''
-    ).replace(
-      /\D/g,
-      ''
-    )
-
-  if (
-    !limpio
-  ) {
-    return '-'
-  }
-
-  try {
-    return new Intl.NumberFormat(
-      'es-CO'
-    ).format(
-      Number(
-        limpio
-      )
-    )
-  } catch {
-    return valor
-  }
+function formatearDocumento(valor) {
+  const documento = String(valor ?? '').replace(/\D/g, '')
+  return documento || '-'
 }
 
 function porcentaje(
@@ -666,6 +640,7 @@ export default function RuntPage() {
   // LISTADO
   // ==========================================================
   const [paginaRunt, setPaginaRunt] = useState(1)
+  const [totalRegistros, setTotalRegistros] = useState(0)
   const [hayMasRunt, setHayMasRunt] = useState(false)
 
   const [
@@ -979,6 +954,7 @@ export default function RuntPage() {
             )
 
           setHayMasRunt(Boolean(json?.hay_mas))
+          setTotalRegistros(Number(json?.total || 0))
           setControles(
             Array.isArray(
               json?.data
@@ -995,6 +971,7 @@ export default function RuntPage() {
 
           setControles([])
           setHayMasRunt(false)
+          setTotalRegistros(0)
           setError(errorConsulta.message || 'Error al consultar Control RUNT.')
         } finally {
           setLoading(
@@ -2506,7 +2483,7 @@ export default function RuntPage() {
           onConfirmar={()=>registrarRunt()} />
 
 
-        <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(180px,2fr)_minmax(95px,1fr)_minmax(170px,1.5fr)_minmax(120px,1fr)_minmax(120px,1fr)_auto] md:items-center">
+        <div className="mt-4 mb-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(180px,2fr)_minmax(95px,1fr)_minmax(170px,1.5fr)_minmax(120px,1fr)_minmax(120px,1fr)_auto] md:items-center">
           <input type="text" name="q" aria-label="Buscar matrícula o documento" value={filtros.q}
             onChange={cambiarFiltro} placeholder="Matrícula o documento..."
             className="h-10 min-w-0 w-full rounded-lg border border-slate-300 px-3 text-xs" />
@@ -2534,7 +2511,9 @@ export default function RuntPage() {
             min={filtros.fecha_inicio||undefined} value={filtros.fecha_fin} onChange={cambiarFiltro}
             className="h-10 min-w-0 w-full rounded-lg border border-slate-300 px-2 text-xs" />
           <BotonAccion tipo="limpiar" type="button" onClick={limpiarFiltros}
-            className="h-10 whitespace-nowrap rounded-lg px-3 text-xs">Limpiar</BotonAccion>
+            className="h-10 whitespace-nowrap rounded-lg px-3 text-xs">
+            <i className="fas fa-eraser mr-2" aria-hidden="true"></i>Limpiar
+          </BotonAccion>
         </div>
 
         {/* ==================================================
@@ -2560,7 +2539,7 @@ export default function RuntPage() {
               ))}
             </div>
             <div className="flex items-center gap-2 pb-2 text-xs">
-              <span>{controles.length} registros · Página {paginaRunt}</span>
+              <span>{totalRegistros.toLocaleString('es-CO')} registros · Página {paginaRunt} de {Math.max(1, Math.ceil(totalRegistros / porPagina))}</span>
               <select aria-label="Registros por página" value={porPagina} onChange={e=>{setPaginaRunt(1);setPorPagina(Number(e.target.value))}}
                 className="rounded border border-white/30 bg-[#194567] px-1 py-1 text-white">
                 <option value={25}>25</option><option value={50}>50</option><option value={100}>100</option>
@@ -2579,51 +2558,15 @@ export default function RuntPage() {
               <thead style={{backgroundColor:ESTILO_ENCABEZADO_TABLA.fondo,color:ESTILO_ENCABEZADO_TABLA.texto}} className="sticky top-0 z-10 text-[10px] font-extrabold uppercase">
 
                 <tr>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Matrícula
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Aprendiz
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Categoría
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Proceso
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Registro
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Vigencia
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Teoría
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Taller
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Práctica
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Certificación
-                  </th>
-
-                  <th className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
-                    Acción
-                  </th>
-
+                  {(pestana === 'pendientes'
+                    ? ['MATRÍCULA','FECHA MATRÍCULA','APRENDIZ','CATEGORÍA','ESTADO','FECHA LÍMITE RUNT','ACCIÓN']
+                    : ['MATRÍCULA','APRENDIZ','CATEGORÍA','PROCESO','VIGENCIA','TEORÍA','TALLER','PRÁCTICA','CERTIFICACIÓN','ACCIÓN']
+                  ).map(titulo => (
+                    <th key={titulo} className="border p-2 bg-[#CEFAFE] text-[#263746]"
+                      style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
+                      {titulo}
+                    </th>
+                  ))}
                 </tr>
 
               </thead>
@@ -2634,7 +2577,7 @@ export default function RuntPage() {
                   <tr>
 
                     <td
-                      colSpan="11"
+                      colSpan={pestana === "pendientes" ? 7 : 10}
                       className="p-8 text-center text-gray-500"
                      style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       Consultando...
@@ -2646,11 +2589,11 @@ export default function RuntPage() {
                   <tr>
 
                     <td
-                      colSpan="11"
+                      colSpan={pestana === "pendientes" ? 7 : 10}
                       className="p-8 text-center text-gray-500"
                      style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                       {consultado
-                        ? 'No se encontraron controles RUNT para este filtro. Si hay matrículas históricas, ejecute la conciliación de controles faltantes en Supabase.'
+                        ? 'No se encontraron procesos RUNT con los filtros seleccionados.'
                         : 'No hay datos.'}
                     </td>
 
@@ -2679,6 +2622,12 @@ export default function RuntPage() {
                               '-'}
                           </td>
 
+                          {pestana === 'pendientes' && (
+                            <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
+                              {formatearFecha(row.aprendiz?.fecha_matricula)}
+                            </td>
+                          )}
+
                           <td className="p-2 border" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             <div className="font-semibold">
@@ -2704,11 +2653,28 @@ export default function RuntPage() {
 
                           </td>
 
+                          {pestana === 'registrados' && (
                           <td className="p-2 border text-center font-semibold" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             #{row.numero_proceso ||
                               1}
                           </td>
+                          )}
 
+                          {pestana === 'pendientes' && (
+                            <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
+                              {row.vigencia?.vencido ? (
+                                <Badge tipo="red">VENCIDO</Badge>
+                              ) : mayusculas(row.resultado_verificacion) === 'NO REGISTRADO' ? (
+                                <Badge tipo="red">NO REGISTRADO</Badge>
+                              ) : mayusculas(row.resultado_verificacion) === 'REGISTRADO' ? (
+                                <Badge tipo="yellow">PENDIENTE</Badge>
+                              ) : (
+                                <Badge tipo="yellow">SIN VERIFICAR</Badge>
+                              )}
+                            </td>
+                          )}
+
+                          {pestana === 'registrados' && (
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             {mayusculas(
@@ -2726,14 +2692,22 @@ export default function RuntPage() {
                             )}
 
                           </td>
+                          )}
 
+                          {pestana === 'pendientes' && (
+                            <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde}}>
+                              {row.vigencia?.fecha_limite ? formatearFecha(row.vigencia.fecha_limite) : '—'}
+                            </td>
+                          )}
+
+                          {pestana === 'registrados' && (
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
-                            <BadgeVigencia
+                            {row.historico_certificado ? <Badge tipo="purple">Certificado histórico</Badge> : <BadgeVigencia
                               vigencia={
                                 row.vigencia
                               }
-                            />
+                            />}
 
                             {row
                               ?.vigencia
@@ -2746,7 +2720,9 @@ export default function RuntPage() {
                             )}
 
                           </td>
+                          )}
 
+                          {pestana === 'registrados' && (
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {numero(
                               av.teoria_cargadas
@@ -2756,7 +2732,9 @@ export default function RuntPage() {
                               av.teoria_requeridas
                             )}
                           </td>
+                          )}
 
+                          {pestana === 'registrados' && (
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {numero(
                               av.taller_cargadas
@@ -2766,7 +2744,9 @@ export default function RuntPage() {
                               av.taller_requeridas
                             )}
                           </td>
+                          )}
 
+                          {pestana === 'registrados' && (
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
                             {numero(
                               av.practica_cargadas
@@ -2776,7 +2756,9 @@ export default function RuntPage() {
                               av.practica_requeridas
                             )}
                           </td>
+                          )}
 
+                          {pestana === 'registrados' && (
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
                             {mayusculas(
@@ -2794,6 +2776,7 @@ export default function RuntPage() {
                             )}
 
                           </td>
+                          )}
 
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
