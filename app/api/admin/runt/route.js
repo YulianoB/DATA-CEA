@@ -3240,25 +3240,15 @@ export async function POST(
       }
 
 
-      if (
-        normalizarMayusculas(
-          control.resultado_verificacion
-        ) !==
-        'REGISTRADO'
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              'El aprendiz debe aparecer REGISTRADO en RUNT antes de realizar el registro.',
-          },
-          {
-            status:
-              409,
-          }
-        )
+      // La consulta ciudadana corresponde al proceso de matrícula.
+      // Los controles históricos pueden tener resultado_verificacion NULL;
+      // no lo inventamos ni lo cambiamos durante el registro formal del CEA.
+      // Una constancia explícita de NO REGISTRADO sí impide registrar.
+      if (normalizarMayusculas(control.resultado_verificacion) === 'NO REGISTRADO') {
+        return NextResponse.json({
+          status: 'error',
+          message: 'El resultado ciudadano figura NO REGISTRADO. No es posible confirmar el registro formal del aprendiz en RUNT mientras persista ese resultado.'
+        }, { status: 409 })
       }
 
       if (
