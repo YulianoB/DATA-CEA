@@ -2464,7 +2464,7 @@ async function consultarControles({
             normalizarMayusculas(
               control.resultado_verificacion
             ) ===
-              'INSCRITO' &&
+              'REGISTRADO' &&
             !vigenciaRunt.vencido,
 
           requiere_reproceso:
@@ -2710,17 +2710,17 @@ async function validarCargue({
   }
 
   // =======================================================
-  // INSCRITO
+  // REGISTRADO
   // =======================================================
 
   if (
     normalizarMayusculas(
       control.resultado_verificacion
     ) !==
-    'INSCRITO'
+    'REGISTRADO'
   ) {
     throw new Error(
-      'El aprendiz debe aparecer INSCRITO en RUNT antes de realizar cargues.'
+      'El aprendiz debe aparecer REGISTRADO en RUNT antes de realizar cargues.'
     )
   }
 
@@ -3266,7 +3266,7 @@ export async function GET(
             normalizarMayusculas(
               control.resultado_verificacion
             ) ===
-              'INSCRITO' &&
+              'REGISTRADO' &&
             !vigencia.vencido,
 
           practica_habilitada:
@@ -3455,7 +3455,7 @@ export async function POST(
       )
 
     // =====================================================
-    // MARCAR INSCRITO
+    // MARCAR REGISTRADO
     // =====================================================
 
     if (
@@ -3505,7 +3505,7 @@ export async function POST(
               'VERIFICADO',
 
             resultado_verificacion:
-              'INSCRITO',
+              'REGISTRADO',
 
             fecha_verificacion:
               hoyBogota(),
@@ -3537,7 +3537,7 @@ export async function POST(
           'success',
 
         message:
-          'Aprendiz marcado como INSCRITO en RUNT.',
+          'Aprendiz marcado como REGISTRADO en RUNT.',
 
         data,
       })
@@ -3585,7 +3585,7 @@ export async function POST(
         normalizarMayusculas(
           control.resultado_verificacion
         ) !==
-        'INSCRITO'
+        'REGISTRADO'
       ) {
         return NextResponse.json(
           {
@@ -3593,7 +3593,7 @@ export async function POST(
               'error',
 
             message:
-              'El aprendiz debe aparecer INSCRITO en RUNT antes de realizar el registro.',
+              'El aprendiz debe aparecer REGISTRADO en RUNT antes de realizar el registro.',
           },
           {
             status:
@@ -4078,6 +4078,13 @@ export async function POST(
           controlRuntId
         )
 
+      if (normalizarMayusculas(control.estado_certificacion) === 'CERTIFICADO') {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Este proceso ya está marcado como CERTIFICADO en RUNT.'
+        }, { status: 409 })
+      }
+
       const vigencia =
         calcularVigenciaRunt(
           control
@@ -4120,6 +4127,29 @@ export async function POST(
               409,
           }
         )
+      }
+
+      // Exigir SICOV certificado para la misma matrícula y categoría.
+      const { data: controlesSicov, error: errorSicov } = await supabase
+        .from('control_sicov')
+        .select('id,estado_certificacion,categoria')
+        .eq('matricula_id', control.matricula_id)
+        .eq('categoria', control.categoria)
+
+      if (errorSicov) {
+        throw new Error(
+          `No fue posible verificar la certificación SICOV: ${errorSicov.message}`
+        )
+      }
+
+      if (!Array.isArray(controlesSicov) ||
+          !controlesSicov.some(item =>
+            normalizarMayusculas(item.estado_certificacion) === 'CERTIFICADO'
+          )) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Debe certificar primero al aprendiz en SICOV para esta matrícula y categoría antes de certificarlo en RUNT.'
+        }, { status: 409 })
       }
 
       const requisitos =
