@@ -2048,13 +2048,8 @@ async function consultarControles({
     error,
   } =
     await consulta
-      .order(
-        'created_at',
-        {
-          ascending:
-            false,
-        }
-      )
+      .order('matricula_id', { ascending: false })
+      .order('numero_proceso', { ascending: false })
       .range(
         (Math.max(1, Number(pagina) || 1)-1) * Math.min(100, Math.max(25, Number(porPagina) || 25)),
         Math.max(1, Number(pagina) || 1) * Math.min(100, Math.max(25, Number(porPagina) || 25)) - 1
@@ -2727,6 +2722,14 @@ async function consultarControles({
         ).getTime()
       )
     }
+  )
+
+  // El orden de consulta prioriza las matrículas nuevas y no la fecha de
+  // creación de un reproceso posterior. Dentro de cada página se comprueba
+  // además la fecha de matrícula real.
+  resultado.sort((a, b) =>
+    String(b.aprendiz?.fecha_matricula || '').localeCompare(String(a.aprendiz?.fecha_matricula || '')) ||
+    Number(b.matricula_id || 0) - Number(a.matricula_id || 0)
   )
 
   return resultado
