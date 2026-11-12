@@ -1432,6 +1432,7 @@ export default function RuntPage() {
     detalle?.vigencia ||
     {}
 
+  const esContinuacionRunt = Number(controlActual?.numero_proceso || 1) > 1
   const sicovCertificado = detalle?.sicov_certificado === true
 
   const notificaciones =
@@ -2270,7 +2271,7 @@ export default function RuntPage() {
       return
     }
 
-    if (!sicovCertificado) {
+    if (!esContinuacionRunt && !sicovCertificado) {
       setError('Debe constar SICOV certificado para esta matrícula y categoría.')
       return
     }
@@ -2522,7 +2523,9 @@ export default function RuntPage() {
               abierto={confirmarCertificacionOpen}
               tipo="confirmacion"
               titulo="Confirmar certificación RUNT"
-              mensaje="¿Confirma que esta matrícula tiene todos los cargues requeridos y que SICOV ya está certificado? Esta acción marcará el proceso como CERTIFICADO en RUNT."
+              mensaje={esContinuacionRunt
+                ? "¿Confirma que el nuevo proceso RUNT tiene todos los cargues requeridos? Se marcará como CERTIFICADO sin requerir una nueva certificación SICOV."
+                : "¿Confirma que esta matrícula tiene todos los cargues requeridos y que SICOV ya está certificado? Esta acción marcará el proceso como CERTIFICADO en RUNT."}
               textoBoton="CONFIRMAR CERTIFICACIÓN" textoCancelar="CANCELAR"
               onCerrar={() => { if (!procesando) setConfirmarCertificacionOpen(false) }}
               onConfirmar={() => certificar(true)}
@@ -4691,10 +4694,17 @@ export default function RuntPage() {
                         <i className={`fas ${procesoCompleto ? 'fa-check-circle' : 'fa-clock'} mr-1`}></i>
                         Cargues: {procesoCompleto ? 'Completos' : 'Pendientes'}
                       </div>
-                      <div className={`rounded-lg border p-2 ${sicovCertificado ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
-                        <i className={`fas ${sicovCertificado ? 'fa-check-circle' : 'fa-clock'} mr-1`}></i>
-                        SICOV: {sicovCertificado ? 'Certificado' : 'Pendiente de certificación'}
-                      </div>
+                      {!esContinuacionRunt && (
+                        <div className={`rounded-lg border p-2 ${sicovCertificado ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
+                          <i className={`fas ${sicovCertificado ? 'fa-check-circle' : 'fa-clock'} mr-1`}></i>
+                          SICOV: {sicovCertificado ? 'Certificado' : 'Pendiente de certificación'}
+                        </div>
+                      )}
+                      {esContinuacionRunt && (
+                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-2 text-blue-900">
+                          Proceso de continuación · certificación solo RUNT
+                        </div>
+                      )}
                     </div>
                     {certificado ? (
                       <div
@@ -4752,7 +4762,7 @@ export default function RuntPage() {
                       >
                         Primero debe registrar al aprendiz en RUNT.
                       </div>
-                    ) : !sicovCertificado ? (
+                    ) : !esContinuacionRunt && !sicovCertificado ? (
                       <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
                         Primero debe figurar CERTIFICADO en SICOV para esta matrícula y categoría.
                       </div>
