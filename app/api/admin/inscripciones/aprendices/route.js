@@ -1,7 +1,7 @@
 // app/api/admin/inscripciones/aprendices/route.js
 
 import { NextResponse } from 'next/server'
-import { ORDEN_CATEGORIAS, extraerCategoriasHistorial, validarSeleccionCategorias } from '@/lib/reglasCategoriasInscripciones'
+import { ORDEN_CATEGORIAS, extraerCategoriasHistorial, validarSeleccionCategorias, categoriasBloqueadasPorPendientes } from '@/lib/reglasCategoriasInscripciones'
 
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
@@ -3684,6 +3684,11 @@ export async function GET(
           documento
         )
       const restriccionNuevaMatricula = await verificarCertificacionHistorial(supabase, historial)
+      restriccionNuevaMatricula.categorias_bloqueadas = categoriasBloqueadasPorPendientes(
+        restriccionNuevaMatricula.pendientes,
+        extraerCategoriasHistorial(historial)
+      )
+      restriccionNuevaMatricula.bloqueada = restriccionNuevaMatricula.categorias_bloqueadas.length > 0
 
       return NextResponse.json({
         status:
@@ -4580,15 +4585,19 @@ export async function POST(
         documento
       )
 
-    // No se crea una segunda matrícula mientras exista cualquier
-    // matrícula anterior sin certificación RUNT confirmada.
-    // Cambio de categoría y retractación requieren un trámite específico.
+    // A2 independiente: un curso de automóvil pendiente no impide
+    // matricularse por primera vez en A2. Un A2 pendiente tampoco
+    // bloquea una categoría de automóvil admisible por progresión.
     const restriccionNuevaMatricula = await verificarCertificacionHistorial(supabase, historial)
-    if (restriccionNuevaMatricula.bloqueada) {
+    const bloqueadas = categoriasBloqueadasPorPendientes(
+      restriccionNuevaMatricula.pendientes,
+      extraerCategoriasHistorial(historial)
+    )
+    if (categorias.some(categoria => bloqueadas.includes(categoria))) {
       return NextResponse.json({
         status: 'error',
-        code: 'MATRICULA_ANTERIOR_SIN_CERTIFICAR',
-        message: 'No es posible registrar una nueva matrícula mientras existan matrículas anteriores sin certificación RUNT confirmada. Consulte el expediente para continuar el curso o gestionar un cambio o retractación.',
+        code: 'MATRICULA_AUTOMOVIL_ANTERIOR_SIN_CERTIFICAR',
+        message: 'Existe una matrícula de automóvil sin certificación RUNT confirmada. Solo se permite una primera matrícula A2 independiente. Para cambiar el curso consulte el expediente.',
         pendientes: restriccionNuevaMatricula.pendientes,
       }, { status: 409 })
     }
