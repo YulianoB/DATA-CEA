@@ -2679,9 +2679,18 @@ export default function NuevaInscripcionPage() {
           const ultimo =
             json.latest
 
+          // Respetar el tipo de documento registrado en el historial.
+          // Si el dato histórico está vacío o no pertenece al catálogo,
+          // no forzar una equivalencia que podría ser incorrecta.
+          const tipoDocHistorial = String(ultimo.tipo_doc || '').trim().toUpperCase()
+
           setForm(
             prev => ({
               ...prev,
+
+              tipo_doc: TIPOS_DOC.includes(tipoDocHistorial)
+                ? tipoDocHistorial
+                : prev.tipo_doc,
 
               lugar_expedicion:
                 String(
