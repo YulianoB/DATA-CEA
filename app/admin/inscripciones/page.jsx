@@ -2138,6 +2138,7 @@ export default function InscripcionesPage() {
                               text-center
                             "
                           >
+                            {row.tipo_doc ? `${String(row.tipo_doc).trim().toUpperCase()} · ` : ''}
                             {formatearDocumento(
                               row.documento
                             )}
