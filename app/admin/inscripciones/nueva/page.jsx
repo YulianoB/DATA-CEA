@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner'
 
 import { UserPlus } from 'lucide-react'
+import { ORDEN_CATEGORIAS, CATEGORIAS_POR_NIVEL, categoriasPosteriores, validarSeleccionCategorias, puedeSeleccionarCategoria } from '@/lib/reglasCategoriasInscripciones'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import CampoCatalogo from '@/components/admin/CampoCatalogo'
 import CampoMunicipioBusqueda from '@/components/admin/CampoMunicipioBusqueda'
@@ -36,43 +37,7 @@ import {
 const API_URL =
   '/api/admin/inscripciones/aprendices'
 
-const CATS_TODAS = [
-  'A2',
-  'B1',
-  'C1',
-  'RC1',
-  'B2',
-  'C2',
-  'C3',
-]
-
-const CATEGORIAS_POR_NIVEL = {
-  'NIVEL I': [
-    'A2',
-    'B1',
-    'C1',
-    'RC1',
-  ],
-
-  'NIVEL II': [
-    'A2',
-    'B1',
-    'C1',
-    'RC1',
-    'B2',
-    'C2',
-  ],
-
-  'NIVEL III': [
-    'A2',
-    'B1',
-    'C1',
-    'RC1',
-    'B2',
-    'C2',
-    'C3',
-  ],
-}
+const CATS_TODAS = ORDEN_CATEGORIAS
 
 const TIPOS_DOC = [
   'CC',
@@ -129,25 +94,6 @@ const ESTRATOS = [
 // ============================================================
 // JERARQUÍA DE CATEGORÍAS
 // ============================================================
-
-const RANK = {
-  A2: 1,
-  B1: 2,
-  C1: 3,
-  RC1: 3,
-  C2: 4,
-  C3: 5,
-}
-
-const ALLOW_WITH_A2 =
-  new Set([
-    'B1',
-    'B2',
-    'C1',
-    'RC1',
-    'C2',
-    'C3',
-  ])
 
 const ALLOWED_16_17 =
   new Set([
@@ -902,11 +848,7 @@ export default function NuevaInscripcionPage() {
                 .trim()
                 .toUpperCase()
 
-            if (
-              RANK[
-                value
-              ]
-            ) {
+            if (CATS_TODAS.includes(value)) {
               set.add(
                 value
               )
@@ -918,31 +860,6 @@ export default function NuevaInscripcionPage() {
       },
       [
         prevMatriculas,
-      ]
-    )
-
-  const histMaxRank =
-    useMemo(
-      () => {
-        let max = 0
-
-        histCategories.forEach(
-          categoria => {
-            max =
-              Math.max(
-                max,
-                RANK[
-                  categoria
-                ] ||
-                0
-              )
-          }
-        )
-
-        return max
-      },
-      [
-        histCategories,
       ]
     )
 
@@ -1113,125 +1030,13 @@ export default function NuevaInscripcionPage() {
   // REGLAS CATEGORÍAS
   // ==========================================================
 
-  const canSelectCat =
-    (
-      cat
-    ) => {
-      if (
-        !categoriasHabilitadas.includes(
-          cat
-        )
-      ) {
-        return false
-      }
-
-      if (
-        esMenor16
-      ) {
-        return false
-      }
-
-      if (
-        es16a17 &&
-        !ALLOWED_16_17.has(
-          cat
-        )
-      ) {
-        return false
-      }
-
-      const current =
-        form.categorias
-
-      const selected =
-        current.includes(
-          cat
-        )
-
-      if (
-        selected
-      ) {
-        return true
-      }
-
-      if (
-        histCategories.has(
-          cat
-        )
-      ) {
-        return false
-      }
-
-      const rank =
-        RANK[
-          cat
-        ] ||
-        0
-
-      if (
-        histMaxRank >
-          rank &&
-        cat !==
-          'A2'
-      ) {
-        return false
-      }
-
-      if (
-        current.length >=
-        2
-      ) {
-        return false
-      }
-
-      const hasA2 =
-        current.includes(
-          'A2'
-        )
-
-      if (
-        cat ===
-        'A2'
-      ) {
-        if (
-          current.length ===
-          0
-        ) {
-          return true
-        }
-
-        if (
-          current.length ===
-            1 &&
-          ALLOW_WITH_A2.has(
-            current[
-              0
-            ]
-          )
-        ) {
-          return true
-        }
-
-        return false
-      }
-
-      if (
-        current.length ===
-        0
-      ) {
-        return true
-      }
-
-      if (
-        hasA2
-      ) {
-        return ALLOW_WITH_A2.has(
-          cat
-        )
-      }
-
-      return false
-    }
+  const canSelectCat = cat => puedeSeleccionarCategoria({
+    categoria: cat,
+    seleccion: form.categorias,
+    historial: [...histCategories],
+    habilitadas: categoriasHabilitadas,
+    edad,
+  })
 
   const toggleCat =
     (
@@ -1272,19 +1077,8 @@ export default function NuevaInscripcionPage() {
         ) {
           msg =
             'Esta categoría ya existe. Si el curso venció, utilice Continuación desde el expediente de Inscripciones.'
-        } else if (
-          histMaxRank >
-            (
-              RANK[
-                cat
-              ] ||
-              0
-            ) &&
-          cat !==
-            'A2'
-        ) {
-          msg =
-            'No se permite una categoría inferior a su historial.'
+        } else if (!categoriasPosteriores([...histCategories]).includes(cat)) {
+          msg = 'Esta categoría no está permitida según el historial del aprendiz.'
         }
 
         toast.warning(
@@ -1564,33 +1358,14 @@ export default function NuevaInscripcionPage() {
           'Con 16–17 años solo A2 o B1.'
       }
 
-      for (
-        const cat of
-          form.categorias
-      ) {
-        if (
-          histCategories.has(
-            cat
-          )
-        ) {
-          errs.categorias =
-            `La categoría ${cat} ya existe. Para continuar un curso vencido, consulte la matrícula original.`
-        }
-
-        if (
-          histMaxRank >
-            (
-              RANK[
-                cat
-              ] ||
-              0
-            ) &&
-          cat !==
-            'A2'
-        ) {
-          errs.categorias =
-            `La categoría ${cat} es inferior a su historial.`
-        }
+      const validacionCategorias = validarSeleccionCategorias({
+        seleccion: form.categorias,
+        historial: [...histCategories],
+        habilitadas: categoriasHabilitadas,
+        edad,
+      })
+      if (!validacionCategorias.ok) {
+        errs.categorias = validacionCategorias.message
       }
 
       // ====================================================
@@ -3425,7 +3200,7 @@ const guardar =
   }
 
   // Progreso de secciones sin efectos secundarios ni validación invasiva.
-  const conTexto = valor => String(valor ?? '').trim().length > 0
+  const conTexto = valor => { const v = String(valor ?? '').trim(); return v !== '' && v !== '—' && v !== '-' }
   const infoComplementaria = ['estado_civil', 'ocupacion', 'eps', 'estrato', 'nivel_educativo']
   const identificacionCampos = ['tipo_doc', 'documento', 'nombres', 'apellidos', 'fecha_nacimiento', 'genero']
   const identificacionCompleta = identificacionCampos.every(key => conTexto(form[key])) &&
@@ -3445,12 +3220,12 @@ const guardar =
       /^\d{10}$/.test(String(form.emergencia_celular || '').trim())
     ))
   const categoriaMatricula = Array.isArray(form.categorias) ? form.categorias : []
-  const matriculaCompleta = categoriaMatricula.length >= 1 &&
-    categoriaMatricula.length <= 2 &&
-    categoriaMatricula.every(cat => categoriasHabilitadas.includes(cat) && !histCategories.has(cat) &&
-      (histMaxRank <= (RANK[cat] || 0) || cat === 'A2') &&
-      (!es16a17 || ALLOWED_16_17.has(cat))) &&
-    categoriaMatricula.filter(cat => cat !== 'A2').length <= 1 &&
+  const matriculaCompleta = validarSeleccionCategorias({
+    seleccion: categoriaMatricula,
+    historial: [...histCategories],
+    habilitadas: categoriasHabilitadas,
+    edad,
+  }).ok &&
     ['DIRECTO', 'CONVENIO'].includes(form.origen_matricula) &&
     (form.origen_matricula !== 'CONVENIO' || Boolean(form.convenio_id)) &&
     (!esMenor || (
@@ -4861,7 +4636,7 @@ const guardar =
                       "
                     >
                       <label className="block text-[11px] font-semibold">
-                        Categoría o categorías
+                        Categoría
                       </label>
 
 
@@ -6309,7 +6084,7 @@ const guardar =
                 <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
                   <strong>Revisión administrativa necesaria</strong>
                   <p>Antes de registrar una continuación debemos verificar que el curso no esté finalizado, comprobar el término aplicable y determinar si RUNT/SICOV/SIET permiten continuar el proceso original.</p>
-                  <p>No se habilitará una continuación mientras no exista la validación y la estructura de datos correspondiente en Supabase.</p>
+                  <p>Para continuar un proceso vencido sin crear una nueva matrícula, abra el expediente del aprendiz desde Inscripciones. Allí puede registrar la continuación administrativa, conservando el consecutivo original. El nuevo proceso se gestiona posteriormente en Control RUNT, previa verificación de ausencia de certificación.</p>
                 </div>
               )}
               <div className="flex justify-end">
