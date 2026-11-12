@@ -1387,6 +1387,12 @@ export default function NuevaInscripcionPage() {
         'apellidos',
         'fecha_nacimiento',
         'genero',
+        // Información complementaria obligatoria.
+        'estado_civil',
+        'ocupacion',
+        'eps',
+        'estrato',
+        'nivel_educativo',
       ]
 
       for (
@@ -4052,6 +4058,7 @@ const guardar =
                           )
                         )}
                       </select>
+                      <FieldError msg={errors.estado_civil} />
                     </div>
 
                     <div>
@@ -4093,8 +4100,10 @@ const guardar =
                           )
                         )}
                       </select>
+                      <FieldError msg={errors.ocupacion} />
                     </div>
 
+                    <div>
                     <CampoCatalogo
                       compacto
                       catalogo="eps"
@@ -4102,9 +4111,11 @@ const guardar =
                       name="eps"
                       value={form.eps}
                       nit={nitCatalogos}
-                      required={false}
+                      required
                       onChange={(event) => setF('eps', event.target.value)}
                     />
+                      <FieldError msg={errors.eps} />
+                    </div>
 
                     <div>
                       <label className="block text-[11px] font-semibold mb-1">
@@ -4145,6 +4156,7 @@ const guardar =
                           )
                         )}
                       </select>
+                      <FieldError msg={errors.estrato} />
                     </div>
 
                     <div className="col-span-2">
@@ -4186,6 +4198,7 @@ const guardar =
                           )
                         )}
                       </select>
+                      <FieldError msg={errors.nivel_educativo} />
                     </div>
 
                   </div>
