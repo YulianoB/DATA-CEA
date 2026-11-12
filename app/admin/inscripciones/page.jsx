@@ -2404,41 +2404,11 @@ export default function InscripcionesPage() {
                     {matriculaSeleccionada?.estado_runt?.estado === 'VENCIDO' && !matriculaSeleccionada?.estado_runt?.continuacion_pendiente && (
                       <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-slate-800">
                         <p className="font-bold">Proceso RUNT vencido · Matrícula {matriculaSeleccionada.consecutivo}</p>
-                        <p className="mt-1">Puede registrar la continuación administrativa sin modificar la matrícula ni su consecutivo. Después deberá verificar en RUNT la ausencia de certificación e iniciar un nuevo proceso desde Control RUNT.</p>
-                        {!(matriculaSeleccionada.continuaciones || []).some(item =>
-                          new Date(item.created_at).getTime() >
-                          new Date(matriculaSeleccionada.procesos_runt?.[0]?.created_at || 0).getTime()
-                        ) && (
-                          <button type="button" onClick={() => setContinuacionAbierta(!continuacionAbierta)}
-                            className="mt-2 rounded bg-[#226184] px-3 py-2 font-semibold text-white">
-                            {continuacionAbierta ? 'Cancelar continuación' : 'Registrar continuación'}
-                          </button>
-                        )}
-                        {continuacionAbierta && (
-                          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            <label className="flex flex-col gap-1">Fecha de continuación
-                              <input type="date" value={continuacionFecha}
-                                max={fechaLocalHoy()} min={matriculaSeleccionada.fecha_matricula || undefined}
-                                onChange={e => setContinuacionFecha(e.target.value)}
-                                className="rounded border border-slate-300 bg-white p-2" />
-                            </label>
-                            <label className="flex flex-col gap-1">Motivo (mínimo 8 caracteres)
-                              <input value={continuacionMotivo} maxLength={500}
-                                onChange={e => setContinuacionMotivo(e.target.value)}
-                                className="rounded border border-slate-300 bg-white p-2" />
-                            </label>
-                            <label className="flex flex-col gap-1 sm:col-span-2">Observaciones
-                              <textarea value={continuacionObservaciones} maxLength={2000}
-                                onChange={e => setContinuacionObservaciones(e.target.value)}
-                                className="rounded border border-slate-300 bg-white p-2" rows={2} />
-                            </label>
-                            <button type="button" disabled={guardandoContinuacion}
-                              onClick={registrarContinuacion}
-                              className="rounded bg-emerald-700 px-3 py-2 font-semibold text-white disabled:opacity-50">
-                              {guardandoContinuacion ? 'Guardando...' : 'Guardar continuación'}
-                            </button>
-                          </div>
-                        )}
+                        <p className="mt-1">Inicie la continuación desde Nueva Matrícula, consultando el documento del aprendiz. Allí se registran la continuación y su nueva obligación; después se reinicia el proceso desde Control RUNT.</p>
+                        <button type="button" onClick={() => router.push('/admin/inscripciones/nueva')}
+                          className="mt-2 rounded bg-[#226184] px-3 py-2 font-semibold text-white">
+                          Ir a Nueva Matrícula
+                        </button>
                       </div>
                     )}
                     {!!matriculaSeleccionada?.continuaciones?.length && (
