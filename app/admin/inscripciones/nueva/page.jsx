@@ -82,6 +82,55 @@ const NIVELES_EDU = [
   'NO APLICA',
 ]
 
+// Equivalencias de los datos históricos migrados desde Excel.
+// Si el texto es ambiguo se deja vacío para exigir selección manual;
+// nunca se corrigen silenciosamente los datos existentes en Supabase.
+const simplificarCatalogo = valor => String(valor ?? '')
+  .trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/\s+/g, ' ')
+
+function normalizarEstadoCivil(valor) {
+  const dato = simplificarCatalogo(valor)
+  const equivalencias = {
+    SOLTERO: 'SOLTERO/A',
+    SOLTERA: 'SOLTERO/A',
+    'SOLTERO/A': 'SOLTERO/A',
+    CASADO: 'CASADO/A',
+    CASADA: 'CASADO/A',
+    'CASADO/A': 'CASADO/A',
+    'UNION LIBRE': 'UNIÓN LIBRE',
+    'UNION MARITAL DE HECHO': 'UNIÓN LIBRE',
+    VIUDO: 'VIUDO/A',
+    VIUDA: 'VIUDO/A',
+    'VIUDO/A': 'VIUDO/A',
+    DIVORCIADO: 'DIVORCIADO/A',
+    DIVORCIADA: 'DIVORCIADO/A',
+    'DIVORCIADO/A': 'DIVORCIADO/A',
+  }
+  return equivalencias[dato] || ''
+}
+
+function normalizarNivelEducativo(valor) {
+  const dato = simplificarCatalogo(valor)
+  const equivalencias = {
+    BACHILLER: 'BACHILLER',
+    BACHILLERATO: 'BACHILLER',
+    TECNICO: 'TÉCNICO',
+    'TECNICO PROFESIONAL': 'TÉCNICO',
+    TECNOLOGO: 'TECNÓLOGO',
+    TECNOLOGIA: 'TECNÓLOGO',
+    PROFESIONAL: 'PROFESIONAL',
+    UNIVERSITARIO: 'PROFESIONAL',
+    ESPECIALISTA: 'ESPECIALISTA',
+    ESPECIALIZACION: 'ESPECIALISTA',
+    MAESTRIA: 'MAESTRÍA',
+    MAGISTER: 'MAESTRÍA',
+    DOCTORADO: 'DOCTORADO',
+    'NO APLICA': 'NO APLICA',
+  }
+  return equivalencias[dato] || ''
+}
+
 const ESTRATOS = [
   '1',
   '2',
@@ -1213,6 +1262,20 @@ export default function NuevaInscripcionPage() {
           ] =
             'Campo obligatorio.'
         }
+      }
+
+      // Los selectores deben corresponder a una opción real del catálogo.
+      if (!ESTADOS_CIVIL.includes(form.estado_civil)) {
+        errs.estado_civil = 'Seleccione un estado civil válido.'
+      }
+      if (!NIVELES_EDU.includes(form.nivel_educativo)) {
+        errs.nivel_educativo = 'Seleccione un nivel educativo válido.'
+      }
+      if (!OCUPACIONES.includes(form.ocupacion)) {
+        errs.ocupacion = 'Seleccione una ocupación válida.'
+      }
+      if (!ESTRATOS.includes(String(form.estrato || ''))) {
+        errs.estrato = 'Seleccione un estrato válido.'
       }
 
       if (
@@ -2677,11 +2740,7 @@ export default function NuevaInscripcionPage() {
                 ).toUpperCase(),
 
               estado_civil:
-                String(
-                  ultimo
-                    .estado_civil ||
-                  ''
-                ).toUpperCase(),
+                normalizarEstadoCivil(ultimo.estado_civil),
 
               ocupacion:
                 String(
@@ -2702,11 +2761,7 @@ export default function NuevaInscripcionPage() {
                 ),
 
               nivel_educativo:
-                String(
-                  ultimo
-                    .nivel_educativo ||
-                  ''
-                ).toUpperCase(),
+                normalizarNivelEducativo(ultimo.nivel_educativo),
             })
           )
 
@@ -3275,7 +3330,11 @@ const guardar =
     },
     contacto: { completo: contactoCompleto, iniciado: contactoIniciado },
     complementaria: {
-      completo: infoComplementaria.every(key => conTexto(form[key])),
+      completo: ESTADOS_CIVIL.includes(form.estado_civil) &&
+        OCUPACIONES.includes(form.ocupacion) &&
+        conTexto(form.eps) &&
+        ESTRATOS.includes(String(form.estrato || '')) &&
+        NIVELES_EDU.includes(form.nivel_educativo),
       iniciado: infoComplementaria.some(key => conTexto(form[key])),
     },
     matricula: {
