@@ -1,6 +1,7 @@
 // app/api/admin/siet/route.js
 
 import { NextResponse } from 'next/server'
+import { ORDEN_CATEGORIAS } from '@/lib/reglasCategoriasInscripciones'
 
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
@@ -11,14 +12,7 @@ import {
 // CONSTANTES
 // =========================================================
 
-const CATEGORIAS_VALIDAS = new Set([
-  'A2',
-  'B1',
-  'C1',
-  'RC1',
-  'C2',
-  'C3',
-])
+const CATEGORIAS_VALIDAS = new Set(ORDEN_CATEGORIAS)
 
 const ESTADOS_VALIDOS = new Set([
   'PENDIENTE',
