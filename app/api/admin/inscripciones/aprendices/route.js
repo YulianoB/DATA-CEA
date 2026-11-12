@@ -1975,6 +1975,12 @@ function validarObligatorios(
     'apellidos',
     'fecha_nacimiento',
     'genero',
+    // Información complementaria: obligatoria para nuevas matrículas.
+    'estado_civil',
+    'ocupacion',
+    'eps',
+    'estrato',
+    'nivel_educativo',
   ]
 
   return obligatorios.filter(
