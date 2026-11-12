@@ -3690,6 +3690,17 @@ export async function GET(
       )
       restriccionNuevaMatricula.bloqueada = restriccionNuevaMatricula.categorias_bloqueadas.length > 0
 
+      // El modal informa el estado del último proceso RUNT de cada matrícula.
+      // No deducir certificación ni vencimiento por la fecha de matrícula.
+      const controlesHistorial = historial.length
+        ? await obtenerControlesRuntExpediente(supabase, historial.map(item => item.id))
+        : []
+      const mapaRuntHistorial = construirMapaRuntActual(controlesHistorial)
+      const historialConEstado = historial.map(item => ({
+        ...item,
+        estado_runt: calcularEstadoOperativoRunt(mapaRuntHistorial.get(String(item.id)) || null),
+      }))
+
       return NextResponse.json({
         status:
           'success',
@@ -3697,7 +3708,7 @@ export async function GET(
         restriccion_nueva_matricula: restriccionNuevaMatricula,
 
         data:
-          historial,
+          historialConEstado,
 
         latest:
           historial.length >
