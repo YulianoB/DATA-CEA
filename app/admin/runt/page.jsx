@@ -1613,6 +1613,29 @@ export default function RuntPage() {
     ? 0
     : Math.round(diasTranscurridosRunt * 100 / 90)
 
+  // Alertas preventivas únicamente visuales. Las reglas de cargue,
+  // requisitos por categoría y controles diarios siguen en la API.
+  const limitePracticaDiaria = 8
+  const clasesPracticaPendientes = Math.max(0, practicaRequeridas - practicaCargadas)
+  const diasMinimosPractica = clasesPracticaPendientes > 0
+    ? Math.ceil(clasesPracticaPendientes / limitePracticaDiaria)
+    : 0
+  const alertaTeoriaTardia = registrado && !certificado && !vencido &&
+    vigenciaConPlazo && diasTranscurridosRunt >= 60 &&
+    teoriaRequeridas > 0 && teoriaCargadas === 0
+  const alertaPracticaLimite = registrado && !certificado && !vencido &&
+    vigenciaConPlazo && diasMinimosPractica > 0 &&
+    diasRestantesRunt <= diasMinimosPractica
+  const practicaSinMargen = alertaPracticaLimite &&
+    diasRestantesRunt < diasMinimosPractica
+  const riesgoVigenciaRunt = vencido || practicaSinMargen
+  const advertenciaVigenciaRunt = alertaTeoriaTardia || alertaPracticaLimite ||
+    (vigenciaConPlazo && diasRestantesRunt <= 15)
+  const colorProgresoRunt = riesgoVigenciaRunt
+    ? 'bg-red-600'
+    : advertenciaVigenciaRunt ? 'bg-amber-500' : 'bg-emerald-600'
+
+
   // ==========================================================
   // INSTRUCTORES
   // ==========================================================
@@ -3058,7 +3081,7 @@ export default function RuntPage() {
 
                     <div className="p-3">
 
-                      <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
+                      <div className="grid grid-cols-1 items-center gap-4 text-xs md:grid-cols-[minmax(105px,0.8fr)_minmax(105px,0.8fr)_minmax(0,3fr)]">
                         <div>
                           <span className="text-gray-500">Registro</span>
                           <div className="font-semibold">
@@ -3071,38 +3094,55 @@ export default function RuntPage() {
                             {formatearFecha(vigenciaActual?.fecha_limite)}
                           </div>
                         </div>
-                      </div>
-
-                      <div className="mt-4 space-y-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                          <span className="font-semibold text-slate-700">Tiempo transcurrido</span>
-                          {vigenciaConPlazo ? (
-                            <span className={`font-bold ${vencido ? 'text-red-700' : diasRestantesRunt <= 15 ? 'text-amber-700' : 'text-blue-700'}`}>
-                              {diasTranscurridosRunt} de 90 días
-                              <span className="ml-2 font-normal text-slate-500">
-                                {vencido ? '· Plazo vencido' : `· ${Math.max(0, diasRestantesRunt)} restantes`}
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                            <span className="font-semibold text-slate-700">Tiempo transcurrido</span>
+                            {vigenciaConPlazo ? (
+                              <span className={`font-bold ${riesgoVigenciaRunt ? 'text-red-700' : advertenciaVigenciaRunt ? 'text-amber-800' : 'text-emerald-700'}`}>
+                                {diasTranscurridosRunt} de 90 días
+                                <span className="ml-1 font-normal text-slate-600">
+                                  {vencido ? '· Plazo vencido' : `· ${Math.max(0, diasRestantesRunt)} restantes`}
+                                </span>
                               </span>
-                            </span>
+                            ) : (
+                              <BadgeVigencia vigencia={vigenciaActual} />
+                            )}
+                          </div>
+                          {vigenciaConPlazo ? (
+                            <div role="progressbar" aria-label="Tiempo transcurrido de la vigencia RUNT"
+                              aria-valuemin={0} aria-valuemax={90}
+                              aria-valuenow={diasTranscurridosRunt}
+                              className="h-5 w-full overflow-hidden rounded-full bg-slate-200">
+                              <div className={`h-full rounded-full transition-all duration-300 ${colorProgresoRunt}`}
+                                style={{ width: `${porcentajeVigenciaRunt}%` }} />
+                            </div>
                           ) : (
-                            <BadgeVigencia vigencia={vigenciaActual} />
+                            <p className="text-[11px] text-slate-500">
+                              {certificado ? 'Proceso certificado. Seguimiento de vigencia finalizado.' : 'Sin plazo de vigencia disponible.'}
+                            </p>
                           )}
                         </div>
-                        {vigenciaConPlazo ? (
-                          <div role="progressbar" aria-label="Tiempo transcurrido de la vigencia RUNT"
-                            aria-valuemin={0} aria-valuemax={90}
-                            aria-valuenow={diasTranscurridosRunt}
-                            className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
-                            <div
-                              className={`h-full rounded-full transition-all duration-300 ${vencido ? 'bg-red-600' : diasRestantesRunt <= 15 ? 'bg-amber-500' : 'bg-blue-600'}`}
-                              style={{ width: `${porcentajeVigenciaRunt}%` }}
-                            />
-                          </div>
-                        ) : (
-                          <p className="text-[11px] text-slate-500">
-                            {certificado ? 'Proceso certificado. Seguimiento de vigencia finalizado.' : 'Sin plazo de vigencia disponible.'}
-                          </p>
-                        )}
                       </div>
+
+                      {alertaTeoriaTardia && (
+                        <div className="mt-3 rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
+                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
+                          <strong>Riesgo de cumplimiento:</strong> han transcurrido {diasTranscurridosRunt} días
+                          y aún no hay clases de teoría cargadas en RUNT.
+                          Quedan {Math.max(0, diasRestantesRunt)} días de vigencia.
+                        </div>
+                      )}
+                      {alertaPracticaLimite && (
+                        <div className={`mt-3 rounded-lg border px-3 py-2 text-xs ${practicaSinMargen ? 'border-red-400 bg-red-50 text-red-900' : 'border-amber-400 bg-amber-50 text-amber-900'}`} role="status">
+                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
+                          <strong>{practicaSinMargen ? 'Tiempo insuficiente para práctica:' : 'Último margen para práctica:'}</strong>
+                          {' '}faltan {clasesPracticaPendientes} clases de práctica;
+                          se necesitan al menos {diasMinimosPractica} día(s) de cargue,
+                          considerando máximo {limitePracticaDiaria} por día.
+                          {' '}Restan {Math.max(0, diasRestantesRunt)} día(s) de vigencia.
+                          {!practicaHabilitadaUI && ' Además debe completar teoría y taller antes de habilitar práctica.'}
+                        </div>
+                      )}
 
                       {vencido && (
                         <div
