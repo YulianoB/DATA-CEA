@@ -3297,37 +3297,23 @@ export async function POST(
           message: 'La fecha de inscripción RUNT debe ser una fecha real válida, no futura.'
         }, { status: 400 })
       }
-      if (fechaRegistro !== hoyBogota() && normalizarTexto(body?.observaciones).length < 8) {
-        return NextResponse.json({
-          status: 'error',
-          message: 'Para registrar una fecha histórica se requiere indicar el soporte en observaciones (mínimo 8 caracteres).'
-        }, { status: 400 })
-      }
+      // Regularización administrativa de controles migrados:
+      // solo completar la verificación cuando no hay ningún dato documentado.
+      // Los valores existentes no se reemplazan ni se reconstruyen.
+      const verificacionSinDocumentar =
+        control.resultado_verificacion == null &&
+        normalizarMayusculas(control.estado_verificacion) !== 'VERIFICADO' &&
+        !control.fecha_verificacion &&
+        !control.usuario_verificacion
 
-      // La regularización es opcional y nunca debe inventar ni alterar
-      // una verificación histórica ya documentada. Si el funcionario
-      // confirma una consulta, se guarda su fecha declarada y responsable.
-      const registrarVerificacion = body?.registrar_verificacion === true
-      const tieneVerificacion = control.resultado_verificacion != null ||
-        normalizarMayusculas(control.estado_verificacion) === 'VERIFICADO'
-      if (registrarVerificacion && tieneVerificacion) {
-        return NextResponse.json({
-          status: 'error',
-          message: 'La verificación ya tiene información registrada. No se reemplazará desde este modal.'
-        }, { status: 409 })
-      }
-      const fechaVerificacion = normalizarTexto(body?.fecha_verificacion)
-      if (registrarVerificacion) {
-        const fechaVerificacionValida = /^\d{4}-\d{2}-\d{2}$/.test(fechaVerificacion) &&
-          !Number.isNaN(Date.parse(fechaVerificacion)) &&
-          new Date(fechaVerificacion + 'T12:00:00Z').toISOString().slice(0, 10) === fechaVerificacion
-        if (!fechaVerificacionValida || fechaVerificacion > hoyBogota()) {
-          return NextResponse.json({
-            status: 'error',
-            message: 'Indique la fecha real de la consulta ciudadana RUNT que está confirmando (no futura).'
-          }, { status: 400 })
-        }
-      }
+      const observacionAnterior = normalizarTexto(control.observaciones)
+      const observacionesActualizadas = fechaRegistro !== hoyBogota()
+        ? (observacionAnterior
+            ? (observacionAnterior.includes('Control Administrativo')
+                ? observacionAnterior
+                : observacionAnterior + ' | Control Administrativo')
+            : 'Control Administrativo')
+        : (observacionAnterior || null)
 
       const {
         data,
@@ -3347,17 +3333,12 @@ export async function POST(
             usuario_registro:
               usuario,
 
-            observaciones:
-              normalizarTexto(
-                body?.observaciones
-              ) ||
-              control.observaciones ||
-              null,
+            observaciones: observacionesActualizadas,
 
-            ...(registrarVerificacion ? {
+            ...(verificacionSinDocumentar ? {
               estado_verificacion: 'VERIFICADO',
               resultado_verificacion: 'REGISTRADO',
-              fecha_verificacion: fechaVerificacion,
+              fecha_verificacion: fechaRegistro,
               usuario_verificacion: usuario,
             } : {}),
 
