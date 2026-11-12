@@ -2955,13 +2955,13 @@ export default function NuevaInscripcionPage() {
                 ' · '
               )
 
-          toast.info(
+          toast.success(
             `Historial encontrado: ${cats || '—'}`
           )
         } else {
           resetPreservandoDocumento()
 
-          toast.info(
+          toast.success(
             'No hay matrículas anteriores para este documento.'
           )
         }
@@ -3454,6 +3454,26 @@ const guardar =
       conTexto(form.emergencia_nombre) &&
       /^\d{10}$/.test(String(form.emergencia_celular || '').trim())
     ))
+  // Errores de ayuda visibles durante el diligenciamiento.
+  // No se generan notificaciones por cada pulsación ni se bloquean campos opcionales.
+  const mensajeCelular = (valor) => {
+    const numero = String(valor || '').trim()
+    return numero && !/^\d{10}$/.test(numero) ? 'Debe tener exactamente 10 dígitos.' : ''
+  }
+  const erroresContactoVivos = {
+    celular: mensajeCelular(form.celular),
+    correo: conTexto(form.correo) && !isValidEmail(form.correo) ? 'Ingrese un correo válido.' : '',
+    emergencia_nombre: !esMenor && contactoIniciado && !conTexto(form.emergencia_nombre)
+      ? 'Ingrese el nombre completo del contacto.' : '',
+    emergencia_celular: !esMenor ? mensajeCelular(form.emergencia_celular) : '',
+  }
+  const erroresAcudienteVivos = {
+    acudi_celular: esMenor ? mensajeCelular(form.acudi_celular) : '',
+    acudi_documento: esMenor && conTexto(form.acudi_documento) &&
+      !/^\d+$/.test(String(form.acudi_documento)) ? 'El documento debe contener solo números.' : '',
+    acudi_correo: esMenor && conTexto(form.acudi_correo) && !isValidEmail(form.acudi_correo)
+      ? 'Ingrese un correo válido.' : '',
+  }
   const categoriaMatricula = Array.isArray(form.categorias) ? form.categorias : []
   const matriculaCompleta = categoriaMatricula.length >= 1 &&
     categoriaMatricula.length <= 2 &&
@@ -3463,8 +3483,13 @@ const guardar =
     categoriaMatricula.filter(cat => cat !== 'A2').length <= 1 &&
     ['DIRECTO', 'CONVENIO'].includes(form.origen_matricula) &&
     (form.origen_matricula !== 'CONVENIO' || Boolean(form.convenio_id)) &&
-    (!esMenor || ['acudi_nombres', 'acudi_apellidos', 'acudi_tipo_doc', 'acudi_documento', 'acudi_celular']
-      .every(key => conTexto(form[key]))) &&
+    (!esMenor || (
+      ['acudi_nombres', 'acudi_apellidos', 'acudi_tipo_doc', 'acudi_documento']
+        .every(key => conTexto(form[key])) &&
+      /^\d+$/.test(String(form.acudi_documento || '')) &&
+      /^\d{10}$/.test(String(form.acudi_celular || '').trim()) &&
+      (!conTexto(form.acudi_correo) || isValidEmail(form.acudi_correo))
+    )) &&
     !esMenor16
   const finanzasCompletas = categoriaMatricula.length > 0 &&
     categoriaMatricula.every(cat => Number(finanzas.valores_curso?.[cat]) > 0) &&
@@ -3945,7 +3970,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.celular
+                          errors.celular || erroresContactoVivos.celular
                         }
                       />
                     </div>
@@ -3978,7 +4003,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.correo
+                          errors.correo || erroresContactoVivos.correo
                         }
                       />
                     </div>
@@ -4003,6 +4028,7 @@ const guardar =
                             )
                         }
                       />
+                      {contactoIniciado && !conTexto(form.direccion) && <FieldError msg="Ingrese la dirección." />}
                     </div>
 
                     <div className="col-span-12">
@@ -4025,6 +4051,7 @@ const guardar =
                             )
                         }
                       />
+                      {contactoIniciado && !conTexto(form.barrio) && <FieldError msg="Ingrese el barrio." />}
                     </div>
 
                     <div className="col-span-6 min-w-0">
@@ -4042,6 +4069,7 @@ const guardar =
                           setF('ciudad', '')
                         }}
                       />
+                      {contactoIniciado && !conTexto(departamentoResidencia) && <FieldError msg="Seleccione el departamento." />}
                     </div>
 
                     <div className="col-span-6 min-w-0">
@@ -4052,6 +4080,7 @@ const guardar =
                       value={form.ciudad}
                       onChange={(nombre) => setF('ciudad', nombre)}
                     />
+                      {contactoIniciado && !conTexto(form.ciudad) && <FieldError msg="Seleccione la ciudad o municipio." />}
                     </div>
 
 
@@ -4076,7 +4105,7 @@ const guardar =
                                 )
                               }
                             />
-                            <FieldError msg={errors.emergencia_nombre} />
+                            <FieldError msg={errors.emergencia_nombre || erroresContactoVivos.emergencia_nombre} />
                           </div>
 
                           <div>
@@ -4089,7 +4118,7 @@ const guardar =
                               onChange={setNumeric('emergencia_celular')}
                               inputMode="numeric"
                             />
-                            <FieldError msg={errors.emergencia_celular} />
+                            <FieldError msg={errors.emergencia_celular || erroresContactoVivos.emergencia_celular} />
                           </div>
                         </div>
                       </div>
@@ -4507,7 +4536,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.acudi_documento
+                          errors.acudi_documento || erroresAcudienteVivos.acudi_documento
                         }
                       />
                     </div>
@@ -4531,7 +4560,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.acudi_celular
+                          errors.acudi_celular || erroresAcudienteVivos.acudi_celular
                         }
                       />
                     </div>
@@ -4583,6 +4612,7 @@ const guardar =
                             )
                         }
                       />
+                      <FieldError msg={errors.acudi_correo || erroresAcudienteVivos.acudi_correo} />
                     </div>
 
                   </div>
