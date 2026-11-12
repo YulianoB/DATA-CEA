@@ -631,6 +631,8 @@ export default function RuntPage() {
   const [confirmarCertificacionOpen, setConfirmarCertificacionOpen] = useState(false)
   const [fechaRegistroCola, setFechaRegistroCola] = useState(hoyBogota())
   const [observacionesRegistroCola, setObservacionesRegistroCola] = useState('')
+  const [registrarVerificacionCola, setRegistrarVerificacionCola] = useState(false)
+  const [fechaVerificacionCola, setFechaVerificacionCola] = useState(hoyBogota())
   const [accionCola, setAccionCola] = useState(null)
   const [filtros, setFiltros] = useState({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
   const categoriasCea = useMemo(() => {
@@ -1951,10 +1953,14 @@ export default function RuntPage() {
     setMensaje('')
     setFechaRegistroCola(hoyBogota())
     setObservacionesRegistroCola('')
+    setRegistrarVerificacionCola(false)
+    setFechaVerificacionCola(hoyBogota())
     setAccionCola({
       controlId: row.id,
       consecutivo: row.consecutivo,
       aprendiz: row.aprendiz?.nombre_completo || row.documento,
+      sinVerificacionDocumentada: !row.resultado_verificacion && !row.fecha_verificacion &&
+        mayusculas(row.estado_verificacion) !== 'VERIFICADO',
     })
   }
 
@@ -1980,6 +1986,9 @@ export default function RuntPage() {
         control_runt_id: accion.controlId,
         fecha_registro: fechaRegistroCola,
         observaciones: observacionesRegistroCola.trim(),
+        registrar_verificacion: Boolean(accion.sinVerificacionDocumentada && registrarVerificacionCola),
+        ...(accion.sinVerificacionDocumentada && registrarVerificacionCola
+          ? { fecha_verificacion: fechaVerificacionCola } : {}),
       })
       setAccionCola(null)
       setMensaje(json?.message || 'Registro formal del aprendiz del CEA en RUNT confirmado.')
@@ -2559,6 +2568,42 @@ export default function RuntPage() {
                         onChange={e=>setFechaRegistroCola(e.target.value)}
                         className="mt-1 block w-full rounded-lg border border-slate-300 p-2 text-xs" />
                     </label>
+                    {accionCola?.sinVerificacionDocumentada && (
+                      <div className="mt-3 space-y-2 border-t border-slate-200 pt-3">
+                        <label className="flex cursor-pointer items-start gap-2 text-[11px] font-semibold">
+                          <input
+                            type="checkbox"
+                            checked={registrarVerificacionCola}
+                            onChange={e => setRegistrarVerificacionCola(e.target.checked)}
+                            className="mt-0.5"
+                          />
+                          Registrar también una verificación ciudadana RUNT efectivamente realizada
+                        </label>
+                        <p className="text-[11px] font-normal text-slate-600">
+                          El histórico no tiene verificación documentada. Marque esta opción
+                          solamente si puede confirmar una consulta real. No reconstruye
+                          automáticamente la verificación original de la matrícula.
+                        </p>
+                        {registrarVerificacionCola && (
+                          <>
+                            <label className="block text-[11px] font-semibold">
+                              Fecha real de la consulta ciudadana RUNT
+                              <input
+                                type="date"
+                                max={hoyBogota()}
+                                value={fechaVerificacionCola}
+                                onChange={e => setFechaVerificacionCola(e.target.value)}
+                                className="mt-1 block w-full rounded-lg border border-slate-300 p-2 text-xs"
+                              />
+                            </label>
+                            <p className="text-[11px] text-slate-600">
+                              Se guardará VERIFICADO / REGISTRADO, fecha declarada y funcionario
+                              responsable. Esta fecha no inicia los 90 días.
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
                     {fechaRegistroCola !== hoyBogota() && (
                       <label className="block text-[11px] font-semibold">
                         Observaciones de la fecha anterior (obligatorio)
