@@ -2842,9 +2842,16 @@ export default function RuntPage() {
                               row.estado_certificacion
                             ) ===
                             'CERTIFICADO' ? (
-                              <Badge tipo="purple">
-                                Certificado
-                              </Badge>
+                              <div className="flex flex-col items-center gap-1">
+                                <Badge tipo="purple">
+                                  Certificado
+                                </Badge>
+                                {row.fecha_certificacion && (
+                                  <span className="text-[10px] text-slate-600">
+                                    {formatearFecha(row.fecha_certificacion)}
+                                  </span>
+                                )}
+                              </div>
                             ) : (
                               <Badge tipo="gray">
                                 {texto(row.observaciones).includes('CONTROL ADMINISTRATIVO CREADO EN CONCILIACION HISTORICA')
