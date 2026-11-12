@@ -3327,12 +3327,6 @@ export async function POST(
             message: 'Indique la fecha real de la consulta ciudadana RUNT que está confirmando (no futura).'
           }, { status: 400 })
         }
-        if (fechaVerificacion > fechaRegistro) {
-          return NextResponse.json({
-            status: 'error',
-            message: 'La fecha declarada de verificación no puede ser posterior a la fecha del registro formal. Si no se conoce, deje la verificación histórica sin completar.'
-          }, { status: 400 })
-        }
       }
 
       const {
