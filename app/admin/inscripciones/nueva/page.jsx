@@ -13,10 +13,7 @@ import {
   useRouter,
 } from 'next/navigation'
 
-import {
-  Toaster,
-  toast,
-} from 'sonner'
+import { toast } from 'sonner'
 
 import { UserPlus } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
@@ -2964,7 +2961,7 @@ export default function NuevaInscripcionPage() {
         } else {
           resetPreservandoDocumento()
 
-          toast.message(
+          toast.info(
             'No hay matrículas anteriores para este documento.'
           )
         }
@@ -3446,10 +3443,17 @@ const guardar =
   const contactoIniciado = ['celular', 'correo', 'direccion', 'barrio', 'ciudad',
     'emergencia_nombre', 'emergencia_celular'].some(key => conTexto(form[key])) ||
     conTexto(departamentoResidencia)
-  const contactoCompleto = (esMenor || (
-    conTexto(form.emergencia_nombre) && /^\d+$/.test(String(form.emergencia_celular || ''))
-  )) && (!conTexto(form.celular) || /^\d+$/.test(String(form.celular))) &&
-    (!conTexto(form.correo) || isValidEmail(form.correo))
+  // El contacto no se completa por diligenciar solo la dirección.
+  // El correo es opcional; los menores tienen un acudiente en otro bloque.
+  const contactoCompleto =
+    /^\d{10}$/.test(String(form.celular || '').trim()) &&
+    ['direccion', 'barrio', 'ciudad'].every(key => conTexto(form[key])) &&
+    conTexto(departamentoResidencia) &&
+    (!conTexto(form.correo) || isValidEmail(form.correo)) &&
+    (esMenor || (
+      conTexto(form.emergencia_nombre) &&
+      /^\d{10}$/.test(String(form.emergencia_celular || '').trim())
+    ))
   const categoriaMatricula = Array.isArray(form.categorias) ? form.categorias : []
   const matriculaCompleta = categoriaMatricula.length >= 1 &&
     categoriaMatricula.length <= 2 &&
@@ -3493,18 +3497,32 @@ const guardar =
   const ordenSecciones = ['identificacion', 'contacto', 'complementaria', 'matricula', 'financiera', 'runt']
   const seccionesCompletas = ordenSecciones.filter(key => estadosSecciones[key].completo).length
   const porcentajeAvance = Math.round(seccionesCompletas / ordenSecciones.length * 100)
+  // Se mantiene el encabezado azul institucional, mientras la tarjeta
+  // completada resalta suavemente sin alterar los campos internos.
+  const claseTarjetaSeccion = clave =>
+    `h-full overflow-hidden rounded-lg border transition-colors duration-200 ${
+      estadosSecciones[clave].completo
+        ? 'border-emerald-400 bg-emerald-50'
+        : 'border-slate-500 bg-white'
+    }`
+
   const etiquetaEstadoSeccion = (clave, numero, titulo) => {
     const estado = estadosSecciones[clave]
     const texto = estado.completo ? 'Completa' : estado.iniciado ? 'Incompleta' : 'Pendiente'
     const estilo = estado.completo
-      ? 'bg-emerald-500/25 text-white border-emerald-300'
+      ? 'border-emerald-300 bg-emerald-600 text-white'
       : estado.iniciado
-        ? 'bg-amber-400/20 text-white border-amber-300'
-        : 'bg-white/10 text-white/90 border-white/35'
+        ? 'border-amber-300 bg-amber-500 text-white'
+        : 'border-white/35 bg-white/10 text-white/90'
+    const colorNumero = estado.completo
+      ? 'bg-emerald-500 text-white'
+      : estado.iniciado
+        ? 'bg-orange-500 text-white'
+        : 'bg-slate-100 text-[#194567]'
     return (
       <div className="flex w-full items-center justify-between gap-2">
-        <span className="flex items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center rounded bg-white/90 text-[10px] font-bold text-[#194567]">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-bold ${colorNumero}`}>
             {numero}
           </span>
           <span>{titulo}</span>
@@ -3532,11 +3550,6 @@ const guardar =
         md:p-6
       "
     >
-      <Toaster
-        position="top-center"
-        richColors
-      />
-
       <div
         className="
           max-w-7xl
@@ -3572,16 +3585,10 @@ const guardar =
             <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200"
               role="progressbar" aria-label="Secciones completas de la matrícula"
               aria-valuemin={0} aria-valuemax={6} aria-valuenow={seccionesCompletas}>
-              <div className={`h-full rounded-full transition-all duration-300 ${porcentajeAvance === 100 ? 'bg-emerald-600' : 'bg-blue-600'}`}
+              <div className="h-full rounded-full bg-emerald-600 transition-all duration-300"
                 style={{ width: `${porcentajeAvance}%` }} />
             </div>
           </div>
-          {borradorRecuperado && (
-            <span className="text-[11px] text-slate-600">
-              <i className="fas fa-rotate-left mr-1"></i>
-              Borrador recuperado de este navegador
-            </span>
-          )}
         </div>
 
         {/* ==================================================
@@ -3620,7 +3627,7 @@ const guardar =
 
                 {/* IDENTIFICACIÓN */}
 
-                <div className="h-full overflow-hidden rounded-lg border border-slate-500 bg-white">
+                <div className={claseTarjetaSeccion('identificacion')}>
 
                   <div
                     className="px-3 py-2 text-xs font-semibold"
@@ -3901,7 +3908,7 @@ const guardar =
 
                 {/* CONTACTO */}
 
-                <div className="h-full overflow-hidden rounded-lg border border-slate-500 bg-white">
+                <div className={claseTarjetaSeccion('contacto')}>
 
                   <div
                     className="px-3 py-2 text-xs font-semibold"
@@ -4094,7 +4101,7 @@ const guardar =
 
                 {/* COMPLEMENTARIA */}
 
-                <div className="h-full overflow-hidden rounded-lg border border-slate-500 bg-white">
+                <div className={claseTarjetaSeccion('complementaria')}>
 
                   <div
                     className="px-3 py-2 text-xs font-semibold"
@@ -4374,12 +4381,18 @@ const guardar =
               {/* ACUDIENTE / EMERGENCIA */}
 
               {esMenor ? (
-                <div className="border border-gray-300 rounded-lg p-4">
-
-                  <div className="font-semibold text-sm mb-3 text-[var(--primary)]">
-                    Acudiente
+                <div className="mt-5 overflow-hidden rounded-lg border border-slate-500 bg-white">
+                  <div
+                    className="px-3 py-2 text-xs font-semibold"
+                    style={{
+                      backgroundColor: ESTILO_SECCIONES.fondo,
+                      color: ESTILO_SECCIONES.texto,
+                      borderColor: ESTILO_SECCIONES.borde,
+                    }}
+                  >
+                    Datos del Acudiente o Representante Legal
                   </div>
-
+                  <div className="p-3">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
                     <div>
@@ -4573,14 +4586,14 @@ const guardar =
                     </div>
 
                   </div>
-
+                  </div>
                 </div>
               ) : null}
 
               <div className="mt-5 grid grid-cols-1 xl:grid-cols-3 gap-3 items-stretch">
               {/* MATRÍCULA */}
 
-              <div className="h-full min-w-0 overflow-hidden rounded-lg border border-slate-500 bg-white">
+              <div className={`min-w-0 ${claseTarjetaSeccion('matricula')}`}>
 
                 <div
                   className="px-3 py-2 text-xs font-semibold"
@@ -4958,15 +4971,7 @@ const guardar =
               =============================================== */}
 
               <div
-                className="
-                  h-full
-                  min-w-0
-                  overflow-hidden
-                  rounded-lg
-                  border
-                  border-slate-500
-                  bg-white
-                "
+                className={`min-w-0 ${claseTarjetaSeccion('financiera')}`}
               >
                 <div
                   className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
@@ -4976,8 +4981,7 @@ const guardar =
                     borderColor: ESTILO_SECCIONES.borde,
                   }}
                 >
-                  <i className="fas fa-file-invoice-dollar"></i>
-                  Información Financiera
+                  {etiquetaEstadoSeccion('financiera', 5, 'Información Financiera')}
                 </div>
 
                 <div className="p-3 space-y-3">
@@ -5329,15 +5333,7 @@ const guardar =
               =============================================== */}
 
               <div
-                className="
-                  h-full
-                  min-w-0
-                  overflow-hidden
-                  rounded-lg
-                  border
-                  border-slate-500
-                  bg-white
-                "
+                className={`min-w-0 ${claseTarjetaSeccion('runt')}`}
               >
                 <div
                   className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
@@ -5819,7 +5815,7 @@ const guardar =
                     borderColor: ESTILO_SECCIONES.borde,
                   }}
                 >
-                  {etiquetaEstadoSeccion('financiera', 5, 'Información Financiera')}
+                  Información Financiera
                 </div>
 
                 <div
