@@ -3460,15 +3460,24 @@ const guardar =
     const numero = String(valor || '').trim()
     return numero && !/^\d{10}$/.test(numero) ? 'Debe tener exactamente 10 dígitos.' : ''
   }
+  const erroresIdentificacionVivos = {
+    documento: conTexto(form.documento) && !/^\d+$/.test(String(form.documento))
+      ? 'El documento debe contener solo números.' : '',
+    fecha_nacimiento: edad !== null && edad < 16 ? 'El aprendiz debe tener 16 años o más.' : '',
+  }
   const erroresContactoVivos = {
-    celular: mensajeCelular(form.celular),
+    celular: contactoIniciado && !conTexto(form.celular)
+      ? 'Ingrese un celular de 10 dígitos.' : mensajeCelular(form.celular),
     correo: conTexto(form.correo) && !isValidEmail(form.correo) ? 'Ingrese un correo válido.' : '',
     emergencia_nombre: !esMenor && contactoIniciado && !conTexto(form.emergencia_nombre)
       ? 'Ingrese el nombre completo del contacto.' : '',
-    emergencia_celular: !esMenor ? mensajeCelular(form.emergencia_celular) : '',
+    emergencia_celular: !esMenor
+      ? (contactoIniciado && !conTexto(form.emergencia_celular)
+        ? 'Ingrese el celular del contacto (10 dígitos).' : mensajeCelular(form.emergencia_celular))
+      : '',
   }
   const erroresAcudienteVivos = {
-    acudi_celular: esMenor ? mensajeCelular(form.acudi_celular) : '',
+    acudi_celular: esMenor && conTexto(form.acudi_celular) ? mensajeCelular(form.acudi_celular) : '',
     acudi_documento: esMenor && conTexto(form.acudi_documento) &&
       !/^\d+$/.test(String(form.acudi_documento)) ? 'El documento debe contener solo números.' : '',
     acudi_correo: esMenor && conTexto(form.acudi_correo) && !isValidEmail(form.acudi_correo)
@@ -3772,7 +3781,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.documento
+                          errors.documento || erroresIdentificacionVivos.documento
                         }
                       />
 
@@ -3911,7 +3920,7 @@ const guardar =
 
                     <FieldError
                       msg={
-                        errors.fecha_nacimiento
+                        errors.fecha_nacimiento || erroresIdentificacionVivos.fecha_nacimiento
                       }
                     />
 
