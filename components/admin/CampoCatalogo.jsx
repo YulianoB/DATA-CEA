@@ -62,7 +62,7 @@ export default function CampoCatalogo({
 
   return (
     <div className={wrapperClass}>
-      <label htmlFor={name} className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+      <label htmlFor={name} className={compacto || busqueda ? "block text-[11px] font-semibold mb-1" : "block text-xs font-semibold text-gray-600 mb-1"}>{label}</label>
       {busqueda ? (
         <>
           <input
