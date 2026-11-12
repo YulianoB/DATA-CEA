@@ -48,8 +48,18 @@ export async function GET(request) {
         if (buscarMunicipio.length < 2 || buscarMunicipio.length > 80) {
           return NextResponse.json({ status: 'failed', message: 'Escriba al menos dos caracteres.' }, { status: 400 })
         }
-        const termino = buscarMunicipio.replace(/[%_,()]/g, ' ').trim()
-        consulta = consulta.ilike('nombre', `%${termino}%`).limit(60)
+        // Permite buscar sin tildes (BOGOTA -> BOGOTÁ) sin modificar
+        // los nombres oficiales almacenados en public.municipios.
+        const termino = buscarMunicipio.replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\\s-]/g, '').trim()
+        const acentos = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú' }
+        const variantes = new Set([termino])
+        for (let i = 0; i < termino.length; i++) {
+          const acento = acentos[termino[i].toLowerCase()]
+          if (acento) {
+            variantes.add(termino.slice(0, i) + (termino[i] === termino[i].toUpperCase() ? acento.toUpperCase() : acento) + termino.slice(i + 1))
+          }
+        }
+        consulta = consulta.or([...variantes].map(nombre => `nombre.ilike.%${nombre}%`).join(',')).limit(60)
       } else {
         consulta = consulta.eq('departamento_id', Number(departamentoId))
       }
