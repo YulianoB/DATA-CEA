@@ -6085,6 +6085,10 @@ const guardar =
                   <strong>Revisión administrativa necesaria</strong>
                   <p>Antes de registrar una continuación debemos verificar que el curso no esté finalizado, comprobar el término aplicable y determinar si RUNT/SICOV/SIET permiten continuar el proceso original.</p>
                   <p>Para continuar un proceso vencido sin crear una nueva matrícula, abra el expediente del aprendiz desde Inscripciones. Allí puede registrar la continuación administrativa, conservando el consecutivo original. El nuevo proceso se gestiona posteriormente en Control RUNT, previa verificación de ausencia de certificación.</p>
+                  <button type="button" onClick={() => router.push('/admin/inscripciones')}
+                    className="rounded bg-[#173A57] px-3 py-2 font-semibold text-white">
+                    Ir a Inscripciones y consultar expediente
+                  </button>
                 </div>
               )}
               <div className="flex justify-end">
