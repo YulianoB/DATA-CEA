@@ -3696,10 +3696,25 @@ export async function GET(
         ? await obtenerControlesRuntExpediente(supabase, historial.map(item => item.id))
         : []
       const mapaRuntHistorial = construirMapaRuntActual(controlesHistorial)
-      const historialConEstado = historial.map(item => ({
-        ...item,
-        estado_runt: calcularEstadoOperativoRunt(mapaRuntHistorial.get(String(item.id)) || null),
-      }))
+      let continuacionesHistorial = []
+      if (historial.length) {
+        const { data, error } = await supabase
+          .from('matriculas_continuaciones')
+          .select('matricula_id,created_at')
+          .in('matricula_id', historial.map(item => item.id))
+        if (error) throw new Error('No fue posible consultar las continuaciones: ' + error.message)
+        continuacionesHistorial = data || []
+      }
+      const historialConEstado = historial.map(item => {
+        const control = mapaRuntHistorial.get(String(item.id)) || null
+        const continuaciones = continuacionesHistorial.filter(c => String(c.matricula_id) === String(item.id))
+        return {
+          ...item,
+          estado_runt: estadoConContinuacionPendiente(
+            calcularEstadoOperativoRunt(control), control, continuaciones
+          ),
+        }
+      })
 
       return NextResponse.json({
         status:
