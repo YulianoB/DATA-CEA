@@ -1,6 +1,7 @@
 // app/api/admin/runt/route.js
 
 import { NextResponse } from 'next/server'
+import { ORDEN_CATEGORIAS } from '@/lib/reglasCategoriasInscripciones'
 
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
@@ -11,15 +12,7 @@ import {
 // CONSTANTES
 // =========================================================
 
-const CATEGORIAS_VALIDAS = new Set([
-  'A2',
-  'B1',
-  'B2',
-  'C1',
-  'RC1',
-  'C2',
-  'C3',
-])
+const CATEGORIAS_VALIDAS = new Set(ORDEN_CATEGORIAS)
 
 const TIPOS_CLASE_VALIDOS = new Set([
   'TEORIA',
@@ -83,10 +76,14 @@ const LICENCIAS_INSTRUCTOR_POR_CATEGORIA = {
     'B3-C3',
   ],
 
+  B2: ['B2-C2', 'B3-C3'],
+
   C2: [
     'B2-C2',
     'B3-C3',
   ],
+
+  B3: ['B3-C3'],
 
   C3: [
     'B3-C3',
