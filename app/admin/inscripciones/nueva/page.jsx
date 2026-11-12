@@ -562,6 +562,8 @@ export default function NuevaInscripcionPage() {
   ] =
     useState([])
 
+  const [restriccionNuevaMatricula, setRestriccionNuevaMatricula] = useState({ bloqueada: false, pendientes: [] })
+
   // Las matrículas anteriores requieren una decisión explícita; nunca inferir vencimiento.
   const [modalAntecedentes, setModalAntecedentes] = useState(false)
   const [revisionAntecedentes, setRevisionAntecedentes] = useState('')
@@ -1030,7 +1032,7 @@ export default function NuevaInscripcionPage() {
   // REGLAS CATEGORÍAS
   // ==========================================================
 
-  const canSelectCat = cat => puedeSeleccionarCategoria({
+  const canSelectCat = cat => !restriccionNuevaMatricula.bloqueada && puedeSeleccionarCategoria({
     categoria: cat,
     seleccion: form.categorias,
     historial: [...histCategories],
@@ -2583,6 +2585,10 @@ export default function NuevaInscripcionPage() {
         setPrevMatriculas(
           list
         )
+        setRestriccionNuevaMatricula(json?.restriccion_nueva_matricula || { bloqueada: list.length > 0, pendientes: [] })
+        if (json?.restriccion_nueva_matricula?.bloqueada) {
+          setForm(prev => ({ ...prev, categorias: [] }))
+        }
         if (list.length > 0 && ultimaConsultaModalRef.current !== documento) {
           ultimaConsultaModalRef.current = documento
           setRevisionAntecedentes('')
@@ -2836,6 +2842,11 @@ export default function NuevaInscripcionPage() {
 
   const abrirConfirmacion =
     () => {
+      if (restriccionNuevaMatricula.bloqueada) {
+        toast.warning('No se puede crear una matrícula nueva hasta verificar la certificación de las matrículas anteriores. Consulte el expediente.')
+        setModalAntecedentes(true)
+        return
+      }
       const ok1 =
         validarPaso1()
 
@@ -2947,6 +2958,11 @@ export default function NuevaInscripcionPage() {
 
 const guardar =
   async () => {
+    if (restriccionNuevaMatricula.bloqueada) {
+      toast.error('Existe una matrícula anterior sin certificación confirmada. No se permite un registro nuevo.')
+      setModalAntecedentes(true)
+      return
+    }
     const ok1 =
       validarPaso1()
 
@@ -3220,7 +3236,7 @@ const guardar =
       /^\d{10}$/.test(String(form.emergencia_celular || '').trim())
     ))
   const categoriaMatricula = Array.isArray(form.categorias) ? form.categorias : []
-  const matriculaCompleta = validarSeleccionCategorias({
+  const matriculaCompleta = !restriccionNuevaMatricula.bloqueada && validarSeleccionCategorias({
     seleccion: categoriaMatricula,
     historial: [...histCategories],
     habilitadas: categoriasHabilitadas,
@@ -6055,16 +6071,27 @@ const guardar =
                   </div>
                 ))}
               </div>
-              <p className="text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                Estado de finalización: <strong>por verificar</strong>. El historial por sí solo no confirma certificación, licencia ni vencimiento del término.
-              </p>
+              {restriccionNuevaMatricula.bloqueada ? (
+                <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-900">
+                  <strong>No es posible generar una nueva matrícula.</strong>
+                  <p className="mt-1">Existen matrículas anteriores sin certificación RUNT confirmada. Debe consultar el expediente y terminar el proceso correspondiente. Un cambio de categoría o retractación requiere revisión administrativa y no debe crear una segunda matrícula.</p>
+                  {!!restriccionNuevaMatricula.pendientes?.length && (
+                    <p className="mt-2 font-semibold">Pendientes: {restriccionNuevaMatricula.pendientes.map(item => (item.consecutivo || 'Sin consecutivo') + ' (' + (item.categorias || []).join('/') + ')').join(' · ')}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-emerald-900">
+                  Las matrículas anteriores tienen certificación RUNT registrada. Puede revisar la categoría siguiente permitida por su historial y por el nivel del CEA.
+                </p>
+              )}
               <p className="font-semibold">¿Qué necesita realizar el CEA?</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button type="button"
                   className={`text-left rounded-lg border p-3 ${revisionAntecedentes==='otra'?'border-blue-600 bg-blue-50':'border-slate-300'}`}
+                  disabled={restriccionNuevaMatricula.bloqueada}
                   onClick={()=>setRevisionAntecedentes('otra')}>
                   <strong>Inscribir otra categoría</strong>
-                  <p className="text-[11px] mt-1">Conservar el historial y aplicar las reglas de categorías, edad y nivel existentes.</p>
+                  <p className="text-[11px] mt-1">{restriccionNuevaMatricula.bloqueada ? 'No disponible hasta confirmar la certificación de todos los procesos anteriores.' : 'Conservar el historial y aplicar las reglas de progresión, edad y nivel.'}</p>
                 </button>
                 <button type="button"
                   className={`text-left rounded-lg border p-3 ${revisionAntecedentes==='misma'?'border-blue-600 bg-blue-50':'border-slate-300'}`}
@@ -6073,7 +6100,7 @@ const guardar =
                   <p className="text-[11px] mt-1">Determinar con soportes si procede una continuación, sin crear otra matrícula.</p>
                 </button>
               </div>
-              {revisionAntecedentes==='otra' && (
+              {revisionAntecedentes==='otra' && !restriccionNuevaMatricula.bloqueada && (
                 <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p>Puede continuar el formulario de inscripción con <strong>una categoría nueva permitida</strong>. Las categorías anteriores permanecerán bloqueadas.</p>
                   <button type="button" onClick={()=>setModalAntecedentes(false)}
