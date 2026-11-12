@@ -3878,7 +3878,7 @@ const guardar =
                       />
                     </div>
 
-                    <div className="col-span-2">
+                    <div className="col-span-12">
                       <label className="block text-[11px] font-semibold mb-1">
                         Dirección
                       </label>
