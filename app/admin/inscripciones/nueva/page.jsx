@@ -6240,7 +6240,10 @@ const guardar =
                           </button>
                         )}
                         {estado === 'VENCIDO' && item.estado_runt?.continuacion_pendiente && (
-                          <span className="text-xs font-medium text-amber-800">Continuación registrada · Ir a Control RUNT</span>
+                          <button type="button" onClick={() => router.push('/admin/runt')}
+                            className="rounded border border-amber-600 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50">
+                            Continuación registrada · Control RUNT
+                          </button>
                         )}
                       </div>
                     </div>
