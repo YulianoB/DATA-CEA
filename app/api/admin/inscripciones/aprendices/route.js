@@ -4174,52 +4174,70 @@ export async function POST(
       const matriculaId = Number(body?.matricula_id)
       const fecha = normalizarTexto(body?.fecha_continuacion)
       const motivo = normalizarTexto(body?.motivo)
-      const observaciones = normalizarTexto(body?.observaciones)
+      const observaciones = normalizarTexto(body?.observaciones) || null
       const responsable = normalizarTexto(body?.usuario)
-      const valor = Number(body?.valor_continuacion)
-      const fechaValida = /^\d{4}-\d{2}-\d{2}$/.test(fecha) &&
-        !Number.isNaN(Date.parse(fecha)) &&
-        new Date(fecha + 'T12:00:00Z').toISOString().slice(0, 10) === fecha
-
+      const esFecha = /^\d{4}-\d{2}-\d{2}$/.test(fecha)
+        && !Number.isNaN(Date.parse(fecha))
+        && new Date(fecha+'T12:00:00Z').toISOString().slice(0,10)===fecha
       if (!Number.isSafeInteger(matriculaId) || matriculaId <= 0 ||
-          !fechaValida || motivo.length < 8 || !responsable ||
-          !Number.isFinite(valor) || valor <= 0 || valor > 999999999999.99 ||
-          Math.abs(valor - Math.round(valor * 100) / 100) > 1e-8) {
+          !esFecha || motivo.length < 8 || !responsable) {
         return NextResponse.json({
-          status: 'error',
-          message: 'Indique matrícula, fecha, motivo, responsable y valor de continuación válido mayor que cero.',
-        }, { status: 400 })
+          status:'error',
+          message:'Indique matrícula, fecha válida, motivo de al menos ocho caracteres y responsable.'
+        },{status:400})
+      }
+      const {data: matricula,error: matriculaError} = await supabase
+        .from('aprendices').select('id,consecutivo,fecha_matricula')
+        .eq('id',matriculaId).maybeSingle()
+      if (matriculaError) throw new Error(matriculaError.message)
+      if (!matricula) {
+        return NextResponse.json({status:'error',message:'Matrícula original no encontrada.'},{status:404})
+      }
+      if (fecha < matricula.fecha_matricula) {
+        return NextResponse.json({status:'error',message:'La continuación no puede preceder a la matrícula original.'},{status:400})
+      }
+      if (fecha < matricula.fecha_matricula || fecha > fechaBogotaInscripciones()) {
+        return NextResponse.json({
+          status:'error',message:'La continuación debe tener una fecha entre la matrícula original y hoy.'
+        },{status:400})
       }
 
-      // RPC en PostgreSQL: continuación y nueva cuenta/detalle se guardan
-      // en una sola transacción. Nunca crear obligación si falla continuación.
-      const { data, error } = await supabase.rpc('registrar_continuacion_con_obligacion', {
-        p_matricula_id: matriculaId,
-        p_fecha_continuacion: fecha,
-        p_motivo: motivo,
-        p_observaciones: observaciones,
-        p_registrado_por: responsable,
-        p_valor_continuacion: valor,
-      })
-      if (error) {
-        if (error.code === 'PGRST202' || error.code === '42883') {
-          return NextResponse.json({
-            status: 'error',
-            message: 'Falta aplicar la migración de continuaciones y obligaciones en la base de datos de este CEA.',
-          }, { status: 503 })
-        }
+      // Solo permitir continuacion si el ultimo proceso RUNT realmente vencio
+      // sin certificacion. Un nuevo proceso se crea exclusivamente desde Control RUNT.
+      const controles = await obtenerControlesRuntExpediente(supabase, [matriculaId])
+      const ultimoControl = construirMapaRuntActual(controles).get(String(matriculaId))
+      const estadoActual = calcularEstadoOperativoRunt(ultimoControl)
+      if (estadoActual.estado !== 'VENCIDO') {
         return NextResponse.json({
-          status: 'error',
-          message: error.message || 'No fue posible registrar la continuación.',
-        }, { status: 409 })
+          status:'error',
+          message:'Solo se puede registrar continuación cuando el último proceso RUNT está vencido y no certificado.'
+        },{status:409})
       }
+
+      const { data: continuacionesPrevias, error: errorContinuaciones } = await supabase
+        .from('matriculas_continuaciones')
+        .select('id,created_at')
+        .eq('matricula_id', matriculaId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (errorContinuaciones) throw new Error('No fue posible validar las continuaciones: ' + errorContinuaciones.message)
+      if (continuacionesPrevias?.[0] && new Date(continuacionesPrevias[0].created_at).getTime() >
+          new Date(ultimoControl.created_at).getTime()) {
+        return NextResponse.json({
+          status:'error',
+          message:'Ya existe una continuación registrada para este proceso RUNT. Continúe con el reproceso desde Control RUNT.'
+        },{status:409})
+      }
+      const {data,error} = await supabase.from('matriculas_continuaciones')
+        .insert({matricula_id:matriculaId,fecha_continuacion:fecha,
+                 motivo,observaciones,registrado_por:responsable})
+        .select('id,matricula_id,fecha_continuacion,motivo,observaciones,registrado_por,created_at')
+        .single()
+      if (error) throw new Error('No fue posible guardar la continuación: '+error.message)
       return NextResponse.json({
-        status: 'success',
-        message: 'Continuación y nueva obligación registradas. La matrícula y el consecutivo se conservan. Continúe el reproceso en Control RUNT.',
-        data,
-        consecutivo_original: data?.consecutivo_original,
-        nueva_cuenta_id: data?.cuenta_id,
-      }, { status: 201 })
+        status:'success',message:'Continuación registrada sin cambiar el consecutivo de la matrícula.',
+        data,consecutivo_original:matricula.consecutivo
+      },{status:201})
     }
 
     // =====================================================
