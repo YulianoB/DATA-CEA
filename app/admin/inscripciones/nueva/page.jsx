@@ -615,9 +615,62 @@ export default function NuevaInscripcionPage() {
 
   // Las matrículas anteriores requieren una decisión explícita; nunca inferir vencimiento.
   const [modalAntecedentes, setModalAntecedentes] = useState(false)
+  const [matriculaContinuar, setMatriculaContinuar] = useState(null)
+  const [motivoContinuacion, setMotivoContinuacion] = useState('Vencimiento del plazo RUNT de 90 días')
+  const [observacionesContinuacion, setObservacionesContinuacion] = useState('')
+  const [valorContinuacion, setValorContinuacion] = useState('')
+  const [fechaContinuacion, setFechaContinuacion] = useState(
+    () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Bogota' }).format(new Date())
+  )
+  const [guardandoContinuacion, setGuardandoContinuacion] = useState(false)
+  const [resultadoContinuacion, setResultadoContinuacion] = useState(null)
   const [revisionAntecedentes, setRevisionAntecedentes] = useState('')
   const ultimaConsultaModalRef = useRef('')
   const documentoConsultaActualRef = useRef('')
+
+
+  const guardarContinuacion = async () => {
+    if (!matriculaContinuar || guardandoContinuacion || !user) return
+    const valor = Number(valorContinuacion)
+    if (!fechaContinuacion || fechaContinuacion < matriculaContinuar.fecha_matricula ||
+        motivoContinuacion.trim().length < 8 || !valorContinuacion.trim() ||
+        !Number.isFinite(valor) || valor <= 0 ||
+        Math.abs(valor - Math.round(valor * 100) / 100) > 1e-8) {
+      toast.warning('Indique una fecha válida, el motivo y el valor de la nueva obligación.')
+      return
+    }
+    setGuardandoContinuacion(true)
+    try {
+      const json = await fetchJsonSeguro(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accion: 'registrar_continuacion',
+          nit: obtenerNitUsuario(user),
+          matricula_id: matriculaContinuar.id,
+          fecha_continuacion: fechaContinuacion,
+          motivo: motivoContinuacion.trim(),
+          observaciones: observacionesContinuacion.trim(),
+          valor_continuacion: valor,
+          usuario: nombreUsuario(user),
+        }),
+      })
+      setResultadoContinuacion({
+        consecutivo: matriculaContinuar.consecutivo,
+        cuentaId: json.obligacion?.cuenta?.id,
+      })
+      setPrevMatriculas(prev => prev.map(item =>
+        item.id === matriculaContinuar.id
+          ? { ...item, estado_runt: { ...item.estado_runt, continuacion_pendiente: true } }
+          : item
+      ))
+      toast.success('Continuación y obligación registradas.')
+    } catch (error) {
+      toast.error(error.message || 'No fue posible registrar la continuación.')
+    } finally {
+      setGuardandoContinuacion(false)
+    }
+  }
 
   // ==========================================================
   // ERRORES
@@ -6171,12 +6224,23 @@ const guardar =
                         <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${color}`}>
                           {etiqueta}
                         </span>
-                        {estado === 'VENCIDO' && (
+                        {estado === 'VENCIDO' && !item.estado_runt?.continuacion_pendiente && (
                           <button type="button"
-                            onClick={() => router.push(`/admin/inscripciones?documento=${encodeURIComponent(form.documento)}`)}
-                            className="rounded border border-[#173A57] px-3 py-1.5 text-xs font-semibold text-[#173A57] hover:bg-blue-50">
-                            Revisar matrícula
+                            onClick={() => {
+                              setMatriculaContinuar(item)
+                              setResultadoContinuacion(null)
+                              setMotivoContinuacion('Vencimiento del plazo RUNT de 90 días')
+                              setObservacionesContinuacion('')
+                              setValorContinuacion('')
+                              setFechaContinuacion(new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Bogota' }).format(new Date()))
+                              setModalAntecedentes(false)
+                            }}
+                            className="rounded bg-[#173A57] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#21577F]">
+                            Continuar matrícula
                           </button>
+                        )}
+                        {estado === 'VENCIDO' && item.estado_runt?.continuacion_pendiente && (
+                          <span className="text-xs font-medium text-amber-800">Continuación registrada · Ir a Control RUNT</span>
                         )}
                       </div>
                     </div>
@@ -6192,6 +6256,83 @@ const guardar =
                   Continuar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* La continuación nace en Nueva Matrícula, sin duplicar aprendices. */}
+      {matriculaContinuar && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4"
+          role="dialog" aria-modal="true" aria-label="Continuar matrícula vencida">
+          <div className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-[#173A57] p-4 text-white">
+              <h3 className="text-sm font-bold">Continuar matrícula</h3>
+              <button type="button" disabled={guardandoContinuacion}
+                onClick={() => setMatriculaContinuar(null)}
+                className="rounded border border-white/40 px-2 py-1 disabled:opacity-50"
+                aria-label="Cerrar">✕</button>
+            </div>
+            <div className="max-h-[80vh] space-y-3 overflow-y-auto p-4 text-sm">
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p><strong>Matrícula:</strong> {matriculaContinuar.consecutivo}</p>
+                <p><strong>Categoría:</strong> {(matriculaContinuar.categorias || []).join(' / ') || matriculaContinuar.categoria}</p>
+                <p className="mt-1 text-xs text-slate-600">Se conserva la matrícula y su consecutivo. Se genera una nueva obligación independiente.</p>
+              </div>
+              {resultadoContinuacion ? (
+                <div className="space-y-3">
+                  <p className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-emerald-900">
+                    Continuación registrada correctamente. Nueva obligación #{resultadoContinuacion.cuentaId || 'registrada'}.
+                  </p>
+                  <p className="text-xs text-slate-600">Registre el pago en Caja. El nuevo plazo RUNT comenzará cuando se confirme la fecha real del nuevo registro desde Control RUNT.</p>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <button type="button" onClick={() => setMatriculaContinuar(null)}
+                      className="rounded border px-3 py-2">Cerrar</button>
+                    <button type="button" onClick={() => router.push('/admin/runt')}
+                      className="rounded border border-[#173A57] px-3 py-2 text-[#173A57]">Control RUNT</button>
+                    <button type="button" onClick={() => router.push('/admin/caja')}
+                      className="rounded bg-[#173A57] px-4 py-2 font-semibold text-white">Ir a Caja</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <label className="block text-xs font-semibold">Fecha de continuación
+                    <input type="date" className="mt-1 w-full rounded border border-slate-400 p-2"
+                      min={matriculaContinuar.fecha_matricula || undefined}
+                      max={new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Bogota' }).format(new Date())}
+                      value={fechaContinuacion} onChange={e => setFechaContinuacion(e.target.value)} />
+                  </label>
+                  <label className="block text-xs font-semibold">Motivo de continuación *
+                    <input className="mt-1 w-full rounded border border-slate-400 p-2"
+                      maxLength={500} value={motivoContinuacion}
+                      onChange={e => setMotivoContinuacion(e.target.value)} />
+                  </label>
+                  <label className="block text-xs font-semibold">Observaciones
+                    <textarea className="mt-1 w-full rounded border border-slate-400 p-2"
+                      rows={3} maxLength={2000} placeholder="Observaciones adicionales del funcionario"
+                      value={observacionesContinuacion}
+                      onChange={e => setObservacionesContinuacion(e.target.value)} />
+                  </label>
+                  <label className="block text-xs font-semibold">Valor de la nueva obligación ($) *
+                    <input type="number" min="0.01" step="0.01"
+                      className="mt-1 w-full rounded border border-slate-400 p-2"
+                      value={valorContinuacion} onChange={e => setValorContinuacion(e.target.value)}
+                      placeholder="Valor acordado" />
+                  </label>
+                  <p className="text-xs text-slate-600">Responsable: {nombreUsuario(user) || 'Usuario de sesión'}</p>
+                  <div className="flex justify-end gap-2">
+                    <button type="button" disabled={guardandoContinuacion}
+                      className="rounded border px-3 py-2 disabled:opacity-50"
+                      onClick={() => setMatriculaContinuar(null)}>Cancelar</button>
+                    <button type="button" disabled={guardandoContinuacion}
+                      className="rounded bg-[#173A57] px-4 py-2 font-semibold text-white disabled:opacity-50"
+                      onClick={guardarContinuacion}>
+                      {guardandoContinuacion ? 'Guardando...' : 'Guardar continuación'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
