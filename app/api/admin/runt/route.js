@@ -3304,6 +3304,37 @@ export async function POST(
         }, { status: 400 })
       }
 
+      // La regularización es opcional y nunca debe inventar ni alterar
+      // una verificación histórica ya documentada. Si el funcionario
+      // confirma una consulta, se guarda su fecha declarada y responsable.
+      const registrarVerificacion = body?.registrar_verificacion === true
+      const tieneVerificacion = control.resultado_verificacion != null ||
+        normalizarMayusculas(control.estado_verificacion) === 'VERIFICADO'
+      if (registrarVerificacion && tieneVerificacion) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'La verificación ya tiene información registrada. No se reemplazará desde este modal.'
+        }, { status: 409 })
+      }
+      const fechaVerificacion = normalizarTexto(body?.fecha_verificacion)
+      if (registrarVerificacion) {
+        const fechaVerificacionValida = /^\d{4}-\d{2}-\d{2}$/.test(fechaVerificacion) &&
+          !Number.isNaN(Date.parse(fechaVerificacion)) &&
+          new Date(fechaVerificacion + 'T12:00:00Z').toISOString().slice(0, 10) === fechaVerificacion
+        if (!fechaVerificacionValida || fechaVerificacion > hoyBogota()) {
+          return NextResponse.json({
+            status: 'error',
+            message: 'Indique la fecha real de la consulta ciudadana RUNT que está confirmando (no futura).'
+          }, { status: 400 })
+        }
+        if (fechaVerificacion > fechaRegistro) {
+          return NextResponse.json({
+            status: 'error',
+            message: 'La fecha declarada de verificación no puede ser posterior a la fecha del registro formal. Si no se conoce, deje la verificación histórica sin completar.'
+          }, { status: 400 })
+        }
+      }
+
       const {
         data,
         error,
@@ -3328,6 +3359,13 @@ export async function POST(
               ) ||
               control.observaciones ||
               null,
+
+            ...(registrarVerificacion ? {
+              estado_verificacion: 'VERIFICADO',
+              resultado_verificacion: 'REGISTRADO',
+              fecha_verificacion: fechaVerificacion,
+              usuario_verificacion: usuario,
+            } : {}),
 
             updated_at:
               new Date()
