@@ -3992,6 +3992,32 @@ export async function POST(
         )
       }
 
+      // La continuación administrativa debe existir antes de reiniciar RUNT.
+      // Se vincula a la matrícula original; nunca genera una matrícula nueva.
+      const { data: continuacionesVigentes, error: errorContinuacion } = await supabase
+        .from('matriculas_continuaciones')
+        .select('id,created_at,fecha_continuacion')
+        .eq('matricula_id', controlAnterior.matricula_id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (errorContinuacion) {
+        throw new Error('No fue posible validar la continuación administrativa: ' + errorContinuacion.message)
+      }
+
+      const inicioProceso = Date.parse(controlAnterior.created_at || '')
+      const tieneContinuacion = Number.isFinite(inicioProceso) &&
+        (continuacionesVigentes || []).some(item => {
+          const fechaCreacion = Date.parse(item.created_at || '')
+          return Number.isFinite(fechaCreacion) && fechaCreacion > inicioProceso
+        })
+      if (!tieneContinuacion) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Registre primero la continuación administrativa desde el expediente de Inscripciones, conservando la matrícula original.',
+        }, { status: 409 })
+      }
+
       // ===================================================
       // EVITAR REPROCESO DUPLICADO
       // ===================================================
