@@ -1943,7 +1943,7 @@ export default function InscripcionesPage() {
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-xs">
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-xs">
               <label htmlFor="tamanoPaginaInscripciones" className="whitespace-nowrap text-white/90">
                 Por página
               </label>
@@ -1970,22 +1970,27 @@ export default function InscripcionesPage() {
                 className="rounded border border-white/30 px-2 py-1 text-white transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40">
                 Siguiente
               </button>
+              <button
+                type="button"
+                onClick={() => router.push('/admin/inscripciones/nueva')}
+                className="flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-600 px-3 text-xs text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-700"
+              >
+                <i className="fas fa-user-plus"></i>
+                Nueva Matrícula
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => router.push('/admin/inscripciones/nueva')}
-              className="flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-600 px-3 text-xs text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-700"
-            >
-              <i className="fas fa-user-plus"></i>
-              Nueva Matrícula
-            </button>
+
           </div>
 
           <div className="overflow-x-auto">
 
             <table
-              className="w-full min-w-[1250px] border-separate border-spacing-0 text-[11px]"
+              className="
+                w-full
+                text-[11px]
+                border-collapse
+              "
             >
 
               <thead
@@ -1997,10 +2002,7 @@ export default function InscripcionesPage() {
 
                 <tr>
 
-                  <th
-                    className="sticky left-0 z-20 border p-2 shadow-[2px_0_3px_-2px_rgba(15,23,42,0.25)]"
-                    style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo }}
-                  >
+                  <th className="p-2 border">
                     Matrícula
                   </th>
 
@@ -2111,13 +2113,23 @@ export default function InscripcionesPage() {
                           key={
                             row.id
                           }
-                          className="group odd:bg-white even:bg-gray-50 hover:bg-blue-50"
+                          className="
+                            odd:bg-white
+                            even:bg-gray-50
+                            hover:bg-blue-50
+                          "
                         >
 
                           <td
-                            className="sticky left-0 z-10 border bg-white p-2 text-center font-semibold shadow-[2px_0_3px_-2px_rgba(15,23,42,0.2)] group-even:bg-gray-50 group-hover:bg-blue-50"
+                            className="
+                              p-2
+                              border
+                              text-center
+                              font-semibold
+                            "
                           >
-                            {row.consecutivo || '-'}
+                            {row.consecutivo ||
+                              '-'}
                           </td>
 
                           <td
