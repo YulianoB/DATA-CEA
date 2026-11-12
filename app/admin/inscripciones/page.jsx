@@ -20,6 +20,7 @@ import {
   ESTILO_SECCIONES,
   ESTILO_ENCABEZADO_TABLA,
   ESTILO_CELDAS_TABLA,
+  MarcoTabla,
   BotonConsultar,
   BotonSecundario,
   BotonDocumentos,
@@ -1918,14 +1919,7 @@ export default function InscripcionesPage() {
             RESULTADOS
         ================================================== */}
 
-        <div
-          className="
-            border
-            border-[#CBD5E1]
-            rounded-lg
-            overflow-hidden
-          "
-        >
+        <MarcoTabla className="rounded-lg">
 
           <div
             className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
@@ -1983,7 +1977,7 @@ export default function InscripcionesPage() {
 
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="max-h-[65vh] overflow-auto" role="region" aria-label="Resultados de matrículas">
 
             <table
               className="
@@ -2002,35 +1996,35 @@ export default function InscripcionesPage() {
 
                 <tr>
 
-                  <th className="p-2 border">
+                  <th className="sticky top-0 z-10 border p-2" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, borderColor: ESTILO_CELDAS_TABLA.borde, borderWidth: ESTILO_CELDAS_TABLA.grosorBorde }}>
                     Matrícula
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="sticky top-0 z-10 border p-2" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, borderColor: ESTILO_CELDAS_TABLA.borde, borderWidth: ESTILO_CELDAS_TABLA.grosorBorde }}>
                     Fecha
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="sticky top-0 z-10 border p-2" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, borderColor: ESTILO_CELDAS_TABLA.borde, borderWidth: ESTILO_CELDAS_TABLA.grosorBorde }}>
                     Documento
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="sticky top-0 z-10 border p-2" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, borderColor: ESTILO_CELDAS_TABLA.borde, borderWidth: ESTILO_CELDAS_TABLA.grosorBorde }}>
                     Aprendiz
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="sticky top-0 z-10 border p-2" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, borderColor: ESTILO_CELDAS_TABLA.borde, borderWidth: ESTILO_CELDAS_TABLA.grosorBorde }}>
                     Categoría
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="sticky top-0 z-10 border p-2" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, borderColor: ESTILO_CELDAS_TABLA.borde, borderWidth: ESTILO_CELDAS_TABLA.grosorBorde }}>
                     Origen
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="sticky top-0 z-10 border p-2" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, borderColor: ESTILO_CELDAS_TABLA.borde, borderWidth: ESTILO_CELDAS_TABLA.grosorBorde }}>
                     Estado Matrícula
                   </th>
 
-                  <th className="p-2 border">
+                  <th className="sticky top-0 z-10 border p-2" style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo, borderColor: ESTILO_CELDAS_TABLA.borde, borderWidth: ESTILO_CELDAS_TABLA.grosorBorde }}>
                     Acción
                   </th>
 
@@ -2289,7 +2283,7 @@ export default function InscripcionesPage() {
 
           </div>
 
-        </div>
+        </MarcoTabla>
 
       </div>
 
