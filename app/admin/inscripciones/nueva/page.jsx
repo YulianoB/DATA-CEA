@@ -1423,16 +1423,22 @@ export default function NuevaInscripcionPage() {
           'Debe contener solo dígitos.'
       }
 
-      if (
-        form.celular &&
-        !/^\d+$/.test(
-          String(
-            form.celular
-          )
-        )
-      ) {
-        errs.celular =
-          'Solo dígitos.'
+      // Validar únicamente al revisar el formulario, no mientras se escribe.
+      const tel = String(form.celular || '').trim()
+      if (!/^\d{10}$/.test(tel)) {
+        errs.celular = 'Ingrese un celular de 10 dígitos.'
+      }
+      for (const [key, label] of [
+        ['direccion', 'la dirección'],
+        ['barrio', 'el barrio'],
+        ['ciudad', 'la ciudad o municipio'],
+      ]) {
+        if (!String(form[key] || '').trim()) {
+          errs[key] = `Ingrese ${label}.`
+        }
+      }
+      if (!String(departamentoResidencia || '').trim()) {
+        errs.departamento_residencia_auxiliar = 'Seleccione el departamento.'
       }
 
       if (
@@ -1709,16 +1715,8 @@ export default function NuevaInscripcionPage() {
             'Solo dígitos.'
         }
 
-        if (
-          form
-            .acudi_celular &&
-          !/^\d+$/.test(
-            form
-              .acudi_celular
-          )
-        ) {
-          errs.acudi_celular =
-            'Solo dígitos.'
+        if (!/^\d{10}$/.test(String(form.acudi_celular || '').trim())) {
+          errs.acudi_celular = 'El celular del acudiente debe tener 10 dígitos.'
         }
 
         if (
@@ -1755,16 +1753,8 @@ export default function NuevaInscripcionPage() {
             'Campo obligatorio.'
         }
 
-        if (
-          form
-            .emergencia_celular &&
-          !/^\d+$/.test(
-            form
-              .emergencia_celular
-          )
-        ) {
-          errs.emergencia_celular =
-            'Solo dígitos.'
+        if (!/^\d{10}$/.test(String(form.emergencia_celular || '').trim())) {
+          errs.emergencia_celular = 'El celular del contacto debe tener 10 dígitos.'
         }
       }
 
@@ -3454,35 +3444,6 @@ const guardar =
       conTexto(form.emergencia_nombre) &&
       /^\d{10}$/.test(String(form.emergencia_celular || '').trim())
     ))
-  // Errores de ayuda visibles durante el diligenciamiento.
-  // No se generan notificaciones por cada pulsación ni se bloquean campos opcionales.
-  const mensajeCelular = (valor) => {
-    const numero = String(valor || '').trim()
-    return numero && !/^\d{10}$/.test(numero) ? 'Debe tener exactamente 10 dígitos.' : ''
-  }
-  const erroresIdentificacionVivos = {
-    documento: conTexto(form.documento) && !/^\d+$/.test(String(form.documento))
-      ? 'El documento debe contener solo números.' : '',
-    fecha_nacimiento: edad !== null && edad < 16 ? 'El aprendiz debe tener 16 años o más.' : '',
-  }
-  const erroresContactoVivos = {
-    celular: contactoIniciado && !conTexto(form.celular)
-      ? 'Ingrese un celular de 10 dígitos.' : mensajeCelular(form.celular),
-    correo: conTexto(form.correo) && !isValidEmail(form.correo) ? 'Ingrese un correo válido.' : '',
-    emergencia_nombre: !esMenor && contactoIniciado && !conTexto(form.emergencia_nombre)
-      ? 'Ingrese el nombre completo del contacto.' : '',
-    emergencia_celular: !esMenor
-      ? (contactoIniciado && !conTexto(form.emergencia_celular)
-        ? 'Ingrese el celular del contacto (10 dígitos).' : mensajeCelular(form.emergencia_celular))
-      : '',
-  }
-  const erroresAcudienteVivos = {
-    acudi_celular: esMenor && conTexto(form.acudi_celular) ? mensajeCelular(form.acudi_celular) : '',
-    acudi_documento: esMenor && conTexto(form.acudi_documento) &&
-      !/^\d+$/.test(String(form.acudi_documento)) ? 'El documento debe contener solo números.' : '',
-    acudi_correo: esMenor && conTexto(form.acudi_correo) && !isValidEmail(form.acudi_correo)
-      ? 'Ingrese un correo válido.' : '',
-  }
   const categoriaMatricula = Array.isArray(form.categorias) ? form.categorias : []
   const matriculaCompleta = categoriaMatricula.length >= 1 &&
     categoriaMatricula.length <= 2 &&
@@ -3781,7 +3742,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.documento || erroresIdentificacionVivos.documento
+                          errors.documento
                         }
                       />
 
@@ -3920,7 +3881,7 @@ const guardar =
 
                     <FieldError
                       msg={
-                        errors.fecha_nacimiento || erroresIdentificacionVivos.fecha_nacimiento
+                        errors.fecha_nacimiento
                       }
                     />
 
@@ -3979,7 +3940,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.celular || erroresContactoVivos.celular
+                          errors.celular
                         }
                       />
                     </div>
@@ -4012,7 +3973,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.correo || erroresContactoVivos.correo
+                          errors.correo
                         }
                       />
                     </div>
@@ -4037,7 +3998,7 @@ const guardar =
                             )
                         }
                       />
-                      {contactoIniciado && !conTexto(form.direccion) && <FieldError msg="Ingrese la dirección." />}
+                      <FieldError msg={errors.direccion} />
                     </div>
 
                     <div className="col-span-12">
@@ -4060,7 +4021,7 @@ const guardar =
                             )
                         }
                       />
-                      {contactoIniciado && !conTexto(form.barrio) && <FieldError msg="Ingrese el barrio." />}
+                      <FieldError msg={errors.barrio} />
                     </div>
 
                     <div className="col-span-6 min-w-0">
@@ -4078,7 +4039,7 @@ const guardar =
                           setF('ciudad', '')
                         }}
                       />
-                      {contactoIniciado && !conTexto(departamentoResidencia) && <FieldError msg="Seleccione el departamento." />}
+                      <FieldError msg={errors.departamento_residencia_auxiliar} />
                     </div>
 
                     <div className="col-span-6 min-w-0">
@@ -4089,7 +4050,7 @@ const guardar =
                       value={form.ciudad}
                       onChange={(nombre) => setF('ciudad', nombre)}
                     />
-                      {contactoIniciado && !conTexto(form.ciudad) && <FieldError msg="Seleccione la ciudad o municipio." />}
+                      <FieldError msg={errors.ciudad} />
                     </div>
 
 
@@ -4114,7 +4075,7 @@ const guardar =
                                 )
                               }
                             />
-                            <FieldError msg={errors.emergencia_nombre || erroresContactoVivos.emergencia_nombre} />
+                            <FieldError msg={errors.emergencia_nombre} />
                           </div>
 
                           <div>
@@ -4127,7 +4088,7 @@ const guardar =
                               onChange={setNumeric('emergencia_celular')}
                               inputMode="numeric"
                             />
-                            <FieldError msg={errors.emergencia_celular || erroresContactoVivos.emergencia_celular} />
+                            <FieldError msg={errors.emergencia_celular} />
                           </div>
                         </div>
                       </div>
@@ -4545,7 +4506,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.acudi_documento || erroresAcudienteVivos.acudi_documento
+                          errors.acudi_documento
                         }
                       />
                     </div>
@@ -4569,7 +4530,7 @@ const guardar =
 
                       <FieldError
                         msg={
-                          errors.acudi_celular || erroresAcudienteVivos.acudi_celular
+                          errors.acudi_celular
                         }
                       />
                     </div>
@@ -4621,7 +4582,7 @@ const guardar =
                             )
                         }
                       />
-                      <FieldError msg={errors.acudi_correo || erroresAcudienteVivos.acudi_correo} />
+                      <FieldError msg={errors.acudi_correo} />
                     </div>
 
                   </div>
