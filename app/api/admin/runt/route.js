@@ -2862,18 +2862,22 @@ export async function GET(
           control.id
         )
 
-      // Estado SICOV para interfaz; la acción certificar valida de nuevo.
-      const { data: controlesSicov, error: errorSicov } = await supabase
-        .from('control_sicov')
-        .select('estado_certificacion')
-        .eq('matricula_id', control.matricula_id)
-        .eq('categoria', control.categoria)
-      if (errorSicov) {
-        throw new Error('No fue posible consultar SICOV: ' + errorSicov.message)
+      // Los reprocesos RUNT (proceso >= 2) se gestionan sin volver a SICOV.
+      // Para la matrícula inicial se mantiene la comprobación original.
+      let sicovCertificado = Number(control.numero_proceso || 1) > 1
+      if (!sicovCertificado) {
+        const { data: controlesSicov, error: errorSicov } = await supabase
+          .from('control_sicov')
+          .select('estado_certificacion')
+          .eq('matricula_id', control.matricula_id)
+          .eq('categoria', control.categoria)
+        if (errorSicov) {
+          throw new Error('No fue posible consultar SICOV: ' + errorSicov.message)
+        }
+        sicovCertificado = (controlesSicov || []).some(item =>
+          normalizarMayusculas(item.estado_certificacion) === 'CERTIFICADO'
+        )
       }
-      const sicovCertificado = (controlesSicov || []).some(item =>
-        normalizarMayusculas(item.estado_certificacion) === 'CERTIFICADO'
-      )
 
       return NextResponse.json({
         status:
@@ -3803,27 +3807,26 @@ export async function POST(
         )
       }
 
-      // Exigir SICOV certificado para la misma matrícula y categoría.
-      const { data: controlesSicov, error: errorSicov } = await supabase
-        .from('control_sicov')
-        .select('id,estado_certificacion,categoria')
-        .eq('matricula_id', control.matricula_id)
-        .eq('categoria', control.categoria)
+      // La certificación de la continuación depende del RUNT vigente y
+      // sus cargues; SICOV solo se exige en el primer proceso.
+      if (Number(control.numero_proceso || 1) === 1) {
+        const { data: controlesSicov, error: errorSicov } = await supabase
+          .from('control_sicov')
+          .select('id,estado_certificacion,categoria')
+          .eq('matricula_id', control.matricula_id)
+          .eq('categoria', control.categoria)
 
-      if (errorSicov) {
-        throw new Error(
-          `No fue posible verificar la certificación SICOV: ${errorSicov.message}`
-        )
-      }
-
-      if (!Array.isArray(controlesSicov) ||
-          !controlesSicov.some(item =>
-            normalizarMayusculas(item.estado_certificacion) === 'CERTIFICADO'
-          )) {
-        return NextResponse.json({
-          status: 'error',
-          message: 'Debe certificar primero al aprendiz en SICOV para esta matrícula y categoría antes de certificarlo en RUNT.'
-        }, { status: 409 })
+        if (errorSicov) {
+          throw new Error('No fue posible verificar la certificación SICOV: ' + errorSicov.message)
+        }
+        if (!Array.isArray(controlesSicov) || !controlesSicov.some(item =>
+          normalizarMayusculas(item.estado_certificacion) === 'CERTIFICADO'
+        )) {
+          return NextResponse.json({
+            status: 'error',
+            message: 'Debe certificar primero al aprendiz en SICOV para esta matrícula y categoría antes de certificarlo en RUNT.',
+          }, { status: 409 })
+        }
       }
 
       const requisitos =
