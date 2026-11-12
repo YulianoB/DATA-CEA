@@ -1,7 +1,7 @@
 // components/admin/CampoCatalogo.jsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 
 /**
  * Selector reutilizable de catálogos del CEA.
@@ -10,8 +10,9 @@ import { useEffect, useState } from 'react'
  */
 export default function CampoCatalogo({
   catalogo, label, name, value = '', onChange, nit,
-  departamentoId, endpoint = '/api/catalogos', onOpcionesCargadas, required = true, disabled = false, wrapperClass = '', opcionesAdicionales = [],
+  departamentoId, endpoint = '/api/catalogos', onOpcionesCargadas, required = true, disabled = false, wrapperClass = '', opcionesAdicionales = [], busqueda = false, compacto = false,
 }) {
+  const listId = useId()
   const [opciones, setOpciones] = useState([])
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
@@ -62,6 +63,26 @@ export default function CampoCatalogo({
   return (
     <div className={wrapperClass}>
       <label htmlFor={name} className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+      {busqueda ? (
+        <>
+          <input
+            id={name}
+            name={name}
+            type="text"
+            list={listId}
+            value={valorActual}
+            required={required}
+            disabled={disabled || cargando || !disponible || Boolean(error)}
+            onChange={onChange}
+            placeholder={cargando ? 'Cargando...' : 'Escriba para buscar'}
+            autoComplete="off"
+            className="w-full border border-gray-700 rounded px-2 py-1 text-xs bg-white focus:outline-none focus:border-[#194567]"
+          />
+          <datalist id={listId}>
+            {opciones.map(item => <option key={item.id} value={item.nombre} />)}
+          </datalist>
+        </>
+      ) : (
       <select
         id={name}
         name={name}
@@ -69,13 +90,14 @@ export default function CampoCatalogo({
         required={required}
         disabled={disabled || cargando || !disponible || Boolean(error)}
         onChange={onChange}
-        className="w-full border border-slate-500 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20"
+        className={compacto ? "w-full border border-gray-700 rounded px-2 py-1 text-xs bg-white" : "w-full border border-slate-500 rounded-md p-2 text-sm bg-white focus:outline-none focus:border-[#194567] focus:ring-2 focus:ring-[#194567]/20"}
       >
         <option value="">{!disponible ? 'Seleccione primero el departamento' : cargando ? 'Cargando...' : 'Seleccione'}</option>
         {opcionesAdicionales.filter(op => !opciones.some(item => item.nombre === op)).map(op => <option key={'extra-'+op} value={op}>{op}</option>)}
         {valorActual && !existe && !opcionesAdicionales.includes(valorActual) && !cargando && <option value={valorActual}>{valorActual} (valor registrado)</option>}
         {opciones.map((item) => <option key={item.id} value={item.nombre}>{item.nombre}</option>)}
       </select>
+      )}
       {error && <p role="alert" className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   )
