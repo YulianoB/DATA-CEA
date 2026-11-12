@@ -4184,7 +4184,7 @@ export async function POST(
       if (!Number.isSafeInteger(matriculaId) || matriculaId <= 0 ||
           !fechaValida || motivo.length < 8 || !responsable ||
           !Number.isFinite(valor) || valor <= 0 || valor > 999999999999.99 ||
-          Math.round(valor * 100) !== valor * 100) {
+          Math.abs(valor - Math.round(valor * 100) / 100) > 1e-8) {
         return NextResponse.json({
           status: 'error',
           message: 'Indique matrícula, fecha, motivo, responsable y valor de continuación válido mayor que cero.',
