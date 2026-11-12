@@ -22,6 +22,7 @@ import { UserPlus } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import CampoCatalogo from '@/components/admin/CampoCatalogo'
 import CampoMunicipioBusqueda from '@/components/admin/CampoMunicipioBusqueda'
+import CampoLugarExpedicion from '@/components/admin/CampoLugarExpedicion'
 import {
   ESTILO_SECCIONES,
   BotonGuardar,
@@ -3561,27 +3562,11 @@ const guardar =
 
                   <div className="grid grid-cols-2 gap-2 mb-2">
 
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Lugar de expedición
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.lugar_expedicion
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'lugar_expedicion',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      />
-                    </div>
+                    <CampoLugarExpedicion
+                      nit={nitCatalogos}
+                      value={form.lugar_expedicion}
+                      onChange={nombre => setF('lugar_expedicion', nombre)}
+                    />
 
                     <div>
                       <label className="block text-[11px] font-semibold mb-1">
@@ -3743,9 +3728,9 @@ const guardar =
 
                   <div className="p-3">
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-12 gap-2">
 
-                    <div>
+                    <div className="col-span-4 min-w-0">
                       <label className="block text-[11px] font-semibold mb-1">
                         Celular
                       </label>
@@ -3770,7 +3755,7 @@ const guardar =
                       />
                     </div>
 
-                    <div>
+                    <div className="col-span-8 min-w-0">
                       <label className="block text-[11px] font-semibold mb-1">
                         Correo
                       </label>
@@ -3825,7 +3810,7 @@ const guardar =
                       />
                     </div>
 
-                    <div>
+                    <div className="col-span-12">
                       <label className="block text-[11px] font-semibold mb-1">
                         Barrio
                       </label>
@@ -3847,9 +3832,10 @@ const guardar =
                       />
                     </div>
 
-                    <div>
+                    <div className="col-span-6 min-w-0">
                       <CampoCatalogo
                         catalogo="departamentos"
+                        busqueda
                         label="Departamento"
                         name="departamento_residencia_auxiliar"
                         value={departamentoResidencia}
@@ -3863,21 +3849,24 @@ const guardar =
                       />
                     </div>
 
+                    <div className="col-span-6 min-w-0">
                     <CampoMunicipioBusqueda
+                      className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
                       nit={nitCatalogos}
                       departamentoId={departamentoId}
                       value={form.ciudad}
                       onChange={(nombre) => setF('ciudad', nombre)}
                     />
+                    </div>
 
 
                     {!esMenor && (
-                      <div className="col-span-2 mt-2 border-t border-gray-200 pt-3">
+                      <div className="col-span-12 mt-1 border-t border-gray-200 pt-2">
                         <div className="text-[11px] font-bold text-gray-700 mb-2">
-                          Contacto de Emergencia
+                          Contacto en caso de Emergencia
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 gap-2">
                           <div>
                             <label className="block text-[11px] font-semibold mb-1">
                               Nombre completo
@@ -4017,6 +4006,7 @@ const guardar =
                     </div>
 
                     <CampoCatalogo
+                      compacto
                       catalogo="eps"
                       label="EPS"
                       name="eps"
@@ -5194,6 +5184,7 @@ const guardar =
 
                         <button
                           type="button"
+                          aria-pressed={runtResultado === 'REGISTRADO'}
                           onClick={() => {
                             setRuntResultado(
                               'REGISTRADO'
@@ -5206,9 +5197,11 @@ const guardar =
                           className={`
                             border
                             rounded-lg
-                            p-4
+                            p-3
+                            cursor-pointer
                             text-left
                             transition
+                            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700
                             ${
                               runtResultado ===
                               'REGISTRADO'
@@ -5217,12 +5210,12 @@ const guardar =
                             }
                           `}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
 
                             <div
                               className={`
-                                w-9
-                                h-9
+                                w-7
+                                h-7
                                 rounded-full
                                 flex
                                 items-center
@@ -5243,8 +5236,8 @@ const guardar =
                                 Aparece registrado
                               </div>
 
-                              <div className="text-[11px] text-gray-500 mt-1">
-                                El aprendiz figura registrado en RUNT.
+                              <div className="text-[10px] text-gray-500 mt-1">
+                                Seleccione si aparece en la consulta RUNT.
                               </div>
                             </div>
 
@@ -5253,6 +5246,7 @@ const guardar =
 
                         <button
                           type="button"
+                          aria-pressed={runtResultado === 'NO REGISTRADO'}
                           onClick={() => {
                             setRuntResultado(
                               'NO REGISTRADO'
@@ -5265,9 +5259,11 @@ const guardar =
                           className={`
                             border
                             rounded-lg
-                            p-4
+                            p-3
+                            cursor-pointer
                             text-left
                             transition
+                            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700
                             ${
                               runtResultado ===
                               'NO REGISTRADO'
@@ -5276,12 +5272,12 @@ const guardar =
                             }
                           `}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
 
                             <div
                               className={`
-                                w-9
-                                h-9
+                                w-7
+                                h-7
                                 rounded-full
                                 flex
                                 items-center
@@ -5302,8 +5298,8 @@ const guardar =
                                 No aparece registrado
                               </div>
 
-                              <div className="text-[11px] text-gray-500 mt-1">
-                                Debe ser atendido posteriormente por el encargado de RUNT.
+                              <div className="text-[10px] text-gray-500 mt-1">
+                                Seleccione si no aparece en la consulta RUNT.
                               </div>
                             </div>
 
