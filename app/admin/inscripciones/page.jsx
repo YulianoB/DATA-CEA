@@ -15,6 +15,7 @@ import {
 } from 'next/navigation'
 
 import { FileSignature } from 'lucide-react'
+import { ORDEN_CATEGORIAS } from '@/lib/reglasCategoriasInscripciones'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
 import {
   ESTILO_SECCIONES,
@@ -34,15 +35,7 @@ import {
 const API_URL =
   '/api/admin/inscripciones/aprendices'
 
-const CATEGORIAS = [
-  'A2',
-  'B1',
-  'C1',
-  'RC1',
-  'B2',
-  'C2',
-  'C3',
-]
+const CATEGORIAS = ORDEN_CATEGORIAS
 
 // ============================================================
 // HELPERS
