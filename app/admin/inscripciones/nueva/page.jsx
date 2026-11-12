@@ -5330,7 +5330,9 @@ const guardar =
                                 Seleccione si aparece en la consulta RUNT.
                               </div>
                             </div>
-
+                            <span className={`ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${runtResultado === 'REGISTRADO' ? 'border-green-600 bg-green-600 text-white' : 'border-slate-400 bg-white'}`} aria-hidden="true">
+                              {runtResultado === 'REGISTRADO' && <i className="fas fa-check text-[9px]"></i>}
+                            </span>
                           </div>
                         </button>
 
@@ -5392,7 +5394,9 @@ const guardar =
                                 Seleccione si no aparece en la consulta RUNT.
                               </div>
                             </div>
-
+                            <span className={`ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${runtResultado === 'NO REGISTRADO' ? 'border-amber-600 bg-amber-600 text-white' : 'border-slate-400 bg-white'}`} aria-hidden="true">
+                              {runtResultado === 'NO REGISTRADO' && <i className="fas fa-check text-[9px]"></i>}
+                            </span>
                           </div>
                         </button>
 
