@@ -3437,6 +3437,86 @@ const guardar =
     )
   }
 
+  // Progreso de secciones sin efectos secundarios ni validación invasiva.
+  const conTexto = valor => String(valor ?? '').trim().length > 0
+  const infoComplementaria = ['estado_civil', 'ocupacion', 'eps', 'estrato', 'nivel_educativo']
+  const identificacionCampos = ['tipo_doc', 'documento', 'nombres', 'apellidos', 'fecha_nacimiento', 'genero']
+  const identificacionCompleta = identificacionCampos.every(key => conTexto(form[key])) &&
+    /^\\d+$/.test(String(form.documento || '')) && edad !== null && edad >= 16
+  const contactoIniciado = ['celular', 'correo', 'direccion', 'barrio', 'ciudad',
+    'emergencia_nombre', 'emergencia_celular'].some(key => conTexto(form[key])) ||
+    conTexto(departamentoResidencia)
+  const contactoCompleto = (esMenor || (
+    conTexto(form.emergencia_nombre) && /^\\d+$/.test(String(form.emergencia_celular || ''))
+  )) && (!conTexto(form.celular) || /^\\d+$/.test(String(form.celular))) &&
+    (!conTexto(form.correo) || isValidEmail(form.correo))
+  const categoriaMatricula = Array.isArray(form.categorias) ? form.categorias : []
+  const matriculaCompleta = categoriaMatricula.length >= 1 &&
+    categoriaMatricula.length <= 2 &&
+    categoriaMatricula.every(cat => categoriasHabilitadas.includes(cat) && !histCategories.has(cat) &&
+      (histMaxRank <= (RANK[cat] || 0) || cat === 'A2') &&
+      (!es16a17 || ALLOWED_16_17.has(cat))) &&
+    categoriaMatricula.filter(cat => cat !== 'A2').length <= 1 &&
+    ['DIRECTO', 'CONVENIO'].includes(form.origen_matricula) &&
+    (form.origen_matricula !== 'CONVENIO' || Boolean(form.convenio_id)) &&
+    (!esMenor || ['acudi_nombres', 'acudi_apellidos', 'acudi_tipo_doc', 'acudi_documento', 'acudi_celular']
+      .every(key => conTexto(form[key]))) &&
+    !esMenor16
+  const finanzasCompletas = categoriaMatricula.length > 0 &&
+    categoriaMatricula.every(cat => Number(finanzas.valores_curso?.[cat]) > 0) &&
+    (!finanzas.incluye_examen_medico || Number(finanzas.valor_examen_medico) > 0)
+  const estadosSecciones = {
+    identificacion: {
+      completo: identificacionCompleta,
+      iniciado: ['documento', 'nombres', 'apellidos', 'fecha_nacimiento', 'lugar_expedicion']
+        .some(key => conTexto(form[key])),
+    },
+    contacto: { completo: contactoCompleto, iniciado: contactoIniciado },
+    complementaria: {
+      completo: infoComplementaria.every(key => conTexto(form[key])),
+      iniciado: infoComplementaria.some(key => conTexto(form[key])),
+    },
+    matricula: {
+      completo: matriculaCompleta,
+      iniciado: categoriaMatricula.length > 0 || form.origen_matricula === 'CONVENIO',
+    },
+    financiera: {
+      completo: finanzasCompletas,
+      iniciado: Object.values(finanzas.valores_curso || {}).some(v => conTexto(v)) ||
+        finanzas.incluye_examen_medico,
+    },
+    runt: {
+      completo: ['REGISTRADO', 'NO REGISTRADO'].includes(runtResultado),
+      iniciado: Boolean(runtResultado),
+    },
+  }
+  const ordenSecciones = ['identificacion', 'contacto', 'complementaria', 'matricula', 'financiera', 'runt']
+  const seccionesCompletas = ordenSecciones.filter(key => estadosSecciones[key].completo).length
+  const porcentajeAvance = Math.round(seccionesCompletas / ordenSecciones.length * 100)
+  const etiquetaEstadoSeccion = (clave, numero, titulo) => {
+    const estado = estadosSecciones[clave]
+    const texto = estado.completo ? 'Completa' : estado.iniciado ? 'Incompleta' : 'Pendiente'
+    const estilo = estado.completo
+      ? 'bg-emerald-500/25 text-white border-emerald-300'
+      : estado.iniciado
+        ? 'bg-amber-400/20 text-white border-amber-300'
+        : 'bg-white/10 text-white/90 border-white/35'
+    return (
+      <div className="flex w-full items-center justify-between gap-2">
+        <span className="flex items-center gap-2">
+          <span className="flex h-5 w-5 items-center justify-center rounded bg-white/90 text-[10px] font-bold text-[#194567]">
+            {numero}
+          </span>
+          <span>{titulo}</span>
+        </span>
+        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${estilo}`}>
+          <i className={`fas ${estado.completo ? 'fa-check-circle' : estado.iniciado ? 'fa-exclamation-circle' : 'fa-clock'}`} aria-hidden="true"></i>
+          {texto}
+        </span>
+      </div>
+    )
+  }
+
   // ==========================================================
   // RENDER
   // ==========================================================
@@ -3484,6 +3564,18 @@ const guardar =
             <i className="fas fa-eraser mr-1"></i>
             Limpiar formulario
           </BotonLimpiar>
+          <div className="min-w-[230px] max-w-2xl flex-1">
+            <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
+              <span className="font-semibold text-slate-700">Progreso de matrícula</span>
+              <span className="font-semibold text-slate-600">{seccionesCompletas} de 6 secciones · {porcentajeAvance}%</span>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200"
+              role="progressbar" aria-label="Secciones completas de la matrícula"
+              aria-valuemin={0} aria-valuemax={6} aria-valuenow={seccionesCompletas}>
+              <div className={`h-full rounded-full transition-all duration-300 ${porcentajeAvance === 100 ? 'bg-emerald-600' : 'bg-blue-600'}`}
+                style={{ width: `${porcentajeAvance}%` }} />
+            </div>
+          </div>
           {borradorRecuperado && (
             <span className="text-[11px] text-slate-600">
               <i className="fas fa-rotate-left mr-1"></i>
@@ -3538,7 +3630,7 @@ const guardar =
                       borderColor: ESTILO_SECCIONES.borde,
                     }}
                   >
-                    Identificación
+                    {etiquetaEstadoSeccion('identificacion', 1, 'Identificación')}
                   </div>
 
                   <div className="p-3">
@@ -3819,7 +3911,7 @@ const guardar =
                       borderColor: ESTILO_SECCIONES.borde,
                     }}
                   >
-                    Contacto
+                    {etiquetaEstadoSeccion('contacto', 2, 'Contacto')}
                   </div>
 
                   <div className="p-3">
@@ -4012,7 +4104,7 @@ const guardar =
                       borderColor: ESTILO_SECCIONES.borde,
                     }}
                   >
-                    Información complementaria
+                    {etiquetaEstadoSeccion('complementaria', 3, 'Información complementaria')}
                   </div>
 
                   <div className="p-3">
@@ -4498,7 +4590,7 @@ const guardar =
                     borderColor: ESTILO_SECCIONES.borde,
                   }}
                 >
-                  Datos de Matrícula
+                  {etiquetaEstadoSeccion('matricula', 4, 'Datos de Matrícula')}
                 </div>
 
                 <div className="p-3">
@@ -5256,7 +5348,7 @@ const guardar =
                   }}
                 >
                   <i className="fas fa-road"></i>
-                  Verificación Inicial RUNT
+                  {etiquetaEstadoSeccion('runt', 6, 'Verificación Inicial RUNT')}
                 </div>
 
                 <div className="p-3">
@@ -5730,7 +5822,7 @@ const guardar =
                 >
                   <i className="fas fa-file-invoice-dollar mr-2"></i>
 
-                  Información Financiera
+                  {etiquetaEstadoSeccion('financiera', 5, 'Información Financiera')}
                 </div>
 
                 <div
