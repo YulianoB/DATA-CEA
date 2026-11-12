@@ -3442,13 +3442,13 @@ const guardar =
   const infoComplementaria = ['estado_civil', 'ocupacion', 'eps', 'estrato', 'nivel_educativo']
   const identificacionCampos = ['tipo_doc', 'documento', 'nombres', 'apellidos', 'fecha_nacimiento', 'genero']
   const identificacionCompleta = identificacionCampos.every(key => conTexto(form[key])) &&
-    /^\\d+$/.test(String(form.documento || '')) && edad !== null && edad >= 16
+    /^\d+$/.test(String(form.documento || '')) && edad !== null && edad >= 16
   const contactoIniciado = ['celular', 'correo', 'direccion', 'barrio', 'ciudad',
     'emergencia_nombre', 'emergencia_celular'].some(key => conTexto(form[key])) ||
     conTexto(departamentoResidencia)
   const contactoCompleto = (esMenor || (
-    conTexto(form.emergencia_nombre) && /^\\d+$/.test(String(form.emergencia_celular || ''))
-  )) && (!conTexto(form.celular) || /^\\d+$/.test(String(form.celular))) &&
+    conTexto(form.emergencia_nombre) && /^\d+$/.test(String(form.emergencia_celular || ''))
+  )) && (!conTexto(form.celular) || /^\d+$/.test(String(form.celular))) &&
     (!conTexto(form.correo) || isValidEmail(form.correo))
   const categoriaMatricula = Array.isArray(form.categorias) ? form.categorias : []
   const matriculaCompleta = categoriaMatricula.length >= 1 &&
@@ -5347,7 +5347,6 @@ const guardar =
                     borderColor: ESTILO_SECCIONES.borde,
                   }}
                 >
-                  <i className="fas fa-road"></i>
                   {etiquetaEstadoSeccion('runt', 6, 'Verificación Inicial RUNT')}
                 </div>
 
@@ -5820,8 +5819,6 @@ const guardar =
                     borderColor: ESTILO_SECCIONES.borde,
                   }}
                 >
-                  <i className="fas fa-file-invoice-dollar mr-2"></i>
-
                   {etiquetaEstadoSeccion('financiera', 5, 'Información Financiera')}
                 </div>
 
