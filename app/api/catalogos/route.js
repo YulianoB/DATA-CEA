@@ -50,7 +50,7 @@ export async function GET(request) {
         }
         // Permite buscar sin tildes (BOGOTA -> BOGOTÁ) sin modificar
         // los nombres oficiales almacenados en public.municipios.
-        const termino = buscarMunicipio.replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\\s-]/g, '').trim()
+        const termino = buscarMunicipio.replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\s-]/g, '').trim()
         const acentos = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú' }
         const variantes = new Set([termino])
         for (let i = 0; i < termino.length; i++) {
