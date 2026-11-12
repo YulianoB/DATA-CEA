@@ -1,6 +1,7 @@
 // app/api/admin/inscripciones/aprendices/route.js
 
 import { NextResponse } from 'next/server'
+import { ORDEN_CATEGORIAS, extraerCategoriasHistorial, validarSeleccionCategorias } from '@/lib/reglasCategoriasInscripciones'
 
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
@@ -11,15 +12,7 @@ import {
 // CONSTANTES
 // =========================================================
 
-const CATS_VALIDAS_GENERALES = new Set([
-  'A2',
-  'B1',
-  'B2',
-  'C1',
-  'RC1',
-  'C2',
-  'C3',
-])
+const CATS_VALIDAS_GENERALES = new Set(ORDEN_CATEGORIAS)
 
 const ORIGENES_MATRICULA = new Set([
   'DIRECTO',
@@ -4578,6 +4571,35 @@ export async function POST(
           categoria
         )
       }
+    }
+
+    // Validación de progresión compartida con Nueva Matrícula.
+    // No se infiere licencia expedida de la existencia de una matrícula.
+    const historialCategorias = extraerCategoriasHistorial(historial)
+    const fechaNacimiento = normalizarTexto(body?.fecha_nacimiento)
+    let edadMatricula = null
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaNacimiento)) {
+      const nacimiento = new Date(fechaNacimiento + 'T12:00:00Z')
+      const hoy = new Date()
+      if (!Number.isNaN(nacimiento.getTime())) {
+        edadMatricula = hoy.getUTCFullYear() - nacimiento.getUTCFullYear()
+        const aniversarioPendiente =
+          hoy.getUTCMonth() < nacimiento.getUTCMonth() ||
+          (hoy.getUTCMonth() === nacimiento.getUTCMonth() && hoy.getUTCDate() < nacimiento.getUTCDate())
+        if (aniversarioPendiente) edadMatricula -= 1
+      }
+    }
+    const progresion = validarSeleccionCategorias({
+      seleccion: categorias,
+      historial: historialCategorias,
+      habilitadas: obtenerCategoriasHabilitadasEmpresa(empresa),
+      edad: edadMatricula,
+    })
+    if (!progresion.ok) {
+      return NextResponse.json({
+        status: 'error',
+        message: progresion.message,
+      }, { status: 409 })
     }
 
     const repetidas =
