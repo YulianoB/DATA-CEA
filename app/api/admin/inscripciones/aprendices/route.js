@@ -841,6 +841,37 @@ async function obtenerHistorial(
 }
 
 // =========================================================
+// BLOQUEO DE NUEVA MATRÍCULA POR CERTIFICACIÓN PENDIENTE
+// Una matrícula anterior no certificada requiere revisión del expediente.
+// Se comprueba RUNT, nunca el estado genérico histórico de aprendices.
+// =========================================================
+
+async function verificarCertificacionHistorial(supabase, historial) {
+  const registros = Array.isArray(historial) ? historial : []
+  if (!registros.length) return { bloqueada: false, pendientes: [] }
+
+  const ids = registros.map(item => Number(item.id)).filter(Number.isSafeInteger)
+  const controles = await obtenerControlesRuntExpediente(supabase, ids)
+  const actuales = construirMapaRuntActual(controles)
+  const pendientes = []
+
+  for (const registro of registros) {
+    const control = actuales.get(String(registro.id))
+    const certificado = String(control?.estado_certificacion || '').trim().toUpperCase() === 'CERTIFICADO'
+    if (!certificado) {
+      const cats = extraerCategoriasHistorial([registro])
+      pendientes.push({
+        matricula_id: registro.id,
+        consecutivo: registro.consecutivo || '',
+        categorias: cats,
+        estado: !control ? 'SIN_CONTROL_RUNT' : 'NO_CERTIFICADO',
+      })
+    }
+  }
+  return { bloqueada: pendientes.length > 0, pendientes }
+}
+
+// =========================================================
 // ESTADO OPERATIVO RUNT (NO ALTERA aprendices.estado)
 // Debe conservar la regla de 90 dias de /api/admin/runt.
 // =========================================================
@@ -3652,10 +3683,13 @@ export async function GET(
           supabase,
           documento
         )
+      const restriccionNuevaMatricula = await verificarCertificacionHistorial(supabase, historial)
 
       return NextResponse.json({
         status:
           'success',
+
+        restriccion_nueva_matricula: restriccionNuevaMatricula,
 
         data:
           historial,
@@ -4545,6 +4579,19 @@ export async function POST(
         supabase,
         documento
       )
+
+    // No se crea una segunda matrícula mientras exista cualquier
+    // matrícula anterior sin certificación RUNT confirmada.
+    // Cambio de categoría y retractación requieren un trámite específico.
+    const restriccionNuevaMatricula = await verificarCertificacionHistorial(supabase, historial)
+    if (restriccionNuevaMatricula.bloqueada) {
+      return NextResponse.json({
+        status: 'error',
+        code: 'MATRICULA_ANTERIOR_SIN_CERTIFICAR',
+        message: 'No es posible registrar una nueva matrícula mientras existan matrículas anteriores sin certificación RUNT confirmada. Consulte el expediente para continuar el curso o gestionar un cambio o retractación.',
+        pendientes: restriccionNuevaMatricula.pendientes,
+      }, { status: 409 })
+    }
 
     // =====================================================
     // CATEGORÍAS YA EXISTENTES
