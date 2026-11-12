@@ -1928,20 +1928,12 @@ export default function InscripcionesPage() {
         >
 
           <div
-            className="
-              px-4
-              py-3
-              flex
-              justify-between
-              items-center
-              gap-3
-            "
+            className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
             style={{
               backgroundColor: ESTILO_SECCIONES.fondo,
               color: ESTILO_SECCIONES.texto,
             }}
           >
-
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm font-semibold">Resultados</span>
               <span className="text-xs" style={{ color: ESTILO_SECCIONES.subtitulo }}>
@@ -1951,61 +1943,49 @@ export default function InscripcionesPage() {
               </span>
             </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                '/admin/inscripciones/nueva'
-              )
-            }
-            className="
-              h-9
-              bg-emerald-600
-              hover:bg-emerald-700
-              hover:-translate-y-0.5
-              text-white
-              px-3
-              rounded-lg
-              text-xs
-              flex
-              items-center
-              justify-center
-              gap-1.5
-              transition-all
-              whitespace-nowrap
-            "
-          >
-            <i className="fas fa-user-plus"></i>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <label htmlFor="tamanoPaginaInscripciones" className="whitespace-nowrap text-white/90">
+                Por página
+              </label>
+              <select
+                id="tamanoPaginaInscripciones"
+                value={porPagina}
+                onChange={e => { setPorPagina(Number(e.target.value)); setPagina(1) }}
+                className="rounded border border-white/30 bg-white px-2 py-1 text-slate-900"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span className="whitespace-nowrap text-white/90">
+                Página {pagina}{totalRegistros !== null ? ` de ${Math.max(1, Math.ceil(totalRegistros / porPagina))}` : ''}
+              </span>
+              <button type="button" disabled={pagina <= 1 || loading}
+                onClick={() => setPagina(p => Math.max(1, p - 1))}
+                className="rounded border border-white/30 px-2 py-1 text-white transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40">
+                Anterior
+              </button>
+              <button type="button" disabled={!hayMas || loading}
+                onClick={() => setPagina(p => p + 1)}
+                className="rounded border border-white/30 px-2 py-1 text-white transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40">
+                Siguiente
+              </button>
+            </div>
 
-            Nueva Matrícula
-          </button>
-
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-2 border-b border-slate-200 px-4 py-2 text-xs">
-            <label htmlFor="tamanoPaginaInscripciones" className="text-slate-600">Por página</label>
-            <select id="tamanoPaginaInscripciones" value={porPagina}
-              onChange={e => { setPorPagina(Number(e.target.value)); setPagina(1) }}
-              className="rounded border border-slate-300 bg-white px-2 py-1">
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            <span className="text-slate-600">Página {pagina}{totalRegistros !== null ? ` de ${Math.max(1, Math.ceil(totalRegistros / porPagina))}` : ''}</span>
-            <button type="button" disabled={pagina <= 1 || loading} onClick={() => setPagina(p => Math.max(1, p - 1))}
-              className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40">Anterior</button>
-            <button type="button" disabled={!hayMas || loading} onClick={() => setPagina(p => p + 1)}
-              className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40">Siguiente</button>
+            <button
+              type="button"
+              onClick={() => router.push('/admin/inscripciones/nueva')}
+              className="flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-600 px-3 text-xs text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-700"
+            >
+              <i className="fas fa-user-plus"></i>
+              Nueva Matrícula
+            </button>
           </div>
 
           <div className="overflow-x-auto">
 
             <table
-              className="
-                w-full
-                text-[11px]
-                border-collapse
-              "
+              className="w-full min-w-[1250px] border-separate border-spacing-0 text-[11px]"
             >
 
               <thead
@@ -2017,7 +1997,10 @@ export default function InscripcionesPage() {
 
                 <tr>
 
-                  <th className="p-2 border">
+                  <th
+                    className="sticky left-0 z-20 border p-2 shadow-[2px_0_3px_-2px_rgba(15,23,42,0.25)]"
+                    style={{ backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo }}
+                  >
                     Matrícula
                   </th>
 
@@ -2128,23 +2111,13 @@ export default function InscripcionesPage() {
                           key={
                             row.id
                           }
-                          className="
-                            odd:bg-white
-                            even:bg-gray-50
-                            hover:bg-blue-50
-                          "
+                          className="group odd:bg-white even:bg-gray-50 hover:bg-blue-50"
                         >
 
                           <td
-                            className="
-                              p-2
-                              border
-                              text-center
-                              font-semibold
-                            "
+                            className="sticky left-0 z-10 border bg-white p-2 text-center font-semibold shadow-[2px_0_3px_-2px_rgba(15,23,42,0.2)] group-even:bg-gray-50 group-hover:bg-blue-50"
                           >
-                            {row.consecutivo ||
-                              '-'}
+                            {row.consecutivo || '-'}
                           </td>
 
                           <td
