@@ -508,6 +508,16 @@ export default function NuevaInscripcionPage() {
   const [departamentosCatalogo, setDepartamentosCatalogo] = useState([])
   const departamentoId = departamentosCatalogo.find((item) => item.nombre === departamentoResidencia)?.id || null
 
+  // El borrador es local y se separa por usuario y CEA en el equipo.
+  // Caduca a las 24 horas para reducir la exposición de datos personales.
+  const claveBorrador = user
+    ? `data-cea:nueva-matricula:v1:${obtenerNitUsuario(user)}:${String(user.id || user.usuario || user.email || user.correo || '').trim()}`
+    : ''
+  const [borradorListo, setBorradorListo] = useState(false)
+  const [borradorRecuperado, setBorradorRecuperado] = useState(false)
+  const omitirSiguienteGuardado = useRef(false)
+  const noGuardarBorrador = useRef(false)
+
   // ==========================================================
   // ESTADO GENERAL
   // ==========================================================
@@ -1881,6 +1891,11 @@ export default function NuevaInscripcionPage() {
 
   const limpiar =
     () => {
+      if (claveBorrador) {
+        try { localStorage.removeItem(claveBorrador) } catch {}
+      }
+      omitirSiguienteGuardado.current = true
+      setBorradorRecuperado(false)
       setDepartamentoResidencia('')
       setForm({
         tipo_doc:
@@ -2458,6 +2473,62 @@ export default function NuevaInscripcionPage() {
   }, [
     router,
   ])
+
+  // ==========================================================
+  // BORRADOR LOCAL: RECUPERAR Y AUTOGUARDAR
+  // ==========================================================
+
+  useEffect(() => {
+    if (!claveBorrador) return
+    setBorradorListo(false)
+    noGuardarBorrador.current = false
+    try {
+      const guardado = localStorage.getItem(claveBorrador)
+      if (guardado) {
+        const borrador = JSON.parse(guardado)
+        const vigente = Number(borrador?.guardadoEn) > Date.now() - 24 * 60 * 60 * 1000
+        if (vigente && borrador.form && typeof borrador.form === 'object') {
+          setForm(prev => ({ ...prev, ...borrador.form }))
+          if (borrador.finanzas && typeof borrador.finanzas === 'object') {
+            setFinanzas(prev => ({ ...prev, ...borrador.finanzas }))
+          }
+          setDepartamentoResidencia(String(borrador.departamentoResidencia || ''))
+          if (['REGISTRADO', 'NO REGISTRADO', ''].includes(borrador.runtResultado)) {
+            setRuntResultado(borrador.runtResultado)
+          }
+          setBorradorRecuperado(true)
+        } else {
+          localStorage.removeItem(claveBorrador)
+        }
+      }
+    } catch {
+      localStorage.removeItem(claveBorrador)
+    } finally {
+      setBorradorListo(true)
+    }
+  }, [claveBorrador])
+
+  useEffect(() => {
+    if (!claveBorrador || !borradorListo || noGuardarBorrador.current) return
+    if (omitirSiguienteGuardado.current) {
+      omitirSiguienteGuardado.current = false
+      return
+    }
+    const timeout = setTimeout(() => {
+      try {
+        localStorage.setItem(claveBorrador, JSON.stringify({
+          guardadoEn: Date.now(),
+          form,
+          finanzas,
+          departamentoResidencia,
+          runtResultado,
+        }))
+      } catch {
+        // La matrícula puede continuar si el almacenamiento local está deshabilitado.
+      }
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [claveBorrador, borradorListo, form, finanzas, departamentoResidencia, runtResultado])
 
   // ==========================================================
   // CARGAR CONVENIOS
@@ -3309,6 +3380,12 @@ const guardar =
         )
       }
 
+      // La matrícula ya se guardó en la empresa: borrar el borrador local.
+      noGuardarBorrador.current = true
+      if (claveBorrador) {
+        try { localStorage.removeItem(claveBorrador) } catch {}
+      }
+
       // =====================================================
       // VOLVER A CONSULTAS Y MATRÍCULAS
       // =====================================================
@@ -3395,6 +3472,19 @@ const guardar =
           rutaRegreso="/admin/inscripciones"
           textoRegreso="Regresar"
         />
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <BotonLimpiar type="button" onClick={limpiar} disabled={saving}>
+            <i className="fas fa-eraser mr-1"></i>
+            Limpiar formulario
+          </BotonLimpiar>
+          {borradorRecuperado && (
+            <span className="text-[11px] text-slate-600">
+              <i className="fas fa-rotate-left mr-1"></i>
+              Borrador recuperado de este navegador
+            </span>
+          )}
+        </div>
 
         {/* ==================================================
             CONTENIDO
