@@ -22,7 +22,10 @@ export async function GET(request) {
   }
 
   const departamentoId = url.searchParams.get('departamento_id')
-  if (catalogo === 'municipios' && (!departamentoId || !/^\d+$/.test(departamentoId) || Number(departamentoId) < 1)) {
+  // La búsqueda de lugar de expedición puede abarcar todo Colombia.
+  // No implica que se haya confirmado la existencia de sede de Registraduría.
+  const buscarMunicipio = catalogo === 'municipios' ? (url.searchParams.get('buscar') || '').trim() : ''
+  if (catalogo === 'municipios' && !buscarMunicipio && (!departamentoId || !/^\d+$/.test(departamentoId) || Number(departamentoId) < 1)) {
     return NextResponse.json({ status: 'failed', message: 'Seleccione un departamento válido.' }, { status: 400 })
   }
 
@@ -41,7 +44,15 @@ export async function GET(request) {
       .eq('activo', true)
       .order('nombre', { ascending: true })
     if (catalogo === 'municipios') {
-      consulta = consulta.eq('departamento_id', Number(departamentoId))
+      if (buscarMunicipio) {
+        if (buscarMunicipio.length < 2 || buscarMunicipio.length > 80) {
+          return NextResponse.json({ status: 'failed', message: 'Escriba al menos dos caracteres.' }, { status: 400 })
+        }
+        const termino = buscarMunicipio.replace(/[%_,()]/g, ' ').trim()
+        consulta = consulta.ilike('nombre', `%${termino}%`).limit(60)
+      } else {
+        consulta = consulta.eq('departamento_id', Number(departamentoId))
+      }
     }
     const { data, error } = await consulta
     if (error) {
