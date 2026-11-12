@@ -6060,78 +6060,69 @@ const guardar =
         </div>
       )}
 
-      {/* Revisión previa de antecedentes: no solicita la tabla de continuaciones. */}
+      {/* Historial: breve, basado en el estado RUNT de cada matrícula. */}
       {modalAntecedentes && prevMatriculas.length > 0 && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4"
-          role="dialog" aria-modal="true" aria-label="Revisar matrículas anteriores">
-          <div className="w-full max-w-2xl rounded-xl bg-white shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between bg-[#173A57] text-white p-4">
-              <h3 className="font-bold text-sm">El aprendiz ya tiene matrículas registradas</h3>
-              <button type="button" onClick={()=>setModalAntecedentes(false)}
-                className="border border-white/40 rounded px-2 py-1" aria-label="Cerrar">✕</button>
+          role="dialog" aria-modal="true" aria-label="Historial de matrículas">
+          <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-[#173A57] p-4 text-white">
+              <h3 className="text-sm font-bold">Historial de matrículas</h3>
+              <button type="button" onClick={() => setModalAntecedentes(false)}
+                className="rounded border border-white/40 px-2 py-1" aria-label="Cerrar">✕</button>
             </div>
-            <div className="space-y-3 p-4 text-xs max-h-[75vh] overflow-auto">
-              <p>Se encontraron antecedentes para el documento <strong>{form.documento}</strong>. Tener una matrícula anterior no significa que esté vencida.</p>
-              <div className="border rounded-lg overflow-hidden">
-                {prevMatriculas.map((item)=>(
-                  <div key={item.id} className="border-b last:border-0 p-3 flex flex-wrap gap-3 justify-between">
-                    <div>
-                      <strong>{item.consecutivo || 'Sin consecutivo'}</strong>
-                      <span className="ml-3">{Array.isArray(item.categorias) ? item.categorias.join(' / ') : item.categoria || 'Sin categoría'}</span>
+            <div className="max-h-[75vh] space-y-3 overflow-y-auto p-4 text-sm">
+              <p>
+                <strong>{[prevMatriculas[0]?.nombres, prevMatriculas[0]?.apellidos].filter(Boolean).join(' ') || 'El aprendiz'}</strong>,
+                con documento <strong>{documentoFmt}</strong>, ya cuenta con
+                {prevMatriculas.length === 1 ? ' una matrícula registrada' : ' matrículas registradas'} en el CEA.
+              </p>
+              <div className="overflow-hidden rounded-lg border border-slate-300">
+                {prevMatriculas.map(item => {
+                  const estado = item.estado_runt?.estado || 'SIN_CONTROL'
+                  const etiqueta = estado === 'CERTIFICADO' ? 'Certificada'
+                    : estado === 'VENCIDO' ? 'Vencida'
+                    : ['EN_PROCESO', 'POR_VENCER'].includes(estado) ? 'Vigente'
+                    : 'Pendiente de verificación'
+                  const color = estado === 'CERTIFICADO'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : estado === 'VENCIDO'
+                      ? 'bg-red-50 text-red-800 border-red-200'
+                      : ['EN_PROCESO', 'POR_VENCER'].includes(estado)
+                        ? 'bg-blue-50 text-blue-800 border-blue-200'
+                        : 'bg-amber-50 text-amber-800 border-amber-200'
+                  const categorias = Array.isArray(item.categorias) && item.categorias.length
+                    ? item.categorias.join(' / ')
+                    : item.categoria || 'Sin categoría'
+                  return (
+                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-3 last:border-b-0">
+                      <div className="space-y-1">
+                        <p><strong>Matrícula:</strong> {item.consecutivo || 'Sin consecutivo'}</p>
+                        <p><strong>Categoría:</strong> {categorias}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${color}`}>
+                          {etiqueta}
+                        </span>
+                        {estado === 'VENCIDO' && (
+                          <button type="button"
+                            onClick={() => router.push(`/admin/inscripciones?documento=${encodeURIComponent(form.documento)}`)}
+                            className="rounded border border-[#173A57] px-3 py-1.5 text-xs font-semibold text-[#173A57] hover:bg-blue-50">
+                            Revisar matrícula
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-slate-600">{item.fecha_matricula || 'Fecha sin verificar'}</div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
-              {restriccionNuevaMatricula.bloqueada ? (
-                <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-900">
-                  <strong>No es posible generar otra matrícula de automóvil mientras exista un proceso de automóvil sin certificar.</strong>
-                  <p className="mt-1">Si A2 no figura en el historial, puede matricularse por primera vez en A2 de manera independiente. Los cambios de categoría y retractaciones de cursos existentes deben gestionarse en el expediente, sin duplicar la matrícula ni la obligación.</p>
-                  {!!restriccionNuevaMatricula.pendientes?.length && (
-                    <p className="mt-2 font-semibold">Pendientes: {restriccionNuevaMatricula.pendientes.map(item => (item.consecutivo || 'Sin consecutivo') + ' (' + (item.categorias || []).join('/') + ')').join(' · ')}</p>
-                  )}
-                </div>
-              ) : (
-                <p className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-emerald-900">
-                  Puede elegir una categoría nueva permitida por el historial, la edad y el nivel del CEA. A2 se maneja de forma independiente cuando aún no existe una matrícula A2.
-                </p>
-              )}
-              <p className="font-semibold">¿Qué necesita realizar el CEA?</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button type="button"
-                  className={`text-left rounded-lg border p-3 ${revisionAntecedentes==='otra'?'border-blue-600 bg-blue-50':'border-slate-300'}`}
-                  onClick={()=>setRevisionAntecedentes('otra')}>
-                  <strong>Inscribir otra categoría</strong>
-                  <p className="text-[11px] mt-1">Conservar el historial y elegir únicamente una categoría disponible; A2 es independiente si no se encuentra registrada.</p>
-                </button>
-                <button type="button"
-                  className={`text-left rounded-lg border p-3 ${revisionAntecedentes==='misma'?'border-blue-600 bg-blue-50':'border-slate-300'}`}
-                  onClick={()=>setRevisionAntecedentes('misma')}>
-                  <strong>Revisar un curso inconcluso</strong>
-                  <p className="text-[11px] mt-1">Determinar con soportes si procede una continuación, sin crear otra matrícula.</p>
-                </button>
-              </div>
-              {revisionAntecedentes==='otra' && (
-                <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p>Puede continuar el formulario de inscripción con <strong>una categoría nueva permitida</strong>. Las categorías anteriores permanecerán bloqueadas.</p>
-                  <button type="button" onClick={()=>setModalAntecedentes(false)}
-                    className="bg-[#173A57] text-white rounded-lg px-4 py-2">Continuar inscripción de otra categoría</button>
-                </div>
-              )}
-              {revisionAntecedentes==='misma' && (
-                <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <strong>Revisión administrativa necesaria</strong>
-                  <p>Antes de registrar una continuación debemos verificar que el curso no esté finalizado, comprobar el término aplicable y determinar si RUNT/SICOV/SIET permiten continuar el proceso original.</p>
-                  <p>Para continuar un proceso vencido sin crear una nueva matrícula, abra el expediente del aprendiz desde Inscripciones. Allí puede registrar la continuación administrativa, conservando el consecutivo original. El nuevo proceso se gestiona posteriormente en Control RUNT, previa verificación de ausencia de certificación.</p>
-                  <button type="button" onClick={() => router.push('/admin/inscripciones')}
-                    className="rounded bg-[#173A57] px-3 py-2 font-semibold text-white">
-                    Ir a Inscripciones y consultar expediente
-                  </button>
-                </div>
-              )}
+              <p className="text-slate-700">
+                Revise los datos del formulario y verifique las categorías habilitadas para una nueva matrícula.
+              </p>
               <div className="flex justify-end">
-                <button type="button" className="border rounded-lg px-3 py-2"
-                  onClick={()=>setModalAntecedentes(false)}>Cerrar revisión</button>
+                <button type="button" onClick={() => setModalAntecedentes(false)}
+                  className="rounded-lg bg-[#173A57] px-5 py-2 font-semibold text-white hover:bg-[#21577F]">
+                  Continuar
+                </button>
               </div>
             </div>
           </div>
