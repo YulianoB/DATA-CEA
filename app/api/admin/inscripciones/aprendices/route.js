@@ -2790,6 +2790,7 @@ async function crearObligacionInicialCaja({
   body,
   origenMatricula,
   convenioSeleccionado,
+  descripcionContinuacion = null,
 }) {
   if (
     !Array.isArray(
@@ -2875,11 +2876,10 @@ async function crearObligacionInicialCaja({
       ' + '
     )
 
-  const descripcionCuenta =
-    categorias.length >
-    0
+  const descripcionCuenta = descripcionContinuacion ||
+    (categorias.length > 0
       ? `OBLIGACIÓN MATRÍCULA ${categoriasTexto}`
-      : 'OBLIGACIÓN DE MATRÍCULA'
+      : 'OBLIGACIÓN DE MATRÍCULA')
 
   // =======================================================
   // CABECERA ÚNICA
@@ -3022,7 +3022,7 @@ async function crearObligacionInicialCaja({
       ],
 
       descripcion:
-        `CURSO CATEGORÍA ${categoria}`,
+        descripcionContinuacion || `CURSO CATEGORÍA ${categoria}`,
 
       valor,
 
@@ -4176,42 +4176,46 @@ export async function POST(
       const motivo = normalizarTexto(body?.motivo)
       const observaciones = normalizarTexto(body?.observaciones) || null
       const responsable = normalizarTexto(body?.usuario)
-      const esFecha = /^\d{4}-\d{2}-\d{2}$/.test(fecha)
-        && !Number.isNaN(Date.parse(fecha))
-        && new Date(fecha+'T12:00:00Z').toISOString().slice(0,10)===fecha
+      const valor = Number(body?.valor_continuacion)
+      const esFecha = /^\d{4}-\d{2}-\d{2}$/.test(fecha) &&
+        !Number.isNaN(Date.parse(fecha)) &&
+        new Date(fecha + 'T12:00:00Z').toISOString().slice(0, 10) === fecha
+
       if (!Number.isSafeInteger(matriculaId) || matriculaId <= 0 ||
-          !esFecha || motivo.length < 8 || !responsable) {
+          !esFecha || motivo.length < 8 || !responsable ||
+          body?.valor_continuacion === '' || body?.valor_continuacion == null ||
+          !Number.isFinite(valor) || valor <= 0 ||
+          Math.abs(valor - Math.round(valor * 100) / 100) > 1e-8) {
         return NextResponse.json({
-          status:'error',
-          message:'Indique matrícula, fecha válida, motivo de al menos ocho caracteres y responsable.'
-        },{status:400})
+          status: 'error',
+          message: 'Indique una fecha válida, motivo, responsable y valor de continuación mayor que cero.',
+        }, { status: 400 })
       }
-      const {data: matricula,error: matriculaError} = await supabase
-        .from('aprendices').select('id,consecutivo,fecha_matricula')
-        .eq('id',matriculaId).maybeSingle()
-      if (matriculaError) throw new Error(matriculaError.message)
+
+      const { data: matricula, error: matriculaError } = await supabase
+        .from('aprendices')
+        .select('id,consecutivo,documento,categorias,fecha_matricula,origen_matricula,convenio_id')
+        .eq('id', matriculaId)
+        .maybeSingle()
+      if (matriculaError) throw new Error('No fue posible consultar la matrícula: ' + matriculaError.message)
       if (!matricula) {
-        return NextResponse.json({status:'error',message:'Matrícula original no encontrada.'},{status:404})
-      }
-      if (fecha < matricula.fecha_matricula) {
-        return NextResponse.json({status:'error',message:'La continuación no puede preceder a la matrícula original.'},{status:400})
+        return NextResponse.json({ status: 'error', message: 'Matrícula original no encontrada.' }, { status: 404 })
       }
       if (fecha < matricula.fecha_matricula || fecha > fechaBogotaInscripciones()) {
         return NextResponse.json({
-          status:'error',message:'La continuación debe tener una fecha entre la matrícula original y hoy.'
-        },{status:400})
+          status: 'error',
+          message: 'La fecha de continuación debe estar entre la matrícula original y hoy.',
+        }, { status: 400 })
       }
 
-      // Solo permitir continuacion si el ultimo proceso RUNT realmente vencio
-      // sin certificacion. Un nuevo proceso se crea exclusivamente desde Control RUNT.
       const controles = await obtenerControlesRuntExpediente(supabase, [matriculaId])
       const ultimoControl = construirMapaRuntActual(controles).get(String(matriculaId))
       const estadoActual = calcularEstadoOperativoRunt(ultimoControl)
       if (estadoActual.estado !== 'VENCIDO') {
         return NextResponse.json({
-          status:'error',
-          message:'Solo se puede registrar continuación cuando el último proceso RUNT está vencido y no certificado.'
-        },{status:409})
+          status: 'error',
+          message: 'La matrícula no tiene un proceso RUNT vencido y pendiente de certificación.',
+        }, { status: 409 })
       }
 
       const { data: continuacionesPrevias, error: errorContinuaciones } = await supabase
@@ -4221,23 +4225,84 @@ export async function POST(
         .order('created_at', { ascending: false })
         .limit(1)
       if (errorContinuaciones) throw new Error('No fue posible validar las continuaciones: ' + errorContinuaciones.message)
-      if (continuacionesPrevias?.[0] && new Date(continuacionesPrevias[0].created_at).getTime() >
-          new Date(ultimoControl.created_at).getTime()) {
+      if (continuacionesPrevias?.[0] && Date.parse(continuacionesPrevias[0].created_at) >
+          Date.parse(ultimoControl.created_at)) {
         return NextResponse.json({
-          status:'error',
-          message:'Ya existe una continuación registrada para este proceso RUNT. Continúe con el reproceso desde Control RUNT.'
-        },{status:409})
+          status: 'error',
+          message: 'Esta continuación ya fue registrada. Continúe el proceso desde Control RUNT.',
+        }, { status: 409 })
       }
-      const {data,error} = await supabase.from('matriculas_continuaciones')
-        .insert({matricula_id:matriculaId,fecha_continuacion:fecha,
-                 motivo,observaciones,registrado_por:responsable})
+
+      // Una continuación se asocia a la matrícula original y genera una
+      // obligación propia; no crea controles SICOV/SIET ni matrícula adicional.
+      const categoria = normalizarMayusculas(ultimoControl.categoria)
+      const origenMatricula = normalizarMayusculas(matricula.origen_matricula) === 'CONVENIO'
+        ? 'CONVENIO' : 'DIRECTO'
+
+      const { data: continuacion, error: errorContinuacion } = await supabase
+        .from('matriculas_continuaciones')
+        .insert({
+          matricula_id: matriculaId,
+          fecha_continuacion: fecha,
+          motivo,
+          observaciones,
+          registrado_por: responsable,
+        })
         .select('id,matricula_id,fecha_continuacion,motivo,observaciones,registrado_por,created_at')
         .single()
-      if (error) throw new Error('No fue posible guardar la continuación: '+error.message)
+      if (errorContinuacion) throw new Error('No fue posible guardar la continuación: ' + errorContinuacion.message)
+
+      let obligacionCaja
+      try {
+        obligacionCaja = await crearObligacionInicialCaja({
+          supabase,
+          matriculas: [{
+            id: matricula.id,
+            documento: matricula.documento,
+            categorias: [categoria],
+            categoria,
+          }],
+          body: {
+            usuario: responsable,
+            valores_curso: [{ categoria, valor }],
+            incluye_examen_medico: false,
+            observaciones_financieras:
+              `Continuación #${continuacion.id} de matrícula ${matricula.consecutivo}. Motivo: ${motivo}.` +
+              (observaciones ? ` Observaciones: ${observaciones}` : ''),
+          },
+          origenMatricula,
+          convenioSeleccionado: origenMatricula === 'CONVENIO'
+            ? { id: matricula.convenio_id } : null,
+          descripcionContinuacion:
+            `CONTINUACIÓN MATRÍCULA ${matricula.consecutivo} · ${categoria} · RUNT PROCESO ${ultimoControl.numero_proceso || 1}`,
+        })
+      } catch (errorCaja) {
+        // Compensación limitada al registro recién insertado; jamás borrar
+        // matrícula, pagos ni obligaciones históricas.
+        const { error: errorReversion } = await supabase
+          .from('matriculas_continuaciones').delete().eq('id', continuacion.id)
+        if (errorReversion) {
+          console.error('CRÍTICO: continuación sin obligación, requiere revisión:', {
+            continuacionId: continuacion.id, matriculaId, error: errorReversion.message,
+          })
+          return NextResponse.json({
+            status: 'error',
+            message: 'Se guardó la continuación, pero falló el cobro y no pudo revertirse. No repita la operación; solicite revisión administrativa.',
+          }, { status: 500 })
+        }
+        return NextResponse.json({
+          status: 'error',
+          message: 'No fue posible crear la nueva obligación. No se registró la continuación. ' + errorCaja.message,
+        }, { status: 500 })
+      }
+
       return NextResponse.json({
-        status:'success',message:'Continuación registrada sin cambiar el consecutivo de la matrícula.',
-        data,consecutivo_original:matricula.consecutivo
-      },{status:201})
+        status: 'success',
+        message: 'Continuación y nueva obligación registradas. Continúe con el pago y posteriormente con Control RUNT.',
+        data: continuacion,
+        consecutivo_original: matricula.consecutivo,
+        obligacion: obligacionCaja,
+      }, { status: 201 })
     }
 
     // =====================================================
