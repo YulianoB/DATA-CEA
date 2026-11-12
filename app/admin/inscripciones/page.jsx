@@ -912,7 +912,6 @@ export default function InscripcionesPage() {
   const [guardandoContinuacion, setGuardandoContinuacion] = useState(false)
   const [continuacionFecha, setContinuacionFecha] = useState(fechaLocalHoy())
   const [continuacionMotivo, setContinuacionMotivo] = useState('')
-  const [continuacionValor, setContinuacionValor] = useState('')
   const [continuacionObservaciones, setContinuacionObservaciones] = useState('')
   const [mensajeContinuacion, setMensajeContinuacion] = useState('')
 
@@ -1471,15 +1470,12 @@ export default function InscripcionesPage() {
 
   async function registrarContinuacion() {
     if (!matriculaSeleccionada?.id || guardandoContinuacion) return
-    const valor = Number(continuacionValor)
-    if (!continuacionFecha || continuacionMotivo.trim().length < 8 ||
-        !continuacionValor.trim() || !Number.isFinite(valor) || valor <= 0 ||
-        Math.abs(valor - Math.round(valor * 100) / 100) > 1e-8) {
-      setError('Indique fecha, motivo de al menos ocho caracteres y valor de continuación mayor que cero.')
+    if (!continuacionFecha || continuacionMotivo.trim().length < 8) {
+      setError('Indique una fecha y un motivo de al menos ocho caracteres.')
       return
     }
     if (!window.confirm(
-      `¿Registrar continuación para la matrícula ${matriculaSeleccionada.consecutivo} y generar una nueva obligación por ${valor.toLocaleString('es-CO')}? Se conserva la matrícula y el consecutivo.`
+      `¿Registrar continuación para la matrícula ${matriculaSeleccionada.consecutivo} sin crear un consecutivo nuevo?`
     )) return
 
     setGuardandoContinuacion(true)
@@ -1495,7 +1491,6 @@ export default function InscripcionesPage() {
           matricula_id: matriculaSeleccionada.id,
           fecha_continuacion: continuacionFecha,
           motivo: continuacionMotivo.trim(),
-          valor_continuacion: valor,
           observaciones: continuacionObservaciones.trim(),
           usuario: obtenerNombreUsuario(user),
         }),
@@ -1504,7 +1499,6 @@ export default function InscripcionesPage() {
       const id = matriculaSeleccionada.id
       setContinuacionAbierta(false)
       setContinuacionMotivo('')
-      setContinuacionValor('')
       setContinuacionObservaciones('')
       setMensajeContinuacion(respuesta.message || 'Continuación registrada correctamente.')
       if (documento) await consultarExpediente(documento, id)
@@ -2410,7 +2404,7 @@ export default function InscripcionesPage() {
                     {matriculaSeleccionada?.estado_runt?.estado === 'VENCIDO' && !matriculaSeleccionada?.estado_runt?.continuacion_pendiente && (
                       <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-slate-800">
                         <p className="font-bold">Proceso RUNT vencido · Matrícula {matriculaSeleccionada.consecutivo}</p>
-                        <p className="mt-1">Registre la continuación y el valor acordado. Se generará una nueva obligación en Caja conservando esta matrícula. Después deberá iniciar el nuevo proceso desde Control RUNT.</p>
+                        <p className="mt-1">Puede registrar la continuación administrativa sin modificar la matrícula ni su consecutivo. Después deberá verificar en RUNT la ausencia de certificación e iniciar un nuevo proceso desde Control RUNT.</p>
                         {!(matriculaSeleccionada.continuaciones || []).some(item =>
                           new Date(item.created_at).getTime() >
                           new Date(matriculaSeleccionada.procesos_runt?.[0]?.created_at || 0).getTime()
@@ -2433,11 +2427,6 @@ export default function InscripcionesPage() {
                                 onChange={e => setContinuacionMotivo(e.target.value)}
                                 className="rounded border border-slate-300 bg-white p-2" />
                             </label>
-                            <label className="flex flex-col gap-1">Valor nueva obligación ($)
-                              <input type="number" min="0.01" step="0.01" required
-                                value={continuacionValor} onChange={e => setContinuacionValor(e.target.value)}
-                                placeholder="Valor acordado" className="rounded border border-slate-300 bg-white p-2" />
-                            </label>
                             <label className="flex flex-col gap-1 sm:col-span-2">Observaciones
                               <textarea value={continuacionObservaciones} maxLength={2000}
                                 onChange={e => setContinuacionObservaciones(e.target.value)}
@@ -2446,7 +2435,7 @@ export default function InscripcionesPage() {
                             <button type="button" disabled={guardandoContinuacion}
                               onClick={registrarContinuacion}
                               className="rounded bg-emerald-700 px-3 py-2 font-semibold text-white disabled:opacity-50">
-                              {guardandoContinuacion ? 'Guardando...' : 'Guardar continuación y obligación'}
+                              {guardandoContinuacion ? 'Guardando...' : 'Guardar continuación'}
                             </button>
                           </div>
                         )}
