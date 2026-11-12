@@ -568,6 +568,7 @@ export default function NuevaInscripcionPage() {
   const [modalAntecedentes, setModalAntecedentes] = useState(false)
   const [revisionAntecedentes, setRevisionAntecedentes] = useState('')
   const ultimaConsultaModalRef = useRef('')
+  const documentoConsultaActualRef = useRef('')
 
   // ==========================================================
   // ERRORES
@@ -1003,12 +1004,16 @@ export default function NuevaInscripcionPage() {
           ''
         )
 
+      documentoConsultaActualRef.current = digits
+      setPrevMatriculas([])
+      setRestriccionNuevaMatricula({ bloqueada: false, pendientes: [] })
+      setModalAntecedentes(false)
       setForm(
         prev => ({
           ...prev,
-
           documento:
             digits,
+          categorias: [],
         })
       )
 
@@ -1776,6 +1781,7 @@ export default function NuevaInscripcionPage() {
       setPrevMatriculas(
         []
       )
+      setRestriccionNuevaMatricula({ bloqueada: false, pendientes: [] })
 
       setRuntConsultado(
         false
@@ -1915,6 +1921,7 @@ export default function NuevaInscripcionPage() {
       setPrevMatriculas(
         []
       )
+      setRestriccionNuevaMatricula({ bloqueada: false, pendientes: [] })
 
       setRuntConsultado(
         false
@@ -2574,6 +2581,8 @@ export default function NuevaInscripcionPage() {
             'No se pudo consultar.'
           )
         }
+
+        if (documentoConsultaActualRef.current && documentoConsultaActualRef.current !== documento) return
 
         const list =
           Array.isArray(
