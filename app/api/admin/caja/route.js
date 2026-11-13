@@ -4653,7 +4653,7 @@ export async function GET(
             nombre_pagador,
             documento_pagador,
             referencia_pago,
-                recibido_por,
+            recibido_por,
             observaciones,
             estado,
             created_at,
