@@ -2066,7 +2066,7 @@ export default function ConveniosCajaPage() {
               subtitulo={`${numero(
                 resumen
                   ?.cantidad_aprendices
-              )} aprendiz(es)`}
+              )} registro(s) de cartera`}
               icono="fas fa-file-invoice-dollar"
               tono="azul"
             />
@@ -2436,7 +2436,7 @@ export default function ConveniosCajaPage() {
             <div role="note" className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] text-blue-900">
               <i className="fas fa-archive mr-2" />
               {cantidadHistoricos > 0 && (
-                <span><strong>{cantidadHistoricos} obligación(es) histórica(s) sin matrícula importada</strong> se incluyen como registros independientes, con sus pagos activos y sin relacionarlas con matrículas posteriores. </span>
+                <span><strong>{cantidadHistoricos} obligación(es) histórica(s) sin matrícula importada</strong> están disponibles como registros independientes, con sus pagos activos y sin relacionarlas con matrículas posteriores. Se muestran cuando cumplen el estado de cartera seleccionado. </span>
               )}
               {historicosExcluidosPorFecha && (
                 <span><strong>Importante:</strong> los registros históricos sin fecha de matrícula verificable no se incluyen cuando filtra por fechas. Quite el rango de fechas para consultarlos.</span>
@@ -2672,8 +2672,9 @@ export default function ConveniosCajaPage() {
                             "
                           >
                             <p className="font-bold text-gray-900">
-                              {item?.nombre_completo ||
-                                '-'}
+                              {item?.registro_historico && item?.nombre_completo === 'Titular de documento no identificado'
+                                ? 'Registro financiero histórico'
+                                : (item?.nombre_completo || '-')}
                             </p>
 
                             <p className="text-[9px] text-gray-500">
@@ -2833,7 +2834,7 @@ export default function ConveniosCajaPage() {
                     <strong className="text-gray-800">
                       {cartera.length}
                     </strong>{' '}
-                    de {totalCartera.toLocaleString('es-CO')} aprendiz(es) filtrados.
+                    de {totalCartera.toLocaleString('es-CO')} registros de cartera filtrados.
                   </span>
 
                   <span>
