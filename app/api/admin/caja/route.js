@@ -2759,9 +2759,7 @@ async function consultarCuentas({
   // VALIDACIÓN COMPLEMENTARIA SOBRE DATOS ENRIQUECIDOS
   // =======================================================
 
-  if (
-    termino
-  ) {
+  if (termino && !conTotal) {
     const terminoNormalizado =
       normalizarComparacion(
         termino
