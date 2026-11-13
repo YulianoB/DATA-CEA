@@ -412,15 +412,8 @@ async function consultarCuentas(
     return []
   }
 
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        'cuentas_aprendiz'
-      )
-      .select(`
+  return consultarPorIdsEnLotes(unicos, lote =>
+    supabase.from('cuentas_aprendiz').select(`
         id,
         documento,
         convenio_id,
@@ -439,36 +432,7 @@ async function consultarCuentas(
           id,
           nombre
         )
-      `)
-      .in(
-        'documento',
-        unicos
-      )
-      .neq(
-        'estado',
-        'ANULADA'
-      )
-      .order(
-        'created_at',
-        {
-          ascending:
-            true,
-        }
-      )
-
-  if (
-    error
-  ) {
-    throw new Error(
-      `No fue posible consultar las cuentas de aprendices: ${error.message}`
-    )
-  }
-
-  return Array.isArray(
-    data
-  )
-    ? data
-    : []
+      `).in('documento', lote).neq('estado','ANULADA').order('created_at',{ascending:true}), 'consultarCuentas')
 }
 
 // =========================================================
@@ -489,15 +453,8 @@ async function consultarDetallesCuenta(
     return []
   }
 
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        'cuentas_aprendiz_detalle'
-      )
-      .select(`
+  return consultarPorIdsEnLotes(cuentasIds, lote =>
+    supabase.from('cuentas_aprendiz_detalle').select(`
         id,
         cuenta_id,
         matricula_id,
@@ -514,36 +471,7 @@ async function consultarDetallesCuenta(
           id,
           nombre
         )
-      `)
-      .in(
-        'cuenta_id',
-        cuentasIds
-      )
-      .eq(
-        'estado',
-        'ACTIVO'
-      )
-      .order(
-        'id',
-        {
-          ascending:
-            true,
-        }
-      )
-
-  if (
-    error
-  ) {
-    throw new Error(
-      `No fue posible consultar el detalle de obligaciones: ${error.message}`
-    )
-  }
-
-  return Array.isArray(
-    data
-  )
-    ? data
-    : []
+      `).in('cuenta_id', lote).eq('estado','ACTIVO').order('id',{ascending:true}), 'consultarDetallesCuenta')
 }
 
 // =========================================================
@@ -572,12 +500,8 @@ async function consultarRecibos(
     return []
   }
 
-  let consulta =
-    supabase
-      .from(
-        'recibos_caja'
-      )
-      .select(`
+  return consultarPorIdsEnLotes(cuentasIds, lote => {
+    let consulta = supabase.from('recibos_caja').select(`
         id,
         cuenta_id,
         matricula_id,
@@ -609,55 +533,10 @@ async function consultarRecibos(
           id,
           nombre
         )
-      `)
-      .in(
-        'cuenta_id',
-        cuentasIds
-      )
-
-  if (
-    !incluirAnulados
-  ) {
-    consulta =
-      consulta.eq(
-        'estado',
-        'ACTIVO'
-      )
-  }
-
-  const {
-    data,
-    error,
-  } =
-    await consulta
-      .order(
-        'fecha',
-        {
-          ascending:
-            true,
-        }
-      )
-      .order(
-        'id',
-        {
-          ascending:
-            true,
-        }
-      )
-
-  if (
-    error
-  ) {
-    throw new Error(
-      `No fue posible consultar los pagos de cartera: ${error.message}`
-    )
-  }
-
-  return Array.isArray(
-    data
-  )
-    ? data
-    : []
+      `).in('cuenta_id', lote)
+    if (!incluirAnulados) consulta = consulta.eq('estado', 'ACTIVO')
+    return consulta.order('fecha',{ascending:true}).order('id',{ascending:true})
+  }, 'consultarRecibos')
 }
 
 // =========================================================
