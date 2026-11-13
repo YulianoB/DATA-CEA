@@ -1258,6 +1258,8 @@ export default function ConveniosCajaPage() {
   const [totalCartera, setTotalCartera] = useState(0)
   const [totalPaginasCartera, setTotalPaginasCartera] = useState(1)
   const [alertasConciliacion, setAlertasConciliacion] = useState(0)
+  const [cantidadHistoricos, setCantidadHistoricos] = useState(0)
+  const [historicosExcluidosPorFecha, setHistoricosExcluidosPorFecha] = useState(false)
   const [detalleAlertasConciliacion, setDetalleAlertasConciliacion] = useState([])
   const [mostrarDetalleAlertas, setMostrarDetalleAlertas] = useState(false)
 
@@ -1697,6 +1699,8 @@ export default function ConveniosCajaPage() {
           )
           setTotalCartera(Number(data?.total || 0))
           setAlertasConciliacion(Number(data?.advertencias_conciliacion || 0))
+          setCantidadHistoricos(Number(data?.registros_historicos || 0))
+          setHistoricosExcluidosPorFecha(Boolean(data?.historicos_excluidos_por_fecha))
           setDetalleAlertasConciliacion(Array.isArray(data?.detalle_advertencias) ? data.detalle_advertencias : [])
           setTotalPaginasCartera(Math.max(1, Number(data?.total_paginas || 1)))
           if (Number(data?.pagina) > 0 && Number(data.pagina) !== paginaCartera) {
@@ -1725,6 +1729,8 @@ export default function ConveniosCajaPage() {
           setCartera([])
           setTotalCartera(0)
           setAlertasConciliacion(0)
+          setCantidadHistoricos(0)
+          setHistoricosExcluidosPorFecha(false)
           setDetalleAlertasConciliacion([])
           setTotalPaginasCartera(1)
 
@@ -1804,14 +1810,9 @@ export default function ConveniosCajaPage() {
       async (
         item
       ) => {
-        const matriculaId =
-          item?.matricula_id
-
-        if (
-          !matriculaId
-        ) {
-          return
-        }
+        const matriculaId = item?.matricula_id
+        const cuentaHistoricaId = item?.registro_historico ? item?.cuenta_id : null
+        if (!matriculaId && !cuentaHistoricaId) return
 
         setDrawerAbierto(
           true
@@ -1835,7 +1836,7 @@ export default function ConveniosCajaPage() {
 
           params.set(
             'recurso',
-            'detalle'
+            cuentaHistoricaId ? 'detalle_historico' : 'detalle'
           )
 
           params.set(
@@ -1843,12 +1844,11 @@ export default function ConveniosCajaPage() {
             nit
           )
 
-          params.set(
-            'matricula_id',
-            String(
-              matriculaId
-            )
-          )
+          if (cuentaHistoricaId) {
+            params.set('cuenta_id', String(cuentaHistoricaId))
+          } else {
+            params.set('matricula_id', String(matriculaId))
+          }
 
           const data =
             await fetchJsonSeguro(
@@ -2432,6 +2432,18 @@ export default function ConveniosCajaPage() {
             </div>
           </div>
 
+          {(cantidadHistoricos > 0 || historicosExcluidosPorFecha) && (
+            <div role="note" className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] text-blue-900">
+              <i className="fas fa-archive mr-2" />
+              {cantidadHistoricos > 0 && (
+                <span><strong>{cantidadHistoricos} obligación(es) histórica(s) sin matrícula importada</strong> se incluyen como registros independientes, con sus pagos activos y sin relacionarlas con matrículas posteriores. </span>
+              )}
+              {historicosExcluidosPorFecha && (
+                <span><strong>Importante:</strong> los registros históricos sin fecha de matrícula verificable no se incluyen cuando filtra por fechas. Quite el rango de fechas para consultarlos.</span>
+              )}
+            </div>
+          )}
+
           {alertasConciliacion > 0 && (
             <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-3 text-[11px] text-amber-900" role="status">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2621,10 +2633,7 @@ export default function ConveniosCajaPage() {
                     cartera.map(
                       item => (
                         <tr
-                          key={
-                            item
-                              .matricula_id
-                          }
+                          key={item.registro_historico ? `historico-${item.cuenta_id}` : `matricula-${item.matricula_id}`}
                           className="
                             border-t
                             border-gray-100
@@ -2646,11 +2655,11 @@ export default function ConveniosCajaPage() {
                                 '-'}
                             </p>
 
-                            <p className="text-[9px] text-gray-500">
-                              {formatearFecha(
-                                item?.fecha_matricula
-                              )}
-                            </p>
+                            {item?.registro_historico ? (
+                              <p className="text-[9px] font-semibold text-blue-700">Histórico sin matrícula importada</p>
+                            ) : (
+                              <p className="text-[9px] text-gray-500">{formatearFecha(item?.fecha_matricula)}</p>
+                            )}
                           </td>
 
                           {/* APRENDIZ */}
@@ -2668,11 +2677,11 @@ export default function ConveniosCajaPage() {
                             </p>
 
                             <p className="text-[9px] text-gray-500">
-                              {item?.tipo_documento ||
-                                ''}{' '}
-                              {item?.documento ||
-                                ''}
+                              {item?.tipo_documento || ''}{' '}{item?.documento || ''}
                             </p>
+                            {item?.registro_historico && (
+                              <p className="text-[9px] text-blue-700">Nombre de referencia por documento; no vinculado a matrícula</p>
+                            )}
                           </td>
 
                           {/* CONVENIO */}
