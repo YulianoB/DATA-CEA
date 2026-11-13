@@ -15,6 +15,7 @@ import {
 import { HandCoins, RefreshCw } from 'lucide-react'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import { ENTIDADES_FINANCIERAS_CAJA } from '@/lib/catalogoEntidadesFinancierasCaja'
 import {
   BotonActualizar,
   BotonAgregar,
@@ -43,6 +44,12 @@ import {
 
 const API_URL =
   '/api/admin/caja'
+
+// El ID es técnico; el número impreso procede exclusivamente del histórico.
+function numeroReciboCaja(recibo) {
+  const referencia = String(recibo?.referencia_pago ?? '').trim()
+  return /^[0-9]+$/.test(referencia) ? referencia : '-'
+}
 
 const CATEGORIAS = [
   '',
@@ -938,7 +945,7 @@ const [
       pagado_por: 'APRENDIZ',
       nombre_pagador: '',
       documento_pagador: '',
-      referencia_pago: '',
+      entidad_financiera: '',
       fecha: '',
       observaciones: '',
     })
@@ -2256,18 +2263,7 @@ const ingresosLibresFiltrados =
         totalAbonadoAlRecibo
       )
 
-    const consecutivo =
-      recibo?.consecutivo ||
-      (
-        recibo?.id
-          ? `RC-${String(
-              recibo.id
-            ).padStart(
-              6,
-              '0'
-            )}`
-          : '-'
-      )
+    const consecutivo = numeroReciboCaja(recibo)
 
     const nombreAprendiz =
       nombreCompletoCuenta(
@@ -2372,18 +2368,7 @@ const ingresosLibresFiltrados =
         ? historialHastaRecibo
             .map(
               item => {
-                const consecutivoItem =
-                  item?.consecutivo ||
-                  (
-                    item?.id
-                      ? `RC-${String(
-                          item.id
-                        ).padStart(
-                          6,
-                          '0'
-                        )}`
-                      : '-'
-                  )
+                const consecutivoItem = numeroReciboCaja(item)
 
                 const medioItem =
                   nombreMedioPagoVisible(
@@ -2834,7 +2819,7 @@ const ingresosLibresFiltrados =
           pagado_por: formPago.pagado_por,
           nombre_pagador: formPago.nombre_pagador,
           documento_pagador: formPago.documento_pagador,
-          referencia_pago: formPago.referencia_pago,
+          entidad_financiera: formPago.entidad_financiera,
           fecha: formPago.fecha,
           descripcion:
             cuentaPago?.descripcion ||
@@ -3991,16 +3976,7 @@ const ingresosLibresFiltrados =
           ) : (
             ingresosLibresFiltrados.map(
               recibo => {
-                const consecutivo =
-                  recibo
-                    ?.consecutivo ||
-                  `RC-${String(
-                    recibo?.id ||
-                    ''
-                  ).padStart(
-                    6,
-                    '0'
-                  )}`
+                const consecutivo = numeroReciboCaja(recibo)
 
                 return (
                   <tr
@@ -5129,16 +5105,17 @@ const ingresosLibresFiltrados =
                       }
                     />
 
-                    <CampoInput
+                    <CampoSelect
                       label="Entidad financiera"
-                      value={formPago.referencia_pago}
+                      value={formPago.entidad_financiera}
                       onChange={value =>
                         setFormPago(actual => ({
                           ...actual,
-                          referencia_pago: value,
+                          entidad_financiera: value,
                         }))
                       }
-                      placeholder="Ej. Bancolombia, Davivienda, Nequi..."
+                      options={ENTIDADES_FINANCIERAS_CAJA.map(nombre => ({ value: nombre, label: nombre }))}
+                      permitirVacio
                     />
                   </div>
 
@@ -5535,7 +5512,7 @@ const ingresosLibresFiltrados =
 
                 {reciboHistoricoEditando && (
                   <div className="p-3 my-2 border border-amber-300 rounded-lg bg-amber-50 space-y-2">
-                    <strong className="text-xs">Corregir recibo histórico {reciboHistoricoEditando.consecutivo}</strong>
+                    <strong className="text-xs">Corregir recibo histórico {numeroReciboCaja(reciboHistoricoEditando)}</strong>
                     <p className="text-[10px]">Importes y aplicaciones no se modifican desde este formulario.</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                       <label className="text-[11px]">Fecha verificada
@@ -5548,7 +5525,7 @@ const ingresosLibresFiltrados =
                           {mediosPago.map(m=><option key={m.id} value={m.id}>{m.nombre}</option>)}
                         </select>
                       </label>
-                      <label className="text-[11px]">Recibo físico / referencia
+                      <label className="text-[11px]">N.º recibo histórico
                         <input className="w-full border rounded p-2" value={correccionHistorica.referencia_pago}
                           onChange={e=>setCorreccionHistorica(a=>({...a,referencia_pago:e.target.value}))}/>
                       </label>
@@ -5609,18 +5586,7 @@ const ingresosLibresFiltrados =
                               recibo => (
                                 <tr key={recibo.id}>
                                   <td className="px-3 py-2 border border-slate-300 font-bold whitespace-nowrap">
-                                    {recibo.consecutivo ||
-                                      `RC-${String(
-                                        recibo.id
-                                      ).padStart(
-                                        6,
-                                        '0'
-                                      )}`}
-                                    {mayusculas(recibo.recibido_por) === 'MIGRACION' && (
-                                      <div className="text-[9px] text-slate-500 font-normal">
-                                        Recibo físico: {recibo.referencia_pago || 'Sin referencia'}
-                                      </div>
-                                    )}
+                                    {numeroReciboCaja(recibo)}
                                   </td>
 
                                   <td className="px-3 py-2 border border-slate-300 whitespace-nowrap">
