@@ -5739,6 +5739,9 @@ const ingresosLibresFiltrados =
                 <span>Nuevo saldo</span>
                 <span>{formatearMoneda(Number(valorLiquidacion) > 0 ? Number(valorLiquidacion) : 0)}</span>
               </div>
+              {error && (
+                <p role="alert" className="rounded border border-red-300 bg-red-50 p-2 text-xs text-red-800">{error}</p>
+              )}
               <div className="flex justify-end gap-2 border-t border-slate-200 pt-3">
                 <BotonCancelar type="button" disabled={procesando}
                   onClick={() => { setModalLiquidacion(null); setError('') }}>
