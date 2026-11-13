@@ -2463,6 +2463,8 @@ async function consultarCuentas({
   estado = '',
   convenioId = null,
   pagina = 1,
+  porPagina = LIMITE_CONSULTA,
+  conTotal = false,
 }) {
   const termino =
     limpiarBusqueda(
@@ -2615,7 +2617,7 @@ async function consultarCuentas({
         fecha_creacion,
         created_at,
         updated_at
-      `)
+      `, { count: conTotal ? 'exact' : undefined })
 
   const estadoNormalizado =
     mayusculas(
@@ -2689,6 +2691,7 @@ async function consultarCuentas({
   const {
     data,
     error,
+    count,
   } =
     await consulta
       .order(
@@ -2699,8 +2702,8 @@ async function consultarCuentas({
         }
       )
       .range(
-        (Math.max(1, Number(pagina) || 1) - 1) * LIMITE_CONSULTA,
-        Math.max(1, Number(pagina) || 1) * LIMITE_CONSULTA
+        (Math.max(1, Number(pagina) || 1) - 1) * porPagina,
+        Math.max(1, Number(pagina) || 1) * porPagina + porPagina - 1
       )
 
   if (
@@ -2769,7 +2772,7 @@ async function consultarCuentas({
       )
   }
 
-  return cuentas
+  return conTotal ? { cuentas, total: Number(count || 0) } : cuentas
 }
 
 // =========================================================
@@ -5211,7 +5214,9 @@ export async function GET(
       recurso ===
         'obligaciones'
     ) {
-      const data =
+      const porPagina = [25, 50, 100].includes(toInt(searchParams.get('por_pagina')))
+        ? toInt(searchParams.get('por_pagina')) : 25
+      const { cuentas, total } =
         await consultarCuentas({
           supabase,
 
@@ -5238,16 +5243,19 @@ export async function GET(
 
           pagina:
             Math.max(1, Math.min(10000, toInt(searchParams.get('pagina')) || 1)),
+          porPagina,
+          conTotal: true,
         })
 
       return NextResponse.json({
         status:
           'success',
 
-        data: data.slice(0, LIMITE_CONSULTA),
+        data: cuentas,
 
-        total: data.length,
-        hay_mas: data.length > LIMITE_CONSULTA,
+        total,
+        por_pagina: porPagina,
+        hay_mas: Math.max(1, toInt(searchParams.get('pagina')) || 1) * porPagina < total,
 
         empresa:
           empresaRespuesta(
