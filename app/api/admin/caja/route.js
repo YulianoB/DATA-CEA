@@ -303,6 +303,18 @@ function hoyColombia() {
 // CONSECUTIVOS VISUALES
 // =========================================================
 
+// El esquema actual NO tiene entidad_financiera. Se conserva el banco
+// como observación identificada, sin mezclarlo con referencia_pago.
+function observacionesConEntidadFinanciera(entidad, observaciones) {
+  const nota = texto(observaciones)
+  return entidad ? `ENTIDAD FINANCIERA: ${entidad}${nota ? '\n' + nota : ''}` : (nota || null)
+}
+function entidadFinancieraDesdeObservaciones(observaciones) {
+  const nota = texto(observaciones)
+  const coincidencia = nota.match(/^ENTIDAD FINANCIERA: ([^\r\n]+)/)
+  return coincidencia ? coincidencia[1].trim() : null
+}
+
 function numeroRecibo(recibo) {
   const referencia = texto(recibo?.referencia_pago)
   return /^[0-9]+$/.test(referencia) ? referencia : '-'
@@ -2812,7 +2824,6 @@ async function obtenerDetalleCuenta(
         nombre_pagador,
         documento_pagador,
         referencia_pago,
-        entidad_financiera,
         recibido_por,
         observaciones,
         estado,
@@ -2981,6 +2992,7 @@ async function obtenerDetalleCuenta(
       ).map(
         recibo => ({
           ...recibo,
+          entidad_financiera: entidadFinancieraDesdeObservaciones(recibo.observaciones),
 
           consecutivo:
             numeroRecibo(recibo),
@@ -4641,8 +4653,7 @@ export async function GET(
             nombre_pagador,
             documento_pagador,
             referencia_pago,
-            entidad_financiera,
-            recibido_por,
+                recibido_por,
             observaciones,
             estado,
             created_at,
@@ -5018,6 +5029,7 @@ export async function GET(
         listaRecibos.map(
           recibo => ({
             ...recibo,
+            entidad_financiera: entidadFinancieraDesdeObservaciones(recibo.observaciones),
 
             consecutivo:
               numeroRecibo(recibo),
@@ -6342,16 +6354,13 @@ if (
               documentoCliente,
 
             referencia_pago: await siguienteNumeroRecibo(supabase),
-            entidad_financiera: entidadFinanciera || null,
 
             recibido_por:
               usuario,
 
-            observaciones:
-              texto(
-                body?.observaciones
-              ) ||
-              null,
+            observaciones: observacionesConEntidadFinanciera(
+              entidadFinanciera, body?.observaciones
+            ),
 
             estado:
               'ACTIVO',
@@ -6545,6 +6554,7 @@ if (
           data: {
             recibo: {
               ...recibo,
+              entidad_financiera: entidadFinanciera,
 
               consecutivo:
                 numeroRecibo(recibo),
@@ -7900,16 +7910,13 @@ if (
               null,
 
             referencia_pago: await siguienteNumeroRecibo(supabase),
-            entidad_financiera: entidadFinanciera || null,
 
             recibido_por:
               usuario,
 
-            observaciones:
-              texto(
-                body?.observaciones
-              ) ||
-              null,
+            observaciones: observacionesConEntidadFinanciera(
+              entidadFinanciera, body?.observaciones
+            ),
 
             estado:
               'ACTIVO',
@@ -8119,6 +8126,7 @@ if (
           data: {
             recibo: {
               ...recibo,
+              entidad_financiera: entidadFinanciera,
 
               consecutivo:
                 numeroRecibo(recibo),
