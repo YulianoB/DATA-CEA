@@ -539,6 +539,16 @@ async function consultarRecibos(
   }, 'consultarRecibos')
 }
 
+// Las aplicaciones identifican qué parte del recibo corresponde a cada
+// componente de la obligación, incluso cuando una cuenta incluye dos matrículas.
+async function consultarAplicacionesRecibos(supabase, recibos) {
+  return consultarPorIdsEnLotes(recibos.map(r => r.id), lote =>
+    supabase.from('recibos_caja_detalle')
+      .select('id,recibo_id,cuenta_detalle_id,valor')
+      .in('recibo_id', lote)
+      .order('id', { ascending: true }), 'aplicaciones de recibos')
+}
+
 // =========================================================
 // AGRUPAR POR CUENTA
 // =========================================================
@@ -689,341 +699,144 @@ function construirCartera({
   cuentas,
   detalles,
   recibos,
+  aplicaciones = [],
 }) {
-  const cuentasPorDocumento =
-    agruparCuentasPorDocumento(
-      cuentas
-    )
-
-  const detallesPorCuenta =
-    agruparPorCuenta(
-      detalles
-    )
-
-  const recibosPorCuenta =
-    agruparPorCuenta(
-      recibos
-    )
-
-  const resultado = []
-
-  for (
-    const aprendiz of
-      aprendices
-  ) {
-    const documento =
-      normalizarDocumento(
-        aprendiz?.documento
-      )
-
-    let cuentasAprendiz =
-      cuentasPorDocumento.get(
-        documento
-      ) ||
-      []
-
-    // =====================================================
-    // PRIORIZAR CUENTAS DEL MISMO CONVENIO
-    // =====================================================
-
-    if (
-      aprendiz?.convenio_id
-    ) {
-      const cuentasMismoConvenio =
-        cuentasAprendiz.filter(
-          cuenta =>
-            Number(
-              cuenta?.convenio_id
-            ) ===
-            Number(
-              aprendiz.convenio_id
-            )
-        )
-
-      if (
-        cuentasMismoConvenio.length >
-        0
-      ) {
-        cuentasAprendiz =
-          cuentasMismoConvenio
-      }
-    }
-
-    // =====================================================
-    // SOLO CUENTAS ORIGINADAS EN CONVENIO
-    // =====================================================
-
-    cuentasAprendiz =
-      cuentasAprendiz.filter(
-        cuenta =>
-          mayusculas(
-            cuenta?.origen_matricula
-          ) ===
-          'CONVENIO'
-      )
-
-    let valorTotal =
-      0
-
-    let totalPagado =
-      0
-
-    let cantidadPagos =
-      0
-
-    let fechaUltimoPago =
-      null
-
-    const cuentasResultado =
-      []
-
-    for (
-      const cuenta of
-        cuentasAprendiz
-    ) {
-      const cuentaId =
-        Number(
-          cuenta?.id
-        )
-
-      const recibosCuenta =
-        recibosPorCuenta.get(
-          cuentaId
-        ) ||
-        []
-
-      const detallesCuenta =
-        detallesPorCuenta.get(
-          cuentaId
-        ) ||
-        []
-
-      const valorCuenta =
-        redondear(
-          cuenta?.valor_total
-        )
-
-      const pagadoCuenta =
-        redondear(
-          recibosCuenta.reduce(
-            (
-              suma,
-              recibo
-            ) =>
-              suma +
-              numero(
-                recibo?.valor
-              ),
-            0
-          )
-        )
-
-      const saldoCuenta =
-        redondear(
-          Math.max(
-            0,
-            valorCuenta -
-              pagadoCuenta
-          )
-        )
-
-      const estadoCuentaCalculado =
-        calcularEstadoCartera({
-          valorTotal:
-            valorCuenta,
-
-          totalPagado:
-            pagadoCuenta,
-        })
-
-      valorTotal +=
-        valorCuenta
-
-      totalPagado +=
-        pagadoCuenta
-
-      cantidadPagos +=
-        recibosCuenta.length
-
-      for (
-        const recibo of
-          recibosCuenta
-      ) {
-        const fechaPago =
-          texto(
-            recibo?.fecha
-          )
-
-        if (
-          fechaPago &&
-          (
-            !fechaUltimoPago ||
-            fechaPago >
-              fechaUltimoPago
-          )
-        ) {
-          fechaUltimoPago =
-            fechaPago
-        }
-      }
-
-      cuentasResultado.push({
-        ...cuenta,
-
-        estado_bd:
-          cuenta?.estado ||
-          '',
-
-        estado_cartera:
-          estadoCuentaCalculado,
-
-        valor_total:
-          valorCuenta,
-
-        total_pagado:
-          pagadoCuenta,
-
-        saldo:
-          saldoCuenta,
-
-        cantidad_pagos:
-          recibosCuenta.length,
-
-        detalle:
-          detallesCuenta,
-      })
-    }
-
-    valorTotal =
-      redondear(
-        valorTotal
-      )
-
-    totalPagado =
-      redondear(
-        totalPagado
-      )
-
-    const saldo =
-      redondear(
-        Math.max(
-          0,
-          valorTotal -
-            totalPagado
-        )
-      )
-
-    const estadoCartera =
-      calcularEstadoCartera({
-        valorTotal,
-        totalPagado,
-      })
-
-    const convenio =
-      aprendiz?.convenio_rel ||
-      null
-
-    resultado.push({
-      matricula_id:
-        aprendiz?.id,
-
-      consecutivo:
-        aprendiz?.consecutivo ||
-        '',
-
-      fecha_matricula:
-        aprendiz?.fecha_matricula ||
-        null,
-
-      tipo_documento:
-        aprendiz?.tipo_doc ||
-        '',
-
-      documento:
-        aprendiz?.documento ||
-        '',
-
-      nombres:
-        aprendiz?.nombres ||
-        '',
-
-      apellidos:
-        aprendiz?.apellidos ||
-        '',
-
-      nombre_completo:
-        nombreCompletoAprendiz(
-          aprendiz
-        ),
-
-      celular:
-        aprendiz?.celular ||
-        '',
-
-      correo:
-        aprendiz?.correo ||
-        '',
-
-      ciudad:
-        aprendiz?.ciudad ||
-        '',
-
-      categorias:
-        Array.isArray(
-          aprendiz?.categorias
-        )
-          ? aprendiz.categorias
-          : [],
-
-      estado_aprendiz:
-        aprendiz?.estado ||
-        '',
-
-      origen_matricula:
-        aprendiz?.origen_matricula ||
-        '',
-
-      convenio_id:
-        aprendiz?.convenio_id ||
-        null,
-
-      convenio_nombre:
-        convenio?.nombre ||
-        aprendiz?.convenio ||
-        '',
-
-      convenio,
-
-      cantidad_cuentas:
-        cuentasAprendiz.length,
-
-      valor_total:
-        valorTotal,
-
-      total_pagado:
-        totalPagado,
-
-      saldo,
-
-      cantidad_pagos:
-        cantidadPagos,
-
-      fecha_ultimo_pago:
-        fechaUltimoPago,
-
-      estado_cartera:
-        estadoCartera,
-
-      tiene_obligacion:
-        cuentasAprendiz.length >
-        0,
-
-      cuentas:
-        cuentasResultado,
-    })
+  const cuentasPorId = new Map(cuentas.map(c => [Number(c.id), c]))
+  const detallesPorId = new Map(detalles.map(d => [Number(d.id), d]))
+  const detallesPorCuenta = agruparPorCuenta(detalles)
+  const aplicacionesPorRecibo = new Map() // Indexadas por recibo_id.
+  for (const aplicacion of aplicaciones) {
+    const id = Number(aplicacion.recibo_id)
+    if (!aplicacionesPorRecibo.has(id)) aplicacionesPorRecibo.set(id, [])
+    aplicacionesPorRecibo.get(id).push(aplicacion)
   }
 
-  return resultado
+  const cuentasPorMatricula = new Map()
+  const valores = new Map()
+  const pagos = new Map()
+  const recibosPorMatricula = new Map()
+  const fechaPagos = new Map()
+  const matriculasValidas = new Set(aprendices.map(a => Number(a.id)))
+
+  const asociar = (matriculaId, cuentaId, valor = 0, pagado = 0, recibo = null) => {
+    const id = Number(matriculaId)
+    if (!matriculasValidas.has(id)) return
+    if (!cuentasPorMatricula.has(id)) cuentasPorMatricula.set(id, new Set())
+    cuentasPorMatricula.get(id).add(cuentaId)
+    valores.set(id, redondear((valores.get(id) || 0) + valor))
+    pagos.set(id, redondear((pagos.get(id) || 0) + pagado))
+    if (recibo && pagado) {
+      if (!recibosPorMatricula.has(id)) recibosPorMatricula.set(id, new Set())
+      recibosPorMatricula.get(id).add(recibo.id)
+      const fecha = texto(recibo.fecha)
+      if (fecha && fecha > (fechaPagos.get(id) || '')) fechaPagos.set(id, fecha)
+    }
+  }
+
+  for (const detalle of detalles) {
+    const cuenta = cuentasPorId.get(Number(detalle.cuenta_id))
+    if (!cuenta || mayusculas(cuenta.origen_matricula) !== 'CONVENIO') continue
+    if (!matriculasValidas.has(Number(detalle.matricula_id))) continue
+    asociar(detalle.matricula_id, Number(cuenta.id), numero(detalle.valor))
+  }
+
+  for (const recibo of recibos) {
+    const cuentaId = Number(recibo.cuenta_id)
+    const cuenta = cuentasPorId.get(cuentaId)
+    if (!cuenta || mayusculas(cuenta.origen_matricula) !== 'CONVENIO') continue
+    const aplicacionesRecibo = aplicacionesPorRecibo.get(Number(recibo.id)) || []
+    const aplicadas = aplicacionesRecibo.filter(a => detallesPorId.has(Number(a.cuenta_detalle_id)))
+    if (aplicadas.length) {
+      let totalAplicado = 0
+      for (const aplicacion of aplicadas) {
+        const detalle = detallesPorId.get(Number(aplicacion.cuenta_detalle_id))
+        if (Number(detalle.cuenta_id) !== cuentaId) continue
+        const monto = numero(aplicacion.valor)
+        totalAplicado += monto
+        asociar(detalle.matricula_id, cuentaId, 0, monto, recibo)
+      }
+      if (Math.abs(totalAplicado - numero(recibo.valor)) > 0.01) {
+        console.warn('Recibo con diferencia de distribución en cartera:', recibo.id)
+      }
+      continue
+    }
+    // Recibos históricos sin distribución: solo asignar cuando su matrícula
+    // es explícita o cuando toda la obligación pertenece a una matrícula.
+    const vinculados = detallesPorCuenta.get(cuentaId) || []
+    const matriculasCuenta = [...new Set(vinculados.map(d => Number(d.matricula_id)).filter(Boolean))]
+    const idExplicito = Number(recibo.matricula_id)
+    const matricula = matriculasCuenta.includes(idExplicito)
+      ? idExplicito
+      : matriculasCuenta.length === 1 ? matriculasCuenta[0] : null
+    if (matricula) asociar(matricula, cuentaId, 0, numero(recibo.valor), recibo)
+    else console.warn('Recibo sin matrícula asociable en cartera:', recibo.id)
+  }
+
+  return aprendices.map(aprendiz => {
+    const matriculaId = Number(aprendiz.id)
+    const cuentasIds = [...(cuentasPorMatricula.get(matriculaId) || [])]
+    const cuentasResultado = cuentasIds.map(id => {
+      const cuenta = cuentasPorId.get(id)
+      const detalleMatricula = (detallesPorCuenta.get(id) || [])
+        .filter(d => Number(d.matricula_id) === matriculaId)
+      const valorTotal = redondear(detalleMatricula.reduce((n,d) => n + numero(d.valor), 0))
+      const pagado = redondear(recibos.reduce((n,r) => {
+        if (Number(r.cuenta_id) !== id) return n
+        const aplica = aplicacionesPorRecibo.get(Number(r.id)) || []
+        if (aplica.length) return n + aplica.reduce((sub,ap) => {
+          const d = detallesPorId.get(Number(ap.cuenta_detalle_id))
+          return sub + (d && Number(d.matricula_id) === matriculaId ? numero(ap.valor) : 0)
+        },0)
+        const ids = [...new Set((detallesPorCuenta.get(id)||[]).map(d=>Number(d.matricula_id)).filter(Boolean))]
+        return n + (ids.length === 1 && ids[0] === matriculaId ||
+          Number(r.matricula_id) === matriculaId && ids.includes(matriculaId)
+            ? numero(r.valor) : 0)
+      },0))
+      return {
+        ...cuenta,
+        estado_bd: cuenta?.estado || '',
+        estado_cartera: calcularEstadoCartera({valorTotal,totalPagado:pagado}),
+        valor_total: valorTotal,
+        total_pagado: pagado,
+        saldo: redondear(Math.max(0, valorTotal - pagado)),
+        detalle: detalleMatricula,
+      }
+    })
+    const valorTotal = redondear(valores.get(matriculaId) || 0)
+    const totalPagado = redondear(pagos.get(matriculaId) || 0)
+    const saldo = redondear(Math.max(0, valorTotal - totalPagado))
+    const tieneObligacion = cuentasIds.length > 0
+    return {
+      matricula_id: aprendiz.id,
+      consecutivo: aprendiz.consecutivo || '',
+      fecha_matricula: aprendiz.fecha_matricula || null,
+      tipo_documento: aprendiz.tipo_doc || '',
+      documento: aprendiz.documento || '',
+      nombres: aprendiz.nombres || '',
+      apellidos: aprendiz.apellidos || '',
+      nombre_completo: nombreCompletoAprendiz(aprendiz),
+      celular: aprendiz.celular || '',
+      correo: aprendiz.correo || '',
+      ciudad: aprendiz.ciudad || '',
+      categorias: Array.isArray(aprendiz.categorias) ? aprendiz.categorias : [],
+      estado_aprendiz: aprendiz.estado || '',
+      origen_matricula: aprendiz.origen_matricula || '',
+      convenio_id: aprendiz.convenio_id || null,
+      convenio_nombre: aprendiz?.convenio_rel?.nombre || aprendiz.convenio || '',
+      convenio: aprendiz.convenio_rel || null,
+      cantidad_cuentas: cuentasIds.length,
+      valor_total: valorTotal,
+      total_pagado: totalPagado,
+      saldo,
+      cantidad_pagos: recibosPorMatricula.get(matriculaId)?.size || 0,
+      fecha_ultimo_pago: fechaPagos.get(matriculaId) || null,
+      estado_cartera: !tieneObligacion || valorTotal <= 0
+        ? 'SIN_LIQUIDAR'
+        : calcularEstadoCartera({ valorTotal, totalPagado }),
+      tiene_obligacion: tieneObligacion,
+      cuentas: cuentasResultado,
+    }
+  })
 }
 
 // =========================================================
