@@ -431,6 +431,9 @@ function BadgeEstado({
 
     PAZ_Y_SALVO:
       'bg-emerald-100 text-emerald-700 border-emerald-200',
+
+    SIN_LIQUIDAR:
+      'bg-slate-100 text-slate-700 border-slate-200',
   }
 
   const etiquetas = {
@@ -442,6 +445,9 @@ function BadgeEstado({
 
     PAZ_Y_SALVO:
       'Paz y salvo',
+
+    SIN_LIQUIDAR:
+      'Sin liquidar',
   }
 
   return (
@@ -1251,6 +1257,7 @@ export default function ConveniosCajaPage() {
   const [porPaginaCartera, setPorPaginaCartera] = useState(25)
   const [totalCartera, setTotalCartera] = useState(0)
   const [totalPaginasCartera, setTotalPaginasCartera] = useState(1)
+  const [alertasConciliacion, setAlertasConciliacion] = useState(0)
 
   const [
     convenios,
@@ -1687,6 +1694,7 @@ export default function ConveniosCajaPage() {
             {}
           )
           setTotalCartera(Number(data?.total || 0))
+          setAlertasConciliacion(Number(data?.advertencias_conciliacion || 0))
           setTotalPaginasCartera(Math.max(1, Number(data?.total_paginas || 1)))
           if (Number(data?.pagina) > 0 && Number(data.pagina) !== paginaCartera) {
             setPaginaCartera(Number(data.pagina))
@@ -1713,6 +1721,7 @@ export default function ConveniosCajaPage() {
 
           setCartera([])
           setTotalCartera(0)
+          setAlertasConciliacion(0)
           setTotalPaginasCartera(1)
 
           setError(
@@ -2418,6 +2427,14 @@ export default function ConveniosCajaPage() {
               </div>
             </div>
           </div>
+
+          {alertasConciliacion > 0 && (
+            <div role="status" className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+              <i className="fas fa-triangle-exclamation mr-2" />
+              Hay {alertasConciliacion} recibo(s) con distribución histórica no conciliable de manera inequívoca.
+              Sus importes no se asignan a una matrícula por suposición. Revise los registros originales antes de utilizar este informe para cierre de cartera.
+            </div>
+          )}
 
           {/* =============================================
               TABLA
