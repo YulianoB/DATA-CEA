@@ -2016,7 +2016,7 @@ const ingresosLibresFiltrados =
               cuenta?.aprendiz?.documento ||
               ''
             ),
-      referencia_pago: '',
+      entidad_financiera: '',
       fecha: new Intl.DateTimeFormat('sv-SE', {
         timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit'
       }).format(new Date()),
