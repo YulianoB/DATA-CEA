@@ -138,7 +138,7 @@ export function imprimirReciboOtrosIngresos(
 
   const valor = Number(recibo?.valor || datos?.valor || 0)
   const descripcion = datos?.descripcion || recibo?.descripcion || concepto
-  const referencia = recibo?.entidad_financiera || datos?.entidadFinanciera || datos?.referencia || '-'
+  const referencia = recibo?.entidad_financiera || datos?.entidadFinanciera || '-'
   const observaciones = recibo?.observaciones || datos?.observaciones || ''
   const recibidoPor =
     recibo?.recibido_por ||
