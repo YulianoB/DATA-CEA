@@ -837,6 +837,8 @@ const [
     useState('PENDIENTE')
 
   const [paginaCuentas, setPaginaCuentas] = useState(1)
+  const [porPaginaCuentas, setPorPaginaCuentas] = useState(25)
+  const [totalCuentas, setTotalCuentas] = useState(0)
   const [hayMasCuentas, setHayMasCuentas] = useState(false)
 
   const [
@@ -1294,11 +1296,13 @@ const [
                 q:
                   busqueda,
                 pagina: paginaCuentas,
+                por_pagina: porPaginaCuentas,
                 estado,
               }
             )
           )
 
+        setTotalCuentas(Number(data?.total || 0))
         setHayMasCuentas(Boolean(data?.hay_mas))
         setCuentas(
           Array.isArray(
@@ -1313,6 +1317,7 @@ const [
         construirUrl,
         busqueda,
         paginaCuentas,
+        porPaginaCuentas,
         estado,
       ]
     )
@@ -1486,7 +1491,7 @@ const cargarIngresosLibres =
   // BÚSQUEDA AUTOMÁTICA CUENTAS
   // =======================================================
 
-  useEffect(() => { setPaginaCuentas(1) }, [busqueda, estado])
+  useEffect(() => { setPaginaCuentas(1) }, [busqueda, estado, categoria, conceptoFiltro])
 
   useEffect(
     () => {
@@ -3469,38 +3474,49 @@ const ingresosLibresFiltrados =
         </p>
       </div>
 
-      <div className="flex items-center gap-2">
-        <span className="text-[10px]" style={{ color: ESTILO_SECCIONES.subtitulo }}>
-          {cuentasFiltradas.length} registro(s) en página {paginaCuentas}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <span className="text-[10px] whitespace-nowrap" style={{ color: ESTILO_SECCIONES.subtitulo }}>
+          {totalCuentas.toLocaleString('es-CO')} registros · Página {paginaCuentas} de {Math.max(1, Math.ceil(totalCuentas / porPaginaCuentas))}
         </span>
-        <button type="button" disabled={paginaCuentas === 1} onClick={()=>setPaginaCuentas(p=>Math.max(1,p-1))}
-          className="border rounded px-2 py-1 text-[10px] disabled:opacity-40">Anterior</button>
-        <button type="button" disabled={!hayMasCuentas} onClick={()=>setPaginaCuentas(p=>p+1)}
-          className="border rounded px-2 py-1 text-[10px] disabled:opacity-40">Siguiente</button>
-        <BotonAgregar
-          type="button"
-          onClick={() => setDrawerOtrosIngresos(true)}
-        >
+        <select aria-label="Registros por página" value={porPaginaCuentas}
+          onChange={e=>{setPorPaginaCuentas(Number(e.target.value));setPaginaCuentas(1)}}
+          className="rounded border border-white/40 bg-[#194567] px-2 py-1 text-[10px] text-white">
+          <option value={25}>25</option>
+          <option value={50}>50</option>
+          <option value={100}>100</option>
+        </select>
+        <button type="button" disabled={paginaCuentas === 1}
+          onClick={()=>setPaginaCuentas(p=>Math.max(1,p-1))}
+          className="rounded border border-white/40 px-2 py-1 text-[10px] disabled:opacity-40 hover:bg-white/20">
+          Anterior
+        </button>
+        <button type="button" disabled={!hayMasCuentas}
+          onClick={()=>setPaginaCuentas(p=>p+1)}
+          className="rounded border border-white/40 px-2 py-1 text-[10px] disabled:opacity-40 hover:bg-white/20">
+          Siguiente
+        </button>
+        <BotonAgregar type="button" onClick={() => setDrawerOtrosIngresos(true)}
+          className="!px-2.5 !py-1.5 !text-[10px]">
           <i className="fas fa-plus"></i>
           Otros Ingresos
         </BotonAgregar>
       </div>
     </div>
 
-    <div className="overflow-x-auto">
+    <div className="w-full min-w-0">
       <table
         className="
           w-full
-          min-w-[1320px]
           table-fixed
-          text-[10px]
+          text-[9px]
+          xl:text-[10px]
           border-collapse
         "
       >
         {/* Anchos de columna fijos: no cambian al filtrar por estado. */}
         <colgroup>
           <col style={{ width: '7%' }} />
-          <col style={{ width: '17%' }} />
+          <col style={{ width: '18%' }} />
           <col style={{ width: '9%' }} />
           <col style={{ width: '10%' }} />
           <col style={{ width: '6%' }} />
@@ -3509,7 +3525,7 @@ const ingresosLibresFiltrados =
           <col style={{ width: '7%' }} />
           <col style={{ width: '7%' }} />
           <col style={{ width: '8%' }} />
-          <col style={{ width: '13%' }} />
+          <col style={{ width: '12%' }} />
         </colgroup>
         <thead
           style={{
@@ -3518,47 +3534,47 @@ const ingresosLibresFiltrados =
           }}
         >
           <tr>
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Matrícula
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Aprendiz
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Fecha matrícula
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Origen
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Categoría
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Concepto
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Valor
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Abonado
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Saldo
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Estado
             </th>
 
-            <th className="border px-2 py-2 text-center align-middle">
+            <th className="border px-1 py-2 text-center align-middle break-words">
               Acción
             </th>
           </tr>
@@ -3621,12 +3637,7 @@ const ingresosLibresFiltrados =
                       border
                       px-2 py-2
                       text-center
-                       align-middle
-                       whitespace-nowrap
-                       align-middle
-                       whitespace-nowrap
-                       align-middle
-                       whitespace-nowrap
+                      align-middle
                       font-semibold
                     "
                   >
@@ -3635,7 +3646,7 @@ const ingresosLibresFiltrados =
                       '-'}
                   </td>
 
-                  <td className="border px-2 py-2">
+                  <td className="border px-1 py-2 align-middle break-words">
                     <div
                       className="
                         font-bold
@@ -3714,7 +3725,7 @@ const ingresosLibresFiltrados =
                     )}
                   </td>
 
-                  <td className="border px-2 py-2 text-center align-middle">
+                  <td className="border px-1 py-2 text-center align-middle break-words">
                     <div className="font-semibold">
                       {conceptoPrincipalCuenta(
                         cuenta
@@ -3797,14 +3808,14 @@ const ingresosLibresFiltrados =
                       text-center
                     "
                   >
-                    <div className="flex justify-center flex-wrap gap-1.5">
+                    <div className="flex justify-center flex-wrap gap-1">
                       {Number(cuenta.valor_total) === 0 &&
                         mayusculas(cuenta.estado) !== 'ANULADA' ? (
                         <BotonAgregar
                           type="button"
                           disabled={cargandoLiquidacion || procesando}
                           onClick={() => abrirLiquidacion(cuenta)}
-                          className="!w-[136px] !px-2 !py-1.5 !text-[10px]"
+                          className="!w-full !max-w-[125px] !px-1 !py-1 !text-[9px]"
                         >
                           <i className="fas fa-file-invoice-dollar"></i>
                           Liquidar Obligación
@@ -3813,7 +3824,7 @@ const ingresosLibresFiltrados =
                         <BotonAgregar
                           type="button"
                           onClick={() => abrirRegistrarPago(cuenta)}
-                          className="!w-[116px] !px-3 !py-1.5 !text-[10px]"
+                          className="!w-full !max-w-[108px] !px-1 !py-1 !text-[9px]"
                         >
                           <i className="fas fa-dollar-sign"></i>
                           Registrar Pago
@@ -3838,7 +3849,7 @@ const ingresosLibresFiltrados =
                           disabled={
                             cargandoDetalle
                           }
-                          className="!w-[116px] !px-3 !py-1.5 !text-[10px]"
+                          className="!w-full !max-w-[108px] !px-1 !py-1 !text-[9px]"
                         >
                           <i className="fas fa-eye"></i>
                           Ver Detalle
