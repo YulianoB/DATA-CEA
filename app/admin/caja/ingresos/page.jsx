@@ -1298,6 +1298,8 @@ const [
                 pagina: paginaCuentas,
                 por_pagina: porPaginaCuentas,
                 estado,
+                categoria,
+                concepto_id: conceptoFiltro,
               }
             )
           )
@@ -1319,6 +1321,8 @@ const [
         paginaCuentas,
         porPaginaCuentas,
         estado,
+        categoria,
+        conceptoFiltro,
       ]
     )
     // =======================================================
