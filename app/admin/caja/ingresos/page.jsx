@@ -3491,10 +3491,26 @@ const ingresosLibresFiltrados =
       <table
         className="
           w-full
-          text-[11px]
+          min-w-[1320px]
+          table-fixed
+          text-[10px]
           border-collapse
         "
       >
+        {/* Anchos de columna fijos: no cambian al filtrar por estado. */}
+        <colgroup>
+          <col style={{ width: '7%' }} />
+          <col style={{ width: '17%' }} />
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '10%' }} />
+          <col style={{ width: '6%' }} />
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '7%' }} />
+          <col style={{ width: '7%' }} />
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '13%' }} />
+        </colgroup>
         <thead
           style={{
             backgroundColor: ESTILO_ENCABEZADO_TABLA.fondo,
@@ -3502,47 +3518,47 @@ const ingresosLibresFiltrados =
           }}
         >
           <tr>
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Matrícula
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Aprendiz
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Fecha matrícula
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Origen
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Categoría
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Concepto
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Valor
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Abonado
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Saldo
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Estado
             </th>
 
-            <th className="border p-2">
+            <th className="border px-2 py-2 text-center align-middle">
               Acción
             </th>
           </tr>
@@ -3603,8 +3619,14 @@ const ingresosLibresFiltrados =
                   <td
                     className="
                       border
-                      p-2
+                      px-2 py-2
                       text-center
+                       align-middle
+                       whitespace-nowrap
+                       align-middle
+                       whitespace-nowrap
+                       align-middle
+                       whitespace-nowrap
                       font-semibold
                     "
                   >
@@ -3613,7 +3635,7 @@ const ingresosLibresFiltrados =
                       '-'}
                   </td>
 
-                  <td className="border p-2">
+                  <td className="border px-2 py-2">
                     <div
                       className="
                         font-bold
@@ -3638,7 +3660,7 @@ const ingresosLibresFiltrados =
                   <td
                     className="
                       border
-                      p-2
+                      px-2 py-2
                       text-center
                       whitespace-nowrap
                     "
@@ -3650,7 +3672,7 @@ const ingresosLibresFiltrados =
                     )}
                   </td>
 
-                  <td className="border p-2">
+                  <td className="border px-2 py-2 align-middle break-words">
                     <div
                       className="
                         text-[10px]
@@ -3692,7 +3714,7 @@ const ingresosLibresFiltrados =
                     )}
                   </td>
 
-                  <td className="border p-2">
+                  <td className="border px-2 py-2 text-center align-middle">
                     <div className="font-semibold">
                       {conceptoPrincipalCuenta(
                         cuenta
@@ -3715,7 +3737,7 @@ const ingresosLibresFiltrados =
                     className="
                       border
                       p-2
-                      text-right
+                      text-center
                       font-semibold
                     "
                   >
@@ -3731,7 +3753,7 @@ const ingresosLibresFiltrados =
                     className="
                       border
                       p-2
-                      text-right
+                      text-center
                       font-semibold
                       text-blue-700
                     "
@@ -3745,7 +3767,7 @@ const ingresosLibresFiltrados =
                     className="
                       border
                       p-2
-                      text-right
+                      text-center
                       font-black
                     "
                   >
