@@ -981,8 +981,11 @@ const [
   const [correccionHistorica, setCorreccionHistorica] = useState({
     fecha: '', medio_pago_id: '', referencia_pago: '', motivo: ''
   })
-  const [liquidacionConvenio, setLiquidacionConvenio] = useState('')
+  // Modal independiente para obligaciones creadas sin valor de curso.
+  const [modalLiquidacion, setModalLiquidacion] = useState(null)
+  const [valorLiquidacion, setValorLiquidacion] = useState('')
   const [motivoLiquidacion, setMotivoLiquidacion] = useState('')
+  const [cargandoLiquidacion, setCargandoLiquidacion] = useState(false)
 
   // =======================================================
   // UI
@@ -2742,28 +2745,73 @@ const ingresosLibresFiltrados =
     }
   }
 
-  async function guardarLiquidacionConvenio() {
-    const cuenta = detalleFinanciero?.cuenta
-    if (!cuenta?.id || !esCuentaConvenio(cuenta) || Number(cuenta.valor_total) !== 0) return
-    const valor = Number(liquidacionConvenio)
-    if (!Number.isFinite(valor) || valor <= 0 || motivoLiquidacion.trim().length < 8) {
-      setError('Indique el valor real y una justificación de mínimo 8 caracteres.')
+  // El formulario de pago no debe abrirse si todavía no existe una
+  // obligación liquidada. Se valida el desglose antes de modificar valores.
+  async function abrirLiquidacion(cuenta) {
+    if (!cuenta?.id || cargandoLiquidacion || procesando) return
+    if (Number(cuenta.valor_total) !== 0 ||
+        Number(cuenta.total_abonado || 0) !== 0 ||
+        mayusculas(cuenta.estado) === 'ANULADA') {
+      setError('Esta obligación no está disponible para liquidación inicial.')
+      return
+    }
+    setCargandoLiquidacion(true)
+    setError('')
+    try {
+      const detalle = await consultarDetalleCuenta(cuenta.id)
+      const cuentaActual = detalle?.cuenta
+      const componentes = Array.isArray(cuentaActual?.detalles)
+        ? cuentaActual.detalles
+        : Array.isArray(detalle?.detalles) ? detalle.detalles : []
+      const recibos = Array.isArray(detalle?.recibos) ? detalle.recibos : []
+      if (!cuentaActual || Number(cuentaActual.valor_total) !== 0 ||
+          Number(cuentaActual.total_abonado || 0) !== 0 ||
+          recibos.some(recibo => mayusculas(recibo.estado) === 'ACTIVO')) {
+        throw new Error('La obligación cambió o ya tiene pagos. Actualice la información.')
+      }
+      if (componentes.length !== 1) {
+        throw new Error('La obligación tiene varios conceptos o no dispone de un único detalle. Debe revisarse su desglose antes de liquidarla.')
+      }
+      setModalLiquidacion({ ...cuentaActual, detalles: componentes })
+      setValorLiquidacion('')
+      setMotivoLiquidacion('')
+    } catch (err) {
+      setError(err.message || 'No fue posible revisar la obligación para liquidarla.')
+    } finally {
+      setCargandoLiquidacion(false)
+    }
+  }
+
+  async function guardarLiquidacion() {
+    if (!modalLiquidacion?.id || procesando) return
+    const valor = Number(valorLiquidacion)
+    if (!texto(valorLiquidacion) || !Number.isFinite(valor) || valor <= 0 ||
+        Math.abs(valor - Math.round(valor * 100) / 100) > 1e-8 ||
+        motivoLiquidacion.trim().length < 8) {
+      setError('Indique un valor mayor que cero y una justificación de mínimo ocho caracteres.')
       return
     }
     setProcesando(true)
     setError('')
     try {
+      // Se actualiza la cabecera y el único detalle existente, sin crear
+      // una segunda obligación ni tocar recibos o pagos anteriores.
       await postCaja({
-        accion: 'modificar_cuenta', cuenta_id: cuenta.id,
-        valor_total: valor, observaciones: motivoLiquidacion.trim()
+        accion: 'modificar_cuenta',
+        cuenta_id: modalLiquidacion.id,
+        valor_total: valor,
+        observaciones: motivoLiquidacion.trim(),
       })
-      setDetalleFinanciero(await consultarDetalleCuenta(cuenta.id))
-      setLiquidacionConvenio('')
+      setModalLiquidacion(null)
+      setValorLiquidacion('')
       setMotivoLiquidacion('')
       await cargarCuentas()
-      setMensaje('Convenio liquidado. Puede registrar los pagos correspondientes.')
+      if (detalleFinanciero?.cuenta?.id === modalLiquidacion.id) {
+        setDetalleFinanciero(await consultarDetalleCuenta(modalLiquidacion.id))
+      }
+      setMensaje('Obligación liquidada correctamente. Ya puede registrar pagos.')
     } catch (err) {
-      setError(err.message || 'No fue posible liquidar el convenio.')
+      setError(err.message || 'No fue posible liquidar la obligación.')
     } finally {
       setProcesando(false)
     }
@@ -3674,7 +3722,7 @@ const ingresosLibresFiltrados =
                     {formatearMoneda(
                       cuenta.valor_total
                     )}
-                    {esCuentaConvenio(cuenta) && Number(cuenta.valor_total) === 0 && (
+                    {Number(cuenta.valor_total) === 0 && (
                       <div className="text-[9px] text-amber-700">Pendiente de liquidación</div>
                     )}
                   </td>
@@ -3728,21 +3776,21 @@ const ingresosLibresFiltrados =
                     "
                   >
                     <div className="flex justify-center flex-wrap gap-1.5">
-                      {[
-                        'PENDIENTE',
-                        'ABONADO',
-                      ].includes(
-                        mayusculas(
-                          cuenta.estado
-                        )
-                      ) && (
+                      {Number(cuenta.valor_total) === 0 &&
+                        mayusculas(cuenta.estado) !== 'ANULADA' ? (
                         <BotonAgregar
                           type="button"
-                          onClick={() =>
-                            abrirRegistrarPago(
-                              cuenta
-                            )
-                          }
+                          disabled={cargandoLiquidacion || procesando}
+                          onClick={() => abrirLiquidacion(cuenta)}
+                          className="!w-[136px] !px-2 !py-1.5 !text-[10px]"
+                        >
+                          <i className="fas fa-file-invoice-dollar"></i>
+                          Liquidar Obligación
+                        </BotonAgregar>
+                      ) : ['PENDIENTE', 'ABONADO'].includes(mayusculas(cuenta.estado)) && (
+                        <BotonAgregar
+                          type="button"
+                          onClick={() => abrirRegistrarPago(cuenta)}
                           className="!w-[116px] !px-3 !py-1.5 !text-[10px]"
                         >
                           <i className="fas fa-dollar-sign"></i>
@@ -4873,28 +4921,6 @@ const ingresosLibresFiltrados =
                 </div>
               </div>
 
-              {esCuentaConvenio(detalleFinanciero?.cuenta) &&
-                Number(detalleFinanciero?.cuenta?.valor_total) === 0 &&
-                mayusculas(detalleFinanciero?.cuenta?.estado) !== 'ANULADA' && (
-                <div className="border border-amber-300 rounded-lg bg-amber-50 p-3 space-y-2">
-                  <strong className="text-xs">Convenio pendiente de liquidación</strong>
-                  <p className="text-[11px]">El valor $0 no significa paz y salvo. Asigne el valor confirmado por el convenio antes de recibir pagos.</p>
-                  <label className="block text-[11px]">Valor de la obligación (CURSO)
-                    <input type="number" min="1" step="1" className="w-full border rounded p-2"
-                      value={liquidacionConvenio}
-                      onChange={e=>setLiquidacionConvenio(e.target.value)}/>
-                  </label>
-                  <label className="block text-[11px]">Soporte y justificación
-                    <textarea rows={2} className="w-full border rounded p-2"
-                      value={motivoLiquidacion}
-                      onChange={e=>setMotivoLiquidacion(e.target.value)}/>
-                  </label>
-                  <button type="button" disabled={procesando} onClick={guardarLiquidacionConvenio}
-                    className="rounded bg-slate-800 text-white px-3 py-2 text-xs">
-                    Liquidar obligación de convenio
-                  </button>
-                </div>
-              )}
 
               <div>
                 <div
@@ -5666,6 +5692,70 @@ const ingresosLibresFiltrados =
             {/* ====================================================
           DRAWER OTROS INGRESOS
       ==================================================== */}
+
+      {/* Liquidación inicial: modal independiente del registro de pagos. */}
+      {modalLiquidacion && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4"
+          role="dialog" aria-modal="true" aria-label="Liquidar obligación">
+          <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-[#246185] px-4 py-3 text-white">
+              <h2 className="text-sm font-bold">
+                <i className="fas fa-file-invoice-dollar mr-2"></i>
+                Liquidar obligación
+              </h2>
+              <button type="button" aria-label="Cerrar" disabled={procesando}
+                onClick={() => { setModalLiquidacion(null); setError('') }}
+                className="rounded border border-white/40 px-2 py-1 disabled:opacity-50">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="space-y-3 p-4 text-xs">
+              <p className="font-semibold text-slate-800">
+                Matrícula {modalLiquidacion.consecutivo_matricula || '-'} ·
+                {' '}{textoCategoriasCuenta(modalLiquidacion)}
+              </p>
+              <p className="rounded border border-amber-200 bg-amber-50 p-2 text-amber-900">
+                Esta obligación tiene valor $0. Asigne el valor acordado antes de recibir pagos.
+              </p>
+              <label className="block font-semibold text-slate-700">
+                Valor total de la obligación *
+                <input type="number" min="0.01" step="0.01"
+                  value={valorLiquidacion}
+                  onChange={e => setValorLiquidacion(e.target.value)}
+                  placeholder="Ingrese el valor acordado"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  disabled={procesando}/>
+              </label>
+              <label className="block font-semibold text-slate-700">
+                Justificación y soporte *
+                <textarea rows={2} maxLength={2000}
+                  value={motivoLiquidacion}
+                  onChange={e => setMotivoLiquidacion(e.target.value)}
+                  placeholder="Indique el soporte del valor asignado"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  disabled={procesando}/>
+              </label>
+              <div className="flex items-center justify-between rounded-lg bg-slate-50 p-3 font-semibold">
+                <span>Nuevo saldo</span>
+                <span>{formatearMoneda(Number(valorLiquidacion) > 0 ? Number(valorLiquidacion) : 0)}</span>
+              </div>
+              <div className="flex justify-end gap-2 border-t border-slate-200 pt-3">
+                <BotonCancelar type="button" disabled={procesando}
+                  onClick={() => { setModalLiquidacion(null); setError('') }}>
+                  Cancelar
+                </BotonCancelar>
+                <BotonGuardar type="button" disabled={procesando ||
+                  !Number.isFinite(Number(valorLiquidacion)) ||
+                  Number(valorLiquidacion) <= 0 ||
+                  motivoLiquidacion.trim().length < 8}
+                  onClick={guardarLiquidacion}>
+                  {procesando ? 'Guardando...' : 'Guardar liquidación'}
+                </BotonGuardar>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <OtrosIngresosDrawer
         abierto={
