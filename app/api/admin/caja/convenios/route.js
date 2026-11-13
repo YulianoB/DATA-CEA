@@ -1223,6 +1223,8 @@ async function consultarDetalleAprendiz(
       ),
     ])
 
+  const aplicaciones = await consultarAplicacionesRecibos(supabase, recibos)
+
   const recibosActivos =
     recibos.filter(
       recibo =>
@@ -1245,6 +1247,7 @@ async function consultarDetalleAprendiz(
 
       recibos:
         recibosActivos,
+      aplicaciones,
     })
 
   const resumen =
@@ -1724,6 +1727,8 @@ export async function GET(
           ),
         ])
 
+      const aplicaciones = await consultarAplicacionesRecibos(supabase, recibos)
+
       // ===================================================
       // 5. CONSTRUIR CARTERA
       // ===================================================
@@ -1738,36 +1743,25 @@ export async function GET(
           detalles,
 
           recibos,
+          aplicaciones,
         })
 
-      // ===================================================
-      // 6. RESUMEN GENERAL
-      // ===================================================
-      //
-      // El resumen se calcula sobre todo el universo que
-      // cumple convenio y rango de matrícula.
-      //
-      // No se limita al estado seleccionado.
-      //
-      // ===================================================
-
-      const resumen =
-        calcularResumen(
-          carteraCompleta
-        )
-
-      // ===================================================
-      // 7. FILTRAR TABLA
-      // ===================================================
-
-      const carteraFiltrada =
-        filtrarCartera(
-          carteraCompleta,
-          {
-            estadoCartera,
-            busqueda,
-          }
-        )
+      // Los importes pertenecen al universo filtrado completo, no solo
+      // a la página visible; mismo criterio para tarjetas y pie de tabla.
+      const carteraFiltrada = filtrarCartera(carteraCompleta, {
+        estadoCartera,
+        busqueda,
+      })
+      const resumen = calcularResumen(carteraFiltrada)
+      const pagina = Math.max(1, Math.min(100000, enteroPositivo(searchParams.get('pagina')) || 1))
+      const porPaginaSolicitado = enteroPositivo(searchParams.get('por_pagina')) || 25
+      const porPagina = [25, 50, 100].includes(porPaginaSolicitado) ? porPaginaSolicitado : 25
+      const total = carteraFiltrada.length
+      const totalPaginas = Math.max(1, Math.ceil(total / porPagina))
+      const paginaActual = Math.min(pagina, totalPaginas)
+      const carteraPaginada = carteraFiltrada.slice(
+        (paginaActual - 1) * porPagina, paginaActual * porPagina
+      )
 
       // ===================================================
       // RESPUESTA
@@ -1778,10 +1772,13 @@ export async function GET(
           'success',
 
         data:
-          carteraFiltrada,
+          carteraPaginada,
 
-        total:
-          carteraFiltrada.length,
+        total,
+        pagina: paginaActual,
+        por_pagina: porPagina,
+        total_paginas: totalPaginas,
+        hay_mas: paginaActual < totalPaginas,
 
         total_universo:
           carteraCompleta.length,
