@@ -2431,8 +2431,8 @@ export default function ConveniosCajaPage() {
           {alertasConciliacion > 0 && (
             <div role="status" className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
               <i className="fas fa-triangle-exclamation mr-2" />
-              Hay {alertasConciliacion} recibo(s) con distribución histórica no conciliable de manera inequívoca.
-              Sus importes no se asignan a una matrícula por suposición. Revise los registros originales antes de utilizar este informe para cierre de cartera.
+              Se detectaron {alertasConciliacion} situaciones de conciliación en las cuentas, sus conceptos o las aplicaciones de recibos migrados.
+              Los importes ambiguos no se asignan a una matrícula por suposición. Revise los registros originales antes de utilizar este informe para cierre de cartera.
             </div>
           )}
 
