@@ -96,11 +96,8 @@ export function imprimirReciboOtrosIngresos(
 ) {
   const recibo = datos?.recibo || {}
 
-  const consecutivo =
-    recibo?.consecutivo ||
-    (recibo?.id
-      ? `RC-${String(recibo.id).padStart(6, '0')}`
-      : '-')
+  const referenciaRecibo = String(recibo?.referencia_pago ?? '').trim()
+  const consecutivo = /^[0-9]+$/.test(referenciaRecibo) ? referenciaRecibo : '-'
 
   const fecha = recibo?.fecha || hoyColombia()
 
@@ -141,7 +138,7 @@ export function imprimirReciboOtrosIngresos(
 
   const valor = Number(recibo?.valor || datos?.valor || 0)
   const descripcion = datos?.descripcion || recibo?.descripcion || concepto
-  const referencia = recibo?.referencia_pago || datos?.referencia || '-'
+  const referencia = recibo?.entidad_financiera || datos?.entidadFinanciera || datos?.referencia || '-'
   const observaciones = recibo?.observaciones || datos?.observaciones || ''
   const recibidoPor =
     recibo?.recibido_por ||
