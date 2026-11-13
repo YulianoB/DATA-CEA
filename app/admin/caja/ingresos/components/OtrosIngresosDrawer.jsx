@@ -10,6 +10,7 @@ import {
 import {
   imprimirReciboOtrosIngresos,
 } from './imprimirReciboOtrosIngresos'
+import { ENTIDADES_FINANCIERAS_CAJA } from '@/lib/catalogoEntidadesFinancierasCaja'
 
 import {
   BotonGuardar,
@@ -416,7 +417,7 @@ export default function OtrosIngresosDrawer({
       medio_pago_id:
         '',
 
-      referencia_pago:
+      entidad_financiera:
         '',
 
       observaciones:
@@ -718,7 +719,7 @@ const [
       medio_pago_id:
         '',
 
-      referencia_pago:
+      entidad_financiera:
         '',
 
       observaciones:
@@ -1371,9 +1372,9 @@ function validarIngreso() {
             medio_pago_id:
               form.medio_pago_id,
 
-            referencia_pago:
+            entidad_financiera:
               texto(
-                form.referencia_pago
+                form.entidad_financiera
               ),
 
             observaciones:
@@ -1445,11 +1446,11 @@ function validarIngreso() {
 
       referencia:
         texto(
-          form.referencia_pago
+          form.entidad_financiera
         ),
                 referencia:
                   texto(
-                    form.referencia_pago
+                    form.entidad_financiera
                   ),
 
                 observaciones:
@@ -1546,9 +1547,9 @@ function validarIngreso() {
                 ?.documento ||
               '',
 
-            referencia_pago:
+            entidad_financiera:
               texto(
-                form.referencia_pago
+                form.entidad_financiera
               ),
 
             descripcion:
@@ -1623,7 +1624,7 @@ function validarIngreso() {
 
           referencia:
             texto(
-              form.referencia_pago
+              form.entidad_financiera
             ),
 
           observaciones:
@@ -1754,7 +1755,7 @@ function imprimirIngresoHistorico(
           0,
 
         referencia:
-          recibo?.referencia_pago ||
+          recibo?.entidad_financiera ||
           '',
 
         observaciones:
@@ -2912,24 +2913,17 @@ function imprimirIngresoHistorico(
                     }
                   />
 
-                  <CampoInput
-                    label="Entidad financiera"
-                    value={
-                      form.referencia_pago
-                    }
-                    onChange={
-                      value =>
-                        setForm(
-                          actual => ({
-                            ...actual,
-
-                            referencia_pago:
-                              value,
-                          })
-                        )
-                    }
-                    placeholder="Ej. Bancolombia, Nequi..."
-                  />
+                  <label className="block text-xs font-semibold">
+                    Entidad financiera
+                    <select className="mt-1 w-full rounded border border-slate-300 p-2"
+                      value={form.entidad_financiera}
+                      onChange={e => setForm(actual => ({ ...actual, entidad_financiera: e.target.value }))}>
+                      <option value="">No aplica / Sin especificar</option>
+                      {ENTIDADES_FINANCIERAS_CAJA.map(nombre => (
+                        <option key={nombre} value={nombre}>{nombre}</option>
+                      ))}
+                    </select>
+                  </label>
 
                   <CampoTextarea
                     label="Observaciones"
