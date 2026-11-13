@@ -2465,6 +2465,8 @@ async function consultarCuentas({
   pagina = 1,
   porPagina = LIMITE_CONSULTA,
   conTotal = false,
+  categoria = '',
+  conceptoId = null,
 }) {
   const termino =
     limpiarBusqueda(
@@ -2598,6 +2600,36 @@ async function consultarCuentas({
     }
   }
 
+  // Filtrar por categoría/concepto ANTES de paginar permite que el
+  // total y los botones correspondan al conjunto realmente solicitado.
+  let idsFiltrados = null
+  if (categoria || conceptoId) {
+    const ids = new Set()
+    let desde = 0
+    const lote = 1000
+    while (true) {
+      let detalleQuery = supabase
+        .from('cuentas_aprendiz_detalle')
+        .select('cuenta_id')
+        .eq('estado', 'ACTIVO')
+      if (categoria) detalleQuery = detalleQuery.contains('categorias', [categoria])
+      if (conceptoId) detalleQuery = detalleQuery.eq('concepto_id', conceptoId)
+      const { data: detallesFiltro, error: errorFiltro } = await detalleQuery
+        .order('id', { ascending: true })
+        .range(desde, desde + lote - 1)
+      if (errorFiltro) throw new Error('No fue posible aplicar el filtro de categoría/concepto: ' + errorFiltro.message)
+      for (const detalle of detallesFiltro || []) {
+        if (detalle.cuenta_id != null) ids.add(detalle.cuenta_id)
+      }
+      if (!detallesFiltro || detallesFiltro.length < lote) break
+      desde += lote
+    }
+    idsFiltrados = [...ids]
+    if (idsFiltrados.length === 0) {
+      return conTotal ? { cuentas: [], total: 0 } : []
+    }
+  }
+
   let consulta =
     supabase
       .from(
@@ -2649,6 +2681,8 @@ async function consultarCuentas({
         'ANULADA'
       )
   }
+
+  if (idsFiltrados !== null) consulta = consulta.in('id', idsFiltrados)
 
   if (
     convenioId
@@ -5245,6 +5279,8 @@ export async function GET(
             Math.max(1, Math.min(10000, toInt(searchParams.get('pagina')) || 1)),
           porPagina,
           conTotal: true,
+          categoria: texto(searchParams.get('categoria')),
+          conceptoId: toInt(searchParams.get('concepto_id')),
         })
 
       return NextResponse.json({
