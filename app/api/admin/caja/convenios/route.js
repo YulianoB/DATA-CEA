@@ -1087,6 +1087,7 @@ function filtrarCartera(
               item?.documento,
               item?.consecutivo,
               item?.nombre_completo,
+              item?.descripcion_historica,
               item?.convenio_nombre,
               ...(item?.categorias ||
                 []),
@@ -1571,6 +1572,51 @@ export async function GET(
           construirEmpresaRespuesta(
             empresa
           ),
+      })
+    }
+
+    // Detalle de obligación histórica sin matrícula importada.
+    if (recurso === 'detalle_historico') {
+      const cuentaId = enteroPositivo(searchParams.get('cuenta_id'))
+      if (!cuentaId) {
+        return NextResponse.json({ status: 'error', message: 'La cuenta es obligatoria.' }, { status: 400 })
+      }
+      const { data: cuenta, error: errorCuenta } = await supabase
+        .from('cuentas_aprendiz').select(`
+          id, documento, convenio_id, descripcion, valor_total, estado,
+          origen_pago, observaciones, creado_por, fecha_creacion,
+          origen_matricula, created_at, updated_at,
+          convenio:convenios!cuentas_aprendiz_convenio_fk (id, nombre)
+        `)
+        .eq('id', cuentaId).eq('origen_matricula', 'CONVENIO')
+        .neq('estado', 'ANULADA').maybeSingle()
+      if (errorCuenta) throw new Error(errorCuenta.message)
+      if (!cuenta) {
+        return NextResponse.json({ status: 'error', message: 'Cuenta histórica no encontrada.' }, { status: 404 })
+      }
+      const [detalles, recibos] = await Promise.all([
+        consultarDetallesCuenta(supabase, [cuentaId]),
+        consultarRecibos(supabase, [cuentaId], true),
+      ])
+      const activos = recibos.filter(r => mayusculas(r.estado) === 'ACTIVO')
+      const aplicaciones = await consultarAplicacionesRecibos(supabase, activos)
+      const cartera = construirCartera({
+        aprendices: [], cuentas: [cuenta], detalles, recibos: activos,
+        aplicaciones, incluirHistoricos: true,
+      })
+      const historico = cartera.find(item => item.registro_historico && Number(item.cuenta_id) === cuentaId)
+      if (!historico) {
+        return NextResponse.json({
+          status: 'error', message: 'Esta cuenta no contiene conceptos históricos sin matrícula.',
+        }, { status: 404 })
+      }
+      return NextResponse.json({
+        status: 'success',
+        data: {
+          ...historico, recibos, pagos_activos: activos,
+          pagos_anulados: recibos.filter(r => mayusculas(r.estado) === 'ANULADO'),
+        },
+        empresa: construirEmpresaRespuesta(empresa),
       })
     }
 
