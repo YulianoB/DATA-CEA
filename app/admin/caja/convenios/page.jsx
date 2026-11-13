@@ -1258,6 +1258,8 @@ export default function ConveniosCajaPage() {
   const [totalCartera, setTotalCartera] = useState(0)
   const [totalPaginasCartera, setTotalPaginasCartera] = useState(1)
   const [alertasConciliacion, setAlertasConciliacion] = useState(0)
+  const [detalleAlertasConciliacion, setDetalleAlertasConciliacion] = useState([])
+  const [mostrarDetalleAlertas, setMostrarDetalleAlertas] = useState(false)
 
   const [
     convenios,
@@ -1695,6 +1697,7 @@ export default function ConveniosCajaPage() {
           )
           setTotalCartera(Number(data?.total || 0))
           setAlertasConciliacion(Number(data?.advertencias_conciliacion || 0))
+          setDetalleAlertasConciliacion(Array.isArray(data?.detalle_advertencias) ? data.detalle_advertencias : [])
           setTotalPaginasCartera(Math.max(1, Number(data?.total_paginas || 1)))
           if (Number(data?.pagina) > 0 && Number(data.pagina) !== paginaCartera) {
             setPaginaCartera(Number(data.pagina))
@@ -1722,6 +1725,7 @@ export default function ConveniosCajaPage() {
           setCartera([])
           setTotalCartera(0)
           setAlertasConciliacion(0)
+          setDetalleAlertasConciliacion([])
           setTotalPaginasCartera(1)
 
           setError(
@@ -2429,10 +2433,53 @@ export default function ConveniosCajaPage() {
           </div>
 
           {alertasConciliacion > 0 && (
-            <div role="status" className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
-              <i className="fas fa-triangle-exclamation mr-2" />
-              Se detectaron {alertasConciliacion} situaciones de conciliación en las cuentas, sus conceptos o las aplicaciones de recibos migrados.
-              Los importes ambiguos no se asignan a una matrícula por suposición. Revise los registros originales antes de utilizar este informe para cierre de cartera.
+            <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-3 text-[11px] text-amber-900" role="status">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p>
+                  <i className="fas fa-triangle-exclamation mr-2" />
+                  <strong>{alertasConciliacion} registro(s) por revisar:</strong> hay diferencias
+                  entre cuentas, conceptos o aplicaciones de recibos. Los importes no identificables
+                  no se asignaron automáticamente a ninguna matrícula.
+                </p>
+                <button type="button" onClick={() => setMostrarDetalleAlertas(valor => !valor)}
+                  aria-expanded={mostrarDetalleAlertas}
+                  className="rounded border border-amber-500 px-3 py-1.5 font-bold hover:bg-amber-100">
+                  {mostrarDetalleAlertas ? 'Ocultar detalles' : 'Ver registros afectados'}
+                </button>
+              </div>
+              <p className="mt-1 text-[10px]">
+                La revisión abarca el convenio y las fechas consultados, incluso otros estados de cartera.
+                Utilice el ID de cuenta o recibo para identificar el registro original.
+              </p>
+              {mostrarDetalleAlertas && (
+                <div className="mt-3 overflow-x-auto rounded border border-amber-200 bg-white">
+                  <table className="w-full text-[10px]">
+                    <thead className="bg-amber-100 text-amber-950">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Cuenta ID</th>
+                        <th className="px-3 py-2 text-left">Recibo ID</th>
+                        <th className="px-3 py-2 text-left">Matrícula ID</th>
+                        <th className="px-3 py-2 text-left">Situación encontrada</th>
+                        <th className="px-3 py-2 text-right">Diferencia</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detalleAlertasConciliacion.map((alerta, indice) => (
+                        <tr key={`${alerta.tipo}-${alerta.cuenta_id || alerta.recibo_id}-${indice}`}
+                          className="border-t border-amber-100 text-slate-800">
+                          <td className="px-3 py-2">{alerta.cuenta_id ?? '—'}</td>
+                          <td className="px-3 py-2">{alerta.recibo_id ?? '—'}</td>
+                          <td className="px-3 py-2">{alerta.matricula_id ?? '—'}</td>
+                          <td className="px-3 py-2">{alerta.descripcion || 'Requiere revisión administrativa.'}</td>
+                          <td className="px-3 py-2 text-right whitespace-nowrap">
+                            {alerta.diferencia == null ? '—' : formatearMoneda(alerta.diferencia)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -2440,8 +2487,8 @@ export default function ConveniosCajaPage() {
               TABLA
           ============================================== */}
 
-          <MarcoTabla className="!rounded-t-none !border-t-0">
-            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
+          <MarcoTabla className="!rounded-xl !border-t-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl px-3 py-2"
               style={{ backgroundColor: '#246185', color: '#fff' }}>
               <div>
                 <h2 className="text-sm font-bold"><i className="fas fa-users mr-2" />Aprendices por convenio</h2>
@@ -2492,19 +2539,19 @@ export default function ConveniosCajaPage() {
                       Convenio
                     </th>
 
-                    <th className="px-3 py-2.5 text-left">
+                    <th className="px-2 py-2.5 text-center">
                       Categoría
                     </th>
 
-                    <th className="px-3 py-2.5 text-right">
+                    <th className="px-2 py-2.5 text-center">
                       Obligación
                     </th>
 
-                    <th className="px-3 py-2.5 text-right">
+                    <th className="px-2 py-2.5 text-center">
                       Pagado
                     </th>
 
-                    <th className="px-3 py-2.5 text-right">
+                    <th className="px-2 py-2.5 text-center">
                       Saldo
                     </th>
 
@@ -2649,6 +2696,8 @@ export default function ConveniosCajaPage() {
                             className="
                               px-3
                               py-2.5
+                              text-center
+                              align-middle
                               whitespace-nowrap
                             "
                           >
@@ -2663,7 +2712,8 @@ export default function ConveniosCajaPage() {
                             className="
                               px-3
                               py-2.5
-                              text-right
+                              text-center
+                              align-middle
                               whitespace-nowrap
                               font-bold
                               text-gray-900
@@ -2680,7 +2730,8 @@ export default function ConveniosCajaPage() {
                             className="
                               px-3
                               py-2.5
-                              text-right
+                              text-center
+                              align-middle
                               whitespace-nowrap
                               font-bold
                               text-emerald-700
@@ -2697,7 +2748,8 @@ export default function ConveniosCajaPage() {
                             className="
                               px-3
                               py-2.5
-                              text-right
+                              text-center
+                              align-middle
                               whitespace-nowrap
                               font-black
                               text-red-700
