@@ -265,6 +265,29 @@ async function consultarConvenios(
     : []
 }
 
+// Consultas paginadas para no truncar la cartera al límite de PostgREST.
+// Los lotes también evitan URLs demasiado largas en filtros .in().
+async function consultarTodosLotes(crearConsulta, etiqueta, tamano = 500) {
+  const resultado = []
+  for (let inicio = 0; ; inicio += tamano) {
+    const { data, error } = await crearConsulta().range(inicio, inicio + tamano - 1)
+    if (error) throw new Error(`No fue posible consultar ${etiqueta}: ${error.message}`)
+    resultado.push(...(data || []))
+    if (!data || data.length < tamano) break
+  }
+  return resultado
+}
+
+async function consultarPorIdsEnLotes(ids, crearConsulta, etiqueta) {
+  const resultado = []
+  const unicos = [...new Set(ids.filter(Boolean))]
+  for (let i = 0; i < unicos.length; i += 150) {
+    const lote = unicos.slice(i, i + 150)
+    resultado.push(...await consultarTodosLotes(() => crearConsulta(lote), etiqueta))
+  }
+  return resultado
+}
+
 // =========================================================
 // CONSULTAR APRENDICES DE CONVENIO
 // =========================================================
@@ -277,7 +300,8 @@ async function consultarAprendicesConvenio(
     convenioId,
   }
 ) {
-  let consulta =
+  const construirConsulta = () => {
+    let consulta =
     supabase
       .from(
         'aprendices'
@@ -344,42 +368,10 @@ async function consultarAprendicesConvenio(
       )
   }
 
-  const {
-    data,
-    error,
-  } =
-    await consulta
-      .order(
-        'fecha_matricula',
-        {
-          ascending:
-            false,
-        }
-      )
-      .order(
-        'id',
-        {
-          ascending:
-            false,
-        }
-      )
-      .limit(
-        LIMITE_RESULTADOS
-      )
-
-  if (
-    error
-  ) {
-    throw new Error(
-      `No fue posible consultar los aprendices por convenio: ${error.message}`
-    )
+    return consulta.order('fecha_matricula', { ascending: false })
+      .order('id', { ascending: false })
   }
-
-  return Array.isArray(
-    data
-  )
-    ? data
-    : []
+  return consultarTodosLotes(construirConsulta, 'los aprendices por convenio')
 }
 
 // =========================================================
