@@ -721,6 +721,7 @@ function construirCartera({
   const recibosPorMatricula = new Map()
   const fechaPagos = new Map()
   const matriculasValidas = new Set(aprendices.map(a => Number(a.id)))
+  const advertencias = new Set()
 
   const asociar = (matriculaId, cuentaId, valor = 0, pagado = 0, recibo = null) => {
     const id = Number(matriculaId)
@@ -762,7 +763,7 @@ function construirCartera({
         asociar(detalle.matricula_id, cuentaId, 0, monto, recibo)
       }
       if (Math.abs(totalAplicado - numero(recibo.valor)) > 0.01) {
-        console.warn('Recibo con diferencia de distribución en cartera:', recibo.id)
+        advertencias.add(Number(recibo.id))
       }
       continue
     }
@@ -775,10 +776,10 @@ function construirCartera({
       ? idExplicito
       : matriculasCuenta.length === 1 ? matriculasCuenta[0] : null
     if (matricula) asociar(matricula, cuentaId, 0, numero(recibo.valor), recibo)
-    else console.warn('Recibo sin matrícula asociable en cartera:', recibo.id)
+    else advertencias.add(Number(recibo.id))
   }
 
-  return aprendices.map(aprendiz => {
+  const resultado = aprendices.map(aprendiz => {
     const matriculaId = Number(aprendiz.id)
     const cuentasIds = [...(cuentasPorMatricula.get(matriculaId) || [])]
     const cuentasResultado = cuentasIds.map(id => {
@@ -832,6 +833,8 @@ function construirCartera({
       cuentas: cuentasResultado,
     }
   })
+  resultado.advertencias_conciliacion = advertencias.size
+  return resultado
 }
 
 // =========================================================
@@ -1779,6 +1782,7 @@ export async function GET(
           carteraCompleta.length,
 
         resumen,
+        advertencias_conciliacion: carteraCompleta.advertencias_conciliacion || 0,
 
         filtros: {
           convenio_id:
