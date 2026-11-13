@@ -722,6 +722,19 @@ function construirCartera({
   const fechaPagos = new Map()
   const matriculasValidas = new Set(aprendices.map(a => Number(a.id)))
   const advertencias = new Set()
+  // Comparación de cabeceras contra detalles para identificar migraciones
+  // con conceptos ausentes o importes diferentes, sin inventar ajustes.
+  for (const cuenta of cuentas) {
+    if (mayusculas(cuenta.origen_matricula) !== 'CONVENIO') continue
+    const detallesCuenta = detallesPorCuenta.get(Number(cuenta.id)) || []
+    const valorDetalles = redondear(detallesCuenta.reduce((suma, d) => suma + numero(d.valor), 0))
+    if (Math.abs(valorDetalles - numero(cuenta.valor_total)) > 0.01) {
+      advertencias.add('cuenta-' + cuenta.id)
+    }
+    if (detallesCuenta.some(d => !Number(d.matricula_id))) {
+      advertencias.add('matricula-sin-vinculo-' + cuenta.id)
+    }
+  }
 
   const asociar = (matriculaId, cuentaId, valor = 0, pagado = 0, recibo = null) => {
     const id = Number(matriculaId)
@@ -763,7 +776,7 @@ function construirCartera({
         asociar(detalle.matricula_id, cuentaId, 0, monto, recibo)
       }
       if (Math.abs(totalAplicado - numero(recibo.valor)) > 0.01) {
-        advertencias.add(Number(recibo.id))
+        advertencias.add('recibo-' + recibo.id)
       }
       continue
     }
@@ -776,7 +789,7 @@ function construirCartera({
       ? idExplicito
       : matriculasCuenta.length === 1 ? matriculasCuenta[0] : null
     if (matricula) asociar(matricula, cuentaId, 0, numero(recibo.valor), recibo)
-    else advertencias.add(Number(recibo.id))
+    else advertencias.add('recibo-' + recibo.id)
   }
 
   const resultado = aprendices.map(aprendiz => {
