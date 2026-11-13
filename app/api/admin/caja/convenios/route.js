@@ -1610,11 +1610,26 @@ export async function GET(
           status: 'error', message: 'Esta cuenta no contiene conceptos históricos sin matrícula.',
         }, { status: 404 })
       }
+      const idsHistoricos = new Set(detalles.filter(d => !Number(d.matricula_id)).map(d => Number(d.id)))
+      const aplicacionesTodas = await consultarAplicacionesRecibos(supabase, recibos)
+      const aplicacionesPorRecibo = new Map()
+      for (const aplicacion of aplicacionesTodas) {
+        const id = Number(aplicacion.recibo_id)
+        if (!aplicacionesPorRecibo.has(id)) aplicacionesPorRecibo.set(id, [])
+        aplicacionesPorRecibo.get(id).push(aplicacion)
+      }
+      const recibosHistoricos = recibos.filter(recibo => {
+        const distribucion = aplicacionesPorRecibo.get(Number(recibo.id)) || []
+        if (distribucion.length) return distribucion.some(d => idsHistoricos.has(Number(d.cuenta_detalle_id)))
+        return detalles.length > 0 && detalles.every(d => idsHistoricos.has(Number(d.id)))
+      })
       return NextResponse.json({
         status: 'success',
         data: {
-          ...historico, recibos, pagos_activos: activos,
-          pagos_anulados: recibos.filter(r => mayusculas(r.estado) === 'ANULADO'),
+          ...historico,
+          recibos: recibosHistoricos,
+          pagos_activos: recibosHistoricos.filter(r => mayusculas(r.estado) === 'ACTIVO'),
+          pagos_anulados: recibosHistoricos.filter(r => mayusculas(r.estado) === 'ANULADO'),
         },
         empresa: construirEmpresaRespuesta(empresa),
       })
