@@ -674,6 +674,9 @@ function calcularEstadoCartera({
       totalPagado
     )
 
+  // Una obligación de $0 aún sin liquidar no equivale a paz y salvo.
+  if (valorTotal <= 0) return 'SIN_LIQUIDAR'
+
   if (
     saldo <= 0
   ) {
@@ -714,6 +717,7 @@ function construirCartera({
   const cuentasPorMatricula = new Map()
   const valores = new Map()
   const pagos = new Map()
+  const pagosPorCuenta = new Map()
   const recibosPorMatricula = new Map()
   const fechaPagos = new Map()
   const matriculasValidas = new Set(aprendices.map(a => Number(a.id)))
@@ -725,6 +729,8 @@ function construirCartera({
     cuentasPorMatricula.get(id).add(cuentaId)
     valores.set(id, redondear((valores.get(id) || 0) + valor))
     pagos.set(id, redondear((pagos.get(id) || 0) + pagado))
+    const clave = `${id}:${cuentaId}`
+    pagosPorCuenta.set(clave, redondear((pagosPorCuenta.get(clave) || 0) + pagado))
     if (recibo && pagado) {
       if (!recibosPorMatricula.has(id)) recibosPorMatricula.set(id, new Set())
       recibosPorMatricula.get(id).add(recibo.id)
@@ -780,18 +786,7 @@ function construirCartera({
       const detalleMatricula = (detallesPorCuenta.get(id) || [])
         .filter(d => Number(d.matricula_id) === matriculaId)
       const valorTotal = redondear(detalleMatricula.reduce((n,d) => n + numero(d.valor), 0))
-      const pagado = redondear(recibos.reduce((n,r) => {
-        if (Number(r.cuenta_id) !== id) return n
-        const aplica = aplicacionesPorRecibo.get(Number(r.id)) || []
-        if (aplica.length) return n + aplica.reduce((sub,ap) => {
-          const d = detallesPorId.get(Number(ap.cuenta_detalle_id))
-          return sub + (d && Number(d.matricula_id) === matriculaId ? numero(ap.valor) : 0)
-        },0)
-        const ids = [...new Set((detallesPorCuenta.get(id)||[]).map(d=>Number(d.matricula_id)).filter(Boolean))]
-        return n + (ids.length === 1 && ids[0] === matriculaId ||
-          Number(r.matricula_id) === matriculaId && ids.includes(matriculaId)
-            ? numero(r.valor) : 0)
-      },0))
+      const pagado = redondear(pagosPorCuenta.get(`${matriculaId}:${id}`) || 0)
       return {
         ...cuenta,
         estado_bd: cuenta?.estado || '',
