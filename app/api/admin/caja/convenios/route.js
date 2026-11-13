@@ -435,6 +435,39 @@ async function consultarCuentas(
       `).in('documento', lote).neq('estado','ANULADA').order('created_at',{ascending:true}), 'consultarCuentas')
 }
 
+// Cuentas de convenio, incluidas las obligaciones migradas cuyos conceptos
+// no conservan una matrícula existente. No depende del documento de un
+// aprendiz matriculado en la base actual.
+async function consultarCuentasConvenio(supabase, convenioId) {
+  return consultarTodosLotes(() => {
+    let consulta = supabase.from('cuentas_aprendiz')
+      .select(`
+        id,
+        documento,
+        convenio_id,
+        descripcion,
+        valor_total,
+        estado,
+        origen_pago,
+        observaciones,
+        creado_por,
+        fecha_creacion,
+        origen_matricula,
+        created_at,
+        updated_at,
+
+        convenio:convenios!cuentas_aprendiz_convenio_fk (
+          id,
+          nombre
+        )
+      `)
+      .eq('origen_matricula', 'CONVENIO')
+      .neq('estado', 'ANULADA')
+    if (convenioId) consulta = consulta.eq('convenio_id', convenioId)
+    return consulta.order('id', { ascending: true })
+  }, 'las cuentas de convenio')
+}
+
 // =========================================================
 // CONSULTAR DETALLE DE OBLIGACIONES
 // =========================================================
@@ -703,6 +736,7 @@ function construirCartera({
   detalles,
   recibos,
   aplicaciones = [],
+  incluirHistoricos = true,
 }) {
   const cuentasPorId = new Map(cuentas.map(c => [Number(c.id), c]))
   const detallesPorId = new Map(detalles.map(d => [Number(d.id), d]))
@@ -746,13 +780,8 @@ function construirCartera({
         descripcion: 'El valor total de la cuenta no coincide con la suma de sus conceptos.',
       })
     }
-    if (detallesCuenta.some(d => !Number(d.matricula_id))) {
-      agregarAdvertencia({
-        tipo: 'SIN_MATRICULA',
-        cuentaId: cuenta.id,
-        descripcion: 'Hay conceptos de la cuenta sin matrícula asociada.',
-      })
-    }
+    // Un concepto histórico sin matrícula es una situación de archivo,
+    // no una inconsistencia financiera por sí misma.
   }
 
   const asociar = (matriculaId, cuentaId, valor = 0, pagado = 0, recibo = null) => {
@@ -873,6 +902,91 @@ function construirCartera({
       cuentas: cuentasResultado,
     }
   })
+  // Registros históricos: solo los conceptos sin matrícula válida.
+  // No asociar estas obligaciones a matrículas posteriores por documento.
+  const historicosPorCuenta = new Map()
+  for (const detalle of detalles) {
+    const cuenta = cuentasPorId.get(Number(detalle.cuenta_id))
+    if (!cuenta || mayusculas(cuenta.origen_matricula) !== 'CONVENIO') continue
+    if (matriculasValidas.has(Number(detalle.matricula_id))) continue
+    // Si el detalle apunta a una matrícula existente que quedó fuera de
+    // los filtros de fecha/convenio, no atribuirla a un histórico.
+    if (Number(detalle.matricula_id) > 0) continue
+    if (!historicosPorCuenta.has(Number(cuenta.id))) historicosPorCuenta.set(Number(cuenta.id), [])
+    historicosPorCuenta.get(Number(cuenta.id)).push(detalle)
+  }
+
+  if (incluirHistoricos) {
+    const nombrePorDocumento = new Map()
+    for (const aprendiz of aprendices) {
+      const doc = normalizarDocumento(aprendiz.documento)
+      if (!nombrePorDocumento.has(doc)) nombrePorDocumento.set(doc, nombreCompletoAprendiz(aprendiz))
+    }
+    for (const [cuentaId, componentes] of historicosPorCuenta) {
+      const cuenta = cuentasPorId.get(cuentaId)
+      const idsDetalle = new Set(componentes.map(d => Number(d.id)))
+      const valorTotal = redondear(componentes.reduce((total, d) => total + numero(d.valor), 0))
+      let totalPagado = 0
+      const idsRecibos = new Set()
+      let fechaUltimoPago = null
+      for (const recibo of recibos) {
+        if (Number(recibo.cuenta_id) !== cuentaId) continue
+        const aplicacionesRecibo = aplicacionesPorRecibo.get(Number(recibo.id)) || []
+        let monto = 0
+        if (aplicacionesRecibo.length) {
+          monto = aplicacionesRecibo.reduce((total, a) => total +
+            (idsDetalle.has(Number(a.cuenta_detalle_id)) ? numero(a.valor) : 0), 0)
+        } else {
+          // Solo atribuir recibos sin desglose si todos los conceptos
+          // de la cuenta son históricos y no existe distribución.
+          const todos = detallesPorCuenta.get(cuentaId) || []
+          if (todos.length > 0 && todos.every(d => idsDetalle.has(Number(d.id)))) {
+            monto = numero(recibo.valor)
+          }
+        }
+        if (monto > 0) {
+          totalPagado += monto
+          idsRecibos.add(recibo.id)
+          const fecha = texto(recibo.fecha)
+          if (fecha && fecha > (fechaUltimoPago || '')) fechaUltimoPago = fecha
+        }
+      }
+      totalPagado = redondear(totalPagado)
+      const descripcion = componentes.map(d => texto(d.descripcion)).find(Boolean) || texto(cuenta.descripcion)
+      const consecutivo = descripcion.match(/\b\d{4}-\d+\b/g)?.slice(-1)[0] || ''
+      const categorias = [...new Set(componentes.flatMap(d => Array.isArray(d.categorias) ? d.categorias : []))]
+      resultado.push({
+        registro_historico: true,
+        cuenta_id: cuentaId,
+        matricula_id: null,
+        consecutivo: consecutivo || 'Sin consecutivo',
+        fecha_matricula: null,
+        documento: cuenta.documento,
+        nombre_completo: nombrePorDocumento.get(normalizarDocumento(cuenta.documento)) || 'Titular de documento no identificado',
+        categorias,
+        convenio_id: cuenta.convenio_id,
+        convenio_nombre: cuenta.convenio?.nombre || 'Convenio sin nombre',
+        convenio: cuenta.convenio || null,
+        cantidad_cuentas: 1,
+        valor_total: valorTotal,
+        total_pagado: totalPagado,
+        saldo: redondear(Math.max(0, valorTotal - totalPagado)),
+        cantidad_pagos: idsRecibos.size,
+        fecha_ultimo_pago: fechaUltimoPago,
+        estado_cartera: calcularEstadoCartera({ valorTotal, totalPagado }),
+        tiene_obligacion: true,
+        cuentas: [{
+          ...cuenta, valor_total: valorTotal, total_pagado: totalPagado,
+          saldo: redondear(Math.max(0, valorTotal - totalPagado)),
+          detalle: componentes,
+        }],
+        descripcion_historica: descripcion,
+      })
+    }
+  }
+  resultado.registros_historicos = resultado.filter(item => item.registro_historico).length
+  resultado.historicos_excluidos_por_fecha = !incluirHistoricos && historicosPorCuenta.size > 0
+
   resultado.advertencias_conciliacion = advertencias.size
   resultado.detalle_advertencias = [...advertencias.values()]
   return resultado
@@ -1622,128 +1736,9 @@ export async function GET(
           }
         )
 
-      // ===================================================
-      // SIN APRENDICES
-      // ===================================================
-
-      if (
-        aprendices.length ===
-        0
-      ) {
-        return NextResponse.json({
-          status:
-            'success',
-
-          data:
-            [],
-
-          total:
-            0,
-
-          total_universo:
-            0,
-
-          resumen: {
-            cantidad_aprendices:
-              0,
-
-            valor_total:
-              0,
-
-            total_pagado:
-              0,
-
-            saldo_pendiente:
-              0,
-
-            pendientes:
-              0,
-
-            abonados:
-              0,
-
-            paz_y_salvo:
-              0,
-
-            sin_cuenta:
-              0,
-
-            sin_abonos:
-              0,
-
-            con_abonos:
-              0,
-          },
-
-          filtros: {
-            convenio_id:
-              convenioId,
-
-            fecha_inicio:
-              fechaInicio,
-
-            fecha_fin:
-              fechaFin,
-
-            estado_cartera:
-              estadoCartera,
-
-            busqueda,
-          },
-
-          empresa:
-            construirEmpresaRespuesta(
-              empresa
-            ),
-        })
-      }
-
-      // ===================================================
-      // 2. DOCUMENTOS
-      // ===================================================
-
-      const documentos =
-        aprendices
-          .map(
-            aprendiz =>
-              normalizarDocumento(
-                aprendiz?.documento
-              )
-          )
-          .filter(
-            Boolean
-          )
-
-      // ===================================================
-      // 3. CUENTAS
-      // ===================================================
-
-      const cuentas =
-        await consultarCuentas(
-          supabase,
-          documentos
-        )
-
-      const cuentasConvenio =
-        cuentas.filter(
-          cuenta =>
-            mayusculas(
-              cuenta?.origen_matricula
-            ) ===
-            'CONVENIO'
-        )
-
-      const cuentasIds =
-        cuentasConvenio
-          .map(
-            cuenta =>
-              Number(
-                cuenta?.id
-              )
-          )
-          .filter(
-            Boolean
-          )
+      // Obtener también las cuentas históricas sin matrícula importada.
+      const cuentasConvenio = await consultarCuentasConvenio(supabase, convenioId)
+      const cuentasIds = cuentasConvenio.map(cuenta => Number(cuenta.id)).filter(Boolean)
 
       // ===================================================
       // 4. DETALLE + PAGOS ACTIVOS
@@ -1783,6 +1778,7 @@ export async function GET(
 
           recibos,
           aplicaciones,
+          incluirHistoricos: !fechaInicio && !fechaFin,
         })
 
       // Los importes pertenecen al universo filtrado completo, no solo
@@ -1825,6 +1821,8 @@ export async function GET(
         resumen,
         advertencias_conciliacion: carteraCompleta.advertencias_conciliacion || 0,
         detalle_advertencias: carteraCompleta.detalle_advertencias || [],
+        registros_historicos: carteraCompleta.registros_historicos || 0,
+        historicos_excluidos_por_fecha: Boolean(carteraCompleta.historicos_excluidos_por_fecha),
 
         filtros: {
           convenio_id:
