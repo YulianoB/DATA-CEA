@@ -4266,8 +4266,8 @@ const ingresosLibresFiltrados =
                                   recibo?.valor ||
                                   0,
 
-                                referencia:
-                                  recibo?.referencia_pago ||
+                                entidadFinanciera:
+                                  recibo?.entidad_financiera ||
                                   '',
 
                                 observaciones:
