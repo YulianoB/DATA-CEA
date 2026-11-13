@@ -1247,6 +1247,10 @@ export default function ConveniosCajaPage() {
     setCartera,
   ] =
     useState([])
+  const [paginaCartera, setPaginaCartera] = useState(1)
+  const [porPaginaCartera, setPorPaginaCartera] = useState(25)
+  const [totalCartera, setTotalCartera] = useState(0)
+  const [totalPaginasCartera, setTotalPaginasCartera] = useState(1)
 
   const [
     convenios,
@@ -1626,6 +1630,8 @@ export default function ConveniosCajaPage() {
             'estado_cartera',
             estadoCartera
           )
+          params.set('pagina', String(paginaCartera))
+          params.set('por_pagina', String(porPaginaCartera))
 
           if (
             convenioId
@@ -1680,6 +1686,11 @@ export default function ConveniosCajaPage() {
             data?.resumen ||
             {}
           )
+          setTotalCartera(Number(data?.total || 0))
+          setTotalPaginasCartera(Math.max(1, Number(data?.total_paginas || 1)))
+          if (Number(data?.pagina) > 0 && Number(data.pagina) !== paginaCartera) {
+            setPaginaCartera(Number(data.pagina))
+          }
 
           if (
             data
@@ -1701,6 +1712,8 @@ export default function ConveniosCajaPage() {
           )
 
           setCartera([])
+          setTotalCartera(0)
+          setTotalPaginasCartera(1)
 
           setError(
             errorCartera
@@ -1720,8 +1733,14 @@ export default function ConveniosCajaPage() {
         fechaInicio,
         fechaFin,
         busquedaAplicada,
+        paginaCartera,
+        porPaginaCartera,
       ]
     )
+
+  useEffect(() => {
+    setPaginaCartera(1)
+  }, [convenioId, estadoCartera, fechaInicio, fechaFin, busquedaAplicada])
 
   // =======================================================
   // CARGA INICIAL
@@ -1897,6 +1916,7 @@ export default function ConveniosCajaPage() {
     setFechaFin(
       ''
     )
+    setPaginaCartera(1)
   }
 
   // =======================================================
@@ -2404,7 +2424,27 @@ export default function ConveniosCajaPage() {
           ============================================== */}
 
           <MarcoTabla className="!rounded-t-none !border-t-0">
-            <TituloSeccion titulo="Aprendices por convenio" subtitulo={`Consulte obligaciones, pagos y saldos · ${cartera.length} registro(s)`} icono={<i className="fas fa-users" />} className="!rounded-b-none" />
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
+              style={{ backgroundColor: '#246185', color: '#fff' }}>
+              <div>
+                <h2 className="text-sm font-bold"><i className="fas fa-users mr-2" />Aprendices por convenio</h2>
+                <p className="text-[10px] text-white/80">Consulte obligaciones, pagos y saldos · {totalCartera.toLocaleString('es-CO')} registro(s)</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                <span>{totalCartera.toLocaleString('es-CO')} registros · Página {paginaCartera} de {totalPaginasCartera}</span>
+                <select aria-label="Registros por página" value={porPaginaCartera}
+                  onChange={e => { setPaginaCartera(1); setPorPaginaCartera(Number(e.target.value)) }}
+                  className="rounded border border-white/30 bg-[#194567] px-2 py-1 text-white">
+                  <option value={25}>25</option><option value={50}>50</option><option value={100}>100</option>
+                </select>
+                <button type="button" disabled={paginaCartera <= 1}
+                  onClick={() => setPaginaCartera(p => Math.max(1, p - 1))}
+                  className="rounded border border-white/40 px-2 py-1 disabled:opacity-40 hover:bg-white/20">Anterior</button>
+                <button type="button" disabled={paginaCartera >= totalPaginasCartera}
+                  onClick={() => setPaginaCartera(p => Math.min(totalPaginasCartera, p + 1))}
+                  className="rounded border border-white/40 px-2 py-1 disabled:opacity-40 hover:bg-white/20">Siguiente</button>
+              </div>
+            </div>
             <div
               className="
                 overflow-x-auto
@@ -2715,7 +2755,7 @@ export default function ConveniosCajaPage() {
                     <strong className="text-gray-800">
                       {cartera.length}
                     </strong>{' '}
-                    aprendiz(es).
+                    de {totalCartera.toLocaleString('es-CO')} aprendiz(es) filtrados.
                   </span>
 
                   <span>
