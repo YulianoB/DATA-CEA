@@ -1,6 +1,7 @@
 // app/api/admin/caja/route.js
 
 import { NextResponse } from 'next/server'
+import { esEntidadFinancieraValida } from '@/lib/catalogoEntidadesFinancierasCaja'
 
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
@@ -302,28 +303,33 @@ function hoyColombia() {
 // CONSECUTIVOS VISUALES
 // =========================================================
 
-function consecutivoRecibo(
-  id
-) {
-  const numero =
-    Number(
-      id
-    )
+function numeroRecibo(recibo) {
+  const referencia = texto(recibo?.referencia_pago)
+  return /^[0-9]+$/.test(referencia) ? referencia : '-'
+}
 
-  if (
-    !Number.isFinite(
-      numero
-    )
-  ) {
-    return ''
+// Lee las referencias históricas y nuevas de ESTE CEA, sin SQL personalizado.
+async function siguienteNumeroRecibo(supabase) {
+  let mayor = 0
+  let offset = 0
+  const lote = 1000
+  while (true) {
+    const { data, error } = await supabase.from('recibos_caja')
+      .select('referencia_pago')
+      .order('id', { ascending: true })
+      .range(offset, offset + lote - 1)
+    if (error) throw new Error('No fue posible calcular el consecutivo: ' + error.message)
+    for (const registro of data || []) {
+      const referencia = texto(registro.referencia_pago)
+      if (!/^[0-9]+$/.test(referencia)) continue
+      const numero = Number(referencia)
+      if (Number.isSafeInteger(numero) && numero > mayor) mayor = numero
+    }
+    if (!data || data.length < lote) break
+    offset += lote
   }
-
-  return `RC-${String(
-    numero
-  ).padStart(
-    6,
-    '0'
-  )}`
+  if (!Number.isSafeInteger(mayor + 1)) throw new Error('Se agotó la numeración de recibos.')
+  return String(mayor + 1)
 }
 
 function consecutivoEgreso(
@@ -2976,9 +2982,7 @@ async function obtenerDetalleCuenta(
           ...recibo,
 
           consecutivo:
-            consecutivoRecibo(
-              recibo.id
-            ),
+            numeroRecibo(recibo),
 
           medio_pago:
             mapaMedios.get(
@@ -5014,9 +5018,7 @@ export async function GET(
             ...recibo,
 
             consecutivo:
-              consecutivoRecibo(
-                recibo.id
-              ),
+              numeroRecibo(recibo),
 
             concepto:
               recibo.concepto_id
@@ -6276,6 +6278,14 @@ if (
       // CREAR RECIBO
       // ===================================================
 
+      const entidadFinanciera = mayusculas(body?.entidad_financiera)
+      if (!esEntidadFinancieraValida(entidadFinanciera)) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Seleccione una entidad financiera del catálogo.',
+        }, { status: 400 })
+      }
+
       const {
         data:
           recibo,
@@ -6329,11 +6339,8 @@ if (
             documento_pagador:
               documentoCliente,
 
-            referencia_pago:
-              texto(
-                body?.referencia_pago
-              ) ||
-              null,
+            referencia_pago: await siguienteNumeroRecibo(supabase),
+            entidad_financiera: entidadFinanciera || null,
 
             recibido_por:
               usuario,
@@ -6468,9 +6475,7 @@ if (
             documentoCliente,
 
           consecutivoReferencia:
-            consecutivoRecibo(
-              recibo.id
-            ),
+            numeroRecibo(recibo),
 
           descripcion:
             `Ingreso libre ${concepto.nombre} por $${valor}.`,
@@ -6540,9 +6545,7 @@ if (
               ...recibo,
 
               consecutivo:
-                consecutivoRecibo(
-                  recibo.id
-                ),
+                numeroRecibo(recibo),
 
               concepto,
 
@@ -7831,6 +7834,14 @@ if (
         ) ||
         `ABONO ${cuenta.descripcion}`
 
+      const entidadFinanciera = mayusculas(body?.entidad_financiera)
+      if (!esEntidadFinancieraValida(entidadFinanciera)) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Seleccione una entidad financiera del catálogo.',
+        }, { status: 400 })
+      }
+
       const {
         data:
           recibo,
@@ -7886,11 +7897,8 @@ if (
               documentoPagador ||
               null,
 
-            referencia_pago:
-              texto(
-                body?.referencia_pago
-              ) ||
-              null,
+            referencia_pago: await siguienteNumeroRecibo(supabase),
+            entidad_financiera: entidadFinanciera || null,
 
             recibido_por:
               usuario,
@@ -8026,9 +8034,7 @@ if (
             cuenta.documento,
 
           consecutivoReferencia:
-            consecutivoRecibo(
-              recibo.id
-            ),
+            numeroRecibo(recibo),
 
           descripcion:
             `Ingreso de Caja por $${valor}.`,
@@ -8113,9 +8119,7 @@ if (
               ...recibo,
 
               consecutivo:
-                consecutivoRecibo(
-                  recibo.id
-                ),
+                numeroRecibo(recibo),
 
               medio_pago:
                 medioPago,
@@ -8477,9 +8481,7 @@ if (
           recibo.documento,
 
         consecutivoReferencia:
-          consecutivoRecibo(
-            recibo.id
-          ),
+          numeroRecibo(recibo),
 
         descripcion:
           'Anulación de recibo de Caja.',
@@ -8498,9 +8500,7 @@ if (
           'success',
 
         message:
-          `${consecutivoRecibo(
-            recibo.id
-          )} anulado correctamente.`,
+          `${numeroRecibo(recibo)} anulado correctamente.`,
 
         data: {
           recibo:
