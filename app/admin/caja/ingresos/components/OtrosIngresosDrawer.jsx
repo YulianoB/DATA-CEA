@@ -3475,13 +3475,8 @@ function imprimirIngresoHistorico(
                       return (
                         <tr key={recibo.id}>
                           <td className="px-3 py-2 font-bold whitespace-nowrap">
-                            {recibo.consecutivo ||
-                              `RC-${String(
-                                recibo.id
-                              ).padStart(
-                                6,
-                                '0'
-                              )}`}
+                            {recibo.referencia_pago && /^[0-9]+$/.test(String(recibo.referencia_pago).trim())
+                              ? String(recibo.referencia_pago).trim() : '-'}
                           </td>
 
                           <td className="px-3 py-2 whitespace-nowrap">
