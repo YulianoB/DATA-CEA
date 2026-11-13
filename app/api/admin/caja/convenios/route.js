@@ -721,18 +721,37 @@ function construirCartera({
   const recibosPorMatricula = new Map()
   const fechaPagos = new Map()
   const matriculasValidas = new Set(aprendices.map(a => Number(a.id)))
-  const advertencias = new Set()
-  // Comparación de cabeceras contra detalles para identificar migraciones
-  // con conceptos ausentes o importes diferentes, sin inventar ajustes.
+  const advertencias = new Map()
+  const agregarAdvertencia = ({ tipo, cuentaId = null, reciboId = null, matriculaId = null, diferencia = null, descripcion }) => {
+    const clave = `${tipo}:${reciboId || cuentaId}`
+    if (!advertencias.has(clave)) {
+      advertencias.set(clave, {
+        tipo, cuenta_id: cuentaId, recibo_id: reciboId, matricula_id: matriculaId,
+        diferencia, descripcion,
+      })
+    }
+  }
+  // Comprobar integridad de los conceptos asociados a cada cuenta.
   for (const cuenta of cuentas) {
     if (mayusculas(cuenta.origen_matricula) !== 'CONVENIO') continue
     const detallesCuenta = detallesPorCuenta.get(Number(cuenta.id)) || []
     const valorDetalles = redondear(detallesCuenta.reduce((suma, d) => suma + numero(d.valor), 0))
-    if (Math.abs(valorDetalles - numero(cuenta.valor_total)) > 0.01) {
-      advertencias.add('cuenta-' + cuenta.id)
+    const diferencia = redondear(numero(cuenta.valor_total) - valorDetalles)
+    if (Math.abs(diferencia) > 0.01) {
+      agregarAdvertencia({
+        tipo: 'VALOR_CUENTA',
+        cuentaId: cuenta.id,
+        matriculaId: detallesCuenta.length === 1 ? detallesCuenta[0].matricula_id : null,
+        diferencia,
+        descripcion: 'El valor total de la cuenta no coincide con la suma de sus conceptos.',
+      })
     }
     if (detallesCuenta.some(d => !Number(d.matricula_id))) {
-      advertencias.add('matricula-sin-vinculo-' + cuenta.id)
+      agregarAdvertencia({
+        tipo: 'SIN_MATRICULA',
+        cuentaId: cuenta.id,
+        descripcion: 'Hay conceptos de la cuenta sin matrícula asociada.',
+      })
     }
   }
 
@@ -776,7 +795,11 @@ function construirCartera({
         asociar(detalle.matricula_id, cuentaId, 0, monto, recibo)
       }
       if (Math.abs(totalAplicado - numero(recibo.valor)) > 0.01) {
-        advertencias.add('recibo-' + recibo.id)
+        agregarAdvertencia({
+          tipo: 'DISTRIBUCION_RECIBO', cuentaId, reciboId: recibo.id,
+          matriculaId: recibo.matricula_id, diferencia: redondear(numero(recibo.valor) - totalAplicado),
+          descripcion: 'El importe del recibo no coincide con la suma de las aplicaciones a conceptos de esta cuenta.',
+        })
       }
       continue
     }
@@ -789,7 +812,11 @@ function construirCartera({
       ? idExplicito
       : matriculasCuenta.length === 1 ? matriculasCuenta[0] : null
     if (matricula) asociar(matricula, cuentaId, 0, numero(recibo.valor), recibo)
-    else advertencias.add('recibo-' + recibo.id)
+    else agregarAdvertencia({
+      tipo: 'RECIBO_SIN_MATRICULA', cuentaId, reciboId: recibo.id,
+      matriculaId: recibo.matricula_id,
+      descripcion: 'Este recibo no permite identificar una única matrícula para aplicar su valor.',
+    })
   }
 
   const resultado = aprendices.map(aprendiz => {
@@ -847,6 +874,7 @@ function construirCartera({
     }
   })
   resultado.advertencias_conciliacion = advertencias.size
+  resultado.detalle_advertencias = [...advertencias.values()]
   return resultado
 }
 
@@ -1796,6 +1824,7 @@ export async function GET(
 
         resumen,
         advertencias_conciliacion: carteraCompleta.advertencias_conciliacion || 0,
+        detalle_advertencias: carteraCompleta.detalle_advertencias || [],
 
         filtros: {
           convenio_id:
