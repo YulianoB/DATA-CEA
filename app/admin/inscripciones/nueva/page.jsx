@@ -3334,7 +3334,7 @@ const guardar =
       iniciado: Boolean(runtResultado),
     },
   }
-  const ordenSecciones = ['identificacion', 'contacto', 'complementaria', 'matricula', 'acudiente', 'runt']
+  const ordenSecciones = ['identificacion', 'contacto', 'complementaria', 'matricula', 'runt', ...(esMenor ? ['acudiente'] : [])]
   const seccionesCompletas = ordenSecciones.filter(key => estadosSecciones[key].completo).length
   const porcentajeAvance = Math.round(seccionesCompletas / ordenSecciones.length * 100)
   // Se mantiene el encabezado azul institucional, mientras la tarjeta
@@ -3420,11 +3420,11 @@ const guardar =
           <div className="min-w-[230px] max-w-2xl flex-1">
             <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
               <span className="font-semibold text-slate-700">Progreso de matrícula</span>
-              <span className="font-semibold text-slate-600">{seccionesCompletas} de 6 secciones · {porcentajeAvance}%</span>
+              <span className="font-semibold text-slate-600">{seccionesCompletas} de {ordenSecciones.length} secciones · {porcentajeAvance}%</span>
             </div>
             <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200"
               role="progressbar" aria-label="Secciones completas de la matrícula"
-              aria-valuemin={0} aria-valuemax={6} aria-valuenow={seccionesCompletas}>
+              aria-valuemin={0} aria-valuemax={ordenSecciones.length} aria-valuenow={seccionesCompletas}>
               <div className="h-full rounded-full bg-emerald-600 transition-all duration-300"
                 style={{ width: `${porcentajeAvance}%` }} />
             </div>
@@ -4222,7 +4222,7 @@ const guardar =
           {(
             <div className="space-y-4">
 
-              <div className="mt-5 grid grid-cols-1 xl:grid-cols-3 gap-3 items-stretch">
+              <div className={`mt-5 grid grid-cols-1 gap-3 items-stretch ${esMenor ? "xl:grid-cols-3" : "xl:grid-cols-2"}`}>
               {/* MATRÍCULA */}
 
               <div className={`min-w-0 ${claseTarjetaSeccion('matricula')}`}>
@@ -4598,14 +4598,14 @@ const guardar =
 
 
 
-              {/* ACUDIENTE: visible siempre y habilitado solo para menores. */}
-              <div className={`min-w-0 ${claseTarjetaSeccion('acudiente')}`}>
+              {/* Acudiente: sección 6, visible exclusivamente para menores de edad. */}
+              {esMenor && <div className={`order-3 min-w-0 ${claseTarjetaSeccion('acudiente')}`}>
                 <div className="px-3 py-2 text-xs font-semibold" style={{
                   backgroundColor: ESTILO_SECCIONES.fondo,
                   color: ESTILO_SECCIONES.texto,
                   borderColor: ESTILO_SECCIONES.borde,
                 }}>
-                  {etiquetaEstadoSeccion('acudiente', 5, 'Datos del Acudiente o Representante Legal')}
+                  {etiquetaEstadoSeccion('acudiente', 6, 'Datos del Acudiente o Representante Legal')}
                 </div>
                 <fieldset disabled={!esMenor} className={`p-3 space-y-3 ${!esMenor ? 'opacity-50' : ''}`}>
                   <p className="text-[11px] text-gray-600">
@@ -4644,14 +4644,14 @@ const guardar =
                     </label>
                   </div>
                 </fieldset>
-              </div>
+              </div>}
 
               {/* ===============================================
                   VERIFICACIÓN RUNT
               =============================================== */}
 
               <div
-                className={`min-w-0 ${claseTarjetaSeccion('runt')}`}
+                className={`order-2 min-w-0 ${claseTarjetaSeccion('runt')}`}
               >
                 <div
                   className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
@@ -4661,7 +4661,7 @@ const guardar =
                     borderColor: ESTILO_SECCIONES.borde,
                   }}
                 >
-                  {etiquetaEstadoSeccion('runt', 6, 'Verificación Inicial RUNT')}
+                  {etiquetaEstadoSeccion('runt', 5, 'Verificación Inicial RUNT')}
                 </div>
 
                 <div className="p-3">
