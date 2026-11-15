@@ -200,6 +200,14 @@ function formatearMoneda(
   )
 }
 
+function visualizarPesosCampo(valor) {
+  const digitos = String(valor ?? '').replace(/\D/g, '')
+  return digitos ? '$ ' + digitos.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
+}
+function leerPesosCampo(valor) {
+  return String(valor ?? '').replace(/\D/g, '')
+}
+
 function nombreCompletoCuenta(
   cuenta
 ) {
@@ -2802,8 +2810,8 @@ const ingresosLibresFiltrados =
     if (!valores.length || valores.some(v => !Number.isFinite(v.valor) || v.valor <= 0 ||
         Math.abs(v.valor*100-Math.round(v.valor*100)) > 0.000001) ||
         (incluirExamenLiquidacion && (!Number.isFinite(Number(valorExamenLiquidacion)) ||
-        Number(valorExamenLiquidacion) <= 0)) || motivoLiquidacion.trim().length < 8) {
-      setError('Ingrese un valor válido por categoría y una justificación de mínimo ocho caracteres.')
+        Number(valorExamenLiquidacion) <= 0))) {
+      setError('Ingrese un valor válido por categoría y, si corresponde, para el examen médico.')
       return
     }
     setProcesando(true)
@@ -5758,16 +5766,17 @@ const ingresosLibresFiltrados =
                 Matrícula {modalLiquidacion.consecutivo_matricula || '-'} ·
                 {' '}{textoCategoriasCuenta(modalLiquidacion)}
               </p>
-              <p className="rounded border border-amber-200 bg-amber-50 p-2 text-amber-900">
-                Esta obligación tiene valor $0. Asigne el valor acordado antes de recibir pagos.
-              </p>
+              <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div><strong>Aprendiz:</strong> {nombreCompletoCuenta(modalLiquidacion)}</div>
+                <div><strong>Documento:</strong> {modalLiquidacion.aprendiz?.tipo_doc || '—'} {modalLiquidacion.aprendiz?.documento || modalLiquidacion.documento || '—'}</div>
+              </div>
               {(modalLiquidacion.detalles || []).map(detalle => (
                 <label key={detalle.id} className="block font-semibold text-slate-700">
                   Valor del curso · {(detalle.categorias || []).join(' / ')} *
-                  <input type="number" min="0.01" step="0.01"
-                    value={valoresLiquidacion[detalle.id] || ''}
-                    onChange={e => setValoresLiquidacion(prev => ({ ...prev, [detalle.id]: e.target.value }))}
-                    placeholder="Valor comercial acordado" disabled={procesando}
+                  <input type="text" inputMode="numeric"
+                    value={visualizarPesosCampo(valoresLiquidacion[detalle.id])}
+                    onChange={e => setValoresLiquidacion(prev => ({ ...prev, [detalle.id]: leerPesosCampo(e.target.value) }))}
+                    placeholder="$ 0" disabled={procesando}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"/>
                 </label>
               ))}
@@ -5780,23 +5789,23 @@ const ingresosLibresFiltrados =
               {incluirExamenLiquidacion && (
                 <label className="block font-semibold text-slate-700">
                   Valor del examen médico *
-                  <input type="number" min="0.01" step="0.01"
-                    value={valorExamenLiquidacion} disabled={procesando}
-                    onChange={e => setValorExamenLiquidacion(e.target.value)}
+                  <input type="text" inputMode="numeric"
+                    value={visualizarPesosCampo(valorExamenLiquidacion)} disabled={procesando}
+                    onChange={e => setValorExamenLiquidacion(leerPesosCampo(e.target.value))}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"/>
                 </label>
               )}
               <label className="block font-semibold text-slate-700">
-                Justificación y soporte *
+                Observaciones (opcional)
                 <textarea rows={2} maxLength={2000}
                   value={motivoLiquidacion}
                   onChange={e => setMotivoLiquidacion(e.target.value)}
-                  placeholder="Indique el soporte del valor asignado"
+                  placeholder="Observaciones sobre el precio, descuentos o examen médico (opcional)"
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   disabled={procesando}/>
               </label>
               <div className="flex items-center justify-between rounded-lg bg-slate-50 p-3 font-semibold">
-                <span>Nuevo saldo</span>
+                <span>Total de la obligación</span>
                 <span>{formatearMoneda(Object.values(valoresLiquidacion).reduce((t,v) => t+(Number(v)||0),0) + (incluirExamenLiquidacion ? Number(valorExamenLiquidacion||0) : 0))}</span>
               </div>
               {error && (
@@ -5810,7 +5819,7 @@ const ingresosLibresFiltrados =
                 <BotonGuardar type="button" disabled={procesando ||
                   (modalLiquidacion.detalles || []).some(d => !(Number(valoresLiquidacion[d.id]) > 0)) ||
                   (incluirExamenLiquidacion && !(Number(valorExamenLiquidacion) > 0)) ||
-                  motivoLiquidacion.trim().length < 8}
+                  false}
                   onClick={guardarLiquidacion}>
                   {procesando ? 'Guardando...' : 'Guardar valor del curso'}
                 </BotonGuardar>
