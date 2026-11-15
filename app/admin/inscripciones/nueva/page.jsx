@@ -1522,58 +1522,6 @@ export default function NuevaInscripcionPage() {
           'Seleccione un convenio.'
       }
 
-      // ====================================================
-      // INFORMACIÓN FINANCIERA
-      // ====================================================
-
-      for (
-        const cat of
-          form.categorias
-      ) {
-        const valorCurso =
-          Number(
-            finanzas.valores_curso?.[cat] ||
-            0
-          )
-
-        if (
-          !Number.isFinite(
-            valorCurso
-          ) ||
-          valorCurso <=
-            0
-        ) {
-          errs[
-            `valor_curso_${cat}`
-          ] =
-            `Ingrese el valor acordado para la categoría ${cat}.`
-        }
-      }
-
-      if (
-        finanzas
-          .incluye_examen_medico
-      ) {
-        const valorExamen =
-          Number(
-            finanzas
-              .valor_examen_medico ||
-            0
-          )
-
-        if (
-          !Number.isFinite(
-            valorExamen
-          ) ||
-          valorExamen <=
-            0
-        ) {
-          errs.valor_examen_medico =
-            'Ingrese el valor del examen médico.'
-        }
-
-      }
-
       if (
         esMenor
       ) {
@@ -3193,41 +3141,10 @@ const guardar =
               ? form.convenio
               : '',
 
-          valores_curso:
-            form.categorias.map(
-              categoria => ({
-                categoria,
-
-                valor:
-                  Number(
-                    finanzas.valores_curso?.[categoria] ||
-                    0
-                  ),
-              })
-            ),
-
-          incluye_examen_medico:
-            Boolean(
-              finanzas
-                .incluye_examen_medico
-            ),
-
-          valor_examen_medico:
-            finanzas
-              .incluye_examen_medico
-              ? Number(
-                  finanzas
-                    .valor_examen_medico ||
-                  0
-                )
-              : 0,
-
-          observaciones_financieras:
-            String(
-              finanzas
-                .observaciones_financieras ||
-              ''
-            ).trim(),
+          valores_curso: form.categorias.map(categoria => ({ categoria, valor: 0 })),
+          incluye_examen_medico: false,
+          valor_examen_medico: 0,
+          observaciones_financieras: '',
         })
 
       // =====================================================
@@ -3381,9 +3298,13 @@ const guardar =
       (!conTexto(form.acudi_correo) || isValidEmail(form.acudi_correo))
     )) &&
     !esMenor16
-  const finanzasCompletas = categoriaMatricula.length > 0 &&
-    categoriaMatricula.every(cat => Number(finanzas.valores_curso?.[cat]) > 0) &&
-    (!finanzas.incluye_examen_medico || Number(finanzas.valor_examen_medico) > 0)
+  const acudienteCompleto = !esMenor || (
+    ['acudi_nombres','acudi_apellidos','acudi_tipo_doc','acudi_documento','acudi_celular']
+      .every(key => conTexto(form[key])) &&
+    /^\d+$/.test(String(form.acudi_documento || '')) &&
+    /^\d{10}$/.test(String(form.acudi_celular || '').trim()) &&
+    (!conTexto(form.acudi_correo) || isValidEmail(form.acudi_correo))
+  )
   const estadosSecciones = {
     identificacion: {
       completo: identificacionCompleta,
@@ -3403,17 +3324,17 @@ const guardar =
       completo: matriculaCompleta,
       iniciado: categoriaMatricula.length > 0 || form.origen_matricula === 'CONVENIO',
     },
-    financiera: {
-      completo: finanzasCompletas,
-      iniciado: Object.values(finanzas.valores_curso || {}).some(v => conTexto(v)) ||
-        finanzas.incluye_examen_medico,
+    acudiente: {
+      completo: acudienteCompleto,
+      iniciado: esMenor && ['acudi_nombres','acudi_apellidos','acudi_documento','acudi_celular']
+        .some(key => conTexto(form[key])),
     },
     runt: {
       completo: ['REGISTRADO', 'NO REGISTRADO'].includes(runtResultado),
       iniciado: Boolean(runtResultado),
     },
   }
-  const ordenSecciones = ['identificacion', 'contacto', 'complementaria', 'matricula', 'financiera', 'runt']
+  const ordenSecciones = ['identificacion', 'contacto', 'complementaria', 'matricula', 'acudiente', 'runt']
   const seccionesCompletas = ordenSecciones.filter(key => estadosSecciones[key].completo).length
   const porcentajeAvance = Math.round(seccionesCompletas / ordenSecciones.length * 100)
   // Se mantiene el encabezado azul institucional, mientras la tarjeta
@@ -3427,7 +3348,7 @@ const guardar =
 
   const etiquetaEstadoSeccion = (clave, numero, titulo) => {
     const estado = estadosSecciones[clave]
-    const texto = estado.completo ? 'Completa' : estado.iniciado ? 'Incompleta' : 'Pendiente'
+    const texto = clave === 'acudiente' && !esMenor ? 'No aplica' : estado.completo ? 'Completa' : estado.iniciado ? 'Incompleta' : 'Pendiente'
     const estilo = estado.completo
       ? 'border-emerald-300 bg-emerald-600 text-white'
       : estado.iniciado
@@ -4301,219 +4222,6 @@ const guardar =
           {(
             <div className="space-y-4">
 
-              {/* ACUDIENTE / EMERGENCIA */}
-
-              {esMenor ? (
-                <div className="mt-5 overflow-hidden rounded-lg border border-slate-500 bg-white">
-                  <div
-                    className="px-3 py-2 text-xs font-semibold"
-                    style={{
-                      backgroundColor: ESTILO_SECCIONES.fondo,
-                      color: ESTILO_SECCIONES.texto,
-                      borderColor: ESTILO_SECCIONES.borde,
-                    }}
-                  >
-                    Datos del Acudiente o Representante Legal
-                  </div>
-                  <div className="p-3">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Nombres
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_nombres
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_nombres',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.acudi_nombres
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Apellidos
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_apellidos
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_apellidos',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.acudi_apellidos
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Tipo Doc.
-                      </label>
-
-                      <select
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_tipo_doc
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_tipo_doc',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      >
-                        {TIPOS_DOC.map(
-                          tipo => (
-                            <option
-                              key={
-                                tipo
-                              }
-                              value={
-                                tipo
-                              }
-                            >
-                              {tipo}
-                            </option>
-                          )
-                        )}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Documento
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_documento
-                        }
-                        onChange={
-                          setNumeric(
-                            'acudi_documento'
-                          )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.acudi_documento
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Celular
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_celular
-                        }
-                        onChange={
-                          setNumeric(
-                            'acudi_celular'
-                          )
-                        }
-                      />
-
-                      <FieldError
-                        msg={
-                          errors.acudi_celular
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Dirección
-                      </label>
-
-                      <input
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_direccion
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_direccion',
-                              event
-                                .target
-                                .value
-                            )
-                        }
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-[11px] font-semibold mb-1">
-                        Correo
-                      </label>
-
-                      <input
-                        type="email"
-                        className="w-full border border-gray-700 rounded px-2 py-1 text-xs"
-                        value={
-                          form.acudi_correo
-                        }
-                        onChange={
-                          event =>
-                            setF(
-                              'acudi_correo',
-                              event
-                                .target
-                                .value,
-                              {
-                                upper:
-                                  false,
-                              }
-                            )
-                        }
-                      />
-                      <FieldError msg={errors.acudi_correo} />
-                    </div>
-
-                  </div>
-                  </div>
-                </div>
-              ) : null}
-
               <div className="mt-5 grid grid-cols-1 xl:grid-cols-3 gap-3 items-stretch">
               {/* MATRÍCULA */}
 
@@ -4890,367 +4598,53 @@ const guardar =
 
 
 
-              {/* ===============================================
-                  INFORMACIÓN FINANCIERA
-              =============================================== */}
-
-              <div
-                className={`min-w-0 ${claseTarjetaSeccion('financiera')}`}
-              >
-                <div
-                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
-                  style={{
-                    backgroundColor: ESTILO_SECCIONES.fondo,
-                    color: ESTILO_SECCIONES.texto,
-                    borderColor: ESTILO_SECCIONES.borde,
-                  }}
-                >
-                  {etiquetaEstadoSeccion('financiera', 5, 'Información Financiera')}
+              {/* ACUDIENTE: visible siempre y habilitado solo para menores. */}
+              <div className={`min-w-0 ${claseTarjetaSeccion('acudiente')}`}>
+                <div className="px-3 py-2 text-xs font-semibold" style={{
+                  backgroundColor: ESTILO_SECCIONES.fondo,
+                  color: ESTILO_SECCIONES.texto,
+                  borderColor: ESTILO_SECCIONES.borde,
+                }}>
+                  {etiquetaEstadoSeccion('acudiente', 5, 'Datos del Acudiente o Representante Legal')}
                 </div>
-
-                <div className="p-3 space-y-3">
-
-                  <p className="text-xs leading-relaxed text-gray-600">
-                    Defina el valor comercial realmente acordado. Aquí se crea la obligación financiera; el ingreso de dinero se registra posteriormente en Caja.
+                <fieldset disabled={!esMenor} className={`p-3 space-y-3 ${!esMenor ? 'opacity-50' : ''}`}>
+                  <p className="text-[11px] text-gray-600">
+                    {!esMenor ? 'No aplica para aprendices mayores de edad. Se habilita automáticamente si la fecha de nacimiento corresponde a un menor de 18 años.' : 'Datos obligatorios para un aprendiz menor de edad.'}
                   </p>
-
-                  {form
-                    .categorias
-                    .length ===
-                    0 ? (
-                    <div
-                      className="
-                        border
-                        border-dashed
-                        border-gray-300
-                        rounded-lg
-                        p-4
-                        text-xs
-                        text-gray-500
-                        text-center
-                      "
-                    >
-                      Seleccione primero una categoría para definir el valor del curso.
-                    </div>
-                  ) : (
-                    <div
-                      className="
-                        grid
-                        grid-cols-1
-                        grid-cols-1
-                        gap-3
-                      "
-                    >
-                      {form.categorias.map(
-                        cat => (
-                          <div
-                            key={
-                              cat
-                            }
-                            className="
-                              border
-                              border-gray-300
-                              rounded-lg
-                              p-3
-                              bg-gray-50
-                            "
-                          >
-                            <div
-                              className="
-                                flex
-                                items-center
-                                justify-between
-                                gap-2
-                                mb-2
-                              "
-                            >
-                              <span className="text-xs font-bold text-gray-800">
-                                Curso categoría {cat}
-                              </span>
-
-                              <span
-                                className="
-                                  bg-[var(--primary)]
-                                  text-white
-                                  text-[10px]
-                                  font-bold
-                                  px-2
-                                  py-1
-                                  rounded
-                                "
-                              >
-                                {cat}
-                              </span>
-                            </div>
-
-                            <label className="block text-[11px] font-semibold mb-1">
-                              Valor acordado del curso *
-                            </label>
-
-                            <div className="relative">
-                              <span
-                                className="
-                                  absolute
-                                  left-3
-                                  top-1/2
-                                  -translate-y-1/2
-                                  text-xs
-                                  text-gray-500
-                                  font-semibold
-                                "
-                              >
-                                $
-                              </span>
-
-                              <input
-                                className="
-                                  w-full
-                                  border
-                                  border-gray-700
-                                  rounded
-                                  pl-7
-                                  pr-2
-                                  py-2
-                                  text-xs
-                                  font-semibold
-                                "
-                                value={
-                                  formatMilesDigits(
-                                    finanzas.valores_curso?.[cat] ||
-                                    ''
-                                  )
-                                }
-                                onChange={
-                                  event =>
-                                    setValorCurso(
-                                      cat,
-                                      event
-                                        .target
-                                        .value
-                                    )
-                                }
-                                inputMode="numeric"
-                                placeholder="Ej: 950.000"
-                              />
-                            </div>
-
-                            <FieldError
-                              msg={
-                                errors[
-                                  `valor_curso_${cat}`
-                                ]
-                              }
-                            />
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
-
-                  <div
-                    className="
-                      border
-                      border-gray-300
-                      rounded-lg
-                      p-3
-                    "
-                  >
-                    <label
-                      className="
-                        flex
-                        items-center
-                        gap-2
-                        text-xs
-                        font-semibold
-                        cursor-pointer
-                      "
-                    >
-                      <input
-                        type="checkbox"
-                        checked={
-                          finanzas
-                            .incluye_examen_medico
-                        }
-                        onChange={
-                          event => {
-                            const checked =
-                              event
-                                .target
-                                .checked
-
-                            setFinanzas(
-                              prev => ({
-                                ...prev,
-
-                                incluye_examen_medico:
-                                  checked,
-
-                                valor_examen_medico:
-                                  checked
-                                    ? prev
-                                        .valor_examen_medico
-                                    : '',
-
-                              })
-                            )
-
-                            clrErr(
-                              'valor_examen_medico'
-                            )
-                          }
-                        }
-                        className="w-4 h-4"
-                      />
-
-                      Incluir examen médico en las obligaciones de esta matrícula
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {[
+                      ['acudi_nombres', 'Nombres'], ['acudi_apellidos', 'Apellidos'],
+                      ['acudi_documento', 'Documento'], ['acudi_celular', 'Celular'],
+                      ['acudi_direccion', 'Dirección'], ['acudi_correo', 'Correo'],
+                    ].map(([campo, etiqueta]) => (
+                      <label key={campo} className="block text-[11px] font-semibold text-gray-700">
+                        {etiqueta}
+                        <input
+                          type={campo === 'acudi_correo' ? 'email' : 'text'}
+                          inputMode={['acudi_documento','acudi_celular'].includes(campo) ? 'numeric' : undefined}
+                          className="mt-1 w-full rounded border border-gray-700 px-2 py-1.5 text-xs"
+                          value={form[campo] || ''}
+                          onChange={event => {
+                            const valor = ['acudi_documento','acudi_celular'].includes(campo)
+                              ? event.target.value.replace(/\D/g, '')
+                              : event.target.value
+                            setF(campo, valor, campo === 'acudi_correo' ? { upper: false } : undefined)
+                          }}
+                        />
+                        <FieldError msg={errors[campo]} />
+                      </label>
+                    ))}
+                    <label className="block text-[11px] font-semibold text-gray-700 sm:col-span-2">
+                      Tipo de documento
+                      <select className="mt-1 w-full rounded border border-gray-700 px-2 py-1.5 text-xs"
+                        value={form.acudi_tipo_doc} onChange={event => setF('acudi_tipo_doc', event.target.value)}>
+                        {TIPOS_DOC.map(tipo => <option key={tipo} value={tipo}>{tipo}</option>)}
+                      </select>
+                      <FieldError msg={errors.acudi_tipo_doc} />
                     </label>
-
-                    {finanzas
-                      .incluye_examen_medico && (
-                      <div
-                        className="
-                          grid
-                          grid-cols-1
-                          md:grid-cols-1
-                          gap-3
-                          mt-3
-                        "
-                      >
-                        <div>
-                          <label className="block text-[11px] font-semibold mb-1">
-                            Valor examen médico *
-                          </label>
-
-                          <div className="relative">
-                            <span
-                              className="
-                                absolute
-                                left-3
-                                top-1/2
-                                -translate-y-1/2
-                                text-xs
-                                text-gray-500
-                                font-semibold
-                              "
-                            >
-                              $
-                            </span>
-
-                            <input
-                              className="
-                                w-full
-                                border
-                                border-gray-700
-                                rounded
-                                pl-7
-                                pr-2
-                                py-2
-                                text-xs
-                                font-semibold
-                              "
-                              value={
-                                formatMilesDigits(
-                                  finanzas
-                                    .valor_examen_medico
-                                )
-                              }
-                              onChange={
-                                event =>
-                                  setValorExamen(
-                                    event
-                                      .target
-                                      .value
-                                  )
-                              }
-                              inputMode="numeric"
-                              placeholder="Ej: 180.000"
-                            />
-                          </div>
-
-                          <FieldError
-                            msg={
-                              errors
-                                .valor_examen_medico
-                            }
-                          />
-                        </div>
-
-                        {form.categorias.length >
-                          0 && (
-                          <div
-                            className="
-                              border
-                              border-emerald-200
-                              bg-emerald-50
-                              rounded
-                              px-3
-                              py-2
-                              text-xs
-                              text-emerald-800
-                            "
-                          >
-                            <span className="font-semibold">
-                              Aplica a:
-                            </span>{' '}
-
-                            {form.categorias.join(
-                              ' + '
-                            )}
-
-                            {form.categorias.length >
-                              1 && (
-                              <span className="block text-[10px] mt-1 text-emerald-700">
-                                El valor ingresado corresponde al examen médico conjunto de las categorías seleccionadas; no se divide por matrícula.
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                      </div>
-                    )}
                   </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold mb-1">
-                      Observaciones financieras
-                    </label>
-
-                    <textarea
-                      rows={2}
-                      className="
-                        w-full
-                        border
-                        border-gray-700
-                        rounded
-                        px-2
-                        py-2
-                        text-xs
-                        resize-none
-                      "
-                      value={
-                        finanzas
-                          .observaciones_financieras
-                      }
-                      onChange={
-                        event =>
-                          setFinanzas(
-                            prev => ({
-                              ...prev,
-
-                              observaciones_financieras:
-                                event
-                                  .target
-                                  .value,
-                            })
-                          )
-                      }
-                      placeholder="Opcional. Ej: descuento por pago anticipado."
-                    />
-                  </div>
-
-                </div>
+                </fieldset>
               </div>
-
 
               {/* ===============================================
                   VERIFICACIÓN RUNT
@@ -5721,160 +5115,11 @@ const guardar =
 
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
-              {/* INFORMACIÓN FINANCIERA */}
-
-              <div
-                className="
-                  border
-                  border-gray-300
-                  rounded-lg
-                  overflow-hidden
-                "
-              >
-                <div
-                  className="px-3 py-1.5 text-[11px] font-semibold"
-                  style={{
-                    backgroundColor: ESTILO_SECCIONES.fondo,
-                    color: ESTILO_SECCIONES.texto,
-                    borderColor: ESTILO_SECCIONES.borde,
-                  }}
-                >
-                  Información Financiera
-                </div>
-
-                <div
-                  className="
-                    p-2
-                    grid
-                    grid-cols-1
-                    grid-cols-1
-                    gap-2
-                  "
-                >
-                  {form.categorias.map(
-                    cat => (
-                      <div
-                        key={
-                          cat
-                        }
-                        className="
-                          border
-                          border-gray-300
-                          rounded-lg
-                          p-2
-                        "
-                      >
-                        <div className="text-[9px] text-gray-500 uppercase">
-                          Curso {cat}
-                        </div>
-
-                        <div className="text-[11px] font-bold text-gray-900 mt-0.5">
-                          {formatMoneda(
-                            finanzas.valores_curso?.[cat] ||
-                            0
-                          )}
-                        </div>
-                      </div>
-                    )
-                  )}
-
-                  {finanzas
-                    .incluye_examen_medico && (
-                    <div
-                      className="
-                        border
-                        border-gray-300
-                        rounded-lg
-                        p-2
-                      "
-                    >
-                      <div className="text-[9px] text-gray-500 uppercase">
-                        Examen Médico
-                      </div>
-
-                      <div className="text-[11px] font-bold text-gray-900 mt-0.5">
-                        {formatMoneda(
-                          finanzas
-                            .valor_examen_medico
-                        )}
-                      </div>
-
-                      <div className="text-[9px] text-gray-500 mt-0.5">
-                        Aplica a{' '}
-
-                        <strong>
-                          {form.categorias.join(
-                            ' + '
-                          ) ||
-                            '—'}
-                        </strong>
-                      </div>
-                    </div>
-                  )}
-
-                  <div
-                    className="
-                      border
-                      border-blue-200
-                      bg-blue-50
-                      rounded-lg
-                      p-2
-                    "
-                  >
-                    <div className="text-[9px] text-blue-700 uppercase">
-                      Total obligaciones iniciales
-                    </div>
-
-                    <div className="text-[11px] font-bold text-blue-900 mt-0.5">
-                      {formatMoneda(
-                        form.categorias.reduce(
-                          (
-                            total,
-                            cat
-                          ) =>
-                            total +
-                            Number(
-                              finanzas.valores_curso?.[cat] ||
-                              0
-                            ),
-                          0
-                        ) +
-                        (
-                          finanzas
-                            .incluye_examen_medico
-                            ? Number(
-                                finanzas
-                                  .valor_examen_medico ||
-                                0
-                              )
-                            : 0
-                        )
-                      )}
-                    </div>
-                  </div>
-
-                  {finanzas
-                    .observaciones_financieras && (
-                    <div
-                      className="
-                        col-span-1
-                        border
-                        border-gray-200
-                        rounded-lg
-                        p-2
-                        text-[11px]
-                        text-gray-600
-                      "
-                    >
-                      <strong>
-                        Observaciones:
-                      </strong>{' '}
-
-                      {finanzas
-                        .observaciones_financieras}
-                    </div>
-                  )}
-                </div>
+              {/* El precio del curso se define posteriormente en Caja. */}
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+                <strong>Obligación pendiente de liquidación.</strong> Al confirmar la matrícula,
+                se creará la obligación con valor $0 y sus detalles por categoría.
+                En Caja deberá seleccionar <strong>Definir valor del curso</strong> antes de registrar un pago.
               </div>
 
               {/* RUNT CONFIRMACIÓN */}
