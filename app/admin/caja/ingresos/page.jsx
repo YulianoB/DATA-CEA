@@ -5818,8 +5818,7 @@ const ingresosLibresFiltrados =
                 </BotonCancelar>
                 <BotonGuardar type="button" disabled={procesando ||
                   (modalLiquidacion.detalles || []).some(d => !(Number(valoresLiquidacion[d.id]) > 0)) ||
-                  (incluirExamenLiquidacion && !(Number(valorExamenLiquidacion) > 0)) ||
-                  false}
+                  (incluirExamenLiquidacion && !(Number(valorExamenLiquidacion) > 0))}
                   onClick={guardarLiquidacion}>
                   {procesando ? 'Guardando...' : 'Guardar valor del curso'}
                 </BotonGuardar>
