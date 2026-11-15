@@ -6806,7 +6806,7 @@ if (
           abonado !== 0 || detalles.length < 1 || detalles.length > 2 ||
           detalles.some(d => d.estado !== 'ACTIVO' || Number(d.valor) !== 0 ||
             !Array.isArray(d.categorias) || d.categorias.length !== 1) ||
-          motivo.length < 8 || valores.length !== detalles.length) {
+          valores.length !== detalles.length) {
         return NextResponse.json({status:'error',
           message:'Esta obligación no admite asignación inicial. Revise su valor, pagos y conceptos.'
         }, {status:409})
@@ -6863,14 +6863,14 @@ if (
           const {data,error} = await supabase.from('cuentas_aprendiz_detalle').insert({
             cuenta_id:cuenta.id,matricula_id:detalles[0].matricula_id,
             concepto_id:conceptoExamen.id,categorias,
-            descripcion:'EXAMEN MEDICO '+categorias.join(' + '),
+            descripcion:'EXAMEN MEDICO',
             valor:valorExamen,estado:'ACTIVO',creado_por:usuario,
           }).select('id').single()
           if (error || !data?.id) throw new Error('No fue posible agregar el examen médico.')
           examenId = data.id
         }
         const {data,error} = await supabase.from('cuentas_aprendiz').update({
-          valor_total:total,estado:'PENDIENTE',observaciones:motivo,
+          valor_total:total,estado:'PENDIENTE',observaciones:motivo || null,
           updated_at:new Date().toISOString()
         }).eq('id',cuenta.id).eq('valor_total',0).eq('estado','PENDIENTE').select('id')
         if (error || (data || []).length !== 1)
