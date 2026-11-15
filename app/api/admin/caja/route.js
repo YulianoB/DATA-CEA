@@ -6792,6 +6792,133 @@ if (
     }
 
     // =====================================================
+    // DEFINIR VALOR DEL CURSO: OBLIGACION INICIAL EN CERO
+    // No usa funciones SQL, RPC ni triggers. La API valida
+    // los detalles existentes y conserva las obligaciones.
+    // =====================================================
+    if (accion === 'definir_valor_curso') {
+      const cuenta = await obtenerCuenta(supabase, body?.cuenta_id)
+      const detalles = await obtenerDetallesCuenta(supabase, cuenta.id)
+      const abonado = await obtenerTotalAbonado(supabase, cuenta.id)
+      const valores = Array.isArray(body?.valores_curso) ? body.valores_curso : []
+      const motivo = texto(body?.observaciones)
+      if (cuenta.estado !== 'PENDIENTE' || Number(cuenta.valor_total) !== 0 ||
+          abonado !== 0 || detalles.length < 1 || detalles.length > 2 ||
+          detalles.some(d => d.estado !== 'ACTIVO' || Number(d.valor) !== 0 ||
+            !Array.isArray(d.categorias) || d.categorias.length !== 1) ||
+          motivo.length < 8 || valores.length !== detalles.length) {
+        return NextResponse.json({status:'error',
+          message:'Esta obligación no admite asignación inicial. Revise su valor, pagos y conceptos.'
+        }, {status:409})
+      }
+      const {data:conceptos,error:errorConceptos} = await supabase
+        .from('conceptos_caja').select('id,nombre,activo').eq('activo',true)
+      if (errorConceptos) throw new Error('No fue posible validar los conceptos de Caja: '+errorConceptos.message)
+      const esConcepto = (id,nombre) => (conceptos || []).some(c =>
+        String(c.id) === String(id) && mayusculas(c.nombre) === nombre)
+      if (!detalles.every(d => esConcepto(d.concepto_id,'CURSO'))) {
+        return NextResponse.json({status:'error',
+          message:'La obligación contiene conceptos diferentes de CURSO y requiere revisión.'
+        }, {status:409})
+      }
+      const mapa = new Map(valores.map(v => [String(v.detalle_id),Number(v.valor)]))
+      if (mapa.size !== detalles.length ||
+          detalles.some(d => !mapa.has(String(d.id)) ||
+            !Number.isFinite(mapa.get(String(d.id))) || mapa.get(String(d.id)) <= 0 ||
+            Math.abs(mapa.get(String(d.id))*100-Math.round(mapa.get(String(d.id))*100)) > 0.000001)) {
+        return NextResponse.json({status:'error',
+          message:'Asigne un valor válido a cada categoría del curso.'
+        }, {status:400})
+      }
+      const incluyeExamen = body?.incluye_examen_medico === true
+      const valorExamen = incluyeExamen ? Number(body?.valor_examen_medico) : 0
+      if (incluyeExamen && (!Number.isFinite(valorExamen) || valorExamen <= 0 ||
+          Math.abs(valorExamen*100-Math.round(valorExamen*100)) > 0.000001)) {
+        return NextResponse.json({status:'error',
+          message:'Ingrese un valor válido para el examen médico.'
+        }, {status:400})
+      }
+      const conceptoExamen = incluyeExamen ? (conceptos || [])
+        .find(c => mayusculas(c.nombre) === 'EXAMEN MEDICO') : null
+      if (incluyeExamen && !conceptoExamen?.id) {
+        return NextResponse.json({status:'error',
+          message:'No se encontró el concepto activo EXAMEN MEDICO.'
+        }, {status:409})
+      }
+      const total = Math.round((detalles.reduce((s,d) => s+mapa.get(String(d.id)),0)+valorExamen)*100)/100
+      const actualizados = []
+      let examenId = null
+      let cabeceraActualizada = false
+      try {
+        for (const detalle of detalles) {
+          const {data,error} = await supabase.from('cuentas_aprendiz_detalle')
+            .update({valor:mapa.get(String(detalle.id)),updated_at:new Date().toISOString()})
+            .eq('id',detalle.id).eq('cuenta_id',cuenta.id).eq('valor',0).select('id')
+          if (error || (data || []).length !== 1)
+            throw new Error('No fue posible guardar el precio de la categoría '+detalle.categorias.join('/'))
+          actualizados.push(detalle.id)
+        }
+        if (incluyeExamen) {
+          const categorias = detalles.flatMap(d => d.categorias)
+          const {data,error} = await supabase.from('cuentas_aprendiz_detalle').insert({
+            cuenta_id:cuenta.id,matricula_id:detalles[0].matricula_id,
+            concepto_id:conceptoExamen.id,categorias,
+            descripcion:'EXAMEN MEDICO '+categorias.join(' + '),
+            valor:valorExamen,estado:'ACTIVO',creado_por:usuario,
+          }).select('id').single()
+          if (error || !data?.id) throw new Error('No fue posible agregar el examen médico.')
+          examenId = data.id
+        }
+        const {data,error} = await supabase.from('cuentas_aprendiz').update({
+          valor_total:total,estado:'PENDIENTE',observaciones:motivo,
+          updated_at:new Date().toISOString()
+        }).eq('id',cuenta.id).eq('valor_total',0).eq('estado','PENDIENTE').select('id')
+        if (error || (data || []).length !== 1)
+          throw new Error('No fue posible actualizar la cabecera de la obligación.')
+        cabeceraActualizada = true
+        await registrarAuditoria({
+          supabase,usuario,accion:'DEFINIR_VALOR_CURSO',
+          entidad:'CUENTA_APRENDIZ',entidadId:cuenta.id,
+          matriculaId:detalles[0].matricula_id,documento:cuenta.documento,
+          descripcion:'Definición del valor de curso y examen médico, cuando corresponde.',
+          datosAnteriores:{cuenta,detalles},
+          datosNuevos:{valor_total:total,valores_curso:valores,
+            incluye_examen_medico:incluyeExamen,valor_examen_medico:valorExamen},
+          observaciones:motivo,
+        })
+      } catch (error) {
+        // La API de Supabase no admite una transacción multi-HTTP.
+        // Se revierte cada escritura realizada si falla el proceso.
+        const fallos = []
+        if (cabeceraActualizada) {
+          const {error:e} = await supabase.from('cuentas_aprendiz').update({
+            valor_total:cuenta.valor_total,estado:cuenta.estado,
+            observaciones:cuenta.observaciones,updated_at:new Date().toISOString()
+          }).eq('id',cuenta.id).eq('valor_total',total)
+          if (e) fallos.push('cabecera: '+e.message)
+        }
+        if (examenId) {
+          const {error:e} = await supabase.from('cuentas_aprendiz_detalle').delete().eq('id',examenId)
+          if (e) fallos.push('examen: '+e.message)
+        }
+        for (const id of actualizados) {
+          const {error:e} = await supabase.from('cuentas_aprendiz_detalle').update({
+            valor:0,updated_at:new Date().toISOString()
+          }).eq('id',id).eq('cuenta_id',cuenta.id)
+          if (e) fallos.push('detalle '+id+': '+e.message)
+        }
+        if (fallos.length) {
+          console.error('Reversión incompleta al definir valor del curso:',cuenta.id,fallos)
+          throw new Error('No fue posible revertir todos los cambios. No repita el proceso; solicite revisión administrativa.')
+        }
+        throw error
+      }
+      return NextResponse.json({status:'success',
+        message:'Valor del curso definido correctamente.',
+        data:await obtenerDetalleCuenta(supabase,cuenta.id)})
+    }
+
+    // =====================================================
     // MODIFICAR CUENTA
     // =====================================================
     //
