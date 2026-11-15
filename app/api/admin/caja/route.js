@@ -2457,6 +2457,47 @@ async function enriquecerCuentas(
 // CONSULTAR CUENTAS
 // =========================================================
 
+// =========================================================
+// CONSULTAR CUENTAS: BUSQUEDA COMPLETA Y ORDEN POR MATRICULA
+// =========================================================
+// No usa RPC, funciones SQL ni triggers. Los lotes evitan el
+// limite de 1.000 coincidencias de Supabase/PostgREST.
+// Se pagina DESPUES de filtrar y ordenar el conjunto completo.
+function claveConsecutivoCaja(valor) {
+  const match = String(valor ?? '').trim().match(/^(\\d{4})-(\\d+)$/)
+  if (!match) return { anio: -1, numero: -1 }
+  return { anio: Number(match[1]), numero: Number(match[2]) }
+}
+
+function normalizarBusquedaCaja(valor) {
+  return String(valor ?? '')
+    .normalize('NFD')
+    .replace(/[\\u0300-\\u036f]/g, '')
+    .toUpperCase()
+    .replace(/\\s+/g, ' ')
+    .trim()
+}
+
+async function consultarLotesCaja({ supabase, tabla, columnas, aplicarFiltros }) {
+  const acumulado = []
+  const tamano = 1000
+  for (let desde = 0; ; desde += tamano) {
+    let consulta = supabase
+      .from(tabla)
+      .select(columnas)
+    if (aplicarFiltros) consulta = aplicarFiltros(consulta)
+    const { data, error } = await consulta
+      .order('id', { ascending: true })
+      .range(desde, desde + tamano - 1)
+    if (error) throw new Error(
+      'No fue posible consultar ' + tabla + ': ' + error.message
+    )
+    acumulado.push(...(data || []))
+    if (!data || data.length < tamano) break
+  }
+  return acumulado
+}
+
 async function consultarCuentas({
   supabase,
   busqueda = '',
@@ -2468,343 +2509,122 @@ async function consultarCuentas({
   categoria = '',
   conceptoId = null,
 }) {
-  const termino =
-    limpiarBusqueda(
-      busqueda
-    )
+  const termino = normalizarBusquedaCaja(limpiarBusqueda(busqueda))
+  const estadoNormalizado = mayusculas(estado)
+  const categoriaNormalizada = mayusculas(categoria)
 
-  // =======================================================
-  // RESOLVER CUENTAS DESDE APRENDICES
-  // =======================================================
-  //
-  // cuentas_aprendiz no almacena nombres ni apellidos.
-  // Cuando existe un término de búsqueda, localizamos primero
-  // las matrículas coincidentes y luego sus cuentas mediante
-  // cuentas_aprendiz_detalle.
-  //
-  // =======================================================
+  if (estadoNormalizado && !ESTADOS_CUENTA.has(estadoNormalizado)) {
+    throw new Error('El estado de cuenta no es válido.')
+  }
+  if (categoriaNormalizada && !CATEGORIAS_VALIDAS.has(categoriaNormalizada)) {
+    throw new Error('La categoría de cuenta no es válida.')
+  }
 
-  let cuentaIdsAprendiz =
-    []
-
-  if (
-    termino
-  ) {
-    const {
-      data:
-        aprendicesCoincidentes,
-
-      error:
-        errorAprendices,
-    } =
-      await supabase
-        .from(
-          'aprendices'
-        )
-        .select(
-          'id'
-        )
-        .or(
-          [
-            `documento.ilike.%${termino}%`,
-            `nombres.ilike.%${termino}%`,
-            `apellidos.ilike.%${termino}%`,
-            `consecutivo.ilike.%${termino}%`,
-          ].join(
-            ','
-          )
-        )
-        .limit(
-          LIMITE_CONSULTA
-        )
-
-    if (
-      errorAprendices
-    ) {
-      throw new Error(
-        `No fue posible buscar aprendices para Caja: ${errorAprendices.message}`
-      )
-    }
-
-    const matriculaIds =
-      (
-        aprendicesCoincidentes ||
-        []
-      )
-        .map(
-          item =>
-            toInt(
-              item.id
-            )
-        )
-        .filter(
-          Boolean
-        )
-
-    if (
-      matriculaIds.length >
-      0
-    ) {
-      const {
-        data:
-          detallesCoincidentes,
-
-        error:
-          errorDetalles,
-      } =
-        await supabase
-          .from(
-            'cuentas_aprendiz_detalle'
-          )
-          .select(
-            'cuenta_id'
-          )
-          .in(
-            'matricula_id',
-            matriculaIds
-          )
-          .eq(
-            'estado',
-            'ACTIVO'
-          )
-          .limit(
-            LIMITE_CONSULTA
-          )
-
-      if (
-        errorDetalles
-      ) {
-        throw new Error(
-          `No fue posible relacionar el aprendiz con su cuenta: ${errorDetalles.message}`
-        )
+  // Se seleccionan únicamente los campos necesarios para filtrar y ordenar.
+  // Las filas completas y los saldos se enriquecen SOLO para la página elegida.
+  const candidatas = await consultarLotesCaja({
+    supabase,
+    tabla: 'cuentas_aprendiz',
+    columnas: 'id,documento,convenio_id,descripcion,valor_total,estado,origen_pago,origen_matricula,observaciones,creado_por,fecha_creacion,created_at,updated_at',
+    aplicarFiltros: q => {
+      let consulta = q
+      if (estadoNormalizado) {
+        consulta = consulta.eq('estado', estadoNormalizado)
+      } else {
+        consulta = consulta.neq('estado', 'ANULADA')
       }
+      if (convenioId) consulta = consulta.eq('convenio_id', convenioId)
+      return consulta
+    },
+  })
 
-      cuentaIdsAprendiz =
-        [
-          ...new Set(
-            (
-              detallesCoincidentes ||
-              []
-            )
-              .map(
-                item =>
-                  toInt(
-                    item.cuenta_id
-                  )
-              )
-              .filter(
-                Boolean
-              )
-          ),
-        ]
+  if (!candidatas.length) return conTotal ? { cuentas: [], total: 0 } : []
+
+  const idsCuentas = new Set(candidatas.map(c => String(c.id)))
+  const detalles = (await consultarLotesCaja({
+    supabase,
+    tabla: 'cuentas_aprendiz_detalle',
+    columnas: 'id,cuenta_id,matricula_id,concepto_id,categorias,estado',
+    aplicarFiltros: q => q.eq('estado', 'ACTIVO'),
+  })).filter(d => idsCuentas.has(String(d.cuenta_id)))
+
+  const detallesPorCuenta = new Map()
+  const matriculaIds = new Set()
+  for (const detalle of detalles) {
+    const key = String(detalle.cuenta_id)
+    if (!detallesPorCuenta.has(key)) detallesPorCuenta.set(key, [])
+    detallesPorCuenta.get(key).push(detalle)
+    if (detalle.matricula_id != null) matriculaIds.add(detalle.matricula_id)
+  }
+
+  const matriculas = new Map()
+  const idsMatriculas = [...matriculaIds]
+  // IN() va por fragmentos para evitar URLs demasiado largas; no descarta filas.
+  for (let i = 0; i < idsMatriculas.length; i += 300) {
+    const ids = idsMatriculas.slice(i, i + 300)
+    const { data, error } = await supabase
+      .from('aprendices')
+      .select('id,consecutivo,documento,nombres,apellidos')
+      .in('id', ids)
+    if (error) throw new Error('No fue posible relacionar matrículas: ' + error.message)
+    for (const a of data || []) matriculas.set(String(a.id), a)
+    // Si el proyecto crece por encima del máximo de PostgREST, fallar
+    // explícitamente es más seguro que mostrar un total incompleto.
+    if ((data || []).length !== ids.length) {
+      throw new Error('La consulta de matrículas devolvió menos filas de las esperadas; revise las relaciones y el límite de la API.')
     }
   }
 
-  // Filtrar por categoría/concepto ANTES de paginar permite que el
-  // total y los botones correspondan al conjunto realmente solicitado.
-  let idsFiltrados = null
-  if (categoria || conceptoId) {
-    const ids = new Set()
-    let desde = 0
-    const lote = 1000
-    while (true) {
-      let detalleQuery = supabase
-        .from('cuentas_aprendiz_detalle')
-        .select('cuenta_id')
-        .eq('estado', 'ACTIVO')
-      if (categoria) detalleQuery = detalleQuery.contains('categorias', [categoria])
-      if (conceptoId) detalleQuery = detalleQuery.eq('concepto_id', conceptoId)
-      const { data: detallesFiltro, error: errorFiltro } = await detalleQuery
-        .order('id', { ascending: true })
-        .range(desde, desde + lote - 1)
-      if (errorFiltro) throw new Error('No fue posible aplicar el filtro de categoría/concepto: ' + errorFiltro.message)
-      for (const detalle of detallesFiltro || []) {
-        if (detalle.cuenta_id != null) ids.add(detalle.cuenta_id)
-      }
-      if (!detallesFiltro || detallesFiltro.length < lote) break
-      desde += lote
-    }
-    idsFiltrados = [...ids]
-    if (idsFiltrados.length === 0) {
-      return conTotal ? { cuentas: [], total: 0 } : []
-    }
-  }
+  const elegibles = []
+  for (const cuenta of candidatas) {
+    const relaciones = detallesPorCuenta.get(String(cuenta.id)) || []
+    if (categoriaNormalizada && !relaciones.some(d =>
+      Array.isArray(d.categorias) && d.categorias.includes(categoriaNormalizada)
+    )) continue
+    if (conceptoId && !relaciones.some(d => String(d.concepto_id) === String(conceptoId))) continue
 
-  let consulta =
-    supabase
-      .from(
-        'cuentas_aprendiz'
-      )
-      .select(`
-        id,
-        documento,
-        convenio_id,
-        descripcion,
-        valor_total,
-        estado,
-        origen_pago,
-        origen_matricula,
-        observaciones,
-        creado_por,
-        fecha_creacion,
-        created_at,
-        updated_at
-      `, { count: conTotal ? 'exact' : undefined })
-
-  const estadoNormalizado =
-    mayusculas(
-      estado
-    )
-
-  if (
-    estadoNormalizado
-  ) {
-    if (
-      !ESTADOS_CUENTA.has(
-        estadoNormalizado
-      )
-    ) {
-      throw new Error(
-        'El estado de cuenta no es válido.'
-      )
-    }
-
-    consulta =
-      consulta.eq(
-        'estado',
-        estadoNormalizado
-      )
-  } else {
-    consulta =
-      consulta.neq(
-        'estado',
-        'ANULADA'
-      )
-  }
-
-  if (idsFiltrados !== null) consulta = consulta.in('id', idsFiltrados)
-
-  if (
-    convenioId
-  ) {
-    consulta =
-      consulta.eq(
-        'convenio_id',
-        convenioId
-      )
-  }
-
-  if (
-    termino
-  ) {
-    const filtros =
-      [
-        `documento.ilike.%${termino}%`,
-        `descripcion.ilike.%${termino}%`,
+    const relacionadas = relaciones.map(d => matriculas.get(String(d.matricula_id))).filter(Boolean)
+    if (termino) {
+      const campos = [
+        cuenta.documento,
+        cuenta.descripcion,
+        ...relacionadas.flatMap(a => [
+          a.documento,
+          a.consecutivo,
+          a.nombres,
+          a.apellidos,
+          [a.nombres, a.apellidos].filter(Boolean).join(' '),
+        ]),
       ]
-
-    if (
-      cuentaIdsAprendiz.length >
-      0
-    ) {
-      filtros.push(
-        `id.in.(${cuentaIdsAprendiz.join(
-          ','
-        )})`
-      )
+      if (!campos.some(valor => normalizarBusquedaCaja(valor).includes(termino))) continue
     }
 
-    consulta =
-      consulta.or(
-        filtros.join(
-          ','
-        )
-      )
+    const consecutivos = relacionadas
+      .map(a => a.consecutivo)
+      .filter(Boolean)
+      .sort((a, b) => {
+        const x = claveConsecutivoCaja(a)
+        const y = claveConsecutivoCaja(b)
+        return y.anio - x.anio || y.numero - x.numero
+      })
+    const ultimo = claveConsecutivoCaja(consecutivos[0])
+    elegibles.push({ cuenta, anio: ultimo.anio, numero: ultimo.numero })
   }
 
-  const {
-    data,
-    error,
-    count,
-  } =
-    await consulta
-      .order(
-        'created_at',
-        {
-          ascending:
-            false,
-        }
-      )
-      .range(
-        (Math.max(1, Number(pagina) || 1) - 1) * porPagina,
-        Math.max(1, Number(pagina) || 1) * porPagina + porPagina - 1
-      )
+  elegibles.sort((a, b) =>
+    b.anio - a.anio ||
+    b.numero - a.numero ||
+    String(b.cuenta.created_at || '').localeCompare(String(a.cuenta.created_at || '')) ||
+    Number(b.cuenta.id) - Number(a.cuenta.id)
+  )
 
-  if (
-    error
-  ) {
-    throw new Error(
-      `No fue posible consultar las cuentas: ${error.message}`
-    )
-  }
-
-  let cuentas =
-    await enriquecerCuentas(
-      supabase,
-      data ||
-      []
-    )
-
-  // =======================================================
-  // VALIDACIÓN COMPLEMENTARIA SOBRE DATOS ENRIQUECIDOS
-  // =======================================================
-
-  if (termino && !conTotal) {
-    const terminoNormalizado =
-      normalizarComparacion(
-        termino
-      )
-
-    cuentas =
-      cuentas.filter(
-        cuenta => {
-          const aprendiz =
-            cuenta.aprendiz ||
-            {}
-
-          const textoBusqueda =
-            normalizarComparacion(
-              [
-                cuenta.documento,
-                cuenta.descripcion,
-                aprendiz.nombres,
-                aprendiz.apellidos,
-                aprendiz.nombre_completo,
-                cuenta.consecutivo_matricula,
-                (
-                  cuenta.categorias ||
-                  []
-                ).join(
-                  ' '
-                ),
-                cuenta.convenio?.nombre,
-              ]
-                .filter(
-                  Boolean
-                )
-                .join(
-                  ' '
-                )
-            )
-
-          return textoBusqueda.includes(
-            terminoNormalizado
-          )
-        }
-      )
-  }
-
-  return conTotal ? { cuentas, total: Number(count || 0) } : cuentas
+  const total = elegibles.length
+  const paginaActual = Math.max(1, Number(pagina) || 1)
+  const cantidad = Math.max(1, Number(porPagina) || LIMITE_CONSULTA)
+  const desde = (paginaActual - 1) * cantidad
+  const seleccion = elegibles.slice(desde, desde + cantidad).map(x => x.cuenta)
+  const cuentas = await enriquecerCuentas(supabase, seleccion)
+  return conTotal ? { cuentas, total } : cuentas
 }
 
 // =========================================================
