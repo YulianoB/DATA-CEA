@@ -2209,7 +2209,8 @@ function construirPayloadBase(
 
 function validarInformacionFinanciera(
   body,
-  categorias
+  categorias,
+  permitirPendiente = false
 ) {
   const valoresCurso =
     Array.isArray(
@@ -2230,10 +2231,9 @@ function validarInformacionFinanciera(
         item?.categoria
       )
 
-    const valor =
-      toNumeroPositivoOrNull(
-        item?.valor
-      )
+    const valor = permitirPendiente && Number(item?.valor) === 0
+      ? 0
+      : toNumeroPositivoOrNull(item?.valor)
 
     if (
       CATS_VALIDAS_GENERALES.has(
@@ -2791,6 +2791,7 @@ async function crearObligacionInicialCaja({
   origenMatricula,
   convenioSeleccionado,
   descripcionContinuacion = null,
+  permitirPendiente = false,
 }) {
   if (
     !Array.isArray(
@@ -2819,7 +2820,8 @@ async function crearObligacionInicialCaja({
   const validacion =
     validarInformacionFinanciera(
       body,
-      categorias
+      categorias,
+      permitirPendiente
     )
 
   if (
@@ -2989,9 +2991,7 @@ async function crearObligacionInicialCaja({
           categoria
         )
 
-    if (
-      !valor
-    ) {
+    if (valor === undefined || valor === null) {
       await supabase
         .from(
           'cuentas_aprendiz'
@@ -4558,11 +4558,17 @@ export async function POST(
     // INFORMACIÓN FINANCIERA
     // =====================================================
 
-    const validacionFinanciera =
-      validarInformacionFinanciera(
-        body,
-        categorias
-      )
+    // El valor inicial de nuevas matrículas siempre se establece desde Caja.
+    const datosPendientes = {
+      ...body,
+      valores_curso: categorias.map(categoria => ({ categoria, valor: 0 })),
+      incluye_examen_medico: false,
+      valor_examen_medico: 0,
+      observaciones_financieras: '',
+    }
+    const validacionFinanciera = validarInformacionFinanciera(
+      datosPendientes, categorias, true
+    )
 
     if (
       !validacionFinanciera.ok
@@ -5101,7 +5107,8 @@ export async function POST(
           matriculas:
             matriculasCreadas,
 
-          body,
+          body: datosPendientes,
+          permitirPendiente: true,
 
           origenMatricula,
 
