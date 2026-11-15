@@ -834,7 +834,7 @@ const [
     estado,
     setEstado,
   ] =
-    useState('PENDIENTE')
+    useState('')
 
   const [paginaCuentas, setPaginaCuentas] = useState(1)
   const [porPaginaCuentas, setPorPaginaCuentas] = useState(25)
@@ -3163,9 +3163,7 @@ const ingresosLibresFiltrados =
                     nuevoTipo ===
                     'OBLIGACIONES'
                   ) {
-                    setEstado(
-                      'PENDIENTE'
-                    )
+                    setEstado('')
                   } else {
                     setEstado('')
                   }
