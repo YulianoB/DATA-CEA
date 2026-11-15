@@ -985,7 +985,9 @@ const [
   })
   // Modal independiente para obligaciones creadas sin valor de curso.
   const [modalLiquidacion, setModalLiquidacion] = useState(null)
-  const [valorLiquidacion, setValorLiquidacion] = useState('')
+  const [valoresLiquidacion, setValoresLiquidacion] = useState({})
+  const [incluirExamenLiquidacion, setIncluirExamenLiquidacion] = useState(false)
+  const [valorExamenLiquidacion, setValorExamenLiquidacion] = useState('')
   const [motivoLiquidacion, setMotivoLiquidacion] = useState('')
   const [cargandoLiquidacion, setCargandoLiquidacion] = useState(false)
 
@@ -2778,11 +2780,12 @@ const ingresosLibresFiltrados =
           recibos.some(recibo => mayusculas(recibo.estado) === 'ACTIVO')) {
         throw new Error('La obligación cambió o ya tiene pagos. Actualice la información.')
       }
-      if (componentes.length !== 1) {
-        throw new Error('La obligación tiene varios conceptos o no dispone de un único detalle. Debe revisarse su desglose antes de liquidarla.')
+      if (!componentes.length || componentes.length > 2 ||
+          componentes.some(d => String(d.concepto?.nombre || '').trim().toUpperCase() !== 'CURSO' || Number(d.valor) !== 0)) {
+        throw new Error('La obligación debe tener uno o dos detalles de CURSO en cero para definir el precio.')
       }
       setModalLiquidacion({ ...cuentaActual, detalles: componentes })
-      setValorLiquidacion('')
+      setValoresLiquidacion({})
       setMotivoLiquidacion('')
     } catch (err) {
       setError(err.message || 'No fue posible revisar la obligación para liquidarla.')
@@ -2793,34 +2796,40 @@ const ingresosLibresFiltrados =
 
   async function guardarLiquidacion() {
     if (!modalLiquidacion?.id || procesando) return
-    const valor = Number(valorLiquidacion)
-    if (!texto(valorLiquidacion) || !Number.isFinite(valor) || valor <= 0 ||
-        Math.abs(valor - Math.round(valor * 100) / 100) > 1e-8 ||
-        motivoLiquidacion.trim().length < 8) {
-      setError('Indique un valor mayor que cero y una justificación de mínimo ocho caracteres.')
+    const valores = (modalLiquidacion.detalles || []).map(detalle => ({
+      detalle_id: detalle.id, valor: Number(valoresLiquidacion[detalle.id] || 0)
+    }))
+    if (!valores.length || valores.some(v => !Number.isFinite(v.valor) || v.valor <= 0 ||
+        Math.abs(v.valor*100-Math.round(v.valor*100)) > 0.000001) ||
+        (incluirExamenLiquidacion && (!Number.isFinite(Number(valorExamenLiquidacion)) ||
+        Number(valorExamenLiquidacion) <= 0)) || motivoLiquidacion.trim().length < 8) {
+      setError('Ingrese un valor válido por categoría y una justificación de mínimo ocho caracteres.')
       return
     }
     setProcesando(true)
     setError('')
     try {
-      // Se actualiza la cabecera y el único detalle existente, sin crear
-      // una segunda obligación ni tocar recibos o pagos anteriores.
-      await postCaja({
-        accion: 'modificar_cuenta',
-        cuenta_id: modalLiquidacion.id,
-        valor_total: valor,
+      const resultado = await postCaja({
+        accion: 'definir_valor_curso', cuenta_id: modalLiquidacion.id,
+        valores_curso: valores, incluye_examen_medico: incluirExamenLiquidacion,
+        valor_examen_medico: incluirExamenLiquidacion ? Number(valorExamenLiquidacion) : 0,
         observaciones: motivoLiquidacion.trim(),
       })
+      const cuentaActualizada = resultado?.data?.cuenta || null
       setModalLiquidacion(null)
-      setValorLiquidacion('')
+      setValoresLiquidacion({})
       setMotivoLiquidacion('')
-      await cargarCuentas()
-      if (detalleFinanciero?.cuenta?.id === modalLiquidacion.id) {
-        setDetalleFinanciero(await consultarDetalleCuenta(modalLiquidacion.id))
+      setIncluirExamenLiquidacion(false)
+      setValorExamenLiquidacion('')
+      if (cuentaActualizada?.id) {
+        abrirRegistrarPago(cuentaActualizada)
+        setMensaje('Precio definido. Puede registrar el pago o cerrar esta ventana para hacerlo después.')
+      } else {
+        setMensaje('Precio definido. Actualice Caja para registrar el pago.')
       }
-      setMensaje('Obligación liquidada correctamente. Ya puede registrar pagos.')
+      await cargarCuentas()
     } catch (err) {
-      setError(err.message || 'No fue posible liquidar la obligación.')
+      setError(err.message || 'No fue posible definir el valor del curso.')
     } finally {
       setProcesando(false)
     }
@@ -3820,7 +3829,7 @@ const ingresosLibresFiltrados =
                           className="!w-full !max-w-[125px] !px-1 !py-1 !text-[9px]"
                         >
                           <i className="fas fa-file-invoice-dollar"></i>
-                          Liquidar Obligación
+                          Definir valor del curso
                         </BotonAgregar>
                       ) : ['PENDIENTE', 'ABONADO'].includes(mayusculas(cuenta.estado)) && (
                         <BotonAgregar
@@ -5731,12 +5740,12 @@ const ingresosLibresFiltrados =
       {/* Liquidación inicial: modal independiente del registro de pagos. */}
       {modalLiquidacion && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4"
-          role="dialog" aria-modal="true" aria-label="Liquidar obligación">
+          role="dialog" aria-modal="true" aria-label="Definir valor del curso">
           <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
             <div className="flex items-center justify-between bg-[#246185] px-4 py-3 text-white">
               <h2 className="text-sm font-bold">
                 <i className="fas fa-file-invoice-dollar mr-2"></i>
-                Liquidar obligación
+                Definir valor del curso
               </h2>
               <button type="button" aria-label="Cerrar" disabled={procesando}
                 onClick={() => { setModalLiquidacion(null); setError('') }}
@@ -5752,15 +5761,31 @@ const ingresosLibresFiltrados =
               <p className="rounded border border-amber-200 bg-amber-50 p-2 text-amber-900">
                 Esta obligación tiene valor $0. Asigne el valor acordado antes de recibir pagos.
               </p>
-              <label className="block font-semibold text-slate-700">
-                Valor total de la obligación *
-                <input type="number" min="0.01" step="0.01"
-                  value={valorLiquidacion}
-                  onChange={e => setValorLiquidacion(e.target.value)}
-                  placeholder="Ingrese el valor acordado"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              {(modalLiquidacion.detalles || []).map(detalle => (
+                <label key={detalle.id} className="block font-semibold text-slate-700">
+                  Valor del curso · {(detalle.categorias || []).join(' / ')} *
+                  <input type="number" min="0.01" step="0.01"
+                    value={valoresLiquidacion[detalle.id] || ''}
+                    onChange={e => setValoresLiquidacion(prev => ({ ...prev, [detalle.id]: e.target.value }))}
+                    placeholder="Valor comercial acordado" disabled={procesando}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"/>
+                </label>
+              ))}
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <input type="checkbox" checked={incluirExamenLiquidacion}
+                  onChange={e => { setIncluirExamenLiquidacion(e.target.checked); if (!e.target.checked) setValorExamenLiquidacion('') }}
                   disabled={procesando}/>
+                Incluir examen médico en la obligación
               </label>
+              {incluirExamenLiquidacion && (
+                <label className="block font-semibold text-slate-700">
+                  Valor del examen médico *
+                  <input type="number" min="0.01" step="0.01"
+                    value={valorExamenLiquidacion} disabled={procesando}
+                    onChange={e => setValorExamenLiquidacion(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"/>
+                </label>
+              )}
               <label className="block font-semibold text-slate-700">
                 Justificación y soporte *
                 <textarea rows={2} maxLength={2000}
@@ -5772,7 +5797,7 @@ const ingresosLibresFiltrados =
               </label>
               <div className="flex items-center justify-between rounded-lg bg-slate-50 p-3 font-semibold">
                 <span>Nuevo saldo</span>
-                <span>{formatearMoneda(Number(valorLiquidacion) > 0 ? Number(valorLiquidacion) : 0)}</span>
+                <span>{formatearMoneda(Object.values(valoresLiquidacion).reduce((t,v) => t+(Number(v)||0),0) + (incluirExamenLiquidacion ? Number(valorExamenLiquidacion||0) : 0))}</span>
               </div>
               {error && (
                 <p role="alert" className="rounded border border-red-300 bg-red-50 p-2 text-xs text-red-800">{error}</p>
@@ -5783,11 +5808,11 @@ const ingresosLibresFiltrados =
                   Cancelar
                 </BotonCancelar>
                 <BotonGuardar type="button" disabled={procesando ||
-                  !Number.isFinite(Number(valorLiquidacion)) ||
-                  Number(valorLiquidacion) <= 0 ||
+                  (modalLiquidacion.detalles || []).some(d => !(Number(valoresLiquidacion[d.id]) > 0)) ||
+                  (incluirExamenLiquidacion && !(Number(valorExamenLiquidacion) > 0)) ||
                   motivoLiquidacion.trim().length < 8}
                   onClick={guardarLiquidacion}>
-                  {procesando ? 'Guardando...' : 'Guardar liquidación'}
+                  {procesando ? 'Guardando...' : 'Guardar valor del curso'}
                 </BotonGuardar>
               </div>
             </div>
