@@ -629,6 +629,9 @@ export default function RuntPage() {
   const [confirmarRegistroOpen, setConfirmarRegistroOpen] = useState(false)
   const [confirmarCargueOpen, setConfirmarCargueOpen] = useState(false)
   const [confirmarCertificacionOpen, setConfirmarCertificacionOpen] = useState(false)
+  const [vistaCertificado, setVistaCertificado] = useState(null)
+  const [cargandoVistaCertificado, setCargandoVistaCertificado] = useState(false)
+  const [errorVistaCertificado, setErrorVistaCertificado] = useState('')
   const [certificacionHistorica, setCertificacionHistorica] = useState(false)
   const [fechaCertificacionRunt, setFechaCertificacionRunt] = useState(hoyBogota())
   const [numeroCertificadoRunt, setNumeroCertificadoRunt] = useState('')
@@ -1297,6 +1300,25 @@ export default function RuntPage() {
   // ==========================================================
   // ABRIR DETALLE
   // ==========================================================
+
+  async function abrirVistaCertificado(row) {
+    setVistaCertificado({ control: row, matricula: row.aprendiz || null, cargando: true })
+    setCargandoVistaCertificado(true)
+    setErrorVistaCertificado('')
+    try {
+      const data = await obtenerDetalleControl(row.id)
+      setVistaCertificado(data)
+    } catch (error) {
+      setErrorVistaCertificado(error.message || 'No fue posible consultar la trazabilidad.')
+    } finally {
+      setCargandoVistaCertificado(false)
+    }
+  }
+
+  function cerrarVistaCertificado() {
+    setVistaCertificado(null)
+    setErrorVistaCertificado('')
+  }
 
   async function abrirDetalle(
     row
@@ -2865,13 +2887,13 @@ export default function RuntPage() {
                               type="button"
                               disabled={procesando || (pestana === 'pendientes' && !row.vigencia?.vencido && mayusculas(row.resultado_verificacion) === 'NO REGISTRADO')}
                               title={pestana === 'pendientes' && mayusculas(row.resultado_verificacion) === 'NO REGISTRADO' ? 'Resultado ciudadano NO REGISTRADO: no procede el registro formal del CEA' : undefined}
-                              onClick={() => pestana === 'pendientes' ? abrirAccionCola(row) : abrirDetalle(row)}
+                              onClick={() => pestana === 'pendientes' ? abrirAccionCola(row) : mayusculas(row.estado_certificacion)==='CERTIFICADO' ? abrirVistaCertificado(row) : abrirDetalle(row)}
                               className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-3 py-1.5 rounded text-[11px] disabled:opacity-50"
                             >
                               <i className={`fas ${pestana === 'pendientes' ? (row.vigencia?.vencido ? 'fa-rotate' : 'fa-user-check') : 'fa-eye'} mr-1`}></i>
                               {pestana === 'pendientes'
                                 ? (row.vigencia?.vencido ? 'Reproceso' : 'Confirmar registro')
-                                : 'Gestionar'}
+                                : (mayusculas(row.estado_certificacion)==='CERTIFICADO' ? 'Ver' : 'Gestionar')}
                             </BotonAccion>
 
                           </td>
@@ -2891,6 +2913,78 @@ export default function RuntPage() {
         </div>
 
       </div>
+
+      {/* CERTIFICADO: VISTA DE SOLO LECTURA, SIN CONTROLES DE GESTIÓN */}
+      {vistaCertificado && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3"
+          role="dialog" aria-modal="true" aria-label="Trazabilidad del certificado RUNT">
+          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 bg-[var(--primary)] p-4 text-white">
+              <div>
+                <h2 className="text-base font-bold">Trazabilidad del proceso RUNT</h2>
+                <p className="mt-1 text-xs">Consulta de solo lectura · Matrícula {vistaCertificado?.control?.consecutivo||'-'} · {vistaCertificado?.control?.categoria||'-'}</p>
+              </div>
+              <button type="button" aria-label="Cerrar vista de certificado" onClick={cerrarVistaCertificado}
+                className="rounded border border-white/40 px-3 py-2 text-sm">Cerrar</button>
+            </div>
+            <div className="space-y-4 overflow-y-auto p-4 text-xs">
+              {cargandoVistaCertificado ? (
+                <p className="p-8 text-center text-slate-600">Consultando proceso y auditoría...</p>
+              ) : errorVistaCertificado ? (
+                <p className="rounded border border-red-300 bg-red-50 p-3 text-red-800">{errorVistaCertificado}</p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-3 rounded border border-slate-200 p-3 sm:grid-cols-2">
+                    <div><span className="text-slate-500">Aprendiz</span><p className="font-bold">{vistaCertificado?.matricula?.nombre_completo||[vistaCertificado?.matricula?.nombres,vistaCertificado?.matricula?.apellidos].filter(Boolean).join(' ')||'-'}</p></div>
+                    <div><span className="text-slate-500">Documento</span><p className="font-semibold">{vistaCertificado?.matricula?.tipo_doc||'-'} {vistaCertificado?.control?.documento||'-'}</p></div>
+                    <div><span className="text-slate-500">Resultado consulta RUNT</span><p>{vistaCertificado?.control?.resultado_verificacion||'Sin registrar'} · {formatearFecha(vistaCertificado?.control?.fecha_verificacion)}</p></div>
+                    <div><span className="text-slate-500">Registrado como aprendiz en RUNT</span><p>{vistaCertificado?.control?.estado_registro||'-'} · {formatearFecha(vistaCertificado?.control?.fecha_registro)}</p></div>
+                    <div><span className="text-slate-500">Certificación RUNT</span><p className="font-semibold text-emerald-700">{vistaCertificado?.control?.estado_certificacion||'-'} · {formatearFecha(vistaCertificado?.control?.fecha_certificacion)}</p></div>
+                    <div><span className="text-slate-500">Usuario que registró el certificado en DATA CEA</span><p>{vistaCertificado?.control?.usuario_certificacion||'No consta'}</p></div>
+                    <div><span className="text-slate-500">Número de certificado</span><p className="font-semibold">{vistaCertificado?.control?.numero_certificado_runt||'No consta en DATA CEA'}</p></div>
+                    <div><span className="text-slate-500">Número de solicitud</span><p>{vistaCertificado?.control?.numero_solicitud_runt||'No consta en DATA CEA'}</p></div>
+                    <div><span className="text-slate-500">Proceso</span><p>#{vistaCertificado?.control?.numero_proceso||1}</p></div>
+                    <div><span className="text-slate-500">Observaciones</span><p className="whitespace-pre-wrap">{vistaCertificado?.control?.observaciones||'Sin observaciones'}</p></div>
+                  </div>
+                  <div className={`rounded-lg border p-3 ${vistaCertificado?.financiero?.paz_y_salvo?'border-emerald-200 bg-emerald-50':'border-amber-200 bg-amber-50'}`}>
+                    <h3 className="font-bold">Situación financiera actual</h3>
+                    <p>{vistaCertificado?.financiero?.paz_y_salvo?'PAZ Y SALVO':'NO PAZ Y SALVO / POR VERIFICAR'} · Saldo actual: {vistaCertificado?.financiero?.saldo==null?'No determinado':'$ '+Number(vistaCertificado.financiero.saldo).toLocaleString('es-CO')}</p>
+                    <p className="mt-1 text-slate-600">Este saldo corresponde a la consulta actual, no necesariamente al día de la certificación.</p>
+                  </div>
+                  <div className="rounded border border-slate-200 p-3">
+                    <h3 className="mb-2 font-bold">Auditoría de certificación disponible</h3>
+                    {(vistaCertificado?.auditoria_certificacion||[]).length ? (
+                      <div className="space-y-2">
+                        {(vistaCertificado.auditoria_certificacion||[]).map(e=> (
+                          <div key={e.id} className="rounded border border-slate-200 bg-slate-50 p-2">
+                            <p className="font-semibold">{e.accion} · {e.usuario||'Usuario no identificado'}</p>
+                            <p className="text-slate-600">Fecha y hora del registro: {e.fecha_evento ? new Date(e.fecha_evento).toLocaleString('es-CO',{timeZone:'America/Bogota'}):'Sin fecha de auditoría'}</p>
+                            <p>{e.descripcion||''}</p>
+                            {e.datos_nuevos?.verificado_paz_y_salvo != null && (
+                              <p className={e.datos_nuevos.verificado_paz_y_salvo?'text-emerald-700':'text-amber-800'}>
+                                Estado al registrar: {e.datos_nuevos.verificado_paz_y_salvo?'PAZ Y SALVO':'NO PAZ Y SALVO'} · Saldo: {e.datos_nuevos.saldo_al_registro==null?'No determinado':'$ '+Number(e.datos_nuevos.saldo_al_registro).toLocaleString('es-CO')}
+                              </p>
+                            )}
+                            {e.datos_nuevos?.soporte && <p>Soporte: {e.datos_nuevos.soporte}</p>}
+                            {e.motivo && <p>Motivo: {e.motivo}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-slate-600">No existen eventos de auditoría de certificación disponibles para este proceso. En los históricos migrados, esta ausencia no significa que no hubiera controles previos.</p>
+                    )}
+                  </div>
+                  <div className="rounded border border-slate-200 p-3">
+                    <h3 className="font-bold">Cargues detallados disponibles en DATA CEA</h3>
+                    <p>Teoría: {vistaCertificado?.avance?.teoria_cargadas??0} · Taller: {vistaCertificado?.avance?.taller_cargadas??0} · Práctica: {vistaCertificado?.avance?.practica_cargadas??0}</p>
+                    <p className="mt-1 text-slate-500">Los datos vacíos no indican que el aprendiz no haya cursado las clases en RUNT.</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ====================================================
           DRAWER
