@@ -767,6 +767,8 @@ export default function RuntPage() {
   // ==========================================================
   // CARGUE
   // ==========================================================
+  const [avanceManualRunt, setAvanceManualRunt] = useState({teoria:'0',taller:'0',practica:'0'})
+  const [observacionesAvanceRunt, setObservacionesAvanceRunt] = useState('')
   const [fechaInscripcionRunt, setFechaInscripcionRunt] = useState(hoyBogota())
   const [soporteInscripcionRunt, setSoporteInscripcionRunt] = useState('')
 
@@ -1115,9 +1117,15 @@ export default function RuntPage() {
         controlId
       )
 
-    setDetalle(
-      data
-    )
+    setDetalle(data)
+    const ultimoAvance = data?.avance_acumulado?.ultimo
+    setAvanceManualRunt({
+      teoria: String(ultimoAvance?.teoria ?? 0),
+      taller: String(ultimoAvance?.taller ?? 0),
+      practica: String(ultimoAvance?.practica ?? 0),
+    })
+    setObservacionesAvanceRunt('')
+
 
     return data
   }
@@ -2035,6 +2043,39 @@ export default function RuntPage() {
   // ==========================================================
   // REGISTRAR RUNT
   // ==========================================================
+
+  async function guardarAvanceManualRunt(event) {
+    event?.preventDefault?.()
+    if (!controlActual?.id || procesando) return
+    const tipos=['teoria','taller','practica']
+    const limites={teoria:Number(requisitos.clases_teoria||0),
+      taller:Number(requisitos.clases_taller||0),
+      practica:Number(requisitos.clases_practica||0)}
+    if (tipos.some(k=>!/^\\d+$/.test(String(avanceManualRunt[k]||'')) ||
+      Number(avanceManualRunt[k])>limites[k])) {
+      setError('Indique cantidades enteras entre 0 y el requisito de cada tipo.')
+      return
+    }
+    setProcesando(true)
+    setError('')
+    try {
+      const resultado=await ejecutarAccion({
+        accion:'actualizar_avance_runt',
+        control_runt_id:controlActual.id,
+        teoria:Number(avanceManualRunt.teoria),
+        taller:Number(avanceManualRunt.taller),
+        practica:Number(avanceManualRunt.practica),
+        observaciones:observacionesAvanceRunt.trim(),
+      })
+      setMensaje(resultado?.message||'Avance confirmado en RUNT.')
+      await refrescarDetalle(controlActual.id)
+      await consultar({silencioso:true})
+    } catch(err) {
+      setError(err.message||'No fue posible guardar los acumulados.')
+    } finally {
+      setProcesando(false)
+    }
+  }
 
   async function registrarRunt() {
     if (
@@ -3379,6 +3420,62 @@ export default function RuntPage() {
                   Los cargues faltantes en DATA CEA no demuestran que el aprendiz no haya cursado clases.
                 </div>
 
+                {/* AVANCE ACUMULADO: no genera clases individuales ni afecta instructores. */}
+                {registrado && !certificado && (
+                  <section className="rounded-lg border border-slate-300 bg-white">
+                    <div className="border-b border-slate-200 bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700">
+                      Actualizar avance RUNT (opcional)
+                    </div>
+                    <form onSubmit={guardarAvanceManualRunt} className="space-y-3 p-4 text-xs">
+                      <p className="text-slate-600">
+                        Registre solamente el <strong>total acumulado</strong> que ya consultó en RUNT.
+                        No son horas nuevas para sumar. No se crean clases, fechas ni vínculos con instructores.
+                        Si no desea llevar este seguimiento, puede omitirlo.
+                      </p>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {[
+                          ['teoria','Teoría','clases_teoria'],
+                          ['taller','Taller','clases_taller'],
+                          ['practica','Práctica','clases_practica'],
+                        ].map(([campo,etiqueta,requisito])=>(
+                          <label key={campo} className="block font-semibold">
+                            {etiqueta} · Máximo {Number(requisitos[requisito]||0)}
+                            <input type="number" min="0" step="1" max={Number(requisitos[requisito]||0)}
+                              value={avanceManualRunt[campo]}
+                              onChange={e=>setAvanceManualRunt(prev=>({...prev,[campo]:e.target.value}))}
+                              className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm"
+                              disabled={procesando||!detalle?.avance_acumulado?.habilitado}/>
+                          </label>
+                        ))}
+                      </div>
+                      {detalle?.avance_acumulado?.ultimo ? (
+                        <p className="rounded bg-blue-50 p-2 text-blue-900">
+                          Última actualización: {new Date(detalle.avance_acumulado.ultimo.created_at).toLocaleString('es-CO',{timeZone:'America/Bogota'})}
+                          {' · '}Usuario: {detalle.avance_acumulado.ultimo.usuario}
+                          . La actualización reemplaza el acumulado consultado, pero conserva las declaraciones previas.
+                        </p>
+                      ) : <p className="text-slate-600">No se han registrado acumulados confirmados en DATA CEA.</p>}
+                      <label className="block font-semibold">Observaciones (opcional)
+                        <textarea rows={2} maxLength={1200}
+                          value={observacionesAvanceRunt}
+                          onChange={e=>setObservacionesAvanceRunt(e.target.value)}
+                          placeholder="Referencia de la consulta o aclaración"
+                          className="mt-1 w-full rounded-md border border-slate-300 p-2"
+                          disabled={procesando||!detalle?.avance_acumulado?.habilitado}/>
+                      </label>
+                      {!detalle?.avance_acumulado?.habilitado && (
+                        <p className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-900">
+                          Para activar el guardado de acumulados, instale primero el SQL 57.
+                        </p>
+                      )}
+                      <button type="submit" disabled={procesando||!detalle?.avance_acumulado?.habilitado}
+                        className="rounded bg-[var(--primary)] px-4 py-2 font-semibold text-white disabled:opacity-50">
+                        {procesando?'Guardando...':'Guardar avance confirmado'}
+                      </button>
+                    </form>
+                  </section>
+                )}
+
                 <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
                   <summary className="cursor-pointer bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700">
                     <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>
@@ -3906,465 +4003,55 @@ export default function RuntPage() {
                 </details>
                 <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
                   <summary className="cursor-pointer list-none bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
-                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>Historial y expediente
+                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>Datos y seguimiento RUNT
                   </summary>
                   <div className="space-y-4 p-3">
-{/* ==========================================
-                    HISTORIAL DE PROCESOS RUNT
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                      flex
-                      items-center
-                      justify-between
-                      gap-2
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-
-                    <span>
-                      <i className="fas fa-history mr-2"></i>
-
-                      Historial de Procesos RUNT
+{/* SEGUIMIENTO DEL PROCESO ACTUAL: sin reproducir la ficha en tarjetas repetidas */}
+                <section className="rounded-lg border border-slate-200 bg-white p-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <strong>Proceso RUNT actual #{controlActual?.numero_proceso||1}</strong>
+                    <span className="text-slate-600">
+                      Registro: {formatearFecha(controlActual?.fecha_registro)}
+                      {' · '}Límite: {formatearFecha(vigenciaActual?.fecha_limite)}
                     </span>
-
-                    {!loadingHistorial && (
-                      <span className="text-[10px] text-gray-300">
-                        {historialProcesos.length} proceso(s)
-                      </span>
-                    )}
-
                   </div>
-
-                  <div className="p-3">
-
-                    {loadingHistorial ? (
-                      <div className="text-center py-4 text-xs text-gray-500">
-
-                        <i className="fas fa-spinner fa-spin mr-2"></i>
-
-                        Consultando historial...
-
-                      </div>
-                    ) : historialProcesos.length ===
-                      0 ? (
-                      <div className="text-xs text-gray-500 text-center py-3">
-                        No hay historial disponible.
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-
-                        {historialProcesos.map(
-                          proceso => {
-                            const control =
-                              proceso
-                                ?.control ||
-                              {}
-
-                            const vigencia =
-                              proceso
-                                ?.vigencia ||
-                              {}
-
-                            const avance =
-                              proceso
-                                ?.avance ||
-                              {}
-
-                            const actual =
-                              proceso
-                                ?.es_actual ===
-                              true
-
-                            const expandido =
-                              procesoHistorialExpandido ===
-                              control.id
-
-                            return (
-                              <div
-                                key={
-                                  control.id
-                                }
-                                className={`
-                                  border
-                                  rounded-lg
-                                  overflow-hidden
-                                  ${
-                                    actual
-                                      ? 'border-blue-300 bg-blue-50/40'
-                                      : 'border-gray-300 bg-white'
-                                  }
-                                `}
-                              >
-
-                                <BotonAccion tipo="verDetalle"
-                                  type="button"
-                                  onClick={() =>
-                                    alternarProcesoHistorial(
-                                      control.id
-                                    )
-                                  }
-                                  className="
-                                    w-full
-                                    p-3
-                                    text-left
-                                    hover:bg-gray-50
-                                    transition
-                                  "
-                                >
-
-                                  <div
-                                    className="
-                                      flex
-                                      items-center
-                                      justify-between
-                                      gap-3
-                                    "
-                                  >
-
-                                    <div
-                                      className="
-                                        flex
-                                        items-center
-                                        gap-3
-                                        min-w-0
-                                      "
-                                    >
-
-                                      <div
-                                        className={`
-                                          w-9
-                                          h-9
-                                          rounded-lg
-                                          flex
-                                          items-center
-                                          justify-center
-                                          shrink-0
-                                          ${
-                                            actual
-                                              ? 'bg-blue-100 text-blue-700'
-                                              : vigencia?.vencido
-                                                ? 'bg-red-100 text-red-700'
-                                                : 'bg-gray-100 text-gray-600'
-                                          }
-                                        `}
-                                      >
-                                        <i
-                                          className={
-                                            actual
-                                              ? 'fas fa-play'
-                                              : vigencia?.vencido
-                                                ? 'fas fa-clock-rotate-left'
-                                                : 'fas fa-folder'
-                                          }
-                                        ></i>
-                                      </div>
-
-                                      <div className="min-w-0">
-
-                                        <div
-                                          className="
-                                            flex
-                                            flex-wrap
-                                            items-center
-                                            gap-2
-                                          "
-                                        >
-
-                                          <span className="text-xs font-bold text-gray-800">
-                                            Proceso #{control.numero_proceso ||
-                                              1}
-                                          </span>
-
-                                          {actual && (
-                                            <Badge tipo="blue">
-                                              ACTUAL
-                                            </Badge>
-                                          )}
-
-                                          {!actual &&
-                                            vigencia?.vencido && (
-                                            <Badge tipo="red">
-                                              VENCIDO
-                                            </Badge>
-                                          )}
-
-                                          {!actual &&
-                                            mayusculas(
-                                              vigencia?.estado
-                                            ) ===
-                                              'CERTIFICADO' && (
-                                            <Badge tipo="green">
-                                              CERTIFICADO
-                                            </Badge>
-                                          )}
-
-                                        </div>
-
-                                        <div
-                                          className="
-                                            mt-1
-                                            text-[10px]
-                                            text-gray-500
-                                          "
-                                        >
-
-                                          Registro:{' '}
-
-                                          <strong>
-                                            {formatearFecha(
-                                              control.fecha_registro
-                                            )}
-                                          </strong>
-
-                                          {vigencia
-                                            ?.fecha_limite && (
-                                            <>
-                                              {' · '}
-                                              Límite:{' '}
-
-                                              <strong>
-                                                {formatearFecha(
-                                                  vigencia.fecha_limite
-                                                )}
-                                              </strong>
-                                            </>
-                                          )}
-
-                                        </div>
-
-                                      </div>
-
-                                    </div>
-
-                                    <i
-                                      className={`
-                                        fas
-                                        ${
-                                          expandido
-                                            ? 'fa-chevron-up'
-                                            : 'fa-chevron-down'
-                                        }
-                                        text-gray-400
-                                      `}
-                                    ></i>
-
-                                  </div>
-
-                                </BotonAccion>
-
-                                {expandido && (
-                                  <div
-                                    className="
-                                      border-t
-                                      border-gray-200
-                                      p-3
-                                      bg-white
-                                    "
-                                  >
-
-                                    <div
-                                      className="
-                                        grid
-                                        grid-cols-2
-                                        sm:grid-cols-4
-                                        gap-3
-                                        text-[11px]
-                                      "
-                                    >
-
-                                      <div>
-
-                                        <span className="text-gray-500">
-                                          Verificación
-                                        </span>
-
-                                        <div className="font-semibold mt-1">
-                                          {control.resultado_verificacion ||
-                                            '-'}
-                                        </div>
-
-                                      </div>
-
-                                      <div>
-
-                                        <span className="text-gray-500">
-                                          Registro
-                                        </span>
-
-                                        <div className="font-semibold mt-1">
-                                          {control.estado_registro ||
-                                            '-'}
-                                        </div>
-
-                                      </div>
-
-                                      <div>
-
-                                        <span className="text-gray-500">
-                                          Certificación
-                                        </span>
-
-                                        <div className="font-semibold mt-1">
-                                          {control.estado_certificacion ||
-                                            '-'}
-                                        </div>
-
-                                      </div>
-
-                                      <div>
-
-                                        <span className="text-gray-500">
-                                          Estado
-                                        </span>
-
-                                        <div className="mt-1">
-                                          <BadgeVigencia
-                                            vigencia={
-                                              vigencia
-                                            }
-                                          />
-                                        </div>
-
-                                      </div>
-
-                                    </div>
-
-                                    <div
-                                      className="
-                                        grid
-                                        grid-cols-3
-                                        gap-2
-                                        mt-3
-                                      "
-                                    >
-
-                                      <div
-                                        className="
-                                          bg-blue-50
-                                          border
-                                          border-blue-200
-                                          rounded-lg
-                                          p-2
-                                          text-center
-                                        "
-                                      >
-                                        <div className="text-[9px] uppercase text-gray-500">
-                                          Teoría
-                                        </div>
-
-                                        <div className="text-xs font-bold mt-1">
-                                          {numero(
-                                            avance.teoria_cargadas
-                                          )}
-                                          {' / '}
-                                          {numero(
-                                            avance.teoria_requeridas
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      <div
-                                        className="
-                                          bg-amber-50
-                                          border
-                                          border-amber-200
-                                          rounded-lg
-                                          p-2
-                                          text-center
-                                        "
-                                      >
-                                        <div className="text-[9px] uppercase text-gray-500">
-                                          Taller
-                                        </div>
-
-                                        <div className="text-xs font-bold mt-1">
-                                          {numero(
-                                            avance.taller_cargadas
-                                          )}
-                                          {' / '}
-                                          {numero(
-                                            avance.taller_requeridas
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      <div
-                                        className="
-                                          bg-emerald-50
-                                          border
-                                          border-emerald-200
-                                          rounded-lg
-                                          p-2
-                                          text-center
-                                        "
-                                      >
-                                        <div className="text-[9px] uppercase text-gray-500">
-                                          Práctica
-                                        </div>
-
-                                        <div className="text-xs font-bold mt-1">
-                                          {numero(
-                                            avance.practica_cargadas
-                                          )}
-                                          {' / '}
-                                          {numero(
-                                            avance.practica_requeridas
-                                          )}
-                                        </div>
-                                      </div>
-
-                                    </div>
-
-                                    {control.motivo_reproceso && (
-                                      <div
-                                        className="
-                                          mt-3
-                                          bg-gray-50
-                                          border
-                                          border-gray-200
-                                          rounded-lg
-                                          p-2
-                                          text-[10px]
-                                          text-gray-600
-                                        "
-                                      >
-                                        <strong>
-                                          Motivo:
-                                        </strong>{' '}
-
-                                        {control.motivo_reproceso}
-                                      </div>
-                                    )}
-
-                                  </div>
-                                )}
-
-                              </div>
-                            )
-                          }
-                        )}
-
-                      </div>
-                    )}
-
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <div className="rounded bg-slate-50 p-2">
+                      <p className="text-slate-500">Verificación</p>
+                      <strong>{controlActual?.resultado_verificacion||'Pendiente'}</strong>
+                    </div>
+                    <div className="rounded bg-slate-50 p-2">
+                      <p className="text-slate-500">Registro RUNT</p>
+                      <strong>{controlActual?.estado_registro||'PENDIENTE'}</strong>
+                    </div>
+                    <div className="rounded bg-slate-50 p-2">
+                      <p className="text-slate-500">Certificación</p>
+                      <strong>{controlActual?.estado_certificacion||'PENDIENTE'}</strong>
+                    </div>
                   </div>
-
-                </div>
+                </section>
+                {historialProcesos.some(p=>!p.es_actual) && (
+                  <section className="rounded-lg border border-slate-200 bg-white p-3 text-xs">
+                    <h3 className="mb-2 font-bold text-slate-700">Reprocesos anteriores</h3>
+                    {historialProcesos.filter(p=>!p.es_actual).map(p=>(
+                      <details key={p.control.id} className="mb-2 rounded border border-slate-200">
+                        <summary className="cursor-pointer p-3 font-semibold">
+                          Proceso #{p.control.numero_proceso||1}
+                          {' · '}Registro: {formatearFecha(p.control.fecha_registro)}
+                          {' · '}{p.control.estado_certificacion||'PENDIENTE'}
+                        </summary>
+                        <div className="space-y-1 border-t border-slate-200 p-3 text-slate-700">
+                          <p>Verificación: {p.control.resultado_verificacion||'Sin registrar'}</p>
+                          <p>Registro: {p.control.estado_registro||'PENDIENTE'}</p>
+                          <p>Certificación: {p.control.estado_certificacion||'PENDIENTE'}</p>
+                          <p>Fecha certificación: {formatearFecha(p.control.fecha_certificacion)}</p>
+                          <p>Motivo del reproceso: {p.control.motivo_reproceso||'Sin motivo registrado'}</p>
+                          <p>Fecha de reinicio: {formatearFecha(p.control.fecha_reinicio)}</p>
+                        </div>
+                      </details>
+                    ))}
+                  </section>
+                )}
 
                 {/* ==========================================
                     DATOS MATRÍCULA
