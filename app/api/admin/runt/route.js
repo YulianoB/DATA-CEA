@@ -783,6 +783,8 @@ async function obtenerControlRunt(
         estado_certificacion,
         fecha_certificacion,
         usuario_certificacion,
+        numero_certificado_runt,
+        numero_solicitud_runt,
         observaciones,
         created_at,
         updated_at
@@ -871,6 +873,59 @@ async function obtenerMatricula(
     data ||
     null
   )
+}
+
+// =========================================================
+// PAZ Y SALVO POR MATRÍCULA (SIN AFECTAR OTRAS MATRÍCULAS)
+// =========================================================
+async function consultarPazYSalvoCertificacion(supabase, matriculaId) {
+  const { data: detalles, error: errorDetalles } = await supabase
+    .from('cuentas_aprendiz_detalle').select('cuenta_id')
+    .eq('matricula_id', matriculaId).eq('estado', 'ACTIVO')
+  if (errorDetalles) throw new Error('No fue posible consultar las obligaciones del aprendiz: ' + errorDetalles.message)
+  const ids = [...new Set((detalles || []).map(d => d.cuenta_id).filter(Boolean))]
+  if (!ids.length) return { paz_y_salvo: false, cuentas: [], saldo: null, motivo: 'No hay obligación financiera vinculada a la matrícula.' }
+  const { data: cuentas, error: errorCuentas } = await supabase
+    .from('cuentas_aprendiz').select('id,estado,valor_total').in('id',ids)
+  if (errorCuentas) throw new Error('No fue posible verificar el estado financiero: ' + errorCuentas.message)
+  const lista = cuentas || []
+  if (lista.length !== ids.length) return { paz_y_salvo:false,cuentas:lista,saldo:null,motivo:'No se encontraron todas las obligaciones.' }
+  const pendiente = lista.some(c => normalizarMayusculas(c.estado) !== 'PAZ_Y_SALVO' || Number(c.valor_total) <= 0)
+  const recibos = []
+  for (let i=0;i<ids.length;i+=100) {
+    const {data,error} = await supabase.from('recibos_caja').select('cuenta_id,valor')
+      .in('cuenta_id',ids.slice(i,i+100)).eq('estado','ACTIVO')
+    if (error) throw new Error('No fue posible verificar los abonos: '+error.message)
+    recibos.push(...(data||[]))
+  }
+  const total = lista.reduce((sum,c)=>sum+Number(c.valor_total||0),0)
+  const pagado = recibos.reduce((sum,x)=>sum+Number(x.valor||0),0)
+  const saldo = Math.round(Math.max(0,total-pagado)*100)/100
+  return {
+    paz_y_salvo: !pendiente && saldo===0,
+    cuentas:lista.map(c=>({id:c.id,estado:c.estado,valor_total:c.valor_total})),
+    saldo,
+    motivo: pendiente ? 'Hay obligaciones pendientes o sin valor definido.' : saldo>0 ? 'Existe saldo pendiente.' : '',
+  }
+}
+
+async function registrarAuditoriaRunt(supabase, { usuario, control, accion, anteriores, nuevos, motivo }) {
+  const {error} = await supabase.from('auditoria_caja').insert({
+    usuario,
+    accion,
+    entidad:'CONTROL_RUNT',
+    entidad_id:control.id,
+    matricula_id:control.matricula_id,
+    documento:control.documento,
+    consecutivo_referencia:control.consecutivo,
+    descripcion:'Registro administrativo de certificación RUNT, no emisión del certificado.',
+    datos_anteriores:anteriores,
+    datos_nuevos:nuevos,
+    motivo:motivo||null,
+    observaciones:'API_RUNT: verificación financiera previa y trazabilidad de certificación.',
+    origen:'API_RUNT',
+  })
+  if(error) throw new Error('No se pudo registrar auditoría de certificación RUNT: '+error.message)
 }
 
 // =========================================================
@@ -3719,209 +3774,130 @@ export async function POST(
     }
 
     // =====================================================
-    // CERTIFICAR
+    // CERTIFICACIÓN RUNT: PREVENCIÓN + REGISTRO FIEL DE HECHOS
     // =====================================================
-
-    if (
-      accion ===
-      'certificar'
-    ) {
-      const controlRuntId =
-        toInt(
-          body?.control_runt_id
-        )
-
-      if (
-        !controlRuntId ||
-        !usuario
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              'El control RUNT y el usuario son obligatorios.',
-          },
-          {
-            status:
-              400,
-          }
-        )
+    if (accion === 'certificar') {
+      const controlRuntId = toInt(body?.control_runt_id)
+      if (!controlRuntId || !usuario) return NextResponse.json({
+        status:'error',message:'El control RUNT y el usuario son obligatorios.'
+      },{status:400})
+      const control = await obtenerControlRunt(supabase,controlRuntId)
+      if (normalizarMayusculas(control.estado_certificacion)==='CERTIFICADO')
+        return NextResponse.json({status:'error',message:'El proceso ya figura CERTIFICADO; no se duplicó el registro.'},{status:409})
+      const historica = body?.certificacion_ya_realizada === true
+      const fechaCertificacion = normalizarTexto(body?.fecha_certificacion)
+      const numeroCertificado = normalizarTexto(body?.numero_certificado_runt)
+      const numeroSolicitud = normalizarTexto(body?.numero_solicitud_runt)
+      const soporte = normalizarTexto(body?.soporte_certificacion)
+      if (!fechaValida(fechaCertificacion) || fechaCertificacion > hoyBogota() ||
+          !numeroCertificado || numeroCertificado.length > 150 || numeroSolicitud.length > 150) {
+        return NextResponse.json({status:'error',
+          message:'Indique fecha válida no futura y número de certificado oficial RUNT. La solicitud es opcional.'
+        },{status:400})
+      }
+      if (historica && soporte.length < 12) {
+        return NextResponse.json({status:'error',
+          message:'Para documentar una certificación ya realizada debe explicar el soporte consultado (mínimo 12 caracteres).'
+        },{status:400})
       }
 
-      const control =
-        await obtenerControlRunt(
-          supabase,
-          controlRuntId
-        )
-
-      if (normalizarMayusculas(control.estado_certificacion) === 'CERTIFICADO') {
-        return NextResponse.json({
-          status: 'error',
-          message: 'Este proceso ya está marcado como CERTIFICADO en RUNT.'
-        }, { status: 409 })
-      }
-
-      const vigencia =
-        calcularVigenciaRunt(
-          control
-        )
-
-      if (
-        vigencia.vencido
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              `El proceso RUNT venció el ${vigencia.fecha_limite}. Debe iniciar un reproceso RUNT.`,
-          },
-          {
-            status:
-              409,
-          }
-        )
-      }
-
-      if (
-        normalizarMayusculas(
-          control.estado_registro
-        ) !==
-        'REGISTRADO'
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              'La matrícula debe estar REGISTRADA en RUNT antes de certificarse.',
-          },
-          {
-            status:
-              409,
-          }
-        )
-      }
-
-      // La certificación de la continuación depende del RUNT vigente y
-      // sus cargues; SICOV solo se exige en el primer proceso.
-      if (Number(control.numero_proceso || 1) === 1) {
-        const { data: controlesSicov, error: errorSicov } = await supabase
-          .from('control_sicov')
-          .select('id,estado_certificacion,categoria')
-          .eq('matricula_id', control.matricula_id)
-          .eq('categoria', control.categoria)
-
-        if (errorSicov) {
-          throw new Error('No fue posible verificar la certificación SICOV: ' + errorSicov.message)
+      const financiero = await consultarPazYSalvoCertificacion(supabase,control.matricula_id)
+      const vigencia = calcularVigenciaRunt(control)
+      const registrado = normalizarMayusculas(control.estado_registro)==='REGISTRADO'
+      let avance = null
+      let sicovCertificado = null
+      if (!historica) {
+        if (!financiero.paz_y_salvo) return NextResponse.json({status:'error',
+          message:'No se autoriza la certificación: la obligación de esta matrícula no está PAZ Y SALVO.',
+          financiero
+        },{status:409})
+        if (vigencia.vencido) return NextResponse.json({status:'error',
+          message:'El proceso RUNT está vencido. Debe tramitarse el reproceso correspondiente.'
+        },{status:409})
+        if (!registrado) return NextResponse.json({status:'error',
+          message:'La matrícula debe estar REGISTRADA en RUNT antes de certificar.'
+        },{status:409})
+        if (Number(control.numero_proceso||1)===1) {
+          const {data,error}=await supabase.from('control_sicov')
+            .select('id,estado_certificacion,categoria')
+            .eq('matricula_id',control.matricula_id).eq('categoria',control.categoria)
+          if(error) throw new Error('No fue posible validar SICOV: '+error.message)
+          sicovCertificado=(data||[]).some(x=>normalizarMayusculas(x.estado_certificacion)==='CERTIFICADO')
+          if(!sicovCertificado) return NextResponse.json({status:'error',
+            message:'Para certificar debe constar la certificación SICOV.'
+          },{status:409})
         }
-        if (!Array.isArray(controlesSicov) || !controlesSicov.some(item =>
-          normalizarMayusculas(item.estado_certificacion) === 'CERTIFICADO'
-        )) {
-          return NextResponse.json({
-            status: 'error',
-            message: 'Debe certificar primero al aprendiz en SICOV para esta matrícula y categoría antes de certificarlo en RUNT.',
-          }, { status: 409 })
-        }
+        const requisitos = await obtenerRequisitosCategoria(supabase,control.categoria)
+        const cargues = await obtenerCarguesControl(supabase,control.id)
+        avance=construirAvanceDesdeCargues(cargues,requisitos)
+        if(!avance.completo) return NextResponse.json({status:'error',
+          message:'No se autoriza la certificación: faltan cargues RUNT confirmados.',
+          avance
+        },{status:409})
       }
 
-      const requisitos =
-        await obtenerRequisitosCategoria(
-          supabase,
-          control.categoria
-        )
-
-      const cargues =
-        await obtenerCarguesControl(
-          supabase,
-          control.id
-        )
-
-      const avance =
-        construirAvanceDesdeCargues(
-          cargues,
-          requisitos
-        )
-
-      if (
-        !avance.completo
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              'La matrícula todavía no tiene completos todos los cargues requeridos en RUNT.',
-
-            avance,
-          },
-          {
-            status:
-              409,
-          }
-        )
+      // Queda registrada la intención antes del cambio, incluso si la actualización falla.
+      // No modifica pagos, saldos, obligaciones ni clases.
+      const momentoRegistro = new Date().toISOString()
+      const evento = {
+        tipo:historica?'HECHO_OFICIAL_PREEXISTENTE':'CERTIFICACION_VERIFICADA',
+        fecha_certificacion:fechaCertificacion,
+        numero_certificado_runt:numeroCertificado,
+        numero_solicitud_runt:numeroSolicitud||null,
+        soporte:soporte||null,
+        verificado_paz_y_salvo:financiero.paz_y_salvo,
+        saldo_al_registro:financiero.saldo,
+        cuentas:financiero.cuentas,
+        registro_runt:registrado,
+        vigencia_vencida:vigencia.vencido,
+        sicov_certificado:sicovCertificado,
+        avance_verificado:avance?.completo??null,
+        registrado_en_data_cea:momentoRegistro,
       }
+      await registrarAuditoriaRunt(supabase,{
+        usuario,control,
+        accion:historica?'SOLICITUD_REGISTRO_CERTIFICADO_HISTORICO':'SOLICITUD_CERTIFICACION_RUNT',
+        anteriores:control,nuevos:evento,motivo:soporte,
+      })
 
-      const {
-        data,
-        error,
-      } =
-        await supabase
-          .from(
-            'control_runt'
-          )
-          .update({
-            estado_certificacion:
-              'CERTIFICADO',
-
-            fecha_certificacion:
-              hoyBogota(),
-
-            usuario_certificacion:
-              usuario,
-
-            updated_at:
-              new Date()
-                .toISOString(),
-          })
-          .eq(
-            'id',
-            control.id
-          )
-          .select('*')
-          .single()
-
-      if (
-        error
-      ) {
-        throw new Error(
-          `No fue posible certificar la matrícula en RUNT: ${error.message}`
-        )
+      const descripcionAnterior = normalizarTexto(control.observaciones)
+      const nota = historica
+        ? 'Certificado RUNT previamente expedido, registrado en DATA-CEA '+momentoRegistro+
+          (financiero.paz_y_salvo?'':' | ALERTA: NO PAZ Y SALVO al registrar')+
+          ' | Soporte: '+soporte
+        : 'Certificación RUNT verificada en DATA-CEA '+momentoRegistro
+      const {data,error}=await supabase.from('control_runt')
+        .update({
+          estado_certificacion:'CERTIFICADO',
+          fecha_certificacion:fechaCertificacion,
+          usuario_certificacion:usuario,
+          numero_certificado_runt:numeroCertificado,
+          numero_solicitud_runt:numeroSolicitud||null,
+          observaciones:[descripcionAnterior,nota].filter(Boolean).join(' | '),
+          updated_at:momentoRegistro,
+        })
+        .eq('id',control.id)
+        .eq('estado_certificacion','PENDIENTE')
+        .select('*').maybeSingle()
+      if(error) throw new Error('No fue posible registrar la certificación: '+error.message)
+      if(!data) return NextResponse.json({status:'error',message:'El control RUNT cambió mientras se registraba. Actualice la consulta.'},{status:409})
+      try {
+        await registrarAuditoriaRunt(supabase,{
+          usuario,control,
+          accion:historica?'CERTIFICADO_RUNT_HISTORICO_REGISTRADO':'CERTIFICADO_RUNT_REGISTRADO',
+          anteriores:control,nuevos:{...evento,control_actualizado_id:data.id},
+          motivo:soporte,
+        })
+      } catch(errorAuditoria) {
+        // La primera auditoría ya conservó la intención y su instante.
+        console.error('Certificación guardada; no se pudo registrar auditoría posterior:',errorAuditoria)
       }
-
       return NextResponse.json({
-        status:
-          'success',
-
-        message:
-          'Matrícula marcada como CERTIFICADA en RUNT.',
-
-        data: {
-          control:
-            data,
-
-          avance,
-
-          vigencia:
-            calcularVigenciaRunt(
-              data
-            ),
-        },
+        status:'success',
+        message: historica && !financiero.paz_y_salvo
+          ? 'Certificación oficial preexistente registrada con alerta financiera y auditoría. La deuda permanece sin cambios.'
+          : 'Certificación RUNT registrada con trazabilidad.',
+        data:{control:data,financiero,avance,vigencia:calcularVigenciaRunt(data)},
       })
     }
 
