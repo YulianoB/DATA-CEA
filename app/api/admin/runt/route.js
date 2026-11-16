@@ -2935,6 +2935,21 @@ export async function GET(
       }
 
       const financiero = await consultarPazYSalvoCertificacion(supabase,control.matricula_id)
+      // Eventos de auditoría disponibles para consulta del proceso certificado.
+      // Las migraciones anteriores pueden no disponer de estos eventos.
+      let auditoria_certificacion = []
+      if (normalizarMayusculas(control.estado_certificacion)==='CERTIFICADO') {
+        const {data:eventos,error:errorEventos} = await supabase
+          .from('auditoria_caja')
+          .select('id,fecha_evento,usuario,accion,descripcion,datos_anteriores,datos_nuevos,motivo,observaciones')
+          .eq('entidad','CONTROL_RUNT')
+          .eq('entidad_id',control.id)
+          .eq('origen','API_RUNT')
+          .order('fecha_evento',{ascending:true})
+          .limit(100)
+        if(errorEventos) throw new Error('No fue posible consultar la auditoría del proceso RUNT: '+errorEventos.message)
+        auditoria_certificacion=eventos||[]
+      }
 
       return NextResponse.json({
         status:
@@ -2943,6 +2958,7 @@ export async function GET(
         data: {
           control,
           financiero,
+          auditoria_certificacion,
 
           matricula:
             matricula
