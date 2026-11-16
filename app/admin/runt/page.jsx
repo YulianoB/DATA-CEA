@@ -1118,11 +1118,12 @@ export default function RuntPage() {
       )
 
     setDetalle(data)
-    const ultimoAvance = data?.avance_acumulado?.ultimo
+    // La consulta devuelve los totales reales desde runt_cargues_clases,
+    // con y sin instructor; no se suman acumulados por separado.
     setAvanceManualRunt({
-      teoria: String(ultimoAvance?.teoria ?? 0),
-      taller: String(ultimoAvance?.taller ?? 0),
-      practica: String(ultimoAvance?.practica ?? 0),
+      teoria: String(data?.avance?.teoria_cargadas ?? 0),
+      taller: String(data?.avance?.taller_cargadas ?? 0),
+      practica: String(data?.avance?.practica_cargadas ?? 0),
     })
     setObservacionesAvanceRunt('')
 
@@ -3429,7 +3430,7 @@ export default function RuntPage() {
                     <form onSubmit={guardarAvanceManualRunt} className="space-y-3 p-4 text-xs">
                       <p className="text-slate-600">
                         Registre solamente el <strong>total acumulado</strong> que ya consultó en RUNT.
-                        No son horas nuevas para sumar. No se crean clases, fechas ni vínculos con instructores.
+                        No son clases nuevas para sumar. El sistema guarda el total en la tabla existente sin vincular instructores; la fecha corresponde al registro administrativo, no a la clase real.
                         Si no desea llevar este seguimiento, puede omitirlo.
                       </p>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -3444,31 +3445,31 @@ export default function RuntPage() {
                               value={avanceManualRunt[campo]}
                               onChange={e=>setAvanceManualRunt(prev=>({...prev,[campo]:e.target.value}))}
                               className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm"
-                              disabled={procesando||!detalle?.avance_acumulado?.habilitado}/>
+                              disabled={procesando}/>
                           </label>
                         ))}
                       </div>
-                      {detalle?.avance_acumulado?.ultimo ? (
+                      {(detalle?.cargues_simplificados || []).length ? (
                         <p className="rounded bg-blue-50 p-2 text-blue-900">
-                          Última actualización: {new Date(detalle.avance_acumulado.ultimo.created_at).toLocaleString('es-CO',{timeZone:'America/Bogota'})}
-                          {' · '}Usuario: {detalle.avance_acumulado.ultimo.usuario}
-                          . La actualización reemplaza el acumulado consultado, pero conserva las declaraciones previas.
+                          Cargue sencillo registrado: {(detalle.cargues_simplificados||[]).map(item =>
+                            item.tipo_clase+' ('+item.cantidad_clases+')'
+                          ).join(' · ')}.
+                          El total visible también incluye las clases detalladas cuando existen.
                         </p>
-                      ) : <p className="text-slate-600">No se han registrado acumulados confirmados en DATA CEA.</p>}
+                      ) : (
+                        <p className="text-slate-600">
+                          No hay cargues sencillos registrados. Puede comenzar sin reconstruir clases anteriores.
+                        </p>
+                      )}
                       <label className="block font-semibold">Observaciones (opcional)
                         <textarea rows={2} maxLength={1200}
                           value={observacionesAvanceRunt}
                           onChange={e=>setObservacionesAvanceRunt(e.target.value)}
                           placeholder="Referencia de la consulta o aclaración"
                           className="mt-1 w-full rounded-md border border-slate-300 p-2"
-                          disabled={procesando||!detalle?.avance_acumulado?.habilitado}/>
+                          disabled={procesando}/>
                       </label>
-                      {!detalle?.avance_acumulado?.habilitado && (
-                        <p className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-900">
-                          Para activar el guardado de acumulados, instale primero el SQL 57.
-                        </p>
-                      )}
-                      <button type="submit" disabled={procesando||!detalle?.avance_acumulado?.habilitado}
+                      <button type="submit" disabled={procesando}
                         className="rounded bg-[var(--primary)] px-4 py-2 font-semibold text-white disabled:opacity-50">
                         {procesando?'Guardando...':'Guardar avance confirmado'}
                       </button>
