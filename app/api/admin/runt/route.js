@@ -3792,7 +3792,10 @@ export async function POST(
       const numeroCertificado = normalizarTexto(body?.numero_certificado_runt)
       const numeroSolicitud = normalizarTexto(body?.numero_solicitud_runt)
       const soporte = normalizarTexto(body?.soporte_certificacion)
-      if (!fechaValida(fechaCertificacion) || fechaCertificacion > hoyBogota() ||
+      if (!fechaValida(fechaCertificacion) ||
+          Number.isNaN(Date.parse(fechaCertificacion+'T12:00:00Z')) ||
+          new Date(fechaCertificacion+'T12:00:00Z').toISOString().slice(0,10)!==fechaCertificacion ||
+          fechaCertificacion > hoyBogota() ||
           !numeroCertificado || numeroCertificado.length > 150 || numeroSolicitud.length > 150) {
         return NextResponse.json({status:'error',
           message:'Indique fecha válida no futura y número de certificado oficial RUNT. La solicitud es opcional.'
