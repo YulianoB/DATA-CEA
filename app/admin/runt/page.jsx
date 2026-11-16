@@ -1439,6 +1439,7 @@ export default function RuntPage() {
 
   const esContinuacionRunt = Number(controlActual?.numero_proceso || 1) > 1
   const sicovCertificado = detalle?.sicov_certificado === true
+  const financieroCertificacion = detalle?.financiero || null
 
   const notificaciones =
     Array.isArray(
@@ -4726,6 +4727,13 @@ export default function RuntPage() {
                         </label>
                       </div>
                     )}
+
+                    <div className={`mb-3 rounded-lg border p-3 text-xs ${financieroCertificacion?.paz_y_salvo ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-amber-300 bg-amber-50 text-amber-900'}`}>
+                      <strong>Validación financiera:</strong>{' '}
+                      {financieroCertificacion?.paz_y_salvo
+                        ? 'PAZ Y SALVO — habilitado para la certificación normal.'
+                        : `No está PAZ Y SALVO. Saldo: ${financieroCertificacion?.saldo == null ? 'por verificar' : '$ ' + Number(financieroCertificacion.saldo).toLocaleString('es-CO')}. No autorizar certificación. Si RUNT ya expidió un certificado, utilice exclusivamente el registro excepcional con soporte.`}
+                    </div>
 
                     <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2 text-[11px]">
                       <div className={`rounded-lg border p-2 ${procesoCompleto ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
