@@ -2934,12 +2934,15 @@ export async function GET(
         )
       }
 
+      const financiero = await consultarPazYSalvoCertificacion(supabase,control.matricula_id)
+
       return NextResponse.json({
         status:
           'success',
 
         data: {
           control,
+          financiero,
 
           matricula:
             matricula
