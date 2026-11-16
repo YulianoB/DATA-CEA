@@ -3371,6 +3371,20 @@ export default function RuntPage() {
                     CARGUE
                 ========================================== */}
 
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+                  <strong>Gestión flexible:</strong> no es obligatorio cargar aquí las clases históricas
+                  ni vincularlas a instructores. El avance detallado se puede gestionar voluntariamente.
+                  Si el certificado ya fue expedido en RUNT, registre ese hecho en la sección
+                  de certificación, aunque DATA CEA todavía no tenga el historial de clases.
+                  Los cargues faltantes en DATA CEA no demuestran que el aprendiz no haya cursado clases.
+                </div>
+
+                <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
+                  <summary className="cursor-pointer bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700">
+                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>
+                    Control detallado de clases e instructores (opcional)
+                  </summary>
+                  <div className="space-y-3 p-3">
                 {registrado &&
                   !certificado &&
                   !vencido && (
@@ -3729,6 +3743,8 @@ export default function RuntPage() {
 
                     </div>
                   )}
+                  </div>
+                </details>
 
                                 <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
                   <summary className="cursor-pointer list-none bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
