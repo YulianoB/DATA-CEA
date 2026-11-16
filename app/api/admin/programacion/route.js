@@ -853,72 +853,25 @@ async function consultarAprendiz(
 // VALIDAR PAZ Y SALVO
 // =========================================================
 
-async function aprendizEstaPazYSalvo(
-  supabase,
-  documento
-) {
-  const documentoNormalizado =
-    normalizarDocumento(
-      documento
-    )
-
-  if (
-    !documentoNormalizado
-  ) {
-    return false
-  }
-
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        'cuentas_aprendiz'
-      )
-      .select(`
-        id,
-        documento,
-        estado
-      `)
-      .eq(
-        'documento',
-        documentoNormalizado
-      )
-      .neq(
-        'estado',
-        'ANULADA'
-      )
-
-  if (
-    error
-  ) {
-    throw new Error(
-      `No fue posible validar el estado financiero del aprendiz: ${error.message}`
-    )
-  }
-
-  const cuentas =
-    Array.isArray(
-      data
-    )
-      ? data
-      : []
-
-  if (
-    cuentas.length ===
-    0
-  ) {
-    return false
-  }
-
-  return cuentas.every(
-    cuenta =>
-      mayusculas(
-        cuenta?.estado
-      ) ===
-      'PAZ_Y_SALVO'
-  )
+async function aprendizEstaPazYSalvo(supabase, matriculaId) {
+  if (!Number.isInteger(Number(matriculaId)) || Number(matriculaId) <= 0) return false
+  // Se comprueban las cuentas vinculadas a ESTA matrícula, incluyendo
+  // las obligaciones compartidas de dos categorías; no las de otro curso.
+  const { data: detalles, error: eDetalles } = await supabase
+    .from('cuentas_aprendiz_detalle')
+    .select('cuenta_id')
+    .eq('matricula_id', matriculaId)
+    .eq('estado', 'ACTIVO')
+  if (eDetalles) throw new Error('No fue posible identificar la obligación de esta matrícula: ' + eDetalles.message)
+  const ids = [...new Set((detalles || []).map(x => x.cuenta_id).filter(Boolean))]
+  if (!ids.length) return false
+  const { data: cuentas, error: eCuentas } = await supabase
+    .from('cuentas_aprendiz')
+    .select('id,estado,valor_total')
+    .in('id', ids)
+  if (eCuentas) throw new Error('No fue posible comprobar el PAZ Y SALVO: ' + eCuentas.message)
+  if ((cuentas || []).length !== ids.length) return false
+  return cuentas.every(c => mayusculas(c.estado) === 'PAZ_Y_SALVO' && Number(c.valor_total) > 0)
 }
 
 // =========================================================
@@ -3077,7 +3030,7 @@ async function validarProgramacion(
     const pazYSalvo =
       await aprendizEstaPazYSalvo(
         supabase,
-        aprendiz.documento
+        matriculaId
       )
 
     if (
