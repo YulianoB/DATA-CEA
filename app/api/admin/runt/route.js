@@ -998,6 +998,26 @@ async function obtenerCarguesControl(
 }
 
 // =========================================================
+// ACUMULADOS RUNT: DECLARACIONES INMUTABLES
+// =========================================================
+// No se agregan a runt_cargues_clases: ambas cifras pueden
+// representar las mismas clases. El último registro es el total
+// confirmado externamente en RUNT.
+async function obtenerAvanceAcumuladoRunt(supabase, controlId) {
+  const { data, error } = await supabase.from('runt_avance_acumulado')
+    .select('id,teoria,taller,practica,usuario,observaciones,created_at')
+    .eq('control_runt_id',controlId)
+    .order('id',{ascending:false}).limit(1).maybeSingle()
+  if (error) {
+    if (error.code==='42P01' || error.code==='PGRST205' || error.code==='PGRST116') {
+      return { habilitado:false, ultimo:null }
+    }
+    throw new Error('No fue posible consultar el avance RUNT: '+error.message)
+  }
+  return {habilitado:true,ultimo:data||null}
+}
+
+// =========================================================
 // AVANCE
 // =========================================================
 
@@ -2899,6 +2919,7 @@ export async function GET(
           cargues,
           requisitos
         )
+      const avanceAcumulado = await obtenerAvanceAcumuladoRunt(supabase,control.id)
 
       const vigencia =
         calcularVigenciaRunt(
@@ -2958,6 +2979,7 @@ export async function GET(
         data: {
           control,
           financiero,
+          avance_acumulado: avanceAcumulado,
           auditoria_certificacion,
 
           matricula:
@@ -3184,6 +3206,60 @@ export async function POST(
       nombreUsuario(
         body
       )
+
+    // =====================================================
+    // ACTUALIZAR AVANCE ACUMULADO CONFIRMADO EN RUNT
+    // =====================================================
+    if (accion==='actualizar_avance_runt') {
+      const controlId = toInt(body?.control_runt_id)
+      if (!controlId || !usuario) return NextResponse.json({status:'error',
+        message:'El proceso RUNT y el usuario son obligatorios.'},{status:400})
+      const control = await obtenerControlRunt(supabase,controlId)
+      if (normalizarMayusculas(control.estado_certificacion)==='CERTIFICADO') {
+        return NextResponse.json({status:'error',
+          message:'El certificado ya está registrado. El expediente es de solo lectura.'},{status:409})
+      }
+      if (normalizarMayusculas(control.estado_registro)!=='REGISTRADO') {
+        return NextResponse.json({status:'error',
+          message:'Confirme primero el registro como aprendiz en RUNT.'},{status:409})
+      }
+      const requisitos = await obtenerRequisitosCategoria(supabase,control.categoria)
+      const cantidades = {teoria:body?.teoria,taller:body?.taller,practica:body?.practica}
+      const limites = {
+        teoria:Number(requisitos.clases_teoria||0),
+        taller:Number(requisitos.clases_taller||0),
+        practica:Number(requisitos.clases_practica||0),
+      }
+      if (Object.entries(cantidades).some(([tipo,v]) =>
+        !Number.isInteger(Number(v)) || v===null || v==='' || Number(v)<0 ||
+        Number(v)>limites[tipo])) {
+        return NextResponse.json({status:'error',
+          message:'Los acumulados deben ser enteros entre cero y el requisito de la categoría.'},{status:400})
+      }
+      const previo = await obtenerAvanceAcumuladoRunt(supabase,control.id)
+      if (!previo.habilitado) return NextResponse.json({status:'error',
+        message:'Falta instalar la tabla runt_avance_acumulado. Ejecute primero SQL 57 en Supabase.'},{status:503})
+      const actual = previo.ultimo
+      if (actual && ['teoria','taller','practica'].every(k=>Number(actual[k])===Number(cantidades[k]))) {
+        return NextResponse.json({status:'success',
+          message:'El avance confirmado ya estaba registrado. No se crearon duplicados.',
+          data:{habilitado:true,ultimo:actual}})
+      }
+      const observaciones=normalizarTexto(body?.observaciones).slice(0,1200)
+      const {data,error}=await supabase.from('runt_avance_acumulado').insert({
+        control_runt_id:control.id,
+        teoria:Number(cantidades.teoria),
+        taller:Number(cantidades.taller),
+        practica:Number(cantidades.practica),
+        fuente:'CONSULTA_RUNT',
+        usuario,
+        observaciones:observaciones||null,
+      }).select('id,teoria,taller,practica,usuario,observaciones,created_at').single()
+      if(error) throw new Error('No fue posible guardar el avance confirmado: '+error.message)
+      return NextResponse.json({status:'success',
+        message:'Acumulados RUNT guardados con fecha, hora y usuario. No se crearon clases ni se consumieron horas del instructor.',
+        data:{habilitado:true,ultimo:data}})
+    }
 
     // =====================================================
     // MARCAR REGISTRADO
