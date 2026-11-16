@@ -1483,6 +1483,8 @@ async function obtenerUltimaFechaTeoriaTaller(
           'TALLER',
         ]
       )
+      // El cargue sencillo tiene fecha administrativa, no fecha de clase.
+      .not('instructor_documento', 'is', null)
       .order(
         'fecha_clase',
         {
