@@ -629,6 +629,11 @@ export default function RuntPage() {
   const [confirmarRegistroOpen, setConfirmarRegistroOpen] = useState(false)
   const [confirmarCargueOpen, setConfirmarCargueOpen] = useState(false)
   const [confirmarCertificacionOpen, setConfirmarCertificacionOpen] = useState(false)
+  const [certificacionHistorica, setCertificacionHistorica] = useState(false)
+  const [fechaCertificacionRunt, setFechaCertificacionRunt] = useState(hoyBogota())
+  const [numeroCertificadoRunt, setNumeroCertificadoRunt] = useState('')
+  const [numeroSolicitudRunt, setNumeroSolicitudRunt] = useState('')
+  const [soporteCertificacionRunt, setSoporteCertificacionRunt] = useState('')
   const [fechaRegistroCola, setFechaRegistroCola] = useState(hoyBogota())
   const [accionCola, setAccionCola] = useState(null)
   const [filtros, setFiltros] = useState({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
@@ -2244,26 +2249,19 @@ export default function RuntPage() {
   // CERTIFICAR
   // ==========================================================
 
-  async function certificar(confirmado = false) {
+  async function certificar(confirmado = false, registrarHechoHistorico = false) {
     if (
       !controlActual?.id
     ) {
       return
     }
 
-    if (
-      vencido
-    ) {
-      setError(
-        'El proceso RUNT está vencido y no puede certificarse.'
-      )
-
+    if (!registrarHechoHistorico && vencido) {
+      setError('El proceso RUNT está vencido y no puede certificarse.')
       return
     }
 
-    if (
-      !procesoCompleto
-    ) {
+    if (!registrarHechoHistorico && !procesoCompleto) {
       setError(
         'No se puede certificar porque todavía existen clases pendientes.'
       )
@@ -2271,11 +2269,21 @@ export default function RuntPage() {
       return
     }
 
-    if (!esContinuacionRunt && !sicovCertificado) {
+    if (!registrarHechoHistorico && !esContinuacionRunt && !sicovCertificado) {
       setError('Debe constar SICOV certificado para esta matrícula y categoría.')
       return
     }
+    if (!fechaCertificacionRunt || fechaCertificacionRunt > hoyBogota() ||
+        !numeroCertificadoRunt.trim()) {
+      setError('Indique la fecha real de certificación y el número oficial del certificado RUNT.')
+      return
+    }
+    if (registrarHechoHistorico && soporteCertificacionRunt.trim().length < 12) {
+      setError('El registro de una certificación ya realizada requiere una explicación del soporte (mínimo 12 caracteres).')
+      return
+    }
     if (!confirmado) {
+      setCertificacionHistorica(registrarHechoHistorico)
       setConfirmarCertificacionOpen(true)
       return
     }
@@ -2296,11 +2304,13 @@ export default function RuntPage() {
     try {
       const json =
         await ejecutarAccion({
-          accion:
-            'certificar',
-
-          control_runt_id:
-            controlActual.id,
+          accion: 'certificar',
+          control_runt_id: controlActual.id,
+          certificacion_ya_realizada: registrarHechoHistorico,
+          fecha_certificacion: fechaCertificacionRunt,
+          numero_certificado_runt: numeroCertificadoRunt.trim(),
+          numero_solicitud_runt: numeroSolicitudRunt.trim(),
+          soporte_certificacion: soporteCertificacionRunt.trim(),
         })
 
       setMensaje(
@@ -2523,12 +2533,12 @@ export default function RuntPage() {
               abierto={confirmarCertificacionOpen}
               tipo="confirmacion"
               titulo="Confirmar certificación RUNT"
-              mensaje={esContinuacionRunt
-                ? "¿Confirma que el nuevo proceso RUNT tiene todos los cargues requeridos? Se marcará como CERTIFICADO sin requerir una nueva certificación SICOV."
-                : "¿Confirma que esta matrícula tiene todos los cargues requeridos y que SICOV ya está certificado? Esta acción marcará el proceso como CERTIFICADO en RUNT."}
+              mensaje={certificacionHistorica
+                ? "Se registrará únicamente un certificado ya emitido oficialmente en RUNT. Si existe saldo pendiente, se conservará la deuda y se registrará una alerta auditada. ¿Confirma que verificó el certificado?"
+                : "¿Confirma que verificó el PAZ Y SALVO, los cargues y la certificación oficial? Si falta alguna condición, la API impedirá el registro."}
               textoBoton="CONFIRMAR CERTIFICACIÓN" textoCancelar="CANCELAR"
               onCerrar={() => { if (!procesando) setConfirmarCertificacionOpen(false) }}
-              onConfirmar={() => certificar(true)}
+              onConfirmar={() => certificar(true, certificacionHistorica)}
             />
             <ModalResultado
               abierto={Boolean(accionCola)}
@@ -4688,6 +4698,34 @@ export default function RuntPage() {
                   </div>
 
                   <div className="p-3">
+                    {!certificado && (
+                      <div className="mb-3 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+                        <p className="font-semibold text-slate-700">Datos de la certificación realmente expedida en RUNT</p>
+                        <label className="block font-semibold text-slate-700">Fecha real de certificación *
+                          <input type="date" max={hoyBogota()} value={fechaCertificacionRunt}
+                            onChange={e=>setFechaCertificacionRunt(e.target.value)}
+                            className="mt-1 w-full rounded border border-slate-300 p-2" disabled={procesando}/>
+                        </label>
+                        <label className="block font-semibold text-slate-700">Número de certificado RUNT *
+                          <input type="text" maxLength={150} value={numeroCertificadoRunt}
+                            onChange={e=>setNumeroCertificadoRunt(e.target.value)}
+                            className="mt-1 w-full rounded border border-slate-300 p-2"
+                            placeholder="Número que figura en RUNT" disabled={procesando}/>
+                        </label>
+                        <label className="block font-semibold text-slate-700">Número de solicitud RUNT (si está disponible)
+                          <input type="text" maxLength={150} value={numeroSolicitudRunt}
+                            onChange={e=>setNumeroSolicitudRunt(e.target.value)}
+                            className="mt-1 w-full rounded border border-slate-300 p-2" disabled={procesando}/>
+                        </label>
+                        <label className="block font-semibold text-slate-700">Soporte o explicación (obligatorio para certificados ya expedidos)
+                          <textarea rows={2} maxLength={1200} value={soporteCertificacionRunt}
+                            onChange={e=>setSoporteCertificacionRunt(e.target.value)}
+                            className="mt-1 w-full rounded border border-slate-300 p-2"
+                            placeholder="Referencia del documento o consulta oficial realizada"
+                            disabled={procesando}/>
+                        </label>
+                      </div>
+                    )}
 
                     <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2 text-[11px]">
                       <div className={`rounded-lg border p-2 ${procesoCompleto ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
@@ -4783,9 +4821,7 @@ export default function RuntPage() {
                     ) : (
                       <BotonAccion tipo="guardar"
                         type="button"
-                        onClick={
-                          certificar
-                        }
+                        onClick={() => certificar(false, false)}
                         disabled={
                           procesando
                         }
@@ -4804,6 +4840,20 @@ export default function RuntPage() {
 
                         Marcar CERTIFICADO en RUNT
                       </BotonAccion>
+                    )}
+                    {!certificado && (
+                      <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-2 text-xs">
+                        <p className="text-amber-900">
+                          <strong>Solo para hechos ya ocurridos:</strong> permite registrar un certificado que
+                          RUNT ya expidió, incluso si DATA CEA todavía presenta pendientes de pago o cargues.
+                          No autoriza certificar ni elimina deudas.
+                        </p>
+                        <BotonAccion tipo="guardar" type="button" disabled={procesando}
+                          onClick={() => certificar(false, true)}
+                          className="rounded bg-amber-700 px-3 py-2 text-white disabled:opacity-50">
+                          Registrar certificado ya expedido en RUNT
+                        </BotonAccion>
+                      </div>
                     )}
 
                   </div>
