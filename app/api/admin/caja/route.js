@@ -3842,6 +3842,14 @@ async function consultarEgresos({
   )
 }
 
+// Neto de caja: anticipo menos reintegro, más reembolso.
+function valorNetoEgresoCaja(egreso) {
+  return redondear(Number(egreso?.valor || 0) +
+    (mayusculas(egreso?.modalidad) === 'ENTREGA_PARA_LEGALIZAR'
+      ? Number(egreso?.valor_reembolsado || 0) - Number(egreso?.valor_reintegrado || 0)
+      : 0))
+}
+
 // =========================================================
 // RESUMEN
 // =========================================================
@@ -3871,6 +3879,9 @@ async function obtenerResumen({
         .select(`
           id,
           valor,
+          modalidad,
+          valor_reintegrado,
+          valor_reembolsado,
           estado,
           medio_pago_id
         `)
@@ -3957,21 +3968,9 @@ async function obtenerResumen({
       )
     )
 
-  const totalEgresos =
-    redondear(
-      egresosActivos.reduce(
-        (
-          total,
-          item
-        ) =>
-          total +
-          Number(
-            item.valor ||
-            0
-          ),
-        0
-      )
-    )
+  const totalEgresos = redondear(
+    egresosActivos.reduce((total, item) => total + valorNetoEgresoCaja(item), 0)
+  )
 
   const reciboIds =
     ingresosActivos.map(
@@ -9162,6 +9161,9 @@ if (
             .select(`
               id,
               valor,
+              modalidad,
+              valor_reintegrado,
+              valor_reembolsado,
               medio_pago_id,
               estado,
               created_at
@@ -9356,10 +9358,7 @@ if (
             resumenMedios[
               medio
             ].egresos +
-            Number(
-              egreso.valor ||
-              0
-            )
+            valorNetoEgresoCaja(egreso)
           )
 
         if (
@@ -9367,16 +9366,10 @@ if (
           'EFECTIVO'
         ) {
           egresosEfectivo +=
-            Number(
-              egreso.valor ||
-              0
-            )
+            valorNetoEgresoCaja(egreso)
         } else {
           egresosOtros +=
-            Number(
-              egreso.valor ||
-              0
-            )
+            valorNetoEgresoCaja(egreso)
         }
       }
 
