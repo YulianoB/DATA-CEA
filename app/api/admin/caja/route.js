@@ -2661,6 +2661,24 @@ async function consultarCuentas({
   const desde = (paginaActual - 1) * cantidad
   const seleccion = elegibles.slice(desde, desde + cantidad).map(x => x.cuenta)
   const cuentas = await enriquecerCuentas(supabase, seleccion)
+  // Mostrar nombre de matrícula por documento cuando un histórico no tiene
+  // detalle activo asociado. Esto es presentación, no relación financiera.
+  const documentosFaltantes = [...new Set(cuentas
+    .filter(c => !c.aprendiz?.nombre_completo && !aprendicesPorDocumento.has(String(c.documento || '').replace(/\D/g, '')))
+    .map(c => String(c.documento || '').replace(/\D/g, ''))
+    .filter(Boolean))]
+  for (let i = 0; i < documentosFaltantes.length; i += 300) {
+    const docs = documentosFaltantes.slice(i, i + 300)
+    const { data, error } = await supabase.from('aprendices')
+      .select('documento,nombres,apellidos').in('documento', docs)
+    if (error) throw new Error('No fue posible consultar nombres de matrículas históricas: ' + error.message)
+    for (const aprendiz of data || []) {
+      const doc = String(aprendiz.documento || '').replace(/\D/g, '')
+      if (!aprendicesPorDocumento.has(doc)) {
+        aprendicesPorDocumento.set(doc, [aprendiz.nombres, aprendiz.apellidos].filter(Boolean).join(' '))
+      }
+    }
+  }
   // El nombre encontrado por documento es solo informativo; NO sustituye
   // matricula_id ni las relaciones de cuentas_aprendiz_detalle.
   for (const cuenta of cuentas) {
