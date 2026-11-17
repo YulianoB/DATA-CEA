@@ -329,6 +329,8 @@ export function imprimirReciboOtrosIngresos(
           .signature-line { width:70%; margin:8px auto 2px; border-top:1px solid #475569; }
           .signature-name { margin-top:1px; font-size:5.8px; font-weight:700; color:#475569; }
           .cea-footer { min-height:12px; border-top:1px solid #CBD5E1; padding:2px 6px; text-align:center; font-size:6.2px; font-weight:700; color:#475569; }
+          /* Texto negro sólido en ambas copias del recibo, sin afectar los botones. */
+          .grid, .grid * { color:#000 !important; -webkit-text-fill-color:#000 !important; opacity:1 !important; }
           /* Dos copias en una hoja CARTA vertical, media carta por copia. */
           @page { size: letter portrait; margin:0; }
           @media print {
