@@ -5532,7 +5532,7 @@ function abrirClase(
                         : 'hidden'}`}>
                     {errorBusquedaAprendiz ||
                       (resultadosAprendiz.length===0
-                        ? 'No hay matrículas a PAZ Y SALVO y sin certificación RUNT para esta búsqueda.'
+                        ? 'No se encontraron matrículas o clientes que coincidan con esta búsqueda.'
                         : '')}
                   </div>
                 )}
