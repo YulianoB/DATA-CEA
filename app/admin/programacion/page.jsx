@@ -1133,11 +1133,6 @@ function ModalClase({
   // NÚMERO DE CLASE
   // =======================================================
 
-  const numeroClase = tipoModal==='CURSO_VIGENTE' && progreso
-    ? Number(numeroClaseEditar || progreso?.siguiente_numero_clase ||
-      Math.min(numero(progreso?.clases_requeridas),numero(progreso?.clases_comprometidas)+1))
-    : null
-
   // =======================================================
   // CAMBIOS DE ESTADO DISPONIBLES
   // =======================================================
@@ -1673,6 +1668,13 @@ const estadosDisponibles =
               </div>
             </div>
           )}
+
+          {modo==='EDITAR' && tipoModal==='CURSO_VIGENTE' &&
+            /\[CEA_CLASE_PRACTICA:\d+\]/.test(texto(clase?.observaciones)) && (
+              <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[10px] font-bold text-blue-900">
+                Clase práctica #{texto(clase.observaciones).match(/\[CEA_CLASE_PRACTICA:(\d+)\]/)?.[1]}
+              </div>
+            )}
 
           {/* =================================================
               MODO EDITAR
