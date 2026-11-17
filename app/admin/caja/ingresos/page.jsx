@@ -215,6 +215,7 @@ function nombreCompletoCuenta(
     cuenta
       ?.aprendiz
       ?.nombre_completo ||
+    cuenta?.nombre_aprendiz_consulta ||
     [
       cuenta
         ?.aprendiz
