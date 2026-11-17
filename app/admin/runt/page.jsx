@@ -3189,155 +3189,21 @@ export default function RuntPage() {
                   </div>
                 )}
 
-                {/* ==========================================
-                    VIGENCIA
-                ========================================== */}
-
-                {registrado && (
-                  <div
-                    className="
-                      border
-                      border-gray-300
-                      rounded-lg
-                      overflow-hidden
-                    "
-                  >
-
-                    <div
-                      className="
-                        
-                        
-                        px-3
-                        py-2
-                        text-xs
-                        font-semibold
-                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                      Vigencia del Proceso RUNT Actual
-                    </div>
-
-                    <div className="p-3">
-
-                      <div className="grid grid-cols-1 items-center gap-4 text-xs md:grid-cols-[minmax(105px,0.8fr)_minmax(105px,0.8fr)_minmax(0,3fr)]">
-                        <div>
-                          <span className="text-gray-500">Registro</span>
-                          <div className="font-semibold">
-                            {formatearFecha(vigenciaActual?.fecha_registro)}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Fecha límite</span>
-                          <div className="font-semibold">
-                            {formatearFecha(vigenciaActual?.fecha_limite)}
-                          </div>
-                        </div>
-                        <div className="min-w-0 space-y-2">
-                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                            <span className="font-semibold text-slate-700">Tiempo transcurrido</span>
-                            {vigenciaConPlazo ? (
-                              <span className={`font-bold ${riesgoVigenciaRunt ? 'text-red-700' : advertenciaVigenciaRunt ? 'text-amber-800' : 'text-emerald-700'}`}>
-                                {diasTranscurridosRunt} de 90 días
-                                <span className="ml-1 font-normal text-slate-600">
-                                  {vencido ? '· Plazo vencido' : `· ${Math.max(0, diasRestantesRunt)} restantes`}
-                                </span>
-                              </span>
-                            ) : (
-                              <BadgeVigencia vigencia={vigenciaActual} />
-                            )}
-                          </div>
-                          {vigenciaConPlazo ? (
-                            <div role="progressbar" aria-label="Tiempo transcurrido de la vigencia RUNT"
-                              aria-valuemin={0} aria-valuemax={90}
-                              aria-valuenow={diasTranscurridosRunt}
-                              className="h-5 w-full overflow-hidden rounded-full bg-slate-200">
-                              <div className={`h-full rounded-full transition-all duration-300 ${colorProgresoRunt}`}
-                                style={{ width: `${porcentajeVigenciaRunt}%` }} />
-                            </div>
-                          ) : (
-                            <p className="text-[11px] text-slate-500">
-                              {certificado ? 'Proceso certificado. Seguimiento de vigencia finalizado.' : 'Sin plazo de vigencia disponible.'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {alertaTeoriaTardia && (
-                        <div className="mt-3 rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
-                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
-                          <strong>Riesgo de cumplimiento:</strong> han transcurrido {diasTranscurridosRunt} días
-                          y aún no hay clases de teoría cargadas en RUNT.
-                          Quedan {Math.max(0, diasRestantesRunt)} días de vigencia.
-                        </div>
-                      )}
-                      {alertaPracticaLimite && (
-                        <div className={`mt-3 rounded-lg border px-3 py-2 text-xs ${practicaSinMargen ? 'border-red-400 bg-red-50 text-red-900' : 'border-amber-400 bg-amber-50 text-amber-900'}`} role="status">
-                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
-                          <strong>{practicaSinMargen ? 'Tiempo insuficiente para práctica:' : 'Último margen para práctica:'}</strong>
-                          {' '}faltan {clasesPracticaPendientes} clases de práctica;
-                          se necesitan al menos {diasMinimosPractica} día(s) de cargue,
-                          considerando máximo {limitePracticaDiaria} por día.
-                          {' '}Restan {Math.max(0, diasRestantesRunt)} día(s) de vigencia.
-                          {!practicaHabilitadaUI && ' Además debe completar teoría y taller antes de habilitar práctica.'}
-                        </div>
-                      )}
-
-                      {vencido && (
-                        <div
-                          className="
-                            mt-3
-                            bg-red-50
-                            border
-                            border-red-300
-                            rounded-lg
-                            p-3
-                            text-xs
-                            text-red-700
-                          "
-                        >
-
-                          <div className="font-bold">
-                            <i className="fas fa-exclamation-triangle mr-2"></i>
-
-                            PROCESO RUNT VENCIDO
-                          </div>
-
-                          <p className="mt-1">
-                            El registro superó los 90 días según la fecha anotada y no tiene certificación registrada en DATA-CEA. Antes de reiniciar, verifique el estado real en RUNT; podría estar certificado y pendiente de actualizar aquí.
-                          </p>
-
-                          <BotonAccion tipo="secundario"
-                            type="button"
-                            onClick={
-                              reiniciarProceso
-                            }
-                            disabled={
-                              procesando
-                            }
-                            className="
-                              mt-3
-                              bg-red-600
-                              hover:bg-red-700
-                              text-white
-                              px-4
-                              py-2
-                              rounded-lg
-                              text-xs
-                              font-semibold
-                              disabled:opacity-50
-                            "
-                          >
-                            <i className="fas fa-rotate-right mr-2"></i>
-
-                            Reiniciar Proceso RUNT
-                          </BotonAccion>
-
-                        </div>
-                      )}
-
-                    </div>
-
-                  </div>
-                )}
-
+                <nav role="tablist" aria-label="Secciones de Control RUNT" className="grid grid-cols-2 gap-2 border-b border-slate-200 pb-3 sm:grid-cols-3 lg:grid-cols-5">
+                  {[
+                    ['flexible','Control flexible'],['detallado','Control detallado'],
+                    ['historial','Historial'],['estados','Seguimiento Estados'],
+                    ['certificaciones','Control certificaciones']
+                  ].map(([id,label])=>(
+                    <button key={id} type="button" role="tab" aria-selected={pestanaDrawerRunt===id}
+                      onClick={()=>{setPestanaDrawerRunt(id);setError('');setMensaje('')}}
+                      className={`min-h-11 rounded-lg border px-2 py-2 text-center text-[11px] font-semibold leading-tight
+                      ${pestanaDrawerRunt===id?'border-[var(--primary)] bg-[var(--primary)] text-white shadow-sm':'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'}`}>
+                      {label}
+                    </button>
+                  ))}
+                </nav>
+                <section role="tabpanel" aria-label="flexible" className={pestanaDrawerRunt==='flexible'?'space-y-4':'hidden'}>
                                 <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
                   <div className="mb-2 text-xs font-bold text-slate-700">Avance de clases en RUNT</div>
                   <div
@@ -3460,13 +3326,10 @@ export default function RuntPage() {
                   </section>
                 )}
 
-                <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
-                  <summary className="cursor-pointer bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700">
-                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>
-                    Control detallado de clases e instructores (opcional)
-                  </summary>
-                  <div className="space-y-3 p-3">
-                {registrado &&
+
+                </section>
+                <section role="tabpanel" aria-label="detallado" className={pestanaDrawerRunt==='detallado'?'space-y-4':'hidden'}>
+{registrado &&
                   !certificado &&
                   !vencido && (
                     <div
@@ -3824,14 +3687,8 @@ export default function RuntPage() {
 
                     </div>
                   )}
-                  </div>
-                </details>
-
-                                <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
-                  <summary className="cursor-pointer list-none bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
-                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>Historial de cargues
-                  </summary>
-                  <div className="space-y-4 p-3">
+                </section>
+                <section role="tabpanel" aria-label="historial" className={pestanaDrawerRunt==='historial'?'space-y-4':'hidden'}>
 {/* ==========================================
                     HISTORIAL CARGUES ACTUALES
                 ========================================== */}
@@ -3982,14 +3839,157 @@ export default function RuntPage() {
                   </div>
 
                 </div>
+                </section>
+                <section role="tabpanel" aria-label="estados" className={pestanaDrawerRunt==='estados'?'space-y-4':'hidden'}>
+                {/* ==========================================
+                    VIGENCIA
+                ========================================== */}
 
-                                  </div>
-                </details>
-                <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
-                  <summary className="cursor-pointer list-none bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
-                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>Datos y seguimiento RUNT
-                  </summary>
-                  <div className="space-y-4 p-3">
+                {registrado && (
+                  <div
+                    className="
+                      border
+                      border-gray-300
+                      rounded-lg
+                      overflow-hidden
+                    "
+                  >
+
+                    <div
+                      className="
+                        
+                        
+                        px-3
+                        py-2
+                        text-xs
+                        font-semibold
+                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
+                      Vigencia del Proceso RUNT Actual
+                    </div>
+
+                    <div className="p-3">
+
+                      <div className="grid grid-cols-1 items-center gap-4 text-xs md:grid-cols-[minmax(105px,0.8fr)_minmax(105px,0.8fr)_minmax(0,3fr)]">
+                        <div>
+                          <span className="text-gray-500">Registro</span>
+                          <div className="font-semibold">
+                            {formatearFecha(vigenciaActual?.fecha_registro)}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Fecha límite</span>
+                          <div className="font-semibold">
+                            {formatearFecha(vigenciaActual?.fecha_limite)}
+                          </div>
+                        </div>
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                            <span className="font-semibold text-slate-700">Tiempo transcurrido</span>
+                            {vigenciaConPlazo ? (
+                              <span className={`font-bold ${riesgoVigenciaRunt ? 'text-red-700' : advertenciaVigenciaRunt ? 'text-amber-800' : 'text-emerald-700'}`}>
+                                {diasTranscurridosRunt} de 90 días
+                                <span className="ml-1 font-normal text-slate-600">
+                                  {vencido ? '· Plazo vencido' : `· ${Math.max(0, diasRestantesRunt)} restantes`}
+                                </span>
+                              </span>
+                            ) : (
+                              <BadgeVigencia vigencia={vigenciaActual} />
+                            )}
+                          </div>
+                          {vigenciaConPlazo ? (
+                            <div role="progressbar" aria-label="Tiempo transcurrido de la vigencia RUNT"
+                              aria-valuemin={0} aria-valuemax={90}
+                              aria-valuenow={diasTranscurridosRunt}
+                              className="h-5 w-full overflow-hidden rounded-full bg-slate-200">
+                              <div className={`h-full rounded-full transition-all duration-300 ${colorProgresoRunt}`}
+                                style={{ width: `${porcentajeVigenciaRunt}%` }} />
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-slate-500">
+                              {certificado ? 'Proceso certificado. Seguimiento de vigencia finalizado.' : 'Sin plazo de vigencia disponible.'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {alertaTeoriaTardia && (
+                        <div className="mt-3 rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
+                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
+                          <strong>Riesgo de cumplimiento:</strong> han transcurrido {diasTranscurridosRunt} días
+                          y aún no hay clases de teoría cargadas en RUNT.
+                          Quedan {Math.max(0, diasRestantesRunt)} días de vigencia.
+                        </div>
+                      )}
+                      {alertaPracticaLimite && (
+                        <div className={`mt-3 rounded-lg border px-3 py-2 text-xs ${practicaSinMargen ? 'border-red-400 bg-red-50 text-red-900' : 'border-amber-400 bg-amber-50 text-amber-900'}`} role="status">
+                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
+                          <strong>{practicaSinMargen ? 'Tiempo insuficiente para práctica:' : 'Último margen para práctica:'}</strong>
+                          {' '}faltan {clasesPracticaPendientes} clases de práctica;
+                          se necesitan al menos {diasMinimosPractica} día(s) de cargue,
+                          considerando máximo {limitePracticaDiaria} por día.
+                          {' '}Restan {Math.max(0, diasRestantesRunt)} día(s) de vigencia.
+                          {!practicaHabilitadaUI && ' Además debe completar teoría y taller antes de habilitar práctica.'}
+                        </div>
+                      )}
+
+                      {vencido && (
+                        <div
+                          className="
+                            mt-3
+                            bg-red-50
+                            border
+                            border-red-300
+                            rounded-lg
+                            p-3
+                            text-xs
+                            text-red-700
+                          "
+                        >
+
+                          <div className="font-bold">
+                            <i className="fas fa-exclamation-triangle mr-2"></i>
+
+                            PROCESO RUNT VENCIDO
+                          </div>
+
+                          <p className="mt-1">
+                            El registro superó los 90 días según la fecha anotada y no tiene certificación registrada en DATA-CEA. Antes de reiniciar, verifique el estado real en RUNT; podría estar certificado y pendiente de actualizar aquí.
+                          </p>
+
+                          <BotonAccion tipo="secundario"
+                            type="button"
+                            onClick={
+                              reiniciarProceso
+                            }
+                            disabled={
+                              procesando
+                            }
+                            className="
+                              mt-3
+                              bg-red-600
+                              hover:bg-red-700
+                              text-white
+                              px-4
+                              py-2
+                              rounded-lg
+                              text-xs
+                              font-semibold
+                              disabled:opacity-50
+                            "
+                          >
+                            <i className="fas fa-rotate-right mr-2"></i>
+
+                            Reiniciar Proceso RUNT
+                          </BotonAccion>
+
+                        </div>
+                      )}
+
+                    </div>
+
+                  </div>
+                )}
+
 {/* SEGUIMIENTO DEL PROCESO ACTUAL: sin reproducir la ficha en tarjetas repetidas */}
                 <section className="rounded-lg border border-slate-200 bg-white p-3 text-xs">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -4446,211 +4446,53 @@ export default function RuntPage() {
 
                   </div>
                 )}
-
-                                  </div>
-                </details>
-                <details className="group overflow-hidden rounded-lg border border-slate-300 bg-white">
-                  <summary className="cursor-pointer list-none bg-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
-                    <i className="fas fa-chevron-right mr-2 transition-transform group-open:rotate-90"></i>Certificación RUNT
-                  </summary>
-                  <div className="space-y-4 p-3">
-{/* ==========================================
-                    CERTIFICACIÓN
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                    Certificación RUNT
-                  </div>
-
-                  <div className="p-3">
-                    {!certificado && (
-                      <div className="mb-3 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
-                        <p className="font-semibold text-slate-700">Datos de la certificación realmente expedida en RUNT</p>
-                        <label className="block font-semibold text-slate-700">Fecha real de certificación *
+                </section>
+                <section role="tabpanel" aria-label="certificaciones" className={pestanaDrawerRunt==='certificaciones'?'space-y-4':'hidden'}>
+                  <div className="overflow-hidden rounded-lg border border-slate-300 bg-white">
+                    <h3 className="border-b border-slate-200 bg-slate-100 p-3 text-xs font-bold text-slate-700">Control certificaciones</h3>
+                    <div className="space-y-3 p-4 text-xs">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label className="block font-semibold text-slate-700">Fecha Certificación
                           <input type="date" max={hoyBogota()} value={fechaCertificacionRunt}
                             onChange={e=>setFechaCertificacionRunt(e.target.value)}
-                            className="mt-1 w-full rounded border border-slate-300 p-2" disabled={procesando}/>
+                            disabled={procesando||certificado} className="mt-1 w-full rounded border border-slate-300 p-2"/>
                         </label>
-                        <label className="block font-semibold text-slate-700">Número de certificado RUNT *
+                        <label className="block font-semibold text-slate-700">N° Certificado RUNT
                           <input type="text" maxLength={150} value={numeroCertificadoRunt}
                             onChange={e=>setNumeroCertificadoRunt(e.target.value)}
-                            className="mt-1 w-full rounded border border-slate-300 p-2"
-                            placeholder="Número que figura en RUNT" disabled={procesando}/>
+                            disabled={procesando||certificado} className="mt-1 w-full rounded border border-slate-300 p-2"/>
                         </label>
-                        <label className="block font-semibold text-slate-700">Número de solicitud RUNT (si está disponible)
+                        <label className="block font-semibold text-slate-700">N° Solicitud RUNT
                           <input type="text" maxLength={150} value={numeroSolicitudRunt}
                             onChange={e=>setNumeroSolicitudRunt(e.target.value)}
-                            className="mt-1 w-full rounded border border-slate-300 p-2" disabled={procesando}/>
+                            disabled={procesando||certificado} className="mt-1 w-full rounded border border-slate-300 p-2"/>
                         </label>
-                        <label className="block font-semibold text-slate-700">Soporte o explicación (obligatorio para certificados ya expedidos)
-                          <textarea rows={2} maxLength={1200} value={soporteCertificacionRunt}
-                            onChange={e=>setSoporteCertificacionRunt(e.target.value)}
-                            className="mt-1 w-full rounded border border-slate-300 p-2"
-                            placeholder="Referencia del documento o consulta oficial realizada"
-                            disabled={procesando}/>
-                        </label>
-                      </div>
-                    )}
-
-                    <div className={`mb-3 rounded-lg border p-3 text-xs ${financieroCertificacion?.paz_y_salvo ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-amber-300 bg-amber-50 text-amber-900'}`}>
-                      <strong>Validación financiera:</strong>{' '}
-                      {financieroCertificacion?.paz_y_salvo
-                        ? 'PAZ Y SALVO — habilitado para la certificación normal.'
-                        : `No está PAZ Y SALVO. Saldo: ${financieroCertificacion?.saldo == null ? 'por verificar' : '$ ' + Number(financieroCertificacion.saldo).toLocaleString('es-CO')}. No autorizar certificación. Si RUNT ya expidió un certificado, utilice exclusivamente el registro excepcional con soporte.`}
-                    </div>
-
-                    <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2 text-[11px]">
-                      <div className={`rounded-lg border p-2 ${procesoCompleto ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
-                        <i className={`fas ${procesoCompleto ? 'fa-check-circle' : 'fa-clock'} mr-1`}></i>
-                        Cargues: {procesoCompleto ? 'Completos' : 'Pendientes'}
-                      </div>
-                      {!esContinuacionRunt && (
-                        <div className={`rounded-lg border p-2 ${sicovCertificado ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-800'}`}>
-                          <i className={`fas ${sicovCertificado ? 'fa-check-circle' : 'fa-clock'} mr-1`}></i>
-                          SICOV: {sicovCertificado ? 'Certificado' : 'Pendiente de certificación'}
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                          <p className="font-semibold text-slate-700">Estado Financiero</p>
+                          <p className={`mt-1 font-bold ${financieroCertificacion?.paz_y_salvo?'text-emerald-700':'text-amber-800'}`}>
+                            {financieroCertificacion?.paz_y_salvo?'PAZ Y SALVO':'NO PAZ Y SALVO'}
+                          </p>
+                          {!financieroCertificacion?.paz_y_salvo && <p className="mt-1 text-slate-600">
+                            Saldo: {financieroCertificacion?.saldo==null?'Por verificar':'$ '+Number(financieroCertificacion.saldo).toLocaleString('es-CO')}
+                          </p>}
                         </div>
-                      )}
-                      {esContinuacionRunt && (
-                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-2 text-blue-900">
-                          Proceso de continuación · certificación solo RUNT
-                        </div>
-                      )}
-                    </div>
-                    {certificado ? (
-                      <div
-                        className="
-                          bg-emerald-50
-                          border
-                          border-emerald-300
-                          rounded-lg
-                          p-3
-                          text-xs
-                        "
-                      >
-
-                        <div className="font-bold text-emerald-700">
-                          CERTIFICADO
-                        </div>
-
-                        <div className="text-gray-600 mt-1">
-                          {formatearFecha(
-                            controlActual
-                              .fecha_certificacion
-                          )}
-                          {' · '}
-                          {controlActual
-                            .usuario_certificacion ||
-                            '-'}
-                        </div>
-
                       </div>
-                    ) : vencido ? (
-                      <div
-                        className="
-                          bg-red-50
-                          border
-                          border-red-300
-                          rounded-lg
-                          p-3
-                          text-xs
-                          text-red-700
-                        "
-                      >
-                        Este proceso está vencido y no puede certificarse.
-                      </div>
-                    ) : !registrado ? (
-                      <div
-                        className="
-                          bg-amber-50
-                          border
-                          border-amber-300
-                          rounded-lg
-                          p-3
-                          text-xs
-                          text-amber-700
-                        "
-                      >
-                        Primero debe registrar al aprendiz en RUNT.
-                      </div>
-                    ) : !esContinuacionRunt && !sicovCertificado ? (
-                      <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
-                        Primero debe figurar CERTIFICADO en SICOV para esta matrícula y categoría.
-                      </div>
-                    ) : !procesoCompleto ? (
-                      <div
-                        className="
-                          bg-amber-50
-                          border
-                          border-amber-300
-                          rounded-lg
-                          p-3
-                          text-xs
-                          text-amber-700
-                        "
-                      >
-                        Todavía existen clases pendientes de cargar.
-                      </div>
-                    ) : (
-                      <BotonAccion tipo="guardar"
-                        type="button"
-                        onClick={() => certificar(false, false)}
-                        disabled={
-                          procesando
-                        }
-                        className="
-                          bg-purple-600
-                          hover:bg-purple-700
-                          text-white
-                          px-4
-                          py-2
-                          rounded-lg
-                          text-xs
-                          disabled:opacity-50
-                        "
-                      >
-                        <i className="fas fa-certificate mr-2"></i>
-
-                        Marcar CERTIFICADO en RUNT
-                      </BotonAccion>
-                    )}
-                    {!certificado && (
-                      <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-2 text-xs">
-                        <p className="text-amber-900">
-                          <strong>Solo para hechos ya ocurridos:</strong> permite registrar un certificado que
-                          RUNT ya expidió, incluso si DATA CEA todavía presenta pendientes de pago o cargues.
-                          No autoriza certificar ni elimina deudas.
+                      {certificado ? (
+                        <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 font-semibold text-emerald-800">
+                          CERTIFICADO · {formatearFecha(controlActual?.fecha_certificacion)}
                         </p>
-                        <BotonAccion tipo="guardar" type="button" disabled={procesando}
-                          onClick={() => certificar(false, true)}
-                          className="rounded bg-amber-700 px-3 py-2 text-white disabled:opacity-50">
-                          Registrar certificado ya expedido en RUNT
-                        </BotonAccion>
-                      </div>
-                    )}
-
+                      ) : (
+                        <button type="button" disabled={procesando||!registrado}
+                          onClick={()=>certificar(false,
+                            vencido||!procesoCompleto||(!esContinuacionRunt&&!sicovCertificado)||
+                            !financieroCertificacion?.paz_y_salvo)}
+                          className="rounded-lg bg-[var(--primary)] px-5 py-2.5 font-bold text-white disabled:opacity-50">
+                          Registrar certificación
+                        </button>
+                      )}
+                    </div>
                   </div>
-
-                </div>
-
-                  </div>
-                </details>
+                </section>
                 <div className="flex justify-end">
 
                   <BotonAccion tipo="cancelar"
