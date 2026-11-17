@@ -2981,7 +2981,7 @@ async function validarProgramacion(
     !tieneReciboRefuerzo
   ) {
     throw new Error(
-      'Seleccione un aprendiz o cliente con pago de refuerzo.'
+      'Seleccione un aprendiz matriculado o un cliente de refuerzo identificable.'
     )
   }
 
@@ -3045,29 +3045,9 @@ async function validarProgramacion(
   if (
     esCursoVigente
   ) {
-    // =====================================================
-    // PAZ Y SALVO
-    // =====================================================
-
-    const pazYSalvo =
-      await aprendizEstaPazYSalvo(
-        supabase,
-        matriculaId
-      )
-
-    if (
-      !pazYSalvo
-    ) {
-      throw new Error(
-        'El aprendiz no se encuentra PAZ Y SALVO.'
-      )
-    }
-
-    // No se depende de aprendices.estado; los históricos migrados
-    // pueden tenerlo NULL. Una categoría certificada no se programa.
-    if (await matriculaEstaCertificadaRunt(supabase,matriculaId,categoria)) {
-      throw new Error('Esta matrícula y categoría ya están certificadas en RUNT. No se pueden programar más prácticas.')
-    }
+    // Programación abierta: no exigir paz y salvo, recibo, obligación
+    // financiera ni estado RUNT no certificado para matrículas históricas.
+    // Se conservan las validaciones de categoría, horario y recursos.
 
     // =====================================================
     // REQUISITOS DE LA CATEGORÍA
