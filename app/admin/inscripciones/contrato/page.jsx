@@ -1366,8 +1366,8 @@ function ClausulaContrato({
     <div
       className="
         mt-1.5
-        text-[8.6px]
-        leading-[1.18]
+        text-[10px]
+        leading-[1.24]
         text-justify
       "
     >
@@ -2169,8 +2169,8 @@ export default function ContratoPage() {
                   }
                   className="
                     mt-2
-                    text-[8.6px]
-                    leading-[1.18]
+                    text-[10px]
+                    leading-[1.24]
                     text-justify
                   "
                 />
@@ -2212,8 +2212,8 @@ export default function ContratoPage() {
                       contrato.texto_final
                     }
                     className="
-                      text-[8.6px]
-                      leading-[1.18]
+                      text-[10px]
+                      leading-[1.24]
                       text-justify
                     "
                   />
@@ -2241,6 +2241,13 @@ export default function ContratoPage() {
       <style>{`
         .hoja-contrato {
           --borde-contrato: 1px solid #000;
+        }
+        /* Lectura y distribución equilibrada entre ambas hojas. */
+        .hoja-contrato .tabla-documento-contrato {
+          font-kerning: normal;
+        }
+        .hoja-contrato .encabezado-repetible-contrato {
+          break-inside: avoid;
         }
         .hoja-contrato .bloque-aspirante-contrato {
           border: var(--borde-contrato) !important;
