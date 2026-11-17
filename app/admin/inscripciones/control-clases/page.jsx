@@ -3277,6 +3277,22 @@ const streamRef =
            independientemente de la opción «Gráficos en segundo plano». */
         @media print {
           .hoja-control { --linea-control: 1px solid #000; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          /* Reservar espacio para la firma del aprendiz en la primera página,
+             sin alterar el tamaño de las filas de la hoja de práctica. */
+          .hoja-control:not(.pagina-dos) {
+            padding: 5mm !important;
+          }
+          .hoja-control:not(.pagina-dos) .tabla-modulo-control {
+            margin-top: 5px !important;
+          }
+          .hoja-control:not(.pagina-dos) .tabla-modulo-control table :is(th, td) {
+            padding-top: 2px !important;
+            padding-bottom: 2px !important;
+          }
+          .hoja-control:not(.pagina-dos) .tabla-modulo-control table tr {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
           .hoja-control .tabla-modulo-control table,
           .hoja-control .tabla-practica-control table {
             border-collapse: separate !important;
