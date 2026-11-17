@@ -50,8 +50,10 @@ export async function POST(request) {
     if ([documento,nombre_completo,categoria,tipo_documento,celular,observaciones].some(v=>v.length>500))
       return NextResponse.json({status:'error',message:'Uno de los campos supera el tamaño permitido.'},{status:400})
     const {data: anterior,error: errorAnterior}=await db.from('clientes_refuerzo')
-      .select('id,documento,nombre_completo,categoria,activo').eq('documento',documento).eq('categoria',categoria).maybeSingle()
+      .select('id,tipo_documento,documento,nombre_completo,celular,categoria,observaciones,activo').eq('documento',documento).eq('categoria',categoria).maybeSingle()
     if(errorAnterior) throw errorAnterior
+    if(anterior && anterior.activo !== true)
+      return NextResponse.json({status:'error',message:'Este cliente externo ya está registrado pero inactivo. Revise su ficha antes de programarlo.'},{status:409})
     if(anterior) return salida({ ...anterior, reutilizado:true })
     const {data,error}=await db.from('clientes_refuerzo')
       .insert({documento,nombre_completo,categoria,tipo_documento,celular:celular||null,observaciones:observaciones||null})
