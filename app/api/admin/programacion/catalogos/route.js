@@ -758,169 +758,68 @@ async function consultarRequisitosCategorias(
 }
 
 // =========================================================
-// ESTADO FINANCIERO APRENDICES
+// HABILITACIÓN POR MATRÍCULA: PAZ Y SALVO + RUNT NO CERTIFICADO
 // =========================================================
-//
-// Para CURSO_VIGENTE:
-//
-// - aprendiz ACTIVO
-// - debe tener cuenta válida
-// - ninguna cuenta activa puede estar PENDIENTE o ABONADO
-// - las cuentas deben estar PAZ_Y_SALVO
-//
-// =========================================================
+// La búsqueda no depende de aprendices.estado: las matrículas
+// migradas pueden tenerlo NULL. La deuda de otra matrícula no bloquea
+// la propia, y el control RUNT se verifica por matrícula/categoría.
 
-async function consultarEstadoFinancieroDocumentos(
-  supabase,
-  documentos
-) {
-  const lista =
-    [
-      ...new Set(
-        documentos
-          .map(
-            normalizarDocumento
-          )
-          .filter(
-            Boolean
-          )
-      ),
-    ]
+async function consultarHabilitacionMatriculas(supabase, aprendices) {
+  const lista = (Array.isArray(aprendices) ? aprendices : []).filter(a => Number(a?.id)>0)
+  const ids = [...new Set(lista.map(a=>Number(a.id)))]
+  const resultado = new Map()
+  if (!ids.length) return resultado
 
-  const resultado =
-    new Map()
+  const [{data:detalles,error:errorDetalles},{data:runt,error:errorRunt}] = await Promise.all([
+    supabase.from('cuentas_aprendiz_detalle')
+      .select('matricula_id,cuenta_id')
+      .in('matricula_id',ids).eq('estado','ACTIVO'),
+    supabase.from('control_runt')
+      .select('matricula_id,categoria,estado_certificacion')
+      .in('matricula_id',ids),
+  ])
+  if (errorDetalles) throw new Error('No fue posible consultar las obligaciones por matrícula: '+errorDetalles.message)
+  if (errorRunt) throw new Error('No fue posible consultar la certificación RUNT: '+errorRunt.message)
 
-  if (
-    lista.length ===
-    0
-  ) {
-    return resultado
+  const idsCuentas = [...new Set((detalles||[]).map(d=>Number(d.cuenta_id)).filter(Boolean))]
+  let cuentas = []
+  if (idsCuentas.length) {
+    const {data,error} = await supabase.from('cuentas_aprendiz')
+      .select('id,estado,valor_total').in('id',idsCuentas)
+    if (error) throw new Error('No fue posible verificar el PAZ Y SALVO: '+error.message)
+    cuentas=data||[]
   }
-
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        'cuentas_aprendiz'
-      )
-      .select(`
-        id,
-        documento,
-        estado,
-        origen_matricula
-      `)
-      .in(
-        'documento',
-        lista
-      )
-      .neq(
-        'estado',
-        'ANULADA'
-      )
-
-  if (
-    error
-  ) {
-    throw new Error(
-      `No fue posible validar el estado financiero de los aprendices: ${error.message}`
-    )
+  const porId = new Map(cuentas.map(c=>[Number(c.id),c]))
+  const idsPorMatricula = new Map()
+  for (const d of detalles||[]) {
+    const id=Number(d.matricula_id)
+    if(!idsPorMatricula.has(id)) idsPorMatricula.set(id,new Set())
+    idsPorMatricula.get(id).add(Number(d.cuenta_id))
   }
-
-  for (
-    const documento of
-      lista
-  ) {
-    resultado.set(
-      documento,
-      {
-        tiene_cuenta:
-          false,
-
-        paz_y_salvo:
-          false,
-
-        estados:
-          [],
-      }
-    )
+  const certificadas = new Map()
+  for (const c of runt||[]) {
+    if(mayusculas(c.estado_certificacion)!=='CERTIFICADO') continue
+    const id=Number(c.matricula_id)
+    if(!certificadas.has(id)) certificadas.set(id,new Set())
+    certificadas.get(id).add(normalizarCategoriaLicencia(c.categoria))
   }
-
-  for (
-    const cuenta of
-      Array.isArray(
-        data
-      )
-        ? data
-        : []
-  ) {
-    const documento =
-      normalizarDocumento(
-        cuenta?.documento
-      )
-
-    if (
-      !resultado.has(
-        documento
-      )
-    ) {
-      resultado.set(
-        documento,
-        {
-          tiene_cuenta:
-            false,
-
-          paz_y_salvo:
-            false,
-
-          estados:
-            [],
-        }
-      )
-    }
-
-    const item =
-      resultado.get(
-        documento
-      )
-
-    item.tiene_cuenta =
-      true
-
-    item.estados.push(
-      mayusculas(
-        cuenta?.estado
-      )
-    )
+  for (const aprendiz of lista) {
+    const id=Number(aprendiz.id), cuentasIds=[...(idsPorMatricula.get(id)||[])]
+    const pazYSalvo = cuentasIds.length>0 && cuentasIds.every(idCuenta=>{
+      const c=porId.get(idCuenta)
+      return c && mayusculas(c.estado)==='PAZ_Y_SALVO' && Number(c.valor_total)>0
+    })
+    const categorias=(Array.isArray(aprendiz.categorias)?aprendiz.categorias:[])
+      .map(normalizarCategoriaLicencia).filter(Boolean)
+    const completadas=certificadas.get(id)||new Set()
+    const disponibles=categorias.filter(cat=>!completadas.has(cat))
+    resultado.set(id,{
+      paz_y_salvo:pazYSalvo,
+      categorias_programables:disponibles,
+      categorias_certificadas:[...completadas],
+      habilitado_programacion:pazYSalvo && disponibles.length>0,
+    })
   }
-
-  for (
-    const [
-      documento,
-      item,
-    ] of resultado.entries()
-  ) {
-    const estados =
-      item.estados.filter(
-        Boolean
-      )
-
-    item.paz_y_salvo =
-      estados.length >
-        0 &&
-      estados.every(
-        estado =>
-          estado ===
-          'PAZ_Y_SALVO'
-      )
-
-    resultado.set(
-      documento,
-      item
-    )
-  }
-
   return resultado
 }
 
@@ -1008,17 +907,6 @@ async function buscarAprendices(
         30
       )
 
-  if (
-    tipoProgramacion ===
-    'CURSO_VIGENTE'
-  ) {
-    consulta =
-      consulta.eq(
-        'estado',
-        'ACTIVO'
-      )
-  }
-
   const {
     data,
     error,
@@ -1040,54 +928,11 @@ async function buscarAprendices(
       ? data
       : []
 
-  // =======================================================
-  // CURSO VIGENTE:
-  // DEBE ESTAR PAZ Y SALVO
-  // =======================================================
-
-  if (
-    tipoProgramacion ===
-    'CURSO_VIGENTE'
-  ) {
-    const documentos =
-      aprendices
-        .map(
-          aprendiz =>
-            normalizarDocumento(
-              aprendiz?.documento
-            )
-        )
-        .filter(
-          Boolean
-        )
-
-    const estadosFinancieros =
-      await consultarEstadoFinancieroDocumentos(
-        supabase,
-        documentos
-      )
-
-    aprendices =
-      aprendices.filter(
-        aprendiz => {
-          const documento =
-            normalizarDocumento(
-              aprendiz?.documento
-            )
-
-          const financiero =
-            estadosFinancieros.get(
-              documento
-            )
-
-          return Boolean(
-            financiero
-              ?.tiene_cuenta &&
-            financiero
-              ?.paz_y_salvo
-          )
-        }
-      )
+  const habilitaciones = tipoProgramacion==='CURSO_VIGENTE'
+    ? await consultarHabilitacionMatriculas(supabase,aprendices)
+    : new Map()
+  if (tipoProgramacion==='CURSO_VIGENTE') {
+    aprendices=aprendices.filter(a=>habilitaciones.get(Number(a.id))?.habilitado_programacion)
   }
 
   return aprendices.map(
@@ -1099,15 +944,14 @@ async function buscarAprendices(
           aprendiz
         ),
 
-      categorias:
-        Array.isArray(
-          aprendiz?.categorias
-        )
-          ? aprendiz.categorias
-          : [],
+      categorias: tipoProgramacion==='CURSO_VIGENTE'
+        ? habilitaciones.get(Number(aprendiz.id))?.categorias_programables || []
+        : Array.isArray(aprendiz?.categorias) ? aprendiz.categorias : [],
 
-      habilitado_programacion:
-        true,
+      habilitado_programacion: tipoProgramacion==='CURSO_VIGENTE'
+        ? habilitaciones.get(Number(aprendiz.id))?.habilitado_programacion === true
+        : true,
+      paz_y_salvo: tipoProgramacion==='CURSO_VIGENTE' ? true : null,
 
       // ===================================================
       // IDENTIFICACIÓN PARA LA PÁGINA
@@ -2364,57 +2208,14 @@ async function consultarAprendiz(
     return null
   }
 
-  // =======================================================
-  // CURSO VIGENTE
-  // =======================================================
-
-  if (
-    tipoProgramacion ===
-    'CURSO_VIGENTE'
-  ) {
-    // =====================================================
-    // ESTADO ACTIVO
-    // =====================================================
-
-    if (
-      mayusculas(
-        aprendiz?.estado
-      ) !==
-      'ACTIVO'
-    ) {
-      throw new Error(
-        'El aprendiz no se encuentra en estado ACTIVO.'
-      )
+  let habilitacion=null
+  if (tipoProgramacion==='CURSO_VIGENTE') {
+    habilitacion=(await consultarHabilitacionMatriculas(supabase,[aprendiz])).get(Number(aprendiz.id))
+    if (!habilitacion?.paz_y_salvo) {
+      throw new Error('Esta matrícula no está PAZ Y SALVO; no se pueden programar prácticas.')
     }
-
-    // =====================================================
-    // PAZ Y SALVO
-    // =====================================================
-
-    const estados =
-      await consultarEstadoFinancieroDocumentos(
-        supabase,
-        [
-          aprendiz.documento,
-        ]
-      )
-
-    const financiero =
-      estados.get(
-        normalizarDocumento(
-          aprendiz.documento
-        )
-      )
-
-    if (
-      !financiero
-        ?.tiene_cuenta ||
-      !financiero
-        ?.paz_y_salvo
-    ) {
-      throw new Error(
-        'El aprendiz no se encuentra PAZ Y SALVO y no puede programar clases del curso vigente.'
-      )
+    if (!habilitacion.categorias_programables.length) {
+      throw new Error('Esta matrícula ya figura certificada en RUNT para sus categorías.')
     }
   }
 
@@ -2422,12 +2223,9 @@ async function consultarAprendiz(
   // CATEGORÍAS
   // =======================================================
 
-  const categorias =
-    Array.isArray(
-      aprendiz?.categorias
-    )
-      ? aprendiz.categorias
-      : []
+  const categorias = tipoProgramacion==='CURSO_VIGENTE'
+    ? habilitacion.categorias_programables
+    : Array.isArray(aprendiz?.categorias) ? aprendiz.categorias : []
 
   // =======================================================
   // REQUISITOS + PROGRAMACIÓN
@@ -2499,6 +2297,8 @@ async function consultarAprendiz(
       ),
 
     categorias,
+    paz_y_salvo: habilitacion?.paz_y_salvo ?? null,
+    habilitado_programacion: habilitacion?.habilitado_programacion ?? true,
 
     progreso,
 
