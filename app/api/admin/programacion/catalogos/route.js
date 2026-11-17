@@ -758,70 +758,10 @@ async function consultarRequisitosCategorias(
 }
 
 // =========================================================
-// HABILITACIÓN POR MATRÍCULA: PAZ Y SALVO + RUNT NO CERTIFICADO
+// PROGRAMACIÓN ABIERTA PARA MATRÍCULAS HISTÓRICAS Y ACTUALES
 // =========================================================
-// La búsqueda no depende de aprendices.estado: las matrículas
-// migradas pueden tenerlo NULL. La deuda de otra matrícula no bloquea
-// la propia, y el control RUNT se verifica por matrícula/categoría.
-
-async function consultarHabilitacionMatriculas(supabase, aprendices) {
-  const lista = (Array.isArray(aprendices) ? aprendices : []).filter(a => Number(a?.id)>0)
-  const ids = [...new Set(lista.map(a=>Number(a.id)))]
-  const resultado = new Map()
-  if (!ids.length) return resultado
-
-  const [{data:detalles,error:errorDetalles},{data:runt,error:errorRunt}] = await Promise.all([
-    supabase.from('cuentas_aprendiz_detalle')
-      .select('matricula_id,cuenta_id')
-      .in('matricula_id',ids).eq('estado','ACTIVO'),
-    supabase.from('control_runt')
-      .select('matricula_id,categoria,estado_certificacion')
-      .in('matricula_id',ids),
-  ])
-  if (errorDetalles) throw new Error('No fue posible consultar las obligaciones por matrícula: '+errorDetalles.message)
-  if (errorRunt) throw new Error('No fue posible consultar la certificación RUNT: '+errorRunt.message)
-
-  const idsCuentas = [...new Set((detalles||[]).map(d=>Number(d.cuenta_id)).filter(Boolean))]
-  let cuentas = []
-  if (idsCuentas.length) {
-    const {data,error} = await supabase.from('cuentas_aprendiz')
-      .select('id,estado,valor_total').in('id',idsCuentas)
-    if (error) throw new Error('No fue posible verificar el PAZ Y SALVO: '+error.message)
-    cuentas=data||[]
-  }
-  const porId = new Map(cuentas.map(c=>[Number(c.id),c]))
-  const idsPorMatricula = new Map()
-  for (const d of detalles||[]) {
-    const id=Number(d.matricula_id)
-    if(!idsPorMatricula.has(id)) idsPorMatricula.set(id,new Set())
-    idsPorMatricula.get(id).add(Number(d.cuenta_id))
-  }
-  const certificadas = new Map()
-  for (const c of runt||[]) {
-    if(mayusculas(c.estado_certificacion)!=='CERTIFICADO') continue
-    const id=Number(c.matricula_id)
-    if(!certificadas.has(id)) certificadas.set(id,new Set())
-    certificadas.get(id).add(normalizarCategoriaLicencia(c.categoria))
-  }
-  for (const aprendiz of lista) {
-    const id=Number(aprendiz.id), cuentasIds=[...(idsPorMatricula.get(id)||[])]
-    const pazYSalvo = cuentasIds.length>0 && cuentasIds.every(idCuenta=>{
-      const c=porId.get(idCuenta)
-      return c && mayusculas(c.estado)==='PAZ_Y_SALVO' && Number(c.valor_total)>0
-    })
-    const categorias=(Array.isArray(aprendiz.categorias)?aprendiz.categorias:[])
-      .map(normalizarCategoriaLicencia).filter(Boolean)
-    const completadas=certificadas.get(id)||new Set()
-    const disponibles=categorias.filter(cat=>!completadas.has(cat))
-    resultado.set(id,{
-      paz_y_salvo:pazYSalvo,
-      categorias_programables:disponibles,
-      categorias_certificadas:[...completadas],
-      habilitado_programacion:pazYSalvo && disponibles.length>0,
-    })
-  }
-  return resultado
-}
+// La elegibilidad financiera y la certificación RUNT no bloquean
+// la programación. El usuario responsable decide a quién agendar.
 
 // =========================================================
 // BUSCAR APRENDICES
@@ -928,12 +868,7 @@ async function buscarAprendices(
       ? data
       : []
 
-  const habilitaciones = tipoProgramacion==='CURSO_VIGENTE'
-    ? await consultarHabilitacionMatriculas(supabase,aprendices)
-    : new Map()
-  if (tipoProgramacion==='CURSO_VIGENTE') {
-    aprendices=aprendices.filter(a=>habilitaciones.get(Number(a.id))?.habilitado_programacion)
-  }
+  // Mostrar todas las matrículas coincidentes, sin filtros financieros o RUNT.
 
   return aprendices.map(
     aprendiz => ({
@@ -944,14 +879,9 @@ async function buscarAprendices(
           aprendiz
         ),
 
-      categorias: tipoProgramacion==='CURSO_VIGENTE'
-        ? habilitaciones.get(Number(aprendiz.id))?.categorias_programables || []
-        : Array.isArray(aprendiz?.categorias) ? aprendiz.categorias : [],
-
-      habilitado_programacion: tipoProgramacion==='CURSO_VIGENTE'
-        ? habilitaciones.get(Number(aprendiz.id))?.habilitado_programacion === true
-        : true,
-      paz_y_salvo: tipoProgramacion==='CURSO_VIGENTE' ? true : null,
+      categorias: Array.isArray(aprendiz?.categorias) ? aprendiz.categorias : [],
+      habilitado_programacion: true,
+      paz_y_salvo: null,
 
       // ===================================================
       // IDENTIFICACIÓN PARA LA PÁGINA
@@ -2223,24 +2153,9 @@ async function consultarAprendiz(
     return null
   }
 
-  let habilitacion=null
-  if (tipoProgramacion==='CURSO_VIGENTE') {
-    habilitacion=(await consultarHabilitacionMatriculas(supabase,[aprendiz])).get(Number(aprendiz.id))
-    if (!habilitacion?.paz_y_salvo) {
-      throw new Error('Esta matrícula no está PAZ Y SALVO; no se pueden programar prácticas.')
-    }
-    if (!habilitacion.categorias_programables.length) {
-      throw new Error('Esta matrícula ya figura certificada en RUNT para sus categorías.')
-    }
-  }
-
-  // =======================================================
-  // CATEGORÍAS
-  // =======================================================
-
-  const categorias = tipoProgramacion==='CURSO_VIGENTE'
-    ? habilitacion.categorias_programables
-    : Array.isArray(aprendiz?.categorias) ? aprendiz.categorias : []
+  // Las categorías registradas son seleccionables incluso si la matrícula
+  // está certificada, sin obligación económica o sin recibos históricos.
+  const categorias = Array.isArray(aprendiz?.categorias) ? aprendiz.categorias : []
 
   // =======================================================
   // REQUISITOS + PROGRAMACIÓN
@@ -2312,8 +2227,8 @@ async function consultarAprendiz(
       ),
 
     categorias,
-    paz_y_salvo: habilitacion?.paz_y_salvo ?? null,
-    habilitado_programacion: habilitacion?.habilitado_programacion ?? true,
+    paz_y_salvo: null,
+    habilitado_programacion: true,
 
     progreso,
 
