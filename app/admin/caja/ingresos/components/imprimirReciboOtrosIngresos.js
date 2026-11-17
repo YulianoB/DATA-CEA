@@ -92,6 +92,7 @@ export function imprimirReciboOtrosIngresos(
     empresaNombre = '',
     empresaDatos = {},
     usuarioOperacion = '',
+    ventanaImpresion = null,
   } = {}
 ) {
   const recibo = datos?.recibo || {}
@@ -265,7 +266,11 @@ export function imprimirReciboOtrosIngresos(
     </section>
   `
 
-  const ventana = window.open('', '_blank', 'width=1200,height=760')
+  // Al registrar, la ventana se abre directamente en el clic del usuario.
+  // La API puede tardar y el navegador bloquearía un window.open posterior.
+  const ventana = ventanaImpresion && !ventanaImpresion.closed
+    ? ventanaImpresion
+    : window.open('', '_blank', 'width=1200,height=760')
 
   if (!ventana) {
     throw new Error('El navegador bloqueó la ventana de impresión.')
