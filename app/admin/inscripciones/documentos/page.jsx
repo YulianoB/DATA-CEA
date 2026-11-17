@@ -1042,11 +1042,11 @@ export default function DocumentosMatriculaPage() {
       return
     }
 
-    const ancho =
-      video.videoWidth
-
-    const alto =
-      video.videoHeight
+    // Imagen liviana para Supabase Storage y documentos impresos.
+    // Evita superar el límite de 2 MB en cámaras de alta resolución.
+    const escala = Math.min(1, 960 / Math.max(video.videoWidth, video.videoHeight))
+    const ancho = Math.round(video.videoWidth * escala)
+    const alto = Math.round(video.videoHeight * escala)
 
     canvas.width =
       ancho
@@ -1109,7 +1109,7 @@ export default function DocumentosMatriculaPage() {
         cerrarCamara()
       },
       'image/jpeg',
-      0.9
+      0.82
     )
   }
 
