@@ -2360,6 +2360,10 @@ export default function ProgramacionPage() {
       false
     )
 
+  const [errorBusquedaAprendiz, setErrorBusquedaAprendiz] = useState('')
+  const [busquedaAprendizResuelta, setBusquedaAprendizResuelta] = useState('')
+
+
   const [
     aprendiz,
     setAprendiz,
@@ -3207,105 +3211,49 @@ const resumenOperativo =
   // BÚSQUEDA AUTOMÁTICA APRENDIZ
   // =======================================================
 
-  useEffect(
-    () => {
-      const buscar =
-        texto(
-          busqueda
-        )
+  useEffect(() => {
+    const buscar = texto(busqueda)
+    if (aprendiz || !nit || buscar.length<3) {
+      setResultadosAprendiz([])
+      setErrorBusquedaAprendiz('')
+      setBusquedaAprendizResuelta('')
+      setBuscandoAprendiz(false)
+      return
+    }
 
-      if (
-        aprendiz ||
-        !nit ||
-        buscar.length <
-          3
-      ) {
-        if (
-          buscar.length <
-          3
-        ) {
-          setResultadosAprendiz(
-            []
-          )
-        }
-
-        return
+    let cancelada=false
+    setErrorBusquedaAprendiz('')
+    setBusquedaAprendizResuelta('')
+    const timer=setTimeout(async()=>{
+      if (cancelada) return
+      setBuscandoAprendiz(true)
+      try {
+        const params=new URLSearchParams({
+          recurso:'personas',
+          nit,
+          busqueda:buscar,
+          tipo_programacion:tipoProgramacion,
+        })
+        const respuesta=await fetchJsonSeguro(`${API_CATALOGOS}?${params.toString()}`)
+        if(cancelada) return
+        setResultadosAprendiz(Array.isArray(respuesta?.data)?respuesta.data:[])
+        setBusquedaAprendizResuelta(buscar)
+      } catch(errorBusqueda) {
+        if(cancelada) return
+        console.error('Error buscando aprendices:',errorBusqueda)
+        setResultadosAprendiz([])
+        setErrorBusquedaAprendiz(errorBusqueda?.message||'No fue posible consultar aprendices.')
+        setBusquedaAprendizResuelta(buscar)
+      } finally {
+        if(!cancelada) setBuscandoAprendiz(false)
       }
+    },400)
 
-      const timer =
-        setTimeout(
-          async () => {
-            setBuscandoAprendiz(
-              true
-            )
-
-            try {
-              const params =
-                new URLSearchParams()
-
-              params.set(
-                'recurso',
-                'personas'
-              )
-
-              params.set(
-                'nit',
-                nit
-              )
-
-              params.set(
-                'busqueda',
-                buscar
-              )
-
-              params.set(
-                'tipo_programacion',
-                tipoProgramacion
-              )
-
-              const data =
-                await fetchJsonSeguro(
-                  `${API_CATALOGOS}?${params.toString()}`
-                )
-
-              setResultadosAprendiz(
-                Array.isArray(
-                  data?.data
-                )
-                  ? data.data
-                  : []
-              )
-            } catch (
-              errorBusqueda
-            ) {
-              console.error(
-                errorBusqueda
-              )
-
-              setResultadosAprendiz(
-                []
-              )
-            } finally {
-              setBuscandoAprendiz(
-                false
-              )
-            }
-          },
-          400
-        )
-
-      return () =>
-        clearTimeout(
-          timer
-        )
-    },
-    [
-      nit,
-      busqueda,
-      aprendiz,
-      tipoProgramacion,
-    ]
-  )
+    return ()=>{
+      cancelada=true
+      clearTimeout(timer)
+    }
+  },[nit,busqueda,aprendiz,tipoProgramacion])
 
   // =======================================================
   // CARGAR DETALLE APRENDIZ
@@ -5600,6 +5548,22 @@ function abrirClase(
                   </button>
                 )}
               </div>
+
+              {!aprendiz && texto(busqueda).length>=3 &&
+                busquedaAprendizResuelta===texto(busqueda) &&
+                !buscandoAprendiz && (
+                  <div role="status" className={`mt-1 rounded-lg border px-3 py-2 text-[10px]
+                    ${errorBusquedaAprendiz
+                      ? 'border-red-300 bg-red-50 text-red-800'
+                      : resultadosAprendiz.length===0
+                        ? 'border-slate-300 bg-slate-50 text-slate-700'
+                        : 'hidden'}`}>
+                    {errorBusquedaAprendiz ||
+                      (resultadosAprendiz.length===0
+                        ? 'No hay matrículas a PAZ Y SALVO y sin certificación RUNT para esta búsqueda.'
+                        : '')}
+                  </div>
+                )}
 
               {!aprendiz &&
                 resultadosAprendiz.length >
