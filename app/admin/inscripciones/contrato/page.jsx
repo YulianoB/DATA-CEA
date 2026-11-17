@@ -2242,6 +2242,18 @@ export default function ContratoPage() {
         .hoja-contrato {
           --borde-contrato: 1px solid #000;
         }
+        /* Todos los textos del documento, incluidos los datos y el encabezado,
+           deben imprimirse en negro sólido. No afecta los botones de pantalla. */
+        .hoja-contrato,
+        .hoja-contrato * {
+          color: #000 !important;
+        }
+        @media print {
+          .hoja-contrato,
+          .hoja-contrato * {
+            -webkit-text-fill-color: #000 !important;
+          }
+        }
         /* Lectura y distribución equilibrada entre ambas hojas. */
         .hoja-contrato .tabla-documento-contrato {
           font-kerning: normal;
