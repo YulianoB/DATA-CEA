@@ -2578,6 +2578,29 @@ async function contarHorasInstructorMes(
   )
 }
 
+// Numeración administrativa opcional de clases históricas del CEA.
+// Se conserva en observaciones existentes, sin agregar columnas ni
+// generar registros de prácticas anteriores.
+function leerNumeroClasePractica(valor) {
+  const m=texto(valor).match(/\[CEA_CLASE_PRACTICA:(\d+)\]/)
+  return m ? Number(m[1]) : 0
+}
+async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numeroClase,limite}) {
+  if(!Number.isInteger(numeroClase)||numeroClase<1||numeroClase>limite) {
+    throw new Error('El número de clase práctica debe estar entre 1 y '+limite+'.')
+  }
+  const {data,error}=await supabase.from('programacion_clases')
+    .select('id,observaciones,estado')
+    .eq('matricula_id',matriculaId)
+    .eq('categoria',categoria)
+    .eq('tipo_programacion','CURSO_VIGENTE')
+    .in('estado',ESTADOS_QUE_CONSUMEN_HORAS)
+  if(error) throw new Error('No fue posible verificar la numeración de clases: '+error.message)
+  if((data||[]).some(c=>leerNumeroClasePractica(c.observaciones)===numeroClase)){
+    throw new Error('La clase práctica número '+numeroClase+' ya está programada para esta matrícula y categoría.')
+  }
+}
+
 // =========================================================
 // PROGRESO CURSO VIGENTE
 // =========================================================
@@ -4945,6 +4968,9 @@ if (
       body?.observaciones
     )
 
+  const numeroClasePractica = body?.numero_clase_practica == null
+    ? null : Number(body.numero_clase_practica)
+
   // =====================================================
   // USUARIO
   // =====================================================
@@ -4993,6 +5019,16 @@ if (
       }
     )
 
+  if(tipoProgramacion==='CURSO_VIGENTE') {
+    const maximo=Number(entidades?.requisito?.clases_practica||0)
+    if(numeroClasePractica===null) {
+      throw new Error('Indique el número de clase práctica que corresponde programar.')
+    }
+    await validarNumeroClasePractica(supabase,{
+      matriculaId,categoria,numeroClase:numeroClasePractica,limite:maximo
+    })
+  }
+
   // =====================================================
   // INSERTAR CLASE
   // =====================================================
@@ -5039,9 +5075,9 @@ if (
         estado:
           'AGENDADA',
 
-        observaciones:
-          observaciones ||
-          null,
+        observaciones: tipoProgramacion==='CURSO_VIGENTE'
+          ? `[CEA_CLASE_PRACTICA:${numeroClasePractica}]${observaciones?' '+observaciones:''}`
+          : observaciones || null,
 
         usuario_programa:
           usuario,
