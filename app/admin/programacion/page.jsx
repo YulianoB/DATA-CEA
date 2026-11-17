@@ -3255,7 +3255,7 @@ const resumenOperativo =
     try {
       const respuesta = await fetchJsonSeguro(API_CLIENTES_REFUERZO, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({...formClienteExterno,nit})
+        body:JSON.stringify({...formClienteExterno,documento:formClienteExterno.documento.trim().toUpperCase(),nombre_completo:formClienteExterno.nombre_completo.trim().toLocaleUpperCase('es-CO'),observaciones:formClienteExterno.observaciones.trim().toLocaleUpperCase('es-CO'),nit})
       })
       const c=respuesta?.data
       if(!c?.id) throw new Error('No se recibió el identificador del cliente externo.')
@@ -7987,12 +7987,12 @@ function abrirClase(
                   </select>
                 </label>
                 <label className="block text-xs font-bold text-slate-700">Documento
-                  <input required autoFocus value={formClienteExterno.documento} onChange={e=>setFormClienteExterno(p=>({...p,documento:e.target.value}))}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Número de documento"/>
+                  <input required autoFocus value={formClienteExterno.documento} onChange={e=>setFormClienteExterno(p=>({...p,documento:e.target.value.toUpperCase()}))}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase" placeholder="Número de documento"/>
                 </label>
                 <label className="block text-xs font-bold text-slate-700">Nombre completo
-                  <input required value={formClienteExterno.nombre_completo} onChange={e=>setFormClienteExterno(p=>({...p,nombre_completo:e.target.value}))}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Nombre y apellidos"/>
+                  <input required value={formClienteExterno.nombre_completo} onChange={e=>setFormClienteExterno(p=>({...p,nombre_completo:e.target.value.toLocaleUpperCase('es-CO')}))}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase" placeholder="Nombre y apellidos"/>
                 </label>
                 <label className="block text-xs font-bold text-slate-700">Celular (opcional)
                   <input value={formClienteExterno.celular} onChange={e=>setFormClienteExterno(p=>({...p,celular:e.target.value}))}
@@ -8005,8 +8005,8 @@ function abrirClase(
                   </select>
                 </label>
                 <label className="block text-xs font-bold text-slate-700 sm:col-span-2">Observaciones (opcional)
-                  <textarea rows={2} value={formClienteExterno.observaciones} onChange={e=>setFormClienteExterno(p=>({...p,observaciones:e.target.value}))}
-                    className="mt-1 block w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Información administrativa relevante"/>
+                  <textarea rows={2} value={formClienteExterno.observaciones} onChange={e=>setFormClienteExterno(p=>({...p,observaciones:e.target.value.toLocaleUpperCase('es-CO')}))}
+                    className="mt-1 block w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase" placeholder="Información administrativa relevante"/>
                 </label>
               </div>
               <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4">
