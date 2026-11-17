@@ -5,6 +5,10 @@ import { respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
 function texto(v) { return String(v ?? '').trim() }
 function normalizar(v) { return texto(v).toUpperCase() }
 function errorRespuesta(e) {
+  const mensaje=texto(e?.message || e)
+  if ((e?.code === 'PGRST205' || /could not find the table.*clientes_refuerzo|clientes_refuerzo.*schema cache/i.test(mensaje))) {
+    return NextResponse.json({ status:'error', message:'Falta crear la tabla de clientes externos en Supabase de este CEA. Ejecute la migración 20261117_clientes_refuerzo_sin_recibo.sql en SQL Editor y actualice la página.' },{status:503})
+  }
   const r = respuestaErrorEmpresa(e)
   return NextResponse.json(r.body, { status: r.status })
 }
@@ -45,12 +49,12 @@ export async function POST(request) {
   try {
     const body = await request.json()
     const { supabaseAdmin: db } = await obtenerContextoCEA(request, {rolesPermitidos:['ADMINISTRATIVO'], body})
-    const documento=texto(body.documento)
-    const nombre_completo=texto(body.nombre_completo)
+    const documento=normalizar(body.documento)
+    const nombre_completo=normalizar(body.nombre_completo)
     const categoria=normalizar(body.categoria)
     const tipo_documento=normalizar(body.tipo_documento || 'CC')
     const celular=texto(body.celular)
-    const observaciones=texto(body.observaciones)
+    const observaciones=normalizar(body.observaciones)
     if (!documento || !nombre_completo || !categoria)
       return NextResponse.json({status:'error',message:'Documento, nombre y categoría son obligatorios.'},{status:400})
     if ([documento,nombre_completo,categoria,tipo_documento,celular,observaciones].some(v=>v.length>500))
