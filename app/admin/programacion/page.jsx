@@ -2751,6 +2751,10 @@ function mostrarAlertaValidacion(
   useMemo(
     
     () => {
+      if (aprendiz?.origen_programacion === 'CLIENTE_REFUERZO') {
+        return { categoria, clases_compradas:null, clases_comprometidas:0,
+          clases_disponibles: null, refuerzos_dictados:0 }
+      }
       if (
         aprendiz
           ?.origen_programacion ===
@@ -3339,7 +3343,7 @@ const resumenOperativo =
     setBusqueda(item.nombre_completo)
     setResultadosAprendiz([])
     setDetalleAprendiz({ ...item, categorias:[item.categoria],
-      clases_disponibles:999, clases_disponibles_dia:8, puede_programar_dia:true })
+      clases_disponibles:null, clases_disponibles_dia:8, puede_programar_dia:true })
     setCategoria(item.categoria)
     return
   }
@@ -4511,7 +4515,7 @@ try {
 
       if (aprendiz?.origen_programacion === 'CLIENTE_REFUERZO') {
         setDetalleAprendiz({ ...aprendiz, categorias:[aprendiz.categoria],
-          clases_disponibles:999, clases_disponibles_dia:8, puede_programar_dia:true })
+          clases_disponibles:null, clases_disponibles_dia:8, puede_programar_dia:true })
       } else if (
         aprendiz
           ?.origen_programacion ===
@@ -5221,9 +5225,8 @@ function abrirClase(
   // =====================================================
 
   aprendiz?.id &&
-  aprendiz
-    ?.origen_programacion !==
-      'CLIENTE_EXTERNO'
+  aprendiz?.origen_programacion !== 'CLIENTE_EXTERNO' &&
+  aprendiz?.origen_programacion !== 'CLIENTE_REFUERZO'
     ? cargarDetalleAprendiz(
         aprendiz
           ?.matricula_id ||
@@ -5741,7 +5744,9 @@ function abrirClase(
                             'Sin celular'
                           }
 
-                          {item
+                          {item?.origen_programacion === 'CLIENTE_REFUERZO' ? (
+                            <span className="font-bold text-indigo-700"> · CLIENTE EXTERNO · SIN RECIBO</span>
+                          ) : item
                             ?.origen_programacion ===
                           'CLIENTE_EXTERNO' ? (
                             <>
@@ -6536,13 +6541,16 @@ function abrirClase(
                             aprendiz
                               ?.origen_programacion ===
                             'CLIENTE_EXTERNO'
+                          const esClienteSinReciboSeleccionado = aprendiz?.origen_programacion === 'CLIENTE_REFUERZO'
 
                           const esPersonaSeleccionada =
                             Boolean(
                               aprendiz &&
                               clase &&
                               (
-                                esClienteExternoSeleccionado
+                                esClienteSinReciboSeleccionado
+                                  ? Number(clase?.cliente_refuerzo_id) === Number(aprendiz?.cliente_refuerzo_id)
+                                  : esClienteExternoSeleccionado
                                   ? Number(
                                       clase
                                         ?.recibo_refuerzo_id
