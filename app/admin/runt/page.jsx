@@ -3192,21 +3192,156 @@ export default function RuntPage() {
                   </div>
                 )}
 
-                <nav role="tablist" aria-label="Secciones de Control RUNT" className="grid grid-cols-2 gap-2 border-b border-slate-200 pb-3 sm:grid-cols-3 lg:grid-cols-5">
-                  {[
-                    ['flexible','Control flexible'],['detallado','Control detallado'],
-                    ['historial','Historial'],['estados','Seguimiento Estados'],
-                    ['certificaciones','Control certificaciones']
-                  ].map(([id,label])=>(
-                    <button key={id} type="button" role="tab" aria-selected={pestanaDrawerRunt===id}
-                      onClick={()=>{setPestanaDrawerRunt(id);setError('');setMensaje('')}}
-                      className={`min-h-11 rounded-lg border px-2 py-2 text-center text-[11px] font-semibold leading-tight
-                      ${pestanaDrawerRunt===id?'border-[var(--primary)] bg-[var(--primary)] text-white shadow-sm':'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'}`}>
-                      {label}
-                    </button>
-                  ))}
-                </nav>
-                <section role="tabpanel" aria-label="flexible" className={pestanaDrawerRunt==='flexible'?'space-y-4':'hidden'}>
+                {/* ==========================================
+                    VIGENCIA
+                ========================================== */}
+
+                {registrado && (
+                  <div
+                    className="
+                      border
+                      border-gray-300
+                      rounded-lg
+                      overflow-hidden
+                    "
+                  >
+
+                    <div
+                      className="
+                        
+                        
+                        px-3
+                        py-2
+                        text-xs
+                        font-semibold
+                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
+                      Vigencia del Proceso RUNT Actual
+                    </div>
+
+                    <div className="p-3">
+
+                      <div className="grid grid-cols-1 items-center gap-4 text-xs md:grid-cols-[minmax(105px,0.8fr)_minmax(105px,0.8fr)_minmax(0,3fr)]">
+                        <div>
+                          <span className="text-gray-500">Registro</span>
+                          <div className="font-semibold">
+                            {formatearFecha(vigenciaActual?.fecha_registro)}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Fecha límite</span>
+                          <div className="font-semibold">
+                            {formatearFecha(vigenciaActual?.fecha_limite)}
+                          </div>
+                        </div>
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                            <span className="font-semibold text-slate-700">Tiempo transcurrido</span>
+                            {vigenciaConPlazo ? (
+                              <span className={`font-bold ${riesgoVigenciaRunt ? 'text-red-700' : advertenciaVigenciaRunt ? 'text-amber-800' : 'text-emerald-700'}`}>
+                                {diasTranscurridosRunt} de 90 días
+                                <span className="ml-1 font-normal text-slate-600">
+                                  {vencido ? '· Plazo vencido' : `· ${Math.max(0, diasRestantesRunt)} restantes`}
+                                </span>
+                              </span>
+                            ) : (
+                              <BadgeVigencia vigencia={vigenciaActual} />
+                            )}
+                          </div>
+                          {vigenciaConPlazo ? (
+                            <div role="progressbar" aria-label="Tiempo transcurrido de la vigencia RUNT"
+                              aria-valuemin={0} aria-valuemax={90}
+                              aria-valuenow={diasTranscurridosRunt}
+                              className="h-5 w-full overflow-hidden rounded-full bg-slate-200">
+                              <div className={`h-full rounded-full transition-all duration-300 ${colorProgresoRunt}`}
+                                style={{ width: `${porcentajeVigenciaRunt}%` }} />
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-slate-500">
+                              {certificado ? 'Proceso certificado. Seguimiento de vigencia finalizado.' : 'Sin plazo de vigencia disponible.'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {alertaTeoriaTardia && (
+                        <div className="mt-3 rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
+                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
+                          <strong>Riesgo de cumplimiento:</strong> han transcurrido {diasTranscurridosRunt} días
+                          y aún no hay clases de teoría cargadas en RUNT.
+                          Quedan {Math.max(0, diasRestantesRunt)} días de vigencia.
+                        </div>
+                      )}
+                      {alertaPracticaLimite && (
+                        <div className={`mt-3 rounded-lg border px-3 py-2 text-xs ${practicaSinMargen ? 'border-red-400 bg-red-50 text-red-900' : 'border-amber-400 bg-amber-50 text-amber-900'}`} role="status">
+                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
+                          <strong>{practicaSinMargen ? 'Tiempo insuficiente para práctica:' : 'Último margen para práctica:'}</strong>
+                          {' '}faltan {clasesPracticaPendientes} clases de práctica;
+                          se necesitan al menos {diasMinimosPractica} día(s) de cargue,
+                          considerando máximo {limitePracticaDiaria} por día.
+                          {' '}Restan {Math.max(0, diasRestantesRunt)} día(s) de vigencia.
+                          {!practicaHabilitadaUI && ' Además debe completar teoría y taller antes de habilitar práctica.'}
+                        </div>
+                      )}
+
+                      {vencido && (
+                        <div
+                          className="
+                            mt-3
+                            bg-red-50
+                            border
+                            border-red-300
+                            rounded-lg
+                            p-3
+                            text-xs
+                            text-red-700
+                          "
+                        >
+
+                          <div className="font-bold">
+                            <i className="fas fa-exclamation-triangle mr-2"></i>
+
+                            PROCESO RUNT VENCIDO
+                          </div>
+
+                          <p className="mt-1">
+                            El registro superó los 90 días según la fecha anotada y no tiene certificación registrada en DATA-CEA. Antes de reiniciar, verifique el estado real en RUNT; podría estar certificado y pendiente de actualizar aquí.
+                          </p>
+
+                          <BotonAccion tipo="secundario"
+                            type="button"
+                            onClick={
+                              reiniciarProceso
+                            }
+                            disabled={
+                              procesando
+                            }
+                            className="
+                              mt-3
+                              bg-red-600
+                              hover:bg-red-700
+                              text-white
+                              px-4
+                              py-2
+                              rounded-lg
+                              text-xs
+                              font-semibold
+                              disabled:opacity-50
+                            "
+                          >
+                            <i className="fas fa-rotate-right mr-2"></i>
+
+                            Reiniciar Proceso RUNT
+                          </BotonAccion>
+
+                        </div>
+                      )}
+
+                    </div>
+
+                  </div>
+                )}
+
+
                                 <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
                   <div className="mb-2 text-xs font-bold text-slate-700">Avance de clases en RUNT</div>
                   <div
@@ -3274,6 +3409,35 @@ export default function RuntPage() {
                   )}
                 </div>
 
+
+                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/80 p-2 shadow-sm">
+                  <nav role="tablist" aria-label="Secciones de Control RUNT"
+                    className="grid min-w-[600px] grid-cols-4 gap-2">
+                    {[
+                      {id:'flexible',label:'Control flexible',icon:'fa-sliders-h'},
+                      {id:'detallado',label:'Control detallado',icon:'fa-chalkboard-teacher'},
+                      {id:'historial',label:'Historial',icon:'fa-history'},
+                      {id:'certificaciones',label:'Registrar Certificación',icon:'fa-certificate'}
+                    ].map(item=>(
+                      <button key={item.id} type="button" role="tab"
+                        aria-selected={pestanaDrawerRunt===item.id}
+                        onClick={()=>{setPestanaDrawerRunt(item.id);setError('');setMensaje('')}}
+                        className={`group relative flex min-h-[64px] flex-col items-center justify-center gap-1
+                          rounded-lg border-2 px-2 py-2 text-center text-[11px] font-bold
+                          transition-all duration-200 ease-out focus-visible:outline-none
+                          focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2
+                          ${pestanaDrawerRunt===item.id
+                            ? 'border-[var(--primary)] bg-[var(--primary)] text-white shadow-md -translate-y-0.5'
+                            : 'border-transparent bg-white text-slate-600 hover:-translate-y-0.5 hover:border-[var(--primary)] hover:bg-blue-50 hover:text-[var(--primary)] hover:shadow-md'}`}>
+                        <i className={`fas ${item.icon} text-sm transition-transform duration-200 group-hover:scale-110`} aria-hidden="true"></i>
+                        <span>{item.label}</span>
+                        <span className={`absolute inset-x-4 bottom-0 h-1 rounded-t-full transition-all duration-200
+                          ${pestanaDrawerRunt===item.id?'bg-white':'bg-transparent group-hover:bg-[var(--primary)]'}`} aria-hidden="true"/>
+                      </button>
+                    ))}
+                  </nav>
+                </div>
+                <section role="tabpanel" aria-label="flexible" className={pestanaDrawerRunt==='flexible'?'space-y-4':'hidden'}>
 {/* ==========================================
                     CARGUE
                 ========================================== */}
@@ -3842,181 +4006,6 @@ export default function RuntPage() {
                   </div>
 
                 </div>
-                </section>
-                <section role="tabpanel" aria-label="estados" className={pestanaDrawerRunt==='estados'?'space-y-4':'hidden'}>
-                {/* ==========================================
-                    VIGENCIA
-                ========================================== */}
-
-                {registrado && (
-                  <div
-                    className="
-                      border
-                      border-gray-300
-                      rounded-lg
-                      overflow-hidden
-                    "
-                  >
-
-                    <div
-                      className="
-                        
-                        
-                        px-3
-                        py-2
-                        text-xs
-                        font-semibold
-                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                      Vigencia del Proceso RUNT Actual
-                    </div>
-
-                    <div className="p-3">
-
-                      <div className="grid grid-cols-1 items-center gap-4 text-xs md:grid-cols-[minmax(105px,0.8fr)_minmax(105px,0.8fr)_minmax(0,3fr)]">
-                        <div>
-                          <span className="text-gray-500">Registro</span>
-                          <div className="font-semibold">
-                            {formatearFecha(vigenciaActual?.fecha_registro)}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Fecha límite</span>
-                          <div className="font-semibold">
-                            {formatearFecha(vigenciaActual?.fecha_limite)}
-                          </div>
-                        </div>
-                        <div className="min-w-0 space-y-2">
-                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                            <span className="font-semibold text-slate-700">Tiempo transcurrido</span>
-                            {vigenciaConPlazo ? (
-                              <span className={`font-bold ${riesgoVigenciaRunt ? 'text-red-700' : advertenciaVigenciaRunt ? 'text-amber-800' : 'text-emerald-700'}`}>
-                                {diasTranscurridosRunt} de 90 días
-                                <span className="ml-1 font-normal text-slate-600">
-                                  {vencido ? '· Plazo vencido' : `· ${Math.max(0, diasRestantesRunt)} restantes`}
-                                </span>
-                              </span>
-                            ) : (
-                              <BadgeVigencia vigencia={vigenciaActual} />
-                            )}
-                          </div>
-                          {vigenciaConPlazo ? (
-                            <div role="progressbar" aria-label="Tiempo transcurrido de la vigencia RUNT"
-                              aria-valuemin={0} aria-valuemax={90}
-                              aria-valuenow={diasTranscurridosRunt}
-                              className="h-5 w-full overflow-hidden rounded-full bg-slate-200">
-                              <div className={`h-full rounded-full transition-all duration-300 ${colorProgresoRunt}`}
-                                style={{ width: `${porcentajeVigenciaRunt}%` }} />
-                            </div>
-                          ) : (
-                            <p className="text-[11px] text-slate-500">
-                              {certificado ? 'Proceso certificado. Seguimiento de vigencia finalizado.' : 'Sin plazo de vigencia disponible.'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {alertaTeoriaTardia && (
-                        <div className="mt-3 rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
-                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
-                          <strong>Riesgo de cumplimiento:</strong> han transcurrido {diasTranscurridosRunt} días
-                          y aún no hay clases de teoría cargadas en RUNT.
-                          Quedan {Math.max(0, diasRestantesRunt)} días de vigencia.
-                        </div>
-                      )}
-                      {alertaPracticaLimite && (
-                        <div className={`mt-3 rounded-lg border px-3 py-2 text-xs ${practicaSinMargen ? 'border-red-400 bg-red-50 text-red-900' : 'border-amber-400 bg-amber-50 text-amber-900'}`} role="status">
-                          <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
-                          <strong>{practicaSinMargen ? 'Tiempo insuficiente para práctica:' : 'Último margen para práctica:'}</strong>
-                          {' '}faltan {clasesPracticaPendientes} clases de práctica;
-                          se necesitan al menos {diasMinimosPractica} día(s) de cargue,
-                          considerando máximo {limitePracticaDiaria} por día.
-                          {' '}Restan {Math.max(0, diasRestantesRunt)} día(s) de vigencia.
-                          {!practicaHabilitadaUI && ' Además debe completar teoría y taller antes de habilitar práctica.'}
-                        </div>
-                      )}
-
-                      {vencido && (
-                        <div
-                          className="
-                            mt-3
-                            bg-red-50
-                            border
-                            border-red-300
-                            rounded-lg
-                            p-3
-                            text-xs
-                            text-red-700
-                          "
-                        >
-
-                          <div className="font-bold">
-                            <i className="fas fa-exclamation-triangle mr-2"></i>
-
-                            PROCESO RUNT VENCIDO
-                          </div>
-
-                          <p className="mt-1">
-                            El registro superó los 90 días según la fecha anotada y no tiene certificación registrada en DATA-CEA. Antes de reiniciar, verifique el estado real en RUNT; podría estar certificado y pendiente de actualizar aquí.
-                          </p>
-
-                          <BotonAccion tipo="secundario"
-                            type="button"
-                            onClick={
-                              reiniciarProceso
-                            }
-                            disabled={
-                              procesando
-                            }
-                            className="
-                              mt-3
-                              bg-red-600
-                              hover:bg-red-700
-                              text-white
-                              px-4
-                              py-2
-                              rounded-lg
-                              text-xs
-                              font-semibold
-                              disabled:opacity-50
-                            "
-                          >
-                            <i className="fas fa-rotate-right mr-2"></i>
-
-                            Reiniciar Proceso RUNT
-                          </BotonAccion>
-
-                        </div>
-                      )}
-
-                    </div>
-
-                  </div>
-                )}
-
-{/* SEGUIMIENTO DEL PROCESO ACTUAL: sin reproducir la ficha en tarjetas repetidas */}
-                <section className="rounded-lg border border-slate-200 bg-white p-3 text-xs">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <strong>Proceso RUNT actual #{controlActual?.numero_proceso||1}</strong>
-                    <span className="text-slate-600">
-                      Registro: {formatearFecha(controlActual?.fecha_registro)}
-                      {' · '}Límite: {formatearFecha(vigenciaActual?.fecha_limite)}
-                    </span>
-                  </div>
-                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <div className="rounded bg-slate-50 p-2">
-                      <p className="text-slate-500">Verificación</p>
-                      <strong>{controlActual?.resultado_verificacion||'Pendiente'}</strong>
-                    </div>
-                    <div className="rounded bg-slate-50 p-2">
-                      <p className="text-slate-500">Registro RUNT</p>
-                      <strong>{controlActual?.estado_registro||'PENDIENTE'}</strong>
-                    </div>
-                    <div className="rounded bg-slate-50 p-2">
-                      <p className="text-slate-500">Certificación</p>
-                      <strong>{controlActual?.estado_certificacion||'PENDIENTE'}</strong>
-                    </div>
-                  </div>
-                </section>
                 {historialProcesos.some(p=>!p.es_actual) && (
                   <section className="rounded-lg border border-slate-200 bg-white p-3 text-xs">
                     <h3 className="mb-2 font-bold text-slate-700">Reprocesos anteriores</h3>
@@ -4040,419 +4029,11 @@ export default function RuntPage() {
                   </section>
                 )}
 
-                {/* ==========================================
-                    DATOS MATRÍCULA
-                ========================================== */}
 
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                    Datos de Matrícula
-                  </div>
-
-                  <div
-                    className="
-                      p-3
-                      grid
-                      grid-cols-2
-                      gap-3
-                      text-xs
-                    "
-                  >
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Aprendiz
-                      </span>
-
-                      <div className="font-semibold">
-                        {matriculaActual
-                          ?.nombre_completo ||
-                          '-'}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Documento
-                      </span>
-
-                      <div className="font-semibold">
-                        {formatearDocumento(
-                          controlActual.documento
-                        )}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Matrícula
-                      </span>
-
-                      <div className="font-semibold">
-                        {controlActual.consecutivo ||
-                          '-'}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Categoría
-                      </span>
-
-                      <div className="font-bold text-[var(--primary)]">
-                        {controlActual.categoria ||
-                          '-'}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Proceso RUNT
-                      </span>
-
-                      <div className="font-semibold">
-                        #{controlActual.numero_proceso ||
-                          1}
-                      </div>
-
-                    </div>
-
-                    <div>
-
-                      <span className="text-gray-500">
-                        Motivo reproceso
-                      </span>
-
-                      <div className="font-semibold">
-                        {controlActual.motivo_reproceso ||
-                          '-'}
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-                {/* ==========================================
-                    VERIFICACIÓN
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                    Verificación RUNT
-                  </div>
-
-                  <div className="p-3 space-y-3">
-
-                    <div
-                      className="
-                        grid
-                        grid-cols-2
-                        gap-3
-                        text-xs
-                      "
-                    >
-
-                      <div>
-
-                        <span className="text-gray-500">
-                          Resultado
-                        </span>
-
-                        <div className="mt-1">
-
-                          {inscrito ? (
-                            <Badge tipo="green">
-                              REGISTRADO
-                            </Badge>
-                          ) : noInscrito ? (
-                            <Badge tipo="red">
-                              NO REGISTRADO
-                            </Badge>
-                          ) : (
-                            <Badge tipo="yellow">
-                              PENDIENTE
-                            </Badge>
-                          )}
-
-                        </div>
-
-                      </div>
-
-                      <div>
-
-                        <span className="text-gray-500">
-                          Usuario
-                        </span>
-
-                        <div className="font-semibold mt-1">
-                          {controlActual
-                            .usuario_verificacion ||
-                            '-'}
-                        </div>
-
-                      </div>
-
-                    </div>
-
-
-
-                  </div>
-
-                </div>
-
-                {/* ==========================================
-                    REGISTRO
-                ========================================== */}
-
-                <div
-                  className="
-                    border
-                    border-gray-300
-                    rounded-lg
-                    overflow-hidden
-                  "
-                >
-
-                  <div
-                    className="
-                      
-                      
-                      px-3
-                      py-2
-                      text-xs
-                      font-semibold
-                    " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                    Registro en RUNT
-                  </div>
-
-                  <div className="p-3">
-
-                    {registrado ? (
-                      <div
-                        className="
-                          flex
-                          items-center
-                          justify-between
-                          gap-3
-                        "
-                      >
-
-                        <Badge tipo="green">
-                          REGISTRADO
-                        </Badge>
-
-                        <div className="text-xs text-gray-500 text-right">
-
-                          <div>
-                            {formatearFecha(
-                              controlActual
-                                .fecha_registro
-                            )}
-                          </div>
-
-                          <div>
-                            {controlActual
-                              .usuario_registro ||
-                              '-'}
-                          </div>
-
-                        </div>
-
-                      </div>
-                    ) : noInscrito ? (
-                      <div className="text-xs text-amber-700">
-                        La matrícula tiene resultado ciudadano NO REGISTRADO. No se puede confirmar el registro formal del CEA mientras exista ese resultado.
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-semibold block">
-                          Fecha real de inscripción del aprendiz en RUNT
-                          <input type="date" max={hoyBogota()}
-                            className="block w-full border border-slate-300 rounded p-2 mt-1"
-                            value={fechaInscripcionRunt}
-                            onChange={e => setFechaInscripcionRunt(e.target.value)}/>
-                        </label>
-                        <label className="text-[11px] font-semibold block">
-                          Observaciones del registro formal RUNT
-                          <textarea rows={2}
-                            className="block w-full border border-slate-300 rounded p-2 mt-1"
-                            placeholder="Obligatorio cuando la fecha de RUNT es anterior a hoy"
-                            value={soporteInscripcionRunt}
-                            onChange={e => setSoporteInscripcionRunt(e.target.value)}/>
-                        </label>
-                        <p className="text-[10px] text-amber-800">
-                          Los 90 días se calculan desde esta fecha, no desde la matrícula del CEA.
-                          No confirme una fecha que no esté verificada en RUNT.
-                        </p>
-                      <BotonAccion tipo="guardar"
-                        type="button"
-                        onClick={
-                          registrarRunt
-                        }
-                        disabled={
-                          procesando
-                        }
-                        className="
-                          bg-blue-600
-                          hover:bg-blue-700
-                          text-white
-                          px-3
-                          py-2
-                          rounded-lg
-                          text-xs
-                          disabled:opacity-50
-                        "
-                      >
-                        <i className="fas fa-user-check mr-2"></i>
-
-                        Marcar REGISTRADO en RUNT
-                      </BotonAccion>
-                      </div>
-                    )}
-
-                  </div>
-
-                </div>
-
-                {/* ==========================================
-                    NOTIFICACIONES
-                ========================================== */}
-
-                {notificaciones.length >
-                  0 && (
-                  <div
-                    className="
-                      border
-                      border-gray-300
-                      rounded-lg
-                      overflow-hidden
-                    "
-                  >
-
-                    <div
-                      className="
-                        
-                        
-                        px-3
-                        py-2
-                        text-xs
-                        font-semibold
-                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                      Notificaciones de Vencimiento
-                    </div>
-
-                    <div className="p-3 space-y-2">
-
-                      {notificaciones.map(
-                        item => (
-                          <div
-                            key={
-                              item.id
-                            }
-                            className="
-                              flex
-                              justify-between
-                              items-center
-                              gap-3
-                              border
-                              border-gray-200
-                              rounded-lg
-                              p-2
-                              text-xs
-                            "
-                          >
-
-                            <div>
-
-                              <div className="font-semibold">
-                                {item.tipo_notificacion}
-                              </div>
-
-                              <div className="text-gray-500">
-                                Programada:{' '}
-
-                                {formatearFecha(
-                                  item.fecha_programada
-                                )}
-                              </div>
-
-                            </div>
-
-                            {mayusculas(
-                              item.estado_envio
-                            ) ===
-                            'ENVIADO' ? (
-                              <Badge tipo="green">
-                                Enviado
-                              </Badge>
-                            ) : mayusculas(
-                                item.estado_envio
-                              ) ===
-                              'ERROR' ? (
-                              <Badge tipo="red">
-                                Error
-                              </Badge>
-                            ) : (
-                              <Badge tipo="yellow">
-                                Pendiente
-                              </Badge>
-                            )}
-
-                          </div>
-                        )
-                      )}
-
-                    </div>
-
-                  </div>
-                )}
                 </section>
                 <section role="tabpanel" aria-label="certificaciones" className={pestanaDrawerRunt==='certificaciones'?'space-y-4':'hidden'}>
                   <div className="overflow-hidden rounded-lg border border-slate-300 bg-white">
-                    <h3 className="border-b border-slate-200 bg-slate-100 p-3 text-xs font-bold text-slate-700">Control certificaciones</h3>
+                    <h3 className="border-b border-slate-200 bg-slate-100 p-3 text-xs font-bold text-slate-700">Registrar Certificación</h3>
                     <div className="space-y-3 p-4 text-xs">
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <label className="block font-semibold text-slate-700">Fecha Certificación
