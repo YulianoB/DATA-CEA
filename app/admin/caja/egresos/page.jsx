@@ -194,6 +194,14 @@ function formatearFecha(
   }
 }
 
+// El valor original documenta la entrega; Caja opera sobre el valor neto.
+function valorEgresoReal(egreso) {
+  const entregado = Number(egreso?.valor || 0)
+  if (mayusculas(egreso?.modalidad) !== 'ENTREGA_PARA_LEGALIZAR') return entregado
+  return entregado - Number(egreso?.valor_reintegrado || 0) +
+    Number(egreso?.valor_reembolsado || 0)
+}
+
 function descripcionVehiculo(
   egreso
 ) {
@@ -2010,9 +2018,14 @@ export default function CajaEgresosPage() {
                             whitespace-nowrap
                           "
                         >
-                          {formatearMoneda(
-                            egreso.valor
-                          )}
+                          {formatearMoneda(valorEgresoReal(egreso))}
+                          {mayusculas(egreso.modalidad) === 'ENTREGA_PARA_LEGALIZAR' &&
+                            (Number(egreso.valor_reintegrado || 0) > 0 ||
+                              Number(egreso.valor_reembolsado || 0) > 0) && (
+                              <div className="text-[9px] font-normal text-slate-500 mt-1">
+                                Entregado: {formatearMoneda(egreso.valor)}
+                              </div>
+                            )}
                         </td>
 
                         {/* ESTADO */}
@@ -2220,9 +2233,12 @@ export default function CajaEgresosPage() {
                         value={detalleEgreso?.concepto?.nombre}
                       />
                       <Dato
-                        label="Valor"
-                        value={formatearMoneda(detalleEgreso.valor)}
+                        label="Egreso real"
+                        value={formatearMoneda(valorEgresoReal(detalleEgreso))}
                       />
+                      {mayusculas(detalleEgreso.modalidad) === 'ENTREGA_PARA_LEGALIZAR' && (
+                        <Dato label="Entrega original" value={formatearMoneda(detalleEgreso.valor)} />
+                      )}
                       <Dato
                         label="Medio de pago"
                         value={detalleEgreso?.medio_pago?.nombre}
@@ -2297,22 +2313,29 @@ export default function CajaEgresosPage() {
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <Dato label="Entregado" value={formatearMoneda(detalleEgreso.valor)} />
-                        <Dato label="Gastado" value={formatearMoneda(detalleEgreso.valor_legalizado)} />
-                        <Dato label="Reintegrado" value={formatearMoneda(detalleEgreso.valor_reintegrado)} />
-                        <Dato label="Reembolsado" value={formatearMoneda(detalleEgreso.valor_reembolsado)} />
+                        <Dato label="Dinero entregado" value={formatearMoneda(detalleEgreso.valor)} />
+                        <Dato label="Dinero utilizado" value={formatearMoneda(detalleEgreso.valor_legalizado)} />
+                        <Dato label="Sobrante devuelto" value={formatearMoneda(detalleEgreso.valor_reintegrado)} />
+                        <div className="rounded-md bg-white border border-green-300 p-2">
+                          <Dato label="Egreso real de Caja" value={formatearMoneda(valorEgresoReal(detalleEgreso))} />
+                        </div>
                       </div>
+                      {Number(detalleEgreso.valor_reembolsado || 0) > 0 && (
+                        <p className="text-xs text-amber-900">
+                          Pago adicional: {formatearMoneda(detalleEgreso.valor_reembolsado)}
+                        </p>
+                      )}
                       <p className="text-[10px] text-amber-900">
-                        El reintegro y el reembolso solo pueden ajustarse el día de la entrega,
-                        antes de cualquier arqueo o cierre. La factura se puede completar después.
+                        Registre el valor usado y el sobrante efectivamente devuelto.
+                        Los importes solo se ajustan el mismo día, antes del arqueo;
+                        la factura puede completarse después.
                       </p>
                       {legalizando && (
                         <div className="space-y-3 bg-white border border-amber-200 rounded-lg p-3">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {[
-                              ['valor_legalizado', 'Valor utilizado ($)'],
-                              ['valor_reintegrado', 'Sobrante devuelto ($)'],
-                              ['valor_reembolsado', 'Reembolso adicional ($)'],
+                              ['valor_legalizado', '¿Cuánto dinero se gastó? ($)'],
+                              ['valor_reintegrado', '¿Cuánto dinero devolvieron a Caja? ($)'],
                             ].map(([campo, etiqueta]) => (
                               <label key={campo} className="text-xs font-semibold text-slate-700">
                                 {etiqueta}
@@ -2323,8 +2346,20 @@ export default function CajaEgresosPage() {
                               </label>
                             ))}
                           </div>
-                          <div className={`text-xs font-bold ${Math.abs(diferenciaLegalizacion) < .005 ? 'text-green-700' : 'text-red-700'}`}>
-                            Diferencia pendiente: {formatearMoneda(diferenciaLegalizacion)}
+                          <details className="text-xs text-slate-600">
+                            <summary className="cursor-pointer font-semibold">Caso especial: el funcionario gastó más de lo entregado</summary>
+                            <label className="mt-2 block">
+                              Pago adicional realmente realizado ($)
+                              <input type="number" min="0" step="0.01"
+                                value={formLegalizacion.valor_reembolsado}
+                                onChange={e => setFormLegalizacion(f => ({...f, valor_reembolsado: e.target.value}))}
+                                className="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm"/>
+                            </label>
+                          </details>
+                          <div className={`text-xs font-bold ${Math.abs(diferenciaLegalizacion) < .005 ? 'text-green-700' : 'text-amber-700'}`}>
+                            {Math.abs(diferenciaLegalizacion) < .005
+                              ? 'Dinero conciliado: no quedan valores por justificar.'
+                              : `Dinero pendiente de justificar: ${formatearMoneda(diferenciaLegalizacion)}`}
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <label className="text-xs font-semibold">
