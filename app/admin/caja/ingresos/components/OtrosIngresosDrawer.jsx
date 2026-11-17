@@ -1659,18 +1659,21 @@ function validarIngreso() {
         await onActualizado()
       }
 
-      if (
-        datosImpresion
-      ) {
-        imprimirReciboOtrosIngresos(
-          datosImpresion,
-          {
+      if (datosImpresion) {
+        try {
+          imprimirReciboOtrosIngresos(datosImpresion, {
             empresaNombre,
             empresaDatos,
             usuarioOperacion,
             ventanaImpresion,
-          }
-        )
+          })
+        } catch (errorImpresion) {
+          // El ingreso YA fue guardado: jamás sugerir que se vuelva a cobrar.
+          if (!ventanaImpresion.closed) ventanaImpresion.close()
+          setError('El ingreso fue registrado correctamente, pero no fue posible abrir su impresión. Puede reimprimirlo desde HISTORIAL / REIMPRIMIR. ' + (errorImpresion?.message || ''))
+        }
+      } else if (!ventanaImpresion.closed) {
+        ventanaImpresion.close()
       }
 
       reiniciarIngreso()
