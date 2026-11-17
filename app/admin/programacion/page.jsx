@@ -5360,7 +5360,13 @@ function abrirClase(
             rutaRegreso="/admin"
             textoRegreso="Menú Administrativo"
           />
-          <div className="flex justify-end px-1 pt-2">
+          <div className="flex flex-wrap justify-end gap-2 px-1 pt-2">
+            {tipoProgramacion === 'REFUERZO' && (
+              <button type="button" onClick={() => setMostrarRegistroExterno(true)}
+                className="inline-flex items-center gap-1 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-800 hover:bg-indigo-100">
+                <span aria-hidden="true">+</span> Registrar cliente externo
+              </button>
+            )}
             <BotonActualizar type="button" onClick={cargarAgenda} disabled={cargandoAgenda}>
               <RefreshCw size={14} className={cargandoAgenda ? 'animate-spin' : ''} />
               Actualizar
@@ -5579,13 +5585,6 @@ function abrirClase(
                   </button>
                 )}
               </div>
-
-              {tipoProgramacion === 'REFUERZO' && (
-                <button type="button" onClick={() => setMostrarRegistroExterno(true)}
-                  className="mt-1.5 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-indigo-300 bg-indigo-50 px-2 py-1.5 text-[10px] font-bold text-indigo-800 hover:bg-indigo-100">
-                  <span aria-hidden="true">+</span> Cliente externo sin recibo
-                </button>
-              )}
 
               {!aprendiz && texto(busqueda).length>=3 &&
                 busquedaAprendizResuelta===texto(busqueda) &&
