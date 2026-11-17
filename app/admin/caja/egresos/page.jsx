@@ -1841,8 +1841,14 @@ export default function CajaEgresosPage() {
                             "
                           >
                             {egreso.beneficiario ||
+                              egreso.receptor_dinero ||
                               '-'}
                           </div>
+                          {mayusculas(egreso.modalidad) === 'ENTREGA_PARA_LEGALIZAR' && (
+                            <div className="text-[9px] font-semibold text-amber-700 mt-1">
+                              Receptor del anticipo · Pendiente de legalización
+                            </div>
+                          )}
 
                           <div
                             className="
@@ -1961,6 +1967,12 @@ export default function CajaEgresosPage() {
                               egreso.estado
                             }
                           />
+                          {mayusculas(egreso.estado) !== 'ANULADO' &&
+                            mayusculas(egreso.modalidad) === 'ENTREGA_PARA_LEGALIZAR' && (
+                              <div className="mt-1 text-[9px] font-bold text-amber-700">
+                                {egreso.estado_legalizacion || 'PENDIENTE'}
+                              </div>
+                          )}
                         </td>
 
                         {/* ACCIÓN */}
@@ -2106,23 +2118,26 @@ export default function CajaEgresosPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-4">
                   <SeccionDetalle
-                    titulo="Beneficiario"
+                    titulo={mayusculas(detalleEgreso.modalidad) === 'ENTREGA_PARA_LEGALIZAR'
+                      ? 'Receptor de la entrega'
+                      : 'Beneficiario'}
                     icono="fas fa-user"
                   >
                     <Dato
                       label="Nombre / Razón social"
-                      value={detalleEgreso.beneficiario}
+                      value={detalleEgreso.receptor_dinero || detalleEgreso.beneficiario}
                     />
                     <div className="grid grid-cols-2 gap-3">
-                      <Dato
-                        label="Tipo documento"
-                        value={detalleEgreso.tipo_documento_beneficiario}
-                      />
-                      <Dato
-                        label="Documento"
-                        value={detalleEgreso.documento_beneficiario}
-                      />
+                      <Dato label="Tipo documento" value={detalleEgreso.tipo_documento_receptor || detalleEgreso.tipo_documento_beneficiario} />
+                      <Dato label="Documento" value={detalleEgreso.documento_receptor || detalleEgreso.documento_beneficiario} />
                     </div>
+                    {mayusculas(detalleEgreso.modalidad) === 'ENTREGA_PARA_LEGALIZAR' && (
+                      <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-[10px] text-amber-800">
+                        Entrega de fondos: el receptor no es necesariamente el proveedor final.
+                        Estado de legalización: {detalleEgreso.estado_legalizacion || 'PENDIENTE'}.
+                        La legalización y los reintegros requieren conciliación y soporte independientes.
+                      </div>
+                    )}
                   </SeccionDetalle>
 
                   <SeccionDetalle
@@ -2219,15 +2234,17 @@ export default function CajaEgresosPage() {
                     </div>
                   )}
 
-                  <div className="flex justify-end pt-1">
-                    <BotonImprimir
-                      type="button"
-                      onClick={() => imprimirCuentaCobroDesdePagina(detalleEgreso)}
-                    >
-                      <i className="fas fa-print"></i>
-                      Imprimir cuenta de cobro
-                    </BotonImprimir>
-                  </div>
+                  {mayusculas(detalleEgreso.modalidad) !== 'ENTREGA_PARA_LEGALIZAR' && (
+                    <div className="flex justify-end pt-1">
+                      <BotonImprimir
+                        type="button"
+                        onClick={() => imprimirCuentaCobroDesdePagina(detalleEgreso)}
+                      >
+                        <i className="fas fa-print"></i>
+                        Imprimir cuenta de cobro
+                      </BotonImprimir>
+                    </div>
+                  )}
 
                   {mayusculas(detalleEgreso.estado) === 'ANULADO' && (
                     <p className="text-[9px] text-right text-red-600">
