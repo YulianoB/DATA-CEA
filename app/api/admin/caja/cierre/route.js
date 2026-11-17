@@ -658,6 +658,11 @@ async function consultarEgresos(
         documento_beneficiario,
         descripcion,
         valor,
+        modalidad,
+        estado_legalizacion,
+        valor_legalizado,
+        valor_reintegrado,
+        valor_reembolsado,
         numero_factura,
         numero_cuenta_cobro,
         referencia_pago,
@@ -869,10 +874,15 @@ function calcularMovimientos({
         egreso
       )
 
-    const valor =
-      redondear(
-        egreso?.valor
-      )
+    // Entregas para legalizar: el reintegro netea el desembolso
+    // dentro del mismo período, sin crear un ingreso operativo.
+    const valor = redondear(
+      Number(egreso?.valor || 0) +
+      (mayusculas(egreso?.modalidad) === 'ENTREGA_PARA_LEGALIZAR'
+        ? Number(egreso?.valor_reembolsado || 0) -
+          Number(egreso?.valor_reintegrado || 0)
+        : 0)
+    )
 
     if (
       !resumenMedios[
