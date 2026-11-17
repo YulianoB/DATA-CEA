@@ -2055,6 +2055,7 @@ const streamRef =
   const teoriaCompacta = totalTeoriaTaller >= 18
   const practicaCompacta = clasesPractica.length >= 26
   const practicaIntermedia = clasesPractica.length >= 20 && !practicaCompacta
+  const practicaBreve = clasesPractica.length <= 10
 
   const referenciaPago =
     matricula
@@ -2900,7 +2901,7 @@ const streamRef =
       ==================================================== */}
 
       <section
-        className={`hoja-control pagina-dos ${practicaCompacta ? 'practica-compacta' : practicaIntermedia ? 'practica-intermedia' : ''} bg-white mx-auto mt-5 shadow-lg p-[8mm]`}
+        className={`hoja-control pagina-dos ${practicaCompacta ? 'practica-compacta' : practicaIntermedia ? 'practica-intermedia' : practicaBreve ? 'practica-breve' : 'practica-normal'} bg-white mx-auto mt-5 shadow-lg p-[8mm]`}
       >
 
         <EncabezadoDocumento
@@ -3394,14 +3395,34 @@ const streamRef =
           .hoja-control.teoria-compacta:not(.pagina-dos) .tabla-modulo-control + .tabla-modulo-control {
             margin-top: 4px !important;
           }
-          /* Segunda hoja: escalas separadas para 20-25 y 26+ clases prácticas. */
+          /* Segunda hoja: densidad proporcional al número de clases prácticas.
+             El formato de 26+ clases se conserva para evitar desbordar C1. */
+          .hoja-control.pagina-dos.practica-normal .tabla-practica-control table {
+            font-size: 9px !important;
+            line-height: 1.23 !important;
+          }
+          .hoja-control.pagina-dos.practica-normal .tabla-practica-control table tbody td {
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
+          }
           .hoja-control.pagina-dos.practica-intermedia .tabla-practica-control table {
-            font-size: 7.6px !important;
-            line-height: 1.14 !important;
+            font-size: 8.2px !important;
+            line-height: 1.18 !important;
           }
           .hoja-control.pagina-dos.practica-intermedia .tabla-practica-control table tbody td {
-            padding-top: 2px !important;
-            padding-bottom: 2px !important;
+            padding-top: 3px !important;
+            padding-bottom: 3px !important;
+          }
+          .hoja-control.pagina-dos.practica-breve .tabla-practica-control table {
+            font-size: 9.3px !important;
+            line-height: 1.25 !important;
+          }
+          .hoja-control.pagina-dos.practica-breve .tabla-practica-control table tbody td {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+          }
+          .hoja-control.pagina-dos.practica-breve .observacion-practica-control {
+            height: 45px !important;
           }
           .hoja-control.pagina-dos.practica-compacta {
             padding: 5mm !important;
