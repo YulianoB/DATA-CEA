@@ -1021,6 +1021,7 @@ async function obtenerReferenciaPago(
       .select(`
         id,
         cuenta_id,
+        referencia_pago,
         fecha,
         estado,
         tipo_origen,
@@ -1097,10 +1098,7 @@ async function obtenerReferenciaPago(
     recibo_id:
       recibo.id,
 
-    consecutivo:
-      consecutivoRecibo(
-        recibo.id
-      ),
+    consecutivo: texto(recibo.referencia_pago),
 
     fecha:
       recibo.fecha ||
