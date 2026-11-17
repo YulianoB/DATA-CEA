@@ -643,7 +643,9 @@ function MiniProgreso({
           text-gray-600
         "
       >
-        {tipoProgramacion ===
+        {progreso?.sin_control_pago
+  ? 'Refuerzo externo sin control de pago'
+  : tipoProgramacion ===
 'CURSO_VIGENTE'
   ? `${numero(
       progreso
@@ -2752,8 +2754,7 @@ function mostrarAlertaValidacion(
     
     () => {
       if (aprendiz?.origen_programacion === 'CLIENTE_REFUERZO') {
-        return { categoria, clases_compradas:null, clases_comprometidas:0,
-          clases_disponibles: null, refuerzos_dictados:0 }
+        return { categoria, sin_control_pago:true, refuerzos_dictados:0 }
       }
       if (
         aprendiz
