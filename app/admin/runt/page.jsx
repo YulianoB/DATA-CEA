@@ -1365,6 +1365,9 @@ export default function RuntPage() {
     )
 
     setPestanaDrawerRunt('flexible')
+    setFechaCertificacionRunt(hoyBogota())
+    setNumeroCertificadoRunt('')
+    setNumeroSolicitudRunt('')
     setFechaInscripcionRunt(hoyBogota())
     setSoporteInscripcionRunt('')
     setCargue({
