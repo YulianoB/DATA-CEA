@@ -5581,28 +5581,10 @@ function abrirClase(
               </div>
 
               {tipoProgramacion === 'REFUERZO' && (
-                <div className="mt-2">
-                  <button type="button" onClick={()=>setMostrarRegistroExterno(v=>!v)}
-                    className="rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-800">
-                    {mostrarRegistroExterno ? 'Cancelar registro' : '+ Registrar cliente externo sin recibo'}
-                  </button>
-                  {mostrarRegistroExterno && (
-                    <form onSubmit={registrarClienteExterno} className="mt-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3 space-y-2">
-                      <p className="text-xs text-slate-700">Refuerzo para persona formada en otro CEA. No crea matrícula ni obligación en Caja.</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <select aria-label="Tipo de documento" value={formClienteExterno.tipo_documento} onChange={e=>setFormClienteExterno(p=>({...p,tipo_documento:e.target.value}))} className="rounded border p-2 text-xs"><option value="CC">CC</option><option value="CE">CE</option><option value="TI">TI</option><option value="PAS">Pasaporte</option></select>
-                        <input required placeholder="Documento" value={formClienteExterno.documento} onChange={e=>setFormClienteExterno(p=>({...p,documento:e.target.value}))} className="rounded border p-2 text-xs"/>
-                        <input required placeholder="Nombre completo" value={formClienteExterno.nombre_completo} onChange={e=>setFormClienteExterno(p=>({...p,nombre_completo:e.target.value}))} className="rounded border p-2 text-xs"/>
-                        <input placeholder="Celular (opcional)" value={formClienteExterno.celular} onChange={e=>setFormClienteExterno(p=>({...p,celular:e.target.value}))} className="rounded border p-2 text-xs"/>
-                        <select aria-label="Categoría de licencia" value={formClienteExterno.categoria} onChange={e=>setFormClienteExterno(p=>({...p,categoria:e.target.value}))} className="rounded border p-2 text-xs">
-                          {['A1','A2','B1','B2','B3','C1','C2','C3'].map(c=><option value={c} key={c}>{c}</option>)}
-                        </select>
-                        <input placeholder="Observaciones (opcional)" value={formClienteExterno.observaciones} onChange={e=>setFormClienteExterno(p=>({...p,observaciones:e.target.value}))} className="rounded border p-2 text-xs"/>
-                      </div>
-                      <button type="submit" disabled={guardandoClienteExterno} className="rounded bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{guardandoClienteExterno?'Guardando...':'Guardar y seleccionar cliente'}</button>
-                    </form>
-                  )}
-                </div>
+                <button type="button" onClick={() => setMostrarRegistroExterno(true)}
+                  className="mt-1.5 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-indigo-300 bg-indigo-50 px-2 py-1.5 text-[10px] font-bold text-indigo-800 hover:bg-indigo-100">
+                  <span aria-hidden="true">+</span> Cliente externo sin recibo
+                </button>
               )}
 
               {!aprendiz && texto(busqueda).length>=3 &&
@@ -7981,6 +7963,65 @@ function abrirClase(
               )
             }
           />    
+
+      {/* Registro externo independiente del panel de filtros. */}
+      {mostrarRegistroExterno && tipoProgramacion === 'REFUERZO' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-3 sm:p-5"
+          role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !guardandoClienteExterno) setMostrarRegistroExterno(false) }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="titulo-cliente-externo"
+            className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-[#173B59] px-5 py-4 text-white">
+              <div>
+                <h2 id="titulo-cliente-externo" className="text-base font-black">Registrar cliente externo de refuerzo</h2>
+                <p className="mt-1 text-xs text-slate-200">Persona formada en otro CEA. No genera matrícula ni obligación en Caja.</p>
+              </div>
+              <button type="button" aria-label="Cerrar registro de cliente externo" disabled={guardandoClienteExterno}
+                onClick={() => setMostrarRegistroExterno(false)}
+                className="rounded-md px-2 py-1 text-lg font-bold hover:bg-white/20 disabled:opacity-50">×</button>
+            </div>
+            <form onSubmit={registrarClienteExterno} className="space-y-4 p-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="block text-xs font-bold text-slate-700">Tipo de documento
+                  <select value={formClienteExterno.tipo_documento} onChange={e=>setFormClienteExterno(p=>({...p,tipo_documento:e.target.value}))}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                    <option value="CC">CC</option><option value="CE">CE</option><option value="TI">TI</option><option value="PAS">Pasaporte</option>
+                  </select>
+                </label>
+                <label className="block text-xs font-bold text-slate-700">Documento
+                  <input required autoFocus value={formClienteExterno.documento} onChange={e=>setFormClienteExterno(p=>({...p,documento:e.target.value}))}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Número de documento"/>
+                </label>
+                <label className="block text-xs font-bold text-slate-700">Nombre completo
+                  <input required value={formClienteExterno.nombre_completo} onChange={e=>setFormClienteExterno(p=>({...p,nombre_completo:e.target.value}))}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Nombre y apellidos"/>
+                </label>
+                <label className="block text-xs font-bold text-slate-700">Celular (opcional)
+                  <input value={formClienteExterno.celular} onChange={e=>setFormClienteExterno(p=>({...p,celular:e.target.value}))}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Celular"/>
+                </label>
+                <label className="block text-xs font-bold text-slate-700">Categoría de licencia
+                  <select value={formClienteExterno.categoria} onChange={e=>setFormClienteExterno(p=>({...p,categoria:e.target.value}))}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                    {['A1','A2','B1','B2','B3','C1','C2','C3'].map(c=><option value={c} key={c}>{c}</option>)}
+                  </select>
+                </label>
+                <label className="block text-xs font-bold text-slate-700 sm:col-span-2">Observaciones (opcional)
+                  <textarea rows={2} value={formClienteExterno.observaciones} onChange={e=>setFormClienteExterno(p=>({...p,observaciones:e.target.value}))}
+                    className="mt-1 block w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Información administrativa relevante"/>
+                </label>
+              </div>
+              <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4">
+                <button type="button" disabled={guardandoClienteExterno} onClick={() => setMostrarRegistroExterno(false)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancelar</button>
+                <button type="submit" disabled={guardandoClienteExterno}
+                  className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-50">
+                  {guardandoClienteExterno ? 'Guardando...' : 'Guardar y seleccionar cliente'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ===================================================
           MODAL CLASE
