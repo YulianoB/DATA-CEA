@@ -2472,9 +2472,9 @@ function claveConsecutivoCaja(valor) {
 function normalizarBusquedaCaja(valor) {
   return String(valor ?? '')
     .normalize('NFD')
-    .replace(/[\\u0300-\\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toUpperCase()
-    .replace(/\\s+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim()
 }
 
@@ -2512,8 +2512,8 @@ async function consultarCuentas({
   const termino = normalizarBusquedaCaja(limpiarBusqueda(busqueda))
   // Los documentos se guardan sin puntuación, pero el usuario puede escribir
   // 86.088.404, 86 088 404 o 86088404.
-  const documentoBuscado = /^[0-9.\\s-]+$/.test(termino)
-    ? termino.replace(/\\D/g, '') : ''
+  const documentoBuscado = /^[0-9.\s-]+$/.test(termino)
+    ? termino.replace(/\D/g, '') : ''
   const estadoNormalizado = mayusculas(estado)
   const categoriaNormalizada = mayusculas(categoria)
 
@@ -2597,7 +2597,7 @@ async function consultarCuentas({
       for (const aprendiz of coincidenciasNombre) {
         const nombre = [aprendiz.nombres, aprendiz.apellidos].filter(Boolean).join(' ')
         if (!normalizarBusquedaCaja(nombre).includes(termino)) continue
-        const documento = String(aprendiz.documento || '').replace(/\\D/g, '')
+        const documento = String(aprendiz.documento || '').replace(/\D/g, '')
         if (documento && !aprendicesPorDocumento.has(documento)) {
           aprendicesPorDocumento.set(documento, nombre)
         }
@@ -2614,7 +2614,7 @@ async function consultarCuentas({
     if (conceptoId && !relaciones.some(d => String(d.concepto_id) === String(conceptoId))) continue
 
     const relacionadas = relaciones.map(d => matriculas.get(String(d.matricula_id))).filter(Boolean)
-    const documentoCuenta = String(cuenta.documento || '').replace(/\\D/g, '')
+    const documentoCuenta = String(cuenta.documento || '').replace(/\D/g, '')
     if (termino) {
       const campos = [
         cuenta.documento,
@@ -2631,7 +2631,7 @@ async function consultarCuentas({
       const coincideTexto = campos.some(valor => normalizarBusquedaCaja(valor).includes(termino))
       const coincideDocumento = documentoBuscado && (
         documentoCuenta.includes(documentoBuscado) ||
-        relacionadas.some(a => String(a.documento || '').replace(/\\D/g, '').includes(documentoBuscado))
+        relacionadas.some(a => String(a.documento || '').replace(/\D/g, '').includes(documentoBuscado))
       )
       if (!coincideTexto && !coincideDocumento) continue
     }
@@ -2664,7 +2664,7 @@ async function consultarCuentas({
   // El nombre encontrado por documento es solo informativo; NO sustituye
   // matricula_id ni las relaciones de cuentas_aprendiz_detalle.
   for (const cuenta of cuentas) {
-    const documento = String(cuenta.documento || '').replace(/\\D/g, '')
+    const documento = String(cuenta.documento || '').replace(/\D/g, '')
     if (aprendicesPorDocumento.has(documento)) {
       cuenta.nombre_aprendiz_consulta = aprendicesPorDocumento.get(documento)
     }
