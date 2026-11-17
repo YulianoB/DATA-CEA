@@ -3926,7 +3926,6 @@ export async function POST(
       const fechaCertificacion = normalizarTexto(body?.fecha_certificacion)
       const numeroCertificado = normalizarTexto(body?.numero_certificado_runt)
       const numeroSolicitud = normalizarTexto(body?.numero_solicitud_runt)
-      const soporte = normalizarTexto(body?.soporte_certificacion)
       if (!fechaValida(fechaCertificacion) ||
           Number.isNaN(Date.parse(fechaCertificacion+'T12:00:00Z')) ||
           new Date(fechaCertificacion+'T12:00:00Z').toISOString().slice(0,10)!==fechaCertificacion ||
@@ -3934,11 +3933,6 @@ export async function POST(
           !numeroCertificado || numeroCertificado.length > 150 || numeroSolicitud.length > 150) {
         return NextResponse.json({status:'error',
           message:'Indique fecha válida no futura y número de certificado oficial RUNT. La solicitud es opcional.'
-        },{status:400})
-      }
-      if (historica && soporte.length < 12) {
-        return NextResponse.json({status:'error',
-          message:'Para documentar una certificación ya realizada debe explicar el soporte consultado (mínimo 12 caracteres).'
         },{status:400})
       }
 
@@ -3985,7 +3979,6 @@ export async function POST(
         fecha_certificacion:fechaCertificacion,
         numero_certificado_runt:numeroCertificado,
         numero_solicitud_runt:numeroSolicitud||null,
-        soporte:soporte||null,
         verificado_paz_y_salvo:financiero.paz_y_salvo,
         saldo_al_registro:financiero.saldo,
         cuentas:financiero.cuentas,
@@ -3998,14 +3991,14 @@ export async function POST(
       await registrarAuditoriaRunt(supabase,{
         usuario,control,
         accion:historica?'SOLICITUD_REGISTRO_CERTIFICADO_HISTORICO':'SOLICITUD_CERTIFICACION_RUNT',
-        anteriores:control,nuevos:evento,motivo:soporte,
+        anteriores:control,nuevos:evento,motivo:null,
       })
 
       const descripcionAnterior = normalizarTexto(control.observaciones)
       const nota = historica
         ? 'Certificado RUNT previamente expedido, registrado en DATA-CEA '+momentoRegistro+
           (financiero.paz_y_salvo?'':' | ALERTA: NO PAZ Y SALVO al registrar')+
-          ' | Soporte: '+soporte
+          ''
         : 'Certificación RUNT verificada en DATA-CEA '+momentoRegistro
       const {data,error}=await supabase.from('control_runt')
         .update({
@@ -4027,7 +4020,7 @@ export async function POST(
           usuario,control,
           accion:historica?'CERTIFICADO_RUNT_HISTORICO_REGISTRADO':'CERTIFICADO_RUNT_REGISTRADO',
           anteriores:control,nuevos:{...evento,control_actualizado_id:data.id},
-          motivo:soporte,
+          motivo:null,
         })
       } catch(errorAuditoria) {
         // La primera auditoría ya conservó la intención y su instante.
