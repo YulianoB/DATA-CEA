@@ -47,13 +47,13 @@ const HORAS = [
 ]
 
 const DIAS_SEMANA = [
+  'Domingo',
   'Lunes',
   'Martes',
   'Miércoles',
   'Jueves',
   'Viernes',
   'Sábado',
-  'Domingo',
 ]
 
 // =========================================================
@@ -165,7 +165,7 @@ function sumarDias(
   return copia
 }
 
-function obtenerLunes(
+function obtenerDomingo(
   fecha
 ) {
   const copia =
@@ -173,18 +173,10 @@ function obtenerLunes(
       fecha
     )
 
-  const dia =
-    copia.getDay()
-
-  const diferencia =
-    dia ===
-    0
-      ? -6
-      : 1 - dia
-
+  // getDay(): domingo = 0, lunes = 1, ... sábado = 6.
+  // La semana visible inicia el domingo de la fecha seleccionada.
   copia.setDate(
-    copia.getDate() +
-    diferencia
+    copia.getDate() - copia.getDay()
   )
 
   copia.setHours(
@@ -2392,7 +2384,7 @@ export default function ProgramacionPage() {
   ] =
     useState(
       () =>
-        obtenerLunes(
+        obtenerDomingo(
           new Date()
         )
     )
@@ -5293,7 +5285,7 @@ function abrirClase(
 
   function semanaActual() {
     setInicioSemana(
-      obtenerLunes(
+      obtenerDomingo(
         new Date()
       )
     )
