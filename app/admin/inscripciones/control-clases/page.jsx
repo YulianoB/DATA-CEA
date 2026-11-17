@@ -2051,7 +2051,7 @@ const streamRef =
   // Densidad de impresión según la cantidad REAL de clases configuradas.
   // Permite que A2 conserve filas amplias y C1 utilice un formato compacto.
   const totalTeoriaTaller = [...modulosTeoria, ...modulosTaller]
-    .reduce((total, modulo) => total + obtenerClases(modulo).length, 0)
+    .reduce((total, modulo) => total + (Array.isArray(modulo?.clases) ? modulo.clases.length : 0), 0)
   const teoriaCompacta = totalTeoriaTaller >= 18
   const practicaCompacta = clasesPractica.length >= 26
   const practicaIntermedia = clasesPractica.length >= 20 && !practicaCompacta
@@ -3405,9 +3405,6 @@ const streamRef =
             padding-top: 2px !important;
             padding-bottom: 2px !important;
           }
-          .hoja-control.teoria-compacta:not(.pagina-dos) .tabla-modulo-control table tbody td span.text-\\[14px\\] {
-            font-size: 12px !important;
-          }
           .hoja-control.teoria-compacta:not(.pagina-dos) .tabla-modulo-control + .tabla-modulo-control {
             margin-top: 4px !important;
           }
@@ -3433,9 +3430,6 @@ const streamRef =
           .hoja-control.pagina-dos.practica-compacta .tabla-practica-control table :is(th, td) {
             padding-top: 1px !important;
             padding-bottom: 1px !important;
-          }
-          .hoja-control.pagina-dos.practica-compacta .tabla-practica-control table tbody td span.text-\\[14px\\] {
-            font-size: 12px !important;
           }
           .hoja-control.pagina-dos.practica-compacta > div:nth-of-type(2),
           .hoja-control.pagina-dos.practica-compacta > div:nth-of-type(3) {
