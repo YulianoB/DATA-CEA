@@ -3143,7 +3143,7 @@ const streamRef =
               <div
                 className="
                   mt-1
-                  h-[28px]
+                  h-[38px]
                   border
                   border-black
                 "
@@ -3160,7 +3160,7 @@ const streamRef =
               <div
                 className="
                   mt-1
-                  h-[28px]
+                  h-[38px]
                   border
                   border-gray-500
                 "
@@ -3247,6 +3247,11 @@ const streamRef =
         /* Un único grosor para el conjunto de la tarjeta; sin sombras que dupliquen líneas. */
         /* Un píxel CSS equivale a 0,75 pt de impresión: línea fina y estable. */
         .hoja-control { --linea-control: 1px solid #000; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        /* Texto negro uniforme en ambas hojas y en toda la tabla de datos. */
+        .hoja-control, .hoja-control * { color: #000 !important; }
+        @media print {
+          .hoja-control, .hoja-control * { -webkit-text-fill-color: #000 !important; }
+        }
         .hoja-control .border { border: var(--linea-control) !important; }
         .hoja-control .border-t { border-top: var(--linea-control) !important; }
         .hoja-control .border-b { border-bottom: var(--linea-control) !important; }
@@ -3345,12 +3350,21 @@ const streamRef =
           /* Hoja práctica: mejor lectura y filas más altas, conservando
              espacio para resultado final y firmas al cierre de la página. */
           .hoja-control.pagina-dos .tabla-practica-control table {
-            font-size: 7.5px !important;
-            line-height: 1.12 !important;
+            font-size: 8.5px !important;
+            line-height: 1.22 !important;
           }
           .hoja-control.pagina-dos .tabla-practica-control table tbody td {
-            padding-top: 3px !important;
-            padding-bottom: 3px !important;
+            padding-top: 5px !important;
+            padding-bottom: 5px !important;
+          }
+          /* Descripciones, leyenda y resultados más legibles en la segunda hoja. */
+          .hoja-control.pagina-dos > div:nth-of-type(2) {
+            font-size: 9px !important;
+            line-height: 1.25 !important;
+          }
+          .hoja-control.pagina-dos > div:nth-of-type(3) {
+            font-size: 8.5px !important;
+            line-height: 1.25 !important;
           }
           .hoja-control.pagina-dos .tabla-practica-control table tr {
             break-inside: avoid !important;
