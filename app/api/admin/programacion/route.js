@@ -1274,6 +1274,7 @@ async function consultarClasesReciboRefuerzo(
         id,
         matricula_id,
         recibo_refuerzo_id,
+        cliente_refuerzo_id,
         instructor_id,
         vehiculo_id,
         categoria,
@@ -2699,6 +2700,7 @@ async function consultarCrucesHorario(
   {
     matriculaId,
     reciboRefuerzoId,
+    clienteRefuerzoId,
     instructorId,
     vehiculoId,
     fecha,
@@ -2736,6 +2738,7 @@ async function consultarCrucesHorario(
       `recibo_refuerzo_id.eq.${reciboRefuerzoId}`
     )
   }
+  if (clienteRefuerzoId) condiciones.push(`cliente_refuerzo_id.eq.${clienteRefuerzoId}`)
 
   // =======================================================
   // INSTRUCTOR
@@ -2871,6 +2874,7 @@ async function validarProgramacion(
   {
     matriculaId,
     reciboRefuerzoId,
+    clienteRefuerzoId,
     instructorId,
     vehiculoId,
     categoria,
@@ -2978,7 +2982,8 @@ async function validarProgramacion(
   if (
     esRefuerzo &&
     !tieneAprendiz &&
-    !tieneReciboRefuerzo
+    !tieneReciboRefuerzo &&
+    !clienteRefuerzoId
   ) {
     throw new Error(
       'Seleccione un aprendiz matriculado o un cliente de refuerzo identificable.'
@@ -3036,6 +3041,22 @@ async function validarProgramacion(
         `El aprendiz no tiene asignada la categoría ${categoria}.`
       )
     }
+  }
+
+  // Cliente externo de refuerzo: sin matrícula ni pago obligatorio.
+  if (clienteRefuerzoId) {
+    if (!esRefuerzo || tieneAprendiz || tieneReciboRefuerzo)
+      throw new Error('El cliente externo sin recibo solo puede programarse como REFUERZO.')
+    const { data: cliente, error: errorCliente } = await supabase
+      .from('clientes_refuerzo')
+      .select('id,documento,nombre_completo,celular,categoria,activo')
+      .eq('id',clienteRefuerzoId).maybeSingle()
+    if (errorCliente) throw errorCliente
+    if (!cliente || cliente.activo !== true)
+      throw new Error('El cliente externo seleccionado no está disponible.')
+    if (normalizarCategoriaLicencia(cliente.categoria) !== normalizarCategoriaLicencia(categoria))
+      throw new Error('La categoría no corresponde al cliente externo.')
+    clienteRefuerzo = { ...cliente, origen_programacion:'CLIENTE_REFUERZO', tipo_doc:'CC' }
   }
 
   // =======================================================
@@ -3411,6 +3432,7 @@ async function validarProgramacion(
         matriculaId,
 
         reciboRefuerzoId,
+        clienteRefuerzoId,
 
         instructorId,
 
@@ -3462,6 +3484,10 @@ async function validarProgramacion(
       throw new Error(
         'El cliente ya tiene una clase de refuerzo programada en este horario.'
       )
+    }
+
+    if (clienteRefuerzoId && Number(cruce?.cliente_refuerzo_id) === Number(clienteRefuerzoId)) {
+      throw new Error('El cliente externo ya tiene una clase programada en este horario.')
     }
 
     // =====================================================
@@ -4906,6 +4932,8 @@ if (
       body?.recibo_refuerzo_id
     )
 
+  const clienteRefuerzoId = enteroPositivo(body?.cliente_refuerzo_id)
+
   const instructorId =
     enteroPositivo(
       body?.instructor_id
@@ -4984,6 +5012,7 @@ if (
         matriculaId,
 
         reciboRefuerzoId,
+        clienteRefuerzoId,
 
         instructorId,
 
@@ -5033,6 +5062,7 @@ if (
         recibo_refuerzo_id:
           reciboRefuerzoId ||
           null,
+        cliente_refuerzo_id: clienteRefuerzoId || null,
 
         instructor_id:
           instructorId,
