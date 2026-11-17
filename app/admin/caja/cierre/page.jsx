@@ -2360,6 +2360,11 @@ export default function CierreCajaPage() {
                   ) : (
                     movimientosDia.movimientos.map(item => {
                       const ingreso = item.tipo_movimiento === 'INGRESO'
+                      const valorMostrado = ingreso ? Number(item.valor || 0) :
+                        Number(item.valor || 0) +
+                        (String(item.modalidad || '').toUpperCase() === 'ENTREGA_PARA_LEGALIZAR'
+                          ? Number(item.valor_reembolsado || 0) - Number(item.valor_reintegrado || 0)
+                          : 0)
                       const referencia = ingreso
                         ? (item.referencia_pago || `REC-${item.id}`)
                         : (item.numero_cuenta_cobro || item.numero_factura || item.referencia_pago || `EGR-${item.id}`)
@@ -2397,7 +2402,15 @@ export default function CierreCajaPage() {
                           <td className="p-2 whitespace-nowrap">{item?.medio_pago?.nombre || '-'}</td>
                           <td className="p-2 text-center">{item.estado || '-'}</td>
                           <td className="p-2">{responsable}</td>
-                          <td className="p-2 text-right font-black whitespace-nowrap">{formatearMoneda(item.valor)}</td>
+                          <td className="p-2 text-right font-black whitespace-nowrap">
+                            {formatearMoneda(valorMostrado)}
+                            {!ingreso && String(item.modalidad || '').toUpperCase() === 'ENTREGA_PARA_LEGALIZAR' &&
+                              Number(item.valor_reintegrado || 0) > 0 && (
+                                <div className="text-[8px] font-normal text-slate-600">
+                                  Entregado: {formatearMoneda(item.valor)}
+                                </div>
+                              )}
+                          </td>
                         </tr>
                       )
                     })
