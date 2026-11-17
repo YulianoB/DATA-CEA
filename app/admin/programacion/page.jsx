@@ -1011,6 +1011,8 @@ function ModalClase({
   ] =
     useState('')
 
+  const [numeroClaseEditar, setNumeroClaseEditar] = useState('')
+
   const [
     confirmandoCancelacion,
     setConfirmandoCancelacion,
@@ -1044,6 +1046,14 @@ function ModalClase({
       setConfirmandoCancelacion(
         false
       )
+      if (abierto && modo==='NUEVA' && tipoProgramacion==='CURSO_VIGENTE') {
+        setNumeroClaseEditar(String(progreso?.siguiente_numero_clase || Math.min(
+          numero(progreso?.clases_requeridas),
+          numero(progreso?.clases_comprometidas)+1
+        )))
+      } else {
+        setNumeroClaseEditar('')
+      }
     },
     [
       clase,
@@ -1123,27 +1133,10 @@ function ModalClase({
   // NÚMERO DE CLASE
   // =======================================================
 
-  const numeroClase =
-    tipoModal ===
-      'CURSO_VIGENTE' &&
-    progreso
-      ? Math.min(
-          numero(
-            progreso
-              ?.clases_requeridas
-          ),
-          numero(
-            progreso
-              ?.clases_comprometidas
-          ) +
-            (
-              modo ===
-              'NUEVA'
-                ? 1
-                : 0
-            )
-        )
-      : null
+  const numeroClase = tipoModal==='CURSO_VIGENTE' && progreso
+    ? Number(numeroClaseEditar || progreso?.siguiente_numero_clase ||
+      Math.min(numero(progreso?.clases_requeridas),numero(progreso?.clases_comprometidas)+1))
+    : null
 
   // =======================================================
   // CAMBIOS DE ESTADO DISPONIBLES
@@ -1660,55 +1653,26 @@ const estadosDisponibles =
             </p>
           </div>
 
-          {/* =================================================
-              NÚMERO CLASE
-          ================================================= */}
-
-          {modo ===
-            'NUEVA' &&
-            tipoModal ===
-              'CURSO_VIGENTE' &&
-            progreso && (
-              <div
-                className="
-                  mt-2
-                  bg-blue-50
-                  border
-                  border-blue-200
-                  rounded-lg
-                  px-3
-                  py-1.5
-                  flex
-                  items-center
-                  justify-between
-                "
-              >
-                <span
-                  className="
-                    text-[8px]
-                    text-blue-700
-                    font-bold
-                  "
-                >
-                  Clase práctica
-                </span>
-
-                <span
-                  className="
-                    text-sm
-                    font-black
-                    text-blue-900
-                  "
-                >
-                  {numeroClase}
-                  /
-                  {numero(
-                    progreso
-                      ?.clases_requeridas
-                  )}
-                </span>
+          {/* NUMERACIÓN DE PRÁCTICA PARA CONTINUAR HISTÓRICOS */}
+          {modo==='NUEVA' && tipoModal==='CURSO_VIGENTE' && progreso && (
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+              <div>
+                <label htmlFor="numero-practica-cea" className="block text-[10px] font-bold text-blue-900">
+                  Número de clase práctica
+                </label>
+                <p className="text-[9px] text-blue-700">Ajustable si ya se dictaron clases antes de utilizar DATA CEA.</p>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <input id="numero-practica-cea" type="number" inputMode="numeric"
+                  min={1} max={numero(progreso.clases_requeridas)} step={1}
+                  value={numeroClaseEditar}
+                  onChange={event=>setNumeroClaseEditar(event.target.value)}
+                  disabled={guardando}
+                  className="w-16 rounded-md border border-blue-300 bg-white px-2 py-1 text-center text-sm font-bold text-blue-900"/>
+                <span className="text-xs font-bold text-blue-800">/ {numero(progreso.clases_requeridas)}</span>
+              </div>
+            </div>
+          )}
 
           {/* =================================================
               MODO EDITAR
@@ -2179,12 +2143,12 @@ const estadosDisponibles =
               'NUEVA' ? (
                 <button
                   type="button"
-                  onClick={
-                    onProgramar
-                  }
-                  disabled={
-                    guardando
-                  }
+                  onClick={() => onProgramar(numeroClaseEditar)}
+                  disabled={guardando || (tipoModal==='CURSO_VIGENTE' && (
+                    !/^\d+$/.test(numeroClaseEditar) || Number(numeroClaseEditar)<1 ||
+                    Number(numeroClaseEditar)>numero(progreso?.clases_requeridas)
+                  ))}
+
                   className="
                     bg-blue-600
                     hover:bg-blue-700
@@ -4289,6 +4253,9 @@ async function programarDesdeDisponibilidad(
       instructor.id
     )
   )
+  if(error==='Seleccione un instructor para continuar con la programación.') setError('')
+  if(alertaValidacion?.titulo==='Falta seleccionar instructor') setAlertaValidacion(null)
+
 
   // =====================================================
   // IMPORTANTE
@@ -4910,7 +4877,7 @@ function abrirClase(
   // PROGRAMAR
   // =======================================================
 
-  async function registrarClase() {
+  async function registrarClase(numeroClaseSeleccionada) {
   setGuardando(
     true
   )
@@ -4986,6 +4953,9 @@ function abrirClase(
 
               tipo_programacion:
                 tipoProgramacion,
+
+              numero_clase_practica: tipoProgramacion==='CURSO_VIGENTE'
+                ? Number(numeroClaseSeleccionada) : null,
 
               usuario:
                 usuarioOperacion,
@@ -5854,14 +5824,13 @@ function abrirClase(
                   value={
                     instructorId
                   }
-                  onChange={
-                    event =>
-                      setInstructorId(
-                        event
-                          .target
-                          .value
-                      )
-                  }
+                  onChange={event=>{
+                    setInstructorId(event.target.value)
+                    if(event.target.value){
+                      if(error==='Seleccione un instructor para continuar con la programación.') setError('')
+                      if(alertaValidacion?.titulo==='Falta seleccionar instructor') setAlertaValidacion(null)
+                    }
+                  }}
                   className="
                     w-full
                     h-[38px]
