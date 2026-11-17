@@ -1056,7 +1056,7 @@ function TablaPractica({
                 "
               >
                 <span>
-                  S
+                  LO
                 </span>
 
                 <span>
@@ -1064,7 +1064,7 @@ function TablaPractica({
                 </span>
 
                 <span>
-                  RR
+                  RF
                 </span>
               </div>
             </th>
@@ -2589,7 +2589,7 @@ const streamRef =
 
   {/* ==================================================
       FILA 3
-      CELULAR | CONVENIO | REF P
+      CELULAR | ORIGEN | REF P
   ================================================== */}
 
   <div
@@ -2607,9 +2607,13 @@ const streamRef =
     />
 
     <CampoDato
-      titulo="Convenio"
+      titulo="ORIGEN"
       valor={
-        aprendiz.convenio
+        aprendiz.nombre_origen ||
+        (String(aprendiz.origen_matricula || '').toUpperCase()==='DIRECTO'
+          ? empresa.nombre
+          : aprendiz.convenio) ||
+        ''
       }
     />
 
@@ -2950,14 +2954,14 @@ const streamRef =
             "
           >
             <strong>
-              S:
+              LO:
             </strong>{' '}
 
             {textos
               ?.practica
               ?.criterios
-              ?.S ||
-              'Desarrolla satisfactoriamente el contenido.'}
+              ?.LO ||
+              'Logrado: ejecuta correctamente la competencia.'}
           </div>
 
           <div
@@ -2976,7 +2980,7 @@ const streamRef =
               ?.practica
               ?.criterios
               ?.EP ||
-              'Continúa consolidando la habilidad.'}
+              'En proceso: necesita continuar practicando.'}
           </div>
 
           <div
@@ -2986,14 +2990,14 @@ const streamRef =
             "
           >
             <strong>
-              RR:
+              RF:
             </strong>{' '}
 
             {textos
               ?.practica
               ?.criterios
-              ?.RR ||
-              'Requiere reforzar el contenido.'}
+              ?.RF ||
+              'Requiere refuerzo: presenta dificultades y necesita práctica adicional.'}
           </div>
 
         </div>
@@ -3236,7 +3240,7 @@ const streamRef =
         .hoja-control .datos-control-clases > div:nth-child(2) {
           border-left: var(--linea-control) !important;
         }
-        /* La última fila (Celular / Convenio / Ref P) no duplica
+        /* La última fila (Celular / Origen / Ref P) no duplica
            el borde inferior del contenedor de identificación. */
         .hoja-control .datos-control-clases > div:first-child > div:last-child > .campo-dato-control {
           border-bottom: 0 !important;
