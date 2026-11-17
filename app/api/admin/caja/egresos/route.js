@@ -774,6 +774,9 @@ async function obtenerResumen(
       .select(`
         id,
         valor,
+        modalidad,
+        valor_reintegrado,
+        valor_reembolsado,
         estado,
         medio_pago:medios_pago_caja (
           id,
@@ -842,11 +845,12 @@ async function obtenerResumen(
         1
       continue
     }
-    const valor =
-      Number(
-        registro?.valor ||
-        0
-      )
+    // Misma conciliación neta aplicada en el cierre diario.
+    const valor = Number(registro?.valor || 0) +
+      (mayusculas(registro?.modalidad) === 'ENTREGA_PARA_LEGALIZAR'
+        ? Number(registro?.valor_reembolsado || 0) -
+          Number(registro?.valor_reintegrado || 0)
+        : 0)
     cantidadEgresos +=
       1
     totalEgresos +=
