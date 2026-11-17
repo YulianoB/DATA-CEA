@@ -3279,19 +3279,50 @@ const streamRef =
           .hoja-control { --linea-control: 1px solid #000; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
           /* Reservar espacio para la firma del aprendiz en la primera página,
              sin alterar el tamaño de las filas de la hoja de práctica. */
+          /* Ajuste vertical de la tarjeta en papel carta.
+             No se altera el ancho ni el contenido configurado de los módulos.
+             Márgenes reales: 5 mm en hoja 1, 7 mm en hoja 2. */
           .hoja-control:not(.pagina-dos) {
             padding: 5mm !important;
           }
           .hoja-control:not(.pagina-dos) .tabla-modulo-control {
-            margin-top: 5px !important;
+            margin-top: 6px !important;
+          }
+          .hoja-control:not(.pagina-dos) .tabla-modulo-control table {
+            font-size: 9px !important;
+            line-height: 1.2 !important;
           }
           .hoja-control:not(.pagina-dos) .tabla-modulo-control table :is(th, td) {
-            padding-top: 2px !important;
-            padding-bottom: 2px !important;
+            padding-top: 3px !important;
+            padding-bottom: 3px !important;
           }
           .hoja-control:not(.pagina-dos) .tabla-modulo-control table tr {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
+          }
+          .hoja-control:not(.pagina-dos) .tabla-modulo-control > div:first-child {
+            font-size: 10px !important;
+          }
+          .hoja-control:not(.pagina-dos) .tabla-modulo-control + .tabla-modulo-control {
+            break-before: auto !important;
+          }
+          /* Hoja práctica: mejor lectura y filas más altas, conservando
+             espacio para resultado final y firmas al cierre de la página. */
+          .hoja-control.pagina-dos .tabla-practica-control table {
+            font-size: 7.5px !important;
+            line-height: 1.12 !important;
+          }
+          .hoja-control.pagina-dos .tabla-practica-control table tbody td {
+            padding-top: 3px !important;
+            padding-bottom: 3px !important;
+          }
+          .hoja-control.pagina-dos .tabla-practica-control table tr {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .hoja-control.pagina-dos > div:nth-of-type(2),
+          .hoja-control.pagina-dos > div:nth-of-type(3) {
+            font-size: 8px;
           }
           .hoja-control .tabla-modulo-control table,
           .hoja-control .tabla-practica-control table {
