@@ -3726,10 +3726,10 @@ async function consultarClasePorId(
         }
       : null
 
-  const persona =
-    aprendizNormalizado ||
-    clienteRefuerzo ||
-    null
+  const clienteNuevo = data?.cliente_externo
+    ? {...data.cliente_externo, origen_programacion:'CLIENTE_REFUERZO',tipo_doc:data.cliente_externo.tipo_documento}
+    : null
+  const persona = aprendizNormalizado || clienteNuevo || clienteRefuerzo || null
 
   return {
     ...data,
@@ -3738,7 +3738,7 @@ async function consultarClasePorId(
       aprendizNormalizado,
 
     cliente_refuerzo:
-      clienteRefuerzo,
+      clienteNuevo || clienteRefuerzo,
 
     persona,
 
@@ -3943,6 +3943,7 @@ async function consultarAgenda(
     reciboRefuerzoId,
     reciboRefuerzoIds = [],
     clienteRefuerzoId,
+    clienteRefuerzoIds = [],
     vehiculoId,
     estado,
     categoria,
@@ -4105,7 +4106,8 @@ if (
     )
 }
 
-  if (clienteRefuerzoId) consulta = consulta.eq('cliente_refuerzo_id',clienteRefuerzoId)
+  if (clienteRefuerzoIds.length) consulta = consulta.in('cliente_refuerzo_id',clienteRefuerzoIds)
+  else if (clienteRefuerzoId) consulta = consulta.eq('cliente_refuerzo_id',clienteRefuerzoId)
   if (
     vehiculoId
   ) {
@@ -4764,6 +4766,7 @@ export async function GET(
       let reciboRefuerzoIds =
         []
       let clienteRefuerzoId = enteroPositivo(searchParams.get('cliente_refuerzo_id'))
+      let clienteRefuerzoIds = []
 
       if (
         documentoPersona
@@ -4773,7 +4776,7 @@ export async function GET(
             .select('id').eq('documento',documentoPersona)
           if(errorClientes) throw errorClientes
           const ids = (clientes||[]).map(x=>Number(x.id)).filter(Boolean)
-          if(ids.length) clienteRefuerzoId=ids[0]
+          if(ids.length) { clienteRefuerzoIds=ids; clienteRefuerzoId=null }
         } else if (
           origenPersona ===
           'CLIENTE_EXTERNO'
@@ -4810,6 +4813,7 @@ export async function GET(
 
           reciboRefuerzoIds,
           clienteRefuerzoId,
+          clienteRefuerzoIds,
 
           vehiculoId,
 
