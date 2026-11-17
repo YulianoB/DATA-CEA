@@ -1281,7 +1281,6 @@ async function consultarClasesReciboRefuerzo(
         id,
         matricula_id,
         recibo_refuerzo_id,
-        cliente_refuerzo_id,
         instructor_id,
         vehiculo_id,
         categoria,
