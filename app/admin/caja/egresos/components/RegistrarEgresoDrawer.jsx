@@ -2804,7 +2804,7 @@ export default function RegistrarEgresoDrawer({
               <CampoInput
                 label="Nombre"
                 value={formConcepto.nombre}
-                onChange={value => setFormConcepto(actual => ({ ...actual, nombre: mayusculas(value) }))}
+                onChange={value => setFormConcepto(actual => ({ ...actual, nombre: String(value ?? '').toUpperCase() }))}
                 placeholder="Ej. COMBUSTIBLE"
               />
               <CampoTextarea
