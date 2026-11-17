@@ -2788,6 +2788,7 @@ async function consultarCrucesHorario(
         id,
         matricula_id,
         recibo_refuerzo_id,
+        cliente_refuerzo_id,
         instructor_id,
         vehiculo_id,
         categoria,
@@ -3583,6 +3584,7 @@ async function consultarClasePorId(
         id,
         matricula_id,
         recibo_refuerzo_id,
+        cliente_refuerzo_id,
         instructor_id,
         vehiculo_id,
         categoria,
@@ -3604,6 +3606,9 @@ async function consultarClasePorId(
         created_at,
         updated_at,
 
+        cliente_externo:clientes_refuerzo (
+          id, tipo_documento, documento, nombre_completo, celular, categoria
+        ),
         aprendiz:aprendices (
           id,
           consecutivo,
@@ -3937,6 +3942,7 @@ async function consultarAgenda(
     matriculaIds = [],
     reciboRefuerzoId,
     reciboRefuerzoIds = [],
+    clienteRefuerzoId,
     vehiculoId,
     estado,
     categoria,
@@ -4095,6 +4101,7 @@ if (
     )
 }
 
+  if (clienteRefuerzoId) consulta = consulta.eq('cliente_refuerzo_id',clienteRefuerzoId)
   if (
     vehiculoId
   ) {
@@ -4283,10 +4290,11 @@ if (
           aprendizNormalizado,
 
         cliente_refuerzo:
-          clienteRefuerzo,
+          item?.cliente_externo || clienteRefuerzo,
 
         persona:
           aprendizNormalizado ||
+          item?.cliente_externo ||
           clienteRefuerzo ||
           null,
 
@@ -4751,11 +4759,18 @@ export async function GET(
 
       let reciboRefuerzoIds =
         []
+      let clienteRefuerzoId = enteroPositivo(searchParams.get('cliente_refuerzo_id'))
 
       if (
         documentoPersona
       ) {
-        if (
+        if (origenPersona === 'CLIENTE_REFUERZO') {
+          const {data: clientes,error: errorClientes} = await supabase.from('clientes_refuerzo')
+            .select('id').eq('documento',documentoPersona)
+          if(errorClientes) throw errorClientes
+          const ids = (clientes||[]).map(x=>Number(x.id)).filter(Boolean)
+          if(ids.length) clienteRefuerzoId=ids[0]
+        } else if (
           origenPersona ===
           'CLIENTE_EXTERNO'
         ) {
@@ -4790,6 +4805,7 @@ export async function GET(
           reciboRefuerzoId,
 
           reciboRefuerzoIds,
+          clienteRefuerzoId,
 
           vehiculoId,
 
@@ -6307,6 +6323,7 @@ if (
       body?.recibo_refuerzo_id ||
       claseActual?.recibo_refuerzo_id
     )
+  const clienteRefuerzoId = enteroPositivo(body?.cliente_refuerzo_id || claseActual?.cliente_refuerzo_id)
 
   // =====================================================
   // DATOS DE PROGRAMACIÓN
@@ -6413,6 +6430,7 @@ if (
         matriculaId,
 
         reciboRefuerzoId,
+        clienteRefuerzoId,
 
         instructorId,
 
@@ -6457,6 +6475,7 @@ if (
         recibo_refuerzo_id:
           reciboRefuerzoId ||
           null,
+        cliente_refuerzo_id: clienteRefuerzoId || null,
 
         instructor_id:
           instructorId,
