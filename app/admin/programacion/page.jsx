@@ -3236,6 +3236,27 @@ const resumenOperativo =
     }
   },[nit,busqueda,aprendiz,tipoProgramacion])
 
+  async function registrarClienteExterno(event) {
+    event.preventDefault()
+    if (guardandoClienteExterno) return
+    setGuardandoClienteExterno(true)
+    setError('')
+    try {
+      const respuesta = await fetchJsonSeguro(API_CLIENTES_REFUERZO, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({...formClienteExterno,nit})
+      })
+      const c=respuesta?.data
+      if(!c?.id) throw new Error('No se recibió el identificador del cliente externo.')
+      setMostrarRegistroExterno(false)
+      await seleccionarAprendiz({ ...c, id:`CLIENTE-${c.id}`,cliente_refuerzo_id:c.id,
+        origen_programacion:'CLIENTE_REFUERZO',categorias:[c.categoria],tipo_doc:c.tipo_documento })
+      setExito(respuesta?.data?.reutilizado
+        ? 'Cliente externo existente seleccionado.' : 'Cliente externo registrado correctamente. Puede programar el refuerzo.')
+    } catch (e) { setError(e?.message || 'No fue posible registrar el cliente externo.') }
+    finally { setGuardandoClienteExterno(false) }
+  }
+
   // =======================================================
   // CARGAR DETALLE APRENDIZ
   // =======================================================
@@ -5548,6 +5569,31 @@ function abrirClase(
                   </button>
                 )}
               </div>
+
+              {tipoProgramacion === 'REFUERZO' && (
+                <div className="mt-2">
+                  <button type="button" onClick={()=>setMostrarRegistroExterno(v=>!v)}
+                    className="rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-800">
+                    {mostrarRegistroExterno ? 'Cancelar registro' : '+ Registrar cliente externo sin recibo'}
+                  </button>
+                  {mostrarRegistroExterno && (
+                    <form onSubmit={registrarClienteExterno} className="mt-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3 space-y-2">
+                      <p className="text-xs text-slate-700">Refuerzo para persona formada en otro CEA. No crea matrícula ni obligación en Caja.</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select aria-label="Tipo de documento" value={formClienteExterno.tipo_documento} onChange={e=>setFormClienteExterno(p=>({...p,tipo_documento:e.target.value}))} className="rounded border p-2 text-xs"><option value="CC">CC</option><option value="CE">CE</option><option value="TI">TI</option><option value="PAS">Pasaporte</option></select>
+                        <input required placeholder="Documento" value={formClienteExterno.documento} onChange={e=>setFormClienteExterno(p=>({...p,documento:e.target.value}))} className="rounded border p-2 text-xs"/>
+                        <input required placeholder="Nombre completo" value={formClienteExterno.nombre_completo} onChange={e=>setFormClienteExterno(p=>({...p,nombre_completo:e.target.value}))} className="rounded border p-2 text-xs"/>
+                        <input placeholder="Celular (opcional)" value={formClienteExterno.celular} onChange={e=>setFormClienteExterno(p=>({...p,celular:e.target.value}))} className="rounded border p-2 text-xs"/>
+                        <select aria-label="Categoría de licencia" value={formClienteExterno.categoria} onChange={e=>setFormClienteExterno(p=>({...p,categoria:e.target.value}))} className="rounded border p-2 text-xs">
+                          {['A1','A2','B1','B2','B3','C1','C2','C3'].map(c=><option value={c} key={c}>{c}</option>)}
+                        </select>
+                        <input placeholder="Observaciones (opcional)" value={formClienteExterno.observaciones} onChange={e=>setFormClienteExterno(p=>({...p,observaciones:e.target.value}))} className="rounded border p-2 text-xs"/>
+                      </div>
+                      <button type="submit" disabled={guardandoClienteExterno} className="rounded bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{guardandoClienteExterno?'Guardando...':'Guardar y seleccionar cliente'}</button>
+                    </form>
+                  )}
+                </div>
+              )}
 
               {!aprendiz && texto(busqueda).length>=3 &&
                 busquedaAprendizResuelta===texto(busqueda) &&
