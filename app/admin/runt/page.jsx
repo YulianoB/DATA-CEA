@@ -457,7 +457,7 @@ function TarjetaResumen({
         border
         border-gray-300
         rounded-lg
-        p-3
+        p-2
         shadow-sm
       "
     >
@@ -473,7 +473,7 @@ function TarjetaResumen({
 
           <p
             className="
-              text-[11px]
+              text-[10px]
               uppercase
               font-semibold
               tracking-wide
@@ -486,7 +486,7 @@ function TarjetaResumen({
           <div
             className="
               mt-1
-              text-xl
+              text-base
               font-bold
               text-gray-800
             "
@@ -510,8 +510,8 @@ function TarjetaResumen({
 
         <div
           className={`
-            w-9
-            h-9
+            w-7
+            h-7
             rounded-lg
             flex
             items-center
@@ -532,8 +532,8 @@ function TarjetaResumen({
 
       <div
         className="
-          mt-3
-          h-2
+          mt-2
+          h-1.5
           bg-gray-200
           rounded-full
           overflow-hidden
@@ -563,8 +563,8 @@ function TarjetaResumen({
 
       <div
         className="
-          mt-2
-          text-[10px]
+          mt-1
+          text-[9px]
           text-gray-500
           flex
           justify-between
@@ -3059,88 +3059,59 @@ export default function RuntPage() {
             "
           >
 
-            {/* CABECERA */}
-
-            <div
-              className="
-                sticky
-                top-0
-                z-20
-                bg-white
-                border-b
-                border-gray-300
-                p-4
-                flex
-                justify-between
-                items-center
-                gap-3
-              "
-            >
-
-              <div>
-
-                <p
-                  className="
-                    text-[11px]
-                    uppercase
-                    font-semibold
-                    text-gray-500
-                  "
-                >
-                  Control RUNT
-                </p>
-
-                <h2
-                  className="
-                    text-lg
-                    font-bold
-                    text-[var(--primary)]
-                  "
-                >
-                  {matriculaActual
-                    ?.nombre_completo ||
-                    'Gestión RUNT'}
-                </h2>
-
-                {controlActual && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Matrícula{' '}
-                    {controlActual.consecutivo ||
-                      '-'}
-                    {' · '}
-                    Categoría{' '}
-                    {controlActual.categoria ||
-                      '-'}
-                    {' · '}
-                    Proceso #{controlActual.numero_proceso ||
-                      1}
-                  </p>
-                )}
-
+            {/* CABECERA INSTITUCIONAL CON VIGENCIA INTEGRADA */}
+            <header className="sticky top-0 z-20 border-b border-blue-950 bg-[#123D7A] px-4 py-3 text-white shadow-md">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-100">CONTROL RUNT</p>
+                  <h2 className="mt-1 text-base font-bold leading-tight text-white sm:text-lg">
+                    {matriculaActual?.nombre_completo || 'Gestión RUNT'}
+                  </h2>
+                  {controlActual && (
+                    <p className="mt-1 text-[11px] text-blue-100">
+                      Matrícula {controlActual.consecutivo || '-'} · Categoría {controlActual.categoria || '-'} · Proceso #{controlActual.numero_proceso || 1}
+                    </p>
+                  )}
+                </div>
+                <button type="button" onClick={cerrarDetalle} disabled={procesando}
+                  aria-label="Cerrar gestión RUNT"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/40 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50">
+                  <i className="fas fa-times" aria-hidden="true"></i>
+                </button>
               </div>
-
-              <BotonAccion tipo="cancelar"
-                type="button"
-                onClick={
-                  cerrarDetalle
-                }
-                disabled={
-                  procesando
-                }
-                className="
-                  w-9
-                  h-9
-                  border
-                  border-gray-300
-                  rounded-lg
-                  hover:bg-gray-100
-                  disabled:opacity-50
-                "
-              >
-                <i className="fas fa-times"></i>
-              </BotonAccion>
-
-            </div>
+              {controlActual && registrado && (
+                <div className="mt-3 grid grid-cols-1 items-center gap-x-4 gap-y-2 border-t border-white/20 pt-2 sm:grid-cols-[auto_auto_minmax(0,1fr)]">
+                  <div className="text-[11px]">
+                    <span className="text-blue-100">Registro</span>
+                    <strong className="ml-2 text-white">{formatearFecha(vigenciaActual?.fecha_registro)}</strong>
+                  </div>
+                  <div className="text-[11px]">
+                    <span className="text-blue-100">Fecha límite</span>
+                    <strong className="ml-2 text-white">{formatearFecha(vigenciaActual?.fecha_limite)}</strong>
+                  </div>
+                  <div className="min-w-0">
+                    {vigenciaConPlazo ? (
+                      <>
+                        <div className="mb-1 flex items-center justify-between gap-2 text-[10px]">
+                          <span className="font-medium text-blue-100">Tiempo transcurrido</span>
+                          <strong className="text-white">{diasTranscurridosRunt} de 90 días · {Math.max(0,diasRestantesRunt)} restantes</strong>
+                        </div>
+                        <div role="progressbar" aria-label="Tiempo transcurrido de vigencia RUNT"
+                          aria-valuemin={0} aria-valuemax={90} aria-valuenow={diasTranscurridosRunt}
+                          className="h-2.5 w-full overflow-hidden rounded-full bg-white/25">
+                          <div className="h-full rounded-full bg-emerald-400 transition-[width] duration-300"
+                            style={{width:`${porcentajeVigenciaRunt}%`}}/>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-[11px] text-blue-100">
+                        {certificado ? 'Proceso certificado' : 'Sin plazo de vigencia disponible'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </header>
 
             {loadingDetalle ? (
               <div className="p-12 text-center text-gray-500">
@@ -3192,77 +3163,9 @@ export default function RuntPage() {
                   </div>
                 )}
 
-                {/* ==========================================
-                    VIGENCIA
-                ========================================== */}
-
-                {registrado && (
-                  <div
-                    className="
-                      border
-                      border-gray-300
-                      rounded-lg
-                      overflow-hidden
-                    "
-                  >
-
-                    <div
-                      className="
-                        
-                        
-                        px-3
-                        py-2
-                        text-xs
-                        font-semibold
-                      " style={{backgroundColor:ESTILO_SECCIONES_SECUNDARIAS.fondo,color:ESTILO_SECCIONES_SECUNDARIAS.texto,borderRadius:ESTILO_SECCIONES_SECUNDARIAS.radioSuperior}}>
-                      Vigencia del Proceso RUNT Actual
-                    </div>
-
-                    <div className="p-3">
-
-                      <div className="grid grid-cols-1 items-center gap-4 text-xs md:grid-cols-[minmax(105px,0.8fr)_minmax(105px,0.8fr)_minmax(0,3fr)]">
-                        <div>
-                          <span className="text-gray-500">Registro</span>
-                          <div className="font-semibold">
-                            {formatearFecha(vigenciaActual?.fecha_registro)}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Fecha límite</span>
-                          <div className="font-semibold">
-                            {formatearFecha(vigenciaActual?.fecha_limite)}
-                          </div>
-                        </div>
-                        <div className="min-w-0 space-y-2">
-                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                            <span className="font-semibold text-slate-700">Tiempo transcurrido</span>
-                            {vigenciaConPlazo ? (
-                              <span className={`font-bold ${riesgoVigenciaRunt ? 'text-red-700' : advertenciaVigenciaRunt ? 'text-amber-800' : 'text-emerald-700'}`}>
-                                {diasTranscurridosRunt} de 90 días
-                                <span className="ml-1 font-normal text-slate-600">
-                                  {vencido ? '· Plazo vencido' : `· ${Math.max(0, diasRestantesRunt)} restantes`}
-                                </span>
-                              </span>
-                            ) : (
-                              <BadgeVigencia vigencia={vigenciaActual} />
-                            )}
-                          </div>
-                          {vigenciaConPlazo ? (
-                            <div role="progressbar" aria-label="Tiempo transcurrido de la vigencia RUNT"
-                              aria-valuemin={0} aria-valuemax={90}
-                              aria-valuenow={diasTranscurridosRunt}
-                              className="h-5 w-full overflow-hidden rounded-full bg-slate-200">
-                              <div className={`h-full rounded-full transition-all duration-300 ${colorProgresoRunt}`}
-                                style={{ width: `${porcentajeVigenciaRunt}%` }} />
-                            </div>
-                          ) : (
-                            <p className="text-[11px] text-slate-500">
-                              {certificado ? 'Proceso certificado. Seguimiento de vigencia finalizado.' : 'Sin plazo de vigencia disponible.'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
+                {/* Alertas operativas; la vigencia ahora está en la cabecera. */}
+                {registrado && (alertaTeoriaTardia || alertaPracticaLimite || vencido) && (
+                  <div className="space-y-2">
                       {alertaTeoriaTardia && (
                         <div className="mt-3 rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
                           <i className="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
@@ -3336,23 +3239,17 @@ export default function RuntPage() {
                         </div>
                       )}
 
-                    </div>
 
                   </div>
                 )}
 
-
-                                <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
-                  <div className="mb-2 text-xs font-bold text-slate-700">Avance de clases en RUNT</div>
+                                <div className="rounded-lg border border-blue-200 bg-blue-50/40 px-3 py-2">
+                  <div className="mb-1 text-[11px] font-bold text-slate-700">Avance de clases en RUNT</div>
                   <div
                     className="
                       grid
                       grid-cols-2 sm:grid-cols-4
-                      gap-3
-                      p-3
-                      bg-gray-50
-                      border-b
-                      border-gray-300
+                      gap-2
                     "
                   >
 
@@ -3410,33 +3307,32 @@ export default function RuntPage() {
                 </div>
 
 
-                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/80 p-2 shadow-sm">
+                <div className="overflow-x-auto border-b-2 border-[#123D7A]">
                   <nav role="tablist" aria-label="Secciones de Control RUNT"
-                    className="grid min-w-[600px] grid-cols-4 gap-2">
+                    className="flex min-w-[610px] items-end gap-1">
                     {[
                       {id:'flexible',label:'Control flexible',icon:'fa-sliders-h'},
-                      {id:'detallado',label:'Control detallado',icon:'fa-chalkboard-teacher'},
+                      {id:'detallado',label:'Control detallado',icon:'fa-search'},
                       {id:'historial',label:'Historial',icon:'fa-history'},
                       {id:'certificaciones',label:'Registrar Certificación',icon:'fa-certificate'}
                     ].map(item=>(
                       <button key={item.id} type="button" role="tab"
                         aria-selected={pestanaDrawerRunt===item.id}
                         onClick={()=>{setPestanaDrawerRunt(item.id);setError('');setMensaje('')}}
-                        className={`group relative flex min-h-[64px] flex-col items-center justify-center gap-1
-                          rounded-lg border-2 px-2 py-2 text-center text-[11px] font-bold
-                          transition-all duration-200 ease-out focus-visible:outline-none
-                          focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2
+                        className={`group relative flex min-h-10 flex-1 items-center justify-center gap-2
+                          rounded-t-lg border border-b-0 px-3 py-2 text-[11px] font-semibold
+                          transition-all duration-200 ease-out
+                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40B9F3]
                           ${pestanaDrawerRunt===item.id
-                            ? 'border-[var(--primary)] bg-[var(--primary)] text-white shadow-md -translate-y-0.5'
-                            : 'border-transparent bg-white text-slate-600 hover:-translate-y-0.5 hover:border-[var(--primary)] hover:bg-blue-50 hover:text-[var(--primary)] hover:shadow-md'}`}>
-                        <i className={`fas ${item.icon} text-sm transition-transform duration-200 group-hover:scale-110`} aria-hidden="true"></i>
-                        <span>{item.label}</span>
-                        <span className={`absolute inset-x-4 bottom-0 h-1 rounded-t-full transition-all duration-200
-                          ${pestanaDrawerRunt===item.id?'bg-white':'bg-transparent group-hover:bg-[var(--primary)]'}`} aria-hidden="true"/>
+                            ? 'border-[#123D7A] bg-[#123D7A] text-white shadow-sm'
+                            : 'border-sky-200 bg-[#DDF3FF] text-[#123D7A] hover:border-[#40B9F3] hover:bg-[#83D4FA] hover:text-[#082A55]'}`}>
+                        <i className={`fas ${item.icon} text-xs transition-transform duration-200 group-hover:scale-110`} aria-hidden="true"></i>
+                        <span className="whitespace-nowrap">{item.label}</span>
                       </button>
                     ))}
                   </nav>
                 </div>
+
                 <section role="tabpanel" aria-label="flexible" className={pestanaDrawerRunt==='flexible'?'space-y-4':'hidden'}>
 {/* ==========================================
                     CARGUE
@@ -3529,29 +3425,6 @@ export default function RuntPage() {
                           space-y-3
                         "
                       >
-
-                        {!practicaHabilitadaUI && (
-                          <div
-                            className="
-                              bg-amber-50
-                              border
-                              border-amber-300
-                              rounded-lg
-                              p-3
-                              text-[11px]
-                              text-amber-800
-                            "
-                          >
-                            <i className="fas fa-lock mr-2"></i>
-
-                            Práctica bloqueada hasta completar teoría
-                            {tallerRequeridas >
-                              0
-                              ? ' y taller'
-                              : ''}
-                            .
-                          </div>
-                        )}
 
                         <div
                           className="
