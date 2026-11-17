@@ -3879,9 +3879,6 @@ async function obtenerResumen({
         .select(`
           id,
           valor,
-          modalidad,
-          valor_reintegrado,
-          valor_reembolsado,
           estado,
           medio_pago_id
         `)
@@ -3901,6 +3898,9 @@ async function obtenerResumen({
         .select(`
           id,
           valor,
+          modalidad,
+          valor_reintegrado,
+          valor_reembolsado,
           estado,
           medio_pago_id
         `)
