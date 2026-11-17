@@ -25,6 +25,7 @@ const API_CATALOGOS =
 
 const API_PROGRAMACION =
   '/api/admin/programacion'
+const API_CLIENTES_REFUERZO = '/api/admin/programacion/clientes-refuerzo'
 
 const HORAS = [
   '06:00',
@@ -2326,6 +2327,9 @@ export default function ProgramacionPage() {
       false
     )
 
+  const [mostrarRegistroExterno, setMostrarRegistroExterno] = useState(false)
+  const [guardandoClienteExterno, setGuardandoClienteExterno] = useState(false)
+  const [formClienteExterno, setFormClienteExterno] = useState({tipo_documento:'CC',documento:'',nombre_completo:'',celular:'',categoria:'B1',observaciones:''})
   const [errorBusquedaAprendiz, setErrorBusquedaAprendiz] = useState('')
   const [busquedaAprendizResuelta, setBusquedaAprendizResuelta] = useState('')
 
@@ -3202,7 +3206,18 @@ const resumenOperativo =
         })
         const respuesta=await fetchJsonSeguro(`${API_CATALOGOS}?${params.toString()}`)
         if(cancelada) return
-        setResultadosAprendiz(Array.isArray(respuesta?.data)?respuesta.data:[])
+        let personas = Array.isArray(respuesta?.data)?respuesta.data:[]
+        if(tipoProgramacion==='REFUERZO') {
+          const externos = await fetchJsonSeguro(`${API_CLIENTES_REFUERZO}?nit=${encodeURIComponent(nit)}&busqueda=${encodeURIComponent(buscar)}`)
+          if(cancelada) return
+          const nuevos = (Array.isArray(externos?.data)?externos.data:[]).map(c=>({
+            ...c, id:`CLIENTE-${c.id}`, cliente_refuerzo_id:c.id,
+            origen_programacion:'CLIENTE_REFUERZO', categorias:[c.categoria],
+            tipo_doc:c.tipo_documento, habilitado_programacion:true,
+          }))
+          personas=[...personas,...nuevos]
+        }
+        setResultadosAprendiz(personas)
         setBusquedaAprendizResuelta(buscar)
       } catch(errorBusqueda) {
         if(cancelada) return
@@ -3297,6 +3312,16 @@ const resumenOperativo =
 ) {
   setError('')
   setExito('')
+
+  if (item?.origen_programacion === 'CLIENTE_REFUERZO') {
+    setAprendiz(item)
+    setBusqueda(item.nombre_completo)
+    setResultadosAprendiz([])
+    setDetalleAprendiz({ ...item, categorias:[item.categoria],
+      clases_disponibles:999, clases_disponibles_dia:8, puede_programar_dia:true })
+    setCategoria(item.categoria)
+    return
+  }
 
   setAprendiz(
     item
@@ -3990,9 +4015,10 @@ function disponibilidadHoy() {
         aprendiz
           ?.origen_programacion ===
         'CLIENTE_EXTERNO'
+      const esClienteSinRecibo = aprendiz?.origen_programacion === 'CLIENTE_REFUERZO'
 
       const matriculaId =
-        !esClienteExterno
+        !esClienteExterno && !esClienteSinRecibo
           ? Number(
               aprendiz
                 ?.matricula_id ||
@@ -4017,7 +4043,8 @@ function disponibilidadHoy() {
       if (
         !tieneInstructor &&
         !matriculaId &&
-        !reciboRefuerzoId
+        !reciboRefuerzoId &&
+        !esClienteSinRecibo
       ) {
         setAgenda(
           []
@@ -4124,14 +4151,10 @@ function disponibilidadHoy() {
             )
           )
 
-          params.set(
-            'origen_persona',
-            aprendiz
-              ?.origen_programacion ===
-              'CLIENTE_EXTERNO'
-              ? 'CLIENTE_EXTERNO'
-              : 'APRENDIZ'
-          )
+          params.set('origen_persona',
+            aprendiz?.origen_programacion === 'CLIENTE_REFUERZO' ? 'CLIENTE_REFUERZO' :
+            aprendiz?.origen_programacion === 'CLIENTE_EXTERNO' ? 'CLIENTE_EXTERNO' : 'APRENDIZ')
+          if(esClienteSinRecibo) params.set('cliente_refuerzo_id',String(aprendiz.cliente_refuerzo_id))
         }     
         const data =
                 await fetchJsonSeguro(
@@ -4465,7 +4488,10 @@ try {
       // REFRESCAR APRENDIZ PARA EL DÍA SELECCIONADO
       // ===================================================
 
-      if (
+      if (aprendiz?.origen_programacion === 'CLIENTE_REFUERZO') {
+        setDetalleAprendiz({ ...aprendiz, categorias:[aprendiz.categoria],
+          clases_disponibles:999, clases_disponibles_dia:8, puede_programar_dia:true })
+      } else if (
         aprendiz
           ?.origen_programacion ===
         'CLIENTE_EXTERNO'
@@ -4892,9 +4918,10 @@ function abrirClase(
       aprendiz
         ?.origen_programacion ===
       'CLIENTE_EXTERNO'
+    const esClienteSinRecibo = aprendiz?.origen_programacion === 'CLIENTE_REFUERZO'
 
     const matriculaId =
-      esClienteExterno
+      esClienteExterno || esClienteSinRecibo
         ? null
         : Number(
             aprendiz
@@ -4934,6 +4961,7 @@ function abrirClase(
 
               recibo_refuerzo_id:
                 reciboRefuerzoId,
+              cliente_refuerzo_id: esClienteSinRecibo ? Number(aprendiz.cliente_refuerzo_id) : null,
 
               instructor_id:
                 Number(
