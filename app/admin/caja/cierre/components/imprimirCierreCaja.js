@@ -2035,6 +2035,14 @@ export function imprimirCierreCaja(
   ventana.document.close()
 }
 
+// El PDF debe usar el mismo neto que la API de Cierre Diario.
+function valorCierreEgreso(item) {
+  const entregado = Number(item?.valor || 0)
+  return entregado + (mayusculas(item?.modalidad) === 'ENTREGA_PARA_LEGALIZAR'
+    ? Number(item?.valor_reembolsado || 0) - Number(item?.valor_reintegrado || 0)
+    : 0)
+}
+
 export function imprimirTablaCierreDiario(cierre, opciones = {}) {
   if (!cierre?.cierre_confirmado || cierre?.cierre_diario?.estado !== 'CERRADO') {
     throw new Error('El cierre diario debe estar confirmado para imprimir.')
@@ -2063,15 +2071,16 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
       escaparHtml(concepto) + categoria,
       escaparHtml(item?.medio_pago?.nombre || '-'),
       escaparHtml(responsable || '-'),
-      escaparHtml(formatearMoneda(item.valor))
+      escaparHtml(formatearMoneda(ingreso ? item.valor : valorCierreEgreso(item)))
     ]
     return '<tr>' + columnas.map((v, i) => '<td' + (i === 6 ? ' class="numero"' : '') + '>' + v + '</td>').join('') + '</tr>'
   }).join('')
   const ingresos = movimientos.filter(item => item.tipo_movimiento === 'INGRESO')
   const egresos = movimientos.filter(item => item.tipo_movimiento === 'EGRESO')
-  const totalActivo = items => items.reduce((s, item) => s + (mayusculas(item.estado) === 'ANULADO' ? 0 : Number(item.valor || 0)), 0)
-  const totalIngresosDetalle = totalActivo(ingresos)
-  const totalEgresosDetalle = totalActivo(egresos)
+  const totalIngresosDetalle = ingresos.reduce((total, item) => total +
+    (mayusculas(item.estado) === 'ANULADO' ? 0 : Number(item.valor || 0)), 0)
+  const totalEgresosDetalle = egresos.reduce((total, item) => total +
+    (mayusculas(item.estado) === 'ANULADO' ? 0 : valorCierreEgreso(item)), 0)
   const medios = Object.entries(cierre.resumen_medios_pago || {})
     .map(([medio, dato]) => '<div class="total ingreso"><span>Ingresos · ' + escaparHtml(medio) +
       '</span><strong>' + escaparHtml(formatearMoneda(dato?.ingresos)) + '</strong></div>').join('')
