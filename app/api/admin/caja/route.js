@@ -2510,6 +2510,10 @@ async function consultarCuentas({
   conceptoId = null,
 }) {
   const termino = normalizarBusquedaCaja(limpiarBusqueda(busqueda))
+  // Los documentos se guardan sin puntuación, pero el usuario puede escribir
+  // 86.088.404, 86 088 404 o 86088404.
+  const documentoBuscado = /^[0-9.\\s-]+$/.test(termino)
+    ? termino.replace(/\\D/g, '') : ''
   const estadoNormalizado = mayusculas(estado)
   const categoriaNormalizada = mayusculas(categoria)
 
@@ -2575,6 +2579,32 @@ async function consultarCuentas({
     }
   }
 
+  // Las cuentas históricas pueden carecer de un detalle ACTIVO vinculado
+  // a matrícula. Buscar por nombre también usando el documento de la cuenta,
+  // sin inventar relaciones financieras ni cambiar el saldo.
+  const aprendicesPorDocumento = new Map()
+  if (termino && !documentoBuscado) {
+    const primerTermino = termino.split(' ')[0].replace(/[^A-Z0-9Ñ]/g, '')
+    if (primerTermino.length >= 2) {
+      const coincidenciasNombre = await consultarLotesCaja({
+        supabase,
+        tabla: 'aprendices',
+        columnas: 'id,documento,nombres,apellidos',
+        aplicarFiltros: q => q.or(
+          `nombres.ilike.%${primerTermino}%,apellidos.ilike.%${primerTermino}%`
+        ),
+      })
+      for (const aprendiz of coincidenciasNombre) {
+        const nombre = [aprendiz.nombres, aprendiz.apellidos].filter(Boolean).join(' ')
+        if (!normalizarBusquedaCaja(nombre).includes(termino)) continue
+        const documento = String(aprendiz.documento || '').replace(/\\D/g, '')
+        if (documento && !aprendicesPorDocumento.has(documento)) {
+          aprendicesPorDocumento.set(documento, nombre)
+        }
+      }
+    }
+  }
+
   const elegibles = []
   for (const cuenta of candidatas) {
     const relaciones = detallesPorCuenta.get(String(cuenta.id)) || []
@@ -2584,10 +2614,12 @@ async function consultarCuentas({
     if (conceptoId && !relaciones.some(d => String(d.concepto_id) === String(conceptoId))) continue
 
     const relacionadas = relaciones.map(d => matriculas.get(String(d.matricula_id))).filter(Boolean)
+    const documentoCuenta = String(cuenta.documento || '').replace(/\\D/g, '')
     if (termino) {
       const campos = [
         cuenta.documento,
         cuenta.descripcion,
+        aprendicesPorDocumento.get(documentoCuenta),
         ...relacionadas.flatMap(a => [
           a.documento,
           a.consecutivo,
@@ -2596,7 +2628,12 @@ async function consultarCuentas({
           [a.nombres, a.apellidos].filter(Boolean).join(' '),
         ]),
       ]
-      if (!campos.some(valor => normalizarBusquedaCaja(valor).includes(termino))) continue
+      const coincideTexto = campos.some(valor => normalizarBusquedaCaja(valor).includes(termino))
+      const coincideDocumento = documentoBuscado && (
+        documentoCuenta.includes(documentoBuscado) ||
+        relacionadas.some(a => String(a.documento || '').replace(/\\D/g, '').includes(documentoBuscado))
+      )
+      if (!coincideTexto && !coincideDocumento) continue
     }
 
     const consecutivos = relacionadas
@@ -2624,6 +2661,14 @@ async function consultarCuentas({
   const desde = (paginaActual - 1) * cantidad
   const seleccion = elegibles.slice(desde, desde + cantidad).map(x => x.cuenta)
   const cuentas = await enriquecerCuentas(supabase, seleccion)
+  // El nombre encontrado por documento es solo informativo; NO sustituye
+  // matricula_id ni las relaciones de cuentas_aprendiz_detalle.
+  for (const cuenta of cuentas) {
+    const documento = String(cuenta.documento || '').replace(/\\D/g, '')
+    if (aprendicesPorDocumento.has(documento)) {
+      cuenta.nombre_aprendiz_consulta = aprendicesPorDocumento.get(documento)
+    }
+  }
   return conTotal ? { cuentas, total } : cuentas
 }
 
