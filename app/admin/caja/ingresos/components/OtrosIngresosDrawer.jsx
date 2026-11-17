@@ -47,6 +47,11 @@ function mayusculas(
   ).toUpperCase()
 }
 
+// No eliminar espacios mientras se escribe en un campo controlado.
+function mayusculasMientrasEscribe(valor) {
+  return String(valor ?? '').toLocaleUpperCase('es-CO')
+}
+
 function hoyColombia() {
   return new Intl.DateTimeFormat(
     'en-CA',
@@ -1266,6 +1271,15 @@ function validarIngreso() {
       return
     }
 
+    // Abrir dentro del clic del usuario, antes de cualquier petición async.
+    const ventanaImpresion = window.open('', '_blank', 'width=1200,height=760')
+    if (!ventanaImpresion) {
+      setError('El navegador bloqueó la ventana de impresión. Permita ventanas emergentes para DATA CEA e inténtelo nuevamente. No se registró ningún ingreso.')
+      return
+    }
+    ventanaImpresion.document.title = 'Preparando recibo de Caja'
+    ventanaImpresion.document.body.innerHTML = '<p style="font:16px Arial,sans-serif;padding:24px">Registrando ingreso y preparando recibo...</p>'
+
     setProcesando(
       true
     )
@@ -1654,6 +1668,7 @@ function validarIngreso() {
             empresaNombre,
             empresaDatos,
             usuarioOperacion,
+            ventanaImpresion,
           }
         )
       }
@@ -1662,6 +1677,7 @@ function validarIngreso() {
     } catch (
       errorRegistro
     ) {
+      if (!ventanaImpresion.closed) ventanaImpresion.close()
       console.error(
         'Error registrando otros ingresos:',
         errorRegistro
@@ -2785,9 +2801,7 @@ function imprimirIngresoHistorico(
                             actual => ({
                               ...actual,
                               nombre_cliente:
-                                mayusculas(
-                                  value
-                                ),
+                                mayusculasMientrasEscribe(value),
                             })
                           )
                       }
@@ -3207,9 +3221,7 @@ function imprimirIngresoHistorico(
                               actual => ({
                                 ...actual,
                                 nombre:
-                                  mayusculas(
-                                    value
-                                  ),
+                                  mayusculasMientrasEscribe(value),
                               })
                             )
                         }
