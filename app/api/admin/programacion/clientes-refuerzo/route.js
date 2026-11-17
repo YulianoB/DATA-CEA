@@ -27,13 +27,7 @@ export async function GET(request) {
     if (buscar.length < 3) return salida([])
     // Consultas separadas para evitar límites de paginación y la
     // interpolación de caracteres especiales en expresiones OR.
-    const patron = '%' + buscar.replace(/[\\%_]/g, '\\\\    // Filtrado local posterior a la consulta: evita interpolar caracteres
-    // especiales sin escapar dentro del operador PostgREST .or().
-    const {data,error} = await consulta.order('nombre_completo').limit(1000)
-    if(error) throw error
-    const q=buscar.toLocaleLowerCase('es')
-    return salida((data||[]).filter(p => [p.documento,p.nombre_completo,p.celular]
-      .some(v => texto(v).toLocaleLowerCase('es').includes(q))).slice(0,30))') + '%'
+    const patron = '%' + buscar.replace(/[%_]/g, '').trim() + '%'
     const campos = ['documento','nombre_completo','celular']
     const consultas = await Promise.all(campos.map(campo=>
       db.from('clientes_refuerzo')
