@@ -2397,14 +2397,7 @@ const streamRef =
       ==================================================== */}
 
       <section
-        className="
-          hoja-control
-          ${teoriaCompacta ? 'teoria-compacta' : ''}
-          bg-white
-          mx-auto
-          shadow-lg
-          p-[8mm]
-        "
+        className={`hoja-control ${teoriaCompacta ? 'teoria-compacta' : ''} bg-white mx-auto shadow-lg p-[8mm]`}
       >
 
         <EncabezadoDocumento
@@ -2907,16 +2900,7 @@ const streamRef =
       ==================================================== */}
 
       <section
-        className="
-          hoja-control
-          pagina-dos
-          ${practicaCompacta ? 'practica-compacta' : practicaIntermedia ? 'practica-intermedia' : ''}
-          bg-white
-          mx-auto
-          mt-5
-          shadow-lg
-          p-[8mm]
-        "
+        className={`hoja-control pagina-dos ${practicaCompacta ? 'practica-compacta' : practicaIntermedia ? 'practica-intermedia' : ''} bg-white mx-auto mt-5 shadow-lg p-[8mm]`}
       >
 
         <EncabezadoDocumento
@@ -3154,6 +3138,7 @@ const streamRef =
                 className="
                   mt-1
                   h-[38px]
+                  observacion-practica-control
                   border
                   border-black
                 "
@@ -3171,6 +3156,7 @@ const streamRef =
                 className="
                   mt-1
                   h-[38px]
+                  observacion-practica-control
                   border
                   border-gray-500
                 "
@@ -3439,7 +3425,7 @@ const streamRef =
           .hoja-control.pagina-dos.practica-compacta .tabla-practica-control + div {
             margin-top: 5px !important;
           }
-          .hoja-control.pagina-dos.practica-compacta .tabla-practica-control + div div.h-\\[38px\\] {
+          .hoja-control.pagina-dos.practica-compacta .observacion-practica-control {
             height: 24px !important;
           }
           .hoja-control .tabla-modulo-control table,
