@@ -7049,16 +7049,8 @@ function abrirClase(
           </p>
         </div>
       ) : (
-        <div
-          className="
-            overflow-x-auto
-          "
-        >
-          <div
-            className="
-              min-w-[1450px]
-            "
-          >
+        <div className="w-full min-w-0 overflow-x-auto">
+          <div className="w-full min-w-[960px] xl:min-w-0">
            {/* ===========================================
                 CABECERA HORAS
             =========================================== */}
@@ -7066,8 +7058,8 @@ function abrirClase(
             <div
               className="
                 grid
-                grid-cols-[260px_repeat(16,minmax(62px,1fr))]
-                gap-1
+                grid-cols-[190px_repeat(16,minmax(0,1fr))]
+                gap-0.5
                 mb-1
               "
             >
@@ -7133,8 +7125,8 @@ function abrirClase(
                     }
                     className="
                       grid
-                      grid-cols-[260px_repeat(16,minmax(62px,1fr))]
-                      gap-1
+                      grid-cols-[190px_repeat(16,minmax(0,1fr))]
+                      gap-0.5
                       mb-1
                     "
                   >
