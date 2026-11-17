@@ -3212,14 +3212,20 @@ const resumenOperativo =
         if(cancelada) return
         let personas = Array.isArray(respuesta?.data)?respuesta.data:[]
         if(tipoProgramacion==='REFUERZO') {
-          const externos = await fetchJsonSeguro(`${API_CLIENTES_REFUERZO}?nit=${encodeURIComponent(nit)}&busqueda=${encodeURIComponent(buscar)}`)
-          if(cancelada) return
-          const nuevos = (Array.isArray(externos?.data)?externos.data:[]).map(c=>({
-            ...c, id:`CLIENTE-${c.id}`, cliente_refuerzo_id:c.id,
-            origen_programacion:'CLIENTE_REFUERZO', categorias:[c.categoria],
-            tipo_doc:c.tipo_documento, habilitado_programacion:true,
-          }))
-          personas=[...personas,...nuevos]
+          try {
+            const externos = await fetchJsonSeguro(`${API_CLIENTES_REFUERZO}?nit=${encodeURIComponent(nit)}&busqueda=${encodeURIComponent(buscar)}`)
+            if(cancelada) return
+            const nuevos = (Array.isArray(externos?.data)?externos.data:[]).map(c=>({
+              ...c, id:`CLIENTE-${c.id}`, cliente_refuerzo_id:c.id,
+              origen_programacion:'CLIENTE_REFUERZO', categorias:[c.categoria],
+              tipo_doc:c.tipo_documento, habilitado_programacion:true,
+            }))
+            personas=[...personas,...nuevos]
+          } catch (errorExterno) {
+            // Mantener la búsqueda tradicional disponible aunque el CEA
+            // todavía no tenga aplicada la migración de clientes externos.
+            console.warn('Clientes externos sin recibo aún no disponibles:',errorExterno)
+          }
         }
         setResultadosAprendiz(personas)
         setBusquedaAprendizResuelta(buscar)
