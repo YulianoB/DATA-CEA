@@ -1290,9 +1290,10 @@ export default function ControlClasesPage() {
       ''
     )
 
-  const fotoUrl =
-    fotoTemporalUrl ||
-    fotoAlmacenadaUrl
+  const [fotoCapturadaBlob, setFotoCapturadaBlob] = useState(null)
+  const [guardandoFoto, setGuardandoFoto] = useState(false)
+  const [errorGuardadoFoto, setErrorGuardadoFoto] = useState('')
+  const fotoUrl = fotoTemporalUrl || fotoAlmacenadaUrl
 
   const [
   camaraAbierta,
@@ -1816,11 +1817,9 @@ const streamRef =
         'canvas'
       )
 
-    canvas.width =
-      video.videoWidth
-
-    canvas.height =
-      video.videoHeight
+    const escala = Math.min(1, 960 / Math.max(video.videoWidth, video.videoHeight))
+    canvas.width = Math.round(video.videoWidth * escala)
+    canvas.height = Math.round(video.videoHeight * escala)
 
     const contexto =
       canvas.getContext(
@@ -1870,17 +1869,46 @@ const streamRef =
             blob
           )
 
-        setFotoTemporalUrl(
-          nuevaFotoUrl
-        )
+        setFotoTemporalUrl(nuevaFotoUrl)
+        setFotoCapturadaBlob(blob)
+        setErrorGuardadoFoto('')
 
         cerrarCamara()
       },
       'image/jpeg',
-      0.92
+      0.82
     )
   }
 
+
+  // Guardar la foto oficial compartida por Contrato y Control de Clases.
+  async function guardarFotoCapturada() {
+    const nit = obtenerNitUsuario(usuario)
+    if (!fotoCapturadaBlob || !matriculaId || !nit || guardandoFoto) return
+    setGuardandoFoto(true)
+    setErrorGuardadoFoto('')
+    try {
+      const formData = new FormData()
+      formData.append('matricula_id', matriculaId)
+      formData.append('foto', fotoCapturadaBlob, 'foto-aprendiz.jpg')
+      const response = await fetch('/api/admin/documentos/foto-matricula', {
+        method: 'POST',
+        headers: { 'x-cea-nit': nit },
+        body: formData,
+      })
+      const json = await response.json()
+      if (!response.ok || json?.ok !== true || !json?.foto?.url) {
+        throw new Error(json?.error || json?.message || 'No fue posible guardar la fotografía.')
+      }
+      setFotoAlmacenadaUrl(json.foto.url)
+      setFotoCapturadaBlob(null)
+      setFotoTemporalUrl('')
+    } catch (error) {
+      setErrorGuardadoFoto(error?.message || 'No fue posible guardar la fotografía.')
+    } finally {
+      setGuardandoFoto(false)
+    }
+  }
 
   useEffect(
     () => {
@@ -2124,8 +2152,16 @@ const streamRef =
               : 'Tomar foto'}
           </button>
 
+          {fotoCapturadaBlob && (
+            <button type="button" onClick={guardarFotoCapturada} disabled={guardandoFoto}
+              className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white px-3 py-2 rounded text-xs">
+              {guardandoFoto ? 'Guardando foto...' : 'Guardar foto para contrato y control'}
+            </button>
+          )}
+          {errorGuardadoFoto && <span role="alert" className="text-red-700 text-xs">{errorGuardadoFoto}</span>}
           <button
             type="button"
+            disabled={guardandoFoto || Boolean(fotoCapturadaBlob)}
             onClick={() =>
               window.print()
             }
