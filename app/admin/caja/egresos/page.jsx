@@ -531,6 +531,19 @@ export default function CajaEgresosPage() {
       null
     )
 
+  const [legalizando, setLegalizando] = useState(false)
+  const [guardandoLegalizacion, setGuardandoLegalizacion] = useState(false)
+  const [errorLegalizacion, setErrorLegalizacion] = useState('')
+  const [formLegalizacion, setFormLegalizacion] = useState({
+    valor_legalizado: '',
+    valor_reintegrado: '0',
+    valor_reembolsado: '0',
+    proveedor_final: '',
+    numero_factura: '',
+    soporte_recibido: false,
+    observaciones_legalizacion: '',
+  })
+
   // =======================================================
   // UI
   // =======================================================
@@ -1241,6 +1254,8 @@ export default function CajaEgresosPage() {
         data?.data ||
         null
       )
+      setLegalizando(false)
+      setErrorLegalizacion('')
 
       setDrawerDetalle(
         true
@@ -1263,6 +1278,53 @@ export default function CajaEgresosPage() {
       )
     }
   }
+
+  function prepararLegalizacion(egreso) {
+    const obs = texto(egreso.observaciones_legalizacion || '')
+    const proveedor = obs.match(/^PROVEEDOR FINAL: (.*?)\. /)?.[1] || ''
+    setFormLegalizacion({
+      valor_legalizado: String(egreso.valor_legalizado ?? ''),
+      valor_reintegrado: String(egreso.valor_reintegrado ?? 0),
+      valor_reembolsado: String(egreso.valor_reembolsado ?? 0),
+      proveedor_final: proveedor,
+      numero_factura: egreso.numero_factura || '',
+      soporte_recibido: egreso.estado_legalizacion === 'LEGALIZADO',
+      observaciones_legalizacion: obs.replace(/^PROVEEDOR FINAL: .*?\. /, ''),
+    })
+    setErrorLegalizacion('')
+    setLegalizando(true)
+  }
+
+  async function guardarLegalizacion() {
+    if (!detalleEgreso?.id || guardandoLegalizacion) return
+    setGuardandoLegalizacion(true)
+    setErrorLegalizacion('')
+    try {
+      const resultado = await postEgreso({
+        accion: 'legalizar',
+        id: detalleEgreso.id,
+        ...formLegalizacion,
+      })
+      if (resultado?.status !== 'success') {
+        throw new Error(resultado?.message || 'No fue posible legalizar el egreso.')
+      }
+      setMensaje(resultado.message || 'Legalización registrada.')
+      setLegalizando(false)
+      await Promise.all([cargarEgresos(), cargarResumen()])
+      const detalle = await fetchJsonSeguro(construirUrl('detalle', { id: detalleEgreso.id }))
+      setDetalleEgreso(detalle?.data || null)
+    } catch (e) {
+      setErrorLegalizacion(e?.message || 'No fue posible registrar la legalización.')
+    } finally {
+      setGuardandoLegalizacion(false)
+    }
+  }
+
+  const totalLegalizacion = Number(formLegalizacion.valor_legalizado || 0) +
+    Number(formLegalizacion.valor_reintegrado || 0)
+  const fondosLegalizacion = Number(detalleEgreso?.valor || 0) +
+    Number(formLegalizacion.valor_reembolsado || 0)
+  const diferenciaLegalizacion = fondosLegalizacion - totalLegalizacion
 
   // =======================================================
   // DESPUÉS DE REGISTRAR
@@ -2220,6 +2282,91 @@ export default function CajaEgresosPage() {
                       </div>
                     )}
                   </SeccionDetalle>
+
+                  {mayusculas(detalleEgreso.modalidad) === 'ENTREGA_PARA_LEGALIZAR' &&
+                    mayusculas(detalleEgreso.estado) === 'ACTIVO' && (
+                    <div className="mt-3 border border-amber-300 rounded-xl p-3 bg-amber-50 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-black text-sm text-amber-900">
+                          Legalización de dinero entregado
+                        </div>
+                        <button type="button"
+                          onClick={() => legalizando ? setLegalizando(false) : prepararLegalizacion(detalleEgreso)}
+                          className="rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white hover:bg-amber-800">
+                          {legalizando ? 'Cerrar formulario' : 'Legalizar / Ajustar'}
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <Dato label="Entregado" value={formatearMoneda(detalleEgreso.valor)} />
+                        <Dato label="Gastado" value={formatearMoneda(detalleEgreso.valor_legalizado)} />
+                        <Dato label="Reintegrado" value={formatearMoneda(detalleEgreso.valor_reintegrado)} />
+                        <Dato label="Reembolsado" value={formatearMoneda(detalleEgreso.valor_reembolsado)} />
+                      </div>
+                      <p className="text-[10px] text-amber-900">
+                        El reintegro y el reembolso solo pueden ajustarse el día de la entrega,
+                        antes de cualquier arqueo o cierre. La factura se puede completar después.
+                      </p>
+                      {legalizando && (
+                        <div className="space-y-3 bg-white border border-amber-200 rounded-lg p-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            {[
+                              ['valor_legalizado', 'Valor utilizado ($)'],
+                              ['valor_reintegrado', 'Sobrante devuelto ($)'],
+                              ['valor_reembolsado', 'Reembolso adicional ($)'],
+                            ].map(([campo, etiqueta]) => (
+                              <label key={campo} className="text-xs font-semibold text-slate-700">
+                                {etiqueta}
+                                <input type="number" min="0" step="0.01"
+                                  value={formLegalizacion[campo]}
+                                  onChange={e => setFormLegalizacion(f => ({ ...f, [campo]: e.target.value }))}
+                                  className="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm"/>
+                              </label>
+                            ))}
+                          </div>
+                          <div className={`text-xs font-bold ${Math.abs(diferenciaLegalizacion) < .005 ? 'text-green-700' : 'text-red-700'}`}>
+                            Diferencia pendiente: {formatearMoneda(diferenciaLegalizacion)}
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label className="text-xs font-semibold">
+                              Proveedor final
+                              <input type="text" value={formLegalizacion.proveedor_final}
+                                onChange={e => setFormLegalizacion(f => ({...f, proveedor_final: e.target.value}))}
+                                placeholder="Estación de servicio"
+                                className="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm"/>
+                            </label>
+                            <label className="text-xs font-semibold">
+                              Número de factura / comprobante
+                              <input type="text" value={formLegalizacion.numero_factura}
+                                onChange={e => setFormLegalizacion(f => ({...f, numero_factura: e.target.value}))}
+                                className="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm"/>
+                            </label>
+                          </div>
+                          <label className="flex items-center gap-2 text-xs">
+                            <input type="checkbox" checked={formLegalizacion.soporte_recibido}
+                              onChange={e => setFormLegalizacion(f => ({...f, soporte_recibido: e.target.checked}))}/>
+                            Factura o comprobante recibido y verificado
+                          </label>
+                          <label className="block text-xs font-semibold">
+                            Descripción de la rendición / observaciones
+                            <textarea rows={3} value={formLegalizacion.observaciones_legalizacion}
+                              onChange={e => setFormLegalizacion(f => ({...f, observaciones_legalizacion: e.target.value}))}
+                              className="mt-1 block w-full border border-slate-300 rounded-lg p-2 text-sm"
+                              placeholder="Indique destino del dinero, devolución y quién lo verificó."/>
+                          </label>
+                          {errorLegalizacion && (
+                            <p role="alert" className="rounded border border-red-300 bg-red-50 p-2 text-xs text-red-700">{errorLegalizacion}</p>
+                          )}
+                          <button type="button" onClick={guardarLegalizacion}
+                            disabled={guardandoLegalizacion || formLegalizacion.valor_legalizado === '' ||
+                              !Number.isFinite(diferenciaLegalizacion) || diferenciaLegalizacion < -.005 ||
+                              !texto(formLegalizacion.observaciones_legalizacion)}
+                            className="rounded-lg bg-blue-700 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                            {guardandoLegalizacion ? 'Guardando...' : 'Guardar legalización'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {mayusculas(detalleEgreso.estado) === 'ANULADO' && (
                     <div className="border border-red-400 bg-red-50 rounded-xl p-3">
