@@ -1927,9 +1927,17 @@ export async function POST(
             valor_reembolsado: 0,
             legalizado_por: null,
             observaciones_legalizacion: null,
-            beneficiario: esEntregaParaLegalizar ? null : beneficiario,
-            tipo_documento_beneficiario: esEntregaParaLegalizar ? null : (tipoDocumento || null),
-            documento_beneficiario: esEntregaParaLegalizar ? null : documento,
+            // Para entregas pendientes, el beneficiario registrado
+            // identifica al receptor inicial de los fondos, no al
+            // proveedor definitivo. Conservamos los campos específicos
+            // de receptor y la modalidad para distinguir ambos roles.
+            beneficiario: esEntregaParaLegalizar ? receptorDinero : beneficiario,
+            tipo_documento_beneficiario: esEntregaParaLegalizar
+              ? (tipoDocumentoReceptor || null)
+              : (tipoDocumento || null),
+            documento_beneficiario: esEntregaParaLegalizar
+              ? documentoReceptor
+              : documento,
             descripcion,
             valor,
             // =============================================
