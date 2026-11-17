@@ -2582,122 +2582,58 @@ const ingresosLibresFiltrados =
             .signature-line { width:70%; margin:8px auto 2px; border-top:1px solid #475569; }
             .signature-name { margin-top:1px; font-size:5.8px; font-weight:700; color:#475569; }
             .cea-footer { min-height:12px; border-top:1px solid #CBD5E1; padding:2px 6px; text-align:center; font-size:6.2px; font-weight:700; color:#475569; }
-            @page {
-              size: 216mm 140mm;
-              margin: 0;
-            }
+            /* Una hoja carta vertical: copia aprendiz y copia CEA,
+               cada una ocupa media carta física (215.9 x 139.7 mm). */
+            @page { size: letter portrait; margin: 0; }
 
             @media print {
-              html,
-              body {
-                width: 216mm;
-                height: 140mm;
-                margin: 0;
-                padding: 0;
-                background: #FFF;
-                overflow: hidden;
+              html, body {
+                width: 215.9mm; height: 279.4mm; margin: 0 !important;
+                padding: 0 !important; background: #FFF;
               }
-
-              .toolbar {
-                display: none;
-              }
-
+              .toolbar { display: none !important; }
               .grid {
-                width: 216mm;
-                height: 140mm;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                flex-direction: row;
-                box-shadow: none;
+                width: 215.9mm; height: 279.4mm; margin: 0; padding: 0;
+                display: flex; flex-direction: column; box-shadow: none;
                 overflow: hidden;
               }
-
               .receipt {
-                width: 108mm;
-                height: 140mm;
-                min-width: 108mm;
-                max-width: 108mm;
-                min-height: 140mm;
-                max-height: 140mm;
-                margin: 0;
-                padding: 7mm 4mm;
-                display: flex;
-                align-items: stretch;
-                justify-content: center;
-                break-inside: avoid;
-                page-break-inside: avoid;
-                overflow: hidden;
+                width: 215.9mm; height: 139.7mm;
+                min-width: 215.9mm; max-width: 215.9mm;
+                min-height: 139.7mm; max-height: 139.7mm;
+                margin: 0; padding: 5mm 7mm;
+                display: flex; align-items: stretch; justify-content: center;
+                break-inside: avoid; page-break-inside: avoid;
               }
-
               .receipt + .receipt {
-                border-top: 0;
-                border-left: 0.25mm dashed #94A3B8;
+                border-left: 0; border-top: .25mm dashed #94A3B8;
               }
-
               .receipt-card {
-                width: 100%;
-                height: 126mm;
-                min-height: 126mm;
-                max-height: 126mm;
-                display: flex;
-                flex-direction: column;
+                width: 100%; height: 129.7mm; min-height: 129.7mm;
+                max-height: 129.7mm; display: flex; flex-direction: column;
                 border-radius: 2mm;
               }
-
-              .brand {
-                padding: 1.8mm 2mm 2.2mm;
-              }
-
-              .receipt-number {
-                padding: 1mm 2mm;
-              }
-
-              .identity-wrap {
-                margin: 1.8mm 1.5mm 0;
-                border-radius: 1.8mm;
-              }
-
-              .identity-grid {
-                padding: 1.4mm 2mm;
-                gap: 1mm 3mm;
-              }
-
-              .identity-right {
-                padding-left: 3mm;
-              }
-
-              .section-block {
-                margin: 2mm 1.5mm 0;
-              }
-
-              .section-title {
-                padding: 0.9mm 1.5mm;
-              }
-
-              th,
-              td {
-                padding: 0.8mm 1mm;
-                height: 4.6mm;
-              }
-
-              .origin-block {
-                margin: 1.6mm 1.5mm 0;
-                padding: 1mm 2mm;
-              }
-
-              .signatures-block {
-                margin-top: auto;
-                padding: 1.5mm 2mm 1mm;
-              }
-
-              .cea-footer {
-                padding: 1mm 2mm;
-              }
-
-              .signature-line {
-                margin-top: 1.5mm;
-              }
+              .title { font-size: 16px; }
+              .company { font-size: 11px; }
+              .nit,.copy { font-size: 9px; }
+              .receipt-number-label { font-size: 9px; }
+              .receipt-number-value { font-size: 15px; }
+              .brand { padding: 2mm 3mm; }
+              .receipt-number { padding: 1mm 2mm; }
+              .identity-wrap { margin: 2mm 2mm 0; border-radius: 1.8mm; }
+              .identity-grid { padding: 2mm 3mm; gap: 1.2mm 4mm; font-size: 10px; }
+              .identity-right { padding-left: 3mm; }
+              .section-block { margin: 2mm 2mm 0; }
+              .section-title { padding: 1.2mm 2mm; font-size: 10px; }
+              table { font-size: 9px; }
+              th,td { padding: 1mm 1.4mm; }
+              .origin-block { margin: 2mm 2mm 0; padding: 1.2mm 2mm; }
+              .origin { font-size: 9px; }
+              .signatures-block { margin-top: auto; padding: 2mm 3mm 1.5mm; }
+              .signatures { font-size: 8px; }
+              .signature-name { font-size: 7px; }
+              .signature-line { margin-top: 3mm; }
+              .cea-footer { font-size: 8px; padding: 1mm 2mm; }
             }
           </style>
         </head>
