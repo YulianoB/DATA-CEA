@@ -923,26 +923,6 @@ export default function RegistrarEgresoDrawer({
     }
   }
   // =======================================================
-  // CAMBIAR MODALIDAD
-  // =======================================================
-  function cambiarModalidad(modalidad) {
-    setForm(actual => ({
-      ...actual,
-      modalidad,
-      tipo_beneficiario: 'FUNCIONARIO',
-      personal_id: '',
-      beneficiario: '',
-      tipo_documento_beneficiario: 'CC',
-      documento_beneficiario: '',
-      cargo_beneficiario: '',
-      numero_factura: '',
-    }))
-    setBuscarPersonal('')
-    setMostrarResultadosPersonal(false)
-    setError('')
-    setMensaje('')
-  }
-  // =======================================================
   // CAMBIAR BENEFICIARIO / RECEPTOR
   // =======================================================
   function cambiarTipoBeneficiario(
@@ -1150,8 +1130,7 @@ export default function RegistrarEgresoDrawer({
             Number(
               form.valor
             ),
-          modalidad:
-            form.modalidad,
+          modalidad: 'PAGO_DIRECTO',
           receptor_dinero:
             form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
               ? mayusculas(form.beneficiario)
@@ -1994,14 +1973,7 @@ export default function RegistrarEgresoDrawer({
                       </div>
                     )}
 
-                    <div
-                      className={
-                        form.modalidad === 'PAGO_DIRECTO'
-                          ? 'grid grid-cols-2 gap-2'
-                          : 'grid grid-cols-1 gap-2'
-                      }
-                    >
-                      {form.modalidad === 'PAGO_DIRECTO' && (
+                    <div className="grid grid-cols-2 gap-2">
                         <CampoInput
                           label="Número de factura"
                           value={form.numero_factura}
@@ -2013,7 +1985,6 @@ export default function RegistrarEgresoDrawer({
                           }
                           placeholder="Opcional"
                         />
-                      )}
                       <CampoInput
                         label="Referencia pago"
                         value={form.referencia_pago}
@@ -2027,9 +1998,7 @@ export default function RegistrarEgresoDrawer({
                       />
                     </div>
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-[9px] text-gray-500">
-                      {form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                        ? 'La factura o soporte del tercero se registrará posteriormente durante la legalización.'
-                        : 'La factura y la referencia pueden registrarse posteriormente; no son obligatorias para realizar el desembolso.'}
+                      La factura y la referencia son opcionales; pueden registrarse posteriormente.
                     </div>
                     <CampoTextarea
                       label="Observaciones"
@@ -2048,48 +2017,12 @@ export default function RegistrarEgresoDrawer({
                       }
                     />
                   </Seccion>
-                  {/* =======================================
-                      MODALIDAD DEL EGRESO
-                  ======================================= */}
-                  <Seccion
-                    titulo="Modalidad y beneficiario"
-                    icono="fas fa-money-check-alt"
-                  >
-                    <div className="text-[10px] font-black text-slate-700">
-                      Modalidad del egreso
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <BotonTipo
-                        activo={form.modalidad === 'PAGO_DIRECTO'}
-                        titulo="PAGO DIRECTO"
-                        subtitulo="Se conoce el beneficiario final"
-                        icono="fas fa-hand-holding-usd"
-                        onClick={() => cambiarModalidad('PAGO_DIRECTO')}
-                      />
-                      <BotonTipo
-                        activo={form.modalidad === 'ENTREGA_PARA_LEGALIZAR'}
-                        titulo="ENTREGA PARA LEGALIZAR"
-                        subtitulo="El tercero o factura se conocerá después"
-                        icono="fas fa-file-invoice-dollar"
-                        onClick={() => cambiarModalidad('ENTREGA_PARA_LEGALIZAR')}
-                      />
-                    </div>
-                    {form.modalidad === 'ENTREGA_PARA_LEGALIZAR' && (
-                      <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-[9px] text-blue-800">
-                        <i className="fas fa-info-circle mr-2"></i>
-                        Registre a la persona que recibe el dinero. El beneficiario final, la factura y el valor legalizado se completarán posteriormente al legalizar este egreso.
-                      </div>
-                    )}
-                    <div className="border-t border-gray-200 my-1"></div>
-
+                  {/* BENEFICIARIO DEL EGRESO */}
+                  <Seccion titulo="Beneficiario" icono="fas fa-user-check">
                   {/* =======================================
                       BENEFICIARIO / RECEPTOR
                   ======================================= */}
-                    <div className="text-[10px] font-black text-slate-700">
-                      {form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                        ? 'Persona que recibe el dinero'
-                        : 'Beneficiario'}
-                    </div>
+                    <div className="text-[10px] font-black text-slate-700">Seleccione el beneficiario</div>
                     <div
                       className="
                         grid
@@ -2103,11 +2036,7 @@ export default function RegistrarEgresoDrawer({
                           'FUNCIONARIO'
                         }
                         titulo="FUNCIONARIO"
-                        subtitulo={
-                          form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                            ? 'Personal que recibe el dinero'
-                            : 'Personal del CEA'
-                        }
+                        subtitulo="Personal del CEA"
                         icono="fas fa-id-badge"
                         onClick={() =>
                           cambiarTipoBeneficiario(
@@ -2121,11 +2050,7 @@ export default function RegistrarEgresoDrawer({
                           'TERCERO'
                         }
                         titulo="TERCERO"
-                        subtitulo={
-                          form.modalidad === 'ENTREGA_PARA_LEGALIZAR'
-                            ? 'Persona externa que recibe'
-                            : 'Persona o empresa'
-                        }
+                        subtitulo="Persona o empresa"
                         icono="fas fa-building"
                         onClick={() =>
                           cambiarTipoBeneficiario(
