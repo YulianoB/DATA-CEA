@@ -146,34 +146,18 @@ async function listarFotosAlmacenadas(
   const rutas =
     []
 
-  const {
-    data: elementosRaiz,
-    error: errorRaiz,
-  } =
-    await supabase.storage
-      .from(
-        BUCKET_EMPRESA
-      )
-      .list(
-        CARPETA_MATRICULAS,
-        {
-          limit:
-            1000,
-        }
-      )
-
-  if (
-    errorRaiz
-  ) {
-    throw errorRaiz
+  // Paginar: un CEA puede tener más de 1000 archivos históricos.
+  // La limpieza se limita a fotografías de matrícula, no a otros documentos.
+  const elementos = []
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase.storage
+      .from(BUCKET_EMPRESA)
+      .list(CARPETA_MATRICULAS, { limit: 1000, offset })
+    if (error) throw error
+    const pagina = Array.isArray(data) ? data : []
+    elementos.push(...pagina)
+    if (pagina.length < 1000) break
   }
-
-  const elementos =
-    Array.isArray(
-      elementosRaiz
-    )
-      ? elementosRaiz
-      : []
 
   for (
     const elemento
@@ -754,7 +738,7 @@ export async function POST(
           true,
 
         message:
-          'Fotografía guardada correctamente. Las fotografías anteriores fueron eliminadas.',
+          'Fotografía actualizada. Solo se conserva la última fotografía tomada en este CEA.',
 
         empresa: {
           nit:
