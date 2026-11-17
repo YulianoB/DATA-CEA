@@ -769,13 +769,11 @@ async function consultarRequisitosCategorias(
 //
 // Búsqueda automática desde 3 caracteres.
 //
-// CURSO_VIGENTE:
-// - estado ACTIVO
-// - PAZ_Y_SALVO
-//
-// REFUERZO:
-// - puede buscar aprendices existentes aunque el refuerzo
-//   posteriormente tenga su propio control de compra.
+// CURSO_VIGENTE y REFUERZO:
+// - se buscan matrículas actuales e históricas, incluso certificadas;
+// - no se exige obligación financiera, recibo ni paz y salvo;
+// - las categorías disponibles son las registradas en la matrícula.
+// Los clientes externos con refuerzo pagado conservan su flujo existente.
 //
 // =========================================================
 
