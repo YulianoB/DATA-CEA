@@ -875,6 +875,20 @@ async function aprendizEstaPazYSalvo(supabase, matriculaId) {
 }
 
 // =========================================================
+// CERTIFICACIÓN OFICIAL RUNT POR MATRÍCULA Y CATEGORÍA
+// =========================================================
+async function matriculaEstaCertificadaRunt(supabase, matriculaId, categoria) {
+  const {data,error}=await supabase.from('control_runt')
+    .select('id')
+    .eq('matricula_id',matriculaId)
+    .eq('categoria',categoria)
+    .eq('estado_certificacion','CERTIFICADO')
+    .limit(1)
+  if(error) throw new Error('No fue posible comprobar la certificación RUNT: '+error.message)
+  return (data||[]).length>0
+}
+
+// =========================================================
 // IDENTIFICAR CONCEPTO REFUERZO PRÁCTICO
 // =========================================================
 
@@ -3009,21 +3023,6 @@ async function validarProgramacion(
     esCursoVigente
   ) {
     // =====================================================
-    // ACTIVO
-    // =====================================================
-
-    if (
-      mayusculas(
-        aprendiz?.estado
-      ) !==
-      'ACTIVO'
-    ) {
-      throw new Error(
-        'Para programar curso vigente el aprendiz debe estar en estado ACTIVO.'
-      )
-    }
-
-    // =====================================================
     // PAZ Y SALVO
     // =====================================================
 
@@ -3039,6 +3038,12 @@ async function validarProgramacion(
       throw new Error(
         'El aprendiz no se encuentra PAZ Y SALVO.'
       )
+    }
+
+    // No se depende de aprendices.estado; los históricos migrados
+    // pueden tenerlo NULL. Una categoría certificada no se programa.
+    if (await matriculaEstaCertificadaRunt(supabase,matriculaId,categoria)) {
+      throw new Error('Esta matrícula y categoría ya están certificadas en RUNT. No se pueden programar más prácticas.')
     }
 
     // =====================================================
