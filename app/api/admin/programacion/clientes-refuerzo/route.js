@@ -25,13 +25,25 @@ export async function GET(request) {
     }
     const buscar = texto(u.searchParams.get('busqueda'))
     if (buscar.length < 3) return salida([])
-    // Filtrado local posterior a la consulta: evita interpolar caracteres
+    // Consultas separadas para evitar límites de paginación y la
+    // interpolación de caracteres especiales en expresiones OR.
+    const patron = '%' + buscar.replace(/[\\%_]/g, '\\\\    // Filtrado local posterior a la consulta: evita interpolar caracteres
     // especiales sin escapar dentro del operador PostgREST .or().
     const {data,error} = await consulta.order('nombre_completo').limit(1000)
     if(error) throw error
     const q=buscar.toLocaleLowerCase('es')
     return salida((data||[]).filter(p => [p.documento,p.nombre_completo,p.celular]
-      .some(v => texto(v).toLocaleLowerCase('es').includes(q))).slice(0,30))
+      .some(v => texto(v).toLocaleLowerCase('es').includes(q))).slice(0,30))') + '%'
+    const campos = ['documento','nombre_completo','celular']
+    const consultas = await Promise.all(campos.map(campo=>
+      db.from('clientes_refuerzo')
+        .select('id,tipo_documento,documento,nombre_completo,celular,categoria,observaciones,activo')
+        .eq('activo',true).ilike(campo,patron).limit(30)
+    ))
+    for (const respuesta of consultas) if(respuesta.error) throw respuesta.error
+    const unicos = new Map()
+    for (const respuesta of consultas) for (const cliente of respuesta.data || []) unicos.set(cliente.id, cliente)
+    return salida([...unicos.values()].slice(0,30))
   } catch (e) { return errorRespuesta(e) }
 }
 
