@@ -53,6 +53,13 @@ const ESTADOS_QUE_CONSUMEN_HORAS = [
   'DICTADA',
 ]
 
+// Compatibilidad durante el empalme: las bases CEA pueden recibir la
+// migración en momentos distintos. Sin ella se conserva el flujo anterior.
+async function soportaClientesRefuerzo(db) {
+  const { error } = await db.from('clientes_refuerzo').select('id').limit(1)
+  return !error
+}
+
 // =========================================================
 // ERROR EMPRESA
 // =========================================================
@@ -2775,6 +2782,8 @@ async function consultarCrucesHorario(
     return []
   }
 
+  const soportaClienteExterno = clienteRefuerzoId ? true : await soportaClientesRefuerzo(supabase)
+
   // =======================================================
   // CONSULTA BASE
   // =======================================================
@@ -2788,7 +2797,7 @@ async function consultarCrucesHorario(
         id,
         matricula_id,
         recibo_refuerzo_id,
-        cliente_refuerzo_id,
+        ${soportaClienteExterno ? 'cliente_refuerzo_id,' : ''}
         instructor_id,
         vehiculo_id,
         categoria,
@@ -3572,6 +3581,7 @@ async function consultarClasePorId(
   supabase,
   id
 ) {
+  const soportaClienteExterno = await soportaClientesRefuerzo(supabase)
   const {
     data,
     error,
@@ -3584,7 +3594,7 @@ async function consultarClasePorId(
         id,
         matricula_id,
         recibo_refuerzo_id,
-        cliente_refuerzo_id,
+        ${soportaClienteExterno ? 'cliente_refuerzo_id,' : ''}
         instructor_id,
         vehiculo_id,
         categoria,
@@ -3606,9 +3616,7 @@ async function consultarClasePorId(
         created_at,
         updated_at,
 
-        cliente_externo:clientes_refuerzo (
-          id, tipo_documento, documento, nombre_completo, celular, categoria
-        ),
+        ${soportaClienteExterno ? 'cliente_externo:clientes_refuerzo(id,tipo_documento,documento,nombre_completo,celular,categoria),' : ''}
         aprendiz:aprendices (
           id,
           consecutivo,
@@ -3950,6 +3958,7 @@ async function consultarAgenda(
     tipoProgramacion,
   }
 ) {
+  const soportaClienteExterno = (clienteRefuerzoId || clienteRefuerzoIds.length) ? true : await soportaClientesRefuerzo(supabase)
   let consulta =
     supabase
       .from(
@@ -3959,7 +3968,7 @@ async function consultarAgenda(
         id,
         matricula_id,
         recibo_refuerzo_id,
-        cliente_refuerzo_id,
+        ${soportaClienteExterno ? 'cliente_refuerzo_id,' : ''}
         instructor_id,
         vehiculo_id,
         categoria,
@@ -3981,9 +3990,7 @@ async function consultarAgenda(
         created_at,
         updated_at,
 
-        cliente_externo:clientes_refuerzo (
-          id, tipo_documento, documento, nombre_completo, celular, categoria
-        ),
+        ${soportaClienteExterno ? 'cliente_externo:clientes_refuerzo(id,tipo_documento,documento,nombre_completo,celular,categoria),' : ''}
         aprendiz:aprendices (
           id,
           consecutivo,
@@ -5086,7 +5093,7 @@ if (
         recibo_refuerzo_id:
           reciboRefuerzoId ||
           null,
-        cliente_refuerzo_id: clienteRefuerzoId || null,
+        ...(clienteRefuerzoId ? { cliente_refuerzo_id: clienteRefuerzoId } : {}),
 
         instructor_id:
           instructorId,
@@ -6483,7 +6490,7 @@ if (
         recibo_refuerzo_id:
           reciboRefuerzoId ||
           null,
-        cliente_refuerzo_id: clienteRefuerzoId || null,
+        ...(clienteRefuerzoId ? { cliente_refuerzo_id: clienteRefuerzoId } : {}),
 
         instructor_id:
           instructorId,
