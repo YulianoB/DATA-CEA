@@ -969,6 +969,9 @@ async function obtenerEfectivoDisponible(
         )
         .select(`
           valor,
+          modalidad,
+          valor_reintegrado,
+          valor_reembolsado,
           estado,
           medio_pago:medios_pago_caja (
             nombre
@@ -1060,7 +1063,13 @@ async function obtenerEfectivoDisponible(
           Number(
             registro?.valor ||
             0
-          )
+          ) -
+          (mayusculas(registro?.modalidad) === 'ENTREGA_PARA_LEGALIZAR'
+            ? Number(registro?.valor_reintegrado || 0)
+            : 0) +
+          (mayusculas(registro?.modalidad) === 'ENTREGA_PARA_LEGALIZAR'
+            ? Number(registro?.valor_reembolsado || 0)
+            : 0)
         )
       },
       0
@@ -2214,6 +2223,136 @@ export async function POST(
         }
       )
     }
+    // =====================================================
+    // LEGALIZAR / AJUSTAR ANTICIPO
+    // =====================================================
+    if (accion === 'legalizar') {
+      const id = enteroPositivo(body?.id)
+      const usuario = mayusculas(body?.usuario || body?.pagado_por)
+      const gasto = Number(body?.valor_legalizado)
+      const reintegro = Number(body?.valor_reintegrado ?? 0)
+      const reembolso = Number(body?.valor_reembolsado ?? 0)
+      const factura = texto(body?.numero_factura)
+      const proveedor = mayusculas(body?.proveedor_final)
+      const observaciones = mayusculas(body?.observaciones_legalizacion)
+      const soporteRecibido = body?.soporte_recibido === true
+      const hoy = hoyColombia()
+      const error = (message, status = 400) =>
+        NextResponse.json({ status: 'error', message }, { status })
+
+      if (!id || !usuario) return error('Indique el egreso y el usuario responsable.')
+      const anterior = await obtenerEgresoPorId(supabase, id)
+      if (!anterior || anterior.estado !== 'ACTIVO' ||
+          anterior.modalidad !== 'ENTREGA_PARA_LEGALIZAR') {
+        return error('El egreso no existe o no corresponde a una entrega activa para legalizar.', 409)
+      }
+      const montoValido = n => Number.isFinite(n) && n >= 0 &&
+        Math.round(n * 100) / 100 === n
+      if (![gasto, reintegro, reembolso].every(montoValido)) {
+        return error('Los valores de la legalización deben ser numéricos, no negativos y con máximo dos decimales.')
+      }
+      const centavos = n => Math.round(Number(n || 0) * 100)
+      const saldo = centavos(anterior.valor) + centavos(reembolso) -
+        centavos(reintegro) - centavos(gasto)
+      if (saldo < 0) return error('El gasto más el reintegro no puede superar el dinero entregado y reembolsado.')
+      if (soporteRecibido && !factura) {
+        return error('Para confirmar el soporte indique el número de factura o comprobante.')
+      }
+      if (soporteRecibido && !proveedor) {
+        return error('Indique el proveedor final que emitió el soporte.')
+      }
+      if (!observaciones) return error('Describa la rendición o justificación del dinero.')
+
+      const dineroAnterior = centavos(anterior.valor_reintegrado) !== centavos(reintegro) ||
+        centavos(anterior.valor_reembolsado) !== centavos(reembolso) ||
+        centavos(anterior.valor_legalizado) !== centavos(gasto)
+      const ajusteEfectivo = centavos(anterior.valor_reintegrado) !== centavos(reintegro) ||
+        centavos(anterior.valor_reembolsado) !== centavos(reembolso)
+
+      // No recalcular movimientos de periodos arqueados/cerrados.
+      // Tampoco permitir modificar importes en una fecha posterior.
+      if (dineroAnterior) {
+        if (texto(anterior.fecha) !== hoy) {
+          return error('Los importes solo se pueden conciliar el mismo día del egreso. La factura puede completarse después.', 409)
+        }
+        const { data: cierre, error: errorCierre } = await supabase
+          .from('cierres_caja').select('id, tipo_cierre, periodo_hasta')
+          .gte('periodo_hasta', anterior.created_at)
+          .order('periodo_hasta', { ascending: true })
+          .limit(1).maybeSingle()
+        if (errorCierre) return error('No fue posible verificar los arqueos de Caja.', 500)
+        if (cierre) {
+          return error('Ya existe un arqueo o cierre que incluye la entrega. No se permite modificar sus valores.', 409)
+        }
+        if (ajusteEfectivo &&
+            mayusculas(anterior.medio_pago?.nombre) !== 'EFECTIVO') {
+          return error('Los reintegros y reembolsos en este formulario solo están habilitados para entregas en efectivo.')
+        }
+      }
+      // El proveedor se registra en las observaciones de legalización;
+      // beneficiario conserva siempre la identidad del receptor del anticipo.
+      const notaProveedor = proveedor ? `PROVEEDOR FINAL: ${proveedor}. ` : ''
+      const detalleLegalizacion = notaProveedor + observaciones
+      const estadoLegalizacion = saldo === 0 && soporteRecibido
+        ? 'LEGALIZADO' : gasto > 0 || reintegro > 0 || reembolso > 0
+          ? 'PARCIAL' : 'PENDIENTE'
+
+      const cambios = {
+        valor_legalizado: gasto,
+        valor_reintegrado: reintegro,
+        valor_reembolsado: reembolso,
+        estado_legalizacion: estadoLegalizacion,
+        fecha_legalizacion: estadoLegalizacion === 'LEGALIZADO' ? hoy : null,
+        legalizado_por: usuario,
+        observaciones_legalizacion: detalleLegalizacion,
+        numero_factura: factura || null,
+        updated_at: new Date().toISOString(),
+      }
+      const { data: actualizado, error: errorUpdate } = await supabase
+        .from('egresos_caja').update(cambios)
+        .eq('id', id).eq('estado', 'ACTIVO')
+        .eq('updated_at', anterior.updated_at)
+        .select('id, valor, valor_legalizado, valor_reintegrado, valor_reembolsado, estado_legalizacion, numero_factura, updated_at')
+        .maybeSingle()
+      if (errorUpdate) return error(`No fue posible legalizar el egreso: ${errorUpdate.message}`, 400)
+      if (!actualizado) return error('El egreso fue modificado por otro usuario. Consulte nuevamente antes de guardar.', 409)
+      try {
+        await registrarAuditoria(supabase, {
+          usuario, accion: 'LEGALIZAR_EGRESO', entidadId: id,
+          consecutivoReferencia: anterior.numero_cuenta_cobro,
+          descripcion: `LEGALIZACIÓN DEL EGRESO #${id}. ESTADO ${estadoLegalizacion}.`,
+          datosAnteriores: anterior,
+          datosNuevos: { ...actualizado, proveedor_final: proveedor, soporte_recibido: soporteRecibido },
+          observaciones: detalleLegalizacion,
+        })
+      } catch (errorAuditoria) {
+        // No dejar una modificación financiera sin auditoría.
+        const restauracion = {
+          valor_legalizado: anterior.valor_legalizado,
+          valor_reintegrado: anterior.valor_reintegrado,
+          valor_reembolsado: anterior.valor_reembolsado,
+          estado_legalizacion: anterior.estado_legalizacion,
+          fecha_legalizacion: anterior.fecha_legalizacion,
+          legalizado_por: anterior.legalizado_por,
+          observaciones_legalizacion: anterior.observaciones_legalizacion,
+          numero_factura: anterior.numero_factura,
+          updated_at: anterior.updated_at,
+        }
+        const { error: errorRestauracion } = await supabase
+          .from('egresos_caja').update(restauracion)
+          .eq('id', id).eq('updated_at', actualizado.updated_at)
+        if (errorRestauracion) console.error('Error restaurando legalización sin auditoría:', errorRestauracion)
+        return error('No fue posible registrar la auditoría de la legalización. Compruebe el historial antes de reintentar.', 500)
+      }
+      return NextResponse.json({
+        status: 'success',
+        message: estadoLegalizacion === 'LEGALIZADO'
+          ? 'Egreso legalizado y conciliado correctamente.'
+          : 'Rendición registrada. El egreso continúa pendiente de legalización completa.',
+        data: { ...actualizado, saldo_pendiente: saldo / 100 },
+      })
+    }
+
     // =====================================================
     // ANULAR
     // =====================================================
