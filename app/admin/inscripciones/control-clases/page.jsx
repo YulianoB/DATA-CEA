@@ -2048,6 +2048,14 @@ const streamRef =
       formacion.practica
     )
 
+  // Densidad de impresión según la cantidad REAL de clases configuradas.
+  // Permite que A2 conserve filas amplias y C1 utilice un formato compacto.
+  const totalTeoriaTaller = [...modulosTeoria, ...modulosTaller]
+    .reduce((total, modulo) => total + obtenerClases(modulo).length, 0)
+  const teoriaCompacta = totalTeoriaTaller >= 18
+  const practicaCompacta = clasesPractica.length >= 26
+  const practicaIntermedia = clasesPractica.length >= 20 && !practicaCompacta
+
   const referenciaPago =
     matricula
       ?.referencia_pago
@@ -2391,6 +2399,7 @@ const streamRef =
       <section
         className="
           hoja-control
+          ${teoriaCompacta ? 'teoria-compacta' : ''}
           bg-white
           mx-auto
           shadow-lg
@@ -2901,6 +2910,7 @@ const streamRef =
         className="
           hoja-control
           pagina-dos
+          ${practicaCompacta ? 'practica-compacta' : practicaIntermedia ? 'practica-intermedia' : ''}
           bg-white
           mx-auto
           mt-5
@@ -3373,6 +3383,70 @@ const streamRef =
           .hoja-control.pagina-dos > div:nth-of-type(2),
           .hoja-control.pagina-dos > div:nth-of-type(3) {
             font-size: 8px;
+          }
+          /* Primera hoja: más clases teóricas y de taller requieren
+             reducir filas sin perder las firmas de autoevaluación. */
+          .hoja-control.teoria-compacta:not(.pagina-dos) {
+            padding: 4mm !important;
+          }
+          .hoja-control.teoria-compacta:not(.pagina-dos) .tabla-modulo-control {
+            margin-top: 4px !important;
+          }
+          .hoja-control.teoria-compacta:not(.pagina-dos) .tabla-modulo-control table {
+            font-size: 8px !important;
+            line-height: 1.1 !important;
+          }
+          .hoja-control.teoria-compacta:not(.pagina-dos) .tabla-modulo-control table :is(th, td) {
+            padding-top: 1px !important;
+            padding-bottom: 1px !important;
+          }
+          .hoja-control.teoria-compacta:not(.pagina-dos) .tabla-modulo-control > div:first-child {
+            font-size: 9px !important;
+            padding-top: 2px !important;
+            padding-bottom: 2px !important;
+          }
+          .hoja-control.teoria-compacta:not(.pagina-dos) .tabla-modulo-control table tbody td span.text-\\[14px\\] {
+            font-size: 12px !important;
+          }
+          .hoja-control.teoria-compacta:not(.pagina-dos) .tabla-modulo-control + .tabla-modulo-control {
+            margin-top: 4px !important;
+          }
+          /* Segunda hoja: escalas separadas para 20-25 y 26+ clases prácticas. */
+          .hoja-control.pagina-dos.practica-intermedia .tabla-practica-control table {
+            font-size: 7.6px !important;
+            line-height: 1.14 !important;
+          }
+          .hoja-control.pagina-dos.practica-intermedia .tabla-practica-control table tbody td {
+            padding-top: 2px !important;
+            padding-bottom: 2px !important;
+          }
+          .hoja-control.pagina-dos.practica-compacta {
+            padding: 5mm !important;
+          }
+          .hoja-control.pagina-dos.practica-compacta .tabla-practica-control {
+            margin-top: 4px !important;
+          }
+          .hoja-control.pagina-dos.practica-compacta .tabla-practica-control table {
+            font-size: 7px !important;
+            line-height: 1.08 !important;
+          }
+          .hoja-control.pagina-dos.practica-compacta .tabla-practica-control table :is(th, td) {
+            padding-top: 1px !important;
+            padding-bottom: 1px !important;
+          }
+          .hoja-control.pagina-dos.practica-compacta .tabla-practica-control table tbody td span.text-\\[14px\\] {
+            font-size: 12px !important;
+          }
+          .hoja-control.pagina-dos.practica-compacta > div:nth-of-type(2),
+          .hoja-control.pagina-dos.practica-compacta > div:nth-of-type(3) {
+            font-size: 7.5px !important;
+            line-height: 1.1 !important;
+          }
+          .hoja-control.pagina-dos.practica-compacta .tabla-practica-control + div {
+            margin-top: 5px !important;
+          }
+          .hoja-control.pagina-dos.practica-compacta .tabla-practica-control + div div.h-\\[38px\\] {
+            height: 24px !important;
           }
           .hoja-control .tabla-modulo-control table,
           .hoja-control .tabla-practica-control table {
