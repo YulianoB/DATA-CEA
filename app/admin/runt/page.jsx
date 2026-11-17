@@ -636,7 +636,7 @@ export default function RuntPage() {
   const [fechaCertificacionRunt, setFechaCertificacionRunt] = useState(hoyBogota())
   const [numeroCertificadoRunt, setNumeroCertificadoRunt] = useState('')
   const [numeroSolicitudRunt, setNumeroSolicitudRunt] = useState('')
-  const [soporteCertificacionRunt, setSoporteCertificacionRunt] = useState('')
+  const [pestanaDrawerRunt, setPestanaDrawerRunt] = useState('flexible')
   const [fechaRegistroCola, setFechaRegistroCola] = useState(hoyBogota())
   const [accionCola, setAccionCola] = useState(null)
   const [filtros, setFiltros] = useState({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
@@ -1364,6 +1364,7 @@ export default function RuntPage() {
       []
     )
 
+    setPestanaDrawerRunt('flexible')
     setFechaInscripcionRunt(hoyBogota())
     setSoporteInscripcionRunt('')
     setCargue({
@@ -2343,10 +2344,6 @@ export default function RuntPage() {
       setError('Indique la fecha real de certificación y el número oficial del certificado RUNT.')
       return
     }
-    if (registrarHechoHistorico && soporteCertificacionRunt.trim().length < 12) {
-      setError('El registro de una certificación ya realizada requiere una explicación del soporte (mínimo 12 caracteres).')
-      return
-    }
     if (!confirmado) {
       setCertificacionHistorica(registrarHechoHistorico)
       setConfirmarCertificacionOpen(true)
@@ -2375,7 +2372,6 @@ export default function RuntPage() {
           fecha_certificacion: fechaCertificacionRunt,
           numero_certificado_runt: numeroCertificadoRunt.trim(),
           numero_solicitud_runt: numeroSolicitudRunt.trim(),
-          soporte_certificacion: soporteCertificacionRunt.trim(),
         })
 
       setMensaje(
@@ -3413,14 +3409,6 @@ export default function RuntPage() {
                     CARGUE
                 ========================================== */}
 
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
-                  <strong>Gestión flexible:</strong> no es obligatorio cargar aquí las clases históricas
-                  ni vincularlas a instructores. El avance detallado se puede gestionar voluntariamente.
-                  Si el certificado ya fue expedido en RUNT, registre ese hecho en la sección
-                  de certificación, aunque DATA CEA todavía no tenga el historial de clases.
-                  Los cargues faltantes en DATA CEA no demuestran que el aprendiz no haya cursado clases.
-                </div>
-
                 {/* AVANCE ACUMULADO: no genera clases individuales ni afecta instructores. */}
                 {registrado && !certificado && (
                   <section className="rounded-lg border border-slate-300 bg-white">
@@ -3428,11 +3416,6 @@ export default function RuntPage() {
                       Actualizar avance RUNT (opcional)
                     </div>
                     <form onSubmit={guardarAvanceManualRunt} className="space-y-3 p-4 text-xs">
-                      <p className="text-slate-600">
-                        Registre solamente el <strong>total acumulado</strong> que ya consultó en RUNT.
-                        No son clases nuevas para sumar. El sistema guarda el total en la tabla existente sin vincular instructores; la fecha corresponde al registro administrativo, no a la clase real.
-                        Si no desea llevar este seguimiento, puede omitirlo.
-                      </p>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                         {[
                           ['teoria','Teoría','clases_teoria'],
