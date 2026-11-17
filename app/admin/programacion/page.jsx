@@ -7137,20 +7137,22 @@ function abrirClase(
                     <div
                       className="
                         min-h-[66px]
+                        min-w-0
                         border
                         border-gray-600
                         rounded-lg
                         bg-white
-                        px-3
+                        px-2
                         py-2
                       "
                     >
-                      <p
+                      <p title={instructor.nombre_completo}
                         className="
                           text-[9px]
                           font-black
                           text-gray-900
                           leading-tight
+                          truncate
                         "
                       >
                         {
@@ -7210,6 +7212,7 @@ function abrirClase(
                           mt-1
                           text-[7px]
                           text-gray-400
+                          truncate
                         "
                       >
                         {(
