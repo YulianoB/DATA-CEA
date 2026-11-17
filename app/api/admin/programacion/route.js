@@ -5020,7 +5020,8 @@ if (
     )
 
   if(tipoProgramacion==='CURSO_VIGENTE') {
-    const maximo=Number(entidades?.requisito?.clases_practica||0)
+    const requisitoNumero=await consultarRequisitoCategoria(supabase,categoria)
+    const maximo=Number(requisitoNumero?.clases_practica||0)
     if(numeroClasePractica===null) {
       throw new Error('Indique el número de clase práctica que corresponde programar.')
     }
