@@ -1880,6 +1880,13 @@ async function buscarPersonasProgramables(
     ...externos,
   ]
 }
+// Numeración administrativa persistida en observaciones, sin alterar
+// el registro de clases ni inventar clases históricas.
+function numeroHistoricoClase(observaciones) {
+  const encontrado=texto(observaciones).match(/\[CEA_CLASE_PRACTICA:(\d+)\]/)
+  return encontrado ? Number(encontrado[1]) : 0
+}
+
 // =========================================================
 // PROGRAMACIÓN DEL APRENDIZ
 // =========================================================
@@ -1907,6 +1914,7 @@ async function consultarProgramacionAprendiz(
         hora_inicio,
         tipo_programacion,
         estado,
+        observaciones,
         motivo_no_dictada_id,
         observacion_no_dictada,
         usuario_cancelacion,
@@ -2057,6 +2065,10 @@ function construirProgresoAprendiz(
         pendientesCargue +
         dictadas
 
+      const numeroMaximoRegistrado = curso
+        .filter(item=>['AGENDADA','PENDIENTE_CARGUE','DICTADA'].includes(item?.estado))
+        .reduce((max,item)=>Math.max(max,numeroHistoricoClase(item.observaciones)),0)
+
       const requeridas =
         numero(
           requisito
@@ -2123,6 +2135,9 @@ function construirProgresoAprendiz(
 
         clases_comprometidas:
           comprometidas,
+
+        siguiente_numero_clase: Math.min(requeridas,
+          Math.max(comprometidas,numeroMaximoRegistrado)+1),
 
         disponibles_programar:
           Math.max(
