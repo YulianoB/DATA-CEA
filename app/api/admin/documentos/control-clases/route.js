@@ -1212,6 +1212,25 @@ function construirAprendiz(
 
 
 // ============================================================
+// ORIGEN DE MATRÍCULA PARA TARJETA
+// ============================================================
+async function resolverOrigenMatricula(supabase, matricula, empresa) {
+  const tipo=mayusculas(matricula?.origen_matricula)
+  if(tipo==='DIRECTO') return construirEmpresa(empresa).nombre || ''
+  if(tipo==='CONVENIO') {
+    const id=Number(matricula?.convenio_id)
+    if(Number.isInteger(id) && id>0) {
+      const {data,error}=await supabase.from('convenios')
+        .select('nombre').eq('id',id).maybeSingle()
+      if(error) throw new Error('No fue posible consultar el origen del convenio: '+error.message)
+      if(texto(data?.nombre)) return texto(data.nombre)
+    }
+    return texto(matricula?.convenio)
+  }
+  return ''
+}
+
+// ============================================================
 // GET
 // ============================================================
 
@@ -1396,11 +1415,14 @@ export async function GET(
       separarFormacion(
         modulosImpresion
       )
+    // ========================================================
+    // ORIGEN REAL DE LA MATRÍCULA
+    // ========================================================
+    const nombreOrigen=await resolverOrigenMatricula(supabase,matricula,empresa)
 
     // ========================================================
     // RESPUESTA
     // ========================================================
-
     return NextResponse.json(
       {
         ok:
@@ -1455,10 +1477,10 @@ export async function GET(
             referenciaPago,
         },
 
-        aprendiz:
-          construirAprendiz(
-            matricula
-          ),
+        aprendiz: {
+          ...construirAprendiz(matricula),
+          nombre_origen: nombreOrigen,
+        },
 
         plan: {
           id:
@@ -1527,14 +1549,9 @@ export async function GET(
 
             criterios:
               {
-                S:
-                  'Desarrolla satisfactoriamente el contenido.',
-
-                EP:
-                  'Continúa consolidando la habilidad.',
-
-                RR:
-                  'Requiere reforzar el contenido.',
+                LO: 'Logrado: ejecuta correctamente la competencia.',
+                 EP: 'En proceso: necesita continuar practicando.',
+                 RF: 'Requiere refuerzo: presenta dificultades y necesita práctica adicional.',
               },
 
             resultado_final:
