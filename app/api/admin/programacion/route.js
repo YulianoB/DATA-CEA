@@ -3958,6 +3958,7 @@ async function consultarAgenda(
         id,
         matricula_id,
         recibo_refuerzo_id,
+        cliente_refuerzo_id,
         instructor_id,
         vehiculo_id,
         categoria,
@@ -3979,6 +3980,9 @@ async function consultarAgenda(
         created_at,
         updated_at,
 
+        cliente_externo:clientes_refuerzo (
+          id, tipo_documento, documento, nombre_completo, celular, categoria
+        ),
         aprendiz:aprendices (
           id,
           consecutivo,
@@ -5361,7 +5365,7 @@ if (
           origen_programacion:
             entidades
               ?.cliente_refuerzo
-              ? 'CLIENTE_EXTERNO'
+              ? (clienteRefuerzoId ? 'CLIENTE_REFUERZO' : 'CLIENTE_EXTERNO')
               : 'APRENDIZ',
 
           documento:
@@ -6854,7 +6858,7 @@ if (
         origen_programacion:
           entidades
             ?.cliente_refuerzo
-            ? 'CLIENTE_EXTERNO'
+            ? (clienteRefuerzoId ? 'CLIENTE_REFUERZO' : 'CLIENTE_EXTERNO')
             : 'APRENDIZ',
 
         documento:
