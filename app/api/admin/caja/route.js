@@ -8311,6 +8311,120 @@ if (
     }
 
     // =====================================================
+    // CORREGIR MEDIO DE PAGO DE UN RECIBO OPERATIVO
+    // Mantiene importe, fecha, consecutivo y aplicaciones.
+    // Los arqueos abiertos se recalculan desde recibos_caja.
+    // Los cierres ya registrados no se reescriben.
+    // =====================================================
+    if (accion === 'corregir_medio_pago_recibo') {
+      const reciboId = toInt(body?.recibo_id)
+      const motivo = texto(body?.motivo)
+      const medioPagoId = toInt(body?.medio_pago_id)
+
+      if (!reciboId || !medioPagoId || motivo.length < 8) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Indique el recibo, el medio correcto y una justificación de al menos 8 caracteres.',
+        }, { status: 400 })
+      }
+
+      const { data: anterior, error: errorConsulta } = await supabase
+        .from('recibos_caja').select('*').eq('id', reciboId).maybeSingle()
+      if (errorConsulta) throw new Error(errorConsulta.message)
+      if (!anterior) {
+        return NextResponse.json({ status: 'error', message: 'No se encontró el recibo.' }, { status: 404 })
+      }
+      if (mayusculas(anterior.estado) !== 'ACTIVO' || mayusculas(anterior.recibido_por) === 'MIGRACION') {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Este recibo no está habilitado para corrección operativa. Use la rectificación histórica cuando corresponda.',
+        }, { status: 409 })
+      }
+      const medio = await obtenerMedioPago(supabase, medioPagoId)
+      if (String(anterior.medio_pago_id) === String(medio.id)) {
+        return NextResponse.json({
+          status: 'error', message: 'El recibo ya tiene el medio de pago seleccionado.',
+        }, { status: 409 })
+      }
+
+      // Una corrección de caja cerrada exige un procedimiento contable
+      // específico. No alterar las cifras archivadas de cierres anteriores.
+      const { data: cierres, error: errorCierres } = await supabase
+        .from('cierres_caja')
+        .select('id,consecutivo,periodo_desde,periodo_hasta,estado')
+        .lte('periodo_desde', anterior.created_at)
+        .gte('periodo_hasta', anterior.created_at)
+        .eq('estado', 'CERRADO')
+        .limit(1)
+      if (errorCierres) throw new Error('No fue posible validar los cierres de Caja: ' + errorCierres.message)
+      if ((cierres || []).length) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'El recibo pertenece a un arqueo o cierre confirmado. La corrección requiere un ajuste administrativo del cierre, no se puede cambiar directamente el medio de pago.',
+        }, { status: 409 })
+      }
+
+      let consulta = supabase.from('recibos_caja')
+        .update({ medio_pago_id: medio.id, updated_at: new Date().toISOString() })
+        .eq('id', reciboId)
+        .eq('estado', 'ACTIVO')
+        .eq('medio_pago_id', anterior.medio_pago_id)
+      consulta = anterior.updated_at
+        ? consulta.eq('updated_at', anterior.updated_at)
+        : consulta.is('updated_at', null)
+      const { data: actualizado, error: errorUpdate } = await consulta
+        .select('*').maybeSingle()
+      if (errorUpdate) throw new Error('No fue posible corregir el medio de pago: ' + errorUpdate.message)
+      if (!actualizado) {
+        return NextResponse.json({
+          status: 'error', message: 'El recibo cambió durante la corrección. Actualice la información.',
+        }, { status: 409 })
+      }
+
+      try {
+        await registrarAuditoria({
+          supabase,
+          usuario,
+          accion: 'CORREGIR_MEDIO_PAGO_RECIBO',
+          entidad: 'RECIBO_CAJA',
+          entidadId: reciboId,
+          matriculaId: anterior.matricula_id,
+          documento: anterior.documento,
+          consecutivoReferencia: numeroRecibo(anterior),
+          descripcion: 'Corrección de medio de pago antes del cierre de Caja.',
+          datosAnteriores: {
+            medio_pago_id: anterior.medio_pago_id,
+            valor: anterior.valor,
+            fecha: anterior.fecha,
+          },
+          datosNuevos: {
+            medio_pago_id: actualizado.medio_pago_id,
+            valor: actualizado.valor,
+            fecha: actualizado.fecha,
+          },
+          motivo,
+        })
+      } catch (errorAuditoria) {
+        const { data: revertido, error: errorRollback } = await supabase
+          .from('recibos_caja')
+          .update({ medio_pago_id: anterior.medio_pago_id, updated_at: anterior.updated_at })
+          .eq('id', reciboId)
+          .eq('updated_at', actualizado.updated_at)
+          .select('id').maybeSingle()
+        if (errorRollback || !revertido) {
+          throw new Error('ERROR CRÍTICO: falló la auditoría y la reversión del medio de pago. No repita la operación; solicite revisión administrativa.')
+        }
+        throw errorAuditoria
+      }
+
+      return NextResponse.json({
+        status: 'success',
+        message: 'Medio de pago corregido y auditado. El arqueo y los movimientos abiertos reflejarán el cambio al actualizar.',
+        data: actualizado,
+      })
+    }
+
+    // =====================================================
     // RECTIFICAR METADATOS DE RECIBO HISTÓRICO
     // Nunca modificar valor ni distribución desde esta acción.
     // =====================================================
