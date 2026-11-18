@@ -2358,40 +2358,12 @@ async function crearControlesRunt(
     return []
   }
 
-  const runtVerificado =
-    body?.runt_verificado ===
-      true ||
-    normalizarMayusculas(
-      body?.runt_estado_verificacion
-    ) ===
-      'VERIFICADO'
-
-  const estadoVerificacion =
-    runtVerificado
-      ? 'VERIFICADO'
-      : 'PENDIENTE'
-
-  const resultadoVerificacion =
-    runtVerificado
-      ? normalizarMayusculas(
-          body?.runt_resultado_verificacion
-        ) ||
-        null
-      : null
-
-  const usuarioVerificacion =
-    runtVerificado
-      ? normalizarTexto(
-          body?.runt_usuario_verificacion
-        ) ||
-        null
-      : null
-
-  const fechaVerificacion =
-    runtVerificado
-      ? new Date()
-          .toISOString()
-      : null
+  // La matrícula crea únicamente la tarea pendiente de Control RUNT.
+  // Nunca aceptar una verificación enviada desde el formulario de inscripción.
+  const estadoVerificacion = 'PENDIENTE'
+  const resultadoVerificacion = null
+  const usuarioVerificacion = null
+  const fechaVerificacion = null
 
   const controles =
     matriculas.map(
