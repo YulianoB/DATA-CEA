@@ -8472,6 +8472,25 @@ if (
           status: 'error', message: 'Seleccione un medio de pago válido.'
         }, { status: 400 })
       }
+      // Las rectificaciones históricas también deben respetar
+      // cierres o arqueos ya confirmados. Evitar alterar un período
+      // cerrado, incluso si el recibo procede de una migración.
+      const { data: cierresHistoricos, error: errorCierresHistoricos } = await supabase
+        .from('cierres_caja')
+        .select('id')
+        .lte('periodo_desde', anterior.created_at)
+        .gte('periodo_hasta', anterior.created_at)
+        .eq('estado', 'CERRADO')
+        .limit(1)
+      if (errorCierresHistoricos) {
+        throw new Error('No fue posible verificar cierres históricos: ' + errorCierresHistoricos.message)
+      }
+      if ((cierresHistoricos || []).length > 0) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'El recibo pertenece a un cierre o arqueo confirmado. La rectificación requiere un procedimiento de ajuste del cierre.',
+        }, { status: 409 })
+      }
       const medio = await obtenerMedioPago(supabase, medioPagoId)
       if (!medio) {
         return NextResponse.json({
