@@ -541,6 +541,7 @@ async function consultarProgramacionInstructor(
         id,
         matricula_id,
         recibo_refuerzo_id,
+        cliente_refuerzo_id,
         instructor_id,
         vehiculo_id,
         categoria,
@@ -559,6 +560,15 @@ async function consultarProgramacionInstructor(
         fecha_cancelacion,
         created_at,
         updated_at,
+
+        cliente_externo:clientes_refuerzo (
+          id,
+          tipo_documento,
+          documento,
+          nombre_completo,
+          celular,
+          categoria
+        ),
 
         aprendiz:aprendices (
           id,
@@ -675,15 +685,20 @@ async function consultarProgramacionInstructor(
             )
           : null
 
-      const clienteRefuerzo =
-        construirClienteRefuerzo(
-          recibo
-        )
+      const clienteExternoSinRecibo = clase?.cliente_externo
+        ? {
+            ...clase.cliente_externo,
+            origen_programacion: 'CLIENTE_REFUERZO',
+            tipo_doc: texto(clase.cliente_externo.tipo_documento),
+            nombre_completo: texto(clase.cliente_externo.nombre_completo),
+            documento: normalizarDocumento(clase.cliente_externo.documento),
+            celular: texto(clase.cliente_externo.celular),
+          }
+        : null
 
-      const persona =
-        aprendiz ||
-        clienteRefuerzo ||
-        null
+      const clienteRefuerzo = clienteExternoSinRecibo || construirClienteRefuerzo(recibo)
+
+      const persona = aprendiz || clienteRefuerzo || null
 
       const horaInicio =
         texto(
@@ -732,6 +747,8 @@ async function consultarProgramacionInstructor(
 
         recibo_refuerzo_id:
           clase.recibo_refuerzo_id,
+
+        cliente_refuerzo_id: clase.cliente_refuerzo_id,
 
         vehiculo_id:
           clase.vehiculo_id,
