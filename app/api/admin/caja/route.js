@@ -1436,6 +1436,7 @@ async function construirDistribucionPago({
   detalles,
   totalAnterior,
   valor,
+  valorTotalCuenta,
 }) {
   const lista =
     Array.isArray(
@@ -1571,6 +1572,15 @@ async function construirDistribucionPago({
         }
       )
 
+  // Los componentes activos deben sumar exactamente la cabecera,
+  // también después de consolidaciones históricas.
+  const sumaComponentes = redondear(ordenados.reduce(
+    (s, d) => s + Number(d.valor || 0), 0
+  ))
+  if (sumaComponentes !== redondear(valorTotalCuenta)) {
+    throw new Error('La obligación no coincide con la suma de sus componentes financieros. Solicite revisión antes de registrar el abono.')
+  }
+
   // =======================================================
   // APLICAR LOS RECIBOS HISTÓRICOS REALES
   // =======================================================
@@ -1597,6 +1607,11 @@ async function construirDistribucionPago({
   }
 
   const recibos = recibosPrevios || []
+  // Supabase limita la respuesta a 1000 filas por defecto. Nunca
+  // calcular un saldo con un histórico truncado silenciosamente.
+  if (recibos.length >= 1000) {
+    throw new Error('La obligación tiene demasiados recibos para validar el histórico completo. Solicite revisión administrativa.')
+  }
   const abonadoEnRecibos = redondear(recibos.reduce((s, r) => s + Number(r.valor || 0), 0))
   if (abonadoEnRecibos !== redondear(totalAnterior)) {
     throw new Error('Los abonos de la obligación cambiaron durante el registro. Actualice e intente de nuevo.')
@@ -1612,6 +1627,9 @@ async function construirDistribucionPago({
       .in('recibo_id', ids)
     if (error) {
       throw new Error('No fue posible consultar el desglose de los abonos: ' + error.message)
+    }
+    if ((data || []).length >= 1000) {
+      throw new Error('El desglose de recibos supera el límite de consulta. No es seguro registrar el abono.')
     }
     aplicaciones.push(...(data || []))
   }
@@ -7724,6 +7742,7 @@ if (
           totalAnterior,
 
           valor,
+          valorTotalCuenta: cuenta.valor_total,
         })
 
       const matriculaIds =
@@ -8078,43 +8097,38 @@ if (
             totalNuevo,
         })
 
-      const {
-        error:
-          errorEstado,
-      } =
-        await supabase
-          .from(
-            'cuentas_aprendiz'
-          )
-          .update({
-            estado:
-              nuevoEstado,
+      // Actualización optimista: si otra operación modificó la
+      // cuenta mientras se preparaba el pago, no confirmar este
+      // recibo. Esto evita confirmar dos pagos sobre un mismo saldo
+      // leído antes de los movimientos concurrentes.
+      let cambioEstado = supabase
+        .from('cuentas_aprendiz')
+        .update({
+          estado: nuevoEstado,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', cuenta.id)
+        .eq('estado', cuenta.estado)
 
-            updated_at:
-              new Date()
-                .toISOString(),
-          })
-          .eq(
-            'id',
-            cuenta.id
-          )
+      cambioEstado = cuenta.updated_at
+        ? cambioEstado.eq('updated_at', cuenta.updated_at)
+        : cambioEstado.is('updated_at', null)
 
-      if (
-        errorEstado
-      ) {
-        await supabase
-          .from(
-            'recibos_caja'
-          )
+      const { data: cuentasActualizadas, error: errorEstado } =
+        await cambioEstado.select('id')
+
+      if (errorEstado || (cuentasActualizadas || []).length !== 1) {
+        const { error: errorReversion } = await supabase
+          .from('recibos_caja')
           .delete()
-          .eq(
-            'id',
-            recibo.id
-          )
+          .eq('id', recibo.id)
 
-        throw new Error(
-          `No fue posible actualizar el estado de la obligación: ${errorEstado.message}`
-        )
+        if (errorReversion) {
+          throw new Error('Conflicto al registrar el abono y la reversión automática falló. No repita el pago; solicite revisión administrativa: ' + errorReversion.message)
+        }
+        throw new Error(errorEstado
+          ? 'No fue posible actualizar el estado de la obligación: ' + errorEstado.message
+          : 'La obligación cambió mientras se registraba el abono. Actualice la página y verifique los recibos antes de reintentar.')
       }
 
       try {
