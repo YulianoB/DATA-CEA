@@ -1572,57 +1572,104 @@ async function construirDistribucionPago({
       )
 
   // =======================================================
-  // APLICAR HISTÓRICO
+  // APLICAR LOS RECIBOS HISTÓRICOS REALES
   // =======================================================
-  //
-  // Si antes de crear recibos_caja_detalle ya existían
-  // pagos, simulamos cómo habrían sido aplicados:
-  //
-  // CURSO -> EXAMEN MEDICO -> OTROS
-  //
+  // Los pagos migrados ya tienen aplicaciones por categoría.
+  // No se debe volver a distribuir todo el abonado desde cero:
+  // eso podría exceder el valor de un detalle que tiene abonos
+  // históricos distintos de la prioridad predeterminada.
   // =======================================================
 
-  let abonadoHistorico =
-    redondear(
-      totalAnterior
-    )
+  const cuentaIds = [...new Set(ordenados.map(d => d.cuenta_id))]
+  if (cuentaIds.length !== 1 || !cuentaIds[0]) {
+    throw new Error('Los componentes no pertenecen a una única obligación.')
+  }
 
-  const saldos =
-    new Map()
+  const { data: recibosPrevios, error: errorRecibosPrevios } = await supabase
+    .from('recibos_caja')
+    .select('id,valor')
+    .eq('cuenta_id', cuentaIds[0])
+    .eq('estado', 'ACTIVO')
+    .order('id', { ascending: true })
 
-  for (
-    const detalle of
-      ordenados
-  ) {
-    const valorDetalle =
-      redondear(
-        detalle.valor
-      )
+  if (errorRecibosPrevios) {
+    throw new Error('No fue posible consultar las aplicaciones anteriores: ' + errorRecibosPrevios.message)
+  }
 
-    const aplicadoHistorico =
-      Math.min(
-        valorDetalle,
-        Math.max(
-          0,
-          abonadoHistorico
-        )
-      )
+  const recibos = recibosPrevios || []
+  const abonadoEnRecibos = redondear(recibos.reduce((s, r) => s + Number(r.valor || 0), 0))
+  if (abonadoEnRecibos !== redondear(totalAnterior)) {
+    throw new Error('Los abonos de la obligación cambiaron durante el registro. Actualice e intente de nuevo.')
+  }
 
-    abonadoHistorico =
-      redondear(
-        abonadoHistorico -
-        aplicadoHistorico
-      )
+  const aplicaciones = []
+  // Consultar por lotes para no superar los límites de filtros de PostgREST.
+  for (let i = 0; i < recibos.length; i += 200) {
+    const ids = recibos.slice(i, i + 200).map(r => r.id)
+    const { data, error } = await supabase
+      .from('recibos_caja_detalle')
+      .select('recibo_id,cuenta_detalle_id,valor')
+      .in('recibo_id', ids)
+    if (error) {
+      throw new Error('No fue posible consultar el desglose de los abonos: ' + error.message)
+    }
+    aplicaciones.push(...(data || []))
+  }
 
-    saldos.set(
-      String(
-        detalle.id
-      ),
-      redondear(
-        valorDetalle -
-        aplicadoHistorico
-      )
-    )
+  const idsDetalle = new Set(ordenados.map(d => String(d.id)))
+  const aplicadoPorDetalle = new Map(ordenados.map(d => [String(d.id), 0]))
+  const aplicacionesPorRecibo = new Map()
+  for (const a of aplicaciones) {
+    const idRecibo = String(a.recibo_id)
+    if (!aplicacionesPorRecibo.has(idRecibo)) aplicacionesPorRecibo.set(idRecibo, [])
+    aplicacionesPorRecibo.get(idRecibo).push(a)
+  }
+
+  const recibosSinDesglose = []
+  for (const recibo of recibos) {
+    const detalleRecibo = aplicacionesPorRecibo.get(String(recibo.id)) || []
+    if (detalleRecibo.length === 0) {
+      recibosSinDesglose.push(recibo)
+      continue
+    }
+    const suma = redondear(detalleRecibo.reduce((s, a) => s + Number(a.valor || 0), 0))
+    if (suma !== redondear(recibo.valor)) {
+      throw new Error('El recibo ' + recibo.id + ' tiene un desglose financiero incompleto.')
+    }
+    for (const a of detalleRecibo) {
+      const id = String(a.cuenta_detalle_id ?? '')
+      const importe = redondear(Number(a.valor))
+      if (!idsDetalle.has(id) || !Number.isFinite(importe) || importe <= 0) {
+        throw new Error('El recibo ' + recibo.id + ' tiene aplicaciones ajenas a la obligación.')
+      }
+      aplicadoPorDetalle.set(id, redondear(aplicadoPorDetalle.get(id) + importe))
+    }
+  }
+
+  const saldos = new Map()
+  for (const detalle of ordenados) {
+    const id = String(detalle.id)
+    const saldo = redondear(Number(detalle.valor) - aplicadoPorDetalle.get(id))
+    if (saldo < 0) {
+      throw new Error('Los abonos históricos superan el valor del componente ' + id + '.')
+    }
+    saldos.set(id, saldo)
+  }
+
+  // Compatibilidad con recibos antiguos sin ninguna fila de desglose:
+  // imputar únicamente ese importe faltante, sin mover aplicaciones ya guardadas.
+  for (const recibo of recibosSinDesglose) {
+    let pendiente = redondear(recibo.valor)
+    for (const detalle of ordenados) {
+      const id = String(detalle.id)
+      const aplicar = redondear(Math.min(pendiente, saldos.get(id)))
+      saldos.set(id, redondear(saldos.get(id) - aplicar))
+      pendiente = redondear(pendiente - aplicar)
+      if (pendiente <= 0) break
+    }
+    if (pendiente > 0) {
+      throw new Error('Los recibos históricos sin desglose superan la obligación.')
+    }
   }
 
   // =======================================================
