@@ -2989,7 +2989,11 @@ export default function RuntPage() {
 
                           <td className="p-2 border text-center" style={{borderColor:ESTILO_CELDAS_TABLA.borde,borderWidth:ESTILO_CELDAS_TABLA.grosorBorde}}>
 
-                            <BotonAccion tipo="verDetalle"
+                            <BotonAccion
+                              tipo={pestana === 'pendientes' && !row.vigencia?.vencido &&
+                                !(mayusculas(row.resultado_verificacion) === 'REGISTRADO' &&
+                                  mayusculas(row.estado_verificacion) === 'VERIFICADO')
+                                  ? 'editar' : 'verDetalle'}
                               type="button"
                               disabled={procesando}
                               title={pestana === 'pendientes' && !row.vigencia?.vencido && mayusculas(row.resultado_verificacion) !== 'REGISTRADO'
