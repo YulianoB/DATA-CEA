@@ -639,6 +639,8 @@ export default function RuntPage() {
   const [pestanaDrawerRunt, setPestanaDrawerRunt] = useState('flexible')
   const [fechaRegistroCola, setFechaRegistroCola] = useState(hoyBogota())
   const [accionCola, setAccionCola] = useState(null)
+  const [consultaRuntPendiente, setConsultaRuntPendiente] = useState(null)
+  const [resultadoConsultaNuevo, setResultadoConsultaNuevo] = useState('')
   const [filtros, setFiltros] = useState({q:'',categoria:'',estado_gestion:'',fecha_inicio:'',fecha_fin:''})
   const categoriasCea = useMemo(() => {
     const nivel=String(user?.nivel_cea||user?.nivelCea||user?.empresa?.nivel_cea||'').toUpperCase()
@@ -1975,8 +1977,46 @@ export default function RuntPage() {
     )
   }
 
-  // Pendientes: únicamente confirmar el registro formal del aprendiz del CEA.
-  // No modificar resultado_verificacion ni marcar consultas ciudadanas aquí.
+  // El funcionario de Control RUNT realiza la consulta antes del registro formal.
+  function abrirConsultaRunt(row) {
+    if (procesando || mayusculas(row?.estado_certificacion) === 'CERTIFICADO' ||
+        mayusculas(row?.estado_registro) === 'REGISTRADO') return
+    setError('')
+    setMensaje('')
+    setResultadoConsultaNuevo('')
+    setConsultaRuntPendiente({
+      controlId: row.id,
+      consecutivo: row.consecutivo,
+      aprendiz: row.aprendiz?.nombre_completo || row.documento,
+      documento: row.documento,
+      resultadoAnterior: row.resultado_verificacion,
+    })
+  }
+
+  async function guardarConsultaRunt() {
+    if (!consultaRuntPendiente || procesando) return
+    if (!['REGISTRADO','NO REGISTRADO'].includes(resultadoConsultaNuevo)) {
+      setError('Seleccione el resultado observado en la consulta pública del RUNT.')
+      return
+    }
+    setProcesando(true)
+    setError('')
+    setMensaje('')
+    try {
+      const json = await ejecutarAccion({
+        accion:'guardar_consulta_runt',
+        control_runt_id:consultaRuntPendiente.controlId,
+        resultado_verificacion:resultadoConsultaNuevo,
+      })
+      setConsultaRuntPendiente(null)
+      setResultadoConsultaNuevo('')
+      setMensaje(json?.message || 'Consulta RUNT guardada correctamente.')
+      await consultar({silencioso:true})
+    } catch(errorConsulta) {
+      setError(errorConsulta?.message || 'No fue posible guardar el resultado de la consulta RUNT.')
+    } finally { setProcesando(false) }
+  }
+
   function abrirAccionCola(row) {
     if (procesando) return
     if (row.vigencia?.vencido) {
@@ -1984,8 +2024,9 @@ export default function RuntPage() {
       return
     }
     if (mayusculas(row.estado_certificacion) === 'CERTIFICADO') return
-    if (mayusculas(row.resultado_verificacion) === 'NO REGISTRADO') {
-      setError('El resultado de la matrícula indica NO REGISTRADO en RUNT. No se puede confirmar el registro formal del CEA con ese resultado.')
+    if (mayusculas(row.resultado_verificacion) !== 'REGISTRADO' ||
+        mayusculas(row.estado_verificacion) !== 'VERIFICADO') {
+      abrirConsultaRunt(row)
       return
     }
     setError('')
@@ -2605,6 +2646,30 @@ export default function RuntPage() {
               onConfirmar={() => certificar(true, certificacionHistorica)}
             />
             <ModalResultado
+              abierto={Boolean(consultaRuntPendiente)}
+              tipo="confirmacion"
+              titulo="Consulta RUNT del aprendiz"
+              mensaje={
+                <div className="space-y-3 text-left text-xs">
+                  <p><strong>{consultaRuntPendiente?.aprendiz}</strong> · Matrícula {consultaRuntPendiente?.consecutivo}</p>
+                  <p>Consulte el documento <strong>{consultaRuntPendiente?.documento}</strong> en la página pública oficial del RUNT y registre el resultado observado.</p>
+                  <p className="text-amber-800">La consulta ciudadana no equivale al registro formal del aprendiz en el CEA.</p>
+                  {['REGISTRADO','NO REGISTRADO'].map(valor => (
+                    <label key={valor} className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 p-3">
+                      <input type="radio" name="resultadoConsultaRunt" value={valor}
+                        checked={resultadoConsultaNuevo === valor}
+                        onChange={() => setResultadoConsultaNuevo(valor)} />
+                      {valor === 'REGISTRADO' ? 'APARECE REGISTRADO' : 'NO APARECE REGISTRADO'}
+                    </label>
+                  ))}
+                </div>
+              }
+              textoBoton={procesando ? 'GUARDANDO...' : 'GUARDAR CONSULTA'}
+              textoCancelar="CANCELAR"
+              onCerrar={() => { if (!procesando) setConsultaRuntPendiente(null) }}
+              onConfirmar={guardarConsultaRunt}
+            />
+            <ModalResultado
               abierto={Boolean(accionCola)}
               tipo="confirmacion"
               titulo="Confirmar registro en RUNT"
@@ -2717,7 +2782,7 @@ export default function RuntPage() {
 
                 <tr>
                   {(pestana === 'pendientes'
-                    ? ['MATRÍCULA','FECHA MATRÍCULA','APRENDIZ','DOCUMENTO','CATEGORÍA','RESULTADO RUNT','ORIGEN','ACCIÓN']
+                    ? ['MATRÍCULA','FECHA MATRÍCULA','APRENDIZ','DOCUMENTO','CATEGORÍA','CONSULTA RUNT','ORIGEN','ACCIÓN']
                     : ['MATRÍCULA','FECHA MATRÍCULA','APRENDIZ','DOCUMENTO','CATEGORÍA','ORIGEN','VIGENCIA','TEORÍA','TALLER','PRÁCTICA','CERTIFICACIÓN','ACCIÓN']
                   ).map(titulo => (
                     <th key={titulo} className="border p-2 bg-[#CEFAFE] text-[#263746]"
@@ -2926,14 +2991,17 @@ export default function RuntPage() {
 
                             <BotonAccion tipo="verDetalle"
                               type="button"
-                              disabled={procesando || (pestana === 'pendientes' && !row.vigencia?.vencido && mayusculas(row.resultado_verificacion) === 'NO REGISTRADO')}
-                              title={pestana === 'pendientes' && mayusculas(row.resultado_verificacion) === 'NO REGISTRADO' ? 'Resultado ciudadano NO REGISTRADO: no procede el registro formal del CEA' : undefined}
+                              disabled={procesando}
+                              title={pestana === 'pendientes' && !row.vigencia?.vencido && mayusculas(row.resultado_verificacion) !== 'REGISTRADO'
+                                ? 'Consultar primero en RUNT' : undefined}
                               onClick={() => pestana === 'pendientes' ? abrirAccionCola(row) : mayusculas(row.estado_certificacion)==='CERTIFICADO' ? abrirVistaCertificado(row) : abrirDetalle(row)}
                               className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white px-3 py-1.5 rounded text-[11px] disabled:opacity-50"
                             >
                               <i className={`fas ${pestana === 'pendientes' ? (row.vigencia?.vencido ? 'fa-rotate' : 'fa-user-check') : 'fa-eye'} mr-1`}></i>
                               {pestana === 'pendientes'
-                                ? (row.vigencia?.vencido ? 'Reproceso' : 'Confirmar registro')
+                                ? (row.vigencia?.vencido ? 'Reproceso' :
+                                  mayusculas(row.resultado_verificacion) === 'REGISTRADO' && mayusculas(row.estado_verificacion) === 'VERIFICADO'
+                                    ? 'Confirmar registro' : 'Consultar RUNT')
                                 : (mayusculas(row.estado_certificacion)==='CERTIFICADO' ? 'Ver' : 'Gestionar')}
                             </BotonAccion>
 
