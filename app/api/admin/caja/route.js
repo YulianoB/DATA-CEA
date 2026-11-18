@@ -8526,11 +8526,11 @@ if (
         )
       }
 
-      const cuenta =
-        await obtenerCuenta(
-          supabase,
-          recibo.cuenta_id
-        )
+      // Los ingresos libres no crean una cuenta financiera.
+      // Su anulación debe funcionar sin intentar consultar cuenta_id NULL.
+      const cuenta = recibo.cuenta_id
+        ? await obtenerCuenta(supabase, recibo.cuenta_id)
+        : null
 
       const {
         data:
@@ -8565,6 +8565,7 @@ if (
             'id',
             recibo.id
           )
+          .eq('estado', 'ACTIVO')
           .select('*')
           .single()
 
@@ -8576,11 +8577,9 @@ if (
         )
       }
 
-      const cuentaActualizada =
-        await actualizarEstadoCuenta(
-          supabase,
-          cuenta
-        )
+      const cuentaActualizada = cuenta
+        ? await actualizarEstadoCuenta(supabase, cuenta)
+        : null
 
       await registrarAuditoria({
         supabase,
