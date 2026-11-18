@@ -2682,17 +2682,20 @@ const ingresosLibresFiltrados =
     setProcesando(true)
     setError('')
     try {
+      const esHistorico = mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION'
       await postCaja({
-        accion: 'corregir_recibo_historico',
+        accion: esHistorico ? 'corregir_recibo_historico' : 'corregir_medio_pago_recibo',
         recibo_id: reciboHistoricoEditando.id,
-        fecha: correccionHistorica.fecha || null,
+        ...(esHistorico ? {
+          fecha: correccionHistorica.fecha || null,
+          referencia_pago: correccionHistorica.referencia_pago
+        } : {}),
         medio_pago_id: correccionHistorica.medio_pago_id,
-        referencia_pago: correccionHistorica.referencia_pago,
         motivo: correccionHistorica.motivo.trim()
       })
       setDetalleFinanciero(await consultarDetalleCuenta(detalleFinanciero.cuenta.id))
       setReciboHistoricoEditando(null)
-      setMensaje('Recibo histórico corregido y auditado.')
+      setMensaje('Recibo corregido y auditado. Los movimientos y arqueos abiertos mostrarán el medio actualizado.')
       await cargarCuentas()
     } catch (err) {
       setError(err.message || 'No fue posible corregir el recibo.')
@@ -5527,23 +5530,27 @@ const ingresosLibresFiltrados =
 
                 {reciboHistoricoEditando && (
                   <div className="p-3 my-2 border border-amber-300 rounded-lg bg-amber-50 space-y-2">
-                    <strong className="text-xs">Corregir recibo histórico {numeroReciboCaja(reciboHistoricoEditando)}</strong>
+                    <strong className="text-xs">Corregir medio de pago del recibo {numeroReciboCaja(reciboHistoricoEditando)}</strong>
                     <p className="text-[10px]">Importes y aplicaciones no se modifican desde este formulario.</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      <label className="text-[11px]">Fecha verificada
-                        <input type="date" className="w-full border rounded p-2" value={correccionHistorica.fecha}
-                          onChange={e=>setCorreccionHistorica(a=>({...a,fecha:e.target.value}))}/>
-                      </label>
+                      {mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION' && (
+                        <label className="text-[11px]">Fecha verificada
+                          <input type="date" className="w-full border rounded p-2" value={correccionHistorica.fecha}
+                            onChange={e=>setCorreccionHistorica(a=>({...a,fecha:e.target.value}))}/>
+                        </label>
+                      )}
                       <label className="text-[11px]">Medio de pago
                         <select className="w-full border rounded p-2" value={correccionHistorica.medio_pago_id}
                           onChange={e=>setCorreccionHistorica(a=>({...a,medio_pago_id:e.target.value}))}>
                           {mediosPago.map(m=><option key={m.id} value={m.id}>{m.nombre}</option>)}
                         </select>
                       </label>
-                      <label className="text-[11px]">N.º recibo histórico
-                        <input className="w-full border rounded p-2" value={correccionHistorica.referencia_pago}
-                          onChange={e=>setCorreccionHistorica(a=>({...a,referencia_pago:e.target.value}))}/>
-                      </label>
+                      {mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION' && (
+                        <label className="text-[11px]">N.º recibo histórico
+                          <input className="w-full border rounded p-2" value={correccionHistorica.referencia_pago}
+                            onChange={e=>setCorreccionHistorica(a=>({...a,referencia_pago:e.target.value}))}/>
+                        </label>
+                      )}
                     </div>
                     <label className="text-[11px] block">Justificación y soporte
                       <textarea className="w-full border rounded p-2" rows={2} value={correccionHistorica.motivo}
@@ -5635,8 +5642,7 @@ const ingresosLibresFiltrados =
                                   </td>
 
                                   <td className="px-3 py-2 border border-slate-300 text-center">
-                                    {mayusculas(recibo.recibido_por) === 'MIGRACION' &&
-                                      mayusculas(recibo.estado) === 'ACTIVO' && (
+                                    {mayusculas(recibo.estado) === 'ACTIVO' && (
                                       <button type="button" disabled={procesando}
                                         onClick={()=>{
                                           setReciboHistoricoEditando(recibo)
