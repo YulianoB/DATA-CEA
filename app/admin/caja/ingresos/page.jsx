@@ -989,6 +989,7 @@ const [
     useState(false)
 
   const [reciboHistoricoEditando, setReciboHistoricoEditando] = useState(null)
+  const [errorCorreccionRecibo, setErrorCorreccionRecibo] = useState('')
   const [correccionHistorica, setCorreccionHistorica] = useState({
     fecha: '', medio_pago_id: '', referencia_pago: '', motivo: ''
   })
@@ -2129,13 +2130,27 @@ const ingresosLibresFiltrados =
   }
 
   function cerrarDrawerDetalle() {
-    setDrawerDetalle(
-      false
-    )
+    if (reciboHistoricoEditando || procesando) return
+    setDrawerDetalle(false)
+    setDetalleFinanciero(null)
+  }
 
-    setDetalleFinanciero(
-      null
-    )
+  function cerrarModalCorreccion() {
+    if (procesando) return
+    setReciboHistoricoEditando(null)
+    setErrorCorreccionRecibo('')
+  }
+
+  function abrirModalCorreccion(recibo) {
+    if (procesando || mayusculas(recibo?.estado) !== 'ACTIVO') return
+    setErrorCorreccionRecibo('')
+    setReciboHistoricoEditando(recibo)
+    setCorreccionHistorica({
+      fecha: recibo.fecha || '',
+      medio_pago_id: String(recibo.medio_pago_id || ''),
+      referencia_pago: recibo.referencia_pago || '',
+      motivo: ''
+    })
   }
 
   function imprimirRecibo(
@@ -2676,11 +2691,15 @@ const ingresosLibresFiltrados =
   async function guardarCorreccionHistorica() {
     if (!reciboHistoricoEditando) return
     if (correccionHistorica.motivo.trim().length < 8) {
-      setError('Indique una justificación de al menos ocho caracteres.')
+      setErrorCorreccionRecibo('Indique una justificación de al menos ocho caracteres.')
+      return
+    }
+    if (!correccionHistorica.medio_pago_id) {
+      setErrorCorreccionRecibo('Seleccione el medio de pago correcto.')
       return
     }
     setProcesando(true)
-    setError('')
+    setErrorCorreccionRecibo('')
     try {
       const esHistorico = mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION'
       await postCaja({
@@ -2698,7 +2717,7 @@ const ingresosLibresFiltrados =
       setMensaje('Recibo corregido y auditado. Los movimientos y arqueos abiertos mostrarán el medio actualizado.')
       await cargarCuentas()
     } catch (err) {
-      setError(err.message || 'No fue posible corregir el recibo.')
+      setErrorCorreccionRecibo(err.message || 'No fue posible corregir el recibo.')
     } finally {
       setProcesando(false)
     }
@@ -5195,6 +5214,129 @@ const ingresosLibresFiltrados =
         </div>
       )}
 
+      {/* Corrección de recibos: modal independiente para todos los pagos activos. */}
+      {reciboHistoricoEditando && (
+        <div
+          className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/60 p-3 sm:p-5"
+          role="presentation"
+          onMouseDown={e => { if (e.target === e.currentTarget) cerrarModalCorreccion() }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-correccion-recibo"
+            className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+            style={{ maxHeight: '90vh' }}
+            onMouseDown={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 bg-[#246185] px-4 py-3 text-white">
+              <div>
+                <h2 id="titulo-correccion-recibo" className="text-base font-bold">
+                  Corregir recibo {numeroReciboCaja(reciboHistoricoEditando)}
+                </h2>
+                <p className="mt-0.5 text-[11px] text-sky-100">
+                  {mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION'
+                    ? 'Rectificación del historial migrado'
+                    : 'Corrección de medio de pago'}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Cerrar corrección"
+                disabled={procesando}
+                onClick={cerrarModalCorreccion}
+                className="rounded-lg border border-white/40 px-2.5 py-1.5 hover:bg-white/10 disabled:opacity-50"
+              >
+                <i className="fas fa-times" />
+              </button>
+            </div>
+            <div className="space-y-4 overflow-y-auto p-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div>
+                  <p className="text-[10px] uppercase text-slate-500">Aprendiz</p>
+                  <p className="font-semibold text-slate-800">{nombreCompletoCuenta(detalleFinanciero?.cuenta)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-slate-500">Valor del recibo</p>
+                  <p className="font-bold text-slate-800">{formatearMoneda(reciboHistoricoEditando.valor)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-slate-500">Fecha registrada</p>
+                  <p className="font-semibold">{formatearFecha(reciboHistoricoEditando.fecha)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-slate-500">Medio registrado</p>
+                  <p className="font-semibold">
+                    {nombreMedioPagoVisible(reciboHistoricoEditando?.medio_pago?.nombre) ||
+                      reciboHistoricoEditando?.medio_pago?.nombre || 'Sin identificar'}
+                  </p>
+                </div>
+              </div>
+              <p className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[11px] text-blue-900">
+                Esta corrección no modifica el importe ni los abonos aplicados al curso.
+                Los movimientos y el arqueo abiertos tomarán el nuevo medio de pago al actualizar.
+                Un recibo incluido en un cierre confirmado requiere revisión administrativa.
+              </p>
+              {mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION' && (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="block font-medium text-slate-700">
+                    Fecha histórica verificada
+                    <input type="date" value={correccionHistorica.fecha} disabled={procesando}
+                      onChange={e => setCorreccionHistorica(a => ({...a,fecha:e.target.value}))}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2.5"/>
+                  </label>
+                  <label className="block font-medium text-slate-700">
+                    Referencia histórica
+                    <input value={correccionHistorica.referencia_pago} disabled={procesando}
+                      onChange={e => setCorreccionHistorica(a => ({...a,referencia_pago:e.target.value}))}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2.5"/>
+                  </label>
+                </div>
+              )}
+              <label className="block font-semibold text-slate-700">
+                Medio de pago correcto *
+                <select value={correccionHistorica.medio_pago_id} disabled={procesando}
+                  onChange={e => setCorreccionHistorica(a => ({...a,medio_pago_id:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5">
+                  <option value="">Seleccione el medio de pago</option>
+                  {mediosPago.map(m => (
+                    <option key={m.id} value={m.id}>{m.nombre}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block font-semibold text-slate-700">
+                Justificación de la corrección *
+                <textarea rows={3} maxLength={2000} value={correccionHistorica.motivo}
+                  disabled={procesando}
+                  onChange={e => setCorreccionHistorica(a => ({...a,motivo:e.target.value}))}
+                  placeholder="Ej.: Se registró efectivo, pero el soporte bancario confirma pago con tarjeta débito."
+                  className="mt-1 w-full resize-y rounded-lg border border-slate-300 p-2.5"/>
+                <span className="mt-1 block text-[10px] font-normal text-slate-500">
+                  Mínimo 8 caracteres. El cambio quedará registrado en auditoría.
+                </span>
+              </label>
+              {errorCorreccionRecibo && (
+                <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-xs text-red-800">
+                  {errorCorreccionRecibo}
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 p-3">
+              <button type="button" disabled={procesando} onClick={cerrarModalCorreccion}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold disabled:opacity-50">
+                Cancelar
+              </button>
+              <button type="button" disabled={procesando || !correccionHistorica.medio_pago_id ||
+                  correccionHistorica.motivo.trim().length < 8}
+                onClick={guardarCorreccionHistorica}
+                className="rounded-lg bg-[#246185] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                {procesando ? 'Guardando...' : 'Guardar corrección'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {/* ====================================================
           DRAWER DETALLE FINANCIERO
       ==================================================== */}
@@ -5528,43 +5670,6 @@ const ingresosLibresFiltrados =
                   </span>
                 </div>
 
-                {reciboHistoricoEditando && (
-                  <div className="p-3 my-2 border border-amber-300 rounded-lg bg-amber-50 space-y-2">
-                    <strong className="text-xs">Corregir medio de pago del recibo {numeroReciboCaja(reciboHistoricoEditando)}</strong>
-                    <p className="text-[10px]">Importes y aplicaciones no se modifican desde este formulario.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      {mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION' && (
-                        <label className="text-[11px]">Fecha verificada
-                          <input type="date" className="w-full border rounded p-2" value={correccionHistorica.fecha}
-                            onChange={e=>setCorreccionHistorica(a=>({...a,fecha:e.target.value}))}/>
-                        </label>
-                      )}
-                      <label className="text-[11px]">Medio de pago
-                        <select className="w-full border rounded p-2" value={correccionHistorica.medio_pago_id}
-                          onChange={e=>setCorreccionHistorica(a=>({...a,medio_pago_id:e.target.value}))}>
-                          {mediosPago.map(m=><option key={m.id} value={m.id}>{m.nombre}</option>)}
-                        </select>
-                      </label>
-                      {mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION' && (
-                        <label className="text-[11px]">N.º recibo histórico
-                          <input className="w-full border rounded p-2" value={correccionHistorica.referencia_pago}
-                            onChange={e=>setCorreccionHistorica(a=>({...a,referencia_pago:e.target.value}))}/>
-                        </label>
-                      )}
-                    </div>
-                    <label className="text-[11px] block">Justificación y soporte
-                      <textarea className="w-full border rounded p-2" rows={2} value={correccionHistorica.motivo}
-                        onChange={e=>setCorreccionHistorica(a=>({...a,motivo:e.target.value}))}/>
-                    </label>
-                    <div className="flex gap-2">
-                      <button type="button" disabled={procesando} onClick={guardarCorreccionHistorica}
-                        className="rounded bg-slate-800 text-white px-3 py-2 text-xs">Guardar corrección</button>
-                      <button type="button" disabled={procesando} onClick={()=>setReciboHistoricoEditando(null)}
-                        className="rounded border px-3 py-2 text-xs">Cancelar</button>
-                    </div>
-                  </div>
-                )}
-
                 {!Array.isArray(
                   detalleFinanciero?.recibos
                 ) ||
@@ -5644,15 +5749,7 @@ const ingresosLibresFiltrados =
                                   <td className="px-3 py-2 border border-slate-300 text-center">
                                     {mayusculas(recibo.estado) === 'ACTIVO' && (
                                       <button type="button" disabled={procesando}
-                                        onClick={()=>{
-                                          setReciboHistoricoEditando(recibo)
-                                          setCorreccionHistorica({
-                                            fecha: recibo.fecha || '',
-                                            medio_pago_id: String(recibo.medio_pago_id || 1),
-                                            referencia_pago: recibo.referencia_pago || '',
-                                            motivo: ''
-                                          })
-                                        }}
+                                        onClick={() => abrirModalCorreccion(recibo)}
                                         className="mr-2 rounded border border-amber-500 px-2 py-1 text-[9px]"
                                       >Corregir</button>
                                     )}
