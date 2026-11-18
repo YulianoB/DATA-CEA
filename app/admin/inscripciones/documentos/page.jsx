@@ -845,7 +845,19 @@ export default function DocumentosMatriculaPage() {
       () => [
         ...DOCUMENTOS_GENERADOS,
 
-        ...documentosInstitucionales.map(
+        ...documentosInstitucionales
+          // Estos dos PDFs ya no forman parte de Documentos de Matrícula.
+          // Mantener sus archivos históricos en Supabase; solo ocultar aquí.
+          .filter(documento => {
+            const nombre = texto(documento?.nombre).normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '').toUpperCase()
+              .replace(/\s+/g, ' ').trim()
+            return !(
+              nombre === 'AUTORIZACION TRATAMIENTO DE DATOS PERSONALES CONSORCIO CEAS' ||
+              nombre === 'ENCUESTA DE SATISFACCION'
+            )
+          })
+          .map(
           documento => ({
             id:
               `PDF_${documento.id}`,
@@ -1336,7 +1348,7 @@ export default function DocumentosMatriculaPage() {
                 nombre,
 
                 usuario_actualizacion:
-                  usuarioActual,
+                  obtenerNombreUsuario(user),
               }),
           }
         )
@@ -1475,7 +1487,7 @@ export default function DocumentosMatriculaPage() {
 
       formData.append(
         'usuario_actualizacion',
-        usuarioActual
+        obtenerNombreUsuario(user)
       )
 
       const response =
@@ -1649,7 +1661,7 @@ export default function DocumentosMatriculaPage() {
                   documentoId,
 
                 usuario_actualizacion:
-                  usuarioActual,
+                  obtenerNombreUsuario(user),
               }),
           }
         )
