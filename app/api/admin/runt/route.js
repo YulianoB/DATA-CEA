@@ -3305,101 +3305,43 @@ export async function POST(
     }
 
     // =====================================================
+    // CONSULTA CIUDADANA RUNT (FUNCIONARIO DE CONTROL RUNT)
+    // =====================================================
+    if (accion === 'guardar_consulta_runt') {
+      const controlId = toInt(body?.control_runt_id)
+      const resultado = normalizarMayusculas(body?.resultado_verificacion)
+      if (!controlId || !usuario || !['REGISTRADO','NO REGISTRADO'].includes(resultado)) {
+        return NextResponse.json({status:'error',message:'Indique el proceso, el usuario y el resultado de la consulta RUNT.'},{status:400})
+      }
+      const control = await obtenerControlRunt(supabase,controlId)
+      if (normalizarMayusculas(control.estado_certificacion) === 'CERTIFICADO' ||
+          normalizarMayusculas(control.estado_registro) === 'REGISTRADO') {
+        return NextResponse.json({status:'error',message:'La consulta de este proceso cerrado no puede modificarse. Su historial se conserva.'},{status:409})
+      }
+      const {data,error} = await supabase.from('control_runt')
+        .update({
+          estado_verificacion:'VERIFICADO',
+          resultado_verificacion:resultado,
+          fecha_verificacion:new Date().toISOString(),
+          usuario_verificacion:usuario,
+          updated_at:new Date().toISOString(),
+        })
+        .eq('id',control.id)
+        .eq('estado_registro','PENDIENTE')
+        .select('*').maybeSingle()
+      if(error) throw new Error('No fue posible guardar la consulta RUNT: '+error.message)
+      if(!data) return NextResponse.json({status:'error',message:'El proceso ya fue modificado. Actualice el listado e inténtelo nuevamente.'},{status:409})
+      return NextResponse.json({status:'success',message:'Consulta RUNT registrada. '+
+        (resultado === 'REGISTRADO' ? 'Puede continuar con la confirmación del registro formal.' : 'El registro formal permanecerá bloqueado hasta una nueva consulta positiva.'),data})
+    }
+
+    // =====================================================
     // MARCAR REGISTRADO
     // =====================================================
 
-    if (
-      accion ===
-      'marcar_inscrito'
-    ) {
-      const controlRuntId =
-        toInt(
-          body?.control_runt_id
-        )
-
-      if (
-        !controlRuntId ||
-        !usuario
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              'El control RUNT y el usuario son obligatorios.',
-          },
-          {
-            status:
-              400,
-          }
-        )
-      }
-
-      const control =
-        await obtenerControlRunt(
-          supabase,
-          controlRuntId
-        )
-      // Los certificados históricos son solo de consulta. No se debe
-      // inventar retroactivamente un registro o verificación oficial.
-      if (normalizarMayusculas(control.estado_certificacion) === 'CERTIFICADO') {
-        return NextResponse.json({
-          status: 'error',
-          message: 'El proceso ya está certificado. Su historial se conserva sin modificar.'
-        }, { status: 409 })
-      }
-
-
-      const {
-        data,
-        error,
-      } =
-        await supabase
-          .from(
-            'control_runt'
-          )
-          .update({
-            estado_verificacion:
-              'VERIFICADO',
-
-            resultado_verificacion:
-              'REGISTRADO',
-
-            fecha_verificacion:
-              hoyBogota(),
-
-            usuario_verificacion:
-              usuario,
-
-            updated_at:
-              new Date()
-                .toISOString(),
-          })
-          .eq(
-            'id',
-            control.id
-          )
-          .select('*')
-          .single()
-
-      if (
-        error
-      ) {
-        throw new Error(
-          `No fue posible actualizar la verificación RUNT: ${error.message}`
-        )
-      }
-
-      return NextResponse.json({
-        status:
-          'success',
-
-        message:
-          'Aprendiz marcado como REGISTRADO en RUNT.',
-
-        data,
-      })
+    if (accion === 'marcar_inscrito') {
+      return NextResponse.json({status:'error',
+        message:'Para registrar el resultado de la consulta use la opción Consulta RUNT.'},{status:400})
     }
 
     // =====================================================
@@ -3449,14 +3391,13 @@ export async function POST(
       }
 
 
-      // La consulta ciudadana corresponde al proceso de matrícula.
-      // Los controles históricos pueden tener resultado_verificacion NULL;
-      // no lo inventamos ni lo cambiamos durante el registro formal del CEA.
-      // Una constancia explícita de NO REGISTRADO sí impide registrar.
-      if (normalizarMayusculas(control.resultado_verificacion) === 'NO REGISTRADO') {
+      // Solo el funcionario de Control RUNT registra la consulta ciudadana.
+      // No inventar resultados ni verificaciones durante el registro formal.
+      if (normalizarMayusculas(control.resultado_verificacion) !== 'REGISTRADO' ||
+          normalizarMayusculas(control.estado_verificacion) !== 'VERIFICADO') {
         return NextResponse.json({
           status: 'error',
-          message: 'El resultado ciudadano figura NO REGISTRADO. No es posible confirmar el registro formal del aprendiz en RUNT mientras persista ese resultado.'
+          message: 'Primero registre una consulta RUNT con resultado REGISTRADO desde Control RUNT.'
         }, { status: 409 })
       }
 
@@ -3491,15 +3432,6 @@ export async function POST(
           message: 'La fecha de inscripción RUNT debe ser una fecha real válida, no futura.'
         }, { status: 400 })
       }
-      // Regularización administrativa de controles migrados:
-      // solo completar la verificación cuando no hay ningún dato documentado.
-      // Los valores existentes no se reemplazan ni se reconstruyen.
-      const verificacionSinDocumentar =
-        control.resultado_verificacion == null &&
-        normalizarMayusculas(control.estado_verificacion) !== 'VERIFICADO' &&
-        !control.fecha_verificacion &&
-        !control.usuario_verificacion
-
       const observacionAnterior = normalizarTexto(control.observaciones)
       const observacionesActualizadas = fechaRegistro !== hoyBogota()
         ? (observacionAnterior
@@ -3528,13 +3460,6 @@ export async function POST(
               usuario,
 
             observaciones: observacionesActualizadas,
-
-            ...(verificacionSinDocumentar ? {
-              estado_verificacion: 'VERIFICADO',
-              resultado_verificacion: 'REGISTRADO',
-              fecha_verificacion: fechaRegistro,
-              usuario_verificacion: usuario,
-            } : {}),
 
             updated_at:
               new Date()
