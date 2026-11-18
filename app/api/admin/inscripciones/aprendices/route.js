@@ -4561,55 +4561,12 @@ export async function POST(
     }
 
     // =====================================================
-    // RUNT
+    // CONSULTA RUNT: RESPONSABILIDAD DEL MÓDULO CONTROL RUNT
     // =====================================================
-
-    const runtVerificado =
-      body?.runt_verificado ===
-        true ||
-      normalizarMayusculas(
-        body?.runt_estado_verificacion
-      ) ===
-        'VERIFICADO'
-
-    if (!runtVerificado) {
-      return NextResponse.json({
-        status: 'error',
-        message: 'Debe realizar y registrar la consulta ciudadana RUNT antes de guardar la matrícula.'
-      }, { status: 400 })
-    }
-
-    if (
-      runtVerificado
-    ) {
-      const resultadoRunt =
-        normalizarMayusculas(
-          body?.runt_resultado_verificacion
-        )
-
-      if (
-        ![
-          'REGISTRADO',
-          'NO REGISTRADO',
-        ].includes(
-          resultadoRunt
-        )
-      ) {
-        return NextResponse.json(
-          {
-            status:
-              'error',
-
-            message:
-              'El resultado de la verificación RUNT no es válido.',
-          },
-          {
-            status:
-              400,
-          }
-        )
-      }
-    }
+    // La inscripción no requiere consulta ciudadana previa. crearControlesRunt()
+    // genera los controles con verificación PENDIENTE, resultado null,
+    // sin fecha ni usuario de verificación. La API de Control RUNT es la
+    // única responsable de registrar la consulta posteriormente.
 
     // =====================================================
     // CONVENIO
