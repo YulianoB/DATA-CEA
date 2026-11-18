@@ -1632,20 +1632,6 @@ export default function NuevaInscripcionPage() {
     }
 
   // ==========================================================
-  // VALIDAR RUNT
-  // ==========================================================
-
-  const validarRunt = () => {
-    if (!['REGISTRADO', 'NO REGISTRADO'].includes(runtResultado)) {
-      setErr('runtResultado', 'Debe consultar el RUNT y seleccionar un resultado.')
-      toast.warning('La consulta ciudadana del RUNT es obligatoria.')
-      return false
-    }
-    clrErr('runtResultado')
-    return true
-  }
-
-  // ==========================================================
   // NORMALIZAR PARA GUARDAR
   // ==========================================================
 
@@ -2930,13 +2916,9 @@ export default function NuevaInscripcionPage() {
       const ok2 =
         validarPaso2()
 
-      const okRunt =
-        validarRunt()
-
       if (
         !ok1 ||
-        !ok2 ||
-        !okRunt
+        !ok2
       ) {
         toast.warning(
           'Complete o corrija los campos señalados antes de confirmar la matrícula.'
@@ -3046,13 +3028,9 @@ const guardar =
     const ok2 =
       validarPaso2()
 
-    const okRunt =
-      validarRunt()
-
     if (
       !ok1 ||
-      !ok2 ||
-      !okRunt
+      !ok2
     ) {
       return
     }
@@ -3104,17 +3082,11 @@ const guardar =
           // VERIFICACIÓN RUNT
           // =================================================
 
-          runt_estado_verificacion:
-            runtResultado ? 'VERIFICADO' : 'PENDIENTE',
-
-          runt_resultado_verificacion:
-            runtResultado || null,
-
-          runt_usuario_verificacion:
-            runtResultado ? nombreUsuario(user) : '',
-
-          runt_verificado:
-            Boolean(runtResultado),
+          // La verificación ciudadana corresponde al módulo Control RUNT.
+          runt_estado_verificacion: 'PENDIENTE',
+          runt_resultado_verificacion: null,
+          runt_usuario_verificacion: '',
+          runt_verificado: false,
 
           // =================================================
           // INFORMACIÓN FINANCIERA
@@ -3334,7 +3306,7 @@ const guardar =
       iniciado: Boolean(runtResultado),
     },
   }
-  const ordenSecciones = ['identificacion', 'contacto', 'complementaria', 'matricula', 'runt', ...(esMenor ? ['acudiente'] : [])]
+  const ordenSecciones = ['identificacion', 'contacto', 'complementaria', 'matricula', ...(esMenor ? ['acudiente'] : [])]
   const seccionesCompletas = ordenSecciones.filter(key => estadosSecciones[key].completo).length
   const porcentajeAvance = Math.round(seccionesCompletas / ordenSecciones.length * 100)
   // Se mantiene el encabezado azul institucional, mientras la tarjeta
@@ -3406,7 +3378,7 @@ const guardar =
 
         <EncabezadoModulo
           titulo="Nueva Matrícula"
-          subtitulo="Registre los datos del aprendiz, la matrícula y la verificación inicial en RUNT."
+          subtitulo="Registre los datos del aprendiz y la matrícula. La consulta del RUNT se realizará posteriormente desde Control RUNT."
           icono={UserPlus}
           rutaRegreso="/admin/inscripciones"
           textoRegreso="Regresar"
@@ -4605,7 +4577,7 @@ const guardar =
                   color: ESTILO_SECCIONES.texto,
                   borderColor: ESTILO_SECCIONES.borde,
                 }}>
-                  {etiquetaEstadoSeccion('acudiente', 6, 'Datos del Acudiente o Representante Legal')}
+                  {etiquetaEstadoSeccion('acudiente', 5, 'Datos del Acudiente o Representante Legal')}
                 </div>
                 <fieldset disabled={!esMenor} className={`p-3 space-y-3 ${!esMenor ? 'opacity-50' : ''}`}>
                   <p className="text-[11px] text-gray-600">
@@ -4645,190 +4617,6 @@ const guardar =
                   </div>
                 </fieldset>
               </div>}
-
-              {/* ===============================================
-                  VERIFICACIÓN RUNT
-              =============================================== */}
-
-              <div
-                className={`order-2 min-w-0 ${claseTarjetaSeccion('runt')}`}
-              >
-                <div
-                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold"
-                  style={{
-                    backgroundColor: ESTILO_SECCIONES.fondo,
-                    color: ESTILO_SECCIONES.texto,
-                    borderColor: ESTILO_SECCIONES.borde,
-                  }}
-                >
-                  {etiquetaEstadoSeccion('runt', 5, 'Verificación Inicial RUNT')}
-                </div>
-
-                <div className="p-3">
-
-                  <div
-                    className="
-                      bg-blue-50
-                      border
-                      border-blue-200
-                      rounded-lg
-                      p-3
-                      text-xs
-                      text-gray-700
-                      mb-4
-                    "
-                  >
-                    Consulte al aprendiz en la página pública del RUNT y registre el resultado.
-                    Esta información quedará disponible posteriormente para el funcionario
-                    encargado del Control RUNT.
-                  </div>
-
-                  <div className="mt-3">
-                    <label className="block text-[11px] font-semibold mb-2">
-                      Resultado de la consulta RUNT (obligatorio)
-                    </label>
-
-                      <div className="grid grid-cols-1 gap-3">
-
-                        <button
-                          type="button"
-                          aria-pressed={runtResultado === 'REGISTRADO'}
-                          onClick={() => {
-                            setRuntResultado(
-                              'REGISTRADO'
-                            )
-
-                            clrErr(
-                              'runtResultado'
-                            )
-                          }}
-                          className={`
-                            border
-                            rounded-lg
-                            p-3
-                            cursor-pointer
-                            text-left
-                            transition
-                            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700
-                            ${
-                              runtResultado ===
-                              'REGISTRADO'
-                                ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
-                                : 'border-gray-300 bg-white hover:bg-gray-50'
-                            }
-                          `}
-                        >
-                          <div className="flex items-center gap-2">
-
-                            <div
-                              className={`
-                                w-7
-                                h-7
-                                rounded-full
-                                flex
-                                items-center
-                                justify-center
-                                ${
-                                  runtResultado ===
-                                  'REGISTRADO'
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-gray-100 text-gray-500'
-                                }
-                              `}
-                            >
-                              <i className="fas fa-check"></i>
-                            </div>
-
-                            <div>
-                              <div className="text-xs font-bold text-gray-800">
-                                Aparece registrado
-                              </div>
-
-                              <div className="text-[10px] text-gray-500 mt-1">
-                                Seleccione si aparece en la consulta RUNT.
-                              </div>
-                            </div>
-                            <span className={`ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${runtResultado === 'REGISTRADO' ? 'border-green-600 bg-green-600 text-white' : 'border-slate-400 bg-white'}`} aria-hidden="true">
-                              {runtResultado === 'REGISTRADO' && <i className="fas fa-check text-[9px]"></i>}
-                            </span>
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          aria-pressed={runtResultado === 'NO REGISTRADO'}
-                          onClick={() => {
-                            setRuntResultado(
-                              'NO REGISTRADO'
-                            )
-
-                            clrErr(
-                              'runtResultado'
-                            )
-                          }}
-                          className={`
-                            border
-                            rounded-lg
-                            p-3
-                            cursor-pointer
-                            text-left
-                            transition
-                            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700
-                            ${
-                              runtResultado ===
-                              'NO REGISTRADO'
-                                ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500'
-                                : 'border-gray-300 bg-white hover:bg-gray-50'
-                            }
-                          `}
-                        >
-                          <div className="flex items-center gap-2">
-
-                            <div
-                              className={`
-                                w-7
-                                h-7
-                                rounded-full
-                                flex
-                                items-center
-                                justify-center
-                                ${
-                                  runtResultado ===
-                                  'NO REGISTRADO'
-                                    ? 'bg-amber-500 text-white'
-                                    : 'bg-gray-100 text-gray-500'
-                                }
-                              `}
-                            >
-                              <i className="fas fa-exclamation"></i>
-                            </div>
-
-                            <div>
-                              <div className="text-xs font-bold text-gray-800">
-                                No aparece registrado
-                              </div>
-
-                              <div className="text-[10px] text-gray-500 mt-1">
-                                Seleccione si no aparece en la consulta RUNT.
-                              </div>
-                            </div>
-                            <span className={`ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${runtResultado === 'NO REGISTRADO' ? 'border-amber-600 bg-amber-600 text-white' : 'border-slate-400 bg-white'}`} aria-hidden="true">
-                              {runtResultado === 'NO REGISTRADO' && <i className="fas fa-check text-[9px]"></i>}
-                            </span>
-                          </div>
-                        </button>
-
-                      </div>
-
-                      <FieldError
-                        msg={errors.runtResultado}
-                      />
-
-                    </div>
-
-                </div>
-              </div>
-
 
               </div>
 
@@ -5122,103 +4910,11 @@ const guardar =
                 En Caja deberá seleccionar <strong>Definir valor del curso</strong> antes de registrar un pago.
               </div>
 
-              {/* RUNT CONFIRMACIÓN */}
-
-              <div className="border border-gray-300 rounded-lg overflow-hidden">
-
-                <div
-                  className="px-3 py-1.5 text-[11px] font-semibold"
-                  style={{
-                    backgroundColor: ESTILO_SECCIONES.fondo,
-                    color: ESTILO_SECCIONES.texto,
-                    borderColor: ESTILO_SECCIONES.borde,
-                  }}
-                >
-                  <i className="fas fa-road mr-2"></i>
-
-                  Verificación Inicial RUNT
-                </div>
-
-                <div className="p-2">
-
-                  {runtResultado ? (
-                    <div
-                      className={`
-                        border
-                        rounded-lg
-                        p-2
-                        ${
-                          runtResultado ===
-                          'REGISTRADO'
-                            ? 'bg-green-50 border-green-300'
-                            : 'bg-amber-50 border-amber-300'
-                        }
-                      `}
-                    >
-                      <div className="text-[11px] text-gray-600">
-                        Estado
-                      </div>
-
-                      <div className="font-bold text-[11px] mt-0.5">
-                        VERIFICADO
-                      </div>
-
-                      <div className="text-[11px] text-gray-600 mt-0.5">
-                        Resultado
-                      </div>
-
-                      <div
-                        className={`
-                          font-bold
-                          text-[11px]
-                          mt-0.5
-                          ${
-                            runtResultado ===
-                            'REGISTRADO'
-                              ? 'text-green-700'
-                              : 'text-amber-700'
-                          }
-                        `}
-                      >
-                        {runtResultado ===
-                        'REGISTRADO'
-                          ? 'APARECE REGISTRADO EN RUNT'
-                          : 'NO APARECE REGISTRADO EN RUNT'}
-                      </div>
-
-                      <div className="text-[11px] text-gray-600 mt-0.5">
-                        Verificado por
-                      </div>
-
-                      <div className="font-semibold text-[11px] mt-0.5">
-                        {nombreUsuario(
-                          user
-                        ) ||
-                          '—'}
-                      </div>
-
-                    </div>
-                  ) : (
-                    <div
-                      className="
-                        bg-amber-50
-                        border
-                        border-amber-300
-                        rounded-lg
-                        p-2
-                      "
-                    >
-                      <div className="font-bold text-[11px] text-amber-700">
-                        PENDIENTE DE VERIFICACIÓN RUNT
-                      </div>
-
-                      <p className="text-[11px] text-gray-600 mt-0.5">
-                        La matrícula puede guardarse, pero aparecerá como pendiente en el módulo Control RUNT.
-                      </p>
-                    </div>
-                  )}
-
-                </div>
+              {/* El funcionario de Control RUNT realizará la consulta después de matricular. */}
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950">
+                <strong>CONSULTA RUNT PENDIENTE.</strong> La matrícula se guardará sin verificación ciudadana.
+                El funcionario encargado registrará el resultado desde Control RUNT.
+              </div>
 
               </div>
 
