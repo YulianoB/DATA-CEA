@@ -4918,9 +4918,6 @@ const guardar =
 
               </div>
 
-
-              </div>
-
               <div className="flex flex-wrap justify-end gap-2 border-t border-gray-200 pt-4">
                 <BotonCancelar
                   type="button"
