@@ -8659,6 +8659,26 @@ if (
         )
       }
 
+      // No alterar ingresos de períodos cuyo arqueo o cierre
+      // ya fue confirmado. La corrección requiere un ajuste
+      // administrativo específico sobre el cierre.
+      const { data: cierresRelacionados, error: errorCierresRelacionados } = await supabase
+        .from('cierres_caja')
+        .select('id')
+        .lte('periodo_desde', recibo.created_at)
+        .gte('periodo_hasta', recibo.created_at)
+        .eq('estado', 'CERRADO')
+        .limit(1)
+      if (errorCierresRelacionados) {
+        throw new Error('No fue posible verificar los cierres antes de anular: ' + errorCierresRelacionados.message)
+      }
+      if ((cierresRelacionados || []).length > 0) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'El recibo pertenece a un cierre o arqueo confirmado. Solicite un ajuste administrativo antes de anularlo.',
+        }, { status: 409 })
+      }
+
       // Los ingresos libres no crean una cuenta financiera.
       // Su anulación debe funcionar sin intentar consultar cuenta_id NULL.
       const cuenta = recibo.cuenta_id
