@@ -33,6 +33,7 @@ import {
 
 import OtrosIngresosDrawer
   from './components/OtrosIngresosDrawer'
+import IngresosDia from './IngresosDia'
 
 import {
   imprimirReciboOtrosIngresos,
@@ -988,6 +989,9 @@ const [
   ] =
     useState(false)
 
+  const [vistaIngresos, setVistaIngresos] = useState('OBLIGACIONES')
+  const [fechaOtrosDesde, setFechaOtrosDesde] = useState('')
+  const [fechaOtrosHasta, setFechaOtrosHasta] = useState('')
   const [reciboHistoricoEditando, setReciboHistoricoEditando] = useState(null)
   const [errorCorreccionRecibo, setErrorCorreccionRecibo] = useState('')
   const [correccionHistorica, setCorreccionHistorica] = useState({
@@ -1360,8 +1364,9 @@ const cargarIngresosLibres =
             construirUrl(
               'ingresos_libres',
               {
-                buscar:
-                  busqueda,
+                buscar: busqueda,
+                fecha_inicio: fechaOtrosDesde,
+                fecha_fin: fechaOtrosHasta,
               }
             )
           )
@@ -1400,6 +1405,8 @@ const cargarIngresosLibres =
       nit,
       construirUrl,
       busqueda,
+      fechaOtrosDesde,
+      fechaOtrosHasta,
     ]
   )
   // =======================================================
@@ -3101,6 +3108,17 @@ const ingresosLibresFiltrados =
         </div>
         </section>
 
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={()=>setVistaIngresos('OBLIGACIONES')}
+            className={`rounded-lg border px-4 py-2 text-xs font-black transition-all hover:-translate-y-0.5 hover:shadow-md ${vistaIngresos==='OBLIGACIONES'?'bg-[#24638C] border-[#24638C] text-white':'border-sky-300 bg-white text-sky-900 hover:bg-sky-50'}`}>
+            <i className="fas fa-users mr-2"/>Obligaciones de aprendices
+          </button>
+          <button type="button" onClick={()=>setVistaIngresos('DIA')}
+            className={`rounded-lg border px-4 py-2 text-xs font-black transition-all hover:-translate-y-0.5 hover:shadow-md ${vistaIngresos==='DIA'?'bg-emerald-700 border-emerald-700 text-white':'border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-50'}`}>
+            <i className="fas fa-receipt mr-2"/>Ingresos del día
+          </button>
+        </div>
+        {vistaIngresos==='DIA' ? <IngresosDia nit={nit}/> : <>
        {/* ==================================================
             FILTROS
         ================================================== */}
@@ -3410,6 +3428,27 @@ const ingresosLibresFiltrados =
               Actualizar
             </BotonActualizar>
         </div>
+        {tipoConsulta==='OTROS_INGRESOS' && (
+          <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="text-xs font-semibold text-blue-950">Desde
+                <input type="date" value={fechaOtrosDesde} onChange={e=>setFechaOtrosDesde(e.target.value)}
+                  className="mt-1 block rounded-lg border border-blue-200 bg-white px-3 py-2"/>
+              </label>
+              <label className="text-xs font-semibold text-blue-950">Hasta
+                <input type="date" min={fechaOtrosDesde||undefined} value={fechaOtrosHasta} onChange={e=>setFechaOtrosHasta(e.target.value)}
+                  className="mt-1 block rounded-lg border border-blue-200 bg-white px-3 py-2"/>
+              </label>
+              <button type="button" onClick={()=>{setFechaOtrosDesde('');setFechaOtrosHasta('')}}
+                className="rounded-lg border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800">Todas las fechas</button>
+            </div>
+            <p className="mt-2 text-xs text-blue-950">Resumen del período consultado: <strong>
+              {ingresosLibresFiltrados.filter(x=>x.estado==='ACTIVO' &&
+                normalizarComparacion(x.concepto?.nombre||x.descripcion)!=='REFUERZO PRACTICO')
+                .reduce((s,x)=>s+Number(x.valor||0),0).toLocaleString('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0})}
+            </strong> · {ingresosLibresFiltrados.filter(x=>x.estado==='ACTIVO').length} recibos activos.</p>
+          </div>
+        )}
         {/* ==================================================
     TABLA
 ================================================== */}
@@ -5216,6 +5255,7 @@ const ingresosLibresFiltrados =
         </div>
       )}
 
+      </>}
       {/* Corrección de recibos: modal independiente para todos los pagos activos. */}
       {reciboHistoricoEditando && (
         <div
@@ -5274,11 +5314,7 @@ const ingresosLibresFiltrados =
                   </p>
                 </div>
               </div>
-              <p className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[11px] text-blue-900">
-                Esta corrección no modifica el importe ni los abonos aplicados al curso.
-                Los movimientos y el arqueo abiertos tomarán el nuevo medio de pago al actualizar.
-                Un recibo incluido en un cierre confirmado requiere revisión administrativa.
-              </p>
+
               {mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION' && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <label className="block font-medium text-slate-700">
