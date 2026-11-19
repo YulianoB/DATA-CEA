@@ -1195,6 +1195,13 @@ export default function InstructorProgramacionPage() {
   // Regla compartida con la API administrativa:
   // sin disponibilidad configurada se mantiene la agenda abierta;
   // con franjas configuradas solo se muestran habilitadas esas horas.
+  const actividadAgenda = (fecha, hora) =>
+    bloqueosAdministrativos.find(b =>
+      b.fecha_inicio <= fecha && b.fecha_fin >= fecha &&
+      hora >= texto(b.hora_inicio).slice(0,5) &&
+      hora < texto(b.hora_fin).slice(0,5)
+    )
+
   const horarioHabilitado = useCallback((fecha, hora) => {
     const bloqueado = bloqueosAdministrativos.some(b =>
       b.fecha_inicio <= fecha && b.fecha_fin >= fecha &&
@@ -1471,6 +1478,9 @@ export default function InstructorProgramacionPage() {
             mb-4
           "
         >
+          <span className="rounded-full bg-violet-200 text-violet-950 border-2 border-violet-600 px-2 py-1 text-[7px] font-black">
+            TEORÍA
+          </span>
           <span className="rounded-full bg-red-200 text-red-900 border-2 border-red-500 px-2 py-1 text-[7px] font-black">
             NO DISPONIBLE
           </span>
@@ -1875,6 +1885,8 @@ export default function InstructorProgramacionPage() {
                                   fechaColombia()
 
                                 const habilitado = horarioHabilitado(fecha, hora)
+                                const actividad = actividadAgenda(fecha, hora)
+                                const esTeoria = actividad?.tipo_actividad === 'TEORIA'
 
                                 return (
                                   <div
@@ -1886,7 +1898,9 @@ export default function InstructorProgramacionPage() {
                                       p-1
                                       ${
                                         !habilitado
-                                          ? 'bg-red-200 border-red-500 border-2'
+                                          ? esTeoria
+                                            ? 'bg-violet-200 border-violet-600 border-2'
+                                            : 'bg-red-200 border-red-500 border-2'
                                           : esHoy
                                             ? 'bg-sky-50 border-sky-200'
                                             : 'bg-gray-50 border-gray-200'
@@ -1894,16 +1908,16 @@ export default function InstructorProgramacionPage() {
                                     `}
                                   >
                                     {!habilitado && (
-                                      <div className="mb-1 flex items-center justify-center gap-1 rounded bg-red-300 px-1 py-1 text-[8px] font-black text-red-950">
-                                        <i className="fas fa-lock" aria-hidden="true" />
-                                        NO DISPONIBLE
+                                      <div className={`mb-1 flex items-center justify-center gap-1 rounded px-1 py-1 text-[8px] font-black ${esTeoria?'bg-violet-300 text-violet-950':'bg-red-300 text-red-950'}`}>
+                                        <i className={`fas ${esTeoria?'fa-book-open':'fa-lock'}`} aria-hidden="true" />
+                                        {esTeoria?'TEORÍA':'NO DISPONIBLE'}
                                       </div>
                                     )}
                                     {clasesHorario.length ===
                                     0 ? (
                                       <div className="min-h-[52px] flex items-center justify-center">
-                                        <span className={`text-[7px] font-semibold ${habilitado ? 'text-gray-300' : 'text-red-800'}`}>
-                                          {habilitado ? '—' : 'Horario restringido'}
+                                        <span className={`text-[7px] font-semibold ${habilitado ? 'text-gray-300' : esTeoria ? 'text-violet-800' : 'text-red-800'}`}>
+                                          {habilitado ? '—' : esTeoria ? 'Clase teórica' : 'Horario restringido'}
                                         </span>
                                       </div>
                                     ) : (
