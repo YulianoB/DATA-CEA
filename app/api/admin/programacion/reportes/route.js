@@ -18,6 +18,17 @@ export async function GET(request) {
       rolesPermitidos:['ADMINISTRATIVO']
     })
     const q = new URL(request.url).searchParams
+    if(q.get('solo_instructores')==='1') {
+      const {data:personal,error} = await db.from('personal')
+        .select('id,nombres,apellidos,cargo,tipo_personal,estado')
+        .order('nombres',{ascending:true})
+      if(error) throw error
+      const instructores=(personal||[])
+        .filter(p => texto(p.cargo).toUpperCase().includes('INSTRUCTOR') ||
+                     texto(p.tipo_personal).toUpperCase().includes('INSTRUCTOR'))
+        .map(p=>({id:p.id,nombre:nombre(p),estado:p.estado}))
+      return NextResponse.json({status:'success',instructores},{headers:{'Cache-Control':'no-store'}})
+    }
     const desde = texto(q.get('fecha_inicio'))
     const hasta = texto(q.get('fecha_fin'))
     const instructorId = texto(q.get('instructor_id'))
