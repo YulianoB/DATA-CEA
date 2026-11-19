@@ -2364,6 +2364,7 @@ export default function ProgramacionPage() {
   const [modalBloqueo, setModalBloqueo] = useState(false)
   const [instructoresBloqueo, setInstructoresBloqueo] = useState([])
   const [bloqueosAgenda, setBloqueosAgenda] = useState([])
+  const [bloqueosSemana, setBloqueosSemana] = useState([])
   const [guardandoBloqueo, setGuardandoBloqueo] = useState(false)
   const [errorBloqueo, setErrorBloqueo] = useState('')
   const [formBloqueo, setFormBloqueo] = useState({
@@ -3902,6 +3903,42 @@ useEffect(
     cargarVehiculos,
   ]
 )
+
+// Los bloqueos por fecha se consultan para la semana del instructor
+// seleccionado. Es la misma fuente que utiliza Disponibilidad.
+useEffect(() => {
+  if (!nit || !instructorId || vistaProgramacion !== 'AGENDA') {
+    setBloqueosSemana([])
+    return
+  }
+  let vigente = true
+  const params = new URLSearchParams({
+    nit,
+    instructor_id: String(instructorId),
+    fecha_inicio: fechaInicioSemana,
+    fecha_fin: fechaFinSemana,
+  })
+  fetchJsonSeguro(`/api/admin/programacion/bloqueos?${params.toString()}`)
+    .then(data => {
+      if (vigente) setBloqueosSemana(Array.isArray(data.data) ? data.data : [])
+    })
+    .catch(error => {
+      if (vigente) {
+        setBloqueosSemana([])
+        setError(error.message || 'No fue posible consultar los bloqueos semanales.')
+      }
+    })
+  return () => { vigente = false }
+}, [nit, instructorId, fechaInicioSemana, fechaFinSemana, vistaProgramacion])
+
+const bloqueadoSemana = (fecha, hora) =>
+  bloqueosSemana.some(b =>
+    Number(b.instructor_id) === Number(instructorId) &&
+    b.fecha_inicio <= fecha &&
+    b.fecha_fin >= fecha &&
+    hora >= String(b.hora_inicio).slice(0,5) &&
+    hora < String(b.hora_fin).slice(0,5)
+  )
 
 // =======================================================
 // DISPONIBILIDAD DIARIA DE INSTRUCTORES
@@ -6549,6 +6586,8 @@ function abrirClase(
                               dia.iso,
                               hora
                             )
+                          const bloqueoAdministrativo =
+                            Boolean(instructorId) && bloqueadoSemana(dia.iso, hora)
 
                           // =====================================================
                           // PERSONA DE LA CLASE
@@ -6820,6 +6859,25 @@ function abrirClase(
                                   </span>
                                 </div>
                               </button>
+                            )
+                          }
+
+                          // Una clase existente prevalece visualmente.
+                          // Si no existe, el bloqueo debe mostrarse aun en
+                          // horas pasadas, con una diferencia clara frente a PASÓ.
+                          if (bloqueoAdministrativo) {
+                            return (
+                              <div key={hora} title="Horario bloqueado por administración"
+                                className="w-full min-h-[46px] rounded-lg border-2 border-red-500 bg-red-200 px-2 py-2 text-left">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="text-[9px] font-black text-red-950">{hora}</span>
+                                  <i className="fas fa-lock text-red-800" aria-hidden="true" />
+                                </div>
+                                <p className="mt-1 text-[9px] font-black uppercase text-red-900">
+                                  NO DISPONIBLE
+                                </p>
+                                <p className="text-[8px] font-semibold text-red-800">Bloqueo administrativo</p>
+                              </div>
                             )
                           }
 
@@ -7379,6 +7437,7 @@ function abrirClase(
                               hora
                           )
 
+                        const bloqueado = horario?.motivo === 'Horario bloqueado por administración.'
                         const ocupado =
                           horario
                             ?.estado ===
@@ -7662,6 +7721,20 @@ function abrirClase(
                                 </span>
                               </div>                            
                               </button>
+                          )
+                        }
+
+                        // Bloqueo explícito: diferenciarlo de horas pasadas
+                        // y de restricciones habituales no configuradas.
+                        if (bloqueado) {
+                          return (
+                            <div key={hora}
+                              title="Bloqueado por administración"
+                              className="min-h-[66px] rounded-lg border-2 border-red-500 bg-red-200 px-1 flex flex-col items-center justify-center">
+                              <i className="fas fa-lock text-red-800 text-[11px]" aria-hidden="true" />
+                              <span className="mt-1 text-center text-[8px] font-black text-red-900">NO DISPONIBLE</span>
+                              <span className="text-center text-[7px] font-bold text-red-800">BLOQUEADO</span>
+                            </div>
                           )
                         }
 
