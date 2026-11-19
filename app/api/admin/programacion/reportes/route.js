@@ -92,14 +92,18 @@ export async function GET(request) {
       if(!resumen.has(clave))resumen.set(clave,{
         instructor_id:fila.instructor_id,instructor:fila.instructor,fecha:fila.fecha,
         total:0,agendadas:0,dictadas:0,pendientes_cargue:0,no_dictadas:0,
-        practicas:0,teorias:0,pruebas_conduccion:0
+        practicas:0,teorias:0,pruebas_conduccion:0,observaciones_no_dictadas:''
       })
       const item=resumen.get(clave)
       item.total++
       if(fila.estado==='AGENDADA')item.agendadas++
       if(fila.estado==='DICTADA')item.dictadas++
       if(fila.estado==='PENDIENTE_CARGUE')item.pendientes_cargue++
-      if(fila.estado==='NO_DICTADA')item.no_dictadas++
+      if(fila.estado==='NO_DICTADA') {
+        item.no_dictadas++
+        const descripcion = [fila.hora_inicio,fila.aprendiz||'Sin aprendiz',fila.observacion||'Sin observación'].join(' · ')
+        item.observaciones_no_dictadas += (item.observaciones_no_dictadas?' | ':'')+descripcion
+      }
       if(fila.tipo_clase==='TEORIA')item.teorias++
       else if(fila.tipo_clase==='PRUEBA_CONDUCCION')item.pruebas_conduccion++
       else item.practicas++
