@@ -8311,6 +8311,130 @@ if (
     }
 
     // =====================================================
+    // CORREGIR VALORES DE LOS COMPONENTES DE UNA OBLIGACIÓN.
+    // Misma cuenta y detalles; fechas de matrícula sin cambios.
+    // =====================================================
+    if (accion === 'corregir_valores_obligacion') {
+      const cuenta=await obtenerCuenta(supabase,body?.cuenta_id)
+      if(cuenta.estado==='ANULADA')return NextResponse.json({status:'error',message:'No se edita una obligación anulada.'},{status:409})
+      const componentes=await obtenerDetallesCuenta(supabase,cuenta.id)
+      const recibosRes=await supabase.from('recibos_caja')
+        .select('id,valor').eq('cuenta_id',cuenta.id).eq('estado','ACTIVO')
+      if(recibosRes.error)throw recibosRes.error
+      const recibos=recibosRes.data||[]
+      if(recibos.length>=1000)return NextResponse.json({status:'error',message:'Historial demasiado extenso para corregir con seguridad.'},{status:409})
+      const aplicacionesRes=recibos.length?await supabase.from('recibos_caja_detalle')
+        .select('recibo_id,cuenta_detalle_id,valor').in('recibo_id',recibos.map(x=>x.id))
+        :{data:[],error:null}
+      if(aplicacionesRes.error)throw aplicacionesRes.error
+      const aplicaciones=aplicacionesRes.data||[]
+      const sumaAplicada=redondear(aplicaciones.reduce((a,x)=>a+Number(x.valor),0))
+      const sumaRecibos=redondear(recibos.reduce((a,x)=>a+Number(x.valor),0))
+      if(sumaAplicada!==sumaRecibos)
+        return NextResponse.json({status:'error',message:'Existen recibos sin desglose verificable. No se modificó la obligación.'},{status:409})
+      const pedidos=Array.isArray(body?.componentes)?body.componentes:[]
+      const mapa=new Map(pedidos.map(x=>[String(x.id),Number(x.valor)]))
+      const valido=componentes.length>0 && mapa.size===componentes.length && componentes.every(d=>{
+        const v=mapa.get(String(d.id))
+        const pagado=redondear(aplicaciones.filter(a=>String(a.cuenta_detalle_id)===String(d.id)).reduce((t,a)=>t+Number(a.valor),0))
+        return Number.isFinite(v)&&v>=0&&redondear(v)===v&&v>=pagado
+      })
+      if(!valido)return NextResponse.json({status:'error',
+        message:'Indique valores válidos para todos los conceptos. Ninguno puede quedar por debajo de lo abonado.'},{status:400})
+      const total=redondear(componentes.reduce((a,d)=>a+mapa.get(String(d.id)),0))
+      if(total<=0)return NextResponse.json({status:'error',message:'La obligación total debe ser mayor que cero.'},{status:400})
+      const modificados=[]
+      const estado=calcularEstadoCuenta({valorTotal:total,totalAbonado:sumaRecibos})
+      try{
+        for(const d of componentes){
+          const nuevo=mapa.get(String(d.id))
+          if(redondear(Number(d.valor))===nuevo)continue
+          const {data,error}=await supabase.from('cuentas_aprendiz_detalle')
+            .update({valor:nuevo,updated_at:new Date().toISOString()})
+            .eq('id',d.id).eq('cuenta_id',cuenta.id).eq('valor',d.valor).select('id')
+          if(error||(data||[]).length!==1)throw new Error('Otro usuario modificó el componente '+d.id+'. Actualice el detalle.')
+          modificados.push(d)
+        }
+        const {data,error}=await supabase.from('cuentas_aprendiz')
+          .update({valor_total:total,estado,updated_at:new Date().toISOString()})
+          .eq('id',cuenta.id).eq('valor_total',cuenta.valor_total).eq('estado',cuenta.estado)
+          .select('id')
+        if(error||(data||[]).length!==1)throw new Error('No fue posible sincronizar el total de la obligación.')
+      }catch(e){
+        const fallos=[]
+        for(const d of modificados.reverse()){
+          const {error}=await supabase.from('cuentas_aprendiz_detalle')
+            .update({valor:d.valor,updated_at:new Date().toISOString()})
+            .eq('id',d.id).eq('cuenta_id',cuenta.id).eq('valor',mapa.get(String(d.id)))
+          if(error)fallos.push(error.message)
+        }
+        if(fallos.length)throw new Error('Error crítico: reversión incompleta; verifique el detalle antes de editar de nuevo. '+fallos.join('; '))
+        throw e
+      }
+      return NextResponse.json({status:'success',message:'Obligación corregida sin cambiar su fecha ni sus abonos.',
+        data:await obtenerDetalleCuenta(supabase,cuenta.id)})
+    }
+
+    // Corrección de importes de recibos con desglose consistente.
+    // El importe y su aplicación se mantienen sincronizados; no se crea
+    // ningún recibo adicional ni se alteran fecha o consecutivo.
+    if (accion === 'corregir_valor_recibo') {
+      const id=toInt(body?.recibo_id),nuevo=Number(body?.valor)
+      if(!id||!Number.isFinite(nuevo)||nuevo<=0||redondear(nuevo)!==nuevo)
+        return NextResponse.json({status:'error',message:'Ingrese un valor de recibo válido mayor que cero.'},{status:400})
+      const {data:anterior,error:errConsulta}=await supabase.from('recibos_caja')
+        .select('*').eq('id',id).maybeSingle()
+      if(errConsulta)throw errConsulta
+      if(!anterior||anterior.estado!=='ACTIVO'||!anterior.cuenta_id)
+        return NextResponse.json({status:'error',message:'El recibo no corresponde a una obligación activa editable.'},{status:409})
+      const cuenta=await obtenerCuenta(supabase,anterior.cuenta_id)
+      const detalles=await obtenerDetallesCuenta(supabase,cuenta.id)
+      const {data:aplicaciones,error:errAplicaciones}=await supabase.from('recibos_caja_detalle')
+        .select('*').eq('recibo_id',id)
+      if(errAplicaciones)throw errAplicaciones
+      // Solo corregir cuando una aplicación única identifica sin ambigüedad
+      // el componente; los pagos distribuidos requieren revisión más específica.
+      if((aplicaciones||[]).length!==1||redondear(Number(aplicaciones[0].valor))!==redondear(Number(anterior.valor)))
+        return NextResponse.json({status:'error',
+          message:'El recibo tiene varias aplicaciones o un desglose histórico incompleto. No se modificó; revise primero su distribución.'},{status:409})
+      const app=aplicaciones[0]
+      const componente=detalles.find(d=>String(d.id)===String(app.cuenta_detalle_id))
+      if(!componente)return NextResponse.json({status:'error',message:'No se identificó el componente de la obligación.'},{status:409})
+      const totalAnterior=await obtenerTotalAbonado(supabase,cuenta.id)
+      const nuevoTotal=redondear(totalAnterior-Number(anterior.valor)+nuevo)
+      if(nuevoTotal>Number(cuenta.valor_total))
+        return NextResponse.json({status:'error',message:'El nuevo pago supera el valor total de la obligación.'},{status:409})
+      const {data:appsOtras,error:errorAppsOtras}=await supabase.from('recibos_caja_detalle')
+        .select('recibo_id,valor').eq('cuenta_detalle_id',componente.id).neq('recibo_id',id)
+      if(errorAppsOtras)throw errorAppsOtras
+      const recibidoDetalle=redondear((appsOtras||[]).reduce((a,x)=>a+Number(x.valor),0))
+      if(redondear(recibidoDetalle+nuevo)>redondear(Number(componente.valor)))
+        return NextResponse.json({status:'error',message:'El valor supera el saldo del componente al que está aplicado.'},{status:409})
+      // Actualizar primero el recibo: si falla la aplicación se revierte.
+      const {data:reciboNuevo,error:errorUpdate}=await supabase.from('recibos_caja')
+        .update({valor:nuevo,updated_at:new Date().toISOString()})
+        .eq('id',id).eq('estado','ACTIVO').eq('valor',anterior.valor).select('id,updated_at')
+        .maybeSingle()
+      if(errorUpdate||!reciboNuevo)throw new Error(errorUpdate?.message||'El recibo fue modificado. Actualice los datos.')
+      const {data:aplicacionNueva,error:errorDetalle}=await supabase.from('recibos_caja_detalle')
+        .update({valor:nuevo}).eq('recibo_id',id).eq('cuenta_detalle_id',componente.id)
+        .eq('valor',app.valor).select('recibo_id')
+      if(errorDetalle||(aplicacionNueva||[]).length!==1){
+        const revertir=await supabase.from('recibos_caja').update({valor:anterior.valor,updated_at:anterior.updated_at})
+          .eq('id',id).eq('updated_at',reciboNuevo.updated_at)
+        if(revertir.error)throw new Error('Error crítico de reversión del recibo; verifique valores antes de continuar.')
+        throw new Error('No fue posible actualizar la aplicación. Se intentó restaurar el importe anterior.')
+      }
+      const estado=calcularEstadoCuenta({valorTotal:cuenta.valor_total,totalAbonado:nuevoTotal})
+      const {error:errorEstado}=await supabase.from('cuentas_aprendiz')
+        .update({estado,updated_at:new Date().toISOString()}).eq('id',cuenta.id)
+      if(errorEstado)throw new Error('Importe corregido, pero el estado de la cuenta requiere actualización: '+errorEstado.message)
+      return NextResponse.json({status:'success',
+        message:'Valor del recibo corregido sin cambiar fecha, consecutivo ni matrícula.',
+        data:await obtenerDetalleCuenta(supabase,cuenta.id)})
+    }
+
+    // =====================================================
     // CORREGIR MEDIO DE PAGO DE UN RECIBO OPERATIVO
     // Mantiene importe, fecha, consecutivo y aplicaciones.
     // Los arqueos abiertos se recalculan desde recibos_caja.
