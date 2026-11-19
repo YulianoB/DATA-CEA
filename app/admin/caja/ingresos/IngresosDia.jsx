@@ -1,6 +1,6 @@
 'use client'
 import {useCallback,useEffect,useMemo,useState} from 'react'
-const hoy=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+const hoy=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
 const dinero=v=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(Number(v)||0)
 const fecha=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—'
 export default function IngresosDia({nit}){
