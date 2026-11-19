@@ -2698,6 +2698,7 @@ async function consultarCargaInstructores(
         fecha,
         hora_inicio,
         tipo_programacion,
+        tipo_clase,
         estado
       `)
       .in(
@@ -3831,6 +3832,8 @@ async function construirDisponibilidadDiariaInstructores({
                 tipo_programacion:
                   clase?.tipo_programacion ||
                   '',
+                  tipo_clase:
+                  clase?.tipo_clase || 'PRACTICA',
 
                 estado:
                   clase?.estado ||
