@@ -8405,10 +8405,18 @@ if (
       const nuevoTotal=redondear(totalAnterior-Number(anterior.valor)+nuevo)
       if(nuevoTotal>Number(cuenta.valor_total))
         return NextResponse.json({status:'error',message:'El nuevo pago supera el valor total de la obligación.'},{status:409})
-      const {data:appsOtras,error:errorAppsOtras}=await supabase.from('recibos_caja_detalle')
-        .select('recibo_id,valor').eq('cuenta_detalle_id',componente.id).neq('recibo_id',id)
-      if(errorAppsOtras)throw errorAppsOtras
-      const recibidoDetalle=redondear((appsOtras||[]).reduce((a,x)=>a+Number(x.valor),0))
+      const {data:recibosActivos,error:errorRecibosActivos}=await supabase.from('recibos_caja')
+        .select('id').eq('cuenta_id',cuenta.id).eq('estado','ACTIVO').neq('id',id)
+      if(errorRecibosActivos)throw errorRecibosActivos
+      let appsOtras=[]
+      if((recibosActivos||[]).length){
+        const resultado=await supabase.from('recibos_caja_detalle')
+          .select('recibo_id,valor').eq('cuenta_detalle_id',componente.id)
+          .in('recibo_id',recibosActivos.map(x=>x.id))
+        if(resultado.error)throw resultado.error
+        appsOtras=resultado.data||[]
+      }
+      const recibidoDetalle=redondear(appsOtras.reduce((a,x)=>a+Number(x.valor),0))
       if(redondear(recibidoDetalle+nuevo)>redondear(Number(componente.valor)))
         return NextResponse.json({status:'error',message:'El valor supera el saldo del componente al que está aplicado.'},{status:409})
       // Actualizar primero el recibo: si falla la aplicación se revierte.
@@ -8429,7 +8437,16 @@ if (
       const estado=calcularEstadoCuenta({valorTotal:cuenta.valor_total,totalAbonado:nuevoTotal})
       const {error:errorEstado}=await supabase.from('cuentas_aprendiz')
         .update({estado,updated_at:new Date().toISOString()}).eq('id',cuenta.id)
-      if(errorEstado)throw new Error('Importe corregido, pero el estado de la cuenta requiere actualización: '+errorEstado.message)
+      if(errorEstado){
+        const reversionDetalle=await supabase.from('recibos_caja_detalle')
+          .update({valor:app.valor}).eq('recibo_id',id).eq('cuenta_detalle_id',componente.id).eq('valor',nuevo)
+        const reversionRecibo=await supabase.from('recibos_caja')
+          .update({valor:anterior.valor,medio_pago_id:anterior.medio_pago_id,updated_at:anterior.updated_at})
+          .eq('id',id).eq('updated_at',reciboNuevo.updated_at)
+        if(reversionDetalle.error||reversionRecibo.error)
+          throw new Error('Corrección parcialmente revertida. Verifique el detalle financiero antes de intentar otra vez.')
+        throw new Error('No fue posible actualizar el estado de la obligación; el recibo se restauró.')
+      }
       return NextResponse.json({status:'success',
         message:'Valor del recibo corregido sin cambiar fecha, consecutivo ni matrícula.',
         data:await obtenerDetalleCuenta(supabase,cuenta.id)})
