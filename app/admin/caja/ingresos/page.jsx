@@ -2757,7 +2757,7 @@ const ingresosLibresFiltrados =
       })
       setDetalleFinanciero(await consultarDetalleCuenta(detalleFinanciero.cuenta.id))
       setReciboHistoricoEditando(null)
-      setMensaje('Recibo corregido y auditado. Los movimientos y arqueos abiertos mostrarán el medio actualizado.')
+      setMensaje('Recibo corregido. Consulte el detalle financiero y los movimientos actualizados.')
       await cargarCuentas()
     } catch (err) {
       setErrorCorreccionRecibo(err.message || 'No fue posible corregir el recibo.')
@@ -3477,7 +3477,7 @@ const ingresosLibresFiltrados =
               <button type="button" onClick={()=>{setFechaOtrosDesde('');setFechaOtrosHasta('')}}
                 className="rounded-lg border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800">Todas las fechas</button>
             </div>
-            <p className="mt-2 text-xs text-blue-950">Resumen del período consultado: <strong>
+            <p className="mt-2 text-xs text-blue-950">Total de otros ingresos activos en el período: <strong>
               {Number(resumenOtros.total||0).toLocaleString('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0})}
             </strong> · {resumenOtros.cantidad||0} recibos activos.</p>
           </div>
