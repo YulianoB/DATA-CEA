@@ -1471,7 +1471,7 @@ export default function InstructorProgramacionPage() {
             mb-4
           "
         >
-          <span className="rounded-full bg-slate-200 text-slate-700 border border-slate-300 px-2 py-1 text-[7px] font-black">
+          <span className="rounded-full bg-red-200 text-red-900 border-2 border-red-500 px-2 py-1 text-[7px] font-black">
             NO DISPONIBLE
           </span>
 
@@ -1886,7 +1886,7 @@ export default function InstructorProgramacionPage() {
                                       p-1
                                       ${
                                         !habilitado
-                                          ? 'bg-slate-200 border-slate-300'
+                                          ? 'bg-red-200 border-red-500 border-2'
                                           : esHoy
                                             ? 'bg-sky-50 border-sky-200'
                                             : 'bg-gray-50 border-gray-200'
@@ -1894,7 +1894,7 @@ export default function InstructorProgramacionPage() {
                                     `}
                                   >
                                     {!habilitado && (
-                                      <div className="mb-1 flex items-center justify-center gap-1 rounded bg-slate-300 px-1 py-1 text-[7px] font-black text-slate-800">
+                                      <div className="mb-1 flex items-center justify-center gap-1 rounded bg-red-300 px-1 py-1 text-[8px] font-black text-red-950">
                                         <i className="fas fa-lock" aria-hidden="true" />
                                         NO DISPONIBLE
                                       </div>
@@ -1902,7 +1902,7 @@ export default function InstructorProgramacionPage() {
                                     {clasesHorario.length ===
                                     0 ? (
                                       <div className="min-h-[52px] flex items-center justify-center">
-                                        <span className={`text-[7px] font-semibold ${habilitado ? 'text-gray-300' : 'text-slate-500'}`}>
+                                        <span className={`text-[7px] font-semibold ${habilitado ? 'text-gray-300' : 'text-red-800'}`}>
                                           {habilitado ? '—' : 'Horario restringido'}
                                         </span>
                                       </div>
