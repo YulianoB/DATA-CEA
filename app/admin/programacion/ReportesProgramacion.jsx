@@ -12,17 +12,129 @@ const etiquetaEstado = v => ({
   PENDIENTE_CARGUE:'Pendiente de cargue',NO_DICTADA:'No dictada'
 }[v] || v)
 const fechaVisible = v => v ? v.split('-').reverse().join('/') : ''
-const escapeCSV = v => '"'+limpiar(v).replace(/"/g,'""')+'"'
-function exportarCSV(filas,columnas,nombre) {
-  // BOM UTF-8 y separador ';' para apertura habitual en Excel español.
-  const contenido='\uFEFFsep=;\r\n'+
-    columnas.map(x=>escapeCSV(x[0])).join(';')+'\r\n'+
-    filas.map(row=>columnas.map(x=>escapeCSV(row[x[1]])).join(';')).join('\r\n')
-  const blob=new Blob([contenido],{type:'text/csv;charset=utf-8'})
-  const enlace=URL.createObjectURL(blob)
-  const a=document.createElement('a')
-  a.href=enlace;a.download=nombre;a.click()
-  URL.revokeObjectURL(enlace)
+const nombresActividad = {PRACTICA:'Práctica',TEORIA:'Teoría',PRUEBA_CONDUCCION:'Prueba de conducción'}
+const observacionLimpia = value => limpiar(value).replace(/\\[CEA_CLASE_PRACTICA:\\d+\\]/g,'').trim()
+
+async function generarPDF(datos, filtros, instructorNombre) {
+  const [{jsPDF},{default:autoTable}] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable')
+  ])
+  const individual=filtros.vista==='INDIVIDUAL'
+  const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true})
+  const ancho=pdf.internal.pageSize.getWidth()
+  const margen=12
+  const titulo=individual?'REPORTE INDIVIDUAL DE CLASES':'CONSOLIDADO DIARIO DE INSTRUCTORES'
+  const inicio=fechaVisible(filtros.fechaInicio)
+  const fin=fechaVisible(filtros.fechaFin)
+  const total=datos.totales
+
+  pdf.setFillColor(25,69,103)
+  pdf.rect(0,0,ancho,22,'F')
+  pdf.setTextColor(255,255,255)
+  pdf.setFont('helvetica','bold')
+  pdf.setFontSize(14)
+  pdf.text('DATA CEA  |  '+titulo,margen,13)
+  pdf.setTextColor(30,45,65)
+  pdf.setFont('helvetica','normal')
+  pdf.setFontSize(9)
+  pdf.text('Periodo: '+inicio+' al '+fin,margen,29)
+  if(individual) {
+    pdf.setFont('helvetica','bold')
+    pdf.text('Instructor: '+(instructorNombre||'No identificado'),margen,35)
+  }
+  const lineaResumen='Total: '+total.total+
+    '   |   Agendadas: '+total.agendadas+
+    '   |   Dictadas: '+total.dictadas+
+    '   |   Pendientes de cargue: '+total.pendientes_cargue+
+    '   |   No dictadas: '+total.no_dictadas
+  pdf.setFont('helvetica','normal')
+  pdf.setFontSize(8)
+  pdf.text(lineaResumen,margen,individual?41:35)
+  pdf.setFontSize(7)
+  pdf.setTextColor(95,105,120)
+  pdf.text('No incluye clases canceladas.',margen,individual?46:40)
+  const inicioTabla=individual?51:45
+
+  const filas=individual?(datos.detalle||[]):(datos.resumen||[])
+  const encabezados=individual
+    ? ['Fecha','Hora','Aprendiz / cliente','Documento','Matrícula','Actividad','Categoría','Programación','Estado']
+    : ['Fecha','Instructor','Total','Agend.','Dictadas','Pend. cargue','No dict.','Práctica','Teoría','Prueba conduc.']
+  const cuerpo=individual?filas.map(f=>[
+      fechaVisible(f.fecha),f.hora_inicio,f.aprendiz||'—',f.documento||'—',
+      f.consecutivo||'—',nombresActividad[f.tipo_clase]||f.tipo_clase,
+      f.categoria||'—',f.tipo_programacion||'—',etiquetaEstado(f.estado)
+    ]):filas.map(f=>[
+      fechaVisible(f.fecha),f.instructor,f.total,f.agendadas,f.dictadas,
+      f.pendientes_cargue,f.no_dictadas,f.practicas,f.teorias,f.pruebas_conduccion
+    ])
+  autoTable(pdf,{
+    head:[encabezados],
+    body:cuerpo,
+    startY:inicioTabla,
+    margin:{left:margen,right:margen,top:14,bottom:15},
+    theme:'grid',
+    styles:{font:'helvetica',fontSize:individual?7:7.5,cellPadding:2.1,
+      overflow:'linebreak',valign:'middle',lineColor:[224,231,238],lineWidth:0.12},
+    headStyles:{fillColor:[25,69,103],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[247,249,252]},
+    columnStyles:individual
+      ? {0:{cellWidth:19},1:{cellWidth:14},2:{cellWidth:51},
+         3:{cellWidth:24},4:{cellWidth:21},5:{cellWidth:29},
+         6:{cellWidth:17},7:{cellWidth:35},8:{cellWidth:32}}
+      : {0:{cellWidth:23},1:{cellWidth:72}}
+  })
+
+  // El detalle completo de motivos y observaciones usa un anexo de ancho
+  // completo, evitando cortes o letra ilegible en la tabla principal.
+  const notas=individual
+    ? filas.filter(f=>limpiar(f.motivo_no_dictada)||observacionLimpia(f.observacion))
+        .map(f=>[
+          fechaVisible(f.fecha)+' '+f.hora_inicio,
+          f.aprendiz||'Sin aprendiz',
+          etiquetaEstado(f.estado),
+          f.motivo_no_dictada||'—',
+          observacionLimpia(f.observacion)||'—'
+        ])
+    : filas.filter(f=>limpiar(f.observaciones_no_dictadas)).map(f=>[
+        fechaVisible(f.fecha),f.instructor,f.observaciones_no_dictadas
+      ])
+  if(notas.length){
+    pdf.addPage()
+    pdf.setFont('helvetica','bold')
+    pdf.setFontSize(12)
+    pdf.setTextColor(25,69,103)
+    pdf.text(individual?'DETALLE DE MOTIVOS Y OBSERVACIONES':'OBSERVACIONES DE CLASES NO DICTADAS',margen,18)
+    autoTable(pdf,{
+      head:[individual
+        ? ['Fecha / hora','Aprendiz / cliente','Estado','Motivo no dictada','Observación registrada']
+        : ['Fecha','Instructor','Observaciones de no dictada']],
+      body:notas,startY:24,
+      margin:{left:margen,right:margen,top:14,bottom:15},
+      theme:'striped',
+      styles:{font:'helvetica',fontSize:8,cellPadding:3,overflow:'linebreak',valign:'top'},
+      headStyles:{fillColor:[25,69,103],textColor:255},
+      columnStyles:individual
+        ? {0:{cellWidth:29},1:{cellWidth:59},2:{cellWidth:28},3:{cellWidth:59}}
+        : {0:{cellWidth:27},1:{cellWidth:70}}
+    })
+  }
+
+  const totalPaginas=pdf.internal.getNumberOfPages()
+  for(let p=1;p<=totalPaginas;p++){
+    pdf.setPage(p)
+    const h=pdf.internal.pageSize.getHeight()
+    pdf.setDrawColor(220,226,233)
+    pdf.line(margen,h-11,ancho-margen,h-11)
+    pdf.setFont('helvetica','normal')
+    pdf.setFontSize(7)
+    pdf.setTextColor(100,110,125)
+    pdf.text('DATA CEA · Reporte de programación',margen,h-7)
+    pdf.text('Página '+p+' de '+totalPaginas,ancho-margen,h-7,{align:'right'})
+  }
+  const nombreArchivo='reporte_clases_'+(individual?'instructor_':'general_')+
+    filtros.fechaInicio+'_'+filtros.fechaFin+'.pdf'
+  pdf.save(nombreArchivo)
 }
 
 export default function ReportesProgramacion({nit}) {
@@ -128,10 +240,18 @@ export default function ReportesProgramacion({nit}) {
             className="h-10 rounded-lg bg-[#194567] px-4 text-xs font-bold text-white hover:bg-[#246185] disabled:opacity-50">
             {cargando?'Consultando...':'Generar reporte'}
           </button>
-          {data && <button type="button" onClick={()=>exportarCSV(filas,columnas,
-            'programacion_'+filtrosAplicados.vista.toLowerCase()+'_'+filtrosAplicados.fechaInicio+'_'+filtrosAplicados.fechaFin+'.csv')}
+          {data && <button type="button" onClick={async ()=>{
+              setError('')
+              try {
+                const instructor=instructores.find(i=>String(i.id)===String(filtrosAplicados.instructorId))
+                await generarPDF(data,filtrosAplicados,instructor?.nombre)
+              }catch(err){
+                console.error('Error al generar el PDF de programación:',err)
+                setError('No fue posible generar el PDF. '+(err.message||''))
+              }
+            }}
             className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700">
-            Exportar CSV
+            Generar PDF
           </button>}
         </div>
       </form>
