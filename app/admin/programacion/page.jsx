@@ -4561,6 +4561,24 @@ if (
 }
 
 // =====================================================
+// SIN APRENDIZ: usar la franja de la agenda sin pedir
+// datos que ya están definidos por la tarjeta.
+// =====================================================
+
+if (!aprendiz) {
+  const instructorActividad = instructorForzado || instructorSeleccionado
+  if (!instructorActividad?.id) {
+    mostrarAlertaValidacion(
+      'Seleccione un instructor antes de programar.',
+      'Falta seleccionar instructor'
+    )
+    return
+  }
+  abrirProgramarActividad(instructorActividad, fecha, hora)
+  return
+}
+
+// =====================================================
 // PERSONA
 // =====================================================
 
