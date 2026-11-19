@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS public.bloqueos_agenda_auditoria (
   antes jsonb,
   despues jsonb
 );
+REVOKE ALL ON TABLE public.bloqueos_agenda_auditoria FROM anon, authenticated;
+GRANT SELECT, INSERT ON TABLE public.bloqueos_agenda_auditoria TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.bloqueos_agenda_auditoria_id_seq TO service_role;
+
 CREATE INDEX IF NOT EXISTS bloqueos_agenda_auditoria_bloqueo_idx
   ON public.bloqueos_agenda_auditoria (bloqueo_id, fecha_operacion DESC);
 
