@@ -2335,7 +2335,7 @@ export default function CierreCajaPage() {
                 : `No hay movimientos registrados para la fecha seleccionada (${fechaConsulta}).`}
           </div>
           <MarcoTabla className="!rounded-t-none !border-t-0">
-            <div className="max-h-[390px] overflow-auto">
+            <div className="overflow-x-auto">
               <table className="w-full min-w-[1050px] text-[10px]">
                 <thead className="sticky top-0 z-10">
                   <tr>
@@ -2397,7 +2397,7 @@ export default function CierreCajaPage() {
                                 Categoría(s): {item.categoria}
                               </div>
                             )}
-                            {item.observaciones && <div className="mt-1 max-w-[280px] truncate text-[8px] text-slate-500" title={item.observaciones}>{item.observaciones}</div>}
+                            {item.observaciones && <div className="mt-1 whitespace-pre-wrap break-words text-[9px] leading-relaxed text-slate-600" title={item.observaciones}><span className="font-bold">Observaciones: </span>{item.observaciones}</div>}
                           </td>
                           <td className="p-2 whitespace-nowrap">{item?.medio_pago?.nombre || '-'}</td>
                           <td className="p-2 text-center">{item.estado || '-'}</td>
