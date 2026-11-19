@@ -2371,6 +2371,11 @@ export default function ProgramacionPage() {
     categoria:'',vehiculo_id:'',observaciones:''
   })
   const [modalBloqueo, setModalBloqueo] = useState(false)
+  const [bloqueoEdicionId, setBloqueoEdicionId] = useState(null)
+  const [bloqueoGestion, setBloqueoGestion] = useState(null)
+  const [guardandoGestionBloqueo, setGuardandoGestionBloqueo] = useState(false)
+  const [errorGestionBloqueo, setErrorGestionBloqueo] = useState('')
+  const [revisionBloqueos, setRevisionBloqueos] = useState(0)
   const [instructoresBloqueo, setInstructoresBloqueo] = useState([])
   const [bloqueosAgenda, setBloqueosAgenda] = useState([])
   const [bloqueosSemana, setBloqueosSemana] = useState([])
@@ -3192,7 +3197,74 @@ const resumenOperativo =
     }
   }
 
+  function abrirGestionBloqueo(b, fecha, hora) {
+    if(!b?.id)return
+    setErrorGestionBloqueo('')
+    setBloqueoGestion({bloqueo:b,fecha,hora})
+  }
+
+  function editarBloqueo(b) {
+    setErrorBloqueo('')
+    setBloqueoEdicionId(b.id)
+    setFormBloqueo({
+      instructor_id:String(b.instructor_id),
+      fecha_inicio:b.fecha_inicio,fecha_fin:b.fecha_fin,
+      hora_inicio:String(b.hora_inicio).slice(0,5),
+      hora_fin:String(b.hora_fin).slice(0,5),
+      motivo:b.motivo||'',tipo_actividad:'BLOQUEO'
+    })
+    setBloqueoGestion(null)
+    setModalBloqueo(true)
+    cargarBloqueosAgenda(b.fecha_inicio,b.fecha_fin).catch(e=>setErrorBloqueo(e.message))
+  }
+
+  async function liberarFranjaBloqueada() {
+    const gestion=bloqueoGestion
+    if(!gestion?.bloqueo?.id)return
+    if(!window.confirm('¿Liberar únicamente la franja '+gestion.hora+' del '+gestion.fecha+'? Las demás horas bloqueadas se conservarán.'))return
+    setGuardandoGestionBloqueo(true)
+    setErrorGestionBloqueo('')
+    try {
+      const respuesta=await fetch('/api/admin/programacion/bloqueos',{
+        method:'PUT',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({nit,id:gestion.bloqueo.id,
+          fecha:gestion.fecha,hora_inicio:gestion.hora,
+          usuario:obtenerNombreUsuario(user)})
+      })
+      const data=await respuesta.json()
+      if(!respuesta.ok||data.status!=='success')throw new Error(data.message||'No fue posible liberar la franja.')
+      setBloqueoGestion(null)
+      setExito(data.message)
+      setRevisionBloqueos(n=>n+1)
+      await cargarDisponibilidadInstructores(fechaDisponibilidad)
+    }catch(e){setErrorGestionBloqueo(e.message||'No fue posible liberar la franja.')}
+    finally{setGuardandoGestionBloqueo(false)}
+  }
+
+  async function retirarBloqueoGestion() {
+    const gestion=bloqueoGestion
+    if(!gestion?.bloqueo?.id)return
+    if(!window.confirm('¿Retirar el bloqueo completo, incluyendo todas sus fechas y horas?'))return
+    setGuardandoGestionBloqueo(true)
+    setErrorGestionBloqueo('')
+    try {
+      const respuesta=await fetch('/api/admin/programacion/bloqueos',{
+        method:'DELETE',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({nit,id:gestion.bloqueo.id,
+          usuario:obtenerNombreUsuario(user)})
+      })
+      const data=await respuesta.json()
+      if(!respuesta.ok||data.status!=='success')throw new Error(data.message||'No fue posible retirar el bloqueo.')
+      setBloqueoGestion(null)
+      setRevisionBloqueos(n=>n+1)
+      setExito(data.message||'Bloqueo retirado.')
+      await cargarDisponibilidadInstructores(fechaDisponibilidad)
+    }catch(e){setErrorGestionBloqueo(e.message||'No fue posible retirar el bloqueo.')}
+    finally{setGuardandoGestionBloqueo(false)}
+  }
+
   async function abrirBloqueosAgenda() {
+    setBloqueoEdicionId(null)
     setErrorBloqueo('')
     setFormBloqueo({
       instructor_id:'',fecha_inicio:fechaDisponibilidad,fecha_fin:fechaDisponibilidad,
@@ -3210,14 +3282,16 @@ const resumenOperativo =
     setErrorBloqueo('')
     try {
       const respuesta = await fetch('/api/admin/programacion/bloqueos', {
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({...formBloqueo,nit,usuario:obtenerNombreUsuario(user)})
+        method:bloqueoEdicionId?'PATCH':'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({...formBloqueo,nit,id:bloqueoEdicionId,usuario:obtenerNombreUsuario(user)})
       })
       const data = await respuesta.json()
       if(!respuesta.ok || data.status!=='success')
         throw new Error(data.message || 'No fue posible guardar el bloqueo.')
-      setExito('Bloqueo de agenda registrado.')
+      setExito(bloqueoEdicionId?'Bloqueo actualizado.':'Bloqueo de agenda registrado.')
       setModalBloqueo(false)
+      setBloqueoEdicionId(null)
+      setRevisionBloqueos(n=>n+1)
       await cargarDisponibilidadInstructores(fechaDisponibilidad)
     } catch(e) { setErrorBloqueo(e.message || 'No fue posible guardar el bloqueo.') }
     finally { setGuardandoBloqueo(false) }
@@ -3236,6 +3310,7 @@ const resumenOperativo =
       if(!respuesta.ok || data.status!=='success')
         throw new Error(data.message || 'No fue posible retirar el bloqueo.')
       await cargarBloqueosAgenda(formBloqueo.fecha_inicio,formBloqueo.fecha_fin)
+      setRevisionBloqueos(n=>n+1)
       await cargarDisponibilidadInstructores(fechaDisponibilidad)
     } catch(e) { setErrorBloqueo(e.message || 'No fue posible retirar el bloqueo.') }
     finally { setGuardandoBloqueo(false) }
@@ -4023,7 +4098,7 @@ useEffect(() => {
       }
     })
   return () => { vigente = false }
-}, [nit, instructorId, fechaInicioSemana, fechaFinSemana, vistaProgramacion])
+}, [nit, instructorId, fechaInicioSemana, fechaFinSemana, vistaProgramacion, revisionBloqueos])
 
 const actividadSemana = (fecha, hora) =>
   bloqueosSemana.find(b =>
