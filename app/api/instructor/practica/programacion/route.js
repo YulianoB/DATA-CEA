@@ -549,6 +549,7 @@ async function consultarProgramacionInstructor(
         hora_inicio,
         duracion_horas,
         tipo_programacion,
+        tipo_clase,
         estado,
         motivo_no_dictada_id,
         observacion_no_dictada,
@@ -738,6 +739,9 @@ async function consultarProgramacionInstructor(
 
         tipo_programacion:
           clase.tipo_programacion,
+
+        tipo_clase:
+          clase.tipo_clase || 'PRACTICA',
 
         estado:
           clase.estado,
