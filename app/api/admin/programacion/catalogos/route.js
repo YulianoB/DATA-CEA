@@ -6095,7 +6095,7 @@ const resultado =
 // Bloqueos administrativos para la fecha consultada.
 const { data: bloqueosDia, error: errorBloqueosDia } = await supabase
   .from('bloqueos_agenda_instructores')
-  .select('instructor_id,hora_inicio,hora_fin')
+  .select('instructor_id,hora_inicio,hora_fin,tipo_actividad')
   .lte('fecha_inicio',fecha).gte('fecha_fin',fecha)
 if (errorBloqueosDia) throw new Error('No fue posible consultar los bloqueos de agenda: ' + errorBloqueosDia.message)
 
@@ -6109,7 +6109,12 @@ for (const item of resultado) {
         hora < String(b.hora_fin).slice(0,5))) {
       horario.estado = 'NO_HABILITADO'
       horario.disponible = false
-      horario.motivo = 'Horario bloqueado por administración.'
+      const actividad = bloques.find(b => hora >= String(b.hora_inicio).slice(0,5) &&
+        hora < String(b.hora_fin).slice(0,5))
+      horario.tipo_actividad = actividad?.tipo_actividad === 'TEORIA' ? 'TEORIA' : 'BLOQUEO'
+      horario.motivo = horario.tipo_actividad === 'TEORIA'
+        ? 'Instructor ocupado en actividad teórica.'
+        : 'Horario bloqueado por administración.'
     }
   }
   item.horarios_disponibles = (item.horarios || []).filter(h=>h.estado === 'DISPONIBLE').length
