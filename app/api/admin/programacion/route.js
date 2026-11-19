@@ -3281,6 +3281,27 @@ async function validarProgramacion(
     )
   }
 
+  // Bloqueos excepcionales de agenda (fecha o rango).
+  // A diferencia del horario habitual, se aplican solo en las fechas
+  // especificadas por el usuario administrativo.
+  const { data: bloqueosAgenda, error: errorBloqueosAgenda } = await supabase
+    .from('bloqueos_agenda_instructores')
+    .select('id,hora_inicio,hora_fin')
+    .eq('instructor_id', instructorId)
+    .lte('fecha_inicio', fecha)
+    .gte('fecha_fin', fecha)
+
+  if (errorBloqueosAgenda) {
+    throw new Error('No fue posible validar bloqueos de agenda: ' + errorBloqueosAgenda.message)
+  }
+  const comienzoClase = normalizarHora(horaInicio)
+  if ((bloqueosAgenda || []).some(b =>
+    comienzoClase >= normalizarHora(b.hora_inicio) &&
+    comienzoClase < normalizarHora(b.hora_fin)
+  )) {
+    throw new Error('El instructor tiene esta franja bloqueada por administración. Seleccione otro horario.')
+  }
+
   // =======================================================
   // DISPONIBILIDAD HABITUAL
   // =======================================================
