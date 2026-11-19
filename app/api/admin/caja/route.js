@@ -8403,6 +8403,13 @@ if (
         if(fallos.length)throw new Error('Error crítico: reversión incompleta; verifique el detalle antes de editar de nuevo. '+fallos.join('; '))
         throw e
       }
+      try{
+        await registrarAuditoria({supabase,usuario,accion:'CORREGIR_VALORES_OBLIGACION',
+          entidad:'CUENTA_APRENDIZ',entidadId:cuenta.id,documento:cuenta.documento,
+          descripcion:'Corrección directa de importes por concepto de la obligación.',
+          datosAnteriores:{cuenta,componentes},
+          datosNuevos:{valor_total:total,componentes:pedidos,estado}})
+      }catch(e){console.error('No fue posible registrar auditoría de obligación:',e)}
       return NextResponse.json({status:'success',message:'Obligación corregida sin cambiar su fecha ni sus abonos.',
         data:await obtenerDetalleCuenta(supabase,cuenta.id)})
     }
@@ -8479,6 +8486,14 @@ if (
           throw new Error('Corrección parcialmente revertida. Verifique el detalle financiero antes de intentar otra vez.')
         throw new Error('No fue posible actualizar el estado de la obligación; el recibo se restauró.')
       }
+      try{
+        await registrarAuditoria({supabase,usuario,accion:'CORREGIR_VALOR_RECIBO',
+          entidad:'RECIBO_CAJA',entidadId:id,matriculaId:anterior.matricula_id,
+          documento:anterior.documento,consecutivoReferencia:numeroRecibo(anterior),
+          descripcion:'Corrección directa del valor y medio de pago del recibo.',
+          datosAnteriores:{valor:anterior.valor,medio_pago_id:anterior.medio_pago_id},
+          datosNuevos:{valor:nuevo,medio_pago_id:medio.id}})
+      }catch(e){console.error('No fue posible registrar auditoría de recibo:',e)}
       return NextResponse.json({status:'success',
         message:'Valor del recibo corregido sin cambiar fecha, consecutivo ni matrícula.',
         data:await obtenerDetalleCuenta(supabase,cuenta.id)})
