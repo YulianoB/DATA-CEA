@@ -3140,6 +3140,7 @@ const resumenOperativo =
         throw new Error(data.message || 'No fue posible registrar la actividad.')
       }
       setModalActividad(false)
+      setInstructorId(String(formActividad.instructor_id))
       setExito(data.message || 'Actividad registrada.')
       await Promise.all([
         cargarAgenda(),
