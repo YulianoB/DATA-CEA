@@ -3142,17 +3142,7 @@ const ingresosLibresFiltrados =
         </div>
         </section>
 
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <button type="button" onClick={()=>setVistaIngresos('OBLIGACIONES')}
-            className={`rounded-lg border px-4 py-2 text-xs font-black transition-all hover:-translate-y-0.5 hover:shadow-md ${vistaIngresos==='OBLIGACIONES'?'bg-[#24638C] border-[#24638C] text-white':'border-sky-300 bg-white text-sky-900 hover:bg-sky-50'}`}>
-            <i className="fas fa-users mr-2"/>Obligaciones de aprendices
-          </button>
-          <button type="button" onClick={()=>setVistaIngresos('DIA')}
-            className={`rounded-lg border px-4 py-2 text-xs font-black transition-all hover:-translate-y-0.5 hover:shadow-md ${vistaIngresos==='DIA'?'bg-emerald-700 border-emerald-700 text-white':'border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-50'}`}>
-            <i className="fas fa-receipt mr-2"/>Ingresos del día
-          </button>
-        </div>
-        {vistaIngresos==='DIA' && <IngresosDia nit={nit}/>}
+        {vistaIngresos==='DIA' && <IngresosDia nit={nit} onVolver={()=>setVistaIngresos('OBLIGACIONES')}/>}
         <div className={vistaIngresos==='DIA' ? 'hidden' : ''}>
        {/* ==================================================
             FILTROS
@@ -3515,8 +3505,19 @@ const ingresosLibresFiltrados =
         >
           <i className="fas fa-list mr-2"></i>
 
-          Obligaciones de Aprendices
+          <span className="sr-only">Obligaciones de Aprendices</span>
         </h2>
+        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Vistas de ingresos">
+          <button type="button" role="tab" aria-selected={vistaIngresos==='OBLIGACIONES'}
+            onClick={()=>setVistaIngresos('OBLIGACIONES')}
+            className="rounded-md border border-white/50 bg-white px-3 py-2 text-[11px] font-black text-[#194567] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-md">
+            <i className="fas fa-users mr-2"/>Obligaciones de aprendices
+          </button>
+          <button type="button" role="tab" aria-selected={false} onClick={()=>setVistaIngresos('DIA')}
+            className="rounded-md border border-white/40 bg-transparent px-3 py-2 text-[11px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-md">
+            <i className="fas fa-receipt mr-2"/>Ingresos del día
+          </button>
+        </div>
 
         <p
           className="
@@ -3949,10 +3950,7 @@ const ingresosLibresFiltrados =
         >
           <i className="fas fa-receipt mr-2"></i>
 
-          {tipoConsulta ===
-          'REFUERZOS'
-            ? 'Refuerzos Prácticos'
-            : 'Otros Ingresos'}
+          <span className="sr-only">{tipoConsulta==='REFUERZOS'?'Refuerzos Prácticos':'Otros Ingresos'}</span>
         </h2>
 
         <p
