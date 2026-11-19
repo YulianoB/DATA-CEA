@@ -992,10 +992,13 @@ const [
   const [vistaIngresos, setVistaIngresos] = useState('OBLIGACIONES')
   const [fechaOtrosDesde, setFechaOtrosDesde] = useState('')
   const [fechaOtrosHasta, setFechaOtrosHasta] = useState('')
+  const [modalCorregirObligacion,setModalCorregirObligacion]=useState(false)
+  const [valoresCorregirObligacion,setValoresCorregirObligacion]=useState({})
+  const [errorCorregirObligacion,setErrorCorregirObligacion]=useState('')
   const [reciboHistoricoEditando, setReciboHistoricoEditando] = useState(null)
   const [errorCorreccionRecibo, setErrorCorreccionRecibo] = useState('')
   const [correccionHistorica, setCorreccionHistorica] = useState({
-    fecha: '', medio_pago_id: '', referencia_pago: '', motivo: ''
+    fecha: '', medio_pago_id: '', referencia_pago: '', valor:'', motivo: ''
   })
   // Modal independiente para obligaciones creadas sin valor de curso.
   const [modalLiquidacion, setModalLiquidacion] = useState(null)
@@ -2156,6 +2159,7 @@ const ingresosLibresFiltrados =
       fecha: recibo.fecha || '',
       medio_pago_id: String(recibo.medio_pago_id || ''),
       referencia_pago: recibo.referencia_pago || '',
+      valor:String(recibo.valor??''),
       motivo: ''
     })
   }
@@ -2697,6 +2701,29 @@ const ingresosLibresFiltrados =
     ventana.focus()
   }
 
+  function abrirCorreccionObligacion(){
+    const detalles=detalleFinanciero?.cuenta?.detalles || detalleFinanciero?.detalles || []
+    if(!detalles.length){setError('No se encontraron componentes de la obligación.');return}
+    setValoresCorregirObligacion(Object.fromEntries(detalles.map(d=>[String(d.id),String(d.valor)])))
+    setErrorCorregirObligacion('')
+    setModalCorregirObligacion(true)
+  }
+  async function guardarCorreccionObligacion(){
+    const cuenta=detalleFinanciero?.cuenta
+    const detalles=cuenta?.detalles||detalleFinanciero?.detalles||[]
+    if(!cuenta?.id||procesando)return
+    setProcesando(true);setErrorCorregirObligacion('')
+    try{
+      await postCaja({accion:'corregir_valores_obligacion',cuenta_id:cuenta.id,
+        componentes:detalles.map(d=>({id:d.id,valor:Number(valoresCorregirObligacion[String(d.id)])}))})
+      setDetalleFinanciero(await consultarDetalleCuenta(cuenta.id))
+      await cargarCuentas()
+      setModalCorregirObligacion(false)
+      setMensaje('Valores de la obligación actualizados.')
+    }catch(e){setErrorCorregirObligacion(e.message||'No fue posible corregir la obligación.')}
+    finally{setProcesando(false)}
+  }
+
   async function guardarCorreccionHistorica() {
     if (!reciboHistoricoEditando) return
     if (correccionHistorica.motivo.trim().length < 8) {
@@ -2711,15 +2738,16 @@ const ingresosLibresFiltrados =
     setErrorCorreccionRecibo('')
     try {
       const esHistorico = mayusculas(reciboHistoricoEditando.recibido_por) === 'MIGRACION'
+      const cambiaValor=Number(correccionHistorica.valor)!==Number(reciboHistoricoEditando.valor)
       await postCaja({
-        accion: esHistorico ? 'corregir_recibo_historico' : 'corregir_medio_pago_recibo',
-        recibo_id: reciboHistoricoEditando.id,
-        ...(esHistorico ? {
-          fecha: correccionHistorica.fecha || null,
-          referencia_pago: correccionHistorica.referencia_pago
-        } : {}),
-        medio_pago_id: correccionHistorica.medio_pago_id,
-        motivo: correccionHistorica.motivo.trim()
+        accion:esHistorico?'corregir_recibo_historico':
+          cambiaValor?'corregir_valor_recibo':'corregir_medio_pago_recibo',
+        recibo_id:reciboHistoricoEditando.id,
+        ...(esHistorico?{fecha:correccionHistorica.fecha||null,
+          referencia_pago:correccionHistorica.referencia_pago}:{}),
+        ...(cambiaValor&&!esHistorico?{valor:Number(correccionHistorica.valor)}:{}),
+        medio_pago_id:correccionHistorica.medio_pago_id,
+        motivo:correccionHistorica.motivo.trim()
       })
       setDetalleFinanciero(await consultarDetalleCuenta(detalleFinanciero.cuenta.id))
       setReciboHistoricoEditando(null)
