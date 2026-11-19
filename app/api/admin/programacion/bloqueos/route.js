@@ -3,6 +3,7 @@ import { respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
 import { obtenerContextoCEA } from '@/lib/autorizacionCEA'
 
 const tabla = 'bloqueos_agenda_instructores'
+const faltaTipoActividad = error => /(?:tipo_actividad)/i.test(String(error?.message || '')) && /(?:does not exist|schema cache|could not find|column)/i.test(String(error?.message || ''))
 const t = v => String(v ?? '').trim()
 const validaFecha = v => /^\d{4}-\d{2}-\d{2}$/.test(v) &&
   !Number.isNaN(Date.parse(v)) &&
@@ -26,15 +27,24 @@ export async function GET(request) {
     if (!validaFecha(inicio) || !validaFecha(fin) || inicio > fin) {
       return NextResponse.json({status:'error',message:'Indique un rango de fechas válido.'},{status:400})
     }
-    let q=db.from(tabla)
-      .select('id,instructor_id,fecha_inicio,fecha_fin,hora_inicio,hora_fin,motivo,tipo_actividad,creado_por,created_at')
-      .lte('fecha_inicio',fin).gte('fecha_fin',inicio)
-      .order('fecha_inicio',{ascending:true})
-    if (Number.isInteger(instructorId) && instructorId>0) q=q.eq('instructor_id',instructorId)
-    const [bloqueos,personal]=await Promise.all([
-      q,
+    const consulta = (campos) => {
+      let q = db.from(tabla).select(campos)
+        .lte('fecha_inicio',fin).gte('fecha_fin',inicio)
+        .order('fecha_inicio',{ascending:true})
+      if (Number.isInteger(instructorId) && instructorId>0) q=q.eq('instructor_id',instructorId)
+      return q
+    }
+    let [bloqueos,personal]=await Promise.all([
+      consulta('id,instructor_id,fecha_inicio,fecha_fin,hora_inicio,hora_fin,motivo,tipo_actividad,creado_por,created_at'),
       db.from('personal').select('id,nombres,apellidos,cargo,tipo_personal,estado').order('nombres',{ascending:true})
     ])
+    if (bloqueos.error && faltaTipoActividad(bloqueos.error)) {
+      const anterior = await consulta('id,instructor_id,fecha_inicio,fecha_fin,hora_inicio,hora_fin,motivo,creado_por,created_at')
+      bloqueos = anterior.error ? anterior : {
+        data:(anterior.data||[]).map(b=>({...b,tipo_actividad:'BLOQUEO'})),
+        error:null
+      }
+    }
     if (bloqueos.error) throw new Error('No se pudo consultar los bloqueos: '+bloqueos.error.message)
     if (personal.error) throw new Error('No se pudo consultar los instructores: '+personal.error.message)
     return NextResponse.json({status:'success',data:bloqueos.data||[],instructores:(personal.data||[])
@@ -89,10 +99,20 @@ export async function POST(request) {
        minutos(t(x.hora_fin).slice(0,5))>minutos(desde))) {
       return NextResponse.json({status:'error',message:'El instructor ya tiene un bloqueo que coincide con el rango seleccionado.'},{status:409})
     }
-    const {data,error}=await db.from(tabla).insert({
+    const datos = {
       instructor_id:instructorId,fecha_inicio:inicio,fecha_fin:fin,
       hora_inicio:desde,hora_fin:hasta,motivo,tipo_actividad:tipoActividad,creado_por:usuario
-    }).select('*').single()
+    }
+    let {data,error}=await db.from(tabla).insert(datos).select('*').single()
+    if (error && faltaTipoActividad(error)) {
+      if (tipoActividad === 'TEORIA') {
+        return NextResponse.json({status:'error',message:'Debe ejecutar primero la migración SQL de actividades teóricas en esta base CEA.'},{status:409})
+      }
+      const {tipo_actividad:omitido,...datosAnteriores} = datos
+      const anterior=await db.from(tabla).insert(datosAnteriores).select('*').single()
+      data=anterior.data ? {...anterior.data,tipo_actividad:'BLOQUEO'} : null
+      error=anterior.error
+    }
     if(error)throw new Error(error.message)
     return NextResponse.json({status:'success',data,message:tipoActividad==='TEORIA'?'Actividad teórica registrada.':'Bloqueo registrado correctamente.'},{status:201})
   }catch(e){return responderError(e)}
