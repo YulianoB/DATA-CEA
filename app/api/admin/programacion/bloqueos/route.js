@@ -27,7 +27,7 @@ export async function GET(request) {
       return NextResponse.json({status:'error',message:'Indique un rango de fechas válido.'},{status:400})
     }
     let q=db.from(tabla)
-      .select('id,instructor_id,fecha_inicio,fecha_fin,hora_inicio,hora_fin,motivo,creado_por,created_at')
+      .select('id,instructor_id,fecha_inicio,fecha_fin,hora_inicio,hora_fin,motivo,tipo_actividad,creado_por,created_at')
       .lte('fecha_inicio',fin).gte('fecha_fin',inicio)
       .order('fecha_inicio',{ascending:true})
     if (Number.isInteger(instructorId) && instructorId>0) q=q.eq('instructor_id',instructorId)
@@ -51,11 +51,12 @@ export async function POST(request) {
     const inicio=t(b.fecha_inicio),fin=t(b.fecha_fin)
     const desde=t(b.hora_inicio),hasta=t(b.hora_fin)
     const motivo=t(b.motivo),usuario=t(b.usuario)
+    const tipoActividad=t(b.tipo_actividad||'BLOQUEO').toUpperCase()
     if (!Number.isInteger(instructorId)||instructorId<1||
         !validaFecha(inicio)||!validaFecha(fin)||fin<inicio||
         (Date.parse(fin)-Date.parse(inicio))/86400000>90 ||
         !validaHora(desde)||!validaHora(hasta)||minutos(hasta)<=minutos(desde)||
-        !motivo||motivo.length<8||!usuario) {
+        !motivo||motivo.length<8||!usuario||!['BLOQUEO','TEORIA'].includes(tipoActividad)) {
       return NextResponse.json({status:'error',message:'Instructor, fechas (máximo 90 días), horas y motivo (mínimo 8 caracteres) son obligatorios.'},{status:400})
     }
     const {data:personal,error:errorPersonal}=await db.from('personal')
@@ -90,10 +91,10 @@ export async function POST(request) {
     }
     const {data,error}=await db.from(tabla).insert({
       instructor_id:instructorId,fecha_inicio:inicio,fecha_fin:fin,
-      hora_inicio:desde,hora_fin:hasta,motivo,creado_por:usuario
+      hora_inicio:desde,hora_fin:hasta,motivo,tipo_actividad:tipoActividad,creado_por:usuario
     }).select('*').single()
     if(error)throw new Error(error.message)
-    return NextResponse.json({status:'success',data,message:'Bloqueo registrado correctamente.'},{status:201})
+    return NextResponse.json({status:'success',data,message:tipoActividad==='TEORIA'?'Actividad teórica registrada.':'Bloqueo registrado correctamente.'},{status:201})
   }catch(e){return responderError(e)}
 }
 export async function DELETE(request) {
