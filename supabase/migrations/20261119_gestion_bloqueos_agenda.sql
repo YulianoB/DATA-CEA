@@ -137,9 +137,34 @@ BEGIN
     'segmentos_conservados',v_partes);
 END $$;
 
+-- Retiro completo con registro de auditoría, dentro de la misma transacción.
+CREATE OR REPLACE FUNCTION public.cea_retirar_bloqueo_agenda(
+  p_id bigint,p_usuario text
+) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public, pg_temp AS $
+DECLARE
+  v_antes public.bloqueos_agenda_instructores%ROWTYPE;
+BEGIN
+  IF p_usuario IS NULL OR trim(p_usuario)='' THEN
+    RAISE EXCEPTION 'Se requiere identificar el usuario';
+  END IF;
+  SELECT * INTO v_antes FROM public.bloqueos_agenda_instructores
+    WHERE id=p_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'El bloqueo ya no existe'; END IF;
+  IF COALESCE(v_antes.tipo_actividad,'BLOQUEO')<>'BLOQUEO'
+  THEN RAISE EXCEPTION 'No se puede retirar una actividad académica desde bloqueos'; END IF;
+  PERFORM pg_advisory_xact_lock(521771,v_antes.instructor_id::integer);
+  DELETE FROM public.bloqueos_agenda_instructores WHERE id=p_id;
+  INSERT INTO public.bloqueos_agenda_auditoria(bloqueo_id,accion,usuario,antes,despues)
+    VALUES(p_id,'RETIRAR',p_usuario,to_jsonb(v_antes),NULL);
+  RETURN jsonb_build_object('id',p_id);
+END $;
+
 REVOKE ALL ON FUNCTION public.cea_editar_bloqueo_agenda(bigint,bigint,date,date,time,time,text,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.cea_liberar_franja_bloqueo(bigint,date,time,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.cea_editar_bloqueo_agenda(bigint,bigint,date,date,time,time,text,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.cea_liberar_franja_bloqueo(bigint,date,time,text) TO service_role;
+REVOKE ALL ON FUNCTION public.cea_retirar_bloqueo_agenda(bigint,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.cea_retirar_bloqueo_agenda(bigint,text) TO service_role;
 
 COMMIT;
