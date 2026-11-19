@@ -45,6 +45,7 @@ const TIPOS_DOC = [
   'CE',
   'PA',
   'PEP',
+  'PPT',
 ]
 
 const GENEROS = [
