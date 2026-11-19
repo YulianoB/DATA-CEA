@@ -817,6 +817,7 @@ export default function InstructorProgramacionPage() {
     )
 
   const [disponibilidadHabitual, setDisponibilidadHabitual] = useState([])
+  const [bloqueosAdministrativos, setBloqueosAdministrativos] = useState([])
 
   const [
     instructor,
@@ -1064,6 +1065,7 @@ export default function InstructorProgramacionPage() {
               ? json.disponibilidad_habitual
               : []
           )
+          setBloqueosAdministrativos(Array.isArray(json?.bloqueos_agenda) ? json.bloqueos_agenda : [])
 
           setInstructor(
             json?.instructor ||
@@ -1085,6 +1087,7 @@ export default function InstructorProgramacionPage() {
             []
           )
           setDisponibilidadHabitual([])
+          setBloqueosAdministrativos([])
 
           toast.error(
             error?.message ||
@@ -1193,6 +1196,12 @@ export default function InstructorProgramacionPage() {
   // sin disponibilidad configurada se mantiene la agenda abierta;
   // con franjas configuradas solo se muestran habilitadas esas horas.
   const horarioHabilitado = useCallback((fecha, hora) => {
+    const bloqueado = bloqueosAdministrativos.some(b =>
+      b.fecha_inicio <= fecha && b.fecha_fin >= fecha &&
+      hora >= texto(b.hora_inicio).slice(0,5) &&
+      hora < texto(b.hora_fin).slice(0,5)
+    )
+    if (bloqueado) return false
     if (!disponibilidadHabitual.length) return true
     const dia = new Date(`${fecha}T12:00:00Z`).getUTCDay() || 7
     return disponibilidadHabitual.some(item =>
@@ -1200,7 +1209,7 @@ export default function InstructorProgramacionPage() {
       hora >= texto(item.hora_inicio).slice(0,5) &&
       hora < texto(item.hora_fin).slice(0,5)
     )
-  }, [disponibilidadHabitual])
+  }, [disponibilidadHabitual, bloqueosAdministrativos])
 
   // =======================================================
   // FECHAS DEL RANGO
