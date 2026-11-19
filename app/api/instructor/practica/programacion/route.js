@@ -1220,7 +1220,7 @@ export async function GET(
 
     const { data: bloqueos, error: errorBloqueos } = await supabase
       .from('bloqueos_agenda_instructores')
-      .select('id,fecha_inicio,fecha_fin,hora_inicio,hora_fin')
+      .select('id,fecha_inicio,fecha_fin,hora_inicio,hora_fin,tipo_actividad')
       .eq('instructor_id',instructor.id)
       .lte('fecha_inicio',fechaFin)
       .gte('fecha_fin',fechaInicio)
