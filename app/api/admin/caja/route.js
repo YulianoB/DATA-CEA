@@ -4708,6 +4708,37 @@ export async function GET(
           )
       }
 
+      // Resumen completo por período, independiente del límite visual de 200.
+      // No se incluyen pagos de refuerzo práctico en Otros Ingresos.
+      const idsResumen=(conceptosOtrosIngresos||[])
+        .filter(c=>!['CURSO','REFUERZO PRACTICO'].includes(
+          mayusculas(c.nombre).normalize('NFD').replace(/[\u0300-\u036f]/g,'')))
+        .map(c=>c.id)
+      let resumenOtros={total:0,cantidad:0}
+      if(idsResumen.length){
+        for(let pagina=0;pagina<50;pagina++){
+          let q=supabase.from('recibos_caja')
+            .select('valor,estado')
+            .in('concepto_id',idsResumen)
+            .in('tipo_origen',['LIBRE','MATRICULA'])
+          if(fechaInicio)q=q.gte('fecha',fechaInicio)
+          if(fechaFin)q=q.lte('fecha',fechaFin)
+          if(buscar)q=q.or([
+            `nombre_cliente.ilike.%${buscar}%`,
+            `documento_cliente.ilike.%${buscar}%`,
+            `descripcion.ilike.%${buscar}%`
+          ].join(','))
+          const {data:filas,error}=await q.range(pagina*500,pagina*500+499)
+          if(error)throw new Error('No fue posible calcular el resumen de otros ingresos: '+error.message)
+          for(const f of filas||[])if(f.estado==='ACTIVO'){
+            resumenOtros.total=redondear(resumenOtros.total+Number(f.valor||0))
+            resumenOtros.cantidad++
+          }
+          if((filas||[]).length<500)break
+          if(pagina===49)throw new Error('El resumen supera el límite de 25.000 recibos. Seleccione un rango menor.')
+        }
+      }
+
       const {
         data:
           recibos,
@@ -5059,6 +5090,7 @@ export async function GET(
 
         total:
           ingresos.length,
+        resumen_otros_ingresos:resumenOtros,
 
         empresa:
           empresaRespuesta(
