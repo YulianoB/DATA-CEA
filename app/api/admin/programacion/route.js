@@ -3996,6 +3996,7 @@ async function consultarAgenda(
         hora_inicio,
         duracion_horas,
         tipo_programacion,
+        tipo_clase,
         estado,
         motivo_no_dictada_id,
         observacion_no_dictada,
