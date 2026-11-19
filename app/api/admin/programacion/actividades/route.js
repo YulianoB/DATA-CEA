@@ -106,3 +106,65 @@ export async function POST(request) {
     return NextResponse.json(r.body,{status:r.status})
   }
 }
+
+
+// Cancelación administrativa: conserva el registro y libera el horario.
+// Solo las actividades sin matrícula TEORIA / PRUEBA_CONDUCCION pueden
+// cancelarse por esta ruta; las prácticas siguen usando su flujo habitual.
+export async function PATCH(request) {
+  try {
+    const body = await request.json()
+    const { supabaseAdmin: db } = await obtenerContextoCEA(request, {
+      rolesPermitidos:['ADMINISTRATIVO'], body
+    })
+    const id = Number(body.id)
+    const usuario = str(body.usuario || body.usuario_cancelacion)
+    if (!Number.isSafeInteger(id) || id <= 0 || !usuario) {
+      return errorJson('Se requiere una actividad válida y el usuario responsable.')
+    }
+
+    const {data:actual,error:errorConsulta} = await db.from('programacion_clases')
+      .select('id,tipo_clase,estado,matricula_id,recibo_refuerzo_id,cliente_refuerzo_id')
+      .eq('id',id).maybeSingle()
+    if (errorConsulta) throw errorConsulta
+    if (!actual) return errorJson('La actividad no existe.',404)
+    if (!TIPOS.has(str(actual.tipo_clase).toUpperCase()) ||
+        actual.matricula_id != null ||
+        actual.recibo_refuerzo_id != null ||
+        actual.cliente_refuerzo_id != null) {
+      return errorJson('Esta opción solamente cancela teoría o prueba de conducción sin aprendiz.',409)
+    }
+    if (actual.estado !== 'AGENDADA') {
+      return errorJson(actual.estado === 'CANCELADA'
+        ? 'Esta actividad ya fue cancelada.'
+        : 'Solo se pueden cancelar actividades en estado AGENDADA.',409)
+    }
+
+    // Actualización condicional para impedir doble cancelación concurrente.
+    const fecha = new Date().toISOString()
+    const {data:cancelada,error:errorUpdate} = await db.from('programacion_clases')
+      .update({
+        estado:'CANCELADA', usuario_cancelacion:usuario,
+        fecha_cancelacion:fecha, usuario_actualiza_estado:usuario,
+        fecha_actualizacion_estado:fecha
+      })
+      .eq('id',id).eq('estado','AGENDADA')
+      .in('tipo_clase',['TEORIA','PRUEBA_CONDUCCION'])
+      .is('matricula_id',null)
+      .is('recibo_refuerzo_id',null)
+      .is('cliente_refuerzo_id',null)
+      .select('id,tipo_clase,estado,instructor_id,vehiculo_id,fecha,hora_inicio')
+      .maybeSingle()
+    if (errorUpdate) throw errorUpdate
+    if (!cancelada) return errorJson('La actividad ya cambió de estado. Actualice la agenda.',409)
+    return NextResponse.json({
+      status:'success',
+      data:cancelada,
+      message:'Actividad cancelada. El horario quedó disponible para una nueva programación.'
+    })
+  } catch(e) {
+    console.error('Error cancelando actividad del instructor:',e)
+    const respuesta=respuestaErrorEmpresa(e)
+    return NextResponse.json(respuesta.body,{status:respuesta.status})
+  }
+}
