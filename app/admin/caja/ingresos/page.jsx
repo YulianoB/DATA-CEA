@@ -3950,8 +3950,18 @@ const ingresosLibresFiltrados =
         >
           <i className="fas fa-receipt mr-2"></i>
 
-          <span className="sr-only">{tipoConsulta==='REFUERZOS'?'Refuerzos Prácticos':'Otros Ingresos'}</span>
+          {tipoConsulta==='REFUERZOS'?'Refuerzos Prácticos':'Otros Ingresos'}
         </h2>
+        <div className="mt-2 flex flex-wrap gap-2" role="tablist" aria-label="Vistas de ingresos">
+          <button type="button" role="tab" aria-selected={true} onClick={()=>setVistaIngresos('OBLIGACIONES')}
+            className="rounded-md border border-white/50 bg-white px-3 py-2 text-[11px] font-black text-[#194567] transition-all hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-md">
+            <i className="fas fa-users mr-2"/>Obligaciones de aprendices
+          </button>
+          <button type="button" role="tab" aria-selected={false} onClick={()=>setVistaIngresos('DIA')}
+            className="rounded-md border border-white/40 px-3 py-2 text-[11px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-md">
+            <i className="fas fa-receipt mr-2"/>Ingresos del día
+          </button>
+        </div>
 
         <p
           className="
