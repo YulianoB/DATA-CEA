@@ -117,6 +117,84 @@ export async function POST(request) {
     return NextResponse.json({status:'success',data,message:'Bloqueo registrado correctamente.'},{status:201})
   }catch(e){return responderError(e)}
 }
+// Edición de intervalo completo: validar antes de cambiar y excluir el
+// propio registro de la verificación de cruces.
+export async function PATCH(request) {
+  try {
+    const {supabaseAdmin:db}=await contexto(request)
+    const b=await request.json()
+    const id=Number(b.id),instructorId=Number(b.instructor_id)
+    const inicio=t(b.fecha_inicio),fin=t(b.fecha_fin)
+    const desde=t(b.hora_inicio),hasta=t(b.hora_fin)
+    const motivo=t(b.motivo),usuario=t(b.usuario)
+    if(!Number.isSafeInteger(id)||id<1||
+      !Number.isSafeInteger(instructorId)||instructorId<1||
+      !validaFecha(inicio)||!validaFecha(fin)||inicio>fin||
+      (Date.parse(fin)-Date.parse(inicio))/86400000>90||
+      !validaHora(desde)||!validaHora(hasta)||minutos(hasta)<=minutos(desde)||
+      motivo.length<8||!usuario)
+      return NextResponse.json({status:'error',message:'Datos del bloqueo inválidos (motivo mínimo 8 caracteres).'}, {status:400})
+    const {data:actual,error:errorActual}=await db.from(tabla)
+      .select('id,instructor_id,tipo_actividad').eq('id',id).maybeSingle()
+    if(errorActual)throw errorActual
+    if(!actual)return NextResponse.json({status:'error',message:'El bloqueo ya no existe.'},{status:404})
+    if(actual.tipo_actividad && actual.tipo_actividad!=='BLOQUEO')
+      return NextResponse.json({status:'error',message:'Solo se pueden editar bloqueos administrativos.'},{status:409})
+    const {data:instructor,error:errorInstructor}=await db.from('personal')
+      .select('id,estado,cargo,tipo_personal').eq('id',instructorId).maybeSingle()
+    if(errorInstructor)throw errorInstructor
+    if(!instructor||String(instructor.estado).toUpperCase()!=='ACTIVO'||
+      !(String(instructor.cargo||'').toUpperCase().includes('INSTRUCTOR')||
+        String(instructor.tipo_personal||'').toUpperCase().includes('INSTRUCTOR')))
+      return NextResponse.json({status:'error',message:'Seleccione un instructor activo.'},{status:409})
+    const [clases,bloqueos]=await Promise.all([
+      db.from('programacion_clases').select('id,fecha,hora_inicio,duracion_horas')
+        .eq('instructor_id',instructorId).gte('fecha',inicio).lte('fecha',fin)
+        .in('estado',['AGENDADA','PENDIENTE_CARGUE','DICTADA']),
+      db.from(tabla).select('id,hora_inicio,hora_fin').eq('instructor_id',instructorId)
+        .lte('fecha_inicio',fin).gte('fecha_fin',inicio).neq('id',id)
+    ])
+    if(clases.error)throw clases.error
+    if(bloqueos.error)throw bloqueos.error
+    const cruce=(clases.data||[]).find(c=>{
+      const h=t(c.hora_inicio).slice(0,5)
+      return minutos(h)<minutos(hasta)&&minutos(h)+Number(c.duracion_horas||1)*60>minutos(desde)
+    })
+    if(cruce)return NextResponse.json({status:'error',message:'Existe una clase el '+cruce.fecha+' a las '+t(cruce.hora_inicio).slice(0,5)+'.'},{status:409})
+    if((bloqueos.data||[]).some(x=>
+      minutos(t(x.hora_inicio).slice(0,5))<minutos(hasta)&&
+      minutos(t(x.hora_fin).slice(0,5))>minutos(desde)))
+      return NextResponse.json({status:'error',message:'El nuevo rango se cruza con otro bloqueo.'},{status:409})
+    // Esta función SQL registra el cambio y valida dentro de la transacción.
+    const {data,error}=await db.rpc('cea_editar_bloqueo_agenda',{
+      p_id:id,p_instructor_id:instructorId,p_fecha_inicio:inicio,
+      p_fecha_fin:fin,p_hora_inicio:desde,p_hora_fin:hasta,
+      p_motivo:motivo,p_usuario:usuario
+    })
+    if(error)throw error
+    return NextResponse.json({status:'success',data,message:'Bloqueo actualizado correctamente.'})
+  } catch(e){return responderError(e)}
+}
+
+// Liberar una sola hora de un bloqueo existente. La función SQL divide
+// el rango dentro de una transacción, conserva todas las otras franjas
+// y registra la acción en la auditoría.
+export async function PUT(request) {
+  try {
+    const {supabaseAdmin:db}=await contexto(request)
+    const b=await request.json()
+    const id=Number(b.id),fecha=t(b.fecha),hora=t(b.hora_inicio),usuario=t(b.usuario)
+    if(!Number.isSafeInteger(id)||id<1||!validaFecha(fecha)||
+      !validaHora(hora)||hora==='22:00'||!usuario)
+      return NextResponse.json({status:'error',message:'Indique un bloqueo, fecha, hora y usuario válidos.'},{status:400})
+    const {data,error}=await db.rpc('cea_liberar_franja_bloqueo',{
+      p_id:id,p_fecha:fecha,p_hora:hora,p_usuario:usuario
+    })
+    if(error)throw error
+    return NextResponse.json({status:'success',data,message:'Franja liberada; el resto del bloqueo se conserva.'})
+  }catch(e){return responderError(e)}
+}
+
 export async function DELETE(request) {
   try {
     const {supabaseAdmin:db}=await contexto(request)
