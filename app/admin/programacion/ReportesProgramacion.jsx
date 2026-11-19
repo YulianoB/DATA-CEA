@@ -86,7 +86,8 @@ export default function ReportesProgramacion({nit}) {
     : [['Fecha','fecha'],['Instructor','instructor'],['Total','total'],
        ['Agendadas','agendadas'],['Dictadas','dictadas'],
        ['Pendientes de cargue','pendientes_cargue'],['No dictadas','no_dictadas'],
-       ['Prácticas','practicas'],['Teoría','teorias'],['Pruebas de conducción','pruebas_conduccion']]
+       ['Prácticas','practicas'],['Teoría','teorias'],['Pruebas de conducción','pruebas_conduccion'],
+       ['Observaciones no dictadas','observaciones_no_dictadas']]
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -164,7 +165,7 @@ export default function ReportesProgramacion({nit}) {
                     <tr key={fila.id||fila.instructor_id+'-'+fila.fecha+'-'+i}
                       className="border-b border-slate-200 even:bg-slate-50">
                       {columnas.map(([h,k])=>(
-                        <td key={k} className={`px-3 py-2 ${k==='observacion'?'min-w-[210px] whitespace-normal':'whitespace-nowrap'}`}>
+                        <td key={k} className={`px-3 py-2 ${(k==='observacion'||k==='observaciones_no_dictadas')?'min-w-[210px] whitespace-normal':'whitespace-nowrap'}`}>
                           {k==='fecha'?fechaVisible(fila[k]):k==='estado'?etiquetaEstado(fila[k]):
                             k==='tipo_clase' ? ({PRACTICA:'Práctica',TEORIA:'Teoría',PRUEBA_CONDUCCION:'Prueba de conducción'}[fila[k]]||fila[k]) :
                             limpiar(fila[k])||'—'}
@@ -176,7 +177,7 @@ export default function ReportesProgramacion({nit}) {
               </table>
             </div>
           )}
-          <p className="mt-2 text-[11px] text-slate-500">Las observaciones de no dictada se muestran en el detalle individual. Los registros sin aprendiz corresponden a actividades sin matrícula o deben consultarse según su origen.</p>
+          <p className="mt-2 text-[11px] text-slate-500">Las observaciones de no dictada se muestran tanto en el consolidado como en el detalle individual. Los registros sin aprendiz corresponden a actividades sin matrícula o deben consultarse según su origen.</p>
         </>
       )}
       {!data&&!cargando&&<p className="rounded-lg bg-sky-50 p-4 text-xs text-sky-900">
