@@ -8638,12 +8638,14 @@ function abrirClase(
                           <p>{b.fecha_inicio} a {b.fecha_fin} · {String(b.hora_inicio).slice(0,5)}–{String(b.hora_fin).slice(0,5)} · {b.tipo_actividad === 'TEORIA' ? 'TEORÍA' : 'BLOQUEO'}</p>
                           <p className="text-slate-500">{b.motivo}</p>
                         </div>
-                        <div className="flex gap-1">
-                          <button type="button" disabled={guardandoBloqueo} onClick={()=>editarBloqueo(b)}
-                            className="rounded border border-blue-300 px-2 py-1 font-bold text-blue-700">Editar</button>
-                        <button type="button" disabled={guardandoBloqueo} onClick={()=>quitarBloqueoAgenda(b.id)}
-                          className="rounded border border-red-300 px-2 py-1 font-bold text-red-700">Retirar</button>
-                        </div>
+                        {b.tipo_actividad !== 'TEORIA' && (
+                          <div className="flex gap-1">
+                            <button type="button" disabled={guardandoBloqueo} onClick={()=>editarBloqueo(b)}
+                              className="rounded border border-blue-300 px-2 py-1 font-bold text-blue-700">Editar</button>
+                            <button type="button" disabled={guardandoBloqueo} onClick={()=>quitarBloqueoAgenda(b.id)}
+                              className="rounded border border-red-300 px-2 py-1 font-bold text-red-700">Retirar</button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
