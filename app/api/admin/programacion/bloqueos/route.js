@@ -11,13 +11,32 @@ const validaFecha = v => /^\d{4}-\d{2}-\d{2}$/.test(v) &&
 const validaHora = v => /^(?:0[6-9]|1\d|2[01]):00$/.test(v) || v === '22:00'
 const minutos = h => Number(h.slice(0,2))*60 + Number(h.slice(3,5))
 const responderError = e => {
-  if (e?.code === 'PGRST202' || /Could not find the function public\\.cea_(?:retirar|editar|liberar)/i.test(String(e?.message||''))) {
-    return NextResponse.json({status:'error',
-      message:'Falta aplicar la migración SQL de gestión de bloqueos en Supabase CEA. Ejecute supabase/migrations/20261119_gestion_bloqueos_agenda.sql y actualice el esquema.'},{status:409})
-  }
   const r = respuestaErrorEmpresa(e)
   return NextResponse.json(r.body, { status:r.status })
 }
+const fallo = (message,status=400) => NextResponse.json({status:'error',message},{status})
+const esAdministrativo = b => !b.tipo_actividad || b.tipo_actividad === 'BLOQUEO'
+const inicioDia = (fecha) => new Date(fecha + 'T12:00:00Z')
+const sumarDia = (fecha,dias) => {
+  const d=inicioDia(fecha)
+  d.setUTCDate(d.getUTCDate()+dias)
+  return d.toISOString().slice(0,10)
+}
+async function obtenerBloqueo(db,id) {
+  const {data,error}=await db.from(tabla).select('*').eq('id',id).maybeSingle()
+  if(error) throw error
+  return data
+}
+async function guardarAuditoria(db,antes,despues,accion,usuario) {
+  // Auditoría solo si ya existe tabla; ninguna función ni trigger.
+  // Su ausencia no impide administrar los bloqueos.
+  const {error}=await db.from('bloqueos_agenda_auditoria').insert({
+    bloqueo_id:antes.id,accion,usuario,antes,despues
+  })
+  if(error && error.code!=='42P01' && error.code!=='PGRST205' && error.code!=='PGRST204')
+    console.warn('No se pudo registrar auditoría de bloqueo:',error.message)
+}
+
 async function contexto(request) {
   return obtenerContextoCEA(request, { rolesPermitidos:['ADMINISTRATIVO'] })
 }
@@ -121,8 +140,7 @@ export async function POST(request) {
     return NextResponse.json({status:'success',data,message:'Bloqueo registrado correctamente.'},{status:201})
   }catch(e){return responderError(e)}
 }
-// Edición de intervalo completo: validar antes de cambiar y excluir el
-// propio registro de la verificación de cruces.
+// Los cambios se procesan desde Next.js; Supabase solo almacena datos.
 export async function PATCH(request) {
   try {
     const {supabaseAdmin:db}=await contexto(request)
@@ -131,26 +149,21 @@ export async function PATCH(request) {
     const inicio=t(b.fecha_inicio),fin=t(b.fecha_fin)
     const desde=t(b.hora_inicio),hasta=t(b.hora_fin)
     const motivo=t(b.motivo),usuario=t(b.usuario)
-    if(!Number.isSafeInteger(id)||id<1||
-      !Number.isSafeInteger(instructorId)||instructorId<1||
+    if(!Number.isSafeInteger(id)||id<1||!Number.isSafeInteger(instructorId)||instructorId<1||
       !validaFecha(inicio)||!validaFecha(fin)||inicio>fin||
       (Date.parse(fin)-Date.parse(inicio))/86400000>90||
       !validaHora(desde)||!validaHora(hasta)||minutos(hasta)<=minutos(desde)||
-      motivo.length<8||!usuario)
-      return NextResponse.json({status:'error',message:'Datos del bloqueo inválidos (motivo mínimo 8 caracteres).'}, {status:400})
-    const {data:actual,error:errorActual}=await db.from(tabla)
-      .select('id,instructor_id,tipo_actividad').eq('id',id).maybeSingle()
-    if(errorActual)throw errorActual
-    if(!actual)return NextResponse.json({status:'error',message:'El bloqueo ya no existe.'},{status:404})
-    if(actual.tipo_actividad && actual.tipo_actividad!=='BLOQUEO')
-      return NextResponse.json({status:'error',message:'Solo se pueden editar bloqueos administrativos.'},{status:409})
-    const {data:instructor,error:errorInstructor}=await db.from('personal')
+      motivo.length<8||!usuario)return fallo('Datos inválidos. Verifique fechas, horas y motivo (mínimo 8 caracteres).')
+    const actual=await obtenerBloqueo(db,id)
+    if(!actual)return fallo('El bloqueo no existe.',404)
+    if(!esAdministrativo(actual))return fallo('Esta actividad no es un bloqueo administrativo.',409)
+    const {data:personal,error:ep}=await db.from('personal')
       .select('id,estado,cargo,tipo_personal').eq('id',instructorId).maybeSingle()
-    if(errorInstructor)throw errorInstructor
-    if(!instructor||String(instructor.estado).toUpperCase()!=='ACTIVO'||
-      !(String(instructor.cargo||'').toUpperCase().includes('INSTRUCTOR')||
-        String(instructor.tipo_personal||'').toUpperCase().includes('INSTRUCTOR')))
-      return NextResponse.json({status:'error',message:'Seleccione un instructor activo.'},{status:409})
+    if(ep)throw ep
+    if(!personal||t(personal.estado).toUpperCase()!=='ACTIVO'||
+       !(t(personal.cargo).toUpperCase().includes('INSTRUCTOR')||
+         t(personal.tipo_personal).toUpperCase().includes('INSTRUCTOR')))
+      return fallo('Seleccione un instructor activo.',409)
     const [clases,bloqueos]=await Promise.all([
       db.from('programacion_clases').select('id,fecha,hora_inicio,duracion_horas')
         .eq('instructor_id',instructorId).gte('fecha',inicio).lte('fecha',fin)
@@ -164,38 +177,81 @@ export async function PATCH(request) {
       const h=t(c.hora_inicio).slice(0,5)
       return minutos(h)<minutos(hasta)&&minutos(h)+Number(c.duracion_horas||1)*60>minutos(desde)
     })
-    if(cruce)return NextResponse.json({status:'error',message:'Existe una clase el '+cruce.fecha+' a las '+t(cruce.hora_inicio).slice(0,5)+'.'},{status:409})
-    if((bloqueos.data||[]).some(x=>
-      minutos(t(x.hora_inicio).slice(0,5))<minutos(hasta)&&
+    if(cruce)return fallo('Existe una clase el '+cruce.fecha+' a las '+t(cruce.hora_inicio).slice(0,5)+'.',409)
+    if((bloqueos.data||[]).some(x=>minutos(t(x.hora_inicio).slice(0,5))<minutos(hasta)&&
       minutos(t(x.hora_fin).slice(0,5))>minutos(desde)))
-      return NextResponse.json({status:'error',message:'El nuevo rango se cruza con otro bloqueo.'},{status:409})
-    // Esta función SQL registra el cambio y valida dentro de la transacción.
-    const {data,error}=await db.rpc('cea_editar_bloqueo_agenda',{
-      p_id:id,p_instructor_id:instructorId,p_fecha_inicio:inicio,
-      p_fecha_fin:fin,p_hora_inicio:desde,p_hora_fin:hasta,
-      p_motivo:motivo,p_usuario:usuario
-    })
+      return fallo('El nuevo rango coincide con otro bloqueo.',409)
+    const cambios={instructor_id:instructorId,fecha_inicio:inicio,fecha_fin:fin,
+      hora_inicio:desde,hora_fin:hasta,motivo}
+    // Coincidencia optimista: evita sobrescribir un bloqueo ya cambiado.
+    const {data,error}=await db.from(tabla).update(cambios)
+      .eq('id',id).eq('instructor_id',actual.instructor_id)
+      .eq('fecha_inicio',actual.fecha_inicio).eq('fecha_fin',actual.fecha_fin)
+      .eq('hora_inicio',actual.hora_inicio).eq('hora_fin',actual.hora_fin)
+      .eq('motivo',actual.motivo).select('*').maybeSingle()
     if(error)throw error
+    if(!data)return fallo('El bloqueo fue modificado por otro usuario. Actualice la agenda.',409)
+    await guardarAuditoria(db,actual,data,'EDITAR',usuario)
     return NextResponse.json({status:'success',data,message:'Bloqueo actualizado correctamente.'})
-  } catch(e){return responderError(e)}
+  }catch(e){return responderError(e)}
 }
 
-// Liberar una sola hora de un bloqueo existente. La función SQL divide
-// el rango dentro de una transacción, conserva todas las otras franjas
-// y registra la acción en la auditoría.
+// Al liberar una hora, primero se insertan los fragmentos restantes;
+// después se elimina condicionalmente el original. En caso de error,
+// la API intenta compensar los registros insertados. Sin transacciones
+// SQL no se puede garantizar atomicidad entre peticiones independientes.
 export async function PUT(request) {
   try {
     const {supabaseAdmin:db}=await contexto(request)
     const b=await request.json()
     const id=Number(b.id),fecha=t(b.fecha),hora=t(b.hora_inicio),usuario=t(b.usuario)
     if(!Number.isSafeInteger(id)||id<1||!validaFecha(fecha)||
-      !validaHora(hora)||hora==='22:00'||!usuario)
-      return NextResponse.json({status:'error',message:'Indique un bloqueo, fecha, hora y usuario válidos.'},{status:400})
-    const {data,error}=await db.rpc('cea_liberar_franja_bloqueo',{
-      p_id:id,p_fecha:fecha,p_hora:hora,p_usuario:usuario
-    })
-    if(error)throw error
-    return NextResponse.json({status:'success',data,message:'Franja liberada; el resto del bloqueo se conserva.'})
+      !validaHora(hora)||hora==='22:00'||!usuario)return fallo('Indique un bloqueo, fecha, hora y usuario válidos.')
+    const actual=await obtenerBloqueo(db,id)
+    if(!actual)return fallo('El bloqueo no existe.',404)
+    if(!esAdministrativo(actual)||fecha<actual.fecha_inicio||fecha>actual.fecha_fin||
+      minutos(hora)<minutos(t(actual.hora_inicio).slice(0,5))||
+      minutos(hora)+60>minutos(t(actual.hora_fin).slice(0,5)))
+      return fallo('La hora seleccionada no pertenece al bloqueo.',409)
+    const finHora=String(Number(hora.slice(0,2))+1).padStart(2,'0')+':00'
+    const base={instructor_id:actual.instructor_id,motivo:actual.motivo,
+      tipo_actividad:'BLOQUEO',creado_por:actual.creado_por}
+    const fragmentos=[]
+    const add=(f1,f2,h1,h2)=>{
+      if(f1<=f2&&minutos(h1)<minutos(h2))
+        fragmentos.push({...base,fecha_inicio:f1,fecha_fin:f2,hora_inicio:h1,hora_fin:h2})
+    }
+    if(actual.fecha_inicio<fecha)
+      add(actual.fecha_inicio,sumarDia(fecha,-1),t(actual.hora_inicio).slice(0,5),t(actual.hora_fin).slice(0,5))
+    add(fecha,fecha,t(actual.hora_inicio).slice(0,5),hora)
+    add(fecha,fecha,finHora,t(actual.hora_fin).slice(0,5))
+    if(actual.fecha_fin>fecha)
+      add(sumarDia(fecha,1),actual.fecha_fin,t(actual.hora_inicio).slice(0,5),t(actual.hora_fin).slice(0,5))
+    let nuevos=[]
+    if(fragmentos.length) {
+      const {data,error}=await db.from(tabla).insert(fragmentos).select('*')
+      if(error)throw error
+      nuevos=data||[]
+      if(nuevos.length!==fragmentos.length)
+        return fallo('No se pudieron confirmar todos los fragmentos. Actualice la agenda.',500)
+    }
+    const {data:retirado,error:ed}=await db.from(tabla).delete()
+      .eq('id',id).eq('instructor_id',actual.instructor_id)
+      .eq('fecha_inicio',actual.fecha_inicio).eq('fecha_fin',actual.fecha_fin)
+      .eq('hora_inicio',actual.hora_inicio).eq('hora_fin',actual.hora_fin)
+      .eq('motivo',actual.motivo).select('id').maybeSingle()
+    if(ed||!retirado){
+      if(nuevos.length) {
+        const ids=nuevos.map(x=>x.id)
+        const rollback=await db.from(tabla).delete().in('id',ids)
+        if(rollback.error)console.error('No se pudieron revertir fragmentos de bloqueo:',rollback.error)
+      }
+      if(ed)throw ed
+      return fallo('El bloqueo cambió durante la operación. Actualice la agenda.',409)
+    }
+    await guardarAuditoria(db,actual,nuevos,'LIBERAR_FRANJA',usuario)
+    return NextResponse.json({status:'success',data:{segmentos_conservados:nuevos},
+      message:'Franja liberada. Las demás horas continúan bloqueadas.'})
   }catch(e){return responderError(e)}
 }
 
@@ -204,10 +260,19 @@ export async function DELETE(request) {
     const {supabaseAdmin:db}=await contexto(request)
     const body=await request.json()
     const id=Number(body.id),usuario=t(body.usuario)
-    if(!Number.isSafeInteger(id)||id<1||!usuario)
-      return NextResponse.json({status:'error',message:'Se requieren el bloqueo y el usuario responsable.'},{status:400})
-    const {data,error}=await db.rpc('cea_retirar_bloqueo_agenda',{p_id:id,p_usuario:usuario})
+    if(!Number.isSafeInteger(id)||id<1||!usuario)return fallo('Indique el bloqueo y usuario responsable.')
+    const actual=await obtenerBloqueo(db,id)
+    if(!actual)return fallo('El bloqueo ya no existe.',404)
+    if(!esAdministrativo(actual))return fallo('Solo se pueden retirar bloqueos administrativos.',409)
+    const {data,error}=await db.from(tabla).delete().eq('id',id)
+      .eq('instructor_id',actual.instructor_id)
+      .eq('fecha_inicio',actual.fecha_inicio).eq('fecha_fin',actual.fecha_fin)
+      .eq('hora_inicio',actual.hora_inicio).eq('hora_fin',actual.hora_fin)
+      .eq('motivo',actual.motivo).select('id').maybeSingle()
     if(error)throw error
-    return NextResponse.json({status:'success',data,message:'Bloqueo retirado y registrado en auditoría.'})
+    if(!data)return fallo('El bloqueo fue modificado. Actualice la agenda.',409)
+    await guardarAuditoria(db,actual,null,'RETIRAR',usuario)
+    return NextResponse.json({status:'success',data,
+      message:'Bloqueo retirado. Todas las franjas del rango quedaron liberadas.'})
   }catch(e){return responderError(e)}
 }
