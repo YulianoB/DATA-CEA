@@ -82,7 +82,7 @@ export default function ReportesProgramacion({nit}) {
     ? [['Fecha','fecha'],['Hora','hora_inicio'],['Instructor','instructor'],
        ['Aprendiz / Cliente','aprendiz'],['Documento','documento'],['Matrícula','consecutivo'],
        ['Actividad','tipo_clase'],['Programación','tipo_programacion'],['Categoría','categoria'],
-       ['Estado','estado'],['Observación','observacion']]
+       ['Estado','estado'],['Motivo no dictada','motivo_no_dictada'],['Observación','observacion']]
     : [['Fecha','fecha'],['Instructor','instructor'],['Total','total'],
        ['Agendadas','agendadas'],['Dictadas','dictadas'],
        ['Pendientes de cargue','pendientes_cargue'],['No dictadas','no_dictadas'],
