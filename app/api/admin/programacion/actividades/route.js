@@ -46,10 +46,20 @@ export async function POST(request) {
     }
     if(tipo==='PRUEBA_CONDUCCION') {
       const {data:vehiculo,error:errorVehiculo}=await db.from('vehiculos')
-        .select('id,estado').eq('id',vehiculoId).maybeSingle()
+        .select('id,estado,tipo_vehiculo').eq('id',vehiculoId).maybeSingle()
       if(errorVehiculo) throw errorVehiculo
       if(!vehiculo || str(vehiculo.estado).toUpperCase()!=='ACTIVO')
         return errorJson('Seleccione un vehículo activo.',409)
+      const normalizar = valor => str(valor).toUpperCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ')
+      const tiposPermitidos = {
+        A2:['MOTOCICLETA'], B1:['AUTOMOVIL','CAMIONETA'],
+        C1:['AUTOMOVIL','CAMIONETA'], RC1:['AUTOMOVIL','CAMIONETA'],
+        C2:['CAMION'], C3:['TRACTO CAMION']
+      }
+      if(!tiposPermitidos[categoria]?.includes(normalizar(vehiculo.tipo_vehiculo))) {
+        return errorJson('El tipo de vehículo no corresponde a la categoría seleccionada.',409)
+      }
       const {data:requisito,error:errorCategoria}=await db.from('runt_requisitos_categoria')
         .select('categoria').eq('categoria',categoria).maybeSingle()
       if(errorCategoria) throw errorCategoria
