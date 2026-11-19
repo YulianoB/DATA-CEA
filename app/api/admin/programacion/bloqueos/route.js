@@ -232,8 +232,13 @@ export async function PUT(request) {
       const {data,error}=await db.from(tabla).insert(fragmentos).select('*')
       if(error)throw error
       nuevos=data||[]
-      if(nuevos.length!==fragmentos.length)
-        return fallo('No se pudieron confirmar todos los fragmentos. Actualice la agenda.',500)
+      if(nuevos.length!==fragmentos.length) {
+        if(nuevos.length) {
+          const rollback=await db.from(tabla).delete().in('id',nuevos.map(x=>x.id))
+          if(rollback.error)console.error('Error revirtiendo segmentos incompletos:',rollback.error)
+        }
+        return fallo('No se pudieron confirmar todos los fragmentos. El bloqueo original se conservó.',500)
+      }
     }
     const {data:retirado,error:ed}=await db.from(tabla).delete()
       .eq('id',id).eq('instructor_id',actual.instructor_id)
