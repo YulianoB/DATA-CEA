@@ -2228,6 +2228,72 @@ export async function POST(
       )
     }
     // =====================================================
+    // EDITAR EGRESO OPERATIVO (MISMA FECHA Y CONSECUTIVO)
+    // =====================================================
+    if (accion === 'editar') {
+      const id = enteroPositivo(body?.id)
+      const usuario = mayusculas(body?.usuario)
+      if(!id || !usuario) return NextResponse.json({
+        status:'error',message:'No se identificó el egreso o el usuario.'},{status:400})
+      const anterior=await obtenerEgresoPorId(supabase,id)
+      if(!anterior) return NextResponse.json({status:'error',message:'Egreso no encontrado.'},{status:404})
+      if(mayusculas(anterior.estado)!=='ACTIVO')
+        return NextResponse.json({status:'error',message:'Solo se pueden corregir egresos activos.'},{status:409})
+      // Se conserva la fecha original. Toda conciliación debe ser del mismo día.
+      if(texto(anterior.fecha)!==hoyColombia())
+        return NextResponse.json({status:'error',
+          message:'La corrección del egreso debe realizarse el mismo día de su fecha original.'},{status:409})
+      if(body.fecha && texto(body.fecha)!==texto(anterior.fecha))
+        return NextResponse.json({status:'error',message:'La fecha del egreso no es editable.'},{status:400})
+      const valor=Number(body.valor)
+      if(!Number.isFinite(valor)||valor<0||Math.round(valor*100)!==valor*100)
+        return NextResponse.json({status:'error',message:'Ingrese un valor mayor o igual a cero, con máximo dos decimales.'},{status:400})
+      const conceptoId=enteroPositivo(body.concepto_id)
+      const medioId=enteroPositivo(body.medio_pago_id)
+      const beneficiario=mayusculas(body.beneficiario)
+      const documento=texto(body.documento_beneficiario)
+      const descripcion=mayusculas(body.descripcion)
+      if(!conceptoId||!medioId||!beneficiario||!documento||!descripcion)
+        return NextResponse.json({status:'error',message:'Complete concepto, medio de pago, beneficiario, documento y descripción.'},{status:400})
+      // Comprobar catálogos actuales, conservando claves foráneas existentes.
+      await Promise.all([obtenerConcepto(supabase,conceptoId),obtenerMedioPago(supabase,medioId)])
+      const vehiculoId=enteroPositivo(body.vehiculo_id)
+      let placa=null
+      if(vehiculoId){
+        const {data:vehiculo,error:errorVehiculo}=await supabase.from('vehiculos')
+          .select('id,placa').eq('id',vehiculoId).maybeSingle()
+        if(errorVehiculo)throw errorVehiculo
+        if(!vehiculo)return NextResponse.json({status:'error',message:'Seleccione un vehículo válido.'},{status:400})
+        placa=vehiculo.placa
+      }
+      // La entrega deja de tener compensaciones separadas: valor es el gasto
+      // neto definitivo. El consecutivo, ID y fecha permanecen intactos.
+      const cambios={
+        concepto_id:conceptoId,medio_pago_id:medioId,
+        vehiculo_id:vehiculoId||null,placa,
+        beneficiario,tipo_documento_beneficiario:mayusculas(body.tipo_documento_beneficiario)||null,
+        documento_beneficiario:documento,descripcion,
+        valor:Math.round(valor*100)/100,
+        numero_factura:texto(body.numero_factura)||null,
+        referencia_pago:texto(body.referencia_pago)||null,
+        observaciones:mayusculas(body.observaciones)||null,
+        modalidad:'PAGO_DIRECTO',
+        valor_reintegrado:0,valor_reembolsado:0,valor_legalizado:0,
+        estado_legalizacion:null,fecha_legalizacion:null,
+        observaciones_legalizacion:null,
+        receptor_dinero:null,tipo_documento_receptor:null,documento_receptor:null,
+        updated_at:new Date().toISOString()
+      }
+      const {data,error}=await supabase.from('egresos_caja')
+        .update(cambios).eq('id',id).eq('estado','ACTIVO')
+        .eq('updated_at',anterior.updated_at)
+        .select('*').maybeSingle()
+      if(error)return NextResponse.json({status:'error',message:'No fue posible corregir el egreso: '+error.message},{status:400})
+      if(!data)return NextResponse.json({status:'error',message:'El egreso fue modificado por otro usuario. Actualice antes de guardar.'},{status:409})
+      return NextResponse.json({status:'success',data,
+        message:valor===0?'Egreso conservado con valor $0. No afecta los totales.':'Egreso corregido en el mismo registro.'})
+    }
+    // =====================================================
     // LEGALIZAR / AJUSTAR ANTICIPO
     // =====================================================
     if (accion === 'legalizar') {
