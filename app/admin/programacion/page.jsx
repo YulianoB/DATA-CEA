@@ -2361,6 +2361,13 @@ export default function ProgramacionPage() {
     setInstructorId,
   ] =
     useState('')
+  const [modalActividad, setModalActividad] = useState(false)
+  const [guardandoActividad, setGuardandoActividad] = useState(false)
+  const [errorActividad, setErrorActividad] = useState('')
+  const [formActividad, setFormActividad] = useState({
+    tipo_clase:'TEORIA', instructor_id:'', fecha:'', hora_inicio:'06:00',
+    categoria:'',vehiculo_id:'',observaciones:''
+  })
   const [modalBloqueo, setModalBloqueo] = useState(false)
   const [instructoresBloqueo, setInstructoresBloqueo] = useState([])
   const [bloqueosAgenda, setBloqueosAgenda] = useState([])
@@ -3096,6 +3103,51 @@ const resumenOperativo =
     )
     setBloqueosAgenda(Array.isArray(data.data) ? data.data : [])
     setInstructoresBloqueo(Array.isArray(data.instructores) ? data.instructores : [])
+  }
+
+  async function abrirProgramarActividad(tipo) {
+    setErrorActividad('')
+    setFormActividad({
+      tipo_clase:tipo,instructor_id:String(instructorId||''),
+      fecha:fechaDisponibilidad,hora_inicio:'06:00',
+      categoria:'',vehiculo_id:'',observaciones:''
+    })
+    setModalActividad(true)
+    try {
+      await cargarBloqueosAgenda(fechaDisponibilidad,fechaDisponibilidad)
+    } catch(e) {
+      setErrorActividad(e.message || 'No fue posible consultar instructores.')
+    }
+  }
+
+  async function guardarActividad(e) {
+    e.preventDefault()
+    setGuardandoActividad(true)
+    setErrorActividad('')
+    setExito('')
+    try {
+      const respuesta = await fetch('/api/admin/programacion/actividades', {
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          ...formActividad,nit,usuario:obtenerNombreUsuario(user),
+          instructor_id:Number(formActividad.instructor_id),
+          vehiculo_id:formActividad.tipo_clase==='TEORIA'?null:Number(formActividad.vehiculo_id),
+          categoria:formActividad.tipo_clase==='TEORIA'?null:formActividad.categoria
+        })
+      })
+      const data=await respuesta.json()
+      if(!respuesta.ok || data.status!=='success') {
+        throw new Error(data.message || 'No fue posible registrar la actividad.')
+      }
+      setModalActividad(false)
+      setExito(data.message || 'Actividad registrada.')
+      await Promise.all([
+        cargarAgenda(),
+        cargarDisponibilidadInstructores(fechaDisponibilidad)
+      ])
+    } catch(e) {
+      setErrorActividad(e.message || 'No fue posible registrar la actividad.')
+    } finally { setGuardandoActividad(false) }
   }
 
   async function abrirBloqueosAgenda() {
@@ -6713,6 +6765,18 @@ function abrirClase(
                           // SIEMPRE tiene prioridad sobre horario pasado.
                           // =====================================================
 
+                          if (clase && ['TEORIA','PRUEBA_CONDUCCION'].includes(clase.tipo_clase)) {
+                            const teoria = clase.tipo_clase==='TEORIA'
+                            return (
+                              <div key={hora} title={teoria?'Clase teórica programada':'Prueba de conducción programada'}
+                                className={`w-full min-h-[64px] rounded-lg border-2 p-2 text-left ${teoria?'border-violet-600 bg-violet-200 text-violet-950':'border-orange-500 bg-orange-200 text-orange-950'}`}>
+                                <div className="text-[9px] font-black">{hora} · {teoria?'TEORÍA':'PRUEBA DE CONDUCCIÓN'}</div>
+                                <p className="mt-1 text-[8px] font-semibold">{clase.estado}</p>
+                                {!teoria && <p className="text-[8px]">{clase.categoria || ''} · {clase.vehiculo?.placa || ''}</p>}
+                              </div>
+                            )
+                          }
+
                           if (
                             clase
                           ) {
@@ -7101,9 +7165,17 @@ function abrirClase(
           gap-2
         "
       >
+        <button type="button" onClick={() => abrirProgramarActividad('TEORIA')}
+          className="h-8 rounded-lg bg-violet-600 px-3 text-[10px] font-bold text-white hover:bg-violet-700">
+          <i className="fas fa-book-open mr-1"></i> Programar teoría
+        </button>
+        <button type="button" onClick={() => abrirProgramarActividad('PRUEBA_CONDUCCION')}
+          className="h-8 rounded-lg bg-orange-500 px-3 text-[10px] font-bold text-white hover:bg-orange-600">
+          <i className="fas fa-car mr-1"></i> Prueba de conducción
+        </button>
         <button type="button" onClick={abrirBloqueosAgenda}
           className="h-8 rounded-lg bg-amber-500 px-3 text-[10px] font-bold text-slate-900 hover:bg-amber-400">
-          <i className="fas fa-calendar-alt mr-1"></i> Bloquear / Teoría
+          <i className="fas fa-calendar-alt mr-1"></i> Bloquear disponibilidad
         </button>
         <button
           type="button"
@@ -8187,6 +8259,87 @@ function abrirClase(
         </div>
       )}
 
+      {modalActividad && (
+        <div className="fixed inset-0 z-[135] flex items-center justify-center bg-black/60 p-3"
+          onMouseDown={e=>{if(e.target===e.currentTarget&&!guardandoActividad)setModalActividad(false)}}>
+          <section role="dialog" aria-modal="true" aria-label="Programar actividad del instructor"
+            className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-[#246185] p-4 text-white">
+              <div>
+                <h2 className="text-sm font-bold">{formActividad.tipo_clase==='TEORIA'?'Programar clase teórica':'Programar prueba de conducción'}</h2>
+                <p className="text-[10px] text-sky-100">Se registra en la agenda unificada sin matrícula de aprendiz</p>
+              </div>
+              <button type="button" disabled={guardandoActividad} onClick={()=>setModalActividad(false)}
+                className="rounded border border-white/40 px-2 py-1" aria-label="Cerrar">×</button>
+            </div>
+            <form onSubmit={guardarActividad} className="space-y-3 overflow-y-auto p-4">
+              <label className="block text-xs font-semibold text-slate-700">Instructor *
+                <select required value={formActividad.instructor_id}
+                  onChange={e=>setFormActividad(p=>({...p,instructor_id:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
+                  <option value="">Seleccione un instructor</option>
+                  {instructoresBloqueo.map(x=><option key={x.id} value={x.id}>{x.nombre_completo}</option>)}
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block text-xs font-semibold text-slate-700">Fecha *
+                  <input required type="date" value={formActividad.fecha}
+                    onChange={e=>setFormActividad(p=>({...p,fecha:e.target.value}))}
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"/>
+                </label>
+                <label className="block text-xs font-semibold text-slate-700">Hora *
+                  <select required value={formActividad.hora_inicio}
+                    onChange={e=>setFormActividad(p=>({...p,hora_inicio:e.target.value}))}
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
+                    {HORAS.map(h=><option key={h} value={h}>{h}</option>)}
+                  </select>
+                </label>
+              </div>
+              {formActividad.tipo_clase==='PRUEBA_CONDUCCION' && (
+                <>
+                  <label className="block text-xs font-semibold text-slate-700">Categoría *
+                    <select required value={formActividad.categoria}
+                      onChange={e=>{
+                        setFormActividad(p=>({...p,categoria:e.target.value,vehiculo_id:''}))
+                        if(e.target.value)cargarVehiculos(e.target.value)
+                      }}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
+                      <option value="">Seleccione categoría</option>
+                      {['A2','B1','C1','RC1','C2','C3'].map(c=><option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </label>
+                  <label className="block text-xs font-semibold text-slate-700">Vehículo *
+                    <select required value={formActividad.vehiculo_id}
+                      onChange={e=>setFormActividad(p=>({...p,vehiculo_id:e.target.value}))}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
+                      <option value="">Seleccione vehículo</option>
+                      {vehiculos.map(v=><option key={v.id} value={v.id}>{v.placa} · {v.tipo_vehiculo}</option>)}
+                    </select>
+                  </label>
+                </>
+              )}
+              <label className="block text-xs font-semibold text-slate-700">Observaciones (opcional)
+                <textarea rows={2} maxLength={1000} value={formActividad.observaciones}
+                  onChange={e=>setFormActividad(p=>({...p,observaciones:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"/>
+              </label>
+              <p className="rounded-lg bg-sky-50 p-2 text-[11px] text-sky-900">
+                Cada registro ocupa una hora. El sistema valida que no exista otra clase o bloqueo simultáneo.
+              </p>
+              {errorActividad && <p role="alert" className="rounded-lg bg-red-50 p-2 text-xs text-red-700">{errorActividad}</p>}
+              <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
+                <button type="button" disabled={guardandoActividad} onClick={()=>setModalActividad(false)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold">Cancelar</button>
+                <button type="submit" disabled={guardandoActividad}
+                  className="rounded-lg bg-[#246185] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                  {guardandoActividad?'Guardando...':'Programar actividad'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
       {modalBloqueo && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-3"
           onMouseDown={e=>{if(e.target===e.currentTarget&&!guardandoBloqueo)setModalBloqueo(false)}}>
@@ -8202,15 +8355,6 @@ function abrirClase(
             </div>
             <div className="overflow-y-auto p-4">
               <form id="form-bloqueo-agenda" onSubmit={guardarBloqueoAgenda} className="space-y-3">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Tipo de actividad *
-                  <select value={formBloqueo.tipo_actividad}
-                    onChange={e=>setFormBloqueo(p=>({...p,tipo_actividad:e.target.value}))}
-                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
-                    <option value="BLOQUEO">No disponible · Bloqueo administrativo</option>
-                    <option value="TEORIA">Clase teórica · Morado</option>
-                  </select>
-                </label>
                 <label className="block text-xs font-semibold text-slate-700">
                   Instructor *
                   <select required value={formBloqueo.instructor_id}
