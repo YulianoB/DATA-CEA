@@ -66,7 +66,7 @@ export async function POST(request) {
         !validaFecha(inicio)||!validaFecha(fin)||fin<inicio||
         (Date.parse(fin)-Date.parse(inicio))/86400000>90 ||
         !validaHora(desde)||!validaHora(hasta)||minutos(hasta)<=minutos(desde)||
-        !motivo||motivo.length<8||!usuario||!['BLOQUEO','TEORIA'].includes(tipoActividad)) {
+        !motivo||motivo.length<8||!usuario||tipoActividad !== 'BLOQUEO') {
       return NextResponse.json({status:'error',message:'Instructor, fechas (máximo 90 días), horas y motivo (mínimo 8 caracteres) son obligatorios.'},{status:400})
     }
     const {data:personal,error:errorPersonal}=await db.from('personal')
@@ -114,7 +114,7 @@ export async function POST(request) {
       error=anterior.error
     }
     if(error)throw new Error(error.message)
-    return NextResponse.json({status:'success',data,message:tipoActividad==='TEORIA'?'Actividad teórica registrada.':'Bloqueo registrado correctamente.'},{status:201})
+    return NextResponse.json({status:'success',data,message:'Bloqueo registrado correctamente.'},{status:201})
   }catch(e){return responderError(e)}
 }
 export async function DELETE(request) {
