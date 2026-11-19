@@ -2239,10 +2239,7 @@ export async function POST(
       if(!anterior) return NextResponse.json({status:'error',message:'Egreso no encontrado.'},{status:404})
       if(mayusculas(anterior.estado)!=='ACTIVO')
         return NextResponse.json({status:'error',message:'Solo se pueden corregir egresos activos.'},{status:409})
-      // Se conserva la fecha original. Toda conciliación debe ser del mismo día.
-      if(texto(anterior.fecha)!==hoyColombia())
-        return NextResponse.json({status:'error',
-          message:'La corrección del egreso debe realizarse el mismo día de su fecha original.'},{status:409})
+      // La fecha no cambia, incluso si el soporte se revisa días después.
       if(body.fecha && texto(body.fecha)!==texto(anterior.fecha))
         return NextResponse.json({status:'error',message:'La fecha del egreso no es editable.'},{status:400})
       const valor=Number(body.valor)
