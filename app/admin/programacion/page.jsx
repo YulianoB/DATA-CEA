@@ -7581,6 +7581,19 @@ function abrirClase(
                       // OCUPADO
                       // ===============================
 
+                        if (ocupado && ['TEORIA','PRUEBA_CONDUCCION'].includes(horario?.clase?.tipo_clase)) {
+                          const teoria = horario.clase.tipo_clase==='TEORIA'
+                          return (
+                            <div key={hora} title={teoria?'Clase teórica':'Prueba de conducción'}
+                              className={`min-h-[88px] rounded-lg border-2 px-2 py-2 text-center ${teoria?'border-violet-600 bg-violet-200 text-violet-950':'border-orange-600 bg-orange-200 text-orange-950'}`}>
+                              <i className={`fas ${teoria?'fa-book-open':'fa-car'} text-[11px]`} aria-hidden="true"/>
+                              <div className="mt-1 text-[9px] font-black">{teoria?'TEORÍA':'PRUEBA DE CONDUCCIÓN'}</div>
+                              <p className="text-[8px]">{horario.clase.estado}</p>
+                              {!teoria && <p className="text-[8px]">{horario.clase.categoria} · {horario.clase.vehiculo?.placa||''}</p>}
+                            </div>
+                          )
+                        }
+
                         if (
                           ocupado
                         ) {
