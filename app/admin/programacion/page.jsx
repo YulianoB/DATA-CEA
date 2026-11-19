@@ -3334,7 +3334,7 @@ const resumenOperativo =
     try {
       const respuesta = await fetch('/api/admin/programacion/bloqueos', {
         method:'DELETE',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({nit,id})
+        body:JSON.stringify({nit,id,usuario:obtenerNombreUsuario(user)})
       })
       const data = await respuesta.json()
       if(!respuesta.ok || data.status!=='success')
