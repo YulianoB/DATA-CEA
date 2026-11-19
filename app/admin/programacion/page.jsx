@@ -14,6 +14,7 @@ import {
 
 import { CalendarDays, RefreshCw } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
 import ReportesProgramacion from './ReportesProgramacion'
 import { BotonActualizar, ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_BOTONES } from '@/components/admin/EstiloModulo'
 
@@ -2373,6 +2374,14 @@ export default function ProgramacionPage() {
   const [modalBloqueo, setModalBloqueo] = useState(false)
   const [bloqueoEdicionId, setBloqueoEdicionId] = useState(null)
   const [bloqueoGestion, setBloqueoGestion] = useState(null)
+  const [resultadoBloqueo, setResultadoBloqueo] = useState(null)
+  const [confirmacionBloqueo, setConfirmacionBloqueo] = useState(null)
+  function mostrarResultadoBloqueo(tipo,titulo,mensaje) {
+    setResultadoBloqueo({tipo,titulo,mensaje})
+  }
+  function confirmarBloqueo(titulo,mensaje,accion) {
+    setConfirmacionBloqueo({titulo,mensaje,accion})
+  }
   const [guardandoGestionBloqueo, setGuardandoGestionBloqueo] = useState(false)
   const [errorGestionBloqueo, setErrorGestionBloqueo] = useState('')
   const [revisionBloqueos, setRevisionBloqueos] = useState(0)
@@ -3234,49 +3243,59 @@ const resumenOperativo =
     cargarBloqueosAgenda(b.fecha_inicio,b.fecha_fin).catch(e=>setErrorBloqueo(e.message))
   }
 
-  async function liberarFranjaBloqueada() {
+  function liberarFranjaBloqueada() {
     const gestion=bloqueoGestion
     if(!gestion?.bloqueo?.id)return
-    if(!window.confirm('¿Liberar únicamente la franja '+gestion.hora+' del '+gestion.fecha+'? Las demás horas bloqueadas se conservarán.'))return
-    setGuardandoGestionBloqueo(true)
-    setErrorGestionBloqueo('')
-    try {
-      const respuesta=await fetch('/api/admin/programacion/bloqueos',{
-        method:'PUT',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({nit,id:gestion.bloqueo.id,
-          fecha:gestion.fecha,hora_inicio:gestion.hora,
-          usuario:obtenerNombreUsuario(user)})
-      })
-      const data=await respuesta.json()
-      if(!respuesta.ok||data.status!=='success')throw new Error(data.message||'No fue posible liberar la franja.')
-      setBloqueoGestion(null)
-      setExito(data.message)
-      setRevisionBloqueos(n=>n+1)
-      await cargarDisponibilidadInstructores(fechaDisponibilidad)
-    }catch(e){setErrorGestionBloqueo(e.message||'No fue posible liberar la franja.')}
-    finally{setGuardandoGestionBloqueo(false)}
+    confirmarBloqueo(
+      'Liberar franja de disponibilidad',
+      '¿Liberar solamente la hora '+gestion.hora+' del '+gestion.fecha+'? Las demás franjas permanecerán bloqueadas.',
+      async ()=>{
+        setGuardandoGestionBloqueo(true)
+        setErrorGestionBloqueo('')
+        try {
+          const respuesta=await fetch('/api/admin/programacion/bloqueos',{
+            method:'PUT',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({nit,id:gestion.bloqueo.id,
+              fecha:gestion.fecha,hora_inicio:gestion.hora,
+              usuario:obtenerNombreUsuario(user)})
+          })
+          const data=await respuesta.json()
+          if(!respuesta.ok||data.status!=='success')throw new Error(data.message||'No fue posible liberar la franja.')
+          setBloqueoGestion(null)
+          setRevisionBloqueos(n=>n+1)
+          await cargarDisponibilidadInstructores(fechaDisponibilidad)
+          mostrarResultadoBloqueo('exito','Franja liberada',data.message||'La franja está disponible.')
+        }catch(e){mostrarResultadoBloqueo('error','No fue posible liberar la franja',e.message||'Verifique la base CEA.')}
+        finally{setGuardandoGestionBloqueo(false)}
+      }
+    )
   }
 
-  async function retirarBloqueoGestion() {
+  function retirarBloqueoGestion() {
     const gestion=bloqueoGestion
     if(!gestion?.bloqueo?.id)return
-    if(!window.confirm('¿Retirar el bloqueo completo, incluyendo todas sus fechas y horas?'))return
-    setGuardandoGestionBloqueo(true)
-    setErrorGestionBloqueo('')
-    try {
-      const respuesta=await fetch('/api/admin/programacion/bloqueos',{
-        method:'DELETE',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({nit,id:gestion.bloqueo.id,
-          usuario:obtenerNombreUsuario(user)})
-      })
-      const data=await respuesta.json()
-      if(!respuesta.ok||data.status!=='success')throw new Error(data.message||'No fue posible retirar el bloqueo.')
-      setBloqueoGestion(null)
-      setRevisionBloqueos(n=>n+1)
-      setExito(data.message||'Bloqueo retirado.')
-      await cargarDisponibilidadInstructores(fechaDisponibilidad)
-    }catch(e){setErrorGestionBloqueo(e.message||'No fue posible retirar el bloqueo.')}
-    finally{setGuardandoGestionBloqueo(false)}
+    confirmarBloqueo(
+      'Retirar bloqueo completo',
+      '¿Retirar el bloqueo completo, incluidas todas las fechas y horas?',
+      async ()=>{
+        setGuardandoGestionBloqueo(true)
+        setErrorGestionBloqueo('')
+        try {
+          const respuesta=await fetch('/api/admin/programacion/bloqueos',{
+            method:'DELETE',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({nit,id:gestion.bloqueo.id,
+              usuario:obtenerNombreUsuario(user)})
+          })
+          const data=await respuesta.json()
+          if(!respuesta.ok||data.status!=='success')throw new Error(data.message||'No fue posible retirar el bloqueo.')
+          setBloqueoGestion(null)
+          setRevisionBloqueos(n=>n+1)
+          await cargarDisponibilidadInstructores(fechaDisponibilidad)
+          mostrarResultadoBloqueo('exito','Bloqueo retirado',data.message||'La disponibilidad se actualizó.')
+        }catch(e){mostrarResultadoBloqueo('error','No fue posible retirar el bloqueo',e.message||'Verifique la base CEA.')}
+        finally{setGuardandoGestionBloqueo(false)}
+      }
+    )
   }
 
   async function abrirGestionDesdeDisponibilidad(instructor,fecha,hora) {
@@ -3318,32 +3337,35 @@ const resumenOperativo =
       const data = await respuesta.json()
       if(!respuesta.ok || data.status!=='success')
         throw new Error(data.message || 'No fue posible guardar el bloqueo.')
-      setExito(bloqueoEdicionId?'Bloqueo actualizado.':'Bloqueo de agenda registrado.')
+      mostrarResultadoBloqueo('exito',bloqueoEdicionId?'Bloqueo actualizado':'Bloqueo registrado',bloqueoEdicionId?'Los cambios se guardaron correctamente.':'La indisponibilidad quedó registrada.')
       setModalBloqueo(false)
       setBloqueoEdicionId(null)
       setRevisionBloqueos(n=>n+1)
       await cargarDisponibilidadInstructores(fechaDisponibilidad)
-    } catch(e) { setErrorBloqueo(e.message || 'No fue posible guardar el bloqueo.') }
+    } catch(e) { mostrarResultadoBloqueo('error','Error al guardar bloqueo',e.message || 'No fue posible guardar el bloqueo.') }
     finally { setGuardandoBloqueo(false) }
   }
 
-  async function quitarBloqueoAgenda(id) {
-    if(!window.confirm('¿Retirar este bloqueo de agenda?')) return
-    setGuardandoBloqueo(true)
-    setErrorBloqueo('')
-    try {
-      const respuesta = await fetch('/api/admin/programacion/bloqueos', {
-        method:'DELETE',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({nit,id,usuario:obtenerNombreUsuario(user)})
+  function quitarBloqueoAgenda(id) {
+    confirmarBloqueo('Retirar bloqueo completo',
+      '¿Retirar este bloqueo de todas sus fechas y horas?',
+      async ()=>{
+        setGuardandoBloqueo(true)
+        try {
+          const respuesta=await fetch('/api/admin/programacion/bloqueos',{
+            method:'DELETE',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({nit,id,usuario:obtenerNombreUsuario(user)})
+          })
+          const data=await respuesta.json()
+          if(!respuesta.ok||data.status!=='success')
+            throw new Error(data.message||'No fue posible retirar el bloqueo.')
+          await cargarBloqueosAgenda(formBloqueo.fecha_inicio,formBloqueo.fecha_fin)
+          setRevisionBloqueos(n=>n+1)
+          await cargarDisponibilidadInstructores(fechaDisponibilidad)
+          mostrarResultadoBloqueo('exito','Bloqueo retirado',data.message||'El bloqueo se retiró.')
+        }catch(e){mostrarResultadoBloqueo('error','No fue posible retirar el bloqueo',e.message||'Verifique la base CEA.')}
+        finally{setGuardandoBloqueo(false)}
       })
-      const data = await respuesta.json()
-      if(!respuesta.ok || data.status!=='success')
-        throw new Error(data.message || 'No fue posible retirar el bloqueo.')
-      await cargarBloqueosAgenda(formBloqueo.fecha_inicio,formBloqueo.fecha_fin)
-      setRevisionBloqueos(n=>n+1)
-      await cargarDisponibilidadInstructores(fechaDisponibilidad)
-    } catch(e) { setErrorBloqueo(e.message || 'No fue posible retirar el bloqueo.') }
-    finally { setGuardandoBloqueo(false) }
   }
 
   // =======================================================
@@ -8531,6 +8553,31 @@ function abrirClase(
               </div>
             </form>
           </section>
+        </div>
+      )}
+
+      {confirmacionBloqueo && (
+        <div className="fixed inset-0 z-[220]">
+          <ModalResultado abierto tipo="confirmacion"
+            titulo={confirmacionBloqueo.titulo}
+            mensaje={confirmacionBloqueo.mensaje}
+            textoBoton="CONFIRMAR"
+            onCerrar={()=>setConfirmacionBloqueo(null)}
+            onConfirmar={()=>{
+              const accion=confirmacionBloqueo.accion
+              setConfirmacionBloqueo(null)
+              accion()
+            }}
+          />
+        </div>
+      )}
+      {resultadoBloqueo && (
+        <div className="fixed inset-0 z-[220]">
+          <ModalResultado abierto tipo={resultadoBloqueo.tipo}
+            titulo={resultadoBloqueo.titulo}
+            mensaje={resultadoBloqueo.mensaje}
+            onCerrar={()=>setResultadoBloqueo(null)}
+          />
         </div>
       )}
 
