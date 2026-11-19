@@ -816,6 +816,8 @@ export default function InstructorProgramacionPage() {
       []
     )
 
+  const [disponibilidadHabitual, setDisponibilidadHabitual] = useState([])
+
   const [
     instructor,
     setInstructor,
@@ -1057,6 +1059,11 @@ export default function InstructorProgramacionPage() {
           setClases(
             clasesVisibles
           )
+          setDisponibilidadHabitual(
+            Array.isArray(json?.disponibilidad_habitual)
+              ? json.disponibilidad_habitual
+              : []
+          )
 
           setInstructor(
             json?.instructor ||
@@ -1077,6 +1084,7 @@ export default function InstructorProgramacionPage() {
           setClases(
             []
           )
+          setDisponibilidadHabitual([])
 
           toast.error(
             error?.message ||
@@ -1180,6 +1188,19 @@ export default function InstructorProgramacionPage() {
         clases,
       ]
     )
+
+  // Regla compartida con la API administrativa:
+  // sin disponibilidad configurada se mantiene la agenda abierta;
+  // con franjas configuradas solo se muestran habilitadas esas horas.
+  const horarioHabilitado = useCallback((fecha, hora) => {
+    if (!disponibilidadHabitual.length) return true
+    const dia = new Date(`${fecha}T12:00:00Z`).getUTCDay() || 7
+    return disponibilidadHabitual.some(item =>
+      Number(item.dia_semana) === dia &&
+      hora >= texto(item.hora_inicio).slice(0,5) &&
+      hora < texto(item.hora_fin).slice(0,5)
+    )
+  }, [disponibilidadHabitual])
 
   // =======================================================
   // FECHAS DEL RANGO
@@ -1441,6 +1462,10 @@ export default function InstructorProgramacionPage() {
             mb-4
           "
         >
+          <span className="rounded-full bg-slate-200 text-slate-700 border border-slate-300 px-2 py-1 text-[7px] font-black">
+            NO DISPONIBLE
+          </span>
+
           <span
             className="
               rounded-full
@@ -1840,6 +1865,8 @@ export default function InstructorProgramacionPage() {
                                   fecha ===
                                   fechaColombia()
 
+                                const habilitado = horarioHabilitado(fecha, hora)
+
                                 return (
                                   <div
                                     key={`${fecha}-${hora}`}
@@ -1849,30 +1876,25 @@ export default function InstructorProgramacionPage() {
                                       border
                                       p-1
                                       ${
-                                        esHoy
-                                          ? 'bg-sky-50 border-sky-200'
-                                          : 'bg-gray-50 border-gray-200'
+                                        !habilitado
+                                          ? 'bg-slate-200 border-slate-300'
+                                          : esHoy
+                                            ? 'bg-sky-50 border-sky-200'
+                                            : 'bg-gray-50 border-gray-200'
                                       }
                                     `}
                                   >
+                                    {!habilitado && (
+                                      <div className="mb-1 flex items-center justify-center gap-1 rounded bg-slate-300 px-1 py-1 text-[7px] font-black text-slate-800">
+                                        <i className="fas fa-lock" aria-hidden="true" />
+                                        NO DISPONIBLE
+                                      </div>
+                                    )}
                                     {clasesHorario.length ===
                                     0 ? (
-                                      <div
-                                        className="
-                                          min-h-[62px]
-                                          flex
-                                          items-center
-                                          justify-center
-                                        "
-                                      >
-                                        <span
-                                          className="
-                                            text-[7px]
-                                            text-gray-300
-                                            font-semibold
-                                          "
-                                        >
-                                          —
+                                      <div className="min-h-[52px] flex items-center justify-center">
+                                        <span className={`text-[7px] font-semibold ${habilitado ? 'text-gray-300' : 'text-slate-500'}`}>
+                                          {habilitado ? '—' : 'Horario restringido'}
                                         </span>
                                       </div>
                                     ) : (
