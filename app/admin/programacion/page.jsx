@@ -7932,6 +7932,11 @@ function abrirClase(
                 text-gray-600
               "
             >
+              <span className="inline-flex items-center gap-1 font-bold text-red-900">
+                <span className="h-3 w-3 rounded border-2 border-red-500 bg-red-200" />
+                No disponible · Bloqueo administrativo
+              </span>
+
               <span
                 className="
                   inline-flex
