@@ -8270,11 +8270,6 @@ function abrirClase(
                 className="rounded border border-white/40 px-2 py-1" aria-label="Cerrar">×</button>
             </div>
             <form onSubmit={guardarActividad} className="space-y-3 overflow-y-auto p-4">
-              <div className="rounded-lg border border-sky-100 bg-sky-50 p-3 text-xs text-slate-700">
-                <p><strong>Instructor:</strong> {instructoresBloqueo.find(x=>String(x.id)===String(formActividad.instructor_id))?.nombre_completo || disponibilidadInstructores?.data?.find?.(x=>String(x.id)===String(formActividad.instructor_id))?.nombre_completo || ('Instructor '+formActividad.instructor_id)}</p>
-                <p className="mt-1"><strong>Fecha:</strong> {formActividad.fecha}</p>
-                <p className="mt-1"><strong>Horario:</strong> {formActividad.hora_inicio} – {String(Number(formActividad.hora_inicio.slice(0,2))+1).padStart(2,'0')}:00</p>
-              </div>
               <label className="block text-xs font-semibold text-slate-700">Tipo de actividad *
                 <select required value={formActividad.tipo_clase}
                   onChange={e=>setFormActividad(p=>({...p,tipo_clase:e.target.value,categoria:'',vehiculo_id:''}))}
