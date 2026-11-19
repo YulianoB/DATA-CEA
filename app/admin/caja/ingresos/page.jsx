@@ -992,6 +992,7 @@ const [
   const [vistaIngresos, setVistaIngresos] = useState('OBLIGACIONES')
   const [fechaOtrosDesde, setFechaOtrosDesde] = useState('')
   const [fechaOtrosHasta, setFechaOtrosHasta] = useState('')
+  const [resumenOtros,setResumenOtros]=useState({total:0,cantidad:0})
   const [modalCorregirObligacion,setModalCorregirObligacion]=useState(false)
   const [valoresCorregirObligacion,setValoresCorregirObligacion]=useState({})
   const [errorCorregirObligacion,setErrorCorregirObligacion]=useState('')
@@ -1381,6 +1382,7 @@ const cargarIngresosLibres =
             ? data.data
             : []
         )
+        setResumenOtros(data?.resumen_otros_ingresos||{total:0,cantidad:0})
       } catch (
         errorIngresos
       ) {
@@ -1673,6 +1675,10 @@ const ingresosLibresFiltrados =
           // ===============================================
           // SOLO REFUERZOS
           // ===============================================
+
+          if(tipoConsulta==='OTROS_INGRESOS' &&
+            normalizarComparacion(recibo?.concepto?.nombre||recibo?.descripcion)==='REFUERZO PRACTICO')
+            return false
 
           if (
             tipoConsulta ===
@@ -3472,10 +3478,8 @@ const ingresosLibresFiltrados =
                 className="rounded-lg border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800">Todas las fechas</button>
             </div>
             <p className="mt-2 text-xs text-blue-950">Resumen del período consultado: <strong>
-              {ingresosLibresFiltrados.filter(x=>x.estado==='ACTIVO' &&
-                normalizarComparacion(x.concepto?.nombre||x.descripcion)!=='REFUERZO PRACTICO')
-                .reduce((s,x)=>s+Number(x.valor||0),0).toLocaleString('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0})}
-            </strong> · {ingresosLibresFiltrados.filter(x=>x.estado==='ACTIVO').length} recibos activos.</p>
+              {Number(resumenOtros.total||0).toLocaleString('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0})}
+            </strong> · {resumenOtros.cantidad||0} recibos activos.</p>
           </div>
         )}
         {/* ==================================================
