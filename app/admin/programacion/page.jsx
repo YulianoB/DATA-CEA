@@ -2361,6 +2361,16 @@ export default function ProgramacionPage() {
     setInstructorId,
   ] =
     useState('')
+  const [modalBloqueo, setModalBloqueo] = useState(false)
+  const [instructoresBloqueo, setInstructoresBloqueo] = useState([])
+  const [bloqueosAgenda, setBloqueosAgenda] = useState([])
+  const [guardandoBloqueo, setGuardandoBloqueo] = useState(false)
+  const [errorBloqueo, setErrorBloqueo] = useState('')
+  const [formBloqueo, setFormBloqueo] = useState({
+    instructor_id:'',fecha_inicio:'',fecha_fin:'',
+    hora_inicio:'06:00',hora_fin:'13:00',motivo:''
+  })
+
 
   const [
     vehiculos,
@@ -3075,6 +3085,66 @@ const resumenOperativo =
         nit,
       ]
     )
+
+  async function cargarBloqueosAgenda(fechaInicial, fechaFinal) {
+    const params = new URLSearchParams({
+      nit,fecha_inicio:fechaInicial,fecha_fin:fechaFinal
+    })
+    const data = await fetchJsonSeguro(
+      `/api/admin/programacion/bloqueos?${params.toString()}`
+    )
+    setBloqueosAgenda(Array.isArray(data.data) ? data.data : [])
+    setInstructoresBloqueo(Array.isArray(data.instructores) ? data.instructores : [])
+  }
+
+  async function abrirBloqueosAgenda() {
+    setErrorBloqueo('')
+    setFormBloqueo({
+      instructor_id:'',fecha_inicio:fechaDisponibilidad,fecha_fin:fechaDisponibilidad,
+      hora_inicio:'06:00',hora_fin:'13:00',motivo:''
+    })
+    setModalBloqueo(true)
+    try {
+      await cargarBloqueosAgenda(fechaDisponibilidad,fechaDisponibilidad)
+    } catch(e) { setErrorBloqueo(e.message || 'No fue posible cargar los bloqueos.') }
+  }
+
+  async function guardarBloqueoAgenda(e) {
+    e.preventDefault()
+    setGuardandoBloqueo(true)
+    setErrorBloqueo('')
+    try {
+      const respuesta = await fetch('/api/admin/programacion/bloqueos', {
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({...formBloqueo,nit,usuario:obtenerNombreUsuario(user)})
+      })
+      const data = await respuesta.json()
+      if(!respuesta.ok || data.status!=='success')
+        throw new Error(data.message || 'No fue posible guardar el bloqueo.')
+      setExito('Bloqueo de agenda registrado.')
+      setModalBloqueo(false)
+      await cargarDisponibilidadInstructores(fechaDisponibilidad)
+    } catch(e) { setErrorBloqueo(e.message || 'No fue posible guardar el bloqueo.') }
+    finally { setGuardandoBloqueo(false) }
+  }
+
+  async function quitarBloqueoAgenda(id) {
+    if(!window.confirm('¿Retirar este bloqueo de agenda?')) return
+    setGuardandoBloqueo(true)
+    setErrorBloqueo('')
+    try {
+      const respuesta = await fetch('/api/admin/programacion/bloqueos', {
+        method:'DELETE',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({nit,id})
+      })
+      const data = await respuesta.json()
+      if(!respuesta.ok || data.status!=='success')
+        throw new Error(data.message || 'No fue posible retirar el bloqueo.')
+      await cargarBloqueosAgenda(formBloqueo.fecha_inicio,formBloqueo.fecha_fin)
+      await cargarDisponibilidadInstructores(fechaDisponibilidad)
+    } catch(e) { setErrorBloqueo(e.message || 'No fue posible retirar el bloqueo.') }
+    finally { setGuardandoBloqueo(false) }
+  }
 
   // =======================================================
   // PRECARGAR VEHÍCULOS
@@ -6969,6 +7039,10 @@ function abrirClase(
           gap-2
         "
       >
+        <button type="button" onClick={abrirBloqueosAgenda}
+          className="h-8 rounded-lg bg-amber-500 px-3 text-[10px] font-bold text-slate-900 hover:bg-amber-400">
+          <i className="fas fa-lock mr-1"></i> Bloquear horario
+        </button>
         <button
           type="button"
           onClick={
@@ -8011,6 +8085,99 @@ function abrirClase(
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {modalBloqueo && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-3"
+          onMouseDown={e=>{if(e.target===e.currentTarget&&!guardandoBloqueo)setModalBloqueo(false)}}>
+          <section role="dialog" aria-modal="true" aria-label="Bloquear disponibilidad del instructor"
+            className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-[#246185] p-4 text-white">
+              <div>
+                <h2 className="text-sm font-bold"><i className="fas fa-lock mr-2"></i>Bloquear disponibilidad</h2>
+                <p className="text-[10px] text-sky-100">Solo administración · Fecha única o rango de fechas</p>
+              </div>
+              <button type="button" disabled={guardandoBloqueo} onClick={()=>setModalBloqueo(false)}
+                className="rounded border border-white/40 px-2 py-1" aria-label="Cerrar">×</button>
+            </div>
+            <div className="overflow-y-auto p-4">
+              <form id="form-bloqueo-agenda" onSubmit={guardarBloqueoAgenda} className="space-y-3">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Instructor *
+                  <select required value={formBloqueo.instructor_id}
+                    onChange={e=>setFormBloqueo(p=>({...p,instructor_id:e.target.value}))}
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
+                    <option value="">Seleccione un instructor</option>
+                    {instructoresBloqueo.map(x=><option key={x.id} value={x.id}>{x.nombre_completo}</option>)}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-slate-700">Desde *
+                    <input type="date" required value={formBloqueo.fecha_inicio}
+                      onChange={e=>setFormBloqueo(p=>({...p,fecha_inicio:e.target.value,fecha_fin:e.target.value>p.fecha_fin?e.target.value:p.fecha_fin}))}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"/>
+                  </label>
+                  <label className="block text-xs font-semibold text-slate-700">Hasta *
+                    <input type="date" required min={formBloqueo.fecha_inicio} value={formBloqueo.fecha_fin}
+                      onChange={e=>setFormBloqueo(p=>({...p,fecha_fin:e.target.value}))}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"/>
+                  </label>
+                  <label className="block text-xs font-semibold text-slate-700">Hora inicial *
+                    <select value={formBloqueo.hora_inicio}
+                      onChange={e=>setFormBloqueo(p=>({...p,hora_inicio:e.target.value}))}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
+                      {HORAS.map(h=><option value={h} key={h}>{h}</option>)}
+                    </select>
+                  </label>
+                  <label className="block text-xs font-semibold text-slate-700">Hora final (excluida) *
+                    <select value={formBloqueo.hora_fin}
+                      onChange={e=>setFormBloqueo(p=>({...p,hora_fin:e.target.value}))}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
+                      {[...HORAS,'22:00'].map(h=><option value={h} key={h}>{h}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <p className="rounded-lg bg-sky-50 p-2 text-[11px] text-sky-900">
+                  Ejemplo: 06:00–13:00 bloquea todas las franjas anteriores a la 1:00 p. m.,
+                  en las fechas seleccionadas. Las clases ya programadas se protegen.
+                </p>
+                <label className="block text-xs font-semibold text-slate-700">Motivo del bloqueo *
+                  <textarea required minLength={8} maxLength={1000} rows={2} value={formBloqueo.motivo}
+                    onChange={e=>setFormBloqueo(p=>({...p,motivo:e.target.value}))}
+                    placeholder="Indique la razón administrativa del bloqueo"
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"/>
+                </label>
+                {errorBloqueo && <p role="alert" className="rounded-lg bg-red-50 p-2 text-xs text-red-700">{errorBloqueo}</p>}
+              </form>
+              {bloqueosAgenda.length>0 && (
+                <div className="mt-4 border-t border-slate-200 pt-3">
+                  <h3 className="mb-2 text-xs font-bold">Bloqueos registrados para la fecha consultada</h3>
+                  <div className="space-y-2">
+                    {bloqueosAgenda.map(b=>(
+                      <div key={b.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 p-2 text-xs">
+                        <div>
+                          <p className="font-bold">{instructoresBloqueo.find(x=>String(x.id)===String(b.instructor_id))?.nombre_completo||('Instructor '+b.instructor_id)}</p>
+                          <p>{b.fecha_inicio} a {b.fecha_fin} · {String(b.hora_inicio).slice(0,5)}–{String(b.hora_fin).slice(0,5)}</p>
+                          <p className="text-slate-500">{b.motivo}</p>
+                        </div>
+                        <button type="button" disabled={guardandoBloqueo} onClick={()=>quitarBloqueoAgenda(b.id)}
+                          className="rounded border border-red-300 px-2 py-1 font-bold text-red-700">Retirar</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-200 p-3">
+              <button type="button" disabled={guardandoBloqueo} onClick={()=>setModalBloqueo(false)}
+                className="rounded border border-slate-300 px-4 py-2 text-xs font-bold">Cancelar</button>
+              <button type="submit" form="form-bloqueo-agenda" disabled={guardandoBloqueo}
+                className="rounded bg-[#246185] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                {guardandoBloqueo?'Guardando...':'Guardar bloqueo'}
+              </button>
+            </div>
+          </section>
         </div>
       )}
 
