@@ -7103,7 +7103,7 @@ function abrirClase(
       >
         <button type="button" onClick={abrirBloqueosAgenda}
           className="h-8 rounded-lg bg-amber-500 px-3 text-[10px] font-bold text-slate-900 hover:bg-amber-400">
-          <i className="fas fa-lock mr-1"></i> Bloquear horario
+          <i className="fas fa-calendar-alt mr-1"></i> Bloquear / Teoría
         </button>
         <button
           type="button"
