@@ -14,6 +14,7 @@ import {
 
 import { CalendarDays, RefreshCw } from 'lucide-react'
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ReportesProgramacion from './ReportesProgramacion'
 import { BotonActualizar, ESTILO_FRANJA_SUPERIOR_MODAL, ESTILO_BOTONES } from '@/components/admin/EstiloModulo'
 
 // =========================================================
@@ -6383,7 +6384,19 @@ function abrirClase(
 
     DISPONIBILIDAD INSTRUCTORES
   </button>
+  <button type="button" onClick={()=>setVistaProgramacion('REPORTES')}
+    className={`h-[38px] rounded-lg border px-4 text-[9px] font-black whitespace-nowrap transition ${
+      vistaProgramacion==='REPORTES'
+        ? 'bg-[#194567] border-[#194567] text-white shadow-sm'
+        : 'bg-white border-[#94A3B8] text-[#29465D] hover:bg-[#F1F5F9]'
+    }`}>
+    <i className="fas fa-chart-column mr-2" aria-hidden="true"/>
+    REPORTES
+  </button>
 </div>
+
+{vistaProgramacion==='REPORTES' && <ReportesProgramacion nit={nit}/>}
+
 
         {/* =================================================
             AGENDA SEMANAL
