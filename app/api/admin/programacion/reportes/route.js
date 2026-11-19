@@ -56,7 +56,8 @@ export async function GET(request) {
           fecha,hora_inicio,duracion_horas,estado,tipo_clase,tipo_programacion,categoria,
           observacion_no_dictada,observaciones,vehiculo_id,
           aprendiz:aprendices(id,consecutivo,tipo_doc,documento,nombres,apellidos),
-          cliente:clientes_refuerzo(id,documento,nombre_completo)`)
+          cliente:clientes_refuerzo(id,documento,nombre_completo),
+          motivo_no_dictada:motivos_no_dictada(nombre)`)
         .gte('fecha',desde).lte('fecha',hasta).in('estado',ESTADOS)
         .order('fecha',{ascending:true}).order('hora_inicio',{ascending:true}).order('id',{ascending:true})
         .range(offset,offset+tamano-1)
@@ -80,6 +81,7 @@ export async function GET(request) {
         documento:persona?.documento||cliente?.documento||'',
         aprendiz:persona?nombre(persona):(cliente?.nombre_completo||''),
         consecutivo:persona?.consecutivo||'',
+        motivo_no_dictada:c.estado==='NO_DICTADA' ? (c.motivo_no_dictada?.nombre||'') : '',
         observacion:c.estado==='NO_DICTADA'
           ? (c.observacion_no_dictada||c.observaciones||'')
           : (c.observaciones||'')
@@ -101,7 +103,7 @@ export async function GET(request) {
       if(fila.estado==='PENDIENTE_CARGUE')item.pendientes_cargue++
       if(fila.estado==='NO_DICTADA') {
         item.no_dictadas++
-        const descripcion = [fila.hora_inicio,fila.aprendiz||'Sin aprendiz',fila.observacion||'Sin observación'].join(' · ')
+        const descripcion = [fila.hora_inicio,fila.aprendiz||'Sin aprendiz',fila.motivo_no_dictada||'Motivo no especificado',fila.observacion||'Sin observación'].join(' · ')
         item.observaciones_no_dictadas += (item.observaciones_no_dictadas?' | ':'')+descripcion
       }
       if(fila.tipo_clase==='TEORIA')item.teorias++
