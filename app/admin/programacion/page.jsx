@@ -2369,7 +2369,7 @@ export default function ProgramacionPage() {
   const [errorBloqueo, setErrorBloqueo] = useState('')
   const [formBloqueo, setFormBloqueo] = useState({
     instructor_id:'',fecha_inicio:'',fecha_fin:'',
-    hora_inicio:'06:00',hora_fin:'13:00',motivo:''
+    hora_inicio:'06:00',hora_fin:'13:00',tipo_actividad:'BLOQUEO',motivo:''
   })
 
 
@@ -3102,7 +3102,7 @@ const resumenOperativo =
     setErrorBloqueo('')
     setFormBloqueo({
       instructor_id:'',fecha_inicio:fechaDisponibilidad,fecha_fin:fechaDisponibilidad,
-      hora_inicio:'06:00',hora_fin:'13:00',motivo:''
+      hora_inicio:'06:00',hora_fin:'13:00',tipo_actividad:'BLOQUEO',motivo:''
     })
     setModalBloqueo(true)
     try {
@@ -3931,8 +3931,8 @@ useEffect(() => {
   return () => { vigente = false }
 }, [nit, instructorId, fechaInicioSemana, fechaFinSemana, vistaProgramacion])
 
-const bloqueadoSemana = (fecha, hora) =>
-  bloqueosSemana.some(b =>
+const actividadSemana = (fecha, hora) =>
+  bloqueosSemana.find(b =>
     Number(b.instructor_id) === Number(instructorId) &&
     b.fecha_inicio <= fecha &&
     b.fecha_fin >= fecha &&
@@ -6586,8 +6586,9 @@ function abrirClase(
                               dia.iso,
                               hora
                             )
-                          const bloqueoAdministrativo =
-                            Boolean(instructorId) && bloqueadoSemana(dia.iso, hora)
+                          const actividadInstructor =
+                            instructorId ? actividadSemana(dia.iso, hora) : null
+                          const bloqueoAdministrativo = Boolean(actividadInstructor)
 
                           // =====================================================
                           // PERSONA DE LA CLASE
@@ -6866,17 +6867,20 @@ function abrirClase(
                           // Si no existe, el bloqueo debe mostrarse aun en
                           // horas pasadas, con una diferencia clara frente a PASÓ.
                           if (bloqueoAdministrativo) {
+                            const esTeoria = actividadInstructor.tipo_actividad === 'TEORIA'
                             return (
-                              <div key={hora} title="Horario bloqueado por administración"
-                                className="w-full min-h-[46px] rounded-lg border-2 border-red-500 bg-red-200 px-2 py-2 text-left">
+                              <div key={hora} title={esTeoria?'Clase teórica':'Horario bloqueado por administración'}
+                                className={`w-full min-h-[46px] rounded-lg border-2 px-2 py-2 text-left ${esTeoria?'border-violet-600 bg-violet-200':'border-red-500 bg-red-200'}`}>
                                 <div className="flex items-center justify-between gap-1">
-                                  <span className="text-[9px] font-black text-red-950">{hora}</span>
-                                  <i className="fas fa-lock text-red-800" aria-hidden="true" />
+                                  <span className={`text-[9px] font-black ${esTeoria?'text-violet-950':'text-red-950'}`}>{hora}</span>
+                                  <i className={`fas ${esTeoria?'fa-book-open text-violet-800':'fa-lock text-red-800'}`} aria-hidden="true" />
                                 </div>
-                                <p className="mt-1 text-[9px] font-black uppercase text-red-900">
-                                  NO DISPONIBLE
+                                <p className={`mt-1 text-[9px] font-black uppercase ${esTeoria?'text-violet-950':'text-red-900'}`}>
+                                  {esTeoria?'TEORÍA':'NO DISPONIBLE'}
                                 </p>
-                                <p className="text-[8px] font-semibold text-red-800">Bloqueo administrativo</p>
+                                <p className={`text-[8px] font-semibold ${esTeoria?'text-violet-800':'text-red-800'}`}>
+                                  {esTeoria?'Clase teórica':'Bloqueo administrativo'}
+                                </p>
                               </div>
                             )
                           }
@@ -7437,7 +7441,8 @@ function abrirClase(
                               hora
                           )
 
-                        const bloqueado = horario?.motivo === 'Horario bloqueado por administración.'
+                        const bloqueado = horario?.tipo_actividad === 'BLOQUEO' || horario?.motivo === 'Horario bloqueado por administración.'
+                        const esTeoria = horario?.tipo_actividad === 'TEORIA'
                         const ocupado =
                           horario
                             ?.estado ===
@@ -7724,6 +7729,17 @@ function abrirClase(
                           )
                         }
 
+                        if (esTeoria) {
+                          return (
+                            <div key={hora} title="Instructor ocupado en clase teórica"
+                              className="min-h-[66px] rounded-lg border-2 border-violet-600 bg-violet-200 px-1 flex flex-col items-center justify-center">
+                              <i className="fas fa-book-open text-violet-800 text-[11px]" aria-hidden="true" />
+                              <span className="mt-1 text-center text-[9px] font-black text-violet-950">TEORÍA</span>
+                              <span className="text-center text-[7px] font-bold text-violet-800">CLASE TEÓRICA</span>
+                            </div>
+                          )
+                        }
+
                         // Bloqueo explícito: diferenciarlo de horas pasadas
                         // y de restricciones habituales no configuradas.
                         if (bloqueado) {
@@ -7932,6 +7948,11 @@ function abrirClase(
                 text-gray-600
               "
             >
+              <span className="inline-flex items-center gap-1 font-bold text-violet-900">
+                <span className="h-3 w-3 rounded border-2 border-violet-600 bg-violet-200" />
+                Teoría
+              </span>
+
               <span className="inline-flex items-center gap-1 font-bold text-red-900">
                 <span className="h-3 w-3 rounded border-2 border-red-500 bg-red-200" />
                 No disponible · Bloqueo administrativo
@@ -8173,7 +8194,7 @@ function abrirClase(
             className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
             <div className="flex items-center justify-between bg-[#246185] p-4 text-white">
               <div>
-                <h2 className="text-sm font-bold"><i className="fas fa-lock mr-2"></i>Bloquear disponibilidad</h2>
+                <h2 className="text-sm font-bold"><i className="fas fa-calendar-check mr-2"></i>Reservar horario del instructor</h2>
                 <p className="text-[10px] text-sky-100">Solo administración · Fecha única o rango de fechas</p>
               </div>
               <button type="button" disabled={guardandoBloqueo} onClick={()=>setModalBloqueo(false)}
@@ -8181,6 +8202,15 @@ function abrirClase(
             </div>
             <div className="overflow-y-auto p-4">
               <form id="form-bloqueo-agenda" onSubmit={guardarBloqueoAgenda} className="space-y-3">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Tipo de actividad *
+                  <select value={formBloqueo.tipo_actividad}
+                    onChange={e=>setFormBloqueo(p=>({...p,tipo_actividad:e.target.value}))}
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
+                    <option value="BLOQUEO">No disponible · Bloqueo administrativo</option>
+                    <option value="TEORIA">Clase teórica · Morado</option>
+                  </select>
+                </label>
                 <label className="block text-xs font-semibold text-slate-700">
                   Instructor *
                   <select required value={formBloqueo.instructor_id}
@@ -8236,7 +8266,7 @@ function abrirClase(
                       <div key={b.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 p-2 text-xs">
                         <div>
                           <p className="font-bold">{instructoresBloqueo.find(x=>String(x.id)===String(b.instructor_id))?.nombre_completo||('Instructor '+b.instructor_id)}</p>
-                          <p>{b.fecha_inicio} a {b.fecha_fin} · {String(b.hora_inicio).slice(0,5)}–{String(b.hora_fin).slice(0,5)}</p>
+                          <p>{b.fecha_inicio} a {b.fecha_fin} · {String(b.hora_inicio).slice(0,5)}–{String(b.hora_fin).slice(0,5)} · {b.tipo_actividad === 'TEORIA' ? 'TEORÍA' : 'BLOQUEO'}</p>
                           <p className="text-slate-500">{b.motivo}</p>
                         </div>
                         <button type="button" disabled={guardandoBloqueo} onClick={()=>quitarBloqueoAgenda(b.id)}
