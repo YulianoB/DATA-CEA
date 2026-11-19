@@ -6093,10 +6093,20 @@ const resultado =
   })
 
 // Bloqueos administrativos para la fecha consultada.
-const { data: bloqueosDia, error: errorBloqueosDia } = await supabase
+let { data: bloqueosDia, error: errorBloqueosDia } = await supabase
   .from('bloqueos_agenda_instructores')
   .select('instructor_id,hora_inicio,hora_fin,tipo_actividad')
   .lte('fecha_inicio',fecha).gte('fecha_fin',fecha)
+// Durante el despliegue gradual de CEAs, conservar los bloqueos
+// registrados antes de agregar tipo_actividad a cada base.
+if (errorBloqueosDia && /tipo_actividad/i.test(errorBloqueosDia.message || '')) {
+  const anterior = await supabase
+    .from('bloqueos_agenda_instructores')
+    .select('instructor_id,hora_inicio,hora_fin')
+    .lte('fecha_inicio',fecha).gte('fecha_fin',fecha)
+  bloqueosDia = (anterior.data || []).map(b => ({...b,tipo_actividad:'BLOQUEO'}))
+  errorBloqueosDia = anterior.error
+}
 if (errorBloqueosDia) throw new Error('No fue posible consultar los bloqueos de agenda: ' + errorBloqueosDia.message)
 
 for (const item of resultado) {
