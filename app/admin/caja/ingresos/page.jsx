@@ -2629,6 +2629,8 @@ const ingresosLibresFiltrados =
                 max-height: 129.7mm; display: flex; flex-direction: column;
                 border-radius: 2mm;
               }
+              /* Tinta negra para legibilidad en impresoras monocromas. */
+              .receipt-card, .receipt-card * { color: #000 !important; }
               .title { font-size: 16px; }
               .company { font-size: 11px; }
               .nit,.copy { font-size: 9px; }
@@ -2637,19 +2639,19 @@ const ingresosLibresFiltrados =
               .brand { padding: 2mm 3mm; }
               .receipt-number { padding: 1mm 2mm; }
               .identity-wrap { margin: 2mm 2mm 0; border-radius: 1.8mm; }
-              .identity-grid { padding: 2mm 3mm; gap: 1.2mm 4mm; font-size: 10px; }
+              .identity-grid { padding: 1.8mm 3mm; gap: 1mm 4mm; font-size: 10.7px; line-height: 1.16; }
               .identity-right { padding-left: 3mm; }
-              .section-block { margin: 2mm 2mm 0; }
-              .section-title { padding: 1.2mm 2mm; font-size: 10px; }
-              table { font-size: 9px; }
-              th,td { padding: 1mm 1.4mm; }
-              .origin-block { margin: 2mm 2mm 0; padding: 1.2mm 2mm; }
-              .origin { font-size: 9px; }
-              .signatures-block { margin-top: auto; padding: 2mm 3mm 1.5mm; }
-              .signatures { font-size: 8px; }
-              .signature-name { font-size: 7px; }
-              .signature-line { margin-top: 3mm; }
-              .cea-footer { font-size: 8px; padding: 1mm 2mm; }
+              .section-block { margin: 1.7mm 2mm 0; }
+              .section-title { padding: 1mm 2mm; font-size: 10.8px; }
+              table { font-size: 10px; line-height: 1.12; }
+              th,td { padding: .85mm 1.2mm; }
+              .origin-block { margin: 1.7mm 2mm 0; padding: 1mm 2mm; }
+              .origin { font-size: 10px; }
+              .signatures-block { margin-top: auto; padding: 1.4mm 3mm 1mm; }
+              .signatures { font-size: 9px; }
+              .signature-name { font-size: 8px; }
+              .signature-line { margin-top: 2mm; }
+              .cea-footer { font-size: 8.7px; padding: .8mm 2mm; }
             }
           </style>
         </head>
