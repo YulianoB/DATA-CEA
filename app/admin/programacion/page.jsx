@@ -6325,6 +6325,7 @@ function abrirClase(
 >
   <button
     type="button"
+    aria-pressed={vistaProgramacion==='AGENDA'}
     onClick={() =>
       setVistaProgramacion(
         'AGENDA'
@@ -6338,12 +6339,16 @@ function abrirClase(
       text-[9px]
       font-black
       whitespace-nowrap
-      transition
+      transition-all duration-200 ease-out
+      hover:-translate-y-0.5 hover:shadow-lg
+      active:translate-y-0 active:scale-[0.98]
+      focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500
+      motion-reduce:transform-none
       ${
         vistaProgramacion ===
         'AGENDA'
-          ? 'bg-[#194567] border-[#194567] text-white shadow-sm'
-          : 'bg-white border-[#94A3B8] text-[#29465D] hover:bg-[#F1F5F9]'
+          ? 'bg-sky-700 border-sky-700 text-white shadow-md'
+          : 'bg-white border-sky-300 text-sky-800 hover:bg-sky-50 hover:border-sky-500'
       }
     `}
   >
@@ -6354,6 +6359,7 @@ function abrirClase(
 
   <button
     type="button"
+    aria-pressed={vistaProgramacion==='DISPONIBILIDAD'}
     onClick={() => {
       setVistaProgramacion(
         'DISPONIBILIDAD'
@@ -6371,12 +6377,16 @@ function abrirClase(
       text-[9px]
       font-black
       whitespace-nowrap
-      transition
+      transition-all duration-200 ease-out
+      hover:-translate-y-0.5 hover:shadow-lg
+      active:translate-y-0 active:scale-[0.98]
+      focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500
+      motion-reduce:transform-none
       ${
         vistaProgramacion ===
         'DISPONIBILIDAD'
-          ? 'bg-[#194567] border-[#194567] text-white shadow-sm'
-          : 'bg-white border-[#94A3B8] text-[#29465D] hover:bg-[#F1F5F9]'
+          ? 'bg-teal-700 border-teal-700 text-white shadow-md'
+          : 'bg-white border-teal-300 text-teal-800 hover:bg-teal-50 hover:border-teal-500'
       }
     `}
   >
@@ -6384,11 +6394,23 @@ function abrirClase(
 
     DISPONIBILIDAD INSTRUCTORES
   </button>
-  <button type="button" onClick={()=>setVistaProgramacion('REPORTES')}
-    className={`h-[38px] rounded-lg border px-4 text-[9px] font-black whitespace-nowrap transition ${
+  <button type="button" onClick={abrirBloqueosAgenda} aria-pressed={modalBloqueo}
+    className={`h-[38px] rounded-lg border px-4 text-[9px] font-black whitespace-nowrap
+      transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg
+      active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none
+      focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 ${
+        modalBloqueo
+          ? 'bg-amber-500 border-amber-600 text-slate-950 shadow-md'
+          : 'bg-amber-50 border-amber-400 text-amber-900 hover:bg-amber-200 hover:border-amber-600'
+      }`}>
+    <i className="fas fa-calendar-alt mr-2" aria-hidden="true"></i>
+    BLOQUEAR DISPONIBILIDAD
+  </button>
+  <button type="button" aria-pressed={vistaProgramacion==='REPORTES'} onClick={()=>setVistaProgramacion('REPORTES')}
+    className={`h-[38px] rounded-lg border px-4 text-[9px] font-black whitespace-nowrap transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none ${
       vistaProgramacion==='REPORTES'
-        ? 'bg-[#194567] border-[#194567] text-white shadow-sm'
-        : 'bg-white border-[#94A3B8] text-[#29465D] hover:bg-[#F1F5F9]'
+        ? 'bg-indigo-700 border-indigo-700 text-white shadow-md'
+        : 'bg-white border-indigo-300 text-indigo-800 hover:bg-indigo-50 hover:border-indigo-500'
     }`}>
     <i className="fas fa-chart-column mr-2" aria-hidden="true"/>
     REPORTES
@@ -7235,10 +7257,6 @@ function abrirClase(
           gap-2
         "
       >
-        <button type="button" onClick={abrirBloqueosAgenda}
-          className="h-8 rounded-lg bg-amber-500 px-3 text-[10px] font-bold text-slate-900 hover:bg-amber-400">
-          <i className="fas fa-calendar-alt mr-1"></i> Bloquear disponibilidad
-        </button>
         <button
           type="button"
           onClick={
