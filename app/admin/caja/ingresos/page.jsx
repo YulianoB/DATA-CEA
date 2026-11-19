@@ -3496,18 +3496,7 @@ const ingresosLibresFiltrados =
         color: ESTILO_SECCIONES.texto,
       }}
     >
-      <div>
-        <h2
-          className="
-            text-xs
-            font-bold
-          "
-        >
-          <i className="fas fa-list mr-2"></i>
-
-          <span className="sr-only">Obligaciones de Aprendices</span>
-        </h2>
-        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Vistas de ingresos">
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Vistas de ingresos">
           <button type="button" role="tab" aria-selected={vistaIngresos==='OBLIGACIONES'}
             onClick={()=>setVistaIngresos('OBLIGACIONES')}
             className="rounded-md border border-white/50 bg-white px-3 py-2 text-[11px] font-black text-[#194567] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-md">
@@ -3517,17 +3506,6 @@ const ingresosLibresFiltrados =
             className="rounded-md border border-white/40 bg-transparent px-3 py-2 text-[11px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-md">
             <i className="fas fa-receipt mr-2"/>Ingresos del día
           </button>
-        </div>
-
-        <p
-          className="
-            text-[9px]
-            text-gray-300
-            mt-0.5
-          "
-        >
-          Pagos pendientes, parciales y conceptos adicionales.
-        </p>
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-2">
