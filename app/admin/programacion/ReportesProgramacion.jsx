@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const actual = () => new Intl.DateTimeFormat('en-CA',{
   timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'
@@ -31,9 +31,24 @@ export default function ReportesProgramacion({nit}) {
   const [vista,setVista]=useState('GENERAL')
   const [instructorId,setInstructorId]=useState('')
   const [data,setData]=useState(null)
+  const [instructores,setInstructores]=useState([])
   const [cargando,setCargando]=useState(false)
   const [error,setError]=useState('')
   const [filtrosAplicados,setFiltrosAplicados]=useState(null)
+
+  useEffect(()=>{
+    if(!nit)return
+    let mounted=true
+    const params=new URLSearchParams({nit,solo_instructores:'1'})
+    fetch('/api/admin/programacion/reportes?'+params.toString(),{cache:'no-store'})
+      .then(async response=>{
+        const json=await response.json()
+        if(!response.ok||json.status!=='success')throw new Error(json.message||'Error de catálogo')
+        if(mounted)setInstructores(json.instructores||[])
+      })
+      .catch(err=>{if(mounted)setError(err.message||'No fue posible consultar instructores.')})
+    return()=>{mounted=false}
+  },[nit])
 
   async function consultar(e) {
     e?.preventDefault()
@@ -103,7 +118,7 @@ export default function ReportesProgramacion({nit}) {
             <select required value={instructorId} onChange={e=>setInstructorId(e.target.value)}
               className="mt-1 block h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs">
               <option value="">Seleccione instructor</option>
-              {(data?.instructores||[]).map(i=><option key={i.id} value={i.id}>{i.nombre}</option>)}
+              {instructores.map(i=><option key={i.id} value={i.id}>{i.nombre}</option>)}
             </select>
           </label>
         )}
