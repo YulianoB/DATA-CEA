@@ -199,10 +199,11 @@ export async function DELETE(request) {
   try {
     const {supabaseAdmin:db}=await contexto(request)
     const body=await request.json()
-    const id=Number(body.id)
-    if(!Number.isInteger(id)||id<1) return NextResponse.json({status:'error',message:'Bloqueo inválido.'},{status:400})
-    const {data,error}=await db.from(tabla).delete().eq('id',id).select('id').maybeSingle()
-    if(error)throw new Error(error.message)
-    return NextResponse.json({status:'success',data,message:data?'Bloqueo retirado.':'El bloqueo ya no existe.'})
+    const id=Number(body.id),usuario=t(body.usuario)
+    if(!Number.isSafeInteger(id)||id<1||!usuario)
+      return NextResponse.json({status:'error',message:'Se requieren el bloqueo y el usuario responsable.'},{status:400})
+    const {data,error}=await db.rpc('cea_retirar_bloqueo_agenda',{p_id:id,p_usuario:usuario})
+    if(error)throw error
+    return NextResponse.json({status:'success',data,message:'Bloqueo retirado y registrado en auditoría.'})
   }catch(e){return responderError(e)}
 }
