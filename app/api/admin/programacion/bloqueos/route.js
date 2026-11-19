@@ -11,6 +11,10 @@ const validaFecha = v => /^\d{4}-\d{2}-\d{2}$/.test(v) &&
 const validaHora = v => /^(?:0[6-9]|1\d|2[01]):00$/.test(v) || v === '22:00'
 const minutos = h => Number(h.slice(0,2))*60 + Number(h.slice(3,5))
 const responderError = e => {
+  if (e?.code === 'PGRST202' || /Could not find the function public\\.cea_(?:retirar|editar|liberar)/i.test(String(e?.message||''))) {
+    return NextResponse.json({status:'error',
+      message:'Falta aplicar la migración SQL de gestión de bloqueos en Supabase CEA. Ejecute supabase/migrations/20261119_gestion_bloqueos_agenda.sql y actualice el esquema.'},{status:409})
+  }
   const r = respuestaErrorEmpresa(e)
   return NextResponse.json(r.body, { status:r.status })
 }
