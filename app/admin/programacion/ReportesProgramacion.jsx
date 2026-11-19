@@ -58,12 +58,13 @@ async function generarPDF(datos, filtros, instructorNombre) {
 
   const filas=individual?(datos.detalle||[]):(datos.resumen||[])
   const encabezados=individual
-    ? ['Fecha','Hora','Aprendiz / cliente','Documento','Matrícula','Actividad','Categoría','Programación','Estado']
+    ? ['Fecha','Hora','Aprendiz / cliente','Documento','Matrícula','Actividad','Categoría','Programación','Estado','Observaciones']
     : ['Fecha','Instructor','Total','Agend.','Dictadas','Pend. cargue','No dict.','Práctica','Teoría','Prueba conduc.']
   const cuerpo=individual?filas.map(f=>[
       fechaVisible(f.fecha),f.hora_inicio,f.aprendiz||'—',f.documento||'—',
       f.consecutivo||'—',nombresActividad[f.tipo_clase]||f.tipo_clase,
-      f.categoria||'—',f.tipo_programacion||'—',etiquetaEstado(f.estado)
+      f.categoria||'—',f.tipo_programacion||'—',etiquetaEstado(f.estado),
+      observacionLimpia(f.observacion)||'—'
     ]):filas.map(f=>[
       fechaVisible(f.fecha),f.instructor,f.total,f.agendadas,f.dictadas,
       f.pendientes_cargue,f.no_dictadas,f.practicas,f.teorias,f.pruebas_conduccion
@@ -79,9 +80,10 @@ async function generarPDF(datos, filtros, instructorNombre) {
     headStyles:{fillColor:[25,69,103],textColor:255,fontStyle:'bold'},
     alternateRowStyles:{fillColor:[247,249,252]},
     columnStyles:individual
-      ? {0:{cellWidth:19},1:{cellWidth:14},2:{cellWidth:51},
-         3:{cellWidth:24},4:{cellWidth:21},5:{cellWidth:29},
-         6:{cellWidth:17},7:{cellWidth:35},8:{cellWidth:32}}
+      ? {0:{cellWidth:17},1:{cellWidth:13},2:{cellWidth:42},
+         3:{cellWidth:21},4:{cellWidth:19},5:{cellWidth:26},
+         6:{cellWidth:15},7:{cellWidth:30},8:{cellWidth:22},
+         9:{cellWidth:65}}
       : {0:{cellWidth:23},1:{cellWidth:72}}
   })
 
