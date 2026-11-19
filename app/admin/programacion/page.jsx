@@ -3130,6 +3130,22 @@ const resumenOperativo =
 
   async function guardarActividad(e) {
     e.preventDefault()
+    if (formActividad.tipo_clase==='BLOQUEO') {
+      setModalActividad(false)
+      setBloqueoEdicionId(null)
+      setErrorBloqueo('')
+      const horaFin=String(Number(formActividad.hora_inicio.slice(0,2))+1).padStart(2,'0')+':00'
+      setFormBloqueo({
+        instructor_id:formActividad.instructor_id,
+        fecha_inicio:formActividad.fecha,fecha_fin:formActividad.fecha,
+        hora_inicio:formActividad.hora_inicio,hora_fin:horaFin,
+        motivo:'',tipo_actividad:'BLOQUEO'
+      })
+      setModalBloqueo(true)
+      cargarBloqueosAgenda(formActividad.fecha,formActividad.fecha)
+        .catch(e=>setErrorBloqueo(e.message||'Error al cargar bloqueos.'))
+      return
+    }
     setGuardandoActividad(true)
     setErrorActividad('')
     setExito('')
@@ -8462,7 +8478,7 @@ function abrirClase(
             className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
             <div className="flex items-center justify-between bg-[#246185] p-4 text-white">
               <div>
-                <h2 className="text-sm font-bold">{formActividad.tipo_clase==='TEORIA'?'Programar clase teórica':'Programar prueba de conducción'}</h2>
+                <h2 className="text-sm font-bold">{formActividad.tipo_clase==='TEORIA'?'Programar clase teórica':formActividad.tipo_clase==='BLOQUEO'?'Bloquear disponibilidad':'Programar prueba de conducción'}</h2>
                 <p className="text-[10px] text-sky-100">Se registra en la agenda unificada sin matrícula de aprendiz</p>
               </div>
               <button type="button" disabled={guardandoActividad} onClick={()=>setModalActividad(false)}
@@ -8475,6 +8491,7 @@ function abrirClase(
                   className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm">
                   <option value="TEORIA">Teoría</option>
                   <option value="PRUEBA_CONDUCCION">Prueba de conducción</option>
+                  <option value="BLOQUEO">Bloqueo administrativo</option>
                 </select>
               </label>
               {formActividad.tipo_clase==='PRUEBA_CONDUCCION' && (
