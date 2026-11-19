@@ -3118,7 +3118,8 @@ const ingresosLibresFiltrados =
             <i className="fas fa-receipt mr-2"/>Ingresos del día
           </button>
         </div>
-        {vistaIngresos==='DIA' ? <IngresosDia nit={nit}/> : <>
+        {vistaIngresos==='DIA' && <IngresosDia nit={nit}/>}
+        <div className={vistaIngresos==='DIA' ? 'hidden' : ''}>
        {/* ==================================================
             FILTROS
         ================================================== */}
@@ -5255,7 +5256,7 @@ const ingresosLibresFiltrados =
         </div>
       )}
 
-      </>}
+      </div>
       {/* Corrección de recibos: modal independiente para todos los pagos activos. */}
       {reciboHistoricoEditando && (
         <div
