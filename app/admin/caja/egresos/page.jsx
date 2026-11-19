@@ -17,6 +17,7 @@ import RegistrarEgresoDrawer
   from './components/RegistrarEgresoDrawer'
 
 import EncabezadoModulo from '@/components/admin/EncabezadoModulo'
+import ModalResultado from '@/components/admin/ModalResultado'
 
 import { ReceiptText, RefreshCw } from 'lucide-react'
 
@@ -539,6 +540,10 @@ export default function CajaEgresosPage() {
       null
     )
 
+  const [editandoEgreso, setEditandoEgreso] = useState(false)
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false)
+  const [resultadoEdicion, setResultadoEdicion] = useState(null)
+  const [formEdicion, setFormEdicion] = useState(null)
   const [legalizando, setLegalizando] = useState(false)
   const [guardandoLegalizacion, setGuardandoLegalizacion] = useState(false)
   const [errorLegalizacion, setErrorLegalizacion] = useState('')
@@ -1285,6 +1290,40 @@ export default function CajaEgresosPage() {
         false
       )
     }
+  }
+
+  function abrirEdicionEgreso(egreso) {
+    setFormEdicion({
+      id:egreso.id,fecha:egreso.fecha,
+      concepto_id:String(egreso.concepto_id||''),
+      medio_pago_id:String(egreso.medio_pago_id||''),
+      vehiculo_id:String(egreso.vehiculo_id||''),
+      beneficiario:egreso.beneficiario||egreso.receptor_dinero||'',
+      tipo_documento_beneficiario:egreso.tipo_documento_beneficiario||egreso.tipo_documento_receptor||'CC',
+      documento_beneficiario:egreso.documento_beneficiario||egreso.documento_receptor||'',
+      descripcion:egreso.descripcion||'',valor:String(valorEgresoReal(egreso)),
+      numero_factura:egreso.numero_factura||'',referencia_pago:egreso.referencia_pago||'',
+      observaciones:egreso.observaciones||''
+    })
+    setEditandoEgreso(true)
+  }
+
+  async function guardarEdicionEgreso(e) {
+    e.preventDefault()
+    if(!formEdicion?.id || guardandoEdicion)return
+    setGuardandoEdicion(true)
+    try {
+      const data=await postEgreso({accion:'editar',...formEdicion})
+      if(data?.status!=='success')throw new Error(data?.message||'No fue posible guardar el egreso.')
+      setEditandoEgreso(false)
+      setFormEdicion(null)
+      const detalle=await fetchJsonSeguro(construirUrl('detalle',{id:detalleEgreso.id}))
+      setDetalleEgreso(detalle?.data||null)
+      await Promise.all([cargarEgresos(),cargarResumen()])
+      setResultadoEdicion({tipo:'exito',titulo:'Egreso actualizado',mensaje:data.message})
+    }catch(errorEditar){
+      setResultadoEdicion({tipo:'error',titulo:'No fue posible editar el egreso',mensaje:errorEditar?.message||'Revise los datos.'})
+    }finally{setGuardandoEdicion(false)}
   }
 
   function prepararLegalizacion(egreso) {
@@ -2139,6 +2178,89 @@ export default function CajaEgresosPage() {
         }
       />
 
+      {editandoEgreso && formEdicion && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-3">
+          <section role="dialog" aria-modal="true" aria-label="Editar egreso"
+            className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-[#24638C] p-4 text-white">
+              <div>
+                <h2 className="text-base font-black">Editar egreso</h2>
+                <p className="text-xs">Se conserva la fecha {formatearFecha(formEdicion.fecha)} y el consecutivo original.</p>
+              </div>
+              <button type="button" disabled={guardandoEdicion} onClick={()=>setEditandoEgreso(false)}
+                className="rounded-lg border border-white/50 px-3 py-2" aria-label="Cerrar">×</button>
+            </div>
+            <form id="form-edicion-egreso" onSubmit={guardarEdicionEgreso} className="grid grid-cols-1 gap-3 overflow-y-auto p-4 text-xs sm:grid-cols-2">
+              {[
+                ['beneficiario','Beneficiario / receptor *'],
+                ['documento_beneficiario','Documento *'],
+                ['descripcion','Descripción *'],
+                ['numero_factura','Número de factura'],
+                ['referencia_pago','Referencia']
+              ].map(([key,label])=>(
+                <label key={key} className="font-semibold text-slate-700">{label}
+                  <input required={['beneficiario','documento_beneficiario','descripcion'].includes(key)}
+                    value={formEdicion[key]} onChange={e=>setFormEdicion(f=>({...f,[key]:e.target.value}))}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"/>
+                </label>
+              ))}
+              <label className="font-semibold text-slate-700">Tipo de documento
+                <select value={formEdicion.tipo_documento_beneficiario}
+                  onChange={e=>setFormEdicion(f=>({...f,tipo_documento_beneficiario:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                  {['CC','CE','NIT','TI','PA','PPT'].map(v=><option key={v} value={v}>{v}</option>)}
+                </select>
+              </label>
+              <label className="font-semibold text-slate-700">Concepto *
+                <select required value={formEdicion.concepto_id} onChange={e=>setFormEdicion(f=>({...f,concepto_id:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                  <option value="">Seleccione concepto</option>
+                  {conceptos.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
+              </label>
+              <label className="font-semibold text-slate-700">Medio de pago *
+                <select required value={formEdicion.medio_pago_id} onChange={e=>setFormEdicion(f=>({...f,medio_pago_id:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                  <option value="">Seleccione medio</option>
+                  {mediosPago.map(m=><option key={m.id} value={m.id}>{m.nombre}</option>)}
+                </select>
+              </label>
+              <label className="font-semibold text-slate-700">Vehículo (opcional)
+                <select value={formEdicion.vehiculo_id} onChange={e=>setFormEdicion(f=>({...f,vehiculo_id:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                  <option value="">Sin vehículo</option>
+                  {vehiculos.map(v=><option key={v.id} value={v.id}>{v.placa}</option>)}
+                </select>
+              </label>
+              <label className="font-semibold text-slate-700">Valor definitivo ($) *
+                <input type="number" min="0" step="0.01" required value={formEdicion.valor}
+                  onChange={e=>setFormEdicion(f=>({...f,valor:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"/>
+              </label>
+              <label className="font-semibold text-slate-700 sm:col-span-2">Observaciones
+                <textarea rows={3} value={formEdicion.observaciones}
+                  onChange={e=>setFormEdicion(f=>({...f,observaciones:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"/>
+              </label>
+              {Number(formEdicion.valor)===0 && <p className="rounded-lg bg-amber-50 p-3 text-amber-900 sm:col-span-2">
+                Egreso sin gasto: el registro y consecutivo permanecen, pero su valor no se suma a Caja. Describa el motivo en observaciones.
+              </p>}
+            </form>
+            <div className="flex justify-end gap-2 border-t border-slate-200 p-4">
+              <button type="button" disabled={guardandoEdicion} onClick={()=>setEditandoEgreso(false)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold">Cancelar</button>
+              <button type="submit" form="form-edicion-egreso" disabled={guardandoEdicion}
+                className="rounded-lg bg-[#24638C] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                {guardandoEdicion?'Guardando...':'Guardar cambios'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      <ModalResultado abierto={Boolean(resultadoEdicion)}
+        tipo={resultadoEdicion?.tipo||'exito'} titulo={resultadoEdicion?.titulo}
+        mensaje={resultadoEdicion?.mensaje} onCerrar={()=>setResultadoEdicion(null)}/>
+
       {/* ====================================================
           DRAWER DETALLE
       ==================================================== */}
@@ -2416,6 +2538,14 @@ export default function CajaEgresosPage() {
                     </div>
                   )}
 
+                  {mayusculas(detalleEgreso.estado)==='ACTIVO' && (
+                    <div className="flex justify-end pt-1">
+                      <button type="button" onClick={()=>abrirEdicionEgreso(detalleEgreso)}
+                        className="rounded-lg bg-[#24638C] px-4 py-2 text-xs font-bold text-white hover:bg-[#194567] transition-all hover:-translate-y-0.5">
+                        <i className="fas fa-pen mr-2"/>Editar egreso
+                      </button>
+                    </div>
+                  )}
                   {mayusculas(detalleEgreso.modalidad) !== 'ENTREGA_PARA_LEGALIZAR' && (
                     <div className="flex justify-end pt-1">
                       <BotonImprimir
