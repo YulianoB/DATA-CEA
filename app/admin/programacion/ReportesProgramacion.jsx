@@ -13,7 +13,7 @@ const etiquetaEstado = v => ({
 }[v] || v)
 const fechaVisible = v => v ? v.split('-').reverse().join('/') : ''
 const nombresActividad = {PRACTICA:'Práctica',TEORIA:'Teoría',PRUEBA_CONDUCCION:'Prueba de conducción'}
-const observacionLimpia = value => limpiar(value).replace(/\\[CEA_CLASE_PRACTICA:\\d+\\]/g,'').trim()
+const observacionLimpia = value => limpiar(value).replace(/\[CEA_CLASE_PRACTICA:\d+\]/g,'').trim()
 
 async function generarPDF(datos, filtros, instructorNombre) {
   const [{jsPDF},{default:autoTable}] = await Promise.all([
