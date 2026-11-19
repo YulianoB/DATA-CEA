@@ -1218,12 +1218,22 @@ export async function GET(
       throw new Error('No fue posible consultar la disponibilidad habitual del instructor: ' + errorDisponibilidad.message)
     }
 
-    const { data: bloqueos, error: errorBloqueos } = await supabase
+    let { data: bloqueos, error: errorBloqueos } = await supabase
       .from('bloqueos_agenda_instructores')
       .select('id,fecha_inicio,fecha_fin,hora_inicio,hora_fin,tipo_actividad')
       .eq('instructor_id',instructor.id)
       .lte('fecha_inicio',fechaFin)
       .gte('fecha_fin',fechaInicio)
+    if (errorBloqueos && /tipo_actividad/i.test(errorBloqueos.message || '')) {
+      const anterior = await supabase
+        .from('bloqueos_agenda_instructores')
+        .select('id,fecha_inicio,fecha_fin,hora_inicio,hora_fin')
+        .eq('instructor_id',instructor.id)
+        .lte('fecha_inicio',fechaFin)
+        .gte('fecha_fin',fechaInicio)
+      bloqueos = (anterior.data || []).map(b => ({...b,tipo_actividad:'BLOQUEO'}))
+      errorBloqueos = anterior.error
+    }
     if (errorBloqueos) {
       throw new Error('No fue posible consultar los bloqueos administrativos: ' + errorBloqueos.message)
     }
