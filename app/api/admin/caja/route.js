@@ -8387,6 +8387,7 @@ if (
       if(errConsulta)throw errConsulta
       if(!anterior||anterior.estado!=='ACTIVO'||!anterior.cuenta_id)
         return NextResponse.json({status:'error',message:'El recibo no corresponde a una obligación activa editable.'},{status:409})
+      const medio=await obtenerMedioPago(supabase,toInt(body?.medio_pago_id)||anterior.medio_pago_id)
       const cuenta=await obtenerCuenta(supabase,anterior.cuenta_id)
       const detalles=await obtenerDetallesCuenta(supabase,cuenta.id)
       const {data:aplicaciones,error:errAplicaciones}=await supabase.from('recibos_caja_detalle')
@@ -8412,7 +8413,7 @@ if (
         return NextResponse.json({status:'error',message:'El valor supera el saldo del componente al que está aplicado.'},{status:409})
       // Actualizar primero el recibo: si falla la aplicación se revierte.
       const {data:reciboNuevo,error:errorUpdate}=await supabase.from('recibos_caja')
-        .update({valor:nuevo,updated_at:new Date().toISOString()})
+        .update({valor:nuevo,medio_pago_id:medio.id,updated_at:new Date().toISOString()})
         .eq('id',id).eq('estado','ACTIVO').eq('valor',anterior.valor).select('id,updated_at')
         .maybeSingle()
       if(errorUpdate||!reciboNuevo)throw new Error(errorUpdate?.message||'El recibo fue modificado. Actualice los datos.')
@@ -8420,7 +8421,7 @@ if (
         .update({valor:nuevo}).eq('recibo_id',id).eq('cuenta_detalle_id',componente.id)
         .eq('valor',app.valor).select('recibo_id')
       if(errorDetalle||(aplicacionNueva||[]).length!==1){
-        const revertir=await supabase.from('recibos_caja').update({valor:anterior.valor,updated_at:anterior.updated_at})
+        const revertir=await supabase.from('recibos_caja') .update({valor:anterior.valor,medio_pago_id:anterior.medio_pago_id,updated_at:anterior.updated_at})
           .eq('id',id).eq('updated_at',reciboNuevo.updated_at)
         if(revertir.error)throw new Error('Error crítico de reversión del recibo; verifique valores antes de continuar.')
         throw new Error('No fue posible actualizar la aplicación. Se intentó restaurar el importe anterior.')
