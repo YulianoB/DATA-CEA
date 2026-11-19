@@ -3263,6 +3263,20 @@ const resumenOperativo =
     finally{setGuardandoGestionBloqueo(false)}
   }
 
+  async function abrirGestionDesdeDisponibilidad(instructor,fecha,hora) {
+    setError('')
+    try {
+      const params=new URLSearchParams({nit,
+        instructor_id:String(instructor.id),fecha_inicio:fecha,fecha_fin:fecha})
+      const data=await fetchJsonSeguro('/api/admin/programacion/bloqueos?'+params.toString())
+      const bloqueo=(data.data||[]).find(b=>b.tipo_actividad!=='TEORIA' &&
+        b.fecha_inicio<=fecha&&b.fecha_fin>=fecha&&
+        hora>=String(b.hora_inicio).slice(0,5)&&hora<String(b.hora_fin).slice(0,5))
+      if(!bloqueo)throw new Error('No se encontró un bloqueo para esta casilla. Actualice la agenda.')
+      abrirGestionBloqueo(bloqueo,fecha,hora)
+    }catch(e){setError(e.message||'No fue posible consultar el bloqueo.')}
+  }
+
   async function abrirBloqueosAgenda() {
     setBloqueoEdicionId(null)
     setErrorBloqueo('')
@@ -7100,8 +7114,11 @@ function abrirClase(
                           if (bloqueoAdministrativo) {
                             const esTeoria = actividadInstructor.tipo_actividad === 'TEORIA'
                             return (
-                              <div key={hora} title={esTeoria?'Clase teórica':'Horario bloqueado por administración'}
-                                className={`w-full min-h-[46px] rounded-lg border-2 px-2 py-2 text-left ${esTeoria?'border-violet-600 bg-violet-200':'border-red-500 bg-red-200'}`}>
+                              <button type="button" key={hora}
+                                title={esTeoria?'Actividad anterior':'Administrar bloqueo de disponibilidad'}
+                                onClick={()=>!esTeoria && abrirGestionBloqueo(actividadInstructor,dia.iso,hora)}
+                                disabled={esTeoria}
+                                className={`w-full min-h-[46px] rounded-lg border-2 px-2 py-2 text-left transition hover:shadow-md ${esTeoria?'border-violet-600 bg-violet-200':'border-red-500 bg-red-200 hover:bg-red-100 cursor-pointer'}`}>
                                 <div className="flex items-center justify-between gap-1">
                                   <span className={`text-[9px] font-black ${esTeoria?'text-violet-950':'text-red-950'}`}>{hora}</span>
                                   <i className={`fas ${esTeoria?'fa-book-open text-violet-800':'fa-lock text-red-800'}`} aria-hidden="true" />
@@ -7110,9 +7127,9 @@ function abrirClase(
                                   {esTeoria?'TEORÍA':'NO DISPONIBLE'}
                                 </p>
                                 <p className={`text-[8px] font-semibold ${esTeoria?'text-violet-800':'text-red-800'}`}>
-                                  {esTeoria?'Clase teórica':'Bloqueo administrativo'}
+                                  {esTeoria?'Clase teórica':'Clic para administrar'}
                                 </p>
-                              </div>
+                              </button>
                             )
                           }
 
@@ -7994,13 +8011,14 @@ function abrirClase(
                         // y de restricciones habituales no configuradas.
                         if (bloqueado) {
                           return (
-                            <div key={hora}
-                              title="Bloqueado por administración"
-                              className="min-h-[66px] rounded-lg border-2 border-red-500 bg-red-200 px-1 flex flex-col items-center justify-center">
+                            <button type="button" key={hora}
+                              onClick={()=>abrirGestionDesdeDisponibilidad(instructor,fechaDisponibilidad,hora)}
+                              title="Clic para administrar bloqueo"
+                              className="min-h-[66px] rounded-lg border-2 border-red-500 bg-red-200 px-1 flex flex-col items-center justify-center transition hover:bg-red-100 hover:shadow-md">
                               <i className="fas fa-lock text-red-800 text-[11px]" aria-hidden="true" />
                               <span className="mt-1 text-center text-[8px] font-black text-red-900">NO DISPONIBLE</span>
-                              <span className="text-center text-[7px] font-bold text-red-800">BLOQUEADO</span>
-                            </div>
+                              <span className="text-center text-[7px] font-bold text-red-800">ADMINISTRAR</span>
+                            </button>
                           )
                         }
 
@@ -8499,6 +8517,37 @@ function abrirClase(
         </div>
       )}
 
+      {bloqueoGestion && (
+        <div className="fixed inset-0 z-[145] flex items-center justify-center bg-black/60 p-3"
+          onMouseDown={e=>{if(e.target===e.currentTarget&&!guardandoGestionBloqueo)setBloqueoGestion(null)}}>
+          <section role="dialog" aria-modal="true" aria-label="Administrar bloqueo"
+            className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-[#194567] p-4 text-white">
+              <h2 className="text-sm font-bold"><i className="fas fa-lock mr-2"/>Administrar bloqueo</h2>
+              <button type="button" disabled={guardandoGestionBloqueo}
+                onClick={()=>setBloqueoGestion(null)} aria-label="Cerrar">×</button>
+            </div>
+            <div className="space-y-3 p-4 text-xs text-slate-700">
+              <p><strong>Franja seleccionada:</strong> {bloqueoGestion.fecha} · {bloqueoGestion.hora}</p>
+              <p><strong>Rango registrado:</strong> {bloqueoGestion.bloqueo.fecha_inicio} al {bloqueoGestion.bloqueo.fecha_fin} · {String(bloqueoGestion.bloqueo.hora_inicio).slice(0,5)} a {String(bloqueoGestion.bloqueo.hora_fin).slice(0,5)}</p>
+              <p><strong>Motivo:</strong> {bloqueoGestion.bloqueo.motivo}</p>
+              {errorGestionBloqueo && <p role="alert" className="rounded-lg bg-red-50 p-2 text-red-700">{errorGestionBloqueo}</p>}
+              <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-3">
+                <button type="button" disabled={guardandoGestionBloqueo}
+                  onClick={()=>editarBloqueo(bloqueoGestion.bloqueo)}
+                  className="rounded-lg border border-blue-300 px-3 py-2 font-bold text-blue-800 hover:bg-blue-50">Editar bloqueo</button>
+                <button type="button" disabled={guardandoGestionBloqueo}
+                  onClick={liberarFranjaBloqueada}
+                  className="rounded-lg border border-amber-400 px-3 py-2 font-bold text-amber-900 hover:bg-amber-50">Liberar solo esta hora</button>
+                <button type="button" disabled={guardandoGestionBloqueo}
+                  onClick={retirarBloqueoGestion}
+                  className="rounded-lg border border-red-300 px-3 py-2 font-bold text-red-700 hover:bg-red-50">Retirar bloqueo completo</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
       {modalBloqueo && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-3"
           onMouseDown={e=>{if(e.target===e.currentTarget&&!guardandoBloqueo)setModalBloqueo(false)}}>
@@ -8506,7 +8555,7 @@ function abrirClase(
             className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
             <div className="flex items-center justify-between bg-[#246185] p-4 text-white">
               <div>
-                <h2 className="text-sm font-bold"><i className="fas fa-calendar-check mr-2"></i>Reservar horario del instructor</h2>
+                <h2 className="text-sm font-bold"><i className="fas fa-calendar-check mr-2"></i>{bloqueoEdicionId?'Editar bloqueo':'Reservar horario del instructor'}</h2>
                 <p className="text-[10px] text-sky-100">Solo administración · Fecha única o rango de fechas</p>
               </div>
               <button type="button" disabled={guardandoBloqueo} onClick={()=>setModalBloqueo(false)}
@@ -8572,8 +8621,12 @@ function abrirClase(
                           <p>{b.fecha_inicio} a {b.fecha_fin} · {String(b.hora_inicio).slice(0,5)}–{String(b.hora_fin).slice(0,5)} · {b.tipo_actividad === 'TEORIA' ? 'TEORÍA' : 'BLOQUEO'}</p>
                           <p className="text-slate-500">{b.motivo}</p>
                         </div>
+                        <div className="flex gap-1">
+                          <button type="button" disabled={guardandoBloqueo} onClick={()=>editarBloqueo(b)}
+                            className="rounded border border-blue-300 px-2 py-1 font-bold text-blue-700">Editar</button>
                         <button type="button" disabled={guardandoBloqueo} onClick={()=>quitarBloqueoAgenda(b.id)}
                           className="rounded border border-red-300 px-2 py-1 font-bold text-red-700">Retirar</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -8585,7 +8638,7 @@ function abrirClase(
                 className="rounded border border-slate-300 px-4 py-2 text-xs font-bold">Cancelar</button>
               <button type="submit" form="form-bloqueo-agenda" disabled={guardandoBloqueo}
                 className="rounded bg-[#246185] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
-                {guardandoBloqueo?'Guardando...':'Guardar bloqueo'}
+                {guardandoBloqueo?'Guardando...':bloqueoEdicionId?'Guardar cambios':'Guardar bloqueo'}
               </button>
             </div>
           </section>
