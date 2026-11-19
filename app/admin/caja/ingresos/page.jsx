@@ -3480,6 +3480,9 @@ const ingresosLibresFiltrados =
             <p className="mt-2 text-xs text-blue-950">Total de otros ingresos activos en el período: <strong>
               {Number(resumenOtros.total||0).toLocaleString('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0})}
             </strong> · {resumenOtros.cantidad||0} recibos activos.</p>
+            {ingresosLibres.length>=200 && <p className="mt-1 text-[11px] text-amber-800">
+              El resumen incluye todos los recibos del período; la tabla presenta hasta 200 registros. Seleccione un rango más corto para consultar los detalles restantes.
+            </p>}
           </div>
         )}
         {/* ==================================================
