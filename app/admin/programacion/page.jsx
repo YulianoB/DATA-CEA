@@ -2363,6 +2363,7 @@ export default function ProgramacionPage() {
     useState('')
   const [modalActividad, setModalActividad] = useState(false)
   const [guardandoActividad, setGuardandoActividad] = useState(false)
+  const [cancelandoActividadId, setCancelandoActividadId] = useState(null)
   const [errorActividad, setErrorActividad] = useState('')
   const [formActividad, setFormActividad] = useState({
     tipo_clase:'TEORIA', instructor_id:'', fecha:'', hora_inicio:'06:00',
@@ -3150,6 +3151,44 @@ const resumenOperativo =
     } catch(e) {
       setErrorActividad(e.message || 'No fue posible registrar la actividad.')
     } finally { setGuardandoActividad(false) }
+  }
+
+  async function cancelarActividad(clase) {
+    if (!clase?.id || !['TEORIA','PRUEBA_CONDUCCION'].includes(clase.tipo_clase)) return
+    if (clase.estado !== 'AGENDADA') {
+      setError('Solo es posible cancelar actividades en estado AGENDADA.')
+      return
+    }
+    const nombre = clase.tipo_clase === 'TEORIA'
+      ? 'la clase teórica' : 'la prueba de conducción'
+    const fecha = clase.fecha || fechaDisponibilidad
+    const hora = String(clase.hora_inicio || '').slice(0,5)
+    if (!window.confirm(`¿Cancelar ${nombre} del ${fecha} a las ${hora}?\\nLa franja se liberará para programar otra actividad.`)) return
+    setCancelandoActividadId(clase.id)
+    setError('')
+    setExito('')
+    try {
+      const respuesta = await fetch('/api/admin/programacion/actividades', {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({nit,id:clase.id,usuario:obtenerNombreUsuario(user)})
+      })
+      const data = await respuesta.json()
+      if (!respuesta.ok || data.status !== 'success') {
+        throw new Error(data.message || 'No fue posible cancelar la actividad.')
+      }
+      // Desocupar inmediatamente la celda, sin borrar su historial en la base.
+      setAgenda(anterior => anterior.filter(item => Number(item.id)!==Number(clase.id)))
+      setExito(data.message || 'Actividad cancelada.')
+      await Promise.all([
+        cargarAgenda(),
+        cargarDisponibilidadInstructores(fechaDisponibilidad)
+      ])
+    } catch (e) {
+      setError(e.message || 'No fue posible cancelar la actividad.')
+    } finally {
+      setCancelandoActividadId(null)
+    }
   }
 
   async function abrirBloqueosAgenda() {
@@ -6783,6 +6822,14 @@ function abrirClase(
                                 <div className="text-[9px] font-black">{hora} · {teoria?'TEORÍA':'PRUEBA DE CONDUCCIÓN'}</div>
                                 <p className="mt-1 text-[8px] font-semibold">{clase.estado}</p>
                                 {!teoria && <p className="text-[8px]">{clase.categoria || ''} · {clase.vehiculo?.placa || ''}</p>}
+                                {clase.estado==='AGENDADA' && (
+                                  <button type="button" disabled={cancelandoActividadId===clase.id}
+                                    onClick={()=>cancelarActividad(clase)}
+                                    className="mt-2 rounded-md border border-current px-2 py-1 text-[8px] font-bold hover:bg-white/70 disabled:opacity-50">
+                                    <i className="fas fa-xmark mr-1" aria-hidden="true"/>
+                                    {cancelandoActividadId===clase.id?'Cancelando...':'Cancelar actividad'}
+                                  </button>
+                                )}
                               </div>
                             )
                           }
@@ -7585,6 +7632,8 @@ function abrirClase(
 
                         if (ocupado && ['TEORIA','PRUEBA_CONDUCCION'].includes(horario?.clase?.tipo_clase)) {
                           const teoria = horario.clase.tipo_clase==='TEORIA'
+                          const actividad = {...horario.clase,
+                            fecha:fechaDisponibilidad,hora_inicio:hora}
                           return (
                             <div key={hora} title={teoria?'Clase teórica':'Prueba de conducción'}
                               className={`min-h-[88px] rounded-lg border-2 px-2 py-2 text-center ${teoria?'border-violet-600 bg-violet-200 text-violet-950':'border-orange-600 bg-orange-200 text-orange-950'}`}>
@@ -7592,6 +7641,14 @@ function abrirClase(
                               <div className="mt-1 text-[9px] font-black">{teoria?'TEORÍA':'PRUEBA DE CONDUCCIÓN'}</div>
                               <p className="text-[8px]">{horario.clase.estado}</p>
                               {!teoria && <p className="text-[8px]">{horario.clase.categoria} · {horario.clase.vehiculo?.placa||''}</p>}
+                              {horario.clase.estado==='AGENDADA' && (
+                                <button type="button" disabled={cancelandoActividadId===horario.clase.id}
+                                  onClick={()=>cancelarActividad(actividad)}
+                                  className="mt-2 rounded-md border border-current px-2 py-1 text-[8px] font-bold hover:bg-white/70 disabled:opacity-50">
+                                  <i className="fas fa-xmark mr-1" aria-hidden="true"/>
+                                  {cancelandoActividadId===horario.clase.id?'Cancelando...':'Cancelar'}
+                                </button>
+                              )}
                             </div>
                           )
                         }
