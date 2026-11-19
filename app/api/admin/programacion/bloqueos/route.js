@@ -33,13 +33,13 @@ export async function GET(request) {
     if (Number.isInteger(instructorId) && instructorId>0) q=q.eq('instructor_id',instructorId)
     const [bloqueos,personal]=await Promise.all([
       q,
-      db.from('personal').select('id,nombres,apellidos,cargo,estado').order('nombres',{ascending:true})
+      db.from('personal').select('id,nombres,apellidos,cargo,tipo_personal,estado').order('nombres',{ascending:true})
     ])
     if (bloqueos.error) throw new Error('No se pudo consultar los bloqueos: '+bloqueos.error.message)
     if (personal.error) throw new Error('No se pudo consultar los instructores: '+personal.error.message)
     return NextResponse.json({status:'success',data:bloqueos.data||[],instructores:(personal.data||[])
       .filter(x=>String(x.estado||'').toUpperCase()==='ACTIVO' &&
-        String(x.cargo||'').toUpperCase().includes('INSTRUCTOR'))
+        (String(x.cargo||'').toUpperCase().includes('INSTRUCTOR') || String(x.tipo_personal||'').toUpperCase().includes('INSTRUCTOR')))
       .map(x=>({id:x.id,nombre_completo:[x.nombres,x.apellidos].filter(Boolean).join(' ')}))})
   } catch(e){return responderError(e)}
 }
@@ -59,10 +59,10 @@ export async function POST(request) {
       return NextResponse.json({status:'error',message:'Instructor, fechas (máximo 90 días), horas y motivo (mínimo 8 caracteres) son obligatorios.'},{status:400})
     }
     const {data:personal,error:errorPersonal}=await db.from('personal')
-      .select('id,estado,cargo').eq('id',instructorId).maybeSingle()
+      .select('id,estado,cargo,tipo_personal').eq('id',instructorId).maybeSingle()
     if(errorPersonal)throw new Error(errorPersonal.message)
     if(!personal || String(personal.estado).toUpperCase()!=='ACTIVO'||
-       !String(personal.cargo||'').toUpperCase().includes('INSTRUCTOR')) {
+       !(String(personal.cargo||'').toUpperCase().includes('INSTRUCTOR') || String(personal.tipo_personal||'').toUpperCase().includes('INSTRUCTOR'))) {
       return NextResponse.json({status:'error',message:'Seleccione un instructor activo.'},{status:409})
     }
     // No permitir bloquear una franja que contiene una clase activa.
