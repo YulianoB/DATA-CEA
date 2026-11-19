@@ -1202,6 +1202,22 @@ export async function GET(
         }
       )
 
+    // La agenda del instructor muestra también la disponibilidad
+    // semanal ya utilizada por la validación administrativa.
+    // Sin registros activos, se mantiene la regla anterior:
+    // horario habitual abierto.
+    const { data: disponibilidad, error: errorDisponibilidad } = await supabase
+      .from('disponibilidad_instructores')
+      .select('id,dia_semana,hora_inicio,hora_fin')
+      .eq('personal_id', instructor.id)
+      .eq('activo', true)
+      .order('dia_semana', { ascending: true })
+      .order('hora_inicio', { ascending: true })
+
+    if (errorDisponibilidad) {
+      throw new Error('No fue posible consultar la disponibilidad habitual del instructor: ' + errorDisponibilidad.message)
+    }
+
     // =====================================================
     // RESPUESTA
     // =====================================================
@@ -1212,6 +1228,8 @@ export async function GET(
 
       data:
         clases,
+
+      disponibilidad_habitual: disponibilidad || [],
 
       total:
         clases.length,
