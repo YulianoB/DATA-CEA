@@ -1,0 +1,109 @@
+import { NextResponse } from 'next/server'
+import { respuestaErrorEmpresa } from '@/lib/supabaseEmpresaServer'
+import { obtenerContextoCEA } from '@/lib/autorizacionCEA'
+
+const tabla = 'bloqueos_agenda_instructores'
+const t = v => String(v ?? '').trim()
+const validaFecha = v => /^\d{4}-\d{2}-\d{2}$/.test(v) &&
+  !Number.isNaN(Date.parse(v)) &&
+  new Date(v + 'T12:00:00Z').toISOString().slice(0,10) === v
+const validaHora = v => /^(?:0[6-9]|1\d|2[01]):00$/.test(v) || v === '22:00'
+const minutos = h => Number(h.slice(0,2))*60 + Number(h.slice(3,5))
+const responderError = e => {
+  const r = respuestaErrorEmpresa(e)
+  return NextResponse.json(r.body, { status:r.status })
+}
+async function contexto(request) {
+  return obtenerContextoCEA(request, { rolesPermitidos:['ADMINISTRATIVO'] })
+}
+export async function GET(request) {
+  try {
+    const { supabaseAdmin:db } = await contexto(request)
+    const { searchParams:p } = new URL(request.url)
+    const inicio = t(p.get('fecha_inicio'))
+    const fin = t(p.get('fecha_fin'))
+    const instructorId = Number(p.get('instructor_id'))
+    if (!validaFecha(inicio) || !validaFecha(fin) || inicio > fin) {
+      return NextResponse.json({status:'error',message:'Indique un rango de fechas válido.'},{status:400})
+    }
+    let q=db.from(tabla)
+      .select('id,instructor_id,fecha_inicio,fecha_fin,hora_inicio,hora_fin,motivo,creado_por,created_at')
+      .lte('fecha_inicio',fin).gte('fecha_fin',inicio)
+      .order('fecha_inicio',{ascending:true})
+    if (Number.isInteger(instructorId) && instructorId>0) q=q.eq('instructor_id',instructorId)
+    const [bloqueos,personal]=await Promise.all([
+      q,
+      db.from('personal').select('id,nombres,apellidos,cargo,estado').order('nombres',{ascending:true})
+    ])
+    if (bloqueos.error) throw new Error('No se pudo consultar los bloqueos: '+bloqueos.error.message)
+    if (personal.error) throw new Error('No se pudo consultar los instructores: '+personal.error.message)
+    return NextResponse.json({status:'success',data:bloqueos.data||[],instructores:(personal.data||[])
+      .filter(x=>String(x.estado||'').toUpperCase()==='ACTIVO' &&
+        String(x.cargo||'').toUpperCase().includes('INSTRUCTOR'))
+      .map(x=>({id:x.id,nombre_completo:[x.nombres,x.apellidos].filter(Boolean).join(' ')}))})
+  } catch(e){return responderError(e)}
+}
+export async function POST(request) {
+  try {
+    const {supabaseAdmin:db}=await contexto(request)
+    const b=await request.json()
+    const instructorId=Number(b.instructor_id)
+    const inicio=t(b.fecha_inicio),fin=t(b.fecha_fin)
+    const desde=t(b.hora_inicio),hasta=t(b.hora_fin)
+    const motivo=t(b.motivo),usuario=t(b.usuario)
+    if (!Number.isInteger(instructorId)||instructorId<1||
+        !validaFecha(inicio)||!validaFecha(fin)||fin<inicio||
+        (Date.parse(fin)-Date.parse(inicio))/86400000>90 ||
+        !validaHora(desde)||!validaHora(hasta)||minutos(hasta)<=minutos(desde)||
+        !motivo||motivo.length<8||!usuario) {
+      return NextResponse.json({status:'error',message:'Instructor, fechas (máximo 90 días), horas y motivo (mínimo 8 caracteres) son obligatorios.'},{status:400})
+    }
+    const {data:personal,error:errorPersonal}=await db.from('personal')
+      .select('id,estado,cargo').eq('id',instructorId).maybeSingle()
+    if(errorPersonal)throw new Error(errorPersonal.message)
+    if(!personal || String(personal.estado).toUpperCase()!=='ACTIVO'||
+       !String(personal.cargo||'').toUpperCase().includes('INSTRUCTOR')) {
+      return NextResponse.json({status:'error',message:'Seleccione un instructor activo.'},{status:409})
+    }
+    // No permitir bloquear una franja que contiene una clase activa.
+    const {data:clases,error:errorClases}=await db.from('programacion_clases')
+      .select('id,fecha,hora_inicio,duracion_horas,estado')
+      .eq('instructor_id',instructorId).gte('fecha',inicio).lte('fecha',fin)
+      .in('estado',['AGENDADA','PENDIENTE_CARGUE','DICTADA'])
+    if(errorClases)throw new Error(errorClases.message)
+    const cruce=(clases||[]).find(c=>{
+      const h=t(c.hora_inicio).slice(0,5)
+      return minutos(h)<minutos(hasta) &&
+        minutos(h)+Number(c.duracion_horas||1)*60>minutos(desde)
+    })
+    if(cruce) {
+      return NextResponse.json({status:'error',
+        message:'No se puede bloquear: existe una clase programada el '+cruce.fecha+' a las '+t(cruce.hora_inicio).slice(0,5)+'.'},{status:409})
+    }
+    const {data:existentes,error:errorExistentes}=await db.from(tabla)
+      .select('id,hora_inicio,hora_fin').eq('instructor_id',instructorId)
+      .lte('fecha_inicio',fin).gte('fecha_fin',inicio)
+    if(errorExistentes)throw new Error(errorExistentes.message)
+    if((existentes||[]).some(x=>minutos(t(x.hora_inicio).slice(0,5))<minutos(hasta) &&
+       minutos(t(x.hora_fin).slice(0,5))>minutos(desde))) {
+      return NextResponse.json({status:'error',message:'El instructor ya tiene un bloqueo que coincide con el rango seleccionado.'},{status:409})
+    }
+    const {data,error}=await db.from(tabla).insert({
+      instructor_id:instructorId,fecha_inicio:inicio,fecha_fin:fin,
+      hora_inicio:desde,hora_fin:hasta,motivo,creado_por:usuario
+    }).select('*').single()
+    if(error)throw new Error(error.message)
+    return NextResponse.json({status:'success',data,message:'Bloqueo registrado correctamente.'},{status:201})
+  }catch(e){return responderError(e)}
+}
+export async function DELETE(request) {
+  try {
+    const {supabaseAdmin:db}=await contexto(request)
+    const body=await request.json()
+    const id=Number(body.id)
+    if(!Number.isInteger(id)||id<1) return NextResponse.json({status:'error',message:'Bloqueo inválido.'},{status:400})
+    const {data,error}=await db.from(tabla).delete().eq('id',id).select('id').maybeSingle()
+    if(error)throw new Error(error.message)
+    return NextResponse.json({status:'success',data,message:data?'Bloqueo retirado.':'El bloqueo ya no existe.'})
+  }catch(e){return responderError(e)}
+}
