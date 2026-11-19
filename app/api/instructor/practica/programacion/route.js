@@ -1218,6 +1218,16 @@ export async function GET(
       throw new Error('No fue posible consultar la disponibilidad habitual del instructor: ' + errorDisponibilidad.message)
     }
 
+    const { data: bloqueos, error: errorBloqueos } = await supabase
+      .from('bloqueos_agenda_instructores')
+      .select('id,fecha_inicio,fecha_fin,hora_inicio,hora_fin')
+      .eq('instructor_id',instructor.id)
+      .lte('fecha_inicio',fechaFin)
+      .gte('fecha_fin',fechaInicio)
+    if (errorBloqueos) {
+      throw new Error('No fue posible consultar los bloqueos administrativos: ' + errorBloqueos.message)
+    }
+
     // =====================================================
     // RESPUESTA
     // =====================================================
@@ -1230,6 +1240,7 @@ export async function GET(
         clases,
 
       disponibilidad_habitual: disponibilidad || [],
+      bloqueos_agenda: bloqueos || [],
 
       total:
         clases.length,
