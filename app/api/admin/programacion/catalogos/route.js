@@ -15,7 +15,7 @@ const MAX_CLASES_APRENDIZ_DIA =
   8
 
 const MAX_CLASES_INSTRUCTOR_DIA_CURSO =
-  10
+  12
 
 const MAX_HORAS_INSTRUCTOR_MES =
   240
@@ -3135,12 +3135,12 @@ function instructorDisponiblePorHorario({
 // REGLAS:
 //
 // CURSO_VIGENTE
-// - máximo 10 clases por día.
+// - máximo 12 clases por día.
 // - máximo 240 horas por mes.
 // - cada clase válida consume 1 hora.
 //
 // REFUERZO
-// - no tiene límite diario de 10.
+// - no tiene límite diario de 12.
 // - no consume las 240 horas mensuales.
 // - sí ocupa horario.
 //
@@ -3371,7 +3371,7 @@ function construirInstructores({
           false
 
         motivoNoDisponible =
-          'El instructor ya completó las 10 clases de curso vigente permitidas para este día.'
+          'El instructor ya completó las 12 clases de curso vigente permitidas para este día.'
       } else if (
         horasMesCurso >=
         MAX_HORAS_INSTRUCTOR_MES
