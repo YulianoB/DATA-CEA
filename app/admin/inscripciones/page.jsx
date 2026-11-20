@@ -796,7 +796,7 @@ function categoriasEdicionUsuario(usuario) {
   const delNivel=CATEGORIAS_CEA_POR_NIVEL[nivel]||[]
   if(Array.isArray(categoriasSesion)&&categoriasSesion.length)
     return [...new Set(categoriasSesion.map(c=>String(c||'').trim().toUpperCase()))]
-      .filter(c=>delNivel.includes(c))
+      .filter(c=>CATEGORIAS_CEA_POR_NIVEL['NIVEL III'].includes(c))
   return [...delNivel]
 }
 function validarEdicionMatricula(datos,categoria,categorias) {
