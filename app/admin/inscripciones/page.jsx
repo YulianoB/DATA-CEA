@@ -788,16 +788,10 @@ const CATEGORIAS_CEA_POR_NIVEL = {
   'NIVEL II':['A2','B1','C1','RC1','B2','C2'],
   'NIVEL III':['A2','B1','C1','RC1','B2','C2','B3','C3']
 }
-function categoriasEdicionUsuario(usuario) {
-  const categoriasSesion=usuario?.categorias_habilitadas||
-    usuario?.categoriasHabilitadas||usuario?.empresa?.categorias_habilitadas
-  const nivel=String(usuario?.nivel_cea||usuario?.nivelCea||
-    usuario?.empresa?.nivel_cea||'').trim().toUpperCase()
-  const delNivel=CATEGORIAS_CEA_POR_NIVEL[nivel]||[]
-  if(Array.isArray(categoriasSesion)&&categoriasSesion.length)
-    return [...new Set(categoriasSesion.map(c=>String(c||'').trim().toUpperCase()))]
-      .filter(c=>CATEGORIAS_CEA_POR_NIVEL['NIVEL III'].includes(c))
-  return [...delNivel]
+// En la corrección se admiten todas las categorías oficiales del catálogo.
+// La creación de nuevas matrículas conserva las restricciones por nivel del CEA.
+function categoriasEdicionUsuario() {
+  return [...CATEGORIAS_CEA_POR_NIVEL['NIVEL III']]
 }
 function validarEdicionMatricula(datos,categoria,categorias) {
   const valor=k=>String(datos[k]??'').trim()
@@ -818,7 +812,7 @@ function validarEdicionMatricula(datos,categoria,categorias) {
   if(valor('acudi_celular')&&!/^\d{10}$/.test(valor('acudi_celular')))
     return 'El celular del acudiente debe tener 10 dígitos.'
   if(!categorias.includes(categoria))
-    return 'La categoría seleccionada no está habilitada para el nivel del CEA.'
+    return 'Seleccione una categoría válida del catálogo oficial.'
   const f=new Date(valor('fecha_nacimiento')+'T12:00:00Z')
   if(!/^\d{4}-\d{2}-\d{2}$/.test(valor('fecha_nacimiento'))||
     Number.isNaN(f.getTime())||f.toISOString().slice(0,10)!==valor('fecha_nacimiento'))
