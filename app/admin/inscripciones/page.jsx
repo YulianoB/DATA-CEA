@@ -1546,6 +1546,9 @@ export default function InscripcionesPage() {
     const datos={}
     CAMPOS_CORREGIR_EXPEDIENTE.forEach(([,campos])=>
       campos.forEach(([clave])=>{datos[clave]=String(aprendiz[clave]??'')}))
+    datos.documento_nuevo=String(aprendiz.documento??'')
+    datos.categoria_nueva=String(matriculaSeleccionada.categorias?.[0]||
+      matriculaSeleccionada.categoria||'').toUpperCase()
     setDatosCorreccion(datos)
     setErrorCorreccion('')
     setEditarExpediente(true)
@@ -1564,12 +1567,17 @@ export default function InscripcionesPage() {
           accion:'corregir_datos_expediente',
           nit,matricula_id:matriculaSeleccionada.id,
           documento:aprendiz.documento,
-          datos:datosCorreccion,
+          documento_nuevo:datosCorreccion.documento_nuevo,
+          categoria_nueva:datosCorreccion.categoria_nueva,
+          datos:Object.fromEntries(Object.entries(datosCorreccion).filter(
+            ([clave])=>!['documento_nuevo','categoria_nueva'].includes(clave))),
+
           usuario:obtenerNombreUsuario(user)
         })
       })
       setEditarExpediente(false)
-      const doc=aprendiz.documento,id=matriculaSeleccionada.id
+      const doc=json?.data?.documento||aprendiz.documento
+      const id=matriculaSeleccionada.id
       await consultarExpediente(doc,id)
       await consultar({silencioso:true})
       setExitoCorreccion(json.message||'Expediente corregido correctamente.')
@@ -2372,10 +2380,31 @@ export default function InscripcionesPage() {
             </div>
             <form id="form-correccion-expediente" onSubmit={guardarCorreccionExpediente}
               className="grid grid-cols-1 gap-3 overflow-y-auto p-4 md:grid-cols-2">
-              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 md:col-span-2">
-                <strong>Número de documento:</strong> {aprendiz?.documento||'—'}.
-                La corrección del número y de las categorías ({(matriculaSeleccionada?.categorias||[]).join(', ')||matriculaSeleccionada?.categoria||'—'})
-                requiere revisar sus vínculos con Caja, RUNT y las clases. Estos datos no se modifican en este formulario.
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-950 md:col-span-2">
+                Puede corregir el documento y la categoría sin generar otra matrícula.
+                Si ya existen clases o reportes externos asociados, el sistema impedirá
+                cambiar la categoría hasta verificar esos procesos.
+              </div>
+              <div className="rounded-lg border border-slate-200 p-3">
+                <h3 className="mb-3 text-sm font-bold text-[#0B668F]">Número de documento</h3>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Documento corregido
+                  <input type="text" inputMode="numeric" pattern="[0-9]{4,15}"
+                    required maxLength={15} value={datosCorreccion.documento_nuevo||''}
+                    onChange={e=>setDatosCorreccion(d=>({...d,documento_nuevo:e.target.value.replace(/[^0-9]/g,'')}))}
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold"/>
+                </label>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-3">
+                <h3 className="mb-3 text-sm font-bold text-[#0B668F]">Categoría de esta matrícula</h3>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Seleccione la categoría correcta
+                  <select required value={datosCorreccion.categoria_nueva||''}
+                    onChange={e=>setDatosCorreccion(d=>({...d,categoria_nueva:e.target.value}))}
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold">
+                    {['A2','B1','C1','RC1','B2','C2','B3','C3'].map(c=><option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
               </div>
               {CAMPOS_CORREGIR_EXPEDIENTE.filter(([titulo])=>{
                 if(!titulo.startsWith('Acudiente'))return true
