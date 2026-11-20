@@ -3,6 +3,8 @@
 import { NextResponse } from 'next/server'
 import { ORDEN_CATEGORIAS, extraerCategoriasHistorial, validarSeleccionCategorias, categoriasBloqueadasPorPendientes } from '@/lib/reglasCategoriasInscripciones'
 
+import { corregirIdentidadCategoria } from '@/lib/corregirIdentidadMatricula'
+
 import {
   obtenerSupabaseAdminEmpresaDesdeRequest,
   respuestaErrorEmpresa,
@@ -4170,8 +4172,12 @@ export async function POST(
       if(!origen)return NextResponse.json({status:'error',message:'Matrícula no encontrada.'},{status:404})
       if(normalizarTexto(body?.documento)!==normalizarTexto(origen.documento))
         return NextResponse.json({status:'error',message:'La corrección del número de documento requiere verificar las relaciones del expediente y sus pagos. No se cambió el documento.'},{status:409})
-      if(body?.categorias && JSON.stringify(body.categorias)!==JSON.stringify(origen.categorias))
-        return NextResponse.json({status:'error',message:'Para corregir categorías deben comprobarse primero los procesos y obligaciones asociados.'},{status:409})
+      const documentoNuevo=normalizarTexto(body?.documento_nuevo??origen.documento)
+      const categoriaNueva=normalizarMayusculas(body?.categoria_nueva??origen.categorias?.[0])
+      const cambioIdentidad=documentoNuevo!==origen.documento||
+        categoriaNueva!==origen.categorias?.[0]
+      if(!normalizarTexto(body.usuario))
+        return NextResponse.json({status:'error',message:'No se identificó el usuario responsable.'},{status:400})
       const camposTextoMayusculas=['tipo_doc','lugar_expedicion','genero','nombres','apellidos',
         'direccion','barrio','ciudad','estado_civil','ocupacion','eps','nivel_educativo',
         'acudi_nombres','acudi_apellidos','acudi_tipo_doc','acudi_direccion','emergencia_nombre']
@@ -4199,11 +4205,25 @@ export async function POST(
       // Un mismo documento puede tener varias matrículas históricas.
       // Una sola sentencia actualiza sus datos comunes sin cambiar IDs,
       // consecutivos, fecha de matrícula, categoría ni valores financieros.
+      let relaciones=null
+      if(cambioIdentidad){
+        try{
+          relaciones=await corregirIdentidadCategoria(supabase,{
+            matriculaId:id,documentoAnterior:origen.documento,documentoNuevo,
+            categoriaNueva,catalogo:[...CATS_VALIDAS_GENERALES]
+          })
+        }catch(e){
+          return NextResponse.json({status:'error',message:e.message||
+            'No se pudo corregir el documento o la categoría.'},{status:e.status||409})
+        }
+      }
       const {data:actualizados,error:errorActualizacion}=await supabase.from('aprendices')
-        .update(cambios).eq('documento',origen.documento).select('id')
+        .update(cambios).eq('documento',documentoNuevo).select('id')
       if(errorActualizacion)throw errorActualizacion
-      return NextResponse.json({status:'success',message:'Datos del expediente corregidos.',
-        data:{matriculas_actualizadas:actualizados?.length||0,documento:origen.documento}})
+      return NextResponse.json({status:'success',
+        message:'Datos del expediente corregidos. Se conservaron los consecutivos y valores.',
+        data:{matriculas_actualizadas:actualizados?.length||0,
+          documento:documentoNuevo,categoria:categoriaNueva,relaciones}})
     }
 
     // =====================================================
