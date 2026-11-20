@@ -4155,6 +4155,58 @@ export async function POST(
       ).toLowerCase()
 
     // =====================================================
+    // CORRECCIÓN DE DATOS DEL EXPEDIENTE
+    // Solo datos personales/contacto. Documento y categoría requieren
+    // revisión de relaciones con RUNT, cuentas y programación.
+    // Sin triggers ni funciones SQL; una actualización de aprendices.
+    // =====================================================
+    if (accion === 'corregir_datos_expediente') {
+      const id=Number(body?.matricula_id)
+      if(!Number.isSafeInteger(id)||id<=0)
+        return NextResponse.json({status:'error',message:'Seleccione una matrícula válida.'},{status:400})
+      const {data:origen,error:errorOrigen}=await supabase.from('aprendices')
+        .select('id,documento,categorias').eq('id',id).maybeSingle()
+      if(errorOrigen)throw errorOrigen
+      if(!origen)return NextResponse.json({status:'error',message:'Matrícula no encontrada.'},{status:404})
+      if(normalizarTexto(body?.documento)!==normalizarTexto(origen.documento))
+        return NextResponse.json({status:'error',message:'La corrección del número de documento requiere verificar las relaciones del expediente y sus pagos. No se cambió el documento.'},{status:409})
+      if(body?.categorias && JSON.stringify(body.categorias)!==JSON.stringify(origen.categorias))
+        return NextResponse.json({status:'error',message:'Para corregir categorías deben comprobarse primero los procesos y obligaciones asociados.'},{status:409})
+      const camposTextoMayusculas=['tipo_doc','lugar_expedicion','genero','nombres','apellidos',
+        'direccion','barrio','ciudad','estado_civil','ocupacion','eps','nivel_educativo',
+        'acudi_nombres','acudi_apellidos','acudi_tipo_doc','acudi_direccion','emergencia_nombre']
+      const camposTexto=['celular','estrato','acudi_documento','acudi_celular','emergencia_celular']
+      const camposCorreo=['correo','acudi_correo']
+      const permitidos=[...camposTextoMayusculas,...camposTexto,...camposCorreo,'fecha_nacimiento']
+      const recibidos=Object.keys(body?.datos||{})
+      if(!recibidos.length||recibidos.some(k=>!permitidos.includes(k)))
+        return NextResponse.json({status:'error',message:'La solicitud contiene campos no permitidos.'},{status:400})
+      const cambios={}
+      for(const k of recibidos){
+        const v=body.datos[k]
+        if(camposTextoMayusculas.includes(k))cambios[k]=normalizarMayusculas(v)
+        else if(camposCorreo.includes(k))cambios[k]=normalizarCorreo(v)
+        else if(k==='fecha_nacimiento')cambios[k]=normalizarTexto(v)
+        else cambios[k]=normalizarTexto(v)
+      }
+      if('fecha_nacimiento' in cambios && (!fechaValida(cambios.fecha_nacimiento)||
+        cambios.fecha_nacimiento>fechaBogotaInscripciones()))
+        return NextResponse.json({status:'error',message:'Fecha de nacimiento inválida.'},{status:400})
+      for(const campo of ['tipo_doc','nombres','apellidos']){
+        if(campo in cambios&&!cambios[campo])
+          return NextResponse.json({status:'error',message:'El campo '+campo+' es obligatorio.'},{status:400})
+      }
+      // Un mismo documento puede tener varias matrículas históricas.
+      // Una sola sentencia actualiza sus datos comunes sin cambiar IDs,
+      // consecutivos, fecha de matrícula, categoría ni valores financieros.
+      const {data:actualizados,error:errorActualizacion}=await supabase.from('aprendices')
+        .update(cambios).eq('documento',origen.documento).select('id')
+      if(errorActualizacion)throw errorActualizacion
+      return NextResponse.json({status:'success',message:'Datos del expediente corregidos.',
+        data:{matriculas_actualizadas:actualizados?.length||0,documento:origen.documento}})
+    }
+
+    // =====================================================
     // REGISTRAR CONTINUACIÓN, SIN CREAR NUEVA MATRÍCULA
     // =====================================================
     if (accion === 'registrar_continuacion') {
