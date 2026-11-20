@@ -800,7 +800,7 @@ function MiniInstructor({
           instructor
             ?.clases_curso_vigente_dia
         )}
-        /10 clases
+        /{numero(instructor?.limite_clases_curso_dia || 12)} clases
       </p>
     </div>
   )
