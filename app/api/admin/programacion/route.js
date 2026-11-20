@@ -15,7 +15,7 @@ const MAX_CLASES_APRENDIZ_DIA =
   8
 
 const MAX_CLASES_INSTRUCTOR_DIA_CURSO =
-  10
+  12
 
 const MAX_HORAS_INSTRUCTOR_MES =
   240
@@ -3329,7 +3329,7 @@ async function validarProgramacion(
   // REFUERZO:
   //
   // - NO consume las 240 horas.
-  // - NO utiliza el límite de 10 clases de curso vigente.
+  // - NO utiliza el límite de 12 clases de curso vigente.
   // - Sí ocupa horario.
   //
   // =======================================================
