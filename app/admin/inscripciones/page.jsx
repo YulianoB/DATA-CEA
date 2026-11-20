@@ -766,6 +766,78 @@ function TarjetaProcesoExterno({
 // PÁGINA
 // ============================================================
 
+// Catálogos de edición alineados con Nueva matrícula.
+const CATALOGOS_EDICION_MATRICULA = {
+  tipo_doc:['CC','TI','CE','PA','PEP','PPT'],
+  acudi_tipo_doc:['CC','TI','CE','PA','PEP','PPT'],
+  genero:['MASCULINO','FEMENINO'],
+  estado_civil:['SOLTERO/A','CASADO/A','UNIÓN LIBRE','VIUDO/A','DIVORCIADO/A'],
+  ocupacion:['EMPLEADO','ESTUDIANTE','INDEPENDIENTE','COMERCIANTE','HOGAR','CONTRATISTA','EMPRESARIO','NO APLICA'],
+  nivel_educativo:['BACHILLER','TÉCNICO','TECNÓLOGO','PROFESIONAL','ESPECIALISTA','MAESTRÍA','DOCTORADO','NO APLICA'],
+  estrato:['1','2','3','4','5','6']
+}
+const CAMPOS_MAYUSCULAS_EDICION = new Set([
+  'nombres','apellidos','lugar_expedicion','direccion','barrio','ciudad',
+  'eps','emergencia_nombre','acudi_nombres','acudi_apellidos','acudi_direccion'
+])
+const CAMPOS_NUMERICOS_EDICION = new Set([
+  'celular','emergencia_celular','acudi_documento','acudi_celular'
+])
+const CATEGORIAS_CEA_POR_NIVEL = {
+  'NIVEL I':['A2','B1','C1','RC1'],
+  'NIVEL II':['A2','B1','C1','RC1','B2','C2'],
+  'NIVEL III':['A2','B1','C1','RC1','B2','C2','B3','C3']
+}
+function categoriasEdicionUsuario(usuario) {
+  const categoriasSesion=usuario?.categorias_habilitadas||
+    usuario?.categoriasHabilitadas||usuario?.empresa?.categorias_habilitadas
+  const nivel=String(usuario?.nivel_cea||usuario?.nivelCea||
+    usuario?.empresa?.nivel_cea||'').trim().toUpperCase()
+  const delNivel=CATEGORIAS_CEA_POR_NIVEL[nivel]||[]
+  if(Array.isArray(categoriasSesion)&&categoriasSesion.length)
+    return [...new Set(categoriasSesion.map(c=>String(c||'').trim().toUpperCase()))]
+      .filter(c=>delNivel.includes(c))
+  return [...delNivel]
+}
+function validarEdicionMatricula(datos,categoria,categorias) {
+  const valor=k=>String(datos[k]??'').trim()
+  for(const [campo,opciones] of Object.entries(CATALOGOS_EDICION_MATRICULA)){
+    if(campo==='acudi_tipo_doc'&&!valor('acudi_documento')&&!valor('acudi_nombres'))continue
+    if(valor(campo)&&!opciones.includes(valor(campo)))
+      return 'Seleccione una opción válida para '+campo.replaceAll('_',' ')+'.'
+  }
+  for(const campo of ['tipo_doc','nombres','apellidos','fecha_nacimiento','genero','estado_civil',
+    'ocupacion','eps','estrato','nivel_educativo','direccion','barrio','ciudad','celular'])
+    if(!valor(campo))return 'Complete el campo obligatorio: '+campo.replaceAll('_',' ')+'.'
+  if(!/^\\d{10}$/.test(valor('celular')))return 'El celular debe tener 10 dígitos.'
+  for(const campo of ['correo','acudi_correo'])
+    if(valor(campo)&&!/^\\S+@\\S+\\.\\S+$/.test(valor(campo)))
+      return 'Ingrese un correo electrónico válido.'
+  if(valor('emergencia_celular')&&!/^\\d{10}$/.test(valor('emergencia_celular')))
+    return 'El contacto de emergencia debe tener 10 dígitos.'
+  if(valor('acudi_celular')&&!/^\\d{10}$/.test(valor('acudi_celular')))
+    return 'El celular del acudiente debe tener 10 dígitos.'
+  if(!categorias.includes(categoria))
+    return 'La categoría seleccionada no está habilitada para el nivel del CEA.'
+  const f=new Date(valor('fecha_nacimiento')+'T12:00:00Z')
+  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(valor('fecha_nacimiento'))||
+    Number.isNaN(f.getTime())||f.toISOString().slice(0,10)!==valor('fecha_nacimiento'))
+    return 'Ingrese una fecha de nacimiento válida.'
+  const hoy=new Date()
+  let edad=hoy.getFullYear()-f.getUTCFullYear()
+  if(hoy.getMonth()<f.getUTCMonth()||(hoy.getMonth()===f.getUTCMonth()&&hoy.getDate()<f.getUTCDate()))edad--
+  if(edad<16)return 'El aprendiz debe tener al menos 16 años.'
+  if(edad<18&&!['A2','B1'].includes(categoria))
+    return 'Con 16 o 17 años solo se permite A2 o B1.'
+  if(edad<18){
+    for(const campo of ['acudi_nombres','acudi_apellidos','acudi_tipo_doc','acudi_documento','acudi_celular'])
+      if(!valor(campo))return 'Complete los datos del acudiente.'
+    if(!/^\\d+$/.test(valor('acudi_documento'))||!/^\\d{10}$/.test(valor('acudi_celular')))
+      return 'Revise documento y celular del acudiente.'
+  }else if(!valor('emergencia_nombre')||!/^\\d{10}$/.test(valor('emergencia_celular')))
+    return 'Ingrese el nombre y celular de 10 dígitos del contacto de emergencia.'
+  return ''
+}
 const CAMPOS_CORREGIR_EXPEDIENTE = [
   ['Identificación y datos básicos',[
     ['tipo_doc','Tipo de documento'],['nombres','Nombres'],['apellidos','Apellidos'],
@@ -1546,6 +1618,12 @@ export default function InscripcionesPage() {
     const datos={}
     CAMPOS_CORREGIR_EXPEDIENTE.forEach(([,campos])=>
       campos.forEach(([clave])=>{datos[clave]=String(aprendiz[clave]??'')}))
+    for(const [clave,opciones] of Object.entries(CATALOGOS_EDICION_MATRICULA)){
+      const actual=String(datos[clave]||'').trim().toUpperCase()
+      // Mantener el valor histórico visible; no reemplazarlo silenciosamente.
+      if(!opciones.includes(actual))datos[clave]=actual
+      else datos[clave]=actual
+    }
     datos.documento_nuevo=String(aprendiz.documento??'')
     datos.categoria_nueva=String(matriculaSeleccionada.categorias?.[0]||
       matriculaSeleccionada.categoria||'').toUpperCase()
@@ -1557,6 +1635,9 @@ export default function InscripcionesPage() {
   async function guardarCorreccionExpediente(e) {
     e.preventDefault()
     if(!matriculaSeleccionada?.id||guardandoCorreccion)return
+    const errorValidacion=validarEdicionMatricula(datosCorreccion,
+      datosCorreccion.categoria_nueva,categoriasEdicionUsuario(user))
+    if(errorValidacion){setErrorCorreccion(errorValidacion);return}
     setGuardandoCorreccion(true)
     setErrorCorreccion('')
     try {
@@ -2402,7 +2483,11 @@ export default function InscripcionesPage() {
                   <select required value={datosCorreccion.categoria_nueva||''}
                     onChange={e=>setDatosCorreccion(d=>({...d,categoria_nueva:e.target.value}))}
                     className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold">
-                    {['A2','B1','C1','RC1','B2','C2','B3','C3'].map(c=><option key={c} value={c}>{c}</option>)}
+                    {!categoriasEdicionUsuario(user).includes(datosCorreccion.categoria_nueva)&&
+                      <option value={datosCorreccion.categoria_nueva} disabled>
+                        {datosCorreccion.categoria_nueva||'Categoría no identificada'} (no habilitada)
+                      </option>}
+                    {categoriasEdicionUsuario(user).map(c=><option key={c} value={c}>{c}</option>)}
                   </select>
                 </label>
               </div>
@@ -2421,11 +2506,34 @@ export default function InscripcionesPage() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {campos.map(([clave,label,tipo])=>(
                       <label key={clave} className="text-xs font-semibold text-slate-700">{label}
-                        <input type={tipo||'text'}
-                          required={['tipo_doc','nombres','apellidos','fecha_nacimiento'].includes(clave)}
-                          value={datosCorreccion[clave]??''}
-                          onChange={e=>setDatosCorreccion(p=>({...p,[clave]:e.target.value}))}
-                          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-900"/>
+                        {CATALOGOS_EDICION_MATRICULA[clave] ? (
+                          <select value={datosCorreccion[clave]??''}
+                            onChange={e=>setDatosCorreccion(p=>({...p,[clave]:e.target.value}))}
+                            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-900">
+                            <option value="">Seleccione...</option>
+                            {datosCorreccion[clave]&&!CATALOGOS_EDICION_MATRICULA[clave].includes(datosCorreccion[clave])&&
+                              <option value={datosCorreccion[clave]} disabled>
+                                {datosCorreccion[clave]} (valor anterior no válido)
+                              </option>}
+                            {CATALOGOS_EDICION_MATRICULA[clave].map(op=>
+                              <option key={op} value={op}>{op}</option>)}
+                          </select>
+                        ) : (
+                          <input type={tipo||'text'}
+                            inputMode={CAMPOS_NUMERICOS_EDICION.has(clave)?'numeric':undefined}
+                            required={['nombres','apellidos','fecha_nacimiento','celular','direccion','barrio','ciudad'].includes(clave)}
+                            value={datosCorreccion[clave]??''}
+                            onChange={e=>setDatosCorreccion(p=>({
+                              ...p,[clave]:CAMPOS_MAYUSCULAS_EDICION.has(clave)
+                                ?e.target.value.toUpperCase()
+                                :CAMPOS_NUMERICOS_EDICION.has(clave)
+                                  ?e.target.value.replace(/\\D/g,'')
+                                  :['correo','acudi_correo'].includes(clave)
+                                    ?e.target.value.toLowerCase():e.target.value
+                            }))}
+                            maxLength={['celular','acudi_celular','emergencia_celular'].includes(clave)?10:undefined}
+                            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-900"/>
+                        )}
                       </label>
                     ))}
                   </div>
