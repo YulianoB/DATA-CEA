@@ -4167,7 +4167,7 @@ export async function POST(
       if(!Number.isSafeInteger(id)||id<=0)
         return NextResponse.json({status:'error',message:'Seleccione una matrícula válida.'},{status:400})
       const {data:origen,error:errorOrigen}=await supabase.from('aprendices')
-        .select('id,documento,categorias').eq('id',id).maybeSingle()
+        .select('*').eq('id',id).maybeSingle()
       if(errorOrigen)throw errorOrigen
       if(!origen)return NextResponse.json({status:'error',message:'Matrícula no encontrada.'},{status:404})
       if(normalizarTexto(body?.documento)!==normalizarTexto(origen.documento))
@@ -4176,6 +4176,9 @@ export async function POST(
       const categoriaNueva=normalizarMayusculas(body?.categoria_nueva??origen.categorias?.[0])
       const cambioIdentidad=documentoNuevo!==origen.documento||
         categoriaNueva!==origen.categorias?.[0]
+      const categoriaAutorizada=validarCategoriasPorNivel([categoriaNueva],empresa)
+      if(!categoriaAutorizada.ok)
+        return NextResponse.json({status:'error',message:categoriaAutorizada.message},{status:400})
       if(!normalizarTexto(body.usuario))
         return NextResponse.json({status:'error',message:'No se identificó el usuario responsable.'},{status:400})
       const camposTextoMayusculas=['tipo_doc','lugar_expedicion','genero','nombres','apellidos',
@@ -4202,6 +4205,59 @@ export async function POST(
         if(campo in cambios&&!cambios[campo])
           return NextResponse.json({status:'error',message:'El campo '+campo+' es obligatorio.'},{status:400})
       }
+      // Las mismas listas que utiliza Nueva matrícula. La API comprueba
+      // nuevamente los datos; no confía en los selectores del navegador.
+      const catalogos={
+        tipo_doc:['CC','TI','CE','PA','PEP','PPT'],
+        acudi_tipo_doc:['CC','TI','CE','PA','PEP','PPT'],
+        genero:['MASCULINO','FEMENINO'],
+        estado_civil:['SOLTERO/A','CASADO/A','UNIÓN LIBRE','VIUDO/A','DIVORCIADO/A'],
+        ocupacion:['EMPLEADO','ESTUDIANTE','INDEPENDIENTE','COMERCIANTE','HOGAR','CONTRATISTA','EMPRESARIO','NO APLICA'],
+        estrato:['1','2','3','4','5','6'],
+        nivel_educativo:['BACHILLER','TÉCNICO','TECNÓLOGO','PROFESIONAL','ESPECIALISTA','MAESTRÍA','DOCTORADO','NO APLICA']
+      }
+      const despues={...origen,...cambios}
+      const txt=k=>normalizarTexto(despues[k])
+      for(const [campo,lista] of Object.entries(catalogos)){
+        if(campo==='acudi_tipo_doc'&&!txt('acudi_documento')&&!txt('acudi_nombres'))continue
+        if(!lista.includes(txt(campo).toUpperCase()))
+          return NextResponse.json({status:'error',message:'Seleccione un valor válido para '+campo.replaceAll('_',' ')+'.'},{status:400})
+      }
+      for(const campo of ['nombres','apellidos','fecha_nacimiento','celular','direccion','barrio','ciudad','eps']){
+        if(!txt(campo))
+          return NextResponse.json({status:'error',message:'Complete el campo obligatorio '+campo.replaceAll('_',' ')+'.'},{status:400})
+      }
+      if(!/^\d{10}$/.test(txt('celular')))
+        return NextResponse.json({status:'error',message:'Celular: debe contener 10 dígitos.'},{status:400})
+      for(const campo of ['correo','acudi_correo']){
+        if(txt(campo)&&!/^\S+@\S+\.\S+$/.test(txt(campo)))
+          return NextResponse.json({status:'error',message:'Correo electrónico inválido.'},{status:400})
+      }
+      for(const campo of ['emergencia_celular','acudi_celular']){
+        if(txt(campo)&&!/^\d{10}$/.test(txt(campo)))
+          return NextResponse.json({status:'error',message:'El campo '+campo+' requiere 10 dígitos.'},{status:400})
+      }
+      const nacimiento=txt('fecha_nacimiento')
+      const fecha=new Date(nacimiento+'T12:00:00Z')
+      if(!fechaValida(nacimiento)||Number.isNaN(fecha.getTime())||
+        fecha.toISOString().slice(0,10)!==nacimiento||nacimiento>fechaBogotaInscripciones())
+        return NextResponse.json({status:'error',message:'Fecha de nacimiento no válida.'},{status:400})
+      const hoyBogota=fechaBogotaInscripciones()
+      const [anio,mes,dia]=hoyBogota.split('-').map(Number)
+      let edad=anio-fecha.getUTCFullYear()
+      if(mes<fecha.getUTCMonth()+1||(mes===fecha.getUTCMonth()+1&&dia<fecha.getUTCDate()))edad--
+      if(edad<16)
+        return NextResponse.json({status:'error',message:'El aprendiz debe tener al menos 16 años.'},{status:400})
+      if(edad<18&&!['A2','B1'].includes(categoriaNueva))
+        return NextResponse.json({status:'error',message:'Con 16 o 17 años solo se permite A2 o B1.'},{status:400})
+      if(edad<18){
+        for(const campo of ['acudi_nombres','acudi_apellidos','acudi_tipo_doc','acudi_documento','acudi_celular']){
+          if(!txt(campo))return NextResponse.json({status:'error',message:'Complete los datos del acudiente.'},{status:400})
+        }
+        if(!/^\d+$/.test(txt('acudi_documento'))||!/^\d{10}$/.test(txt('acudi_celular')))
+          return NextResponse.json({status:'error',message:'Revise documento y celular del acudiente.'},{status:400})
+      }else if(!txt('emergencia_nombre')||!/^\d{10}$/.test(txt('emergencia_celular')))
+        return NextResponse.json({status:'error',message:'Complete nombre y celular del contacto de emergencia.'},{status:400})
       // Un mismo documento puede tener varias matrículas históricas.
       // Una sola sentencia actualiza sus datos comunes sin cambiar IDs,
       // consecutivos, fecha de matrícula, categoría ni valores financieros.
@@ -4210,7 +4266,7 @@ export async function POST(
         try{
           relaciones=await corregirIdentidadCategoria(supabase,{
             matriculaId:id,documentoAnterior:origen.documento,documentoNuevo,
-            categoriaNueva,catalogo:[...CATS_VALIDAS_GENERALES]
+            categoriaNueva,catalogo:categoriaAutorizada.habilitadas
           })
         }catch(e){
           return NextResponse.json({status:'error',message:e.message||
