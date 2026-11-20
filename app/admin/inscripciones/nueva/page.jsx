@@ -4636,7 +4636,7 @@ const guardar =
                 top-6
                 bottom-6
                 w-[calc(100%-2rem)]
-                max-w-[960px]
+                max-w-[1120px]
                 -translate-x-1/2
                 z-50
                 overflow-y-auto
@@ -4664,11 +4664,11 @@ const guardar =
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-bold">
-                      Confirmar Matrícula
+                    <div className="text-xl font-bold">
+                      Confirmar matrícula
                     </div>
-                    <div className="mt-1 text-xs opacity-90">
-                      Revise toda la información antes de guardar.
+                    <div className="mt-1 text-sm opacity-90">
+                      Verifique los datos personales, de contacto y de matrícula antes de guardar.
                     </div>
                   </div>
 
@@ -4688,235 +4688,123 @@ const guardar =
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {/* Resumen visual de lectura: únicamente muestra datos ya ingresados. */}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {[
+                  {
+                    titulo:'Datos de identificación',
+                    campos:[
+                      ['Tipo de documento',form.tipo_doc],
+                      ['Número de documento',formatMilesDigits(form.documento)],
+                      ['Nombres',form.nombres],
+                      ['Apellidos',form.apellidos],
+                      ['Fecha de nacimiento',form.fecha_nacimiento],
+                      ['Género',form.genero],
+                    ],
+                  },
+                  {
+                    titulo:'Información de contacto',
+                    campos:[
+                      ['Celular',form.celular],
+                      ['Correo electrónico',form.correo],
+                      ['Dirección',form.direccion],
+                      ['Barrio',form.barrio],
+                      ['Ciudad',form.ciudad],
+                    ],
+                  },
+                  {
+                    titulo:'Contacto en caso de emergencia',
+                    campos:[
+                      ['Nombre de contacto',form.emergencia_nombre],
+                      ['Teléfono de emergencia',form.emergencia_celular],
+                    ],
+                  },
+                  {
+                    titulo:'Información complementaria',
+                    campos:[
+                      ['Estado civil',form.estado_civil],
+                      ['Ocupación',form.ocupacion],
+                      ['EPS',form.eps],
+                      ['Estrato',form.estrato],
+                      ['Nivel educativo',form.nivel_educativo],
+                    ],
+                  },
+                ].map(seccion=>(
+                  <section key={seccion.titulo} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h3 className="mb-4 border-b border-slate-200 pb-2 text-lg font-extrabold text-[#0B668F]">
+                      {seccion.titulo}
+                    </h3>
+                    <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+                      {seccion.campos.map(([etiqueta,valor])=>(
+                        <div key={etiqueta} className="min-w-0">
+                          <dt className="text-[13px] font-semibold text-slate-500">{etiqueta}</dt>
+                          <dd className="mt-0.5 break-words text-[16px] font-semibold leading-snug text-slate-900">
+                            {valor || '—'}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                ))}
 
-                {/* DATOS BÁSICOS */}
-
-                <div className="border border-gray-300 rounded-lg p-3">
-
-                  <div
-                    className="rounded-t-lg px-3 py-2 text-xs font-semibold"
-                    style={{
-                      backgroundColor: ESTILO_SECCIONES.fondo,
-                      color: ESTILO_SECCIONES.texto,
-                      borderColor: ESTILO_SECCIONES.borde,
-                    }}
-                  >
-                    Datos básicos
-                  </div>
-
-                  <div className="text-xs space-y-1">
-
+                <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <h3 className="mb-4 border-b border-slate-200 pb-2 text-lg font-extrabold text-[#0B668F]">
+                    Datos de matrícula
+                  </h3>
+                  <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <strong>
-                        Documento:
-                      </strong>{' '}
-
-                      {form.tipo_doc}{' '}
-
-                      {formatMilesDigits(
-                        form.documento
-                      )}
+                      <dt className="text-[13px] font-semibold text-slate-500">Origen de matrícula</dt>
+                      <dd className="mt-0.5 text-[16px] font-semibold text-slate-900">{form.origen_matricula==='CONVENIO'?'CONVENIO':'DIRECTO'}</dd>
                     </div>
-
                     <div>
-                      <strong>
-                        Nombres:
-                      </strong>{' '}
-
-                      {form.nombres ||
-                        '—'}
+                      <dt className="text-[13px] font-semibold text-slate-500">
+                        {form.origen_matricula==='CONVENIO'?'Convenio':'CEA'}
+                      </dt>
+                      <dd className="mt-0.5 break-words text-[16px] font-semibold text-slate-900">
+                        {form.origen_matricula==='CONVENIO'
+                          ? (form.convenio||'—')
+                          : String(nombreEmpresaUsuario(user)||'CEA').toUpperCase()}
+                      </dd>
                     </div>
-
-                    <div>
-                      <strong>
-                        Apellidos:
-                      </strong>{' '}
-
-                      {form.apellidos ||
-                        '—'}
-                    </div>
-
-                    <div>
-                      <strong>
-                        Fecha nacimiento:
-                      </strong>{' '}
-
-                      {form.fecha_nacimiento ||
-                        '—'}
-                    </div>
-
-                    <div>
-                      <strong>
-                        Género:
-                      </strong>{' '}
-
-                      {form.genero ||
-                        '—'}
-                    </div>
-
-                  </div>
-
-                </div>
-
-                {/* CONTACTO */}
-
-                <div className="border border-gray-300 rounded-lg p-3">
-
-                  <div
-                    className="rounded-t-lg px-3 py-2 text-xs font-semibold"
-                    style={{
-                      backgroundColor: ESTILO_SECCIONES.fondo,
-                      color: ESTILO_SECCIONES.texto,
-                      borderColor: ESTILO_SECCIONES.borde,
-                    }}
-                  >
-                    Contacto
-                  </div>
-
-                  <div className="text-xs space-y-1">
-
-                    <div>
-                      <strong>
-                        Celular:
-                      </strong>{' '}
-
-                      {form.celular ||
-                        '—'}
-                    </div>
-
-                    <div>
-                      <strong>
-                        Correo:
-                      </strong>{' '}
-
-                      {form.correo ||
-                        '—'}
-                    </div>
-
-                    <div>
-                      <strong>
-                        Dirección:
-                      </strong>{' '}
-
-                      {form.direccion ||
-                        '—'}
-                    </div>
-
-                    <div>
-                      <strong>
-                        Ciudad:
-                      </strong>{' '}
-
-                      {form.ciudad ||
-                        '—'}
-                    </div>
-
-                  </div>
-
-                </div>
-
-                {/* MATRÍCULA */}
-
-                <div className="border border-gray-300 rounded-lg p-3">
-
-                  <div
-                    className="rounded-t-lg px-3 py-2 text-xs font-semibold"
-                    style={{
-                      backgroundColor: ESTILO_SECCIONES.fondo,
-                      color: ESTILO_SECCIONES.texto,
-                      borderColor: ESTILO_SECCIONES.borde,
-                    }}
-                  >
-                    Matrícula
-                  </div>
-
-                  <div className="text-xs space-y-2">
-
-                    <div>
-                      <strong>
-                        Origen:
-                      </strong>{' '}
-
-                      {form.origen_matricula ===
-                      'CONVENIO'
-                        ? 'CONVENIO'
-                        : 'DIRECTO'}
-                    </div>
-
-                    <div>
-                      <strong>
-                        {form.origen_matricula ===
-                        'CONVENIO'
-                          ? 'Convenio:'
-                          : 'CEA:'}
-                      </strong>{' '}
-
-                      {form.origen_matricula ===
-                      'CONVENIO'
-                        ? (
-                            form.convenio ||
-                            '—'
-                          )
-                        : String(
-                            nombreEmpresaUsuario(
-                              user
-                            ) ||
-                            'CEA'
-                          ).toUpperCase()}
-                    </div>
-
-                    <div>
-                      <strong>
-                        Categorías:
-                      </strong>
-
-                      <div className="flex flex-wrap gap-2 mt-2">
-
-                        {form.categorias.map(
-                          categoria => (
-                            <span
-                              key={
-                                categoria
-                              }
-                              className="
-                                bg-[var(--primary)]
-                                text-white
-                                px-3
-                                py-1
-                                rounded
-                                font-bold
-                              "
-                            >
-                              {categoria}
-                            </span>
-                          )
-                        )}
-
+                  </dl>
+                  <h4 className="mb-2 mt-4 text-sm font-bold text-slate-600">Categoría(s) seleccionada(s)</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {form.categorias.map(categoria=>(
+                      <div key={categoria} className="flex min-h-[70px] min-w-[100px] items-center justify-center rounded-xl border-2 border-blue-500 bg-blue-50 px-6 py-3 text-3xl font-black text-blue-900 shadow-sm">
+                        {categoria}
                       </div>
-                    </div>
-
+                    ))}
                   </div>
+                </section>
 
-                </div>
-
+                <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <h3 className="mb-4 border-b border-slate-200 pb-2 text-lg font-extrabold text-[#0B668F]">
+                    Información del acudiente
+                  </h3>
+                  <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+                    {[
+                      ['Nombres',form.acudi_nombres],
+                      ['Apellidos',form.acudi_apellidos],
+                      ['Tipo de documento',form.acudi_tipo_doc],
+                      ['Documento',form.acudi_documento],
+                      ['Celular',form.acudi_celular],
+                      ['Dirección',form.acudi_direccion],
+                      ['Correo electrónico',form.acudi_correo],
+                    ].map(([etiqueta,valor])=>(
+                      <div key={etiqueta} className="min-w-0">
+                        <dt className="text-[13px] font-semibold text-slate-500">{etiqueta}</dt>
+                        <dd className="mt-0.5 break-words text-[16px] font-semibold text-slate-900">{valor||'—'}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
               </div>
 
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
-              {/* El precio del curso se define posteriormente en Caja. */}
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+              {/* El valor del curso se determina posteriormente desde Caja. */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-[14px] leading-relaxed text-blue-950">
                 <strong>Obligación pendiente de liquidación.</strong> Al confirmar la matrícula,
                 se creará la obligación con valor $0 y sus detalles por categoría.
                 En Caja deberá seleccionar <strong>Definir valor del curso</strong> antes de registrar un pago.
-              </div>
-
-              {/* El funcionario de Control RUNT realizará la consulta después de matricular. */}
-              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950">
-                <strong>CONSULTA RUNT PENDIENTE.</strong> La matrícula se guardará sin verificación ciudadana.
-                El funcionario encargado registrará el resultado desde Control RUNT.
-              </div>
-
               </div>
 
               <div className="flex flex-wrap justify-end gap-2 border-t border-gray-200 pt-4">
