@@ -2448,8 +2448,8 @@ export default function InscripcionesPage() {
                 <div className="flex shrink-0 items-center gap-2">
                   <button type="button" onClick={abrirCorreccionExpediente}
                     disabled={!aprendiz||!matriculaSeleccionada||loadingExpediente}
-                    className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-[#173A57] transition hover:bg-sky-50 disabled:opacity-50">
-                    <i className="fas fa-pen mr-2"/>Corregir datos
+                    className="relative z-30 inline-flex min-h-[40px] shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-white/50 bg-white px-4 py-2 text-xs font-bold text-[#173A57] shadow-sm transition hover:bg-sky-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50">
+                    <i className="fas fa-pen" aria-hidden="true"/>Corregir datos
                   </button>
                 <button
                   type="button"
@@ -2463,13 +2463,13 @@ export default function InscripcionesPage() {
               </div>
 
               {matriculaSeleccionada && (
-                <div className="absolute right-16 top-1/2 -translate-y-1/2 text-right text-white pr-3">
-                  <div className="text-xs text-white">
-                    Matrícula {matriculaSeleccionada.consecutivo || '-'}
-                  </div>
-                  <div className="text-lg font-black leading-tight text-white">
-                    {matriculaSeleccionada.categoria || '-'}
-                  </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-white/20 pt-2 text-white">
+                  <span className="text-xs font-semibold">Matrícula {matriculaSeleccionada.consecutivo || '-'}</span>
+                  <span className="rounded-md border border-white/30 bg-white/10 px-2 py-0.5 text-sm font-black">
+                    {(Array.isArray(matriculaSeleccionada.categorias) && matriculaSeleccionada.categorias.length
+                      ? matriculaSeleccionada.categorias.join(' · ')
+                      : matriculaSeleccionada.categoria) || '-'}
+                  </span>
                 </div>
               )}
             </div>
