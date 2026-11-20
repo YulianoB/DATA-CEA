@@ -4633,10 +4633,10 @@ const guardar =
               className="
                 fixed
                 left-1/2
-                top-6
-                bottom-6
-                w-[calc(100%-2rem)]
-                max-w-[1120px]
+                top-3
+                bottom-3
+                w-[calc(100%-1.5rem)]
+                max-w-[1450px]
                 -translate-x-1/2
                 z-50
                 overflow-y-auto
@@ -4644,17 +4644,17 @@ const guardar =
                 border
                 border-gray-300
                 bg-white
-                p-4
-                md:p-5
+                p-3
+                md:p-4
                 shadow-[0_0_0_100vmax_rgba(15,23,42,0.55)]
-                space-y-4
+                space-y-3
               "
               role="dialog"
               aria-modal="true"
               aria-label="Confirmar matrícula"
             >
               <div
-                className="rounded-lg px-4 py-3"
+                className="rounded-lg px-4 py-2.5"
                 style={{
                   backgroundColor:
                     ESTILO_SECCIONES.fondo,
@@ -4664,10 +4664,10 @@ const guardar =
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-xl font-bold">
+                    <div className="text-lg font-bold">
                       Confirmar matrícula
                     </div>
-                    <div className="mt-1 text-sm opacity-90">
+                    <div className="mt-0.5 text-[13px] opacity-90">
                       Verifique los datos personales, de contacto y de matrícula antes de guardar.
                     </div>
                   </div>
@@ -4689,7 +4689,7 @@ const guardar =
               </div>
 
               {/* Resumen visual de lectura: únicamente muestra datos ya ingresados. */}
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {[
                   {
                     titulo:'Datos de identificación',
@@ -4730,15 +4730,15 @@ const guardar =
                     ],
                   },
                 ].map(seccion=>(
-                  <section key={seccion.titulo} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <h3 className="mb-4 border-b border-slate-200 pb-2 text-lg font-extrabold text-[#0B668F]">
+                  <section key={seccion.titulo} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <h3 className="mb-2 border-b border-slate-200 pb-1.5 text-[16px] font-extrabold text-[#0B668F]">
                       {seccion.titulo}
                     </h3>
-                    <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+                    <dl className="grid grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-2">
                       {seccion.campos.map(([etiqueta,valor])=>(
                         <div key={etiqueta} className="min-w-0">
-                          <dt className="text-[13px] font-semibold text-slate-500">{etiqueta}</dt>
-                          <dd className="mt-0.5 break-words text-[16px] font-semibold leading-snug text-slate-900">
+                          <dt className="text-[12px] font-semibold text-slate-500">{etiqueta}</dt>
+                          <dd className="mt-0.5 break-words text-[14px] font-semibold leading-tight text-slate-900">
                             {valor || '—'}
                           </dd>
                         </div>
@@ -4747,41 +4747,42 @@ const guardar =
                   </section>
                 ))}
 
-                <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <h3 className="mb-4 border-b border-slate-200 pb-2 text-lg font-extrabold text-[#0B668F]">
+                <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <h3 className="mb-2 border-b border-slate-200 pb-1.5 text-[16px] font-extrabold text-[#0B668F]">
                     Datos de matrícula
                   </h3>
-                  <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <div>
-                      <dt className="text-[13px] font-semibold text-slate-500">Origen de matrícula</dt>
-                      <dd className="mt-0.5 text-[16px] font-semibold text-slate-900">{form.origen_matricula==='CONVENIO'?'CONVENIO':'DIRECTO'}</dd>
+                      <dt className="text-[12px] font-semibold text-slate-500">Origen de matrícula</dt>
+                      <dd className="mt-0.5 text-[14px] font-semibold text-slate-900">{form.origen_matricula==='CONVENIO'?'CONVENIO':'DIRECTO'}</dd>
                     </div>
                     <div>
-                      <dt className="text-[13px] font-semibold text-slate-500">
+                      <dt className="text-[12px] font-semibold text-slate-500">
                         {form.origen_matricula==='CONVENIO'?'Convenio':'CEA'}
                       </dt>
-                      <dd className="mt-0.5 break-words text-[16px] font-semibold text-slate-900">
+                      <dd className="mt-0.5 break-words text-[14px] font-semibold text-slate-900">
                         {form.origen_matricula==='CONVENIO'
                           ? (form.convenio||'—')
                           : String(nombreEmpresaUsuario(user)||'CEA').toUpperCase()}
                       </dd>
                     </div>
                   </dl>
-                  <h4 className="mb-2 mt-4 text-sm font-bold text-slate-600">Categoría(s) seleccionada(s)</h4>
-                  <div className="flex flex-wrap gap-3">
+                  <h4 className="mb-2 mt-2 text-[12px] font-bold text-slate-600">Categoría(s) seleccionada(s)</h4>
+                  <div className="flex flex-wrap gap-2">
                     {form.categorias.map(categoria=>(
-                      <div key={categoria} className="flex min-h-[70px] min-w-[100px] items-center justify-center rounded-xl border-2 border-blue-500 bg-blue-50 px-6 py-3 text-3xl font-black text-blue-900 shadow-sm">
+                      <div key={categoria} className="flex min-h-[50px] min-w-[76px] items-center justify-center rounded-lg border-2 border-blue-500 bg-blue-50 px-4 py-2 text-2xl font-black text-blue-900 shadow-sm">
                         {categoria}
                       </div>
                     ))}
                   </div>
                 </section>
 
-                <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <h3 className="mb-4 border-b border-slate-200 pb-2 text-lg font-extrabold text-[#0B668F]">
+                {esMenor && (
+                <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <h3 className="mb-2 border-b border-slate-200 pb-1.5 text-[16px] font-extrabold text-[#0B668F]">
                     Información del acudiente
                   </h3>
-                  <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+                  <dl className="grid grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-2">
                     {[
                       ['Nombres',form.acudi_nombres],
                       ['Apellidos',form.acudi_apellidos],
@@ -4792,22 +4793,23 @@ const guardar =
                       ['Correo electrónico',form.acudi_correo],
                     ].map(([etiqueta,valor])=>(
                       <div key={etiqueta} className="min-w-0">
-                        <dt className="text-[13px] font-semibold text-slate-500">{etiqueta}</dt>
-                        <dd className="mt-0.5 break-words text-[16px] font-semibold text-slate-900">{valor||'—'}</dd>
+                        <dt className="text-[12px] font-semibold text-slate-500">{etiqueta}</dt>
+                        <dd className="mt-0.5 break-words text-[14px] font-semibold text-slate-900">{valor||'—'}</dd>
                       </div>
                     ))}
                   </dl>
                 </section>
+                )}
               </div>
 
               {/* El valor del curso se determina posteriormente desde Caja. */}
-              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-[14px] leading-relaxed text-blue-950">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[12px] leading-snug text-blue-950">
                 <strong>Obligación pendiente de liquidación.</strong> Al confirmar la matrícula,
                 se creará la obligación con valor $0 y sus detalles por categoría.
                 En Caja deberá seleccionar <strong>Definir valor del curso</strong> antes de registrar un pago.
               </div>
 
-              <div className="flex flex-wrap justify-end gap-2 border-t border-gray-200 pt-4">
+              <div className="flex flex-wrap justify-end gap-2 border-t border-gray-200 pt-2">
                 <BotonCancelar
                   type="button"
                   onClick={() =>
