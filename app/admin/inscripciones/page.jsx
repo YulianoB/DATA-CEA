@@ -2380,7 +2380,7 @@ export default function InscripcionesPage() {
               {CAMPOS_CORREGIR_EXPEDIENTE.filter(([titulo])=>{
                 if(!titulo.startsWith('Acudiente'))return true
                 const nacimiento=datosCorreccion.fecha_nacimiento
-                if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(nacimiento||''))return false
+                if(!/^\d{4}-\d{2}-\d{2}$/.test(nacimiento||''))return false
                 const f=new Date(nacimiento+'T12:00:00Z'),ahora=new Date()
                 let edad=ahora.getFullYear()-f.getUTCFullYear()
                 if(ahora.getMonth()<f.getUTCMonth()||
