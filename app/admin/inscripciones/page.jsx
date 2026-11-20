@@ -809,18 +809,18 @@ function validarEdicionMatricula(datos,categoria,categorias) {
   for(const campo of ['tipo_doc','nombres','apellidos','fecha_nacimiento','genero','estado_civil',
     'ocupacion','eps','estrato','nivel_educativo','direccion','barrio','ciudad','celular'])
     if(!valor(campo))return 'Complete el campo obligatorio: '+campo.replaceAll('_',' ')+'.'
-  if(!/^\\d{10}$/.test(valor('celular')))return 'El celular debe tener 10 dígitos.'
+  if(!/^\d{10}$/.test(valor('celular')))return 'El celular debe tener 10 dígitos.'
   for(const campo of ['correo','acudi_correo'])
-    if(valor(campo)&&!/^\\S+@\\S+\\.\\S+$/.test(valor(campo)))
+    if(valor(campo)&&!/^\S+@\S+\.\S+$/.test(valor(campo)))
       return 'Ingrese un correo electrónico válido.'
-  if(valor('emergencia_celular')&&!/^\\d{10}$/.test(valor('emergencia_celular')))
+  if(valor('emergencia_celular')&&!/^\d{10}$/.test(valor('emergencia_celular')))
     return 'El contacto de emergencia debe tener 10 dígitos.'
-  if(valor('acudi_celular')&&!/^\\d{10}$/.test(valor('acudi_celular')))
+  if(valor('acudi_celular')&&!/^\d{10}$/.test(valor('acudi_celular')))
     return 'El celular del acudiente debe tener 10 dígitos.'
   if(!categorias.includes(categoria))
     return 'La categoría seleccionada no está habilitada para el nivel del CEA.'
   const f=new Date(valor('fecha_nacimiento')+'T12:00:00Z')
-  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(valor('fecha_nacimiento'))||
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(valor('fecha_nacimiento'))||
     Number.isNaN(f.getTime())||f.toISOString().slice(0,10)!==valor('fecha_nacimiento'))
     return 'Ingrese una fecha de nacimiento válida.'
   const hoy=new Date()
@@ -832,9 +832,9 @@ function validarEdicionMatricula(datos,categoria,categorias) {
   if(edad<18){
     for(const campo of ['acudi_nombres','acudi_apellidos','acudi_tipo_doc','acudi_documento','acudi_celular'])
       if(!valor(campo))return 'Complete los datos del acudiente.'
-    if(!/^\\d+$/.test(valor('acudi_documento'))||!/^\\d{10}$/.test(valor('acudi_celular')))
+    if(!/^\d+$/.test(valor('acudi_documento'))||!/^\d{10}$/.test(valor('acudi_celular')))
       return 'Revise documento y celular del acudiente.'
-  }else if(!valor('emergencia_nombre')||!/^\\d{10}$/.test(valor('emergencia_celular')))
+  }else if(!valor('emergencia_nombre')||!/^\d{10}$/.test(valor('emergencia_celular')))
     return 'Ingrese el nombre y celular de 10 dígitos del contacto de emergencia.'
   return ''
 }
@@ -1621,8 +1621,7 @@ export default function InscripcionesPage() {
     for(const [clave,opciones] of Object.entries(CATALOGOS_EDICION_MATRICULA)){
       const actual=String(datos[clave]||'').trim().toUpperCase()
       // Mantener el valor histórico visible; no reemplazarlo silenciosamente.
-      if(!opciones.includes(actual))datos[clave]=actual
-      else datos[clave]=actual
+      datos[clave]=actual
     }
     datos.documento_nuevo=String(aprendiz.documento??'')
     datos.categoria_nueva=String(matriculaSeleccionada.categorias?.[0]||
