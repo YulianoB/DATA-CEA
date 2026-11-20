@@ -766,6 +766,31 @@ function TarjetaProcesoExterno({
 // PÁGINA
 // ============================================================
 
+const CAMPOS_CORREGIR_EXPEDIENTE = [
+  ['Identificación y datos básicos',[
+    ['tipo_doc','Tipo de documento'],['nombres','Nombres'],['apellidos','Apellidos'],
+    ['fecha_nacimiento','Fecha de nacimiento','date'],['lugar_expedicion','Lugar de expedición'],
+    ['genero','Género']
+  ]],
+  ['Contacto',[
+    ['celular','Celular'],['correo','Correo electrónico'],['direccion','Dirección'],
+    ['barrio','Barrio'],['ciudad','Ciudad']
+  ]],
+  ['Información complementaria',[
+    ['estado_civil','Estado civil'],['ocupacion','Ocupación'],['eps','EPS'],
+    ['estrato','Estrato'],['nivel_educativo','Nivel educativo']
+  ]],
+  ['Contacto de emergencia',[
+    ['emergencia_nombre','Nombre'],['emergencia_celular','Celular']
+  ]],
+  ['Acudiente (solo cuando corresponda)',[
+    ['acudi_nombres','Nombres'],['acudi_apellidos','Apellidos'],
+    ['acudi_tipo_doc','Tipo de documento'],['acudi_documento','Documento'],
+    ['acudi_celular','Celular'],['acudi_direccion','Dirección'],
+    ['acudi_correo','Correo']
+  ]]
+]
+
 export default function InscripcionesPage() {
   const router =
     useRouter()
@@ -914,6 +939,11 @@ export default function InscripcionesPage() {
   const [continuacionMotivo, setContinuacionMotivo] = useState('')
   const [continuacionObservaciones, setContinuacionObservaciones] = useState('')
   const [mensajeContinuacion, setMensajeContinuacion] = useState('')
+  const [editarExpediente,setEditarExpediente]=useState(false)
+  const [datosCorreccion,setDatosCorreccion]=useState({})
+  const [guardandoCorreccion,setGuardandoCorreccion]=useState(false)
+  const [errorCorreccion,setErrorCorreccion]=useState('')
+  const [exitoCorreccion,setExitoCorreccion]=useState('')
 
   // ==========================================================
   // SESIÓN
@@ -1511,11 +1541,48 @@ export default function InscripcionesPage() {
     }
   }
 
+  function abrirCorreccionExpediente() {
+    if(!aprendiz || !matriculaSeleccionada)return
+    const datos={}
+    CAMPOS_CORREGIR_EXPEDIENTE.forEach(([,campos])=>
+      campos.forEach(([clave])=>{datos[clave]=String(aprendiz[clave]??'')}))
+    setDatosCorreccion(datos)
+    setErrorCorreccion('')
+    setEditarExpediente(true)
+  }
+
+  async function guardarCorreccionExpediente(e) {
+    e.preventDefault()
+    if(!matriculaSeleccionada?.id||guardandoCorreccion)return
+    setGuardandoCorreccion(true)
+    setErrorCorreccion('')
+    try {
+      const json=await fetchJsonSeguro(API_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          accion:'corregir_datos_expediente',
+          nit,matricula_id:matriculaSeleccionada.id,
+          documento:aprendiz.documento,
+          datos:datosCorreccion,
+          usuario:obtenerNombreUsuario(user)
+        })
+      })
+      setEditarExpediente(false)
+      const doc=aprendiz.documento,id=matriculaSeleccionada.id
+      await consultarExpediente(doc,id)
+      await consultar({silencioso:true})
+      setExitoCorreccion(json.message||'Expediente corregido correctamente.')
+    }catch(e){setErrorCorreccion(e.message||'No fue posible guardar la corrección.')}
+    finally{setGuardandoCorreccion(false)}
+  }
+
   // ==========================================================
   // CERRAR EXPEDIENTE
   // ==========================================================
 
   function cerrarExpediente() {
+    setEditarExpediente(false)
     setDrawerOpen(
       false
     )
@@ -2281,6 +2348,74 @@ export default function InscripcionesPage() {
 
       </div>
 
+      {exitoCorreccion&&(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4">
+          <div role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl">
+            <h2 className="text-lg font-bold text-emerald-800">Corrección guardada</h2>
+            <p className="mt-2 text-sm text-slate-700">{exitoCorreccion}</p>
+            <button type="button" onClick={()=>setExitoCorreccion('')}
+              className="mt-4 rounded-lg bg-[#24638C] px-5 py-2 text-xs font-bold text-white">Aceptar</button>
+          </div>
+        </div>
+      )}
+      {editarExpediente&&(
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-3">
+          <section role="dialog" aria-modal="true" aria-label="Corregir datos del expediente"
+            className="flex max-h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-[#24638C] px-5 py-4 text-white">
+              <div>
+                <h2 className="text-lg font-bold">Corregir datos del expediente</h2>
+                <p className="text-xs text-white/90">Se conservan matrícula, fecha, consecutivo, pagos y procesos registrados.</p>
+              </div>
+              <button type="button" disabled={guardandoCorreccion} onClick={()=>setEditarExpediente(false)}
+                className="rounded-lg border border-white/40 px-3 py-2 text-xs">Cerrar</button>
+            </div>
+            <form id="form-correccion-expediente" onSubmit={guardarCorreccionExpediente}
+              className="grid grid-cols-1 gap-3 overflow-y-auto p-4 md:grid-cols-2">
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 md:col-span-2">
+                <strong>Número de documento:</strong> {aprendiz?.documento||'—'}.
+                La corrección del número y de las categorías ({(matriculaSeleccionada?.categorias||[]).join(', ')||matriculaSeleccionada?.categoria||'—'})
+                requiere revisar sus vínculos con Caja, RUNT y las clases. Estos datos no se modifican en este formulario.
+              </div>
+              {CAMPOS_CORREGIR_EXPEDIENTE.filter(([titulo])=>{
+                if(!titulo.startsWith('Acudiente'))return true
+                const nacimiento=datosCorreccion.fecha_nacimiento
+                if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(nacimiento||''))return false
+                const f=new Date(nacimiento+'T12:00:00Z'),ahora=new Date()
+                let edad=ahora.getFullYear()-f.getUTCFullYear()
+                if(ahora.getMonth()<f.getUTCMonth()||
+                   (ahora.getMonth()===f.getUTCMonth()&&ahora.getDate()<f.getUTCDate()))edad--
+                return edad<18
+              }).map(([titulo,campos])=>(
+                <fieldset key={titulo} className="rounded-lg border border-slate-200 p-3">
+                  <legend className="px-1 text-sm font-bold text-[#0B668F]">{titulo}</legend>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {campos.map(([clave,label,tipo])=>(
+                      <label key={clave} className="text-xs font-semibold text-slate-700">{label}
+                        <input type={tipo||'text'}
+                          required={['tipo_doc','nombres','apellidos','fecha_nacimiento'].includes(clave)}
+                          value={datosCorreccion[clave]??''}
+                          onChange={e=>setDatosCorreccion(p=>({...p,[clave]:e.target.value}))}
+                          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-900"/>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ))}
+              {errorCorreccion&&<p role="alert" className="rounded-lg bg-red-50 p-3 text-xs text-red-700 md:col-span-2">{errorCorreccion}</p>}
+            </form>
+            <div className="flex justify-end gap-2 border-t border-slate-200 p-4">
+              <button type="button" disabled={guardandoCorreccion} onClick={()=>setEditarExpediente(false)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold">Cancelar</button>
+              <button type="submit" form="form-correccion-expediente" disabled={guardandoCorreccion}
+                className="rounded-lg bg-[#24638C] px-4 py-2 text-xs font-bold text-white disabled:opacity-60">
+                {guardandoCorreccion?'Guardando...':'Guardar correcciones'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {/* ====================================================
           MODAL EXPEDIENTE
       ==================================================== */}
@@ -2310,6 +2445,12 @@ export default function InscripcionesPage() {
                   )}
                 </div>
 
+                <div className="flex shrink-0 items-center gap-2">
+                  <button type="button" onClick={abrirCorreccionExpediente}
+                    disabled={!aprendiz||!matriculaSeleccionada||loadingExpediente}
+                    className="rounded-lg border border-white/50 bg-white px-3 py-2 text-xs font-bold text-[#173A57] transition hover:bg-sky-50 disabled:opacity-50">
+                    <i className="fas fa-pen mr-2"/>Corregir datos
+                  </button>
                 <button
                   type="button"
                   onClick={cerrarExpediente}
@@ -2318,6 +2459,7 @@ export default function InscripcionesPage() {
                 >
                   <i className="fas fa-times"></i>
                 </button>
+                </div>
               </div>
 
               {matriculaSeleccionada && (
