@@ -4176,9 +4176,12 @@ export async function POST(
       const categoriaNueva=normalizarMayusculas(body?.categoria_nueva??origen.categorias?.[0])
       const cambioIdentidad=documentoNuevo!==origen.documento||
         categoriaNueva!==origen.categorias?.[0]
-      const categoriaAutorizada=validarCategoriasPorNivel([categoriaNueva],empresa)
-      if(!categoriaAutorizada.ok)
-        return NextResponse.json({status:'error',message:categoriaAutorizada.message},{status:400})
+      // Correcciones administrativas: cualquier categoría oficial puede
+      // reemplazar un error de digitación, aunque el CEA tenga otro nivel.
+      // Nueva matrícula sigue validando el nivel sin cambios.
+      if(!CATS_VALIDAS_GENERALES.has(categoriaNueva))
+        return NextResponse.json({status:'error',
+          message:'Seleccione una categoría válida del catálogo oficial.'},{status:400})
       if(!normalizarTexto(body.usuario))
         return NextResponse.json({status:'error',message:'No se identificó el usuario responsable.'},{status:400})
       const camposTextoMayusculas=['tipo_doc','lugar_expedicion','genero','nombres','apellidos',
@@ -4266,7 +4269,7 @@ export async function POST(
         try{
           relaciones=await corregirIdentidadCategoria(supabase,{
             matriculaId:id,documentoAnterior:origen.documento,documentoNuevo,
-            categoriaNueva,catalogo:categoriaAutorizada.habilitadas
+            categoriaNueva,catalogo:[...CATS_VALIDAS_GENERALES]
           })
         }catch(e){
           return NextResponse.json({status:'error',message:e.message||
