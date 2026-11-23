@@ -1884,39 +1884,13 @@ async function consultarProgramacionAprendiz(
 }
 
 // =========================================================
-// BASE HISTÓRICA PERSISTENTE DE SECUENCIA PRÁCTICA
-// =========================================================
-
-async function consultarBasesHistoricas(supabase, matriculaId) {
-  const { data, error } = await supabase
-    .from('cea_secuencia_practica_base')
-    .select('categoria,numero_anterior_data_cea')
-    .eq('matricula_id', matriculaId)
-
-  // Compatibilidad para empresas que aún no han ejecutado la migración.
-  if (error) {
-    if (error.code === '42P01' || error.code === 'PGRST205' ||
-        /cea_secuencia_practica_base.*(schema cache|does not exist)/i.test(error.message || '')) {
-      return new Map()
-    }
-    throw new Error('No fue posible consultar la base histórica de clases: ' + error.message)
-  }
-
-  return new Map((data || []).map(item => [
-    normalizarCategoriaLicencia(item.categoria),
-    Number(item.numero_anterior_data_cea)
-  ]))
-}
-
-// =========================================================
 // PROGRESO DEL APRENDIZ
 // =========================================================
 
 function construirProgresoAprendiz(
   categorias,
   requisitos,
-  clases,
-  basesHistoricas = new Map()
+  clases
 ) {
   return categorias.map(
     categoria => {
@@ -2031,12 +2005,8 @@ function construirProgresoAprendiz(
       const primerNumeroRegistrado = cursoCronologico
         .map(item => numeroHistoricoClase(item?.observaciones))
         .find(n => Number.isInteger(n) && n > 0) || 0
-      const baseConfigurada = basesHistoricas.get(cat)
-      const baseHistorica = Number.isInteger(baseConfigurada) &&
-        baseConfigurada >= 0
-        ? baseConfigurada
-        : primerNumeroRegistrado > 0
-          ? primerNumeroRegistrado - 1 : 0
+      const baseHistorica = primerNumeroRegistrado > 0
+        ? primerNumeroRegistrado - 1 : 0
 
       const numerosActivos = curso
         .filter(item => ['AGENDADA','PENDIENTE_CARGUE','DICTADA'].includes(item?.estado))
@@ -2232,13 +2202,11 @@ async function consultarAprendiz(
   // PROGRESO
   // =======================================================
 
-  const basesHistoricas = await consultarBasesHistoricas(supabase, matriculaId)
   const progreso =
     construirProgresoAprendiz(
       categorias,
       requisitos,
-      clases,
-      basesHistoricas
+      clases
     )
 
   // =======================================================
