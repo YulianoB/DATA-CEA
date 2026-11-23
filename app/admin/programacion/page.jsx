@@ -6620,7 +6620,9 @@ async function registrarClase(numeroClaseSeleccionada) {
               >
                 <i className="fas fa-calendar-week mr-2"></i>
 
-                Agenda Semanal
+                {instructorSeleccionado
+                  ? 'Agenda Semanal'
+                  : aprendiz ? 'Agenda del aprendiz' : 'Agenda Semanal'}
 
                 {instructorSeleccionado && (
                   <>
@@ -6642,7 +6644,9 @@ async function registrarClase(numeroClaseSeleccionada) {
               >
                 {instructorSeleccionado
                   ? 'Seleccione un espacio disponible para programar o una clase existente para administrarla.'
-                  : 'Seleccione un instructor para consultar su agenda.'}
+                  : aprendiz
+                    ? 'Se muestran las clases del aprendiz con todos sus instructores.'
+                    : 'Seleccione un instructor o un aprendiz para consultar su agenda.'}
               </p>
             </div>
 
