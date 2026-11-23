@@ -41,7 +41,7 @@ DECLARE
   v_operacion uuid := gen_random_uuid();
   v_usuario text := COALESCE(NEW.usuario_actualiza_estado, NEW.usuario_programa);
 BEGIN
-  IF pg_trigger_depth() > 1 OR NEW.tipo_programacion IS DISTINCT FROM 'CURSO_VIGENTE'
+  IF NEW.tipo_programacion IS DISTINCT FROM 'CURSO_VIGENTE'
      OR NEW.matricula_id IS NULL THEN
     RETURN NEW;
   END IF;
