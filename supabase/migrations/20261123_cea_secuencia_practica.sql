@@ -91,6 +91,13 @@ BEGIN
     IF v_numero IS NULL THEN
       RAISE EXCEPTION 'Clase % sin número práctico; cambio cancelado.',v_fila.id;
     END IF;
+    -- Un nuevo registro debe solicitar el consecutivo siguiente correcto.
+    -- Rechazar solicitudes obsoletas en lugar de guardar un número distinto
+    -- del que el operador confirmó.
+    IF TG_OP='INSERT' AND v_fila.id=NEW.id AND v_numero <> v_siguiente THEN
+      RAISE EXCEPTION 'Consecutivo desactualizado: solicitado %, corresponde %. Actualice el progreso y vuelva a programar.',
+        v_numero,v_siguiente;
+    END IF;
     IF v_fila.estado IN ('DICTADA','PENDIENTE_CARGUE') AND v_numero <> v_siguiente THEN
       RAISE EXCEPTION 'Conflicto histórico en clase %: número %, esperado %. No se alteraron clases dictadas.',
         v_fila.id,v_numero,v_siguiente;
