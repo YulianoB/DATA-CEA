@@ -3745,10 +3745,39 @@ const resumenOperativo =
       item?.matricula_id ||
       item?.id
 
-    const detalle =
+    let detalle =
       await cargarDetalleAprendiz(
         matriculaId
       )
+
+    // Recalcular al seleccionar al aprendiz, sin exigir que las clases
+    // anteriores ya estén en DICTADA: AGENDADA también consume número.
+    // NO_DICTADA y CANCELADA quedan en el historial sin consumirlo.
+    if(tipoProgramacion==='CURSO_VIGENTE' && matriculaId){
+      const categoriasNormalizar=Array.isArray(detalle?.categorias)
+        ? detalle.categorias.filter(Boolean)
+        : []
+      if(categoriasNormalizar.length){
+        for(const categoriaActual of categoriasNormalizar){
+          await fetchJsonSeguro(API_PROGRAMACION,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              accion:'renumerar_clases',nit,
+              matricula_id:Number(matriculaId),
+              categoria:categoriaActual,
+              usuario:usuarioOperacion
+            })
+          })
+        }
+        // Traer los consecutivos actualizados y refrescar la agenda.
+        detalle=await cargarDetalleAprendiz(matriculaId)
+        await Promise.all([
+          cargarAgenda(),
+          cargarDisponibilidadInstructores(fechaDisponibilidad||hoyColombia())
+        ])
+      }
+    }
 
     const categorias =
       Array.isArray(
