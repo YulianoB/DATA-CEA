@@ -1663,11 +1663,8 @@ const estadosDisponibles =
                   disabled={guardando}
                   className="w-16 rounded-md border border-blue-300 bg-white px-2 py-1 text-center text-sm font-bold text-blue-900"/>
                 <span className="text-xs font-bold text-blue-800">/ {numero(progreso.clases_requeridas)}</span>
-                <button type="button" disabled={guardando} onClick={onRenumerar}
-                  title="Recalcular números de clases existentes sin modificar fechas ni estados"
-                  className="rounded-md border border-blue-300 bg-white px-2 py-1 text-[10px] font-bold text-blue-900 hover:bg-blue-100 disabled:opacity-50">
-                  Recalcular numeración
-                </button>
+                {/* La renumeración automática se deshabilitó: preserva
+                    los consecutivos históricos registrados por clase. */}
               </div>
             </div>
           )}
