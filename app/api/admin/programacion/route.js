@@ -5860,6 +5860,14 @@ if (
       )
     }
 
+    const ajustesCancelacion=claseActual.tipo_programacion==='CURSO_VIGENTE'
+      ? await prepararReorganizacionPractica(supabase,{
+          matriculaId:claseActual.matricula_id,
+          categoria:claseActual.categoria,
+          claseId:id,nuevoEstado:'CANCELADA'
+        })
+      : []
+
     const ahora =
       ahoraIso()
 
@@ -5959,7 +5967,25 @@ if (
       )
     }
 
-    // La cancelación libera cupo, pero conserva los consecutivos.
+    // El registro cancelado conserva su número; únicamente cambian
+    // las reservas que todavía están AGENDADA.
+    try {
+      await aplicarReorganizacionPractica(supabase,ajustesCancelacion)
+    } catch(errorSecuencia) {
+      const {error:errorReversion}=await supabase.from('programacion_clases')
+        .update({
+          estado:'AGENDADA',
+          usuario_cancelacion:null,
+          fecha_cancelacion:null,
+          usuario_actualiza_estado:claseActual.usuario_actualiza_estado,
+          fecha_actualizacion_estado:claseActual.fecha_actualizacion_estado,
+          updated_at:claseActual.updated_at
+        }).eq('id',id).eq('estado','CANCELADA')
+      if(errorReversion) console.error('No se revirtió cancelación',id,errorReversion)
+      throw new Error('No se completó la reorganización de la agenda: '+
+        errorSecuencia.message+
+        (errorReversion ? ' Revise también el estado de la clase.' : ' La cancelación fue revertida.'))
+    }
     const avisoSecuenciaCancelada=''
 
     return NextResponse.json({
@@ -6082,6 +6108,16 @@ if (
     motivoNoDictada =
       motivo
   }
+
+  // Preparar el ajuste antes de guardar el estado. Ninguna clase dictada,
+  // pendiente de cargue, no dictada o cancelada se renumera.
+  const ajustesEstado=claseActual.tipo_programacion==='CURSO_VIGENTE'
+    ? await prepararReorganizacionPractica(supabase,{
+        matriculaId:claseActual.matricula_id,
+        categoria:claseActual.categoria,
+        claseId:id,nuevoEstado
+      })
+    : []
 
   // =====================================================
   // CAMBIOS GENERALES
@@ -6258,9 +6294,31 @@ if (
     )
   }
 
-  // Conservar el consecutivo histórico en cualquier cambio de estado.
-  // NO_DICTADA y CANCELADA liberan cupos, pero no se renumeran filas.
-  const secuenciaPractica=null
+  // Aplicar únicamente los números de las reservas pendientes.
+  // Ante un fallo se intenta restaurar el estado anterior para que el
+  // operador no reciba un éxito con la agenda a medio reorganizar.
+  let cantidadReorganizadas=0
+  try {
+    cantidadReorganizadas=await aplicarReorganizacionPractica(supabase,ajustesEstado)
+  } catch(errorSecuencia) {
+    const {error:errorReversion}=await supabase.from('programacion_clases')
+      .update({
+        estado:claseActual.estado,
+        motivo_no_dictada_id:claseActual.motivo_no_dictada_id,
+        observacion_no_dictada:claseActual.observacion_no_dictada,
+        fecha_dictada:claseActual.fecha_dictada,
+        fecha_cargue:claseActual.fecha_cargue,
+        usuario_cargue:claseActual.usuario_cargue,
+        usuario_actualiza_estado:claseActual.usuario_actualiza_estado,
+        fecha_actualizacion_estado:claseActual.fecha_actualizacion_estado,
+        updated_at:claseActual.updated_at
+      }).eq('id',id).eq('estado',nuevoEstado)
+    if(errorReversion) console.error('No se revirtió estado',id,errorReversion)
+    throw new Error('No se completó la reorganización de la agenda: '+
+      errorSecuencia.message+
+      (errorReversion ? ' Revise también el estado de la clase.' : ' El cambio de estado fue revertido.'))
+  }
+  const secuenciaPractica={actualizadas:cantidadReorganizadas}
   const advertenciaSecuencia=''
 
   // =====================================================
