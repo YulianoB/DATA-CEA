@@ -67,8 +67,9 @@ BEGIN
       (matricula_id,categoria,numero_anterior_data_cea,origen)
     VALUES (NEW.matricula_id,NEW.categoria,v_base,'INFERIDO');
   END IF;
-  IF TG_OP='UPDATE' AND OLD.estado IS DISTINCT FROM NEW.estado THEN
-    INSERT INTO public.cea_auditoria_secuencia_practica
+  IF TG_OP='UPDATE' THEN
+    IF OLD.estado IS DISTINCT FROM NEW.estado THEN
+      INSERT INTO public.cea_auditoria_secuencia_practica
       (operacion_id,clase_id,matricula_id,categoria,estado_anterior,estado_nuevo,
        numero_anterior,numero_nuevo,tipo_cambio,usuario,motivo)
     VALUES (v_operacion,NEW.id,NEW.matricula_id,NEW.categoria,OLD.estado,NEW.estado,
@@ -76,6 +77,7 @@ BEGIN
       substring(NEW.observaciones from '\[CEA_CLASE_PRACTICA:([0-9]+)\]')::integer,
       'CORRECCION_ESTADO',v_usuario,
       COALESCE(NEW.observacion_no_dictada,OLD.observacion_no_dictada));
+    END IF;
   END IF;
   v_siguiente := v_base;
   FOR v_fila IN
