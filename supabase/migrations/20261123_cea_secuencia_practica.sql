@@ -114,7 +114,7 @@ END;
 $func$;
 DROP TRIGGER IF EXISTS cea_reordenar_practica ON public.programacion_clases;
 CREATE TRIGGER cea_reordenar_practica
-AFTER INSERT OR UPDATE OF estado ON public.programacion_clases
+AFTER INSERT OR UPDATE OF estado, fecha, hora_inicio ON public.programacion_clases
 FOR EACH ROW EXECUTE FUNCTION public.cea_reordenar_practica_trigger();
 REVOKE ALL ON public.cea_secuencia_practica_base FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON public.cea_auditoria_secuencia_practica FROM PUBLIC,anon,authenticated;
