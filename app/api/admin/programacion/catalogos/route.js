@@ -2723,7 +2723,8 @@ async function consultarCargaInstructores(
         hora_inicio,
         tipo_programacion,
         tipo_clase,
-        estado
+        estado,
+        observaciones
       `)
       .in(
         'instructor_id',
@@ -3695,6 +3696,12 @@ async function construirDisponibilidadDiariaInstructores({
           )
       )
 
+    // Historial visible, pero no ocupa horario ni consume horas.
+    const clasesHistoricasDia = clasesInstructor.filter(
+      item => item?.fecha === fecha &&
+        ['NO_DICTADA', 'CANCELADA'].includes(item?.estado)
+    )
+
     const clasesCursoDia =
       clasesDia.filter(
         item =>
@@ -3722,15 +3729,48 @@ async function construirDisponibilidadDiariaInstructores({
           // CLASE QUE OCUPA EL HORARIO
           // =================================================
 
-          const clase =
-            clasesDia.find(
-              item =>
-                horaNormalizada(
-                  item?.hora_inicio
-                ) ===
-                hora
-            ) ||
-            null
+          const clase = clasesDia.find(
+            item => horaNormalizada(item?.hora_inicio) === hora
+          ) || null
+
+          const historial = clasesHistoricasDia
+            .filter(item => horaNormalizada(item?.hora_inicio) === hora)
+            .sort((x, y) => Number(x?.id || 0) - Number(y?.id || 0))
+            .map(item => {
+              const aprendiz = item?.matricula_id
+                ? aprendicesPorId?.get(Number(item.matricula_id)) : null
+              const recibo = item?.recibo_refuerzo_id
+                ? recibosPorId?.get(Number(item.recibo_refuerzo_id)) : null
+              const vehiculo = item?.vehiculo_id
+                ? vehiculosPorId?.get(Number(item.vehiculo_id)) : null
+              const refuerzo = item?.tipo_programacion === 'REFUERZO'
+              return {
+                id: item.id,
+                matricula_id: item.matricula_id,
+                recibo_refuerzo_id: item.recibo_refuerzo_id,
+                vehiculo_id: item.vehiculo_id,
+                categoria: item.categoria,
+                tipo_programacion: item.tipo_programacion,
+                tipo_clase: item.tipo_clase || 'PRACTICA',
+                estado: item.estado,
+                numero_clase: numeroHistoricoClase(item.observaciones),
+                persona: {
+                  nombre: refuerzo
+                    ? mayusculas(recibo?.nombre_cliente || 'CLIENTE REFUERZO')
+                    : mayusculas(nombreCompleto(aprendiz) || 'APRENDIZ'),
+                  tipo_documento: refuerzo
+                    ? mayusculas(recibo?.tipo_documento_cliente || '')
+                    : mayusculas(aprendiz?.tipo_doc || ''),
+                  documento: refuerzo
+                    ? texto(recibo?.documento_cliente)
+                    : texto(aprendiz?.documento),
+                },
+                vehiculo: {
+                  id: vehiculo?.id || null,
+                  placa: mayusculas(vehiculo?.placa || ''),
+                },
+              }
+            })
 
           // =================================================
           // OCUPADO
@@ -3832,6 +3872,8 @@ async function construirDisponibilidadDiariaInstructores({
               motivo:
                 'El instructor ya tiene una clase programada.',
 
+              historial,
+
               clase: {
                 id:
                   clase?.id ||
@@ -3862,6 +3904,8 @@ async function construirDisponibilidadDiariaInstructores({
                 estado:
                   clase?.estado ||
                   '',
+
+                numero_clase: numeroHistoricoClase(clase?.observaciones),
 
                 persona: {
                   nombre:
@@ -4002,6 +4046,8 @@ async function construirDisponibilidadDiariaInstructores({
 
             motivo:
               '',
+
+            historial,
 
             clase:
               null,
