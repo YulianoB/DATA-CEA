@@ -2608,6 +2608,69 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
   }
 }
 
+// Normalización operativa: las clases NO_DICTADA/CANCELADA permanecen
+// en el historial, pero no consumen número de práctica. La secuencia
+// de las clases activas se recalcula cronológicamente en la misma tabla.
+// Mantiene la numeración inicial cuando hay clases anteriores a DATA CEA.
+async function renumerarSecuenciaPractica(supabase,{matriculaId,categoria}) {
+  const {data,error}=await supabase.from('programacion_clases')
+    .select('id,fecha,hora_inicio,estado,observaciones')
+    .eq('matricula_id',matriculaId).eq('categoria',categoria)
+    .eq('tipo_programacion','CURSO_VIGENTE')
+    .order('fecha',{ascending:true})
+    .order('hora_inicio',{ascending:true})
+    .order('id',{ascending:true})
+    .limit(501)
+  if(error)throw new Error('No fue posible consultar la secuencia: '+error.message)
+  if((data||[]).length>500)throw new Error('La secuencia supera 500 clases; requiere revisión administrativa.')
+  const clases=data||[]
+  const activas=clases.filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
+  const indicePrimerNumero=clases.findIndex(c=>leerNumeroClasePractica(c.observaciones)>0)
+  let primerNumero=1
+  if(indicePrimerNumero>=0){
+    const numeroAncla=leerNumeroClasePractica(clases[indicePrimerNumero].observaciones)
+    const activasAntes=clases.slice(0,indicePrimerNumero)
+      .filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado)).length
+    primerNumero=Math.max(1,numeroAncla-activasAntes)
+  }
+  const cambios=[]
+  for(let i=0;i<activas.length;i++){
+    const clase=activas[i],nuevo=primerNumero+i
+    const anterior=clase.observaciones
+    const textoAnterior=texto(anterior)
+    const observaciones=/\\[CEA_CLASE_PRACTICA:\\d+\\]/.test(textoAnterior)
+      ? textoAnterior.replace(/\\[CEA_CLASE_PRACTICA:\\d+\\]/,
+          '[CEA_CLASE_PRACTICA:'+nuevo+']')
+      : '[CEA_CLASE_PRACTICA:'+nuevo+']'+(textoAnterior?' '+textoAnterior:'')
+    if(observaciones!==textoAnterior) cambios.push({id:clase.id,anterior,nuevo:observaciones})
+  }
+  const aplicados=[]
+  try{
+    for(const c of cambios){
+      let q=supabase.from('programacion_clases').update({
+        observaciones:c.nuevo,updated_at:ahoraIso()
+      }).eq('id',c.id)
+      q=c.anterior==null?q.is('observaciones',null):q.eq('observaciones',c.anterior)
+      const {data:guardado,error:err}=await q.select('id').maybeSingle()
+      if(err||!guardado)throw new Error('No se pudo renumerar clase '+c.id+': '+(err?.message||'cambio concurrente'))
+      aplicados.push(c)
+    }
+  }catch(e){
+    const pendientes=[]
+    for(const c of [...aplicados].reverse()){
+      const {data:revertido,error:err}=await supabase.from('programacion_clases')
+        .update({observaciones:c.anterior,updated_at:ahoraIso()})
+        .eq('id',c.id).eq('observaciones',c.nuevo)
+        .select('id').maybeSingle()
+      if(err||!revertido)pendientes.push(c.id)
+    }
+    if(pendientes.length)throw new Error('ATENCIÓN: La secuencia quedó parcialmente actualizada. Revise las clases: '+pendientes.join(', '))
+    throw e
+  }
+  return {actualizadas:cambios.length,primera:primerNumero,
+    siguiente:primerNumero+activas.length}
+}
+
 // =========================================================
 // PROGRESO CURSO VIGENTE
 // =========================================================
@@ -4966,6 +5029,17 @@ export async function POST(
         'programar'
       ).toLowerCase()
 
+    if(accion==='renumerar_clases'){
+      const matriculaId=enteroPositivo(body?.matricula_id)
+      const categoria=normalizarCategoriaLicencia(body?.categoria)
+      const usuario=texto(body?.usuario)
+      if(!matriculaId||!categoria||!usuario)throw new Error('Indique matrícula, categoría y usuario para recalcular.')
+      const resultado=await renumerarSecuenciaPractica(supabase,{matriculaId,categoria})
+      return NextResponse.json({status:'success',
+        message:'Secuencia práctica corregida: '+resultado.actualizadas+' clase(s) actualizada(s).',
+        data:resultado})
+    }
+
     // =====================================================
 // PROGRAMAR
 // =====================================================
@@ -6127,6 +6201,18 @@ if (
     )
   }
 
+  // Al cambiar a NO_DICTADA (o recuperar/cancelar una clase),
+  // reajustar inmediatamente las clases posteriores del mismo aprendiz.
+  let secuenciaPractica=null
+  if(claseActualizada?.tipo_programacion==='CURSO_VIGENTE' &&
+    claseActualizada?.matricula_id &&
+    ['NO_DICTADA','AGENDADA','DICTADA','PENDIENTE_CARGUE'].includes(nuevoEstado)){
+    secuenciaPractica=await renumerarSecuenciaPractica(supabase,{
+      matriculaId:claseActualizada.matricula_id,
+      categoria:claseActualizada.categoria
+    })
+  }
+
   // =====================================================
   // EFECTO SOBRE REFUERZO
   // =====================================================
@@ -6222,6 +6308,8 @@ if (
 
       saldo_refuerzo:
         saldoRefuerzo,
+
+      secuencia_practica: secuenciaPractica,
     },
 
     empresa:
