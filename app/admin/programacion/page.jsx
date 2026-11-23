@@ -5806,7 +5806,7 @@ async function registrarClase(numeroClaseSeleccionada) {
               grid
               grid-cols-1
               md:grid-cols-2
-              xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.65fr)_minmax(0,0.75fr)_minmax(0,1.1fr)_minmax(0,1.25fr)_minmax(0,1.1fr)_minmax(0,1.25fr)_minmax(0,0.7fr)]
+              xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.9fr)_minmax(0,0.5fr)_minmax(0,1.1fr)_minmax(0,1.25fr)_minmax(0,1.1fr)_minmax(0,1.25fr)_minmax(0,0.7fr)]
               gap-x-1.5
               gap-y-2
               items-end
