@@ -2608,6 +2608,80 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
   }
 }
 
+// Reorganizar exclusivamente las reservas AGENDADA, sin tocar el historial.
+// Se ejecuta desde la API al guardar cambios, nunca al consultar la agenda.
+async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,claseId=null,nuevoEstado=null}) {
+  if(!matriculaId || !categoria) return []
+  const {data,error}=await supabase.from('programacion_clases')
+    .select('id,fecha,hora_inicio,estado,observaciones')
+    .eq('matricula_id',matriculaId)
+    .eq('categoria',categoria)
+    .eq('tipo_programacion','CURSO_VIGENTE')
+    .order('fecha',{ascending:true})
+    .order('hora_inicio',{ascending:true})
+    .order('id',{ascending:true})
+    .limit(501)
+  if(error) throw new Error('No fue posible revisar la numeración: '+error.message)
+  if((data||[]).length>500) throw new Error('Hay demasiadas clases para reorganizar automáticamente.')
+  const todas=(data||[]).map(c=>({
+    ...c, estado:claseId===c.id && nuevoEstado ? nuevoEstado : c.estado,
+    numero:leerNumeroClasePractica(c.observaciones)
+  }))
+  const primera=todas.find(c=>c.numero>0)
+  if(!primera) throw new Error('No hay un número inicial de práctica registrado. Revise la matrícula.')
+  const inicial=primera.numero
+  const vigentes=todas.filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
+  const fijas=vigentes.filter(c=>c.estado!=='AGENDADA')
+  const ocupados=new Set()
+  for(const fija of fijas) {
+    if(fija.numero<inicial || ocupados.has(fija.numero))
+      throw new Error('Conflicto en clases dictadas o pendientes de cargue. Requiere revisión administrativa.')
+    ocupados.add(fija.numero)
+  }
+  let siguiente=inicial
+  const ajustes=[]
+  for(const c of vigentes.filter(c=>c.estado==='AGENDADA')) {
+    while(ocupados.has(siguiente)) siguiente++
+    if(c.numero!==siguiente) {
+      ajustes.push({id:c.id,anterior:c.observaciones,
+        nuevo: String(c.observaciones||'').replace(
+          /\\[CEA_CLASE_PRACTICA:\\d+\\]/,'[CEA_CLASE_PRACTICA:'+siguiente+']')
+      })
+      if(!c.numero || ajustes[ajustes.length-1].nuevo===String(c.observaciones||'')) {
+        throw new Error('Una clase agendada no tiene consecutivo válido. No se modificó la programación.')
+      }
+    }
+    ocupados.add(siguiente)
+    siguiente++
+  }
+  return ajustes
+}
+
+async function aplicarReorganizacionPractica(supabase,ajustes) {
+  const aplicados=[]
+  try {
+    for(const ajuste of ajustes) {
+      const {data,error}=await supabase.from('programacion_clases')
+        .update({observaciones:ajuste.nuevo})
+        .eq('id',ajuste.id).eq('estado','AGENDADA')
+        .eq('observaciones',ajuste.anterior)
+        .select('id').maybeSingle()
+      if(error||!data) throw new Error('No se pudo actualizar el consecutivo de la clase '+ajuste.id)
+      aplicados.push(ajuste)
+    }
+  } catch(error) {
+    for(const ajuste of aplicados.reverse()) {
+      const {error:reversionError}=await supabase.from('programacion_clases')
+        .update({observaciones:ajuste.anterior})
+        .eq('id',ajuste.id).eq('estado','AGENDADA')
+        .eq('observaciones',ajuste.nuevo)
+      if(reversionError) console.error('No se pudo revertir consecutivo',ajuste.id,reversionError)
+    }
+    throw error
+  }
+  return aplicados.length
+}
+
 // Los consecutivos históricos son parte del registro de cada clase.
 // No deben recalcularse a partir de las filas activas: un aprendiz puede
 // haber cursado clases antes de utilizar DATA CEA. Los cambios de estado,
