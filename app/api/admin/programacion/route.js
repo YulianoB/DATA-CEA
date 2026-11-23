@@ -4879,6 +4879,18 @@ export async function GET(
               supabase,
               documentoPersona
             )
+          // Combinar las matrículas del documento y la seleccionada.
+          // Esta última es la referencia real de programacion_clases.
+          if(matriculaId && !matriculaIds.includes(matriculaId)){
+            const {data:matriculaSeleccionada,error:errorMatricula}=
+              await supabase.from('aprendices').select('id,documento')
+                .eq('id',matriculaId).maybeSingle()
+            if(errorMatricula)throw errorMatricula
+            if(matriculaSeleccionada &&
+              normalizarDocumento(matriculaSeleccionada.documento)===documentoPersona){
+              matriculaIds.push(matriculaId)
+            }
+          }
         }
       }
 
