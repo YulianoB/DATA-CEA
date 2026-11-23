@@ -2638,8 +2638,8 @@ async function renumerarSecuenciaPractica(supabase,{matriculaId,categoria}) {
     const clase=activas[i],nuevo=primerNumero+i
     const anterior=clase.observaciones
     const textoAnterior=texto(anterior)
-    const observaciones=/\\[CEA_CLASE_PRACTICA:\\d+\\]/.test(textoAnterior)
-      ? textoAnterior.replace(/\\[CEA_CLASE_PRACTICA:\\d+\\]/,
+    const observaciones=/\[CEA_CLASE_PRACTICA:\d+\]/.test(textoAnterior)
+      ? textoAnterior.replace(/\[CEA_CLASE_PRACTICA:\d+\]/,
           '[CEA_CLASE_PRACTICA:'+nuevo+']')
       : '[CEA_CLASE_PRACTICA:'+nuevo+']'+(textoAnterior?' '+textoAnterior:'')
     if(observaciones!==textoAnterior) cambios.push({id:clase.id,anterior,nuevo:observaciones})
@@ -5405,6 +5405,12 @@ if (
         errorNotificacion
       )
     }
+  }
+
+  // También regularizar las clases antiguas antes de continuar con la
+  // numeración del aprendiz recién programado.
+  if(tipoProgramacion==='CURSO_VIGENTE' && claseCreada?.id){
+    await renumerarSecuenciaPractica(supabase,{matriculaId,categoria})
   }
 
   // =====================================================
