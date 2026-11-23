@@ -1670,7 +1670,6 @@ const estadosDisponibles =
           )}
 
           {modo==='EDITAR' && tipoModal==='CURSO_VIGENTE' &&
-            !['NO_DICTADA','CANCELADA'].includes(estadoActual) &&
             /\[CEA_CLASE_PRACTICA:\d+\]/.test(texto(clase?.observaciones)) && (
               <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[10px] font-bold text-blue-900">
                 Clase práctica #{texto(clase.observaciones).match(/\[CEA_CLASE_PRACTICA:(\d+)\]/)?.[1]}
