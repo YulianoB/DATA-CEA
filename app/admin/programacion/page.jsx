@@ -644,7 +644,7 @@ function MiniProgreso({
   ? `${numero(
       progreso
         ?.disponibles_programar
-    )} clase(s) disponibles`
+    )} por programar`
   : progreso
       ?.clases_disponibles !==
       undefined
@@ -7082,6 +7082,12 @@ async function registrarClase(numeroClaseSeleccionada) {
                                     "
                                   >
                                     {hora}
+                                    {clase?.tipo_programacion==='CURSO_VIGENTE' &&
+                                      /\[CEA_CLASE_PRACTICA:(\d+)\]/.test(texto(clase?.observaciones)) && (
+                                        <span className="ml-1 text-[8px] font-black text-blue-900">
+                                          #{texto(clase.observaciones).match(/\[CEA_CLASE_PRACTICA:(\d+)\]/)?.[1]}
+                                        </span>
+                                      )}
                                   </span>
 
                                   <BadgeEstado
