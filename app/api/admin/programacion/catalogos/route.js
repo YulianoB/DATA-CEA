@@ -1993,9 +1993,15 @@ function construirProgresoAprendiz(
         pendientesCargue +
         dictadas
 
-      const numeroMaximoRegistrado = curso
+      // NO_DICTADA y CANCELADA liberan su número. Para continuar después
+      // de inasistencias no se usa el máximo histórico de la anotación:
+      // puede haber saltos (p.ej. 8-11 NO_DICTADA, 12-13 DICTADA).
+      // Preferimos la posición siguiente al total comprometido, siempre
+      // que no esté ocupada; de estarlo buscamos el primer hueco válido.
+      const numerosActivos = new Set(curso
         .filter(item=>['AGENDADA','PENDIENTE_CARGUE','DICTADA'].includes(item?.estado))
-        .reduce((max,item)=>Math.max(max,numeroHistoricoClase(item.observaciones)),0)
+        .map(item=>numeroHistoricoClase(item.observaciones))
+        .filter(n=>Number.isInteger(n)&&n>0))
 
       const requeridas =
         numero(
@@ -2064,8 +2070,16 @@ function construirProgresoAprendiz(
         clases_comprometidas:
           comprometidas,
 
-        siguiente_numero_clase: Math.min(requeridas,
-          Math.max(comprometidas,numeroMaximoRegistrado)+1),
+        siguiente_numero_clase: (()=>{
+          // No ofrecer un número duplicado; si la numeración histórica
+          // contiene huecos, se recupera el primero disponible.
+          const preferido=comprometidas+1
+          if(preferido<=requeridas&&!numerosActivos.has(preferido))return preferido
+          for(let n=1;n<=requeridas;n++){
+            if(!numerosActivos.has(n))return n
+          }
+          return requeridas+1 // Sin cupos: el formulario no permite programar.
+        })(),
 
         disponibles_programar:
           Math.max(
