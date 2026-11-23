@@ -2608,22 +2608,23 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
   if(activas.includes(numeroClase)){
     throw new Error('La clase práctica número '+numeroClase+' ya está programada para esta matrícula y categoría.')
   }
-  // Para matrículas ya iniciadas, seleccionar el primer número no reservado.
-  // En la primera clase se conserva el número elegido por el operador
-  // (puede ser 8, 12, etc. por prácticas anteriores a DATA-CEA).
-  if(activas.length) {
-    const {data:historial,error:errorHistorial}=await supabase
-      .from('programacion_clases')
-      .select('id,fecha,hora_inicio,observaciones')
-      .eq('matricula_id',matriculaId).eq('categoria',categoria)
-      .eq('tipo_programacion','CURSO_VIGENTE')
-      .order('fecha',{ascending:true}).order('hora_inicio',{ascending:true})
-      .order('id',{ascending:true}).limit(1)
-    if(errorHistorial) throw new Error('No fue posible consultar el inicio histórico: '+errorHistorial.message)
-    const primero=leerNumeroClasePractica(historial?.[0]?.observaciones)
+  // Si ya hay historial, retomar el primer número que no esté
+  // dictado ni reservado. Si todavía no hay registros, respetar
+  // el consecutivo inicial elegido por administración (8, 12, etc.).
+  const {data:historial,error:errorHistorial}=await supabase
+    .from('programacion_clases')
+    .select('id,fecha,hora_inicio,observaciones')
+    .eq('matricula_id',matriculaId).eq('categoria',categoria)
+    .eq('tipo_programacion','CURSO_VIGENTE')
+    .order('fecha',{ascending:true}).order('hora_inicio',{ascending:true})
+    .order('id',{ascending:true}).limit(1)
+  if(errorHistorial) throw new Error('No fue posible consultar el inicio histórico: '+errorHistorial.message)
+  if(historial?.length) {
+    const primero=leerNumeroClasePractica(historial[0].observaciones)
     if(!primero) throw new Error('No se puede determinar el inicio histórico de prácticas.')
     let esperado=primero
-    while(activas.includes(esperado)) esperado++
+    const ocupados=new Set(activas)
+    while(ocupados.has(esperado)) esperado++
     if(numeroClase!==esperado) {
       throw new Error('El siguiente consecutivo disponible es #'+esperado+
         '. Actualice el aprendiz antes de continuar.')
