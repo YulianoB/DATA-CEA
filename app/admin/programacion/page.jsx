@@ -7592,7 +7592,7 @@ async function registrarClase(numeroClaseSeleccionada) {
             <div
               className="
                 grid
-                grid-cols-[190px_repeat(16,minmax(0,1fr))]
+                grid-cols-[160px_repeat(16,minmax(0,1fr))]
                 gap-0.5
                 mb-1
               "
@@ -7659,7 +7659,7 @@ async function registrarClase(numeroClaseSeleccionada) {
                     }
                     className="
                       grid
-                      grid-cols-[190px_repeat(16,minmax(0,1fr))]
+                      grid-cols-[160px_repeat(16,minmax(0,1fr))]
                       gap-0.5
                       mb-1
                     "
@@ -7680,20 +7680,16 @@ async function registrarClase(numeroClaseSeleccionada) {
                         py-2
                       "
                     >
-                      <p title={instructor.nombre_completo}
-                        className="
-                          text-[9px]
-                          font-black
-                          text-gray-900
-                          leading-tight
-                          truncate
-                        "
+                      <div title={instructor.nombre_completo}
+                        className="min-w-0 text-[9px] font-black text-gray-900 leading-tight"
                       >
-                        {
-                          instructor
-                            .nombre_completo
-                        }
-                      </p>
+                        <p className="whitespace-normal break-words">
+                          {instructor.nombres || ''}
+                        </p>
+                        <p className="whitespace-normal break-words">
+                          {instructor.apellidos || ''}
+                        </p>
+                      </div>
 
                       <div
                         className="
@@ -7703,7 +7699,7 @@ async function registrarClase(numeroClaseSeleccionada) {
                           gap-x-2
                           gap-y-0.5
                           text-[7px]
-                          text-gray-500
+                          text-gray-800
                         "
                       >
                         <span>
@@ -7745,8 +7741,9 @@ async function registrarClase(numeroClaseSeleccionada) {
                         className="
                           mt-1
                           text-[7px]
-                          text-gray-400
-                          truncate
+                          text-gray-700
+                          whitespace-normal
+                          break-words
                         "
                       >
                         {(
