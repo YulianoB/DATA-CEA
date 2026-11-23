@@ -2276,7 +2276,8 @@ export async function POST(
         observaciones:mayusculas(body.observaciones)||null,
         modalidad:'PAGO_DIRECTO',
         valor_reintegrado:0,valor_reembolsado:0,valor_legalizado:0,
-        estado_legalizacion:null,fecha_legalizacion:null,
+        // Columna NOT NULL. Para un pago directo no existe legalización pendiente.
+        estado_legalizacion:'NO_APLICA',fecha_legalizacion:null,
         observaciones_legalizacion:null,
         receptor_dinero:null,tipo_documento_receptor:null,documento_receptor:null,
         updated_at:new Date().toISOString()
