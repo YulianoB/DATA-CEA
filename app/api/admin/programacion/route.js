@@ -5409,8 +5409,14 @@ if (
 
   // También regularizar las clases antiguas antes de continuar con la
   // numeración del aprendiz recién programado.
+  let advertenciaNumeracion=''
   if(tipoProgramacion==='CURSO_VIGENTE' && claseCreada?.id){
-    await renumerarSecuenciaPractica(supabase,{matriculaId,categoria})
+    try{
+      await renumerarSecuenciaPractica(supabase,{matriculaId,categoria})
+    }catch(errorNumeracion){
+      console.error('Clase creada, pero falló la renumeración:',errorNumeracion)
+      advertenciaNumeracion=' Clase guardada; no fue posible actualizar los consecutivos: '+errorNumeracion.message
+    }
   }
 
   // =====================================================
@@ -5423,7 +5429,7 @@ if (
         'success',
 
       message:
-        'Clase programada correctamente.',
+        'Clase programada correctamente.'+advertenciaNumeracion,
 
       data: {
         ...claseCreada,
@@ -6210,13 +6216,19 @@ if (
   // Al cambiar a NO_DICTADA (o recuperar/cancelar una clase),
   // reajustar inmediatamente las clases posteriores del mismo aprendiz.
   let secuenciaPractica=null
+  let advertenciaSecuencia=''
   if(claseActualizada?.tipo_programacion==='CURSO_VIGENTE' &&
     claseActualizada?.matricula_id &&
     ['NO_DICTADA','AGENDADA','DICTADA','PENDIENTE_CARGUE'].includes(nuevoEstado)){
-    secuenciaPractica=await renumerarSecuenciaPractica(supabase,{
-      matriculaId:claseActualizada.matricula_id,
-      categoria:claseActualizada.categoria
-    })
+    try{
+      secuenciaPractica=await renumerarSecuenciaPractica(supabase,{
+        matriculaId:claseActualizada.matricula_id,
+        categoria:claseActualizada.categoria
+      })
+    }catch(errorNumeracion){
+      console.error('Estado actualizado, pero falló la numeración:',errorNumeracion)
+      advertenciaSecuencia=' El estado se guardó, pero la secuencia requiere revisión: '+errorNumeracion.message
+    }
   }
 
   // =====================================================
@@ -6304,7 +6316,7 @@ if (
       `La clase fue actualizada a ${nuevoEstado.replace(
         /_/g,
         ' '
-      )}.`,
+      )}.`+advertenciaSecuencia,
 
     data: {
       ...claseActualizada,
