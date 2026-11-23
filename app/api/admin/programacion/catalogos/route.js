@@ -1993,38 +1993,41 @@ function construirProgresoAprendiz(
         pendientesCargue +
         dictadas
 
-      // NO_DICTADA y CANCELADA liberan su número. Para continuar después
-      // de inasistencias no se usa el máximo histórico de la anotación:
-      // puede haber saltos (p.ej. 8-11 NO_DICTADA, 12-13 DICTADA).
-      // Preferimos la posición siguiente al total comprometido, siempre
-      // que no esté ocupada; de estarlo buscamos el primer hueco válido.
-      const numerosActivos = new Set(curso
-        .filter(item=>['AGENDADA','PENDIENTE_CARGUE','DICTADA'].includes(item?.estado))
-        .map(item=>numeroHistoricoClase(item.observaciones))
-        .filter(n=>Number.isInteger(n)&&n>0))
+      // El primer número real registrado es la referencia histórica.
+      // Las clases NO_DICTADA/CANCELADA conservan su número en el historial,
+      // pero no consumen cupo. Solo se cuentan DICTADA, PENDIENTE_CARGUE
+      // y AGENDADA en el avance (estas últimas reservan número).
+      const cursoCronologico = [...curso].sort((a, b) =>
+        String(a?.fecha || '').localeCompare(String(b?.fecha || '')) ||
+        String(a?.hora_inicio || '').localeCompare(String(b?.hora_inicio || '')) ||
+        Number(a?.id || 0) - Number(b?.id || 0)
+      )
+      const primerNumeroRegistrado = cursoCronologico
+        .map(item => numeroHistoricoClase(item?.observaciones))
+        .find(n => Number.isInteger(n) && n > 0) || 0
+      const baseHistorica = primerNumeroRegistrado > 0
+        ? primerNumeroRegistrado - 1 : 0
 
-      const requeridas =
-        numero(
-          requisito
-            ?.clases_practica
-        )
+      const numerosActivos = curso
+        .filter(item => ['AGENDADA','PENDIENTE_CARGUE','DICTADA'].includes(item?.estado))
+        .map(item => numeroHistoricoClase(item?.observaciones))
+        .filter(n => Number.isInteger(n) && n > 0)
+      const mayorNumeroVigente = numerosActivos.length
+        ? Math.max(...numerosActivos) : 0
 
-      // El alumno puede iniciar en DATA CEA desde la clase 8, 12, etc.
-      // El progreso debe respetar el consecutivo histórico conservado,
-      // no limitarse a contar las filas registradas en esta aplicación.
-      // NO_DICTADA y CANCELADA mantienen su número para consulta, pero
-      // nunca aumentan el avance ni reducen las plazas disponibles.
-      const mayorNumeroVigente=numerosActivos.size
-        ? Math.max(...numerosActivos)
-        : 0
-      const avanceOperativo=Math.max(comprometidas,mayorNumeroVigente)
-      const disponiblesOperativos=Math.max(0,requeridas-avanceOperativo)
-      const noDictadasNumeradas=curso
-        .filter(item=>item?.estado==='NO_DICTADA')
-        .map(item=>numeroHistoricoClase(item.observaciones))
-        .filter(n=>Number.isInteger(n)&&n>0)
-        .sort((a,b)=>a-b)
-
+      const requeridas = numero(requisito?.clases_practica)
+      const avanceOperativo = Math.max(
+        baseHistorica + comprometidas,
+        mayorNumeroVigente
+      )
+      const disponiblesOperativos = Math.max(0, requeridas - avanceOperativo)
+      // Tras la conciliación transaccional, las reservas vigentes son
+      // consecutivas desde baseHistorica + 1; no rescatar inasistencias
+      // antiguas cuyo número ya haya sido efectivamente dictado.
+      const siguienteNumero = Math.max(
+        baseHistorica + comprometidas + 1,
+        mayorNumeroVigente + 1
+      )
       // ===================================================
       // ESTADOS REFUERZO
       // ===================================================
@@ -2090,11 +2093,7 @@ function construirProgresoAprendiz(
         // al primer registro de DATA CEA.
         clases_comprometidas: avanceOperativo,
 
-        siguiente_numero_clase: mayorNumeroVigente>0
-          ? mayorNumeroVigente+1
-          : noDictadasNumeradas.length
-            ? noDictadasNumeradas[0]
-            : comprometidas+1,
+        siguiente_numero_clase: siguienteNumero,
 
         disponibles_programar: disponiblesOperativos,
 
