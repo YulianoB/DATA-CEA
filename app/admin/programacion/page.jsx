@@ -989,6 +989,7 @@ function ModalClase({
   onCerrar,
   onProgramar,
   onCambiarEstado,
+  onRenumerar,
 }) {
   const [
     nuevoEstado,
@@ -1662,6 +1663,11 @@ const estadosDisponibles =
                   disabled={guardando}
                   className="w-16 rounded-md border border-blue-300 bg-white px-2 py-1 text-center text-sm font-bold text-blue-900"/>
                 <span className="text-xs font-bold text-blue-800">/ {numero(progreso.clases_requeridas)}</span>
+                <button type="button" disabled={guardando} onClick={onRenumerar}
+                  title="Recalcular números de clases existentes sin modificar fechas ni estados"
+                  className="rounded-md border border-blue-300 bg-white px-2 py-1 text-[10px] font-bold text-blue-900 hover:bg-blue-100 disabled:opacity-50">
+                  Recalcular numeración
+                </button>
               </div>
             </div>
           )}
@@ -5265,7 +5271,35 @@ function abrirClase(
   // PROGRAMAR
   // =======================================================
 
-  async function registrarClase(numeroClaseSeleccionada) {
+  async function recalcularNumeracionAprendiz(){
+  const matriculaId=Number(aprendiz?.matricula_id||aprendiz?.id)
+  if(!matriculaId||!categoria)return
+  setGuardando(true)
+  setError('')
+  setExito('')
+  try{
+    const respuesta=await fetchJsonSeguro(API_PROGRAMACION,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        accion:'renumerar_clases',nit,matricula_id:matriculaId,
+        categoria,usuario:usuarioOperacion
+      })
+    })
+    setModalAbierto(false)
+    setExito(respuesta?.message||'Numeración corregida.')
+    await Promise.all([
+      cargarDetalleAprendiz(matriculaId,fechaSeleccionada),
+      cargarAgenda(),
+      cargarDisponibilidadInstructores(fechaSeleccionada)
+    ])
+  }catch(e){
+    mostrarAlertaValidacion(e.message||'No fue posible recalcular la numeración.',
+      'No fue posible recalcular la numeración')
+  }finally{setGuardando(false)}
+}
+
+async function registrarClase(numeroClaseSeleccionada) {
   setGuardando(
     true
   )
@@ -8767,6 +8801,7 @@ function abrirClase(
         onCambiarEstado={
           cambiarEstadoClase
         }
+        onRenumerar={recalcularNumeracionAprendiz}
       />
     </div>
   )
