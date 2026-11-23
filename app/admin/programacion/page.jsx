@@ -4500,20 +4500,25 @@ function disponibilidadHoy() {
         //
         // =================================================
 
-        else if (
-          aprendiz?.documento
-        ) {
-          params.set(
-            'documento_persona',
-            String(
-              aprendiz.documento
-            )
-          )
-
+        else if (aprendiz) {
+          // La matrícula es el identificador estable de las clases. El
+          // documento amplía la consulta a otras matrículas del aprendiz.
+          // No exigir instructor para consultar la agenda de una persona.
+          if (matriculaId) {
+            params.set('matricula_id',String(matriculaId))
+          }
+          if (aprendiz?.documento) {
+            params.set('documento_persona',String(aprendiz.documento))
+          }
           params.set('origen_persona',
-            aprendiz?.origen_programacion === 'CLIENTE_REFUERZO' ? 'CLIENTE_REFUERZO' :
-            aprendiz?.origen_programacion === 'CLIENTE_EXTERNO' ? 'CLIENTE_EXTERNO' : 'APRENDIZ')
-          if(esClienteSinRecibo) params.set('cliente_refuerzo_id',String(aprendiz.cliente_refuerzo_id))
+            esClienteSinRecibo ? 'CLIENTE_REFUERZO' :
+            esClienteExterno ? 'CLIENTE_EXTERNO' : 'APRENDIZ')
+          if (esClienteSinRecibo && aprendiz?.cliente_refuerzo_id) {
+            params.set('cliente_refuerzo_id',String(aprendiz.cliente_refuerzo_id))
+          }
+          if (reciboRefuerzoId) {
+            params.set('recibo_refuerzo_id',String(reciboRefuerzoId))
+          }
         }     
         const data =
                 await fetchJsonSeguro(
