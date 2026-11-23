@@ -3972,6 +3972,8 @@ async function construirDisponibilidadDiariaInstructores({
               motivo:
                 'Fuera de la disponibilidad habitual del instructor.',
 
+              historial,
+
               clase:
                 null,
             }
@@ -3999,6 +4001,8 @@ async function construirDisponibilidadDiariaInstructores({
               motivo:
                 'El instructor completó el límite diario de clases de curso vigente.',
 
+              historial,
+
               clase:
                 null,
             }
@@ -4025,6 +4029,8 @@ async function construirDisponibilidadDiariaInstructores({
 
               motivo:
                 'El instructor completó el límite mensual de horas de curso vigente.',
+
+              historial,
 
               clase:
                 null,
