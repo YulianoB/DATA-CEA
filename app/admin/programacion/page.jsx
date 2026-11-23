@@ -7914,7 +7914,7 @@ async function registrarClase(numeroClaseSeleccionada) {
                             null
 
                           return (
-                            <div key={hora} className="min-w-0 max-h-[110px] overflow-y-auto rounded-lg">
+                            <div key={hora} className="min-w-0 w-full rounded-lg">
                             <button
                             type="button"
                             title="Abrir y administrar esta clase"
@@ -7925,6 +7925,8 @@ async function registrarClase(numeroClaseSeleccionada) {
                               )
                             }
                             className={`
+                              w-full
+                              min-w-0
                               min-h-[88px]
                               border
                               hover:shadow-sm
@@ -8133,7 +8135,7 @@ async function registrarClase(numeroClaseSeleccionada) {
                         // aunque el horario esté disponible para programar.
                         if (historialHorario.length > 0) {
                           return (
-                            <div key={hora} className="min-w-0 max-h-[110px] space-y-0.5 overflow-y-auto rounded-lg">
+                            <div key={hora} className="min-w-0 w-full space-y-0.5 rounded-lg">
                               {renderHistorial()}
                               {disponible && !pasado && (
                                 <button type="button"
