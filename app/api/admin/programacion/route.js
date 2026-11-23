@@ -2625,14 +2625,10 @@ async function renumerarSecuenciaPractica(supabase,{matriculaId,categoria}) {
   if((data||[]).length>500)throw new Error('La secuencia supera 500 clases; requiere revisión administrativa.')
   const clases=data||[]
   const activas=clases.filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
-  const indicePrimerNumero=clases.findIndex(c=>leerNumeroClasePractica(c.observaciones)>0)
-  let primerNumero=1
-  if(indicePrimerNumero>=0){
-    const numeroAncla=leerNumeroClasePractica(clases[indicePrimerNumero].observaciones)
-    const activasAntes=clases.slice(0,indicePrimerNumero)
-      .filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado)).length
-    primerNumero=Math.max(1,numeroAncla-activasAntes)
-  }
+  // La numeración operativa se deriva exclusivamente del orden cronológico
+  // de las clases que consumen cupo. Nunca tomar la anotación histórica como
+  // ancla: una NO_DICTADA con número anterior deja huecos artificiales.
+  const primerNumero=1
   const cambios=[]
   for(let i=0;i<activas.length;i++){
     const clase=activas[i],nuevo=primerNumero+i
