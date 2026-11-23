@@ -2024,10 +2024,9 @@ function construirProgresoAprendiz(
       // Tras la conciliación transaccional, las reservas vigentes son
       // consecutivas desde baseHistorica + 1; no rescatar inasistencias
       // antiguas cuyo número ya haya sido efectivamente dictado.
-      const siguienteNumero = Math.max(
-        baseHistorica + comprometidas + 1,
-        mayorNumeroVigente + 1
-      )
+      const numerosOcupados = new Set(numerosActivos)
+      let siguienteNumero = baseHistorica + 1
+      while (numerosOcupados.has(siguienteNumero)) siguienteNumero++
       // ===================================================
       // ESTADOS REFUERZO
       // ===================================================
