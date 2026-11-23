@@ -2009,6 +2009,22 @@ function construirProgresoAprendiz(
             ?.clases_practica
         )
 
+      // El alumno puede iniciar en DATA CEA desde la clase 8, 12, etc.
+      // El progreso debe respetar el consecutivo histórico conservado,
+      // no limitarse a contar las filas registradas en esta aplicación.
+      // NO_DICTADA y CANCELADA mantienen su número para consulta, pero
+      // nunca aumentan el avance ni reducen las plazas disponibles.
+      const mayorNumeroVigente=numerosActivos.size
+        ? Math.max(...numerosActivos)
+        : 0
+      const avanceOperativo=Math.max(comprometidas,mayorNumeroVigente)
+      const disponiblesOperativos=Math.max(0,requeridas-avanceOperativo)
+      const noDictadasNumeradas=curso
+        .filter(item=>item?.estado==='NO_DICTADA')
+        .map(item=>numeroHistoricoClase(item.observaciones))
+        .filter(n=>Number.isInteger(n)&&n>0)
+        .sort((a,b)=>a-b)
+
       // ===================================================
       // ESTADOS REFUERZO
       // ===================================================
@@ -2067,26 +2083,20 @@ function construirProgresoAprendiz(
 
         canceladas,
 
-        clases_comprometidas:
-          comprometidas,
+        // Total de clases registradas en DATA CEA (sin no dictadas).
+        clases_registradas_activas: comprometidas,
 
-        siguiente_numero_clase: (()=>{
-          // No ofrecer un número duplicado; si la numeración histórica
-          // contiene huecos, se recupera el primero disponible.
-          const preferido=comprometidas+1
-          if(preferido<=requeridas&&!numerosActivos.has(preferido))return preferido
-          for(let n=1;n<=requeridas;n++){
-            if(!numerosActivos.has(n))return n
-          }
-          return requeridas+1 // Sin cupos: el formulario no permite programar.
-        })(),
+        // Avance incluyendo las clases históricas que preceden
+        // al primer registro de DATA CEA.
+        clases_comprometidas: avanceOperativo,
 
-        disponibles_programar:
-          Math.max(
-            0,
-            requeridas -
-              comprometidas
-          ),
+        siguiente_numero_clase: mayorNumeroVigente>0
+          ? mayorNumeroVigente+1
+          : noDictadasNumeradas.length
+            ? noDictadasNumeradas[0]
+            : comprometidas+1,
+
+        disponibles_programar: disponiblesOperativos,
 
         refuerzos_agendados:
           refuerzosAgendados,
