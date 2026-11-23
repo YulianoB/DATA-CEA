@@ -6532,8 +6532,12 @@ async function registrarClase(numeroClaseSeleccionada) {
         'DISPONIBILIDAD'
       )
 
+      // Respetar el día consultado si pertenece a la semana
+      // mostrada; si no, comenzar por el primer día de esa semana.
       setFechaDisponibilidad(
-        hoyColombia()
+        semana.some(dia => dia.iso === fechaDisponibilidad)
+          ? fechaDisponibilidad
+          : fechaInicioSemana
       )
     }}
     className={`
@@ -7773,6 +7777,39 @@ async function registrarClase(numeroClaseSeleccionada) {
                               hora
                           )
 
+                        const historialHorario = Array.isArray(horario?.historial)
+                          ? horario.historial : []
+
+                        const renderHistorial = () => historialHorario.map(claseHistorica => (
+                          <button
+                            key={claseHistorica.id}
+                            type="button"
+                            onClick={() => abrirClaseDesdeDisponibilidad(
+                              instructor, { clase: claseHistorica }
+                            )}
+                            title="Abrir clase histórica"
+                            className={`block w-full min-w-0 rounded-lg border px-1 py-1 text-left
+                              ${claseHistorica.estado === 'NO_DICTADA'
+                                ? 'bg-red-200 border-red-400 hover:bg-red-100'
+                                : 'bg-gray-200 border-gray-400 hover:bg-gray-100'}`}
+                          >
+                            <p className="text-[7px] font-black leading-tight truncate">
+                              {hora}{claseHistorica.numero_clase
+                                ? ` · #${claseHistorica.numero_clase}` : ''}
+                            </p>
+                            <p className="text-[7px] font-black truncate"
+                              title={claseHistorica.persona?.nombre || ''}>
+                              {claseHistorica.persona?.nombre || 'APRENDIZ'}
+                            </p>
+                            <p className="text-[6px] font-bold truncate">
+                              {claseHistorica.categoria || '-'} · {claseHistorica.vehiculo?.placa || '-'}
+                            </p>
+                            <p className="text-[6px] font-black">
+                              {claseHistorica.estado.replace(/_/g, ' ')}
+                            </p>
+                          </button>
+                        ))
+
                         const bloqueado = horario?.tipo_actividad === 'BLOQUEO' || horario?.motivo === 'Horario bloqueado por administración.'
                         const esTeoria = horario?.tipo_actividad === 'TEORIA'
                         const ocupado =
@@ -7880,10 +7917,8 @@ async function registrarClase(numeroClaseSeleccionada) {
                             null
 
                           return (
+                            <div key={hora} className="min-w-0 max-h-[110px] overflow-y-auto rounded-lg">
                             <button
-                            key={
-                              hora
-                            }
                             type="button"
                             title="Abrir y administrar esta clase"
                             onClick={() =>
@@ -7906,6 +7941,13 @@ async function registrarClase(numeroClaseSeleccionada) {
                               ${claseEstiloDisponibilidad}
                             `}
                           >
+                              {/* NÚMERO HISTÓRICO DE CLASE */}
+                              {horario?.clase?.numero_clase && (
+                                <p className="text-[7px] font-black text-blue-950">
+                                  {hora} · #{horario.clase.numero_clase}
+                                </p>
+                              )}
+
                               {/* NOMBRE */}
 
                               <p
@@ -8081,6 +8123,31 @@ async function registrarClase(numeroClaseSeleccionada) {
                                 </span>
                               </div>                            
                               </button>
+                              {historialHorario.length > 0 && (
+                                <div className="mt-0.5 space-y-0.5">
+                                  {renderHistorial()}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        }
+
+                        // Si no hay clase activa, las históricas siguen visibles,
+                        // aunque el horario esté disponible para programar.
+                        if (historialHorario.length > 0) {
+                          return (
+                            <div key={hora} className="min-w-0 max-h-[110px] space-y-0.5 overflow-y-auto rounded-lg">
+                              {renderHistorial()}
+                              {disponible && !pasado && (
+                                <button type="button"
+                                  onClick={() => programarDesdeDisponibilidad(
+                                    instructor, fechaDisponibilidad, hora
+                                  )}
+                                  className="w-full rounded border border-emerald-400 bg-emerald-50 py-0.5 text-[7px] font-black text-emerald-800">
+                                  + PROGRAMAR
+                                </button>
+                              )}
+                            </div>
                           )
                         }
 
