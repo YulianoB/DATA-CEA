@@ -2645,7 +2645,7 @@ async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,cl
     if(c.numero!==siguiente) {
       ajustes.push({id:c.id,anterior:c.observaciones,
         nuevo: String(c.observaciones||'').replace(
-          /\\[CEA_CLASE_PRACTICA:\\d+\\]/,'[CEA_CLASE_PRACTICA:'+siguiente+']')
+          /\[CEA_CLASE_PRACTICA:\d+\]/,'[CEA_CLASE_PRACTICA:'+siguiente+']')
       })
       if(!c.numero || ajustes[ajustes.length-1].nuevo===String(c.observaciones||'')) {
         throw new Error('Una clase agendada no tiene consecutivo válido. No se modificó la programación.')
