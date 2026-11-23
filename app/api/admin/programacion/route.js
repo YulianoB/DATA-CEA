@@ -5917,12 +5917,24 @@ if (
       )
     }
 
+    let avisoSecuenciaCancelada=''
+    if(claseCancelada?.tipo_programacion==='CURSO_VIGENTE' && claseCancelada?.matricula_id){
+      try{
+        await renumerarSecuenciaPractica(supabase,{
+          matriculaId:claseCancelada.matricula_id,categoria:claseCancelada.categoria
+        })
+      }catch(errorNumeracion){
+        console.error('Clase cancelada, pero falló la renumeración:',errorNumeracion)
+        avisoSecuenciaCancelada=' La numeración requiere revisión: '+errorNumeracion.message
+      }
+    }
+
     return NextResponse.json({
       status:
         'success',
 
       message:
-        'La clase fue cancelada correctamente.',
+        'La clase fue cancelada correctamente.'+avisoSecuenciaCancelada,
 
       data:
         claseCancelada,
