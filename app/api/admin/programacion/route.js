@@ -5412,6 +5412,23 @@ if (
     )
   }
 
+  // Una clase nueva puede quedar antes de reservas existentes.
+  // Ordenar por fecha y hora sin tocar DICTADA, NO_DICTADA ni CANCELADA.
+  // Si falla la conciliación, eliminar únicamente la clase recién creada.
+  let advertenciaNumeracion=''
+  if(tipoProgramacion==='CURSO_VIGENTE' && fecha>=FECHA_INICIO_NUMERACION_PRACTICA) {
+    try {
+      const ajustes=await prepararReorganizacionPractica(supabase,{matriculaId,categoria,fechaClase:fecha})
+      await aplicarReorganizacionPractica(supabase,ajustes)
+    } catch(errorSecuencia) {
+      const {error:errorEliminar}=await supabase.from('programacion_clases')
+        .delete().eq('id',claseCreada.id).eq('estado','AGENDADA')
+      if(errorEliminar) console.error('No se pudo revertir la clase nueva',claseCreada.id,errorEliminar)
+      throw new Error('No se pudo ordenar la numeración de la nueva clase: '+errorSecuencia.message+
+        (errorEliminar?' Revise el registro creado.':' La clase nueva fue revertida.'))
+    }
+  }
+
   // =====================================================
   // PERSONA PROGRAMADA
   // =====================================================
@@ -5472,23 +5489,6 @@ if (
         'No fue posible registrar la notificación pendiente:',
         errorNotificacion
       )
-    }
-  }
-
-  // Una clase nueva puede quedar antes de reservas existentes.
-  // Ordenar por fecha y hora sin tocar DICTADA, NO_DICTADA ni CANCELADA.
-  // Si falla la conciliación, eliminar únicamente la clase recién creada.
-  let advertenciaNumeracion=''
-  if(tipoProgramacion==='CURSO_VIGENTE' && fecha>=FECHA_INICIO_NUMERACION_PRACTICA) {
-    try {
-      const ajustes=await prepararReorganizacionPractica(supabase,{matriculaId,categoria,fechaClase:fecha})
-      await aplicarReorganizacionPractica(supabase,ajustes)
-    } catch(errorSecuencia) {
-      const {error:errorEliminar}=await supabase.from('programacion_clases')
-        .delete().eq('id',claseCreada.id).eq('estado','AGENDADA')
-      if(errorEliminar) console.error('No se pudo revertir la clase nueva',claseCreada.id,errorEliminar)
-      throw new Error('No se pudo ordenar la numeración de la nueva clase: '+errorSecuencia.message+
-        (errorEliminar?' Revise el registro creado.':' La clase nueva fue revertida.'))
     }
   }
 
