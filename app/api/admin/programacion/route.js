@@ -2601,53 +2601,34 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
     throw new Error('El número de clase práctica debe estar entre 1 y '+limite+'.')
   }
   const {data,error}=await supabase.from('programacion_clases')
-    .select('id,observaciones,estado')
+    .select('id,fecha,hora_inicio,observaciones,estado')
     .eq('matricula_id',matriculaId)
     .eq('categoria',categoria)
     .eq('tipo_programacion','CURSO_VIGENTE')
     .gte('fecha',FECHA_INICIO_NUMERACION_PRACTICA)
-    .in('estado',ESTADOS_QUE_CONSUMEN_HORAS)
+    .order('fecha',{ascending:true})
+    .order('hora_inicio',{ascending:true})
+    .order('id',{ascending:true})
+    .limit(501)
   if(error) throw new Error('No fue posible verificar la numeración de clases: '+error.message)
-  const activas=(data||[]).map(c=>leerNumeroClasePractica(c.observaciones))
-    .filter(n=>n>0)
-  if(activas.includes(numeroClase)){
+  if((data||[]).length>500) throw new Error('La matrícula supera el máximo de clases consultables.')
+  const activas=(data||[]).filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
+    .map(c=>leerNumeroClasePractica(c.observaciones)).filter(n=>n>0)
+  const ocupados=new Set(activas)
+  if(ocupados.has(numeroClase)){
     throw new Error('La clase práctica número '+numeroClase+' ya está programada para esta matrícula y categoría.')
   }
-  // Si ya hay historial, retomar el primer número que no esté
-  // dictado ni reservado. Si todavía no hay registros, respetar
-  // el consecutivo inicial elegido por administración (8, 12, etc.).
-  const {data:historial,error:errorHistorial}=await supabase
-    .from('programacion_clases')
-    .select('id,fecha,hora_inicio,observaciones')
-    .eq('matricula_id',matriculaId).eq('categoria',categoria)
-    .eq('tipo_programacion','CURSO_VIGENTE')
-    .gte('fecha',FECHA_INICIO_NUMERACION_PRACTICA)
-    .order('fecha',{ascending:true}).order('hora_inicio',{ascending:true})
-    .order('id',{ascending:true}).limit(501)
-  if(errorHistorial) throw new Error('No fue posible consultar el inicio histórico: '+errorHistorial.message)
-  if(historial?.length) {
-    if(historial.length>500) throw new Error('La matrícula supera el máximo de clases consultables.')
-    // Los CANCELADA solo sirven de referencia cuando no existe
-    // ninguna clase operativa o NO_DICTADA.
-    const {data:datosBase,error:errorBase}=await supabase.from('programacion_clases')
-      .select('estado,observaciones')
-      .eq('matricula_id',matriculaId).eq('categoria',categoria)
-      .eq('tipo_programacion','CURSO_VIGENTE')
-      .gte('fecha',FECHA_INICIO_NUMERACION_PRACTICA)
-      .limit(501)
-    if(errorBase) throw new Error('No se pudo consultar la secuencia: '+errorBase.message)
-    if((datosBase||[]).length>500) throw new Error('Demasiadas clases para validar la secuencia.')
-    const candidatas=(datosBase||[]).filter(c=>c.estado!=='CANCELADA')
-      .map(c=>leerNumeroClasePractica(c.observaciones)).filter(n=>n>0)
-    const alternas=(datosBase||[]).map(c=>leerNumeroClasePractica(c.observaciones)).filter(n=>n>0)
-    const numeros=candidatas.length?candidatas:alternas
-    if(!numeros.length) throw new Error('No se puede determinar el inicio histórico de prácticas.')
-    let esperado=Math.min(...numeros)
-    const ocupados=new Set(activas)
-    while(ocupados.has(esperado)) esperado++
-    if(numeroClase!==esperado) {
-      throw new Error('El siguiente consecutivo disponible es #'+esperado+
-        '. Actualice el aprendiz antes de continuar.')
+  if((data||[]).length) {
+    const {inicio,ultima}=inicioPendientesPractica(data)
+    // No volver a recuperar una clase NO_DICTADA anterior a la última
+    // DICTADA. Las reservas después de ella ocupan los siguientes números.
+    if(inicio) {
+      let esperado=inicio
+      while(ocupados.has(esperado)) esperado++
+      if(numeroClase!==esperado) {
+        throw new Error('El siguiente consecutivo disponible es #'+esperado+
+          '. Actualice el aprendiz antes de continuar.')
+      }
     }
   }
 }
@@ -2709,7 +2690,17 @@ async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,cl
   // no hay clases consolidadas, retoman el primero NO_DICTADA anterior.
   const vigentes=todas.filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
   if(!vigentes.length) return []
-  const {inicio,ultima}=inicioPendientesPractica(todas)
+  const base=inicioPendientesPractica(todas)
+  let inicio=base.inicio
+  const ultima=base.ultima
+  // CANCELADA también libera su consecutivo al momento de cancelarse,
+  // pero una cancelación antigua nunca reinicia la programación vigente.
+  if(nuevoEstado==='CANCELADA' && !ultima) {
+    const liberada=todas.find(c=>c.id===claseId)
+    if(liberada?.numero>0) {
+      inicio=inicio?Math.min(inicio,liberada.numero):liberada.numero
+    }
+  }
   if(!inicio) return []
   const ajustes=[]
   let siguiente=inicio
