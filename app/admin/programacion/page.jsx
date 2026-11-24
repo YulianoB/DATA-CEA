@@ -2493,6 +2493,8 @@ export default function ProgramacionPage() {
     setVehiculos,
   ] =
     useState([])
+  const [instructoresEdicionModal,setInstructoresEdicionModal]=useState([])
+  const [vehiculosEdicionModal,setVehiculosEdicionModal]=useState([])
 
   const [
     vehiculoId,
@@ -5335,6 +5337,31 @@ function abrirClase(
   setClaseSeleccionada(
     clase
   )
+
+  // Catálogos específicos para editar clases de cualquier aprendiz.
+  // No modificar los filtros principales ni su selección.
+  setInstructoresEdicionModal([])
+  setVehiculosEdicionModal([])
+  if(nit && clase?.estado==='AGENDADA') {
+    const consulta=async(recurso)=>{
+      const params=new URLSearchParams({
+        recurso,nit,
+        fecha:clase.fecha || hoyColombia(),
+        categoria:clase.categoria || ''
+      })
+      if(recurso==='instructores') {
+        params.set('tipo_programacion',clase.tipo_programacion || 'CURSO_VIGENTE')
+      }
+      const respuesta=await fetchJsonSeguro(`${API_CATALOGOS}?${params.toString()}`)
+      return Array.isArray(respuesta?.data)?respuesta.data:[]
+    }
+    Promise.all([consulta('instructores'),consulta('vehiculos')])
+      .then(([ins,veh])=>{
+        setInstructoresEdicionModal(ins)
+        setVehiculosEdicionModal(veh)
+      })
+      .catch(e=>console.error('No se pudieron cargar opciones de edición:',e))
+  }
 
   setModoModal(
     'EDITAR'
@@ -9006,8 +9033,8 @@ async function registrarClase(numeroClaseSeleccionada) {
         }
         onRenumerar={recalcularNumeracionAprendiz}
         onReprogramar={reprogramarClase}
-        instructoresEdicion={instructores}
-        vehiculosEdicion={vehiculos}
+        instructoresEdicion={instructoresEdicionModal}
+        vehiculosEdicion={vehiculosEdicionModal}
       />
     </div>
   )
