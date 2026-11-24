@@ -2761,6 +2761,10 @@ async function contarClasesComprometidasCategoria(
         'tipo_programacion',
         'CURSO_VIGENTE'
       )
+      .gte(
+        'fecha',
+        FECHA_INICIO_NUMERACION_PRACTICA
+      )
       .in(
         'estado',
         ESTADOS_QUE_CONSUMEN_HORAS
