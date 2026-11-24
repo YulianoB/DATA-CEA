@@ -5472,9 +5472,22 @@ if (
     }
   }
 
-  // No renumerar clases antiguas al crear una nueva.
-  // Su consecutivo ya fue validado y guardado en observaciones.
-  const advertenciaNumeracion=''
+  // Una clase nueva puede quedar antes de reservas existentes.
+  // Ordenar por fecha y hora sin tocar DICTADA, NO_DICTADA ni CANCELADA.
+  // Si falla la conciliación, eliminar únicamente la clase recién creada.
+  let advertenciaNumeracion=''
+  if(tipoProgramacion==='CURSO_VIGENTE' && fecha>=FECHA_INICIO_NUMERACION_PRACTICA) {
+    try {
+      const ajustes=await prepararReorganizacionPractica(supabase,{matriculaId,categoria,fechaClase:fecha})
+      await aplicarReorganizacionPractica(supabase,ajustes)
+    } catch(errorSecuencia) {
+      const {error:errorEliminar}=await supabase.from('programacion_clases')
+        .delete().eq('id',claseCreada.id).eq('estado','AGENDADA')
+      if(errorEliminar) console.error('No se pudo revertir la clase nueva',claseCreada.id,errorEliminar)
+      throw new Error('No se pudo ordenar la numeración de la nueva clase: '+errorSecuencia.message+
+        (errorEliminar?' Revise el registro creado.':' La clase nueva fue revertida.'))
+    }
+  }
 
   // =====================================================
   // RESPUESTA
@@ -6925,6 +6938,32 @@ if (
           400,
       }
     )
+  }
+
+  // Si cambia fecha u hora, conservar el ID y reordenar solo reservas
+  // AGENDADA. Un cambio exclusivo de vehículo/instructor no modifica números.
+  if(tipoProgramacion==='CURSO_VIGENTE' &&
+     (fecha!==claseActual.fecha ||
+      horaInicio!==normalizarHora(claseActual.hora_inicio))) {
+    try {
+      const ajustes=await prepararReorganizacionPractica(supabase,{
+        matriculaId,categoria,fechaClase:fecha
+      })
+      await aplicarReorganizacionPractica(supabase,ajustes)
+    } catch(errorSecuencia) {
+      const {error:errorReversion}=await supabase.from('programacion_clases')
+        .update({
+          fecha:claseActual.fecha,hora_inicio:claseActual.hora_inicio,
+          instructor_id:claseActual.instructor_id,
+          vehiculo_id:claseActual.vehiculo_id,
+          observaciones:claseActual.observaciones,
+          estado:claseActual.estado,
+          updated_at:claseActual.updated_at
+        }).eq('id',id).eq('estado','AGENDADA')
+      if(errorReversion) console.error('No se pudo revertir reprogramación',id,errorReversion)
+      throw new Error('No se pudo reorganizar la agenda: '+errorSecuencia.message+
+        (errorReversion?' Revise la clase.':' Se restauró la programación anterior.'))
+    }
   }
 
   // =====================================================
