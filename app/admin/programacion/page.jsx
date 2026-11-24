@@ -990,6 +990,9 @@ function ModalClase({
   onProgramar,
   onCambiarEstado,
   onRenumerar,
+  onReprogramar,
+  instructoresEdicion = [],
+  vehiculosEdicion = [],
 }) {
   const [
     nuevoEstado,
@@ -1010,6 +1013,10 @@ function ModalClase({
     useState('')
 
   const [numeroClaseEditar, setNumeroClaseEditar] = useState('')
+  const [editandoProgramacion,setEditandoProgramacion] = useState(false)
+  const [datosEdicion,setDatosEdicion] = useState({
+    fecha:'',hora_inicio:'',instructor_id:'',vehiculo_id:''
+  })
 
   const [
     confirmandoCancelacion,
@@ -1044,6 +1051,13 @@ function ModalClase({
       setConfirmandoCancelacion(
         false
       )
+      setEditandoProgramacion(false)
+      setDatosEdicion({
+        fecha:clase?.fecha || '',
+        hora_inicio:texto(clase?.hora_inicio).slice(0,5),
+        instructor_id:String(clase?.instructor_id || ''),
+        vehiculo_id:String(clase?.vehiculo_id || '')
+      })
       if (abierto && modo==='NUEVA' && tipoProgramacion==='CURSO_VIGENTE') {
         setNumeroClaseEditar(String(progreso?.siguiente_numero_clase || Math.min(
           numero(progreso?.clases_requeridas),
@@ -1675,6 +1689,63 @@ const estadosDisponibles =
                 Clase práctica #{texto(clase.observaciones).match(/\[CEA_CLASE_PRACTICA:(\d+)\]/)?.[1]}
               </div>
             )}
+
+          {/* MODIFICAR LA PROGRAMACIÓN EXISTENTE SIN CREAR OTRA CLASE */}
+          {modo==='EDITAR' && estadoActual==='AGENDADA' && (
+            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+              <button type="button" disabled={guardando}
+                onClick={()=>setEditandoProgramacion(v=>!v)}
+                className="text-[10px] font-black text-blue-900">
+                <i className="fas fa-pen mr-1" />
+                {editandoProgramacion?'Ocultar modificación':'Modificar fecha, hora, instructor o vehículo'}
+              </button>
+              {editandoProgramacion && (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <label className="text-[9px] font-bold text-gray-700">
+                    Fecha
+                    <input type="date" value={datosEdicion.fecha}
+                      onChange={e=>setDatosEdicion(v=>({...v,fecha:e.target.value}))}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-[10px]"/>
+                  </label>
+                  <label className="text-[9px] font-bold text-gray-700">
+                    Hora
+                    <input type="time" value={datosEdicion.hora_inicio}
+                      onChange={e=>setDatosEdicion(v=>({...v,hora_inicio:e.target.value}))}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-[10px]"/>
+                  </label>
+                  <label className="text-[9px] font-bold text-gray-700">
+                    Instructor
+                    <select value={datosEdicion.instructor_id}
+                      onChange={e=>setDatosEdicion(v=>({...v,instructor_id:e.target.value}))}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-[10px]">
+                      {!instructoresEdicion.some(x=>String(x.id)===datosEdicion.instructor_id) &&
+                        <option value={datosEdicion.instructor_id}>{clase?.instructor?.nombre_completo || 'Instructor actual'}</option>}
+                      {instructoresEdicion.map(x=><option key={x.id} value={x.id}>{x.nombre_completo}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-[9px] font-bold text-gray-700">
+                    Vehículo
+                    <select value={datosEdicion.vehiculo_id}
+                      onChange={e=>setDatosEdicion(v=>({...v,vehiculo_id:e.target.value}))}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-[10px]">
+                      {!vehiculosEdicion.some(x=>String(x.id)===datosEdicion.vehiculo_id) &&
+                        <option value={datosEdicion.vehiculo_id}>{clase?.vehiculo?.placa || 'Vehículo actual'}</option>}
+                      {vehiculosEdicion.map(x=><option key={x.id} value={x.id}>{x.placa} · {x.tipo_vehiculo || ''}</option>)}
+                    </select>
+                  </label>
+                  <div className="col-span-2 flex justify-end">
+                    <button type="button" disabled={guardando ||
+                      !datosEdicion.fecha || !datosEdicion.hora_inicio ||
+                      !datosEdicion.instructor_id || !datosEdicion.vehiculo_id}
+                      onClick={()=>onReprogramar(datosEdicion)}
+                      className="rounded-md bg-blue-700 px-3 py-2 text-[9px] font-black text-white disabled:opacity-50">
+                      {guardando?'Guardando...':'Guardar modificación'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* =================================================
               MODO EDITAR
@@ -5649,6 +5720,42 @@ async function registrarClase(numeroClaseSeleccionada) {
     }
   }
 
+  // Modificar la clase existente conservando su ID.
+  async function reprogramarClase(datos) {
+    if(!claseSeleccionada?.id) return
+    setGuardando(true)
+    setError('')
+    setExito('')
+    try {
+      const data=await fetchJsonSeguro(API_PROGRAMACION,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          accion:'reprogramar',nit,id:claseSeleccionada.id,
+          usuario:usuarioOperacion,
+          fecha:datos.fecha,hora_inicio:datos.hora_inicio,
+          instructor_id:Number(datos.instructor_id),
+          vehiculo_id:Number(datos.vehiculo_id)
+        })
+      })
+      setExito(data?.message || 'Programación modificada correctamente.')
+      setModalAbierto(false)
+      await Promise.all([
+        cargarAgenda(),
+        cargarDisponibilidadInstructores(datos.fecha),
+        claseSeleccionada.matricula_id
+          ? cargarDetalleAprendiz(claseSeleccionada.matricula_id,datos.fecha)
+          : Promise.resolve()
+      ])
+    } catch(errorModificacion) {
+      const mensaje=errorModificacion.message || 'No fue posible modificar la clase.'
+      setError(mensaje)
+      mostrarAlertaValidacion(mensaje,'No se pudo modificar la programación')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
   // =======================================================
   // NAVEGACIÓN SEMANA
   // =======================================================
@@ -8898,6 +9005,9 @@ async function registrarClase(numeroClaseSeleccionada) {
           cambiarEstadoClase
         }
         onRenumerar={recalcularNumeracionAprendiz}
+        onReprogramar={reprogramarClase}
+        instructoresEdicion={instructores}
+        vehiculosEdicion={vehiculos}
       />
     </div>
   )
