@@ -2032,11 +2032,31 @@ function construirProgresoAprendiz(
         mayorNumeroVigente
       )
       const disponiblesOperativos = Math.max(0, requeridas - avanceOperativo)
-      // Tras la conciliación transaccional, las reservas vigentes son
-      // consecutivas desde baseHistorica + 1; no rescatar inasistencias
-      // antiguas cuyo número ya haya sido efectivamente dictado.
+      // Continuar después de la última clase DICTADA/PENDIENTE_CARGUE.
+      // Si no hay clases consolidadas, reutilizar la primera NO_DICTADA
+      // anterior a las reservas. Nunca reiniciar por inasistencias antiguas
+      // cuando ya hay clases efectivamente dictadas.
+      const consolidadas = cursoCronologico.filter(item =>
+        ['DICTADA','PENDIENTE_CARGUE'].includes(item?.estado) &&
+        numeroHistoricoClase(item?.observaciones)>0
+      )
+      const ultimaConsolidada = consolidadas[consolidadas.length-1]
+      const primeraReserva = cursoCronologico.find(item=>item?.estado==='AGENDADA')
+      const historicasPrevias = cursoCronologico.filter(item =>
+        item?.estado==='NO_DICTADA' &&
+        (!primeraReserva ||
+          String(item?.fecha||'')<String(primeraReserva?.fecha||'') ||
+          (item?.fecha===primeraReserva?.fecha &&
+            String(item?.hora_inicio||'')<=String(primeraReserva?.hora_inicio||'')))
+      ).map(item=>numeroHistoricoClase(item?.observaciones)).filter(n=>n>0)
+      const inicioNumero = ultimaConsolidada
+        ? numeroHistoricoClase(ultimaConsolidada.observaciones)+1
+        : historicasPrevias.length
+          ? Math.min(...historicasPrevias)
+          : numerosActivos.length
+            ? Math.min(...numerosActivos) : 1
       const numerosOcupados = new Set(numerosActivos)
-      let siguienteNumero = baseHistorica + 1
+      let siguienteNumero = inicioNumero
       while (numerosOcupados.has(siguienteNumero)) siguienteNumero++
       // ===================================================
       // ESTADOS REFUERZO
