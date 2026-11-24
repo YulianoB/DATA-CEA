@@ -2004,9 +2004,16 @@ function construirProgresoAprendiz(
         String(a?.hora_inicio || '').localeCompare(String(b?.hora_inicio || '')) ||
         Number(a?.id || 0) - Number(b?.id || 0)
       )
-      const numerosHistoricos = cursoCronologico
+      // CANCELADA conserva su número, pero no debe bajar el inicio
+      // de una secuencia que ya tiene clases vigentes/no dictadas.
+      const numerosSinCanceladas = cursoCronologico
+        .filter(item => item?.estado !== 'CANCELADA')
         .map(item => numeroHistoricoClase(item?.observaciones))
         .filter(n => Number.isInteger(n) && n > 0)
+      const numerosHistoricos = numerosSinCanceladas.length
+        ? numerosSinCanceladas
+        : cursoCronologico.map(item => numeroHistoricoClase(item?.observaciones))
+            .filter(n => Number.isInteger(n) && n > 0)
       const primerNumeroRegistrado = numerosHistoricos.length
         ? Math.min(...numerosHistoricos) : 0
       const baseHistorica = primerNumeroRegistrado > 0
