@@ -2627,7 +2627,20 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
   if(errorHistorial) throw new Error('No fue posible consultar el inicio histórico: '+errorHistorial.message)
   if(historial?.length) {
     if(historial.length>500) throw new Error('La matrícula supera el máximo de clases consultables.')
-    const numeros=historial.map(c=>leerNumeroClasePractica(c.observaciones)).filter(n=>n>0)
+    // Los CANCELADA solo sirven de referencia cuando no existe
+    // ninguna clase operativa o NO_DICTADA.
+    const {data:datosBase,error:errorBase}=await supabase.from('programacion_clases')
+      .select('estado,observaciones')
+      .eq('matricula_id',matriculaId).eq('categoria',categoria)
+      .eq('tipo_programacion','CURSO_VIGENTE')
+      .gte('fecha',FECHA_INICIO_NUMERACION_PRACTICA)
+      .limit(501)
+    if(errorBase) throw new Error('No se pudo consultar la secuencia: '+errorBase.message)
+    if((datosBase||[]).length>500) throw new Error('Demasiadas clases para validar la secuencia.')
+    const candidatas=(datosBase||[]).filter(c=>c.estado!=='CANCELADA')
+      .map(c=>leerNumeroClasePractica(c.observaciones)).filter(n=>n>0)
+    const alternas=(datosBase||[]).map(c=>leerNumeroClasePractica(c.observaciones)).filter(n=>n>0)
+    const numeros=candidatas.length?candidatas:alternas
     if(!numeros.length) throw new Error('No se puede determinar el inicio histórico de prácticas.')
     let esperado=Math.min(...numeros)
     const ocupados=new Set(activas)
@@ -2664,7 +2677,10 @@ async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,cl
   }))
   // La base no puede depender de cuál clase se movió de fecha.
   // Conservar el menor consecutivo conocido en el historial operativo.
-  const numerosHistoricos=todas.map(c=>c.numero).filter(n=>Number.isInteger(n)&&n>0)
+  const candidatos=todas.filter(c=>c.estado!=='CANCELADA')
+    .map(c=>c.numero).filter(n=>Number.isInteger(n)&&n>0)
+  const numerosHistoricos=candidatos.length?candidatos:
+    todas.map(c=>c.numero).filter(n=>Number.isInteger(n)&&n>0)
   if(!numerosHistoricos.length) throw new Error('No hay un número inicial de práctica registrado. Revise la matrícula.')
   const inicial=Math.min(...numerosHistoricos)
   const vigentes=todas.filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
