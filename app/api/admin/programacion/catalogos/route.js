@@ -2004,9 +2004,11 @@ function construirProgresoAprendiz(
         String(a?.hora_inicio || '').localeCompare(String(b?.hora_inicio || '')) ||
         Number(a?.id || 0) - Number(b?.id || 0)
       )
-      const primerNumeroRegistrado = cursoCronologico
+      const numerosHistoricos = cursoCronologico
         .map(item => numeroHistoricoClase(item?.observaciones))
-        .find(n => Number.isInteger(n) && n > 0) || 0
+        .filter(n => Number.isInteger(n) && n > 0)
+      const primerNumeroRegistrado = numerosHistoricos.length
+        ? Math.min(...numerosHistoricos) : 0
       const baseHistorica = primerNumeroRegistrado > 0
         ? primerNumeroRegistrado - 1 : 0
 
