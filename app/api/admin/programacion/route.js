@@ -2652,6 +2652,35 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
   }
 }
 
+// Punto de partida de las reservas: después del último número consolidado.
+// Si aún no hay clases DICTADA/PENDIENTE_CARGUE, se retoma la primera
+// NO_DICTADA anterior a las reservas; nunca se renumera el historial.
+function inicioPendientesPractica(clases) {
+  const cronologico=[...clases].sort((a,b)=>
+    String(a.fecha||'').localeCompare(String(b.fecha||'')) ||
+    String(a.hora_inicio||'').localeCompare(String(b.hora_inicio||'')) ||
+    Number(a.id||0)-Number(b.id||0)
+  )
+  const numero=c=>leerNumeroClasePractica(c.observaciones)
+  const consolidadas=cronologico.filter(c=>
+    ['DICTADA','PENDIENTE_CARGUE'].includes(c.estado) && numero(c)>0)
+  const ultima=consolidadas[consolidadas.length-1]
+  if(ultima) return {inicio:numero(ultima)+1,ultima}
+  const primeraReserva=cronologico.find(c=>c.estado==='AGENDADA')
+  const hastaPrimera=primeraReserva
+    ? cronologico.filter(c=>
+        String(c.fecha||'')<String(primeraReserva.fecha||'') ||
+        (c.fecha===primeraReserva.fecha &&
+          String(c.hora_inicio||'')<=String(primeraReserva.hora_inicio||'')))
+    : cronologico
+  const historicas=hastaPrimera.filter(c=>c.estado==='NO_DICTADA')
+    .map(numero).filter(n=>n>0)
+  if(historicas.length) return {inicio:Math.min(...historicas),ultima:null}
+  const vigentes=cronologico.filter(c=>
+    ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado)).map(numero).filter(n=>n>0)
+  return {inicio:vigentes.length?Math.min(...vigentes):null,ultima:null}
+}
+
 // Reorganizar exclusivamente las reservas AGENDADA, sin tocar el historial.
 // Se ejecuta desde la API al guardar cambios, nunca al consultar la agenda.
 async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,claseId=null,nuevoEstado=null,fechaClase=null}) {
@@ -2675,31 +2704,25 @@ async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,cl
     ...c, estado:claseId===c.id && nuevoEstado ? nuevoEstado : c.estado,
     numero:leerNumeroClasePractica(c.observaciones)
   }))
-  // Iniciar desde la primera clase activa, no desde una inasistencia
-  // histórica cuyo consecutivo ya quedó atrás. Al liberar una clase
-  // AGENDADA se incluye su número para poder reutilizarlo en reservas
-  // posteriores, sin modificar el registro NO_DICTADA/CANCELADA.
+  // Los números de las clases ya dictadas/pendientes son definitivos.
+  // Las reservas posteriores retoman el número siguiente; cuando aún
+  // no hay clases consolidadas, retoman el primero NO_DICTADA anterior.
   const vigentes=todas.filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
-  const numerosVigentes=vigentes.map(c=>c.numero)
-    .filter(n=>Number.isInteger(n)&&n>0)
-  const claseLiberada=todas.find(c=>c.id===claseId &&
-    (nuevoEstado==='NO_DICTADA'||nuevoEstado==='CANCELADA'))
-  const numeroLiberado=claseLiberada?.numero>0?claseLiberada.numero:null
-  const numerosBase=[...numerosVigentes,...(numeroLiberado?[numeroLiberado]:[])]
-  if(!numerosBase.length) return []
-  const inicial=Math.min(...numerosBase)
-  // La fecha y hora son la autoridad para el orden. Los números de
-  // DICTADA y PENDIENTE_CARGUE se respetan: si impiden mantener la
-  // secuencia cronológica se rechaza el cambio, no se fuerzan números.
-  let siguiente=inicial
+  if(!vigentes.length) return []
+  const {inicio,ultima}=inicioPendientesPractica(todas)
+  if(!inicio) return []
   const ajustes=[]
+  let siguiente=inicio
   for(const c of vigentes) {
-    if(c.estado!=='AGENDADA') {
-      if(c.numero!==siguiente) {
-        throw new Error('La clase #'+c.numero+' ya consolidada no coincide con la posición cronológica #'+
-          siguiente+'. Revise la programación antes de mover esta clase.')
-      }
-    } else if(c.numero!==siguiente) {
+    // No cambiar ni revisar contra un contador antiguo las clases que ya
+    // tienen un consecutivo consolidado. Las reservas anteriores a la
+    // última clase consolidada tampoco se alteran automáticamente.
+    if(c.estado!=='AGENDADA') continue
+    if(ultima && (
+      c.fecha<ultima.fecha ||
+      (c.fecha===ultima.fecha && c.hora_inicio<=ultima.hora_inicio)
+    )) continue
+    if(c.numero!==siguiente) {
       if(!c.numero) throw new Error('La clase '+c.id+' no tiene número práctico registrado.')
       const nuevo=String(c.observaciones||'').replace(
         /\[CEA_CLASE_PRACTICA:\d+\]/,'[CEA_CLASE_PRACTICA:'+siguiente+']')
