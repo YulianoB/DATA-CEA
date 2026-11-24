@@ -2684,27 +2684,26 @@ async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,cl
   if(!numerosHistoricos.length) throw new Error('No hay un número inicial de práctica registrado. Revise la matrícula.')
   const inicial=Math.min(...numerosHistoricos)
   const vigentes=todas.filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
-  const fijas=vigentes.filter(c=>c.estado!=='AGENDADA')
-  const ocupados=new Set()
-  for(const fija of fijas) {
-    if(fija.numero<inicial || ocupados.has(fija.numero))
-      throw new Error('Conflicto en clases dictadas o pendientes de cargue. Requiere revisión administrativa.')
-    ocupados.add(fija.numero)
-  }
+  // La fecha y hora son la autoridad para el orden. Los números de
+  // DICTADA y PENDIENTE_CARGUE se respetan: si impiden mantener la
+  // secuencia cronológica se rechaza el cambio, no se fuerzan números.
   let siguiente=inicial
   const ajustes=[]
-  for(const c of vigentes.filter(c=>c.estado==='AGENDADA')) {
-    while(ocupados.has(siguiente)) siguiente++
-    if(c.numero!==siguiente) {
-      ajustes.push({id:c.id,anterior:c.observaciones,
-        nuevo: String(c.observaciones||'').replace(
-          /\[CEA_CLASE_PRACTICA:\d+\]/,'[CEA_CLASE_PRACTICA:'+siguiente+']')
-      })
-      if(!c.numero || ajustes[ajustes.length-1].nuevo===String(c.observaciones||'')) {
-        throw new Error('Una clase agendada no tiene consecutivo válido. No se modificó la programación.')
+  for(const c of vigentes) {
+    if(c.estado!=='AGENDADA') {
+      if(c.numero!==siguiente) {
+        throw new Error('La clase #'+c.numero+' ya consolidada no coincide con la posición cronológica #'+
+          siguiente+'. Revise la programación antes de mover esta clase.')
       }
+    } else if(c.numero!==siguiente) {
+      if(!c.numero) throw new Error('La clase '+c.id+' no tiene número práctico registrado.')
+      const nuevo=String(c.observaciones||'').replace(
+        /\[CEA_CLASE_PRACTICA:\d+\]/,'[CEA_CLASE_PRACTICA:'+siguiente+']')
+      if(nuevo===String(c.observaciones||'')) {
+        throw new Error('No fue posible preparar el consecutivo de la clase '+c.id)
+      }
+      ajustes.push({id:c.id,anterior:c.observaciones,nuevo})
     }
-    ocupados.add(siguiente)
     siguiente++
   }
   return ajustes
