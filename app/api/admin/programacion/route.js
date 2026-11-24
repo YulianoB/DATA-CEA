@@ -2623,12 +2623,13 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
     .eq('tipo_programacion','CURSO_VIGENTE')
     .gte('fecha',FECHA_INICIO_NUMERACION_PRACTICA)
     .order('fecha',{ascending:true}).order('hora_inicio',{ascending:true})
-    .order('id',{ascending:true}).limit(1)
+    .order('id',{ascending:true}).limit(501)
   if(errorHistorial) throw new Error('No fue posible consultar el inicio histórico: '+errorHistorial.message)
   if(historial?.length) {
-    const primero=leerNumeroClasePractica(historial[0].observaciones)
-    if(!primero) throw new Error('No se puede determinar el inicio histórico de prácticas.')
-    let esperado=primero
+    if(historial.length>500) throw new Error('La matrícula supera el máximo de clases consultables.')
+    const numeros=historial.map(c=>leerNumeroClasePractica(c.observaciones)).filter(n=>n>0)
+    if(!numeros.length) throw new Error('No se puede determinar el inicio histórico de prácticas.')
+    let esperado=Math.min(...numeros)
     const ocupados=new Set(activas)
     while(ocupados.has(esperado)) esperado++
     if(numeroClase!==esperado) {
