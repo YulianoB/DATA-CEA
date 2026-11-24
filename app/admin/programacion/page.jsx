@@ -1721,6 +1721,24 @@ const estadosDisponibles =
                   />
                 </div>
 
+                {/* INFORMACIÓN REGISTRADA DE CLASE NO DICTADA */}
+                {estadoActual === 'NO_DICTADA' && (
+                  <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                    <p className="text-[8px] font-bold text-gray-600">
+                      Observación registrada
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-[9px] font-medium text-gray-900">
+                      {texto(clase?.observacion_no_dictada) || 'Sin observación registrada'}
+                    </p>
+                    <p className="mt-2 text-[8px] font-bold text-gray-600">
+                      Usuario que cambió el estado
+                    </p>
+                    <p className="mt-1 break-words text-[9px] font-medium text-gray-900">
+                      {texto(clase?.usuario_actualiza_estado) || 'No registrado'}
+                    </p>
+                  </div>
+                )}
+
                 {/* ===========================================
                     CANCELADA - ESTADO FINAL
                 =========================================== */}
