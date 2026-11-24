@@ -53,6 +53,10 @@ const ESTADOS_QUE_CONSUMEN_HORAS = [
   'DICTADA',
 ]
 
+// Las programaciones anteriores corresponden a pruebas no administradas.
+// Este corte se utiliza SOLO para la numeración de prácticas.
+const FECHA_INICIO_NUMERACION_PRACTICA = '2026-11-22'
+
 // Compatibilidad durante el empalme: las bases CEA pueden recibir la
 // migración en momentos distintos. Sin ella se conserva el flujo anterior.
 async function soportaClientesRefuerzo(db) {
@@ -2601,6 +2605,7 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
     .eq('matricula_id',matriculaId)
     .eq('categoria',categoria)
     .eq('tipo_programacion','CURSO_VIGENTE')
+    .gte('fecha',FECHA_INICIO_NUMERACION_PRACTICA)
     .in('estado',ESTADOS_QUE_CONSUMEN_HORAS)
   if(error) throw new Error('No fue posible verificar la numeración de clases: '+error.message)
   const activas=(data||[]).map(c=>leerNumeroClasePractica(c.observaciones))
@@ -2616,6 +2621,7 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
     .select('id,fecha,hora_inicio,observaciones')
     .eq('matricula_id',matriculaId).eq('categoria',categoria)
     .eq('tipo_programacion','CURSO_VIGENTE')
+    .gte('fecha',FECHA_INICIO_NUMERACION_PRACTICA)
     .order('fecha',{ascending:true}).order('hora_inicio',{ascending:true})
     .order('id',{ascending:true}).limit(1)
   if(errorHistorial) throw new Error('No fue posible consultar el inicio histórico: '+errorHistorial.message)
@@ -2634,13 +2640,17 @@ async function validarNumeroClasePractica(supabase,{matriculaId,categoria,numero
 
 // Reorganizar exclusivamente las reservas AGENDADA, sin tocar el historial.
 // Se ejecuta desde la API al guardar cambios, nunca al consultar la agenda.
-async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,claseId=null,nuevoEstado=null}) {
+async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,claseId=null,nuevoEstado=null,fechaClase=null}) {
   if(!matriculaId || !categoria) return []
+  // Las clases anteriores al 22/11 son pruebas; sus cambios de estado
+  // no pueden modificar la numeración de las agendas operativas.
+  if(fechaClase && fechaClase < FECHA_INICIO_NUMERACION_PRACTICA) return []
   const {data,error}=await supabase.from('programacion_clases')
     .select('id,fecha,hora_inicio,estado,observaciones')
     .eq('matricula_id',matriculaId)
     .eq('categoria',categoria)
     .eq('tipo_programacion','CURSO_VIGENTE')
+    .gte('fecha',FECHA_INICIO_NUMERACION_PRACTICA)
     .order('fecha',{ascending:true})
     .order('hora_inicio',{ascending:true})
     .order('id',{ascending:true})
@@ -5865,7 +5875,7 @@ if (
       ? await prepararReorganizacionPractica(supabase,{
           matriculaId:claseActual.matricula_id,
           categoria:claseActual.categoria,
-          claseId:id,nuevoEstado:'CANCELADA'
+          claseId:id,nuevoEstado:'CANCELADA',fechaClase:claseActual.fecha
         })
       : []
 
@@ -6116,7 +6126,7 @@ if (
     ? await prepararReorganizacionPractica(supabase,{
         matriculaId:claseActual.matricula_id,
         categoria:claseActual.categoria,
-        claseId:id,nuevoEstado
+        claseId:id,nuevoEstado,fechaClase:claseActual.fecha
       })
     : []
 
