@@ -2675,15 +2675,19 @@ async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,cl
     ...c, estado:claseId===c.id && nuevoEstado ? nuevoEstado : c.estado,
     numero:leerNumeroClasePractica(c.observaciones)
   }))
-  // La base no puede depender de cuál clase se movió de fecha.
-  // Conservar el menor consecutivo conocido en el historial operativo.
-  const candidatos=todas.filter(c=>c.estado!=='CANCELADA')
-    .map(c=>c.numero).filter(n=>Number.isInteger(n)&&n>0)
-  const numerosHistoricos=candidatos.length?candidatos:
-    todas.map(c=>c.numero).filter(n=>Number.isInteger(n)&&n>0)
-  if(!numerosHistoricos.length) throw new Error('No hay un número inicial de práctica registrado. Revise la matrícula.')
-  const inicial=Math.min(...numerosHistoricos)
+  // Iniciar desde la primera clase activa, no desde una inasistencia
+  // histórica cuyo consecutivo ya quedó atrás. Al liberar una clase
+  // AGENDADA se incluye su número para poder reutilizarlo en reservas
+  // posteriores, sin modificar el registro NO_DICTADA/CANCELADA.
   const vigentes=todas.filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
+  const numerosVigentes=vigentes.map(c=>c.numero)
+    .filter(n=>Number.isInteger(n)&&n>0)
+  const claseLiberada=todas.find(c=>c.id===claseId &&
+    (nuevoEstado==='NO_DICTADA'||nuevoEstado==='CANCELADA'))
+  const numeroLiberado=claseLiberada?.numero>0?claseLiberada.numero:null
+  const numerosBase=[...numerosVigentes,...(numeroLiberado?[numeroLiberado]:[])]
+  if(!numerosBase.length) return []
+  const inicial=Math.min(...numerosBase)
   // La fecha y hora son la autoridad para el orden. Los números de
   // DICTADA y PENDIENTE_CARGUE se respetan: si impiden mantener la
   // secuencia cronológica se rechaza el cambio, no se fuerzan números.
