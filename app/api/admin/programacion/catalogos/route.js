@@ -1921,12 +1921,14 @@ function construirProgresoAprendiz(
       // CURSO VIGENTE
       // ===================================================
 
+      // Solo las clases operativas desde el 22/11/2026 participan
+      // en el cálculo de progreso y siguiente número; las pruebas
+      // anteriores siguen disponibles en su historial.
       const curso =
         clasesCategoria.filter(
           item =>
-            item
-              ?.tipo_programacion ===
-            'CURSO_VIGENTE'
+            item?.tipo_programacion === 'CURSO_VIGENTE' &&
+            String(item?.fecha || '') >= '2026-11-22'
         )
 
       // ===================================================
