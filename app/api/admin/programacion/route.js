@@ -2661,9 +2661,11 @@ async function prepararReorganizacionPractica(supabase,{matriculaId,categoria,cl
     ...c, estado:claseId===c.id && nuevoEstado ? nuevoEstado : c.estado,
     numero:leerNumeroClasePractica(c.observaciones)
   }))
-  const primera=todas.find(c=>c.numero>0)
-  if(!primera) throw new Error('No hay un número inicial de práctica registrado. Revise la matrícula.')
-  const inicial=primera.numero
+  // La base no puede depender de cuál clase se movió de fecha.
+  // Conservar el menor consecutivo conocido en el historial operativo.
+  const numerosHistoricos=todas.map(c=>c.numero).filter(n=>Number.isInteger(n)&&n>0)
+  if(!numerosHistoricos.length) throw new Error('No hay un número inicial de práctica registrado. Revise la matrícula.')
+  const inicial=Math.min(...numerosHistoricos)
   const vigentes=todas.filter(c=>ESTADOS_QUE_CONSUMEN_HORAS.includes(c.estado))
   const fijas=vigentes.filter(c=>c.estado!=='AGENDADA')
   const ocupados=new Set()
