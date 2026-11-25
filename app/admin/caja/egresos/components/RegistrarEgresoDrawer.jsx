@@ -2271,10 +2271,10 @@ export default function RegistrarEgresoDrawer({
                               setForm(
                                 actual => ({
                                   ...actual,
+                                  // No aplicar trim mientras se escribe:
+                                  // elimina el espacio entre nombres.
                                   beneficiario:
-                                    mayusculas(
-                                      value
-                                    ),
+                                    String(value ?? '').toUpperCase(),
                                 })
                               )
                           }
@@ -2409,9 +2409,7 @@ export default function RegistrarEgresoDrawer({
                           onChange={
                             e => {
                               setBuscarVehiculo(
-                                mayusculas(
-                                  e.target.value
-                                )
+                                e.target.value.toUpperCase()
                               )
                               setMostrarResultadosVehiculo(
                                 true
