@@ -20,6 +20,13 @@ function mayusculas(
   ).toUpperCase()
 }
 
+// Ocultar únicamente la plantilla automática vacía en los reportes de cierre.
+function observacionVisibleCierre(valor) {
+  const nota=texto(valor)
+  if (/^Recursos adicionales: El egreso supera el efectivo disponible en caja en [\d.,]+\. El valor adicional fue cubierto con recursos provenientes de: _+\. Responsable\/aportante: _+\. Motivo: _+\.$/i.test(nota)) return ''
+  return nota
+}
+
 function escaparHtml(
   valor
 ) {
@@ -672,6 +679,14 @@ function construirFilasEgresos(
                   `
                   : ''
               }
+              ${observacionVisibleCierre(egreso?.observaciones)
+                ? '<div class="subdato"><strong>Observaciones: </strong>' +
+                  escaparHtml(observacionVisibleCierre(egreso.observaciones)) + '</div>'
+                : ''}
+              ${anulado && egreso?.motivo_anulacion
+                ? '<div class="subdato"><strong>Motivo de anulación: </strong>' +
+                  escaparHtml(egreso.motivo_anulacion) + '</div>'
+                : ''}
             </td>
 
             <td>
@@ -2071,6 +2086,12 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
       escaparHtml(referencia),
       escaparHtml(tercero),
       escaparHtml(concepto) + categoria +
+        (!ingreso && (item.placa || item?.vehiculo?.placa)
+          ? '<div class="subdato">Placa: ' +
+            escaparHtml(mayusculas(item.placa || item.vehiculo.placa)) + '</div>' : '') +
+        (observacionVisibleCierre(item.observaciones)
+          ? '<div class="subdato"><strong>Observaciones: </strong>' +
+            escaparHtml(observacionVisibleCierre(item.observaciones)) + '</div>' : '') +
         (mayusculas(item.estado)==='ANULADO' && item.motivo_anulacion
           ? '<div class="subdato"><strong>Motivo de anulación: </strong>' +
             escaparHtml(item.motivo_anulacion) + '</div>' : ''),
