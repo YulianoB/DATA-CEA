@@ -86,6 +86,18 @@ function mayusculas(
   ).toUpperCase()
 }
 
+// Ocultar en el cierre únicamente la plantilla automática SIN diligenciar.
+// Los textos reales del usuario permanecen intactos en pantalla y BD.
+function observacionVisibleCierre(valor) {
+  const nota=texto(valor)
+  if (/^Recursos adicionales: El egreso supera el efectivo disponible en caja en [\\d.,]+\\. El valor adicional fue cubierto con recursos provenientes de: _+\\. Responsable\\/aportante: _+\\. Motivo: _+\\.$/i.test(nota)) return ''
+  return nota
+}
+
+function placaEgresoCierre(item) {
+  return texto(item?.placa || item?.vehiculo?.placa)
+}
+
 function obtenerNitUsuario(
   user
 ) {
@@ -2397,7 +2409,16 @@ export default function CierreCajaPage() {
                                 Categoría(s): {item.categoria}
                               </div>
                             )}
-                            {item.observaciones && <div className="mt-1 whitespace-pre-wrap break-words text-[9px] leading-relaxed text-slate-600" title={item.observaciones}><span className="font-bold">Observaciones: </span>{item.observaciones}</div>}
+                            {!ingreso && placaEgresoCierre(item) && (
+                              <div className="mt-1 text-[9px] font-semibold text-[#24638C]">
+                                Placa: {placaEgresoCierre(item)}
+                              </div>
+                            )}
+                            {observacionVisibleCierre(item.observaciones) && (
+                              <div className="mt-1 whitespace-pre-wrap break-words text-[9px] leading-relaxed text-slate-600" title={observacionVisibleCierre(item.observaciones)}>
+                                <span className="font-bold">Observaciones: </span>{observacionVisibleCierre(item.observaciones)}
+                              </div>
+                            )}
                             {String(item.estado).toUpperCase()==='ANULADO' && item.motivo_anulacion && (
                               <div className="mt-1 whitespace-pre-wrap break-words text-[9px] leading-relaxed text-red-700" title={item.motivo_anulacion}>
                                 <span className="font-bold">Motivo de anulación: </span>{item.motivo_anulacion}
@@ -3224,6 +3245,14 @@ function TablaEgresos({
 
                 <td className="border p-1.5">
                   <div>{item?.concepto?.nombre || item.descripcion || '-'}</div>
+                  {placaEgresoCierre(item) && (
+                    <div className="mt-1 text-[8px] font-semibold">Placa: {placaEgresoCierre(item)}</div>
+                  )}
+                  {observacionVisibleCierre(item.observaciones) && (
+                    <div className="mt-1 whitespace-pre-wrap break-words text-[8px]">
+                      <strong>Observaciones: </strong>{observacionVisibleCierre(item.observaciones)}
+                    </div>
+                  )}
                   {item.estado==='ANULADO' && item.motivo_anulacion && (
                     <div className="mt-1 whitespace-pre-wrap break-words text-[8px] text-red-700">
                       <strong>Motivo de anulación: </strong>{item.motivo_anulacion}
