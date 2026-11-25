@@ -637,10 +637,51 @@ async function consultarIngresos(
       'No fue posible consultar los aprendices asociados a los recibos: '+errorAprendices.message)
     for(const aprendiz of aprendices||[]) aprendicesPorId.set(String(aprendiz.id),aprendiz)
   }
+  // Estado financiero ACTUAL de la obligación, no el de la fecha
+  // del recibo. Solo los recibos ACTIVO constituyen abonos.
+  const cuentaIds=[...new Set(ingresos.map(item=>item.cuenta_id).filter(Boolean))]
+  const saldosPorCuenta=new Map()
+  for(let i=0;i<cuentaIds.length;i+=100) {
+    const ids=cuentaIds.slice(i,i+100)
+    const {data:cuentas,error:errorCuentas}=await supabase
+      .from('cuentas_aprendiz')
+      .select('id,valor_total')
+      .in('id',ids)
+    if(errorCuentas) throw new Error(
+      'No fue posible consultar las obligaciones de los ingresos: '+errorCuentas.message)
+    const cuentasPorId=new Map((cuentas||[]).map(c=>[String(c.id),c]))
+    const abonos=new Map()
+    // Paginación: nunca calcular un saldo con un histórico truncado.
+    for(let offset=0;;offset+=1000) {
+      const {data:pagos,error:errorPagos}=await supabase
+        .from('recibos_caja')
+        .select('cuenta_id,valor')
+        .in('cuenta_id',ids)
+        .eq('estado','ACTIVO')
+        .order('id',{ascending:true})
+        .range(offset,offset+999)
+      if(errorPagos) throw new Error(
+        'No fue posible consultar los abonos activos: '+errorPagos.message)
+      for(const pago of pagos||[]) {
+        const key=String(pago.cuenta_id)
+        abonos.set(key,(abonos.get(key)||0)+Number(pago.valor||0))
+      }
+      if(!pagos || pagos.length<1000) break
+    }
+    for(const id of ids) {
+      const cuenta=cuentasPorId.get(String(id))
+      if(!cuenta) continue
+      const saldo=Math.max(0,Math.round((Number(cuenta.valor_total||0)-
+        (abonos.get(String(id))||0))*100)/100)
+      saldosPorCuenta.set(String(id),saldo)
+    }
+  }
   return ingresos.map(ingreso=>{
     const aprendiz=aprendicesPorId.get(String(ingreso.matricula_id))
+    const saldo=ingreso.cuenta_id?saldosPorCuenta.get(String(ingreso.cuenta_id)):undefined
     return {
       ...ingreso,
+      saldo_actual_obligacion:saldo===undefined?null:saldo,
       aprendiz_pago:aprendiz?{
         nombre:[aprendiz.nombres,aprendiz.apellidos].filter(Boolean).join(' ').trim(),
         matricula:aprendiz.consecutivo||null,
