@@ -2400,7 +2400,14 @@ export default function CierreCajaPage() {
                               {item.tipo_movimiento}
                             </span>
                           </td>
-                          <td className="p-2 font-bold whitespace-nowrap">{referencia}</td>
+                          <td className="p-2 font-bold text-center" title={referencia}>
+                            {!ingreso && /^CC-\d{4}-\d+$/.test(String(referencia)) ? (
+                              <>
+                                <div className="whitespace-nowrap">{String(referencia).slice(0,7)}</div>
+                                <div className="whitespace-nowrap">{String(referencia).slice(8)}</div>
+                              </>
+                            ) : referencia}
+                          </td>
                           <td className="p-2">
                             <div>{tercero}</div>
                             {ingreso && mayusculas(item.pagado_por)==='CONVENIO' &&
