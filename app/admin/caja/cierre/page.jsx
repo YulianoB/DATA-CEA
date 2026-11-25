@@ -2401,7 +2401,22 @@ export default function CierreCajaPage() {
                             </span>
                           </td>
                           <td className="p-2 font-bold whitespace-nowrap">{referencia}</td>
-                          <td className="p-2">{tercero}</td>
+                          <td className="p-2">
+                            <div>{tercero}</div>
+                            {ingreso && mayusculas(item.pagado_por)==='CONVENIO' &&
+                              /curso/i.test(item?.concepto?.nombre || item.descripcion || '') &&
+                              item.aprendiz_pago && (
+                                <div className="mt-1 text-[9px] leading-relaxed text-slate-600">
+                                  <div><span className="font-bold">Aprendiz: </span>{item.aprendiz_pago.nombre || '-'}</div>
+                                  {item.aprendiz_pago.matricula && (
+                                    <div><span className="font-bold">Matrícula: </span>{item.aprendiz_pago.matricula}</div>
+                                  )}
+                                  {item.aprendiz_pago.categoria && (
+                                    <div><span className="font-bold">Categoría: </span>{item.aprendiz_pago.categoria}</div>
+                                  )}
+                                </div>
+                              )}
+                          </td>
                           <td className="p-2">
                             <div className="font-bold">{item?.concepto?.nombre || item.descripcion || '-'}</div>
                             {ingreso && /curso|refuerzo/i.test(item?.concepto?.nombre || item.descripcion || '') && item.categoria && (
@@ -3096,10 +3111,16 @@ function TablaIngresos({
                 </td>
 
                 <td className="border p-1.5">
-                  {item.nombre_cliente ||
-                    item.nombre_pagador ||
-                    item.documento ||
-                    '-'}
+                  <div>{item.nombre_cliente || item.nombre_pagador || item.documento || '-'}</div>
+                  {mayusculas(item.pagado_por)==='CONVENIO' &&
+                    /curso/i.test(item?.concepto?.nombre || item.descripcion || '') &&
+                    item.aprendiz_pago && (
+                      <div className="mt-1 text-[8px] leading-relaxed text-slate-600">
+                        <div><strong>Aprendiz: </strong>{item.aprendiz_pago.nombre || '-'}</div>
+                        {item.aprendiz_pago.matricula && <div><strong>Matrícula: </strong>{item.aprendiz_pago.matricula}</div>}
+                        {item.aprendiz_pago.categoria && <div><strong>Categoría: </strong>{item.aprendiz_pago.categoria}</div>}
+                      </div>
+                    )}
                 </td>
 
                 <td className="border p-1.5">
