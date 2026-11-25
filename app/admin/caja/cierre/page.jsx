@@ -2398,6 +2398,11 @@ export default function CierreCajaPage() {
                               </div>
                             )}
                             {item.observaciones && <div className="mt-1 whitespace-pre-wrap break-words text-[9px] leading-relaxed text-slate-600" title={item.observaciones}><span className="font-bold">Observaciones: </span>{item.observaciones}</div>}
+                            {String(item.estado).toUpperCase()==='ANULADO' && item.motivo_anulacion && (
+                              <div className="mt-1 whitespace-pre-wrap break-words text-[9px] leading-relaxed text-red-700" title={item.motivo_anulacion}>
+                                <span className="font-bold">Motivo de anulación: </span>{item.motivo_anulacion}
+                              </div>
+                            )}
                           </td>
                           <td className="p-2 whitespace-nowrap">{item?.medio_pago?.nombre || '-'}</td>
                           <td className="p-2 text-center">{item.estado || '-'}</td>
@@ -3077,11 +3082,12 @@ function TablaIngresos({
                 </td>
 
                 <td className="border p-1.5">
-                  {item
-                    ?.concepto
-                    ?.nombre ||
-                    item.descripcion ||
-                    '-'}
+                  <div>{item?.concepto?.nombre || item.descripcion || '-'}</div>
+                  {item.estado==='ANULADO' && item.motivo_anulacion && (
+                    <div className="mt-1 whitespace-pre-wrap break-words text-[8px] text-red-700">
+                      <strong>Motivo de anulación: </strong>{item.motivo_anulacion}
+                    </div>
+                  )}
                 </td>
 
                 <td className="border p-1.5">
@@ -3217,11 +3223,12 @@ function TablaEgresos({
                 </td>
 
                 <td className="border p-1.5">
-                  {item
-                    ?.concepto
-                    ?.nombre ||
-                    item.descripcion ||
-                    '-'}
+                  <div>{item?.concepto?.nombre || item.descripcion || '-'}</div>
+                  {item.estado==='ANULADO' && item.motivo_anulacion && (
+                    <div className="mt-1 whitespace-pre-wrap break-words text-[8px] text-red-700">
+                      <strong>Motivo de anulación: </strong>{item.motivo_anulacion}
+                    </div>
+                  )}
                 </td>
 
                 <td className="border p-1.5">
