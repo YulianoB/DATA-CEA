@@ -1882,79 +1882,28 @@ function evaluarDocumentacionInstructor({
   categoria,
   fechaReferencia,
 }) {
-  const instructor =
-    licencias.filter(
-      item =>
-        normalizarTipoLicencia(
-          item?.tipo_licencia
-        ) ===
-        'INSTRUCTOR'
-    )
-
-  const conduccion =
-    licencias.filter(
-      item =>
-        normalizarTipoLicencia(
-          item?.tipo_licencia
-        ) ===
-        'CONDUCCION'
-    )
-
-  const licenciaInstructor =
-    instructor.find(
-      item =>
-        registroVigenteEnFecha(
-          item,
-          fechaReferencia
-        ) &&
-        licenciaInstructorPermiteCategoria(
-          item,
-          categoria
-        )
-    )
-
-  const licenciaConduccion =
-    conduccion.find(
-      item =>
-        registroVigenteEnFecha(
-          item,
-          fechaReferencia
-        )
-    )
-
-  if (
-    !licenciaInstructor
-  ) {
-    return {
-      valido:
-        false,
-
-      motivo:
-        `El instructor no tiene licencia de INSTRUCTOR vigente y habilitada para ${categoria}.`,
-    }
+  // La fecha de vencimiento documental no bloquea programación.
+  // Se conserva la exigencia de licencias registradas y de
+  // categoría habilitada para el instructor.
+  const instructor=(licencias||[]).filter(item=>
+    normalizarTipoLicencia(item?.tipo_licencia)==='INSTRUCTOR')
+  const conduccion=(licencias||[]).filter(item=>
+    normalizarTipoLicencia(item?.tipo_licencia)==='CONDUCCION')
+  const licenciaInstructor=instructor.find(item=>
+    licenciaInstructorPermiteCategoria(item,categoria))
+  const licenciaConduccion=conduccion[0]||null
+  if(!licenciaInstructor) return {
+    valido:false,
+    motivo:`El instructor no tiene licencia de INSTRUCTOR registrada y habilitada para ${categoria}.`
   }
-
-  if (
-    !licenciaConduccion
-  ) {
-    return {
-      valido:
-        false,
-
-      motivo:
-        'El instructor no tiene licencia de CONDUCCION vigente para la fecha seleccionada.',
-    }
+  if(!licenciaConduccion) return {
+    valido:false,
+    motivo:'El instructor no tiene licencia de CONDUCCION registrada.'
   }
-
   return {
-    valido:
-      true,
-
-    licencia_instructor:
-      licenciaInstructor,
-
-    licencia_conduccion:
-      licenciaConduccion,
+    valido:true,
+    licencia_instructor:licenciaInstructor,
+    licencia_conduccion:licenciaConduccion,
   }
 }
 
@@ -2280,92 +2229,21 @@ function evaluarDocumentacionVehiculo({
   documentos,
   fechaReferencia,
 }) {
-  const ultimos =
-    obtenerUltimosDocumentosVehiculo(
-      documentos
-    )
-
-  if (
-    ultimos.length ===
-    0
-  ) {
-    return {
-      valido:
-        false,
-
-      motivo:
-        'El vehículo no tiene documentación de vigencias registrada.',
-    }
+  // La fecha de vencimiento no es causal de bloqueo al programar.
+  // Se mantienen los documentos registrados y el bloqueo explícito
+  // de documentos marcados como INACTIVO/INACTIVA.
+  const ultimos=obtenerUltimosDocumentosVehiculo(documentos)
+  if(!ultimos.length) return {
+    valido:false,
+    motivo:'El vehículo no tiene documentación registrada.'
   }
-
-  for (
-    const registro of
-      ultimos
-  ) {
-    const vigencia =
-      texto(
-        registro?.fecha_vigencia
-      ).slice(
-        0,
-        10
-      )
-
-    const estado =
-      normalizarTexto(
-        registro?.estado
-      )
-
-    const estadoBloqueado =
-      [
-        'VENCIDO',
-        'VENCIDA',
-        'INACTIVO',
-        'INACTIVA',
-      ].includes(
-        estado
-      )
-
-    if (
-      !vigencia ||
-      !fechaValida(
-        vigencia
-      )
-    ) {
-      return {
-        valido:
-          false,
-
-        motivo:
-          `${texto(
-            registro?.documento
-          ) || 'Un documento'} no tiene fecha de vigencia registrada.`,
-      }
-    }
-
-    if (
-      vigencia <
-        fechaReferencia ||
-      estadoBloqueado
-    ) {
-      return {
-        valido:
-          false,
-
-        motivo:
-          `${texto(
-            registro?.documento
-          ) || 'Un documento'} no está vigente para la fecha seleccionada.`,
-      }
-    }
+  const inactivo=ultimos.find(registro=>
+    ['INACTIVO','INACTIVA'].includes(normalizarTexto(registro?.estado)))
+  if(inactivo) return {
+    valido:false,
+    motivo:`${texto(inactivo?.documento)||'Un documento'} está marcado como inactivo.`
   }
-
-  return {
-    valido:
-      true,
-
-    documentos:
-      ultimos,
-  }
+  return {valido:true,documentos:ultimos}
 }
 
 // =========================================================
