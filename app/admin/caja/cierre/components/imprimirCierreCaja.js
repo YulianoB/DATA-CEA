@@ -63,6 +63,14 @@ function escaparHtml(
     )
 }
 
+function referenciaEgresoCierreHtml(valor) {
+  const ref=texto(valor)
+  const partes=/^(CC-\\d{4})-(\\d+)$/.exec(ref)
+  return partes
+    ? escaparHtml(partes[1])+'<div>'+escaparHtml(partes[2])+'</div>'
+    : escaparHtml(ref)
+}
+
 function formatearMoneda(
   valor
 ) {
@@ -657,9 +665,7 @@ function construirFilasEgresos(
             </td>
 
             <td>
-              ${escaparHtml(
-                referencia
-              )}
+              ${referenciaEgresoCierreHtml(referencia)}
             </td>
 
             <td>
@@ -2103,7 +2109,7 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
     const responsable = ingreso ? item.recibido_por : item.pagado_por
     const columnas = [
       escaparHtml(formatearHora(item.created_at)),
-      escaparHtml(referencia),
+      ingreso ? escaparHtml(referencia) : referenciaEgresoCierreHtml(referencia),
       escaparHtml(tercero) +
         (ingreso && mayusculas(item.pagado_por)==='CONVENIO' &&
           /curso/i.test(concepto) && item.aprendiz_pago
