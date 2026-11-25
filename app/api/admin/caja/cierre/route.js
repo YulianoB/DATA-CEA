@@ -622,11 +622,32 @@ async function consultarIngresos(
     )
   }
 
-  return Array.isArray(
-    data
-  )
-    ? data
-    : []
+  const ingresos=Array.isArray(data)?data:[]
+  // El convenio/tercero sigue siendo el pagador. Estos datos del
+  // aprendiz solo complementan la visualización del movimiento.
+  const matriculaIds=[...new Set(ingresos.map(item=>item.matricula_id).filter(Boolean))]
+  const aprendicesPorId=new Map()
+  for(let i=0;i<matriculaIds.length;i+=200) {
+    const ids=matriculaIds.slice(i,i+200)
+    const {data:aprendices,error:errorAprendices}=await supabase
+      .from('aprendices')
+      .select('id,consecutivo,nombres,apellidos')
+      .in('id',ids)
+    if(errorAprendices) throw new Error(
+      'No fue posible consultar los aprendices asociados a los recibos: '+errorAprendices.message)
+    for(const aprendiz of aprendices||[]) aprendicesPorId.set(String(aprendiz.id),aprendiz)
+  }
+  return ingresos.map(ingreso=>{
+    const aprendiz=aprendicesPorId.get(String(ingreso.matricula_id))
+    return {
+      ...ingreso,
+      aprendiz_pago:aprendiz?{
+        nombre:[aprendiz.nombres,aprendiz.apellidos].filter(Boolean).join(' ').trim(),
+        matricula:aprendiz.consecutivo||null,
+        categoria:ingreso.categoria||null,
+      }:null,
+    }
+  })
 }
 
 // =========================================================
