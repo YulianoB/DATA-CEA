@@ -997,6 +997,9 @@ const [
   const [valoresCorregirObligacion,setValoresCorregirObligacion]=useState({})
   const [errorCorregirObligacion,setErrorCorregirObligacion]=useState('')
   const [reciboHistoricoEditando, setReciboHistoricoEditando] = useState(null)
+  const [reciboParaAnular, setReciboParaAnular] = useState(null)
+  const [motivoAnulacionRecibo, setMotivoAnulacionRecibo] = useState('')
+  const [errorAnulacionRecibo, setErrorAnulacionRecibo] = useState('')
   const [errorCorreccionRecibo, setErrorCorreccionRecibo] = useState('')
   const [correccionHistorica, setCorreccionHistorica] = useState({
     fecha: '', medio_pago_id: '', referencia_pago: '', valor:'', motivo: ''
@@ -2146,7 +2149,7 @@ const ingresosLibresFiltrados =
   }
 
   function cerrarDrawerDetalle() {
-    if (reciboHistoricoEditando || procesando) return
+    if (reciboHistoricoEditando || reciboParaAnular || procesando) return
     setDrawerDetalle(false)
     setDetalleFinanciero(null)
   }
@@ -2168,6 +2171,56 @@ const ingresosLibresFiltrados =
       valor:String(recibo.valor??''),
       motivo: ''
     })
+  }
+
+  function abrirAnulacionRecibo(recibo) {
+    if (procesando || mayusculas(recibo?.estado)!=='ACTIVO') return
+    setReciboParaAnular(recibo)
+    setMotivoAnulacionRecibo('')
+    setErrorAnulacionRecibo('')
+  }
+
+  function cerrarAnulacionRecibo() {
+    if (procesando) return
+    setReciboParaAnular(null)
+    setMotivoAnulacionRecibo('')
+    setErrorAnulacionRecibo('')
+  }
+
+  async function confirmarAnulacionRecibo() {
+    if (!reciboParaAnular || procesando) return
+    const motivo=motivoAnulacionRecibo.trim()
+    if (motivo.length<8) {
+      setErrorAnulacionRecibo('Explique el motivo de anulación con al menos 8 caracteres.')
+      return
+    }
+    setProcesando(true)
+    setErrorAnulacionRecibo('')
+    try {
+      await postCaja({
+        accion:'anular_recibo',
+        recibo_id:reciboParaAnular.id,
+        motivo,
+      })
+      const cuentaId=detalleFinanciero?.cuenta?.id
+      // La anulación ya fue registrada: no repetirla si falla la recarga.
+      setReciboParaAnular(null)
+      setMotivoAnulacionRecibo('')
+      setMensaje('Recibo anulado. El consecutivo se conserva y no se incluye como ingreso ni abono activo.')
+      if (cuentaId) {
+        try { setDetalleFinanciero(await consultarDetalleCuenta(cuentaId)) }
+        catch (errorActualizacion) {
+          setError('La anulación se guardó, pero no se pudo actualizar el detalle. Cierre y vuelva a abrirlo.')
+        }
+      }
+      try { await cargarCuentas() } catch (errorListado) {
+        setError('La anulación se guardó, pero no se pudo actualizar la lista. Pulse Actualizar.')
+      }
+    } catch (errorAnulacion) {
+      setErrorAnulacionRecibo(errorAnulacion?.message||'No fue posible anular el recibo.')
+    } finally {
+      setProcesando(false)
+    }
   }
 
   function imprimirRecibo(
@@ -5308,6 +5361,51 @@ const ingresosLibresFiltrados =
         </div>
       )}
 
+      {/* Anulación de recibo: conserva el consecutivo y exige motivo. */}
+      {reciboParaAnular && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/60 p-4"
+          role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget) cerrarAnulacionRecibo()}}>
+          <section role="dialog" aria-modal="true" aria-labelledby="titulo-anular-recibo"
+            className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl"
+            onMouseDown={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between bg-red-800 px-4 py-3 text-white">
+              <h2 id="titulo-anular-recibo" className="text-sm font-bold">
+                Anular recibo {numeroReciboCaja(reciboParaAnular)}
+              </h2>
+              <button type="button" onClick={cerrarAnulacionRecibo} disabled={procesando}
+                aria-label="Cerrar anulación" className="rounded px-2 py-1 hover:bg-white/10">×</button>
+            </div>
+            <div className="space-y-3 p-4 text-xs">
+              <p className="font-semibold">Valor registrado: {formatearMoneda(reciboParaAnular.valor)}</p>
+              <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                Confirme que este dinero no fue recibido. La anulación conservará el número del recibo
+                y su historial, pero lo descontará de caja y del abono a la obligación.
+                No se puede deshacer desde esta pantalla.
+              </p>
+              <label className="block font-bold text-slate-700">
+                Motivo de anulación *
+                <textarea rows={3} maxLength={2000} disabled={procesando}
+                  value={motivoAnulacionRecibo}
+                  onChange={e=>setMotivoAnulacionRecibo(e.target.value)}
+                  placeholder="Ej.: Transferencia bancaria no realizada; fondos insuficientes."
+                  className="mt-1 w-full resize-y rounded-lg border border-slate-300 p-2.5 font-normal"/>
+              </label>
+              {errorAnulacionRecibo && <p role="alert"
+                className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-800">{errorAnulacionRecibo}</p>}
+            </div>
+            <div className="flex justify-end gap-2 border-t bg-slate-50 p-3">
+              <button type="button" onClick={cerrarAnulacionRecibo} disabled={procesando}
+                className="rounded border px-4 py-2 text-xs">Volver</button>
+              <button type="button" onClick={confirmarAnulacionRecibo}
+                disabled={procesando||motivoAnulacionRecibo.trim().length<8}
+                className="rounded bg-red-700 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                {procesando?'Anulando...':'Confirmar anulación'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {/* Corrección de recibos: modal independiente para todos los pagos activos. */}
       {reciboHistoricoEditando && (
         <div
@@ -5861,19 +5959,23 @@ const ingresosLibresFiltrados =
                                         className="mr-2 rounded border border-amber-500 px-2 py-1 text-[9px]"
                                       >Corregir</button>
                                     )}
-                                    <BotonImprimir
-                                      type="button"
-                                      onClick={() =>
-                                        imprimirRecibo(
-                                          recibo,
-                                          detalleFinanciero
-                                        )
-                                      }
-                                      className="!px-2 !py-1 !text-[9px]"
-                                    >
-                                      <i className="fas fa-print"></i>
-                                      Imprimir
-                                    </BotonImprimir>
+                                    {mayusculas(recibo.estado)==='ACTIVO' && (
+                                      <button type="button" disabled={procesando}
+                                        onClick={()=>abrirAnulacionRecibo(recibo)}
+                                        className="mr-2 rounded border border-red-500 px-2 py-1 text-[9px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                                      >Anular</button>
+                                    )}
+                                    {mayusculas(recibo.estado)==='ACTIVO' ? (
+                                      <BotonImprimir
+                                        type="button"
+                                        onClick={()=>imprimirRecibo(recibo,detalleFinanciero)}
+                                        className="!px-2 !py-1 !text-[9px]">
+                                        <i className="fas fa-print"></i> Imprimir
+                                      </BotonImprimir>
+                                    ) : (
+                                      <span title={recibo.motivo_anulacion||'Recibo anulado'}
+                                        className="text-[9px] font-bold text-red-700">Anulado</span>
+                                    )}
                                   </td>
                                 </tr>
                               )
