@@ -90,7 +90,7 @@ function mayusculas(
 // Los textos reales del usuario permanecen intactos en pantalla y BD.
 function observacionVisibleCierre(valor) {
   const nota=texto(valor)
-  if (/^Recursos adicionales: El egreso supera el efectivo disponible en caja en [\\d.,]+\\. El valor adicional fue cubierto con recursos provenientes de: _+\\. Responsable\\/aportante: _+\\. Motivo: _+\\.$/i.test(nota)) return ''
+  if (/^Recursos adicionales: El egreso supera el efectivo disponible en caja en [\d.,]+\. El valor adicional fue cubierto con recursos provenientes de: _+\. Responsable\/aportante: _+\. Motivo: _+\.$/i.test(nota)) return ''
   return nota
 }
 
