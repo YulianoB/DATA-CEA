@@ -27,6 +27,14 @@ function observacionVisibleCierre(valor) {
   return nota
 }
 
+function estadoActualCursoCierre(item) {
+  const saldo=item?.saldo_actual_obligacion
+  if(saldo===null || saldo===undefined || !Number.isFinite(Number(saldo))) return ''
+  if(!/curso/i.test(item?.concepto?.nombre || item?.descripcion || '')) return ''
+  return Number(saldo)<=0 ? 'Estado actual: PAZ Y SALVO'
+    : 'Estado actual: DEBE '+formatearMoneda(saldo)
+}
+
 function escaparHtml(
   valor
 ) {
@@ -487,6 +495,9 @@ function construirFilasIngresos(
 
             <td>
               ${escaparHtml(concepto)}
+              ${estadoActualCursoCierre(ingreso)
+                ? '<div class="subdato"><strong>' +
+                  escaparHtml(estadoActualCursoCierre(ingreso)) + '</strong></div>' : ''}
               ${anulado && ingreso?.motivo_anulacion
                 ? '<div class="subdato"><strong>Motivo de anulación: </strong>' +
                   escaparHtml(ingreso.motivo_anulacion) + '</div>'
@@ -2103,6 +2114,9 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
             ].filter(Boolean).map(v=>'<div class="subdato">'+escaparHtml(v)+'</div>').join('')
           : ''),
       escaparHtml(concepto) + categoria +
+        (ingreso && estadoActualCursoCierre(item)
+          ? '<div class="subdato"><strong>' +
+            escaparHtml(estadoActualCursoCierre(item)) + '</strong></div>' : '') +
         (!ingreso && (item.placa || item?.vehiculo?.placa)
           ? '<div class="subdato">Placa: ' +
             escaparHtml(mayusculas(item.placa || item.vehiculo.placa)) + '</div>' : '') +
