@@ -2424,6 +2424,14 @@ export default function CierreCajaPage() {
                                 Categoría(s): {item.categoria}
                               </div>
                             )}
+                            {ingreso && /curso/i.test(item?.concepto?.nombre || item.descripcion || '') &&
+                              item.saldo_actual_obligacion != null && (
+                                <div className={`mt-1 text-[9px] font-bold ${Number(item.saldo_actual_obligacion)<=0?'text-emerald-700':'text-amber-800'}`}>
+                                  Estado actual: {Number(item.saldo_actual_obligacion)<=0
+                                    ? 'PAZ Y SALVO'
+                                    : 'DEBE '+formatearMoneda(item.saldo_actual_obligacion)}
+                                </div>
+                              )}
                             {!ingreso && placaEgresoCierre(item) && (
                               <div className="mt-1 text-[9px] font-semibold text-[#24638C]">
                                 Placa: {placaEgresoCierre(item)}
@@ -3125,6 +3133,15 @@ function TablaIngresos({
 
                 <td className="border p-1.5">
                   <div>{item?.concepto?.nombre || item.descripcion || '-'}</div>
+                  {/****** Saldo vigente de la obligación, no el saldo histórico del recibo. ******/}
+                  {/curso/i.test(item?.concepto?.nombre || item.descripcion || '') &&
+                    item.saldo_actual_obligacion != null && (
+                      <div className={`mt-1 text-[8px] font-bold ${Number(item.saldo_actual_obligacion)<=0?'text-emerald-700':'text-amber-800'}`}>
+                        Estado actual: {Number(item.saldo_actual_obligacion)<=0
+                          ? 'PAZ Y SALVO'
+                          : 'DEBE '+formatearMoneda(item.saldo_actual_obligacion)}
+                      </div>
+                    )}
                   {item.estado==='ANULADO' && item.motivo_anulacion && (
                     <div className="mt-1 whitespace-pre-wrap break-words text-[8px] text-red-700">
                       <strong>Motivo de anulación: </strong>{item.motivo_anulacion}
