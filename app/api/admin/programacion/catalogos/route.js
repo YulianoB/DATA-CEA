@@ -2540,136 +2540,28 @@ function evaluarDocumentacionInstructor({
   categoria,
   fechaReferencia,
 }) {
-  const registros =
-    Array.isArray(
-      licencias
-    )
-      ? licencias
-      : []
-
-  // =======================================================
-  // LICENCIAS TIPO INSTRUCTOR
-  // =======================================================
-
-  const licenciasInstructor =
-    registros.filter(
-      item =>
-        normalizarTipoLicencia(
-          item?.tipo_licencia
-        ) ===
-        'INSTRUCTOR'
-    )
-
-  // =======================================================
-  // LICENCIAS TIPO CONDUCCIÓN
-  // =======================================================
-
-  const licenciasConduccion =
-    registros.filter(
-      item =>
-        normalizarTipoLicencia(
-          item?.tipo_licencia
-        ) ===
-        'CONDUCCION'
-    )
-
-  // =======================================================
-  // INSTRUCTOR VIGENTE
-  // =======================================================
-
-  const instructoresVigentes =
-    licenciasInstructor.filter(
-      item =>
-        registroVigenteEnFecha(
-          item,
-          fechaReferencia
-        )
-    )
-
-  // =======================================================
-  // INSTRUCTOR COMPATIBLE CON CATEGORÍA
-  // =======================================================
-
-  const instructorCompatible =
-    categoria
-      ? instructoresVigentes.find(
-          item =>
-            licenciaInstructorPermiteCategoria(
-              item,
-              categoria
-            )
-        )
-      : (
-          instructoresVigentes[0] ||
-          null
-        )
-
-  // =======================================================
-  // CONDUCCIÓN VIGENTE
-  // =======================================================
-
-  const conduccionVigente =
-    licenciasConduccion.find(
-      item =>
-        registroVigenteEnFecha(
-          item,
-          fechaReferencia
-        )
-    )
-
-  let motivo =
-    ''
-
-  if (
-    licenciasInstructor.length ===
-    0
-  ) {
-    motivo =
-      'No tiene licencia de INSTRUCTOR registrada.'
-  } else if (
-    instructoresVigentes.length ===
-    0
-  ) {
-    motivo =
-      'La licencia de INSTRUCTOR no está vigente para la fecha seleccionada.'
-  } else if (
-    categoria &&
-    !instructorCompatible
-  ) {
-    motivo =
-      `No tiene licencia de INSTRUCTOR vigente y habilitada para ${categoria}.`
-  } else if (
-    licenciasConduccion.length ===
-    0
-  ) {
-    motivo =
-      'No tiene licencia de CONDUCCION registrada.'
-  } else if (
-    !conduccionVigente
-  ) {
-    motivo =
-      'La licencia de CONDUCCION no está vigente para la fecha seleccionada.'
-  }
-
+  // Los vencimientos no impiden programar. Se conserva validación
+  // de licencias registradas y categoría correspondiente.
+  const registros=Array.isArray(licencias)?licencias:[]
+  const licenciasInstructor=registros.filter(item=>
+    normalizarTipoLicencia(item?.tipo_licencia)==='INSTRUCTOR')
+  const licenciasConduccion=registros.filter(item=>
+    normalizarTipoLicencia(item?.tipo_licencia)==='CONDUCCION')
+  const instructorCompatible=categoria
+    ? licenciasInstructor.find(item=>licenciaInstructorPermiteCategoria(item,categoria))
+    : licenciasInstructor[0]||null
+  const conduccion=licenciasConduccion[0]||null
+  let motivo=''
+  if(!instructorCompatible) motivo=categoria
+    ? `No tiene licencia de INSTRUCTOR registrada y habilitada para ${categoria}.`
+    : 'No tiene licencia de INSTRUCTOR registrada.'
+  else if(!conduccion) motivo='No tiene licencia de CONDUCCION registrada.'
   return {
-    valido:
-      Boolean(
-        instructorCompatible &&
-        conduccionVigente
-      ),
-
+    valido:Boolean(instructorCompatible&&conduccion),
     motivo,
-
-    licencia_instructor:
-      instructorCompatible ||
-      null,
-
-    licencias_instructor_vigentes:
-      instructoresVigentes,
-
-    licencia_conduccion:
-      conduccionVigente ||
-      null,
+    licencia_instructor:instructorCompatible,
+    licencias_instructor_vigentes:licenciasInstructor,
+    licencia_conduccion:conduccion,
   }
 }
 
@@ -4529,119 +4421,28 @@ function evaluarDocumentacionVehiculo({
   documentos,
   fechaReferencia,
 }) {
-  const ultimos =
-    obtenerUltimosDocumentosVehiculo(
-      documentos
-    )
-
-  if (
-    ultimos.length ===
-    0
-  ) {
-    return {
-      valido:
-        false,
-
-      motivo:
-        'El vehículo no tiene documentación de vigencias registrada.',
-
-      documentos:
-        [],
-    }
+  // Los documentos vencidos se muestran pero no bloquean el catálogo.
+  // Un documento explícitamente INACTIVO continúa bloqueando.
+  const ultimos=obtenerUltimosDocumentosVehiculo(documentos)
+  if(!ultimos.length) return {
+    valido:false,
+    motivo:'El vehículo no tiene documentación registrada.',
+    documentos:[],
   }
-
-  const evaluados =
-    ultimos.map(
-      registro => {
-        const vigencia =
-          texto(
-            registro?.fecha_vigencia
-          ).slice(
-            0,
-            10
-          )
-
-        const estado =
-          normalizarTexto(
-            registro?.estado
-          )
-
-        const estadoBloqueado =
-          [
-            'VENCIDO',
-            'VENCIDA',
-            'INACTIVO',
-            'INACTIVA',
-          ].includes(
-            estado
-          )
-
-        const vigente =
-          Boolean(
-            vigencia &&
-            fechaValida(
-              vigencia
-            ) &&
-            vigencia >=
-              fechaReferencia &&
-            !estadoBloqueado
-          )
-
-        return {
-          ...registro,
-
-          vigente,
-        }
-      }
-    )
-
-  const vencidos =
-    evaluados.filter(
-      item =>
-        !item?.vigente
-    )
-
-  if (
-    vencidos.length >
-    0
-  ) {
-    const primero =
-      vencidos[0]
-
-    const documento =
-      texto(
-        primero?.documento
-      ) ||
-      'Documento'
-
-    const vigencia =
-      texto(
-        primero?.fecha_vigencia
-      )
-
-    return {
-      valido:
-        false,
-
-      motivo:
-        vigencia
-          ? `${documento} vencido o no vigente para la fecha seleccionada (${vigencia}).`
-          : `${documento} no tiene fecha de vigencia registrada.`,
-
-      documentos:
-        evaluados,
-    }
-  }
-
+  const evaluados=ultimos.map(registro=>{
+    const vigencia=texto(registro?.fecha_vigencia).slice(0,10)
+    const estado=normalizarTexto(registro?.estado)
+    return {...registro,vigente:Boolean(vigencia&&fechaValida(vigencia)&&
+      vigencia>=fechaReferencia&&!['VENCIDO','VENCIDA','INACTIVO','INACTIVA'].includes(estado))}
+  })
+  const inactivo=evaluados.find(registro=>
+    ['INACTIVO','INACTIVA'].includes(normalizarTexto(registro?.estado)))
   return {
-    valido:
-      true,
-
-    motivo:
-      '',
-
-    documentos:
-      evaluados,
+    valido:!inactivo,
+    motivo:inactivo
+      ? `${texto(inactivo?.documento)||'Un documento'} está marcado como inactivo.`
+      : '',
+    documentos:evaluados,
   }
 }
 
