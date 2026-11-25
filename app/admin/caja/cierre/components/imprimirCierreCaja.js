@@ -474,6 +474,15 @@ function construirFilasIngresos(
                   `
                   : ''
               }
+              ${mayusculas(ingreso?.pagado_por)==='CONVENIO' &&
+                /curso/i.test(ingreso?.concepto?.nombre || ingreso?.descripcion || '') &&
+                ingreso?.aprendiz_pago
+                ? [
+                    ingreso.aprendiz_pago.nombre ? 'Aprendiz: '+ingreso.aprendiz_pago.nombre : '',
+                    ingreso.aprendiz_pago.matricula ? 'Matrícula: '+ingreso.aprendiz_pago.matricula : '',
+                    ingreso.aprendiz_pago.categoria ? 'Categoría: '+ingreso.aprendiz_pago.categoria : '',
+                  ].filter(Boolean).map(v=>'<div class="subdato">'+escaparHtml(v)+'</div>').join('')
+                : ''}
             </td>
 
             <td>
@@ -2084,7 +2093,15 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
     const columnas = [
       escaparHtml(formatearHora(item.created_at)),
       escaparHtml(referencia),
-      escaparHtml(tercero),
+      escaparHtml(tercero) +
+        (ingreso && mayusculas(item.pagado_por)==='CONVENIO' &&
+          /curso/i.test(concepto) && item.aprendiz_pago
+          ? [
+              item.aprendiz_pago.nombre ? 'Aprendiz: '+item.aprendiz_pago.nombre : '',
+              item.aprendiz_pago.matricula ? 'Matrícula: '+item.aprendiz_pago.matricula : '',
+              item.aprendiz_pago.categoria ? 'Categoría: '+item.aprendiz_pago.categoria : '',
+            ].filter(Boolean).map(v=>'<div class="subdato">'+escaparHtml(v)+'</div>').join('')
+          : ''),
       escaparHtml(concepto) + categoria +
         (!ingreso && (item.placa || item?.vehiculo?.placa)
           ? '<div class="subdato">Placa: ' +
