@@ -3133,7 +3133,6 @@ function TablaIngresos({
 
                 <td className="border p-1.5">
                   <div>{item?.concepto?.nombre || item.descripcion || '-'}</div>
-                  {/****** Saldo vigente de la obligación, no el saldo histórico del recibo. ******/}
                   {/curso/i.test(item?.concepto?.nombre || item.descripcion || '') &&
                     item.saldo_actual_obligacion != null && (
                       <div className={`mt-1 text-[8px] font-bold ${Number(item.saldo_actual_obligacion)<=0?'text-emerald-700':'text-amber-800'}`}>
