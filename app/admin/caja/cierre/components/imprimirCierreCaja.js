@@ -470,9 +470,11 @@ function construirFilasIngresos(
             </td>
 
             <td>
-              ${escaparHtml(
-                concepto
-              )}
+              ${escaparHtml(concepto)}
+              ${anulado && ingreso?.motivo_anulacion
+                ? '<div class="subdato"><strong>Motivo de anulación: </strong>' +
+                  escaparHtml(ingreso.motivo_anulacion) + '</div>'
+                : ''}
             </td>
 
             <td>
@@ -2068,7 +2070,10 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
       escaparHtml(formatearHora(item.created_at)),
       escaparHtml(referencia),
       escaparHtml(tercero),
-      escaparHtml(concepto) + categoria,
+      escaparHtml(concepto) + categoria +
+        (mayusculas(item.estado)==='ANULADO' && item.motivo_anulacion
+          ? '<div class="subdato"><strong>Motivo de anulación: </strong>' +
+            escaparHtml(item.motivo_anulacion) + '</div>' : ''),
       escaparHtml(item?.medio_pago?.nombre || '-'),
       escaparHtml(responsable || '-'),
       escaparHtml(formatearMoneda(ingreso ? item.valor : valorCierreEgreso(item)))
