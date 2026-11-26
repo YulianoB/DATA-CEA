@@ -1206,9 +1206,17 @@ async function validarReciboRefuerzo(
     )
   }
 
-  // La categoría del recibo identifica la licencia informada al comprar.
-  // Para REFUERZO externo pagado no limita la categoría práctica elegida.
-  // Se mantienen las validaciones de cupos, instructor, vehículo y agenda.
+  if (
+    categoria &&
+    categoriaRecibo !==
+      normalizarCategoriaLicencia(
+        categoria
+      )
+  ) {
+    throw new Error(
+      `El refuerzo fue adquirido para la categoría ${categoriaRecibo} y no puede programarse como ${categoria}.`
+    )
+  }
 
   // =======================================================
   // CLIENTE
@@ -3191,6 +3199,23 @@ async function validarProgramacion(
         ?.saldo ||
       null
 
+    // La categoría del refuerzo debe coincidir con el recibo.
+    const categoriaCompra =
+      normalizarCategoriaLicencia(
+        validacionRefuerzo
+          ?.categoria
+      )
+
+    if (
+      categoriaCompra !==
+      normalizarCategoriaLicencia(
+        categoria
+      )
+    ) {
+      throw new Error(
+        `El refuerzo fue adquirido para la categoría ${categoriaCompra}.`
+      )
+    }
   }
 
   // =======================================================
