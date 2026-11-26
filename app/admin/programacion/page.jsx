@@ -8938,30 +8938,7 @@ async function registrarClase(numeroClaseSeleccionada) {
                 </label>
                 {errorBloqueo && <p role="alert" className="rounded-lg bg-red-50 p-2 text-xs text-red-700">{errorBloqueo}</p>}
               </form>
-              {bloqueosAgenda.length>0 && (
-                <div className="mt-4 border-t border-slate-200 pt-3">
-                  <h3 className="mb-2 text-xs font-bold">Bloqueos registrados para la fecha consultada</h3>
-                  <div className="space-y-2">
-                    {bloqueosAgenda.map(b=>(
-                      <div key={b.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 p-2 text-xs">
-                        <div>
-                          <p className="font-bold">{instructoresBloqueo.find(x=>String(x.id)===String(b.instructor_id))?.nombre_completo||('Instructor '+b.instructor_id)}</p>
-                          <p>{b.fecha_inicio} a {b.fecha_fin} · {String(b.hora_inicio).slice(0,5)}–{String(b.hora_fin).slice(0,5)} · {b.tipo_actividad === 'TEORIA' ? 'TEORÍA' : 'BLOQUEO'}</p>
-                          <p className="text-slate-500">{b.motivo}</p>
-                        </div>
-                        {b.tipo_actividad !== 'TEORIA' && (
-                          <div className="flex gap-1">
-                            <button type="button" disabled={guardandoBloqueo} onClick={()=>editarBloqueo(b)}
-                              className="rounded border border-blue-300 px-2 py-1 font-bold text-blue-700">Editar</button>
-                            <button type="button" disabled={guardandoBloqueo} onClick={()=>quitarBloqueoAgenda(b.id)}
-                              className="rounded border border-red-300 px-2 py-1 font-bold text-red-700">Retirar</button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-200 p-3">
               <button type="button" disabled={guardandoBloqueo} onClick={()=>setModalBloqueo(false)}
