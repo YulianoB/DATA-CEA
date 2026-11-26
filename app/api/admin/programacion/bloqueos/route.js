@@ -22,6 +22,32 @@ const sumarDia = (fecha,dias) => {
   d.setUTCDate(d.getUTCDate()+dias)
   return d.toISOString().slice(0,10)
 }
+// El catálogo de Programación identifica instructores por licencias,
+// no exclusivamente por el texto del cargo de personal.
+const normalizarTipo = v => t(v).normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'').toUpperCase()
+async function consultarIdsInstructores(db, ids) {
+  if(!ids.length)return new Set()
+  const habilitados=new Map()
+  for(let i=0;i<ids.length;i+=200){
+    const {data,error}=await db.from('licencias_personal')
+      .select('personal_id,tipo_licencia').in('personal_id',ids.slice(i,i+200))
+    if(error)throw new Error('No fue posible consultar licencias de instructores: '+error.message)
+    for(const licencia of data||[]){
+      const id=Number(licencia.personal_id)
+      if(!habilitados.has(id))habilitados.set(id,new Set())
+      habilitados.get(id).add(normalizarTipo(licencia.tipo_licencia))
+    }
+  }
+  return new Set([...habilitados].filter(([,tipos])=>
+    tipos.has('INSTRUCTOR')&&tipos.has('CONDUCCION')).map(([id])=>id))
+}
+async function instructorActivoHabilitado(db,personal) {
+  if(!personal || normalizarTipo(personal.estado)!=='ACTIVO')return false
+  const ids=await consultarIdsInstructores(db,[Number(personal.id)])
+  return ids.has(Number(personal.id))
+}
+
 async function obtenerBloqueo(db,id) {
   const {data,error}=await db.from(tabla).select('*').eq('id',id).maybeSingle()
   if(error) throw error
@@ -70,9 +96,10 @@ export async function GET(request) {
     }
     if (bloqueos.error) throw new Error('No se pudo consultar los bloqueos: '+bloqueos.error.message)
     if (personal.error) throw new Error('No se pudo consultar los instructores: '+personal.error.message)
-    return NextResponse.json({status:'success',data:bloqueos.data||[],instructores:(personal.data||[])
-      .filter(x=>String(x.estado||'').toUpperCase()==='ACTIVO' &&
-        (String(x.cargo||'').toUpperCase().includes('INSTRUCTOR') || String(x.tipo_personal||'').toUpperCase().includes('INSTRUCTOR')))
+    const activos=(personal.data||[]).filter(x=>normalizarTipo(x.estado)==='ACTIVO')
+    const idsInstructores=await consultarIdsInstructores(db,activos.map(x=>Number(x.id)))
+    return NextResponse.json({status:'success',data:bloqueos.data||[],instructores:activos
+      .filter(x=>idsInstructores.has(Number(x.id)))
       .map(x=>({id:x.id,nombre_completo:[x.nombres,x.apellidos].filter(Boolean).join(' ')}))})
   } catch(e){return responderError(e)}
 }
@@ -95,8 +122,7 @@ export async function POST(request) {
     const {data:personal,error:errorPersonal}=await db.from('personal')
       .select('id,estado,cargo,tipo_personal').eq('id',instructorId).maybeSingle()
     if(errorPersonal)throw new Error(errorPersonal.message)
-    if(!personal || String(personal.estado).toUpperCase()!=='ACTIVO'||
-       !(String(personal.cargo||'').toUpperCase().includes('INSTRUCTOR') || String(personal.tipo_personal||'').toUpperCase().includes('INSTRUCTOR'))) {
+    if(!(await instructorActivoHabilitado(db,personal))) {
       return NextResponse.json({status:'error',message:'Seleccione un instructor activo.'},{status:409})
     }
     // No permitir bloquear una franja que contiene una clase activa.
@@ -160,9 +186,7 @@ export async function PATCH(request) {
     const {data:personal,error:ep}=await db.from('personal')
       .select('id,estado,cargo,tipo_personal').eq('id',instructorId).maybeSingle()
     if(ep)throw ep
-    if(!personal||t(personal.estado).toUpperCase()!=='ACTIVO'||
-       !(t(personal.cargo).toUpperCase().includes('INSTRUCTOR')||
-         t(personal.tipo_personal).toUpperCase().includes('INSTRUCTOR')))
+    if(!(await instructorActivoHabilitado(db,personal)))
       return fallo('Seleccione un instructor activo.',409)
     const [clases,bloqueos]=await Promise.all([
       db.from('programacion_clases').select('id,fecha,hora_inicio,duracion_horas')
