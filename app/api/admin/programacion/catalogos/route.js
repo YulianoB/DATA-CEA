@@ -1315,9 +1315,12 @@ function construirRefuerzoExterno(
       recibo?.correo_cliente ||
       '',
 
-    // Categoría del recibo: dato histórico de la licencia del cliente.
-    // Para refuerzos pagados se permite seleccionar la categoría práctica.
-    categorias: ['A1','A2','B1','B2','B3','C1','C2','C3'],
+    categorias:
+      categoria
+        ? [
+            categoria,
+          ]
+        : [],
 
     categoria,
 
