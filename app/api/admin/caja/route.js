@@ -8614,6 +8614,121 @@ if (
     }
 
     // =====================================================
+    // CORREGIR RECIBO DE OTROS INGRESOS (SIN NUEVO CONSECUTIVO)
+    // Solo ingresos LIBRE, con detalle único consistente.
+    // =====================================================
+    if (accion === 'corregir_ingreso_libre') {
+      const id = toInt(body?.recibo_id)
+      const motivo = texto(body?.motivo)
+      const nombre = mayusculas(body?.nombre_cliente)
+      const documento = texto(body?.documento_cliente)
+      const tipoDocumento = mayusculas(body?.tipo_documento_cliente)
+      const valor = Number(body?.valor)
+      const categoria = mayusculas(body?.categoria)
+      if (!id || motivo.length < 8 || !nombre || !documento || !tipoDocumento ||
+          !Number.isFinite(valor) || valor <= 0 || redondear(valor) !== valor) {
+        return NextResponse.json({status:'error',
+          message:'Complete nombre, documento, valor válido y motivo de al menos 8 caracteres.'},{status:400})
+      }
+      const {data:anterior,error:errorAnterior}=await supabase.from('recibos_caja')
+        .select('*').eq('id',id).maybeSingle()
+      if(errorAnterior)throw errorAnterior
+      if(!anterior || anterior.tipo_origen!=='LIBRE' || anterior.cuenta_id || anterior.matricula_id ||
+          anterior.estado!=='ACTIVO')
+        return NextResponse.json({status:'error',
+          message:'Solo se pueden corregir ingresos libres activos sin obligación ni matrícula.'},{status:409})
+      const {data:concepto,error:errorConcepto}=await supabase.from('conceptos_caja')
+        .select('nombre').eq('id',anterior.concepto_id).maybeSingle()
+      if(errorConcepto)throw errorConcepto
+      const refuerzo = normalizarComparacion(concepto?.nombre)==='REFUERZO PRACTICO'
+      if(refuerzo && !['A1','A2','B1','B2','B3','C1','C2','C3'].includes(categoria))
+        return NextResponse.json({status:'error',message:'Seleccione una categoría válida de refuerzo.'},{status:400})
+      // Evitar alterar un período cerrado, igual que en anulación.
+      const {data:cierres,error:errorCierres}=await supabase.from('cierres_caja')
+        .select('id').lte('periodo_desde',anterior.created_at)
+        .gte('periodo_hasta',anterior.created_at).eq('estado','CERRADO').limit(1)
+      if(errorCierres)throw new Error('No fue posible verificar cierres: '+errorCierres.message)
+      if(cierres?.length)
+        return NextResponse.json({status:'error',
+          message:'El recibo pertenece a un cierre confirmado. Requiere ajuste administrativo del cierre.'},{status:409})
+      const {data:detalles,error:errorDetalles}=await supabase.from('recibos_caja_detalle')
+        .select('*').eq('recibo_id',id).limit(3)
+      if(errorDetalles)throw errorDetalles
+      if(detalles?.length!==1 || redondear(Number(detalles[0].valor))!==redondear(Number(anterior.valor)))
+        return NextResponse.json({status:'error',
+          message:'El desglose del recibo no es único o no coincide con el valor. No se modificó.'},{status:409})
+      if(refuerzo && categoria!==mayusculas(anterior.categoria)){
+        const {data:clases,error:errorClases}=await supabase.from('programacion_clases')
+          .select('id').eq('recibo_refuerzo_id',id).limit(1)
+        if(errorClases)throw new Error('No fue posible verificar las clases del refuerzo: '+errorClases.message)
+        if(clases?.length)return NextResponse.json({status:'error',
+          message:'Este refuerzo ya tiene programación registrada. Revise sus clases antes de cambiar la categoría.'},{status:409})
+      }
+      // Los datos de compra (número de clases) y el consecutivo no cambian.
+      const valoresNuevos={
+        nombre_cliente:nombre, nombre_pagador:nombre,
+        documento_cliente:documento, documento_pagador:documento, documento,
+        tipo_documento_cliente:tipoDocumento,
+        categoria:refuerzo?categoria:anterior.categoria,
+        valor:redondear(valor),
+      }
+      const valoresAnteriores=Object.fromEntries(
+        Object.keys(valoresNuevos).map(k=>[k,anterior[k]]))
+      const detalleAnterior=detalles[0]
+      const detalleNuevo={
+        valor:redondear(valor),
+        categorias:refuerzo?[categoria]:detalleAnterior.categorias,
+      }
+      const cambios=Object.keys(valoresNuevos).filter(k=>
+        JSON.stringify(valoresNuevos[k])!==JSON.stringify(anterior[k]))
+      if(!cambios.length && Number(detalleAnterior.valor)===valor)
+        return NextResponse.json({status:'error',message:'No hay cambios que guardar.'},{status:400})
+      const nuevoTiempo=new Date().toISOString()
+      let q=supabase.from('recibos_caja')
+        .update({...valoresNuevos,updated_at:nuevoTiempo})
+        .eq('id',id).eq('estado','ACTIVO').eq('valor',anterior.valor)
+      q=anterior.updated_at?q.eq('updated_at',anterior.updated_at):q.is('updated_at',null)
+      const {data:actualizado,error:errorUpdate}=await q.select('*').maybeSingle()
+      if(errorUpdate||!actualizado)throw new Error(errorUpdate?.message||'El recibo cambió. Actualice el historial.')
+      async function revertirRecibo(){
+        const {data,error}=await supabase.from('recibos_caja')
+          .update({...valoresAnteriores,updated_at:anterior.updated_at})
+          .eq('id',id).eq('updated_at',nuevoTiempo).select('id').maybeSingle()
+        if(error||!data)throw new Error('ERROR CRÍTICO: no fue posible restaurar el recibo. Revise antes de continuar.')
+      }
+      try {
+        const {data:detalleActualizado,error:errorDetalle}=await supabase.from('recibos_caja_detalle')
+          .update({...detalleNuevo,updated_at:new Date().toISOString()})
+          .eq('id',detalleAnterior.id).eq('recibo_id',id).eq('valor',detalleAnterior.valor)
+          .select('id').maybeSingle()
+        if(errorDetalle||!detalleActualizado)throw new Error(errorDetalle?.message||'El detalle cambió durante la corrección.')
+      } catch(errorDetalle) {await revertirRecibo();throw errorDetalle}
+      try {
+        await registrarAuditoria({
+          supabase,usuario,accion:'CORREGIR_INGRESO_LIBRE',
+          entidad:'RECIBO_CAJA',entidadId:id,documento:anterior.documento_cliente,
+          consecutivoReferencia:numeroRecibo(anterior),
+          descripcion:'Corrección de datos de cliente, categoría o valor en Otros Ingresos.',
+          datosAnteriores:{recibo:valoresAnteriores,detalle:{valor:detalleAnterior.valor,categorias:detalleAnterior.categorias}},
+          datosNuevos:{recibo:valoresNuevos,detalle:detalleNuevo},
+          motivo,observaciones:motivo,
+        })
+      } catch(errorAuditoria) {
+        const {data:detalleRevertido,error:errorDetalleRevertir}=await supabase.from('recibos_caja_detalle')
+          .update({valor:detalleAnterior.valor,categorias:detalleAnterior.categorias,
+            updated_at:detalleAnterior.updated_at})
+          .eq('id',detalleAnterior.id).eq('valor',detalleNuevo.valor).select('id').maybeSingle()
+        if(errorDetalleRevertir||!detalleRevertido)
+          throw new Error('ERROR CRÍTICO: falló la auditoría y la reversión del detalle. Requiere revisión administrativa.')
+        await revertirRecibo()
+        throw errorAuditoria
+      }
+      return NextResponse.json({status:'success',
+        message:'Recibo corregido y auditado sin cambiar su consecutivo, fecha ni número de clases.',
+        data:actualizado})
+    }
+
+    // =====================================================
     // RECTIFICAR METADATOS DE RECIBO HISTÓRICO
     // Nunca modificar valor ni distribución desde esta acción.
     // =====================================================
