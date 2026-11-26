@@ -522,6 +522,13 @@ const [
   setHistorialIngresos,
 ] = useState([])
 
+const [reciboEditando,setReciboEditando]=useState(null)
+const [correccion,setCorreccion]=useState({
+  nombre_cliente:'',tipo_documento_cliente:'CC',documento_cliente:'',
+  categoria:'',valor:'',motivo:''
+})
+const [errorCorreccion,setErrorCorreccion]=useState('')
+
 const [
   cargandoHistorial,
   setCargandoHistorial,
@@ -979,6 +986,55 @@ const [
    // =======================================================
 // CARGAR HISTORIAL DE INGRESOS LIBRES
 // =======================================================
+
+function iniciarCorreccion(recibo) {
+  if(procesando || mayusculas(recibo?.estado)!=='ACTIVO') return
+  setReciboEditando(recibo)
+  setCorreccion({
+    nombre_cliente:recibo.nombre_cliente||recibo.nombre_pagador||'',
+    tipo_documento_cliente:recibo.tipo_documento_cliente||'CC',
+    documento_cliente:recibo.documento_cliente||recibo.documento||'',
+    categoria:recibo.categoria||'',
+    valor:String(recibo.valor??''),
+    motivo:'',
+  })
+  setErrorCorreccion('')
+}
+
+function cerrarCorreccion() {
+  if(procesando)return
+  setReciboEditando(null)
+  setErrorCorreccion('')
+}
+
+async function guardarCorreccion() {
+  if(!reciboEditando||procesando)return
+  if(correccion.motivo.trim().length<8) {
+    setErrorCorreccion('Explique la corrección con al menos 8 caracteres.')
+    return
+  }
+  setProcesando(true)
+  setErrorCorreccion('')
+  try{
+    await postCaja({
+      accion:'corregir_ingreso_libre',
+      recibo_id:reciboEditando.id,
+      ...correccion,
+      valor:Number(correccion.valor),
+      motivo:correccion.motivo.trim(),
+    })
+    setReciboEditando(null)
+    setMensaje('Recibo corregido sin cambiar su consecutivo. La modificación quedó auditada.')
+    try{await cargarHistorialIngresos()}catch(errorRefresco){
+      setError('La corrección fue registrada; actualice el historial para ver los nuevos datos.')
+    }
+    try{await onActualizado?.()}catch(errorActualizacion){
+      setError('La corrección fue registrada; actualice la vista de Caja.')
+    }
+  }catch(errorGuardar){
+    setErrorCorreccion(errorGuardar?.message||'No fue posible corregir el ingreso.')
+  }finally{setProcesando(false)}
+}
 
 async function cargarHistorialIngresos() {
   try {
@@ -3540,7 +3596,14 @@ function imprimirIngresoHistorico(
                           </td>
 
                           <td className="px-3 py-2">
-                            <div className="flex justify-center">
+                            <div className="flex justify-center gap-2">
+                              {estado==='ACTIVO' && recibo.tipo_origen==='LIBRE' && (
+                                <button type="button" onClick={()=>iniciarCorreccion(recibo)}
+                                  disabled={procesando}
+                                  className="rounded border border-amber-500 px-2 py-1 text-[10px] font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-50">
+                                  Corregir
+                                </button>
+                              )}
                               <BotonImprimir
                                 type="button"
                                 onClick={() =>
@@ -3567,6 +3630,79 @@ function imprimirIngresoHistorico(
     </ContenedorModulo>
   </div>
 )}
+
+
+      {reciboEditando && (
+        <div className="fixed inset-0 z-[155] flex items-center justify-center bg-slate-950/60 p-4"
+          onMouseDown={e=>{if(e.target===e.currentTarget)cerrarCorreccion()}}>
+          <section role="dialog" aria-modal="true" aria-label="Corregir recibo de Otros Ingresos"
+            className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-xl bg-white shadow-2xl"
+            onMouseDown={e=>e.stopPropagation()}>
+            <div className="flex justify-between gap-3 bg-[#246185] px-4 py-3 text-white">
+              <div>
+                <div className="text-xs font-bold">Corregir recibo {reciboEditando.referencia_pago}</div>
+                <p className="text-[10px] opacity-90">El número, fecha y clases adquiridas no se modifican.</p>
+              </div>
+              <button type="button" disabled={procesando} onClick={cerrarCorreccion}
+                aria-label="Cerrar corrección" className="text-xl">×</button>
+            </div>
+            <div className="grid grid-cols-1 gap-3 p-4 text-xs sm:grid-cols-2">
+              <label className="sm:col-span-2 font-bold">Nombre del cliente
+                <input value={correccion.nombre_cliente} disabled={procesando}
+                  onChange={e=>setCorreccion(v=>({...v,nombre_cliente:mayusculasMientrasEscribe(e.target.value)}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 font-normal"/>
+              </label>
+              <label className="font-bold">Tipo de documento
+                <select value={correccion.tipo_documento_cliente} disabled={procesando}
+                  onChange={e=>setCorreccion(v=>({...v,tipo_documento_cliente:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 font-normal">
+                  {['CC','CE','TI','PAS','NIT'].map(t=><option value={t} key={t}>{t}</option>)}
+                </select>
+              </label>
+              <label className="font-bold">Número de documento
+                <input value={correccion.documento_cliente} disabled={procesando}
+                  onChange={e=>setCorreccion(v=>({...v,documento_cliente:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 font-normal"/>
+              </label>
+              {mayusculas(reciboEditando.concepto?.nombre)==='REFUERZO PRACTICO' && (
+                <label className="font-bold">Categoría del refuerzo
+                  <select value={correccion.categoria} disabled={procesando}
+                    onChange={e=>setCorreccion(v=>({...v,categoria:e.target.value}))}
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 font-normal">
+                    {['A1','A2','B1','B2','B3','C1','C2','C3'].map(t=><option value={t} key={t}>{t}</option>)}
+                  </select>
+                </label>
+              )}
+              <label className="font-bold">Valor recibido ($)
+                <input type="number" min="1" step="1" value={correccion.valor} disabled={procesando}
+                  onChange={e=>setCorreccion(v=>({...v,valor:e.target.value}))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 font-normal"/>
+              </label>
+              <label className="sm:col-span-2 font-bold">Motivo de corrección (obligatorio)
+                <textarea rows={3} value={correccion.motivo} disabled={procesando}
+                  onChange={e=>setCorreccion(v=>({...v,motivo:e.target.value}))}
+                  placeholder="Indique el dato incorrecto y el correcto."
+                  className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 font-normal"/>
+              </label>
+              <p className="sm:col-span-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                Si el recibo ya está en un cierre confirmado, no se podrá corregir.
+                Si ya tiene clases de refuerzo registradas, no podrá cambiar su categoría.
+                Los valores se sincronizan con el detalle del recibo.
+              </p>
+              {errorCorreccion && <p role="alert" className="sm:col-span-2 rounded border border-red-300 bg-red-50 p-3 text-red-700">{errorCorreccion}</p>}
+            </div>
+            <div className="flex justify-end gap-2 border-t p-3">
+              <button type="button" disabled={procesando} onClick={cerrarCorreccion}
+                className="rounded border px-4 py-2 text-xs">Cancelar</button>
+              <button type="button" disabled={procesando||correccion.motivo.trim().length<8}
+                onClick={guardarCorreccion}
+                className="rounded bg-[#246185] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                {procesando?'Guardando...':'Guardar corrección'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
         </div>
       </aside>
