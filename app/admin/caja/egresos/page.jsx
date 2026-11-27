@@ -541,6 +541,10 @@ export default function CajaEgresosPage() {
     )
 
   const [editandoEgreso, setEditandoEgreso] = useState(false)
+  const [anulandoEgreso, setAnulandoEgreso] = useState(false)
+  const [guardandoAnulacion, setGuardandoAnulacion] = useState(false)
+  const [motivoAnulacion, setMotivoAnulacion] = useState('')
+  const [errorAnulacion, setErrorAnulacion] = useState('')
   const [guardandoEdicion, setGuardandoEdicion] = useState(false)
   const [resultadoEdicion, setResultadoEdicion] = useState(null)
   const [formEdicion, setFormEdicion] = useState(null)
@@ -1324,6 +1328,40 @@ export default function CajaEgresosPage() {
     }catch(errorEditar){
       setResultadoEdicion({tipo:'error',titulo:'No fue posible editar el egreso',mensaje:errorEditar?.message||'Revise los datos.'})
     }finally{setGuardandoEdicion(false)}
+  }
+
+  function abrirAnulacionEgreso() {
+    if(!detalleEgreso || mayusculas(detalleEgreso.estado)!=='ACTIVO')return
+    setMotivoAnulacion('')
+    setErrorAnulacion('')
+    setAnulandoEgreso(true)
+  }
+
+  async function confirmarAnulacionEgreso() {
+    if(!detalleEgreso?.id || guardandoAnulacion)return
+    if(motivoAnulacion.trim().length<8){
+      setErrorAnulacion('Indique por qué se anula este egreso (mínimo 8 caracteres).')
+      return
+    }
+    setGuardandoAnulacion(true)
+    setErrorAnulacion('')
+    try{
+      const resultado=await postEgreso({
+        accion:'anular',
+        id:detalleEgreso.id,
+        motivo_anulacion:motivoAnulacion.trim(),
+      })
+      if(resultado?.status!=='success')throw new Error(resultado?.message||'No fue posible anular el egreso.')
+      setAnulandoEgreso(false)
+      setMotivoAnulacion('')
+      setDetalleEgreso(actual=>actual?.id===resultado.data?.id
+        ? {...actual,...resultado.data} : actual)
+      setMensaje(resultado.message||'Egreso anulado correctamente.')
+      try{await Promise.all([cargarEgresos(),cargarResumen()])}
+      catch(errorRecarga){setError('El egreso quedó anulado, pero no fue posible actualizar el listado. Pulse Actualizar.')}
+    }catch(errorGuardar){
+      setErrorAnulacion(errorGuardar?.message||'No fue posible anular el egreso.')
+    }finally{setGuardandoAnulacion(false)}
   }
 
   function prepararLegalizacion(egreso) {
@@ -2446,10 +2484,14 @@ export default function CajaEgresosPage() {
                   )}
 
                   {mayusculas(detalleEgreso.estado)==='ACTIVO' && (
-                    <div className="flex justify-end pt-1">
+                    <div className="flex flex-wrap justify-end gap-2 pt-1">
                       <button type="button" onClick={()=>abrirEdicionEgreso(detalleEgreso)}
                         className="rounded-lg bg-[#24638C] px-4 py-2 text-xs font-bold text-white hover:bg-[#194567] transition-all hover:-translate-y-0.5">
                         <i className="fas fa-pen mr-2"/>Editar egreso
+                      </button>
+                      <button type="button" onClick={abrirAnulacionEgreso}
+                        className="rounded-lg border border-red-400 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-100">
+                        <i className="fas fa-ban mr-2"/>Anular egreso
                       </button>
                     </div>
                   )}
@@ -2474,6 +2516,46 @@ export default function CajaEgresosPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {anulandoEgreso && detalleEgreso && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4"
+          onMouseDown={e=>{if(e.target===e.currentTarget&&!guardandoAnulacion)setAnulandoEgreso(false)}}>
+          <section role="dialog" aria-modal="true" aria-labelledby="titulo-anular-egreso"
+            className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl"
+            onMouseDown={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between bg-red-800 px-4 py-3 text-white">
+              <h2 id="titulo-anular-egreso" className="text-sm font-bold">Anular egreso {detalleEgreso.numero_cuenta_cobro}</h2>
+              <button type="button" aria-label="Cerrar anulación" disabled={guardandoAnulacion}
+                onClick={()=>setAnulandoEgreso(false)} className="rounded px-2 py-1 text-lg hover:bg-white/10">×</button>
+            </div>
+            <div className="space-y-3 p-4 text-xs">
+              <p><strong>Beneficiario:</strong> {detalleEgreso.beneficiario||detalleEgreso.receptor_dinero||'-'}</p>
+              <p><strong>Valor:</strong> {formatearMoneda(valorEgresoReal(detalleEgreso))}</p>
+              <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                Utilice esta opción cuando el movimiento se haya registrado por error o duplicado y
+                el dinero no corresponda a un egreso real adicional. Se conservará el consecutivo,
+                pero el egreso dejará de sumar en Caja. No puede deshacerse desde aquí.
+              </p>
+              <label className="block font-bold text-slate-700">Motivo de anulación *
+                <textarea rows={3} maxLength={1000} disabled={guardandoAnulacion}
+                  value={motivoAnulacion} onChange={e=>setMotivoAnulacion(e.target.value)}
+                  placeholder="Ej.: Registro duplicado. El pago real corresponde a otra cuenta de cobro."
+                  className="mt-1 w-full resize-y rounded-lg border border-slate-300 p-2.5 font-normal"/>
+              </label>
+              {errorAnulacion && <p role="alert" className="rounded border border-red-200 bg-red-50 p-3 text-red-700">{errorAnulacion}</p>}
+            </div>
+            <div className="flex justify-end gap-2 border-t bg-slate-50 p-3">
+              <button type="button" disabled={guardandoAnulacion}
+                onClick={()=>setAnulandoEgreso(false)} className="rounded border px-4 py-2 text-xs">Cancelar</button>
+              <button type="button" disabled={guardandoAnulacion||motivoAnulacion.trim().length<8}
+                onClick={confirmarAnulacionEgreso}
+                className="rounded bg-red-700 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                {guardandoAnulacion?'Anulando...':'Confirmar anulación'}
+              </button>
+            </div>
+          </section>
         </div>
       )}
 
