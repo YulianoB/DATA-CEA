@@ -2533,6 +2533,20 @@ export async function POST(
           }
         )
       }
+      // Los egresos que ya forman parte de un cierre confirmado
+      // se mantienen inalterables para preservar la conciliación.
+      const {data:cierres,error:errorCierres}=await supabase
+        .from('cierres_caja')
+        .select('id')
+        .lte('periodo_desde',egresoAnterior.created_at)
+        .gte('periodo_hasta',egresoAnterior.created_at)
+        .eq('estado','CERRADO')
+        .limit(1)
+      if(errorCierres)throw new Error('No fue posible verificar cierres: '+errorCierres.message)
+      if((cierres||[]).length)return NextResponse.json({
+        status:'error',
+        message:'El egreso pertenece a un cierre confirmado. Solicite un ajuste administrativo antes de anularlo.'
+      },{status:409})
       const fechaAnulacion =
         new Date()
           .toISOString()
@@ -2569,6 +2583,7 @@ export async function POST(
             'estado',
             'ACTIVO'
           )
+          .eq('updated_at',egresoAnterior.updated_at)
           .select(`
             id,
             concepto_id,
