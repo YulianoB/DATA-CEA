@@ -94,6 +94,16 @@ function observacionVisibleCierre(valor) {
   return nota
 }
 
+// El cierre operativo no presenta egresos anulados; su historial
+// sigue disponible en Caja > Egresos y en la auditoría existente.
+function egresoVisibleCierre(item) {
+  return String(item?.estado || '').trim().toUpperCase() !== 'ANULADO'
+}
+function movimientosVisiblesCierre(movimientos) {
+  return (Array.isArray(movimientos) ? movimientos : []).filter(item =>
+    item?.tipo_movimiento !== 'EGRESO' || egresoVisibleCierre(item))
+}
+
 function placaEgresoCierre(item) {
   return texto(item?.placa || item?.vehiculo?.placa)
 }
@@ -2330,7 +2340,7 @@ export default function CierreCajaPage() {
                 Movimientos del día
               </div>
               <div className="mt-1 text-[9px] text-white/80">
-                ${movimientosDia?.movimientos?.length || 0} movimiento(s) · Consulta ordenada por hora de registro.
+                ${movimientosVisiblesCierre(movimientosDia?.movimientos).length} movimiento(s) · Consulta ordenada por hora de registro.
               </div>
             </div>
             <div className="w-[155px]">
@@ -2342,7 +2352,7 @@ export default function CierreCajaPage() {
           <div className={`border-x border-b px-4 py-3 text-xs font-bold ${movimientosDia?.cierre_confirmado ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
             {movimientosDia?.cierre_confirmado
               ? `Cierre de caja del día realizado · ${movimientosDia?.cierre_diario?.consecutivo || 'Cierre registrado'}. Puede imprimir el soporte.`
-              : movimientosDia?.movimientos?.length
+              : movimientosVisiblesCierre(movimientosDia?.movimientos).length
                 ? `Cierre de caja del día pendiente (${fechaConsulta}). La impresión estará disponible después de registrar el cierre.`
                 : `No hay movimientos registrados para la fecha seleccionada (${fechaConsulta}).`}
           </div>
@@ -2363,14 +2373,14 @@ export default function CierreCajaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {!movimientosDia?.movimientos?.length ? (
+                  {!movimientosVisiblesCierre(movimientosDia?.movimientos).length ? (
                     <tr>
                       <td colSpan="9" className="p-8 text-center text-gray-500">
                         No hay movimientos registrados para la fecha seleccionada.
                       </td>
                     </tr>
                   ) : (
-                    movimientosDia.movimientos.map(item => {
+                    movimientosVisiblesCierre(movimientosDia.movimientos).map(item => {
                       const ingreso = item.tipo_movimiento === 'INGRESO'
                       const valorMostrado = ingreso ? Number(item.valor || 0) :
                         Number(item.valor || 0) +
@@ -2930,13 +2940,12 @@ export default function CierreCajaPage() {
               </SeccionDetalle>
 
               <SeccionDetalle
-                titulo={`Egresos del período (${detalle?.egresos?.length || 0})`}
+                titulo={`Egresos del período (${(detalle?.egresos || []).filter(egresoVisibleCierre).length})`}
                 icono="fas fa-arrow-trend-down"
               >
                 <TablaEgresos
                   egresos={
-                    detalle?.egresos ||
-                    []
+                    (detalle?.egresos || []).filter(egresoVisibleCierre)
                   }
                 />
               </SeccionDetalle>
