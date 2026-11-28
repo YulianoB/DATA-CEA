@@ -299,6 +299,33 @@ function hoyColombia() {
   )
 }
 
+// Un registro posterior nunca altera created_at: identifica su fecha efectiva.
+const MARCA_PAGO_AYER='[CEA_PAGO_DIA_ANTERIOR:'
+function ayerColombia(){
+  const fecha=new Date(hoyColombia()+'T12:00:00Z')
+  fecha.setUTCDate(fecha.getUTCDate()-1)
+  return fecha.toISOString().slice(0,10)
+}
+async function validarFechaPagoCaja(supabase,body){
+  const hoy=hoyColombia()
+  const fecha=texto(body?.fecha)||hoy
+  if(fecha===hoy)return {fecha,nota:''}
+  if(fecha!==ayerColombia())throw new Error(
+    'Solo se permite registrar pagos de hoy o del día anterior.')
+  const motivo=texto(body?.motivo_registro_anterior)
+  if(motivo.length<8)throw new Error(
+    'Indique el motivo del registro posterior (mínimo 8 caracteres).')
+  const {data,error}=await supabase.from('cierres_caja')
+    .select('id,tipo_cierre,estado').eq('fecha',fecha).eq('estado','CERRADO').limit(1)
+  if(error)throw new Error('No fue posible verificar el cierre anterior: '+error.message)
+  if(data?.length)throw new Error('La caja del día anterior ya tiene cierre confirmado.')
+  return {fecha,nota:'REGISTRADO AL DÍA SIGUIENTE. MOTIVO: '+motivo+
+    ' '+MARCA_PAGO_AYER+fecha+']'}
+}
+function observacionesFechaPagoCaja(observaciones,nota){
+  return [texto(observaciones),nota].filter(Boolean).join(' | ')
+}
+
 // =========================================================
 // CONSECUTIVOS VISUALES
 // =========================================================
@@ -6071,6 +6098,7 @@ if (
       accion ===
       'registrar_ingreso_libre'
     ) {
+      const fechaPagoValidada=await validarFechaPagoCaja(supabase,body)
       const concepto =
         await obtenerConcepto(
           supabase,
@@ -6354,12 +6382,7 @@ if (
             medio_pago_id:
               medioPago.id,
 
-            fecha:
-              fechaValida(
-                body?.fecha
-              )
-                ? body.fecha
-                : hoyColombia(),
+            fecha: fechaPagoValidada.fecha,
 
             descripcion,
 
@@ -6380,7 +6403,8 @@ if (
               usuario,
 
             observaciones: observacionesConEntidadFinanciera(
-              entidadFinanciera, body?.observaciones
+              entidadFinanciera, observacionesFechaPagoCaja(
+                body?.observaciones,fechaPagoValidada.nota)
             ),
 
             estado:
@@ -7616,6 +7640,7 @@ if (
       accion ===
         'registrar_ingreso'
     ) {
+      const fechaPagoValidada=await validarFechaPagoCaja(supabase,body)
       const cuenta =
         await obtenerCuenta(
           supabase,
@@ -8036,12 +8061,7 @@ if (
             medio_pago_id:
               medioPago.id,
 
-            fecha:
-              fechaValida(
-                body?.fecha
-              )
-                ? body.fecha
-                : hoyColombia(),
+            fecha: fechaPagoValidada.fecha,
 
             descripcion,
 
@@ -8064,7 +8084,8 @@ if (
               usuario,
 
             observaciones: observacionesConEntidadFinanciera(
-              entidadFinanciera, body?.observaciones
+              entidadFinanciera, observacionesFechaPagoCaja(
+                body?.observaciones,fechaPagoValidada.nota)
             ),
 
             estado:
