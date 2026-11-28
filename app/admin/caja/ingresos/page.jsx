@@ -154,6 +154,12 @@ function obtenerNombreEmpresa(
   )
 }
 
+function ayerColombiaCaja() {
+  const fecha=new Date(hoyColombia()+'T12:00:00Z')
+  fecha.setUTCDate(fecha.getUTCDate()-1)
+  return fecha.toISOString().slice(0,10)
+}
+
 function hoyColombia() {
   return new Intl.DateTimeFormat(
     'en-CA',
@@ -959,6 +965,7 @@ const [
       documento_pagador: '',
       entidad_financiera: '',
       fecha: '',
+      motivo_registro_anterior: '',
       observaciones: '',
     })
 
@@ -2063,6 +2070,7 @@ const ingresosLibresFiltrados =
       fecha: new Intl.DateTimeFormat('sv-SE', {
         timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit'
       }).format(new Date()),
+      motivo_registro_anterior: '',
       observaciones: '',
     })
 
@@ -2950,6 +2958,7 @@ const ingresosLibresFiltrados =
           documento_pagador: formPago.documento_pagador,
           entidad_financiera: formPago.entidad_financiera,
           fecha: formPago.fecha,
+          motivo_registro_anterior: formPago.motivo_registro_anterior,
           descripcion:
             cuentaPago?.descripcion ||
             cuentaPago?.concepto?.nombre ||
@@ -5239,9 +5248,19 @@ const ingresosLibresFiltrados =
 
                   <div className="mb-2">
                     <label className="block text-[11px] font-semibold mb-1">Fecha del pago</label>
-                    <input type="date" className="w-full border border-slate-300 rounded-md px-3 py-2 text-xs"
+                    <input type="date" min={ayerColombiaCaja()} max={hoyColombia()} className="w-full border border-slate-300 rounded-md px-3 py-2 text-xs"
                       value={formPago.fecha || ''}
-                      onChange={e=>setFormPago(actual=>({...actual,fecha:e.target.value}))}/>
+                      onChange={e=>setFormPago(actual=>({...actual,fecha:e.target.value,motivo_registro_anterior:''}))}/>
+                    {formPago.fecha===ayerColombiaCaja() && (
+                      <div className="mt-2 space-y-1">
+                        <label className="block text-[10px] font-semibold">Motivo del registro posterior *</label>
+                        <textarea rows={2} value={formPago.motivo_registro_anterior||''}
+                          onChange={e=>setFormPago(actual=>({...actual,motivo_registro_anterior:e.target.value}))}
+                          placeholder="Indique por qué el pago recibido ayer se registra hoy."
+                          className="w-full rounded-md border border-amber-300 bg-amber-50 p-2 text-xs"/>
+                        <p className="text-[9px] text-amber-800">Solo se permite si el cierre de ayer está pendiente.</p>
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <CampoSelect
