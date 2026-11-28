@@ -561,13 +561,7 @@ function egresosActivosCierre(egresos) {
 function construirFilasEgresos(
   egresos = []
 ) {
-  if (
-    !Array.isArray(
-      egresos
-    ) ||
-    egresos.length ===
-      0
-  ) {
+  if (egresosActivosCierre(egresos).length === 0  ) {
     return `
       <tr>
         <td
