@@ -646,7 +646,7 @@ async function consultarIngresos(
     .order('created_at',{ascending:true})
   const [base,anteriores]=await Promise.all([consultaBase,consultaAnteriores])
   const error=base.error||anteriores.error
-  const marca=/\\[CEA_PAGO_DIA_ANTERIOR:(\\d{4}-\\d{2}-\\d{2})\\]/
+  const marca=/\[CEA_PAGO_DIA_ANTERIOR:(\d{4}-\d{2}-\d{2})\]/
   const perteneceAlPeriodo=registro=>{
     const coincidencia=String(registro.observaciones||'').match(marca)
     if(!coincidencia)return true
