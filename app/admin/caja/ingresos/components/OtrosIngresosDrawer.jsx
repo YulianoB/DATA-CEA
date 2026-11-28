@@ -744,6 +744,8 @@ const [
 
       observaciones:
         '',
+      fecha_pago: hoyColombia(),
+      motivo_registro_anterior: '',
     })
 
     setBusquedaAprendiz('')
