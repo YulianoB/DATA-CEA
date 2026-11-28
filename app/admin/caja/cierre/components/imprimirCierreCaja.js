@@ -552,6 +552,12 @@ function construirFilasIngresos(
 // FILAS EGRESOS
 // =========================================================
 
+// Los egresos anulados son de auditoría, no del reporte operativo.
+function egresosActivosCierre(egresos) {
+  return (Array.isArray(egresos) ? egresos : []).filter(item =>
+    mayusculas(item?.estado) !== 'ANULADO')
+}
+
 function construirFilasEgresos(
   egresos = []
 ) {
@@ -574,7 +580,7 @@ function construirFilasEgresos(
     `
   }
 
-  return egresos
+  return egresosActivosCierre(egresos)
     .map(
       egreso => {
         const anulado =
@@ -817,12 +823,7 @@ export function imprimirCierreCaja(
       ? cierre.ingresos
       : []
 
-  const egresos =
-    Array.isArray(
-      cierre?.egresos
-    )
-      ? cierre.egresos
-      : []
+  const egresos = egresosActivosCierre(cierre?.egresos)
 
   const diferencia =
     Number(
@@ -1883,21 +1884,7 @@ export function imprimirCierreCaja(
 
                 </div>
 
-                <div class="dato">
 
-                  <div class="dato-label">
-                    Egresos anulados
-                  </div>
-
-                  <div class="dato-valor">
-                    ${escaparHtml(
-                      cierre
-                        ?.cantidad_egresos_anulados ||
-                      0
-                    )}
-                  </div>
-
-                </div>
 
               </div>
 
@@ -2092,9 +2079,9 @@ export function imprimirTablaCierreDiario(cierre, opciones = {}) {
   }
   const registro = cierre.cierre_diario
   const empresa = obtenerEmpresa(opciones.empresa || {})
-  const movimientos = [...(cierre.movimientos || [])].sort(
-    (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)
-  )
+  const movimientos = (cierre.movimientos || [])
+    .filter(item=>item.tipo_movimiento !== 'EGRESO' || mayusculas(item.estado)!=='ANULADO')
+    .sort((a,b)=>new Date(a.created_at||0)-new Date(b.created_at||0))
   const filas = (items, ingresoGrupo) => items.map(item => {
     const ingreso = ingresoGrupo
     const concepto = texto(item?.concepto?.nombre || item.descripcion || '-')
