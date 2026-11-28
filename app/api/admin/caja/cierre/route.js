@@ -550,14 +550,10 @@ async function consultarIngresos(
   periodoDesde,
   periodoHasta
 ) {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        'recibos_caja'
-      )
+  // El histórico continúa agrupándose por created_at. Solo recibos
+  // marcados explícitamente como registros del día anterior se agrupan
+  // por su fecha efectiva, sin duplicarse el día de digitación.
+  const consultaBase=supabase.from('recibos_caja')
       .select(`
         id,
         cuenta_id,
@@ -598,21 +594,72 @@ async function consultarIngresos(
           nombre
         )
       `)
-      .gte(
-        'created_at',
-        periodoDesde
-      )
-      .lte(
-        'created_at',
-        periodoHasta
-      )
-      .order(
-        'created_at',
-        {
-          ascending:
-            true,
-        }
-      )
+    .gte('created_at',periodoDesde)
+    .lte('created_at',periodoHasta)
+    .order('created_at',{ascending:true})
+  const desdeFecha=periodoDesde.slice(0,10)
+  const hastaFecha=periodoHasta.slice(0,10)
+  const consultaAnteriores=supabase.from('recibos_caja')
+      .select(`
+        id,
+        cuenta_id,
+        matricula_id,
+        documento,
+        categoria,
+        concepto_id,
+        medio_pago_id,
+        fecha,
+        descripcion,
+        valor,
+        pagado_por,
+        nombre_pagador,
+        documento_pagador,
+        referencia_pago,
+        recibido_por,
+        observaciones,
+        estado,
+        motivo_anulacion,
+        usuario_anulacion,
+        fecha_anulacion,
+        nombre_cliente,
+        tipo_documento_cliente,
+        documento_cliente,
+        celular_cliente,
+        correo_cliente,
+        tipo_origen,
+        created_at,
+
+        concepto:conceptos_caja (
+          id,
+          nombre,
+          naturaleza
+        ),
+
+        medio_pago:medios_pago_caja (
+          id,
+          nombre
+        )
+      `)
+    .gte('fecha',desdeFecha)
+    .lte('fecha',hastaFecha)
+    .like('observaciones','%[CEA_PAGO_DIA_ANTERIOR:%')
+    .order('created_at',{ascending:true})
+  const [base,anteriores]=await Promise.all([consultaBase,consultaAnteriores])
+  const error=base.error||anteriores.error
+  const marca=/\\[CEA_PAGO_DIA_ANTERIOR:(\\d{4}-\\d{2}-\\d{2})\\]/
+  const perteneceAlPeriodo=registro=>{
+    const coincidencia=String(registro.observaciones||'').match(marca)
+    if(!coincidencia)return true
+    const fechaEfectiva=coincidencia[1]
+    return fechaEfectiva>=desdeFecha && fechaEfectiva<=hastaFecha
+  }
+  const mapa=new Map()
+  for(const recibo of base.data||[])
+    if(perteneceAlPeriodo(recibo))mapa.set(recibo.id,recibo)
+  for(const recibo of anteriores.data||[])
+    if(perteneceAlPeriodo(recibo))mapa.set(recibo.id,recibo)
+  const data=[...mapa.values()].sort((x,y)=>
+    String(x.created_at).localeCompare(String(y.created_at)))
 
   if (
     error
