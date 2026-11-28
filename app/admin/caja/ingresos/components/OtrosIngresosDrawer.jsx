@@ -332,6 +332,12 @@ async function fetchJsonSeguro(
 // COMPONENTE
 // =========================================================
 
+function ayerCaja() {
+  const fecha=new Date(hoyColombia()+'T12:00:00Z')
+  fecha.setUTCDate(fecha.getUTCDate()-1)
+  return fecha.toISOString().slice(0,10)
+}
+
 export default function OtrosIngresosDrawer({
   abierto,
   onCerrar,
@@ -427,6 +433,8 @@ export default function OtrosIngresosDrawer({
 
       observaciones:
         '',
+      fecha_pago: hoyColombia(),
+      motivo_registro_anterior: '',
     })
 
   // =======================================================
@@ -1278,6 +1286,10 @@ function validarIngreso() {
     }
   }
 
+  if(tipoIngreso==='LIBRE' && form.fecha_pago===ayerCaja() &&
+      String(form.motivo_registro_anterior||'').trim().length<8)
+    return 'Explique por qué se registra hoy un pago recibido ayer.'
+
   // =====================================================
   // VALOR
   // =====================================================
@@ -1452,8 +1464,8 @@ function validarIngreso() {
                 form.observaciones
               ),
 
-            fecha:
-              hoyColombia(),
+            fecha:form.fecha_pago || hoyColombia(),
+            motivo_registro_anterior:form.motivo_registro_anterior,
           })
 
         recibo =
@@ -2672,6 +2684,25 @@ function imprimirIngresoHistorico(
                       </div>
                     )}
 
+                  {tipoIngreso==='LIBRE' && (
+                    <div className="mb-3 rounded-lg border border-slate-200 p-2">
+                      <label className="mb-1 block text-[10px] font-semibold">Fecha efectiva del pago</label>
+                      <input type="date" min={ayerCaja()} max={hoyColombia()}
+                        value={form.fecha_pago||hoyColombia()}
+                        onChange={e=>setForm(v=>({...v,fecha_pago:e.target.value,motivo_registro_anterior:''}))}
+                        className="w-full rounded-md border border-slate-300 p-2 text-xs"/>
+                      {form.fecha_pago===ayerCaja() && (
+                        <div className="mt-2">
+                          <label className="mb-1 block text-[10px] font-semibold">Motivo del registro posterior *</label>
+                          <textarea rows={2} value={form.motivo_registro_anterior||''}
+                            onChange={e=>setForm(v=>({...v,motivo_registro_anterior:e.target.value}))}
+                            placeholder="Motivo por el que el pago de ayer se registra hoy"
+                            className="w-full rounded-md border border-amber-300 bg-amber-50 p-2 text-xs"/>
+                          <p className="mt-1 text-[9px] text-amber-800">Solo si el cierre de ayer no se ha realizado.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <CampoInput
                     label="Valor recibido"
                     prefijo="$"
